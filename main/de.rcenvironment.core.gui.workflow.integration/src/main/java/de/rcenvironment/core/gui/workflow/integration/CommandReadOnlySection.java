@@ -18,8 +18,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
-import de.rcenvironment.core.gui.resources.api.FontManager;
-import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
@@ -56,12 +54,10 @@ public class CommandReadOnlySection extends ValidatingWorkflowNodePropertySectio
         commandScriptWindows = new LineNumberStyledText(scriptComposite, SWT.BORDER | SWT.MULTI | SWT.WRAP);
         commandScriptWindows.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         commandScriptWindows.setEditable(false);
-        commandScriptWindows.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
                 
         commandScriptLinux = new LineNumberStyledText(scriptComposite, SWT.BORDER | SWT.MULTI | SWT.WRAP);
         commandScriptLinux.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         commandScriptLinux.setEditable(false);
-        commandScriptLinux.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
                 
         scriptSection.setClient(scriptComposite);
 

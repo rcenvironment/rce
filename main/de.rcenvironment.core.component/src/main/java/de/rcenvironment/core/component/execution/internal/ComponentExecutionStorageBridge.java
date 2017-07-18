@@ -25,6 +25,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  * @author Robert Mischke (8.0.0 id adaptations)
  * @author Brigitte Boden
+ * 
+ * Note: Synchronization exists due to the fact that each of the synchronized methods (except #addComponentExecution()) are related
+ * to a certain component run. A component run is represented by the 'compExeDmId'. The 'compExeDmId' is assigned anew on each call
+ * to #addComponentExecution(). So to say, each call starts a new component run "session" and it must be prohibited that other calls
+ * to the data management overlap with this "session start". The synchronization could be improved though I think, but cannot be
+ * just removed. --seid_do
  */
 public class ComponentExecutionStorageBridge {
 

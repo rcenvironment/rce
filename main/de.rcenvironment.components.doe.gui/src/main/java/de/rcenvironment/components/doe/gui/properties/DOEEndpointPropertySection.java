@@ -31,6 +31,10 @@ public class DOEEndpointPropertySection extends EndpointPropertySection {
 
         DOEEndpointSelectionPane outputPane = new DOEEndpointSelectionPane("Outputs (values to evaluate)", this);
 
+        EndpointSelectionPane startInputPane =
+            new EndpointSelectionPane("Start Inputs", EndpointType.INPUT, "startTable",
+                new String[] {}, new String[] {}, this, EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY, true);
+
         EndpointSelectionPane outputForwardedPane =
             new EndpointSelectionPane("Outputs (forwarded)", EndpointType.OUTPUT, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD,
                 new String[] {}, new String[] {}, this, true, true);
@@ -45,6 +49,6 @@ public class DOEEndpointPropertySection extends EndpointPropertySection {
             this, true, true);
 
         setColumns(2);
-        setPanes(inputPane, outputPane, inputToForwardPane, outputForwardedPane, outputPaneOthers);
+        setPanes(inputPane, outputPane, startInputPane, inputToForwardPane, outputForwardedPane, outputPaneOthers);
     }
 }

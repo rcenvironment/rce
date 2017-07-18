@@ -24,6 +24,8 @@ import org.osgi.framework.Version;
 public final class VersionUtils {
 
     // TODO this class needs refactoring: initialization should be done once, and the release types should be an enum - misc_ro
+    
+    // TODO (p2) eliminate code duplication in this class - misc_ro
 
     /**
      * Release build type.
@@ -71,10 +73,15 @@ public final class VersionUtils {
     public static Version getVersionOfPlatformBundles() {
         Log log = LogFactory.getLog(OWN_CLASS); // not a static field to conserve memory
         Bundle ownBundle = FrameworkUtil.getBundle(OWN_CLASS);
+        if (ownBundle == null){
+            log.debug("No BundleContext available (most likely because we are running in a unit test); returning 'null' version");
+            return null;
+        }
         Bundle[] bundles = ownBundle.getBundleContext().getBundles();
         Version version = null;
         if (bundles == null) {
-            log.error("Unexpected error: 'null' bundle list while getting platform version");
+            log.error("Unexpected error: 'null' bundle list while getting platform version; returning 'null' version");
+            return null;
         } else {
             // find all platform bundles by their symbolic name
             for (Bundle bundle : bundles) {
@@ -98,10 +105,15 @@ public final class VersionUtils {
     public static Version getVersionOfProduct() {
         Log log = LogFactory.getLog(OWN_CLASS); // not a static field to conserve memory
         Bundle ownBundle = FrameworkUtil.getBundle(OWN_CLASS);
+        if (ownBundle == null){
+            log.debug("No BundleContext available (most likely because we are running in a unit test); returning 'null' version");
+            return null;
+        }
         Bundle[] bundles = ownBundle.getBundleContext().getBundles();
         Version version = null;
         if (bundles == null) {
-            log.error("Unexpected error: 'null' bundle list while getting product version");
+            log.error("Unexpected error: 'null' bundle list while getting product version; returning 'null' version");
+            return null;
         } else {
             // find bundles by their symbolic name
             for (Bundle bundle : bundles) {

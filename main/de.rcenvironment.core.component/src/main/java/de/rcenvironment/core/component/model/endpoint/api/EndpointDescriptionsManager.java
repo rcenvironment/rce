@@ -30,8 +30,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  * 
- * FIXME: Use a factory to create {@link EndpointDescription} instances and just provide add, delete, etc. for
- * {@link EndpointDescription} instances --seid_do
+ *         FIXME: Use a factory to create {@link EndpointDescription} instances and just provide add, delete, etc. for
+ *         {@link EndpointDescription} instances --seid_do
+ * 
+ * Note: This class evolved over time and lost its straight-forward implementation. E.g., it got some methods required by the
+ * WorkflowDescriptionPersistenceHandler to add endpoints even if a component is not installed and thus a matching
+ * EndpointDefinition does not exist. An issue exists that covers the rework: https://mantis.sc.dlr.de/view.php?id=13191 --seid_do
  */
 public class EndpointDescriptionsManager extends PropertiesChangeSupport implements Serializable {
 

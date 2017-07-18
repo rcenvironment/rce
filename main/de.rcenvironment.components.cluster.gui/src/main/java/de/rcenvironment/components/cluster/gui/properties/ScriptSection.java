@@ -29,7 +29,7 @@ public class ScriptSection extends AbstractScriptSection {
     private Button isScriptProvidedbutton;
 
     public ScriptSection() {
-        super(AbstractScriptSection.ALL, Messages.scriptname);
+        super(Messages.scriptname);
     }
     
     @Override
@@ -37,7 +37,6 @@ public class ScriptSection extends AbstractScriptSection {
         isScriptProvidedbutton = factory.createButton(composite,
             StringUtils.format(Messages.isScriptProvided, ClusterComponentConstants.JOB_SCRIPT_NAME), SWT.CHECK);
         isScriptProvidedbutton.setData(CONTROL_PROPERTY_KEY, ClusterComponentConstants.KEY_IS_SCRIPT_PROVIDED_WITHIN_INPUT_DIR);
-        super.createCompositeContentAtVeryTop(composite, factory);
         
         factory.createCLabel(composite, "Note: Component is marked as failed, if a file with name 'cluster_job_failed' exists "
             + "in at least one of the job's output directories. See F1 help for more details.");

@@ -22,7 +22,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
@@ -44,7 +44,7 @@ import de.rcenvironment.core.datamodel.api.CompressionFormat;
  */
 public class DataServiceImplTest {
 
-    private InstanceNodeId pi;
+    private LogicalNodeId pi;
 
     private UUID drId;
 
@@ -57,7 +57,7 @@ public class DataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        pi = NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy");
+        pi = NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy");
         drId = UUID.randomUUID();
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();

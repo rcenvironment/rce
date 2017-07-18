@@ -20,6 +20,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -37,55 +38,71 @@ import org.eclipse.swt.widgets.TreeItem;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 
 /**
- * This page handles the association of a new workflow with a project. The
- * workflow can be placed in an existing project or in a project that is created
- * on the fly.
+ * This page handles the association of a new workflow with a project. The workflow can be placed in an existing project or in a project
+ * that is created on the fly.
  * 
  * @author Oliver Seebach
  */
-final class ProjectSelectionPage extends WizardPage {
-    
+public class ProjectSelectionPage extends WizardPage {
+
     private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
         '*', '?', '\"', '>', '<', '|' };
 
     private static final int TEXT_WIDTH = 100;
+
     private static final int TREE_HEIGHT = 200;
+
     private static final int TREE_WIDTH = 100;
+
     private static final int LIST_HEIGHT = 200;
+
     private static final int PANEL_HEIGHT = 250;
+
     private static final int DIALOGWINDOWIDTH = 500;
+
     private static final int BORDERSIZE = 5;
 
-    private ProjectUsages usage;
-    private TreeViewer projectTreeViewer;
-    private IStructuredSelection selection;
-    private Text projectNameTextField;
-    private Button newProjectRadioButton;
-    private Button existingProjectRadioButton;
-    private Button useDefaultNameButton;
-    private String workflowName;
+    /**
+     * The project custom name. Public for extending classes.
+     */
+    public Text projectNameTextField;
 
-    ProjectSelectionPage(final NewWorkflowProjectWizard parentWizard,
-            final IStructuredSelection selection) {
+    protected Button useDefaultNameButton;
+
+    protected String workflowName;
+
+    protected ModifyListener projectNameTextFieldModifyListener;
+
+    protected TreeViewer projectTreeViewer;
+
+    private ProjectUsages usage;
+
+    private IStructuredSelection selection;
+
+    private Button newProjectRadioButton;
+
+    private Button existingProjectRadioButton;
+
+    public ProjectSelectionPage(final Wizard parentWizard, final IStructuredSelection selection) {
         super("Project");
         this.selection = selection;
         setTitle("Project");
         setDescription("Place the workflow in a project");
     }
 
-    private void dialogChanged() {
+    protected void dialogChanged() {
         final String newProjectName = getProjectNameTextField().getText();
         if (newProjectName.length() == 0
-                && newProjectRadioButton.getSelection()) {
+            && newProjectRadioButton.getSelection()) {
             updateStatus("Please chose a name for the new project");
             return;
         }
 
         if (newProjectName.length() > 0) {
             IProject existingProject = ResourcesPlugin.getWorkspace().getRoot()
-                    .getProject(newProjectName);
+                .getProject(newProjectName);
             if (existingProject != null && existingProject.exists()
-                    && newProjectRadioButton.getSelection()) {
+                && newProjectRadioButton.getSelection()) {
                 updateStatus("This project name is already in use");
                 return;
             }
@@ -120,14 +137,14 @@ final class ProjectSelectionPage extends WizardPage {
         // radiobutton
         GridData existingGridDataRadio = new GridData();
         existingGridDataRadio.widthHint = (DIALOGWINDOWIDTH / 2) - 2
-                * BORDERSIZE;
+            * BORDERSIZE;
         existingGridDataRadio.verticalAlignment = GridData.BEGINNING;
         existingGridDataRadio.horizontalAlignment = GridData.BEGINNING;
         existingGridDataRadio.grabExcessVerticalSpace = true;
         // list
         GridData existingGridDataList = new GridData();
         existingGridDataList.widthHint = (DIALOGWINDOWIDTH / 2) - 7
-                * BORDERSIZE;
+            * BORDERSIZE;
         existingGridDataList.heightHint = LIST_HEIGHT;
         existingGridDataList.verticalAlignment = GridData.BEGINNING;
         existingGridDataList.horizontalAlignment = GridData.BEGINNING;
@@ -139,13 +156,13 @@ final class ProjectSelectionPage extends WizardPage {
         existingProjectComposite.setLayoutData(existingGridDataComp);
 
         setExistingProjectRadioButton(new Button(existingProjectComposite,
-                SWT.RADIO));
+            SWT.RADIO));
         getExistingProjectRadioButton().setText("Place in existing project");
         getExistingProjectRadioButton().setVisible(true);
         getExistingProjectRadioButton().setLayoutData(existingGridDataRadio);
 
         projectTreeViewer = new TreeViewer(existingProjectComposite, SWT.SINGLE
-                | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+            | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 
         projectTreeViewer.setContentProvider(new ProjectTreeContentProvider());
         projectTreeViewer.setLabelProvider(new ProjectTreeLabelProvider());
@@ -214,7 +231,7 @@ final class ProjectSelectionPage extends WizardPage {
         useDefaultNameButton.setSelection(true);
         useDefaultNameButton.setText("Use default project name");
         useDefaultNameButton.setEnabled(getNewProjectRadioButton()
-                .getSelection());
+            .getSelection());
         useDefaultNameButton.setVisible(true);
         useDefaultNameButton.setLayoutData(newGridDataCheck);
 
@@ -224,20 +241,21 @@ final class ProjectSelectionPage extends WizardPage {
         projectNameLabel.setLayoutData(newGridDataLabel);
 
         setProjectNameTextField(new Text(newProjectComposite, SWT.SINGLE
-                | SWT.BORDER));
+            | SWT.BORDER));
         projectNameTextField.setEnabled(false);
         projectNameTextField.setVisible(true);
         projectNameTextField.setLayoutData(newGridDataText);
         projectNameTextField.addListener(SWT.Verify, new AlphanumericalTextContraintListener(false, true));
         projectNameTextField.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
-        projectNameTextField.addModifyListener(new ModifyListener() {
+        projectNameTextFieldModifyListener = new ModifyListener() {
 
             @Override
             public void modifyText(ModifyEvent arg0) {
                 dialogChanged();
             }
-        });
-        if (NewWorkflowProjectWizard.sharedWorkflowName != null){
+        };
+        projectNameTextField.addModifyListener(projectNameTextFieldModifyListener);
+        if (NewWorkflowProjectWizard.sharedWorkflowName != null) {
             projectNameTextField.setText(NewWorkflowProjectWizard.sharedWorkflowName);
         }
 
@@ -256,15 +274,11 @@ final class ProjectSelectionPage extends WizardPage {
         registerListeners();
         handleInitialTreeSelection();
 
-
-
-
-
     }
 
     private void handleInitialTreeSelection() {
         boolean useExistingProject = false;
-        
+
         if (this.selection != null) {
             useExistingProject = true;
             if (this.selection.getFirstElement() != null) {
@@ -273,24 +287,24 @@ final class ProjectSelectionPage extends WizardPage {
                 useExistingProject = false;
             }
         }
-        
+
         if (useExistingProject) {
             if (this.selection.size() == 1
-                    && this.selection.getFirstElement() instanceof IProject) {
+                && this.selection.getFirstElement() instanceof IProject) {
                 // (a) Project selected
                 projectTreeViewer.setSelection(selection);
                 getExistingProjectRadioButton().setSelection(true);
                 getNewProjectRadioButton().setSelection(false);
             } else if (this.selection.size() == 1
-                    && this.selection.getFirstElement() instanceof IFolder) {
+                && this.selection.getFirstElement() instanceof IFolder) {
                 // (b) Folder selected
                 IFolder folder = (IFolder) this.selection.getFirstElement();
                 String pathToExpand2 = folder.getFullPath().toOSString()
-                        .substring(1);
+                    .substring(1);
                 java.util.List<String> pathToExpand = Arrays
-                        .asList(pathToExpand2.split("\\\\"));
+                    .asList(pathToExpand2.split("\\\\"));
                 TreeItem[] currentCandidates = projectTreeViewer.getTree()
-                        .getItems();
+                    .getItems();
                 TreeItem lastItem = null;
                 for (String segment : pathToExpand) {
                     TreeItem matchedItem = null;
@@ -314,11 +328,11 @@ final class ProjectSelectionPage extends WizardPage {
                 getExistingProjectRadioButton().setSelection(true);
                 getNewProjectRadioButton().setSelection(false);
             } else if (this.selection.size() == 1
-                    && this.selection.getFirstElement() instanceof IFile) {
+                && this.selection.getFirstElement() instanceof IFile) {
                 // (c) File selected
                 IFile file = (IFile) this.selection.getFirstElement();
                 IStructuredSelection iss = new StructuredSelection(
-                        file.getProject());
+                    file.getProject());
                 projectTreeViewer.setSelection(iss);
                 getExistingProjectRadioButton().setSelection(true);
                 getNewProjectRadioButton().setSelection(false);
@@ -332,7 +346,7 @@ final class ProjectSelectionPage extends WizardPage {
             // null)
             activateExistingProjectPart();
         }
-        
+
         // in case workspace contains no projects so far
         if (projectTreeViewer.getTree().getItemCount() == 0) {
             getExistingProjectRadioButton().setEnabled(false);
@@ -343,10 +357,11 @@ final class ProjectSelectionPage extends WizardPage {
 
     private void registerListeners() {
         newProjectRadioButton.addSelectionListener(new SelectionAdapter() {
+
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 if (getNewProjectRadioButton().getSelection()) {
-                    if (NewWorkflowProjectWizard.sharedWorkflowName != null){
+                    if (NewWorkflowProjectWizard.sharedWorkflowName != null) {
                         getProjectNameTextField().setText(NewWorkflowProjectWizard.sharedWorkflowName);
                     }
                     useDefaultNameButton.setEnabled(true);
@@ -359,23 +374,23 @@ final class ProjectSelectionPage extends WizardPage {
         });
 
         existingProjectRadioButton.addSelectionListener(
-                new SelectionAdapter() {
+            new SelectionAdapter() {
 
-                    @Override
-                    public void widgetSelected(SelectionEvent arg0) {
-                        getNewProjectRadioButton().setSelection(false);
-                        useDefaultNameButton.setEnabled(false);
-                        projectTreeViewer.getTree().setEnabled(true);
-                        if (projectTreeViewer.getTree().getSelection().length == 0) {
-                            projectTreeViewer.getTree().setSelection(
-                                    projectTreeViewer.getTree().getItem(0));
-                        }
-                        NewWorkflowProjectWizard.setWorkbenchSelection(new StructuredSelection(
-                                projectTreeViewer.getSelection()));
-                        setUsage(ProjectUsages.EXISTING);
-                        dialogChanged();
+                @Override
+                public void widgetSelected(SelectionEvent arg0) {
+                    getNewProjectRadioButton().setSelection(false);
+                    useDefaultNameButton.setEnabled(false);
+                    projectTreeViewer.getTree().setEnabled(true);
+                    if (projectTreeViewer.getTree().getSelection().length == 0) {
+                        projectTreeViewer.getTree().setSelection(
+                            projectTreeViewer.getTree().getItem(0));
                     }
-                });
+                    NewWorkflowProjectWizard.setWorkbenchSelection(new StructuredSelection(
+                        projectTreeViewer.getSelection()));
+                    setUsage(ProjectUsages.EXISTING);
+                    dialogChanged();
+                }
+            });
 
         useDefaultNameButton.addSelectionListener(new SelectionAdapter() {
 
@@ -389,18 +404,19 @@ final class ProjectSelectionPage extends WizardPage {
         });
 
         projectTreeViewer
-                .addSelectionChangedListener(new ISelectionChangedListener() {
-                    @Override
-                    public void selectionChanged(SelectionChangedEvent event) {
-                        NewWorkflowProjectWizard.setWorkbenchSelection((IStructuredSelection) event.getSelection());
-                    }
-                });
+            .addSelectionChangedListener(new ISelectionChangedListener() {
+
+                @Override
+                public void selectionChanged(SelectionChangedEvent event) {
+                    NewWorkflowProjectWizard.setWorkbenchSelection((IStructuredSelection) event.getSelection());
+                }
+            });
     }
 
-    private void activateExistingProjectPart() {
+    protected void activateExistingProjectPart() {
         getNewProjectRadioButton().setSelection(true);
         getExistingProjectRadioButton().setSelection(false);
-        if (workflowName != null){
+        if (workflowName != null) {
             getProjectNameTextField().setText(workflowName);
         }
     }

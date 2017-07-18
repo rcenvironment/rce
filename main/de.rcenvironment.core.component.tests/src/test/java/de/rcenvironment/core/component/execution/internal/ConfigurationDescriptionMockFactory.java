@@ -29,9 +29,10 @@ public final class ConfigurationDescriptionMockFactory {
      * approval (verification).
      * 
      * @param outputApprovalRequired <code>true</code> if manual output approval is required, otherwise <code>false</code>
+     * @param imitationMode <code>true</code> if in tool run imitation mode, otherwise <code>false</code>
      * @return {@link ConfigurationDescription} mock
      */
-    public static ConfigurationDescription createConfigurationDescriptionMock(boolean outputApprovalRequired) {
+    public static ConfigurationDescription createConfigurationDescriptionMock(boolean outputApprovalRequired, boolean imitationMode) {
         ReadOnlyConfiguration readOnlyConfigMock = EasyMock.createStrictMock(ReadOnlyConfiguration.class);
         EasyMock.expect(readOnlyConfigMock.getValue(ComponentConstants.COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL))
             .andStubReturn(String.valueOf(outputApprovalRequired));
@@ -42,6 +43,8 @@ public final class ConfigurationDescriptionMockFactory {
         EasyMock.replay(configDefMock);
 
         ConfigurationDescription configDescMock = EasyMock.createStrictMock(ConfigurationDescription.class);
+        EasyMock.expect(configDescMock.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))
+            .andStubReturn(Boolean.toString(imitationMode));
         EasyMock.expect(configDescMock.getComponentConfigurationDefinition()).andStubReturn(configDefMock);
         EasyMock.replay(configDescMock);
         return configDescMock;

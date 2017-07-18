@@ -14,6 +14,9 @@ import de.rcenvironment.core.component.execution.api.ComponentState;
  * Listener for {@link ComponentState} changes.
  *
  * @author Doreen Seider
+ * 
+ * Note: Seems to be obsolete and can be deleted. I just don't want to remove it right before I leave because I couldn't handle any
+ * side effects if there are any. --seid_do
  */
 public interface ComponentStateChangeListener {
 

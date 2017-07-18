@@ -39,7 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.equinox.app.IApplication;
 
-import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.shutdown.HeadlessShutdown;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
@@ -412,13 +412,15 @@ public class InstanceOperationsImpl implements InstanceOperations {
                 }
                 fireCommandFinishEvent(executor.getProfile());
                 try {
+                    // TODO (p2) what is the rationale behind this 1 msec timeout? - misc_ro
                     future.get(1, TimeUnit.MILLISECONDS);
                 } catch (ExecutionException e) {
                     throw new IOException(e);
                 } catch (InterruptedException e) {
                     throw new IOException("Launcher task was interrupted.");
                 } catch (TimeoutException e) {
-                    log.info("Instance launcher terminated");
+                    // TODO (p1) needs a better message: what happened from a user's perspective?
+                    log.warn("TimeoutException while fetching an instance launcher result");
                 }
             }
 
@@ -533,7 +535,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
     private boolean detectShutdownFile(final String path) throws IOException {
         WatchService watcher = FileSystems.getDefault().newWatchService();
-        Path shutdownFile = Paths.get(path + SLASH + BootstrapConfiguration.PROFILE_SHUTDOWN_DATA_SUBDIR + SLASH + SHUTDOWN_FILE_NAME);
+        Path shutdownFile = Paths.get(path + SLASH + Profile.PROFILE_SHUTDOWN_DATA_SUBDIR + SLASH + SHUTDOWN_FILE_NAME);
         Path shutdownFileDir = shutdownFile.getParent();
         File file = new File(shutdownFileDir.toString());
         final int maxWaitingTime = 200;
@@ -638,7 +640,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
             throw new IOException("Profile directory " + profileDir.getAbsolutePath() + " can not be created or is not a directory");
         }
 
-        File lockfile = new File(profileDir, BootstrapConfiguration.PROFILE_DIR_LOCK_FILE_NAME);
+        File lockfile = new File(profileDir, Profile.PROFILE_DIR_LOCK_FILE_NAME);
         FileLock lock = null;
         if (!lockfile.isFile()) {
             return false;
@@ -743,7 +745,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
     private void deleteInstanceLockFromProfileFolder(File profileDir) {
         for (File fileInProfileDir : profileDir.listFiles()) {
             if (fileInProfileDir.isFile()
-                && BootstrapConfiguration.PROFILE_DIR_LOCK_FILE_NAME.equals(fileInProfileDir.getName())) {
+                && Profile.PROFILE_DIR_LOCK_FILE_NAME.equals(fileInProfileDir.getName())) {
                 fileInProfileDir.delete();
                 break;
             }

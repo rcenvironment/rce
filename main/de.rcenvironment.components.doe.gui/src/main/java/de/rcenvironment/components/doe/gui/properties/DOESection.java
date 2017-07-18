@@ -12,10 +12,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,6 +74,7 @@ import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.components.doe.common.DOEUtils;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -507,6 +510,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         }
         int varCount = getOutputs().size();
         if (varCount < 2 && !(algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+            || algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)
             || algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO))) {
             table.setRedraw(true);
             return;
@@ -566,7 +570,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
     private String[][] createTableValues() {
         int varCount = getOutputs().size();
-        if (varCount == 0) {
+        String algorithm = algorithmSelection.getText();
+        if (varCount == 0 && !algorithm.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
             return null;
         }
         int runCount = 0;
@@ -578,7 +583,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             seedCount = seedSpinner.getSelection();
         }
         Double[][] tableValuesDouble = null;
-        switch (algorithmSelection.getText()) {
+        switch (algorithm) {
         case DOEConstants.DOE_ALGORITHM_FULLFACT:
             if (runSpinner.getSelection() >= 2) {
                 tableValuesDouble = DOEAlgorithms.populateTableFullFactorial(varCount, runCount);
@@ -613,8 +618,21 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             }
 
             break;
+        case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT:
+            if (node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
+                Map<String, String> metaData = new HashMap<>();
+                node.getInputDescriptionsManager().addDynamicEndpointDescription(DOEConstants.CUSTOM_TABLE_ENDPOINT_ID,
+                    DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, DataType.Matrix,
+                    metaData);
+            }
+
+            break;
         default:
             break;
+        }
+        if (!algorithm.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)
+            && !node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
+            node.getInputDescriptionsManager().removeDynamicEndpointDescription(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME);
         }
         if (tableValuesDouble != null && tableValuesDouble.length > 0) {
             String[][] returnValues = new String[tableValuesDouble.length][tableValuesDouble[0].length];
@@ -631,15 +649,13 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             }
             this.tableValues = returnValues;
             return returnValues;
-        } else {
-            if (!DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(algorithmSelection.getText())) {
-                this.tableValues = new String[0][varCount];
-            } else {
-                this.tableValues = new String[runCount][varCount];
-            }
-            return this.tableValues;
-
         }
+        if (!DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(algorithm)) {
+            this.tableValues = new String[0][varCount];
+        } else {
+            this.tableValues = new String[runCount][varCount];
+        }
+        return this.tableValues;
     }
 
     private void updateActivation() {
@@ -654,11 +670,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         clearTableButton.setEnabled(false);
         if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
             runLabel.setText(Messages.numLevelsLabel);
-        } else if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_LHC)) {
-            runLabel.setText(Messages.desiredRunsLabel);
-            seedSpinner.setEnabled(true);
-            seedLabel.setEnabled(true);
-        } else if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)) {
+        } else if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_LHC)
+            || algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)) {
             runLabel.setText(Messages.desiredRunsLabel);
             seedSpinner.setEnabled(true);
             seedLabel.setEnabled(true);
@@ -722,7 +735,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             codedValuesButton.setEnabled(false);
         }
         if (outputsWarningLabel != null && !outputsWarningLabel.isVisible()
-            && ((tableValues != null && (tableValues.length * getOutputs().size() > MAX_GUI_ELEMENTS || tableValues.length == 0)))) {
+            && ((tableValues != null && (tableValues.length * getOutputs().size() > MAX_GUI_ELEMENTS || tableValues.length == 0)))
+            && !algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
             outputsWarningLabel.setVisible(true);
             outputsWarningLabel.setText(Messages.tooMuchElements);
         }
@@ -730,6 +744,13 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             && (tableValues == null || tableValues.length == 0 || tableValues[0] == null)) {
             outputsWarningLabel.setVisible(true);
             outputsWarningLabel.setText(Messages.noTableLong);
+        }
+        if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
+            runSpinner.setEnabled(false);
+            table.setEnabled(false);
+            saveTable.setEnabled(false);
+            loadTable.setEnabled(false);
+            clearTableButton.setEnabled(false);
         }
         outputsWarningLabel.pack();
         runLabel.getParent().pack();

@@ -20,10 +20,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.ui.forms.widgets.Section;
-import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
@@ -41,6 +38,7 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * @author Arne Bachmann
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Hendrik Abbenhaus
  */
 public class ScriptSection extends AbstractScriptSection {
 
@@ -49,44 +47,22 @@ public class ScriptSection extends AbstractScriptSection {
     private CCombo languages;
 
     public ScriptSection() {
-        super(AbstractScriptSection.LOCAL_FILE | AbstractScriptSection.NEW_SCRIPT_FILE | AbstractScriptSection.NO_SCRIPT_FILENAME,
-            Messages.scriptname);
+        super(Messages.scriptname);
     }
-
+    
     @Override
-    protected void createCompositeContent(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        super.createCompositeContent(parent, aTabbedPropertySheetPage);
-        /*
-         * Inspecting the build-up of super-class section. Parent composite has a section which has a layout composite. The label-text will
-         * be inserted at first position.
-         */
-        Composite parentComposite = null;
-        Control[] parentChildControls = parent.getChildren();
-        if (parentChildControls[0] instanceof Section) {
-            Control[] sectionChildControls = ((Section) parentChildControls[0]).getChildren();
-            for (int i = 0; i < sectionChildControls.length; i++) {
-                if (sectionChildControls[i] instanceof Composite) {
-                    parentComposite = (Composite) sectionChildControls[i];
-                    break;
-                }
-            }
-        }
-
-        if (parentComposite != null) {
-            TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
-            Composite scriptParent = factory.createFlatFormComposite(parentComposite);
-            scriptParent.setLayout(new RowLayout());
-            new Label(scriptParent, SWT.NONE).setText(Messages.chooseLanguage);
-            languages = new CCombo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
-            languages.setData(CONTROL_PROPERTY_KEY, ScriptComponentConstants.SCRIPT_LANGUAGE);
-            ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-            ScriptExecutorFactoryRegistry scriptExecutorRegistry = serviceRegistryAccess.getService(ScriptExecutorFactoryRegistry.class);
-            List<ScriptLanguage> languagesForCombo =
-                scriptExecutorRegistry.getCurrentRegisteredExecutorLanguages();
-            for (ScriptLanguage sl : languagesForCombo) {
-                languages.add(sl.getName());
-            }
-            scriptParent.moveAbove(parentComposite.getChildren()[0]);
+    protected void createCompositeContentAtVeryTop(Composite composite, TabbedPropertySheetWidgetFactory factory) {
+        Composite scriptParent = factory.createFlatFormComposite(composite);
+        scriptParent.setLayout(new RowLayout());
+        new Label(scriptParent, SWT.NONE).setText(Messages.chooseLanguage);
+        languages = new CCombo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
+        languages.setData(CONTROL_PROPERTY_KEY, ScriptComponentConstants.SCRIPT_LANGUAGE);
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        ScriptExecutorFactoryRegistry scriptExecutorRegistry = serviceRegistryAccess.getService(ScriptExecutorFactoryRegistry.class);
+        List<ScriptLanguage> languagesForCombo =
+            scriptExecutorRegistry.getCurrentRegisteredExecutorLanguages();
+        for (ScriptLanguage sl : languagesForCombo) {
+            languages.add(sl.getName());
         }
     }
 

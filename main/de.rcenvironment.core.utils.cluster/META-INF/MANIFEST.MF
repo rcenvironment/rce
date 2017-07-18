@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Cluster
 Bundle-SymbolicName: de.rcenvironment.core.utils.cluster
-Bundle-Version: 8.0.2.qualifier
+Bundle-Version: 8.1.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
@@ -10,13 +10,9 @@ Export-Package: de.rcenvironment.core.utils.cluster
 Import-Package: com.jcraft.jsch;version="0.1.53",
  de.rcenvironment.core.utils.cluster,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.security,
- de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.ssh.jsch,
  de.rcenvironment.core.utils.ssh.jsch.executor,
  org.apache.commons.codec.binary;version="1.3.0",
  org.apache.commons.io;version="2.0.1",
- org.apache.commons.lang3.exception;version="3.1.0",
- org.apache.commons.logging;version="1.1.1",
- org.osgi.framework;version="1.5.0"
+ org.apache.commons.lang3.exception;version="3.1.0"
 Service-Component: OSGI-INF/*.xml

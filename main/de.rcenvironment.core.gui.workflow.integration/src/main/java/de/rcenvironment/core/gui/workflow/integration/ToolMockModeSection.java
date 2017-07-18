@@ -16,6 +16,7 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -41,7 +42,7 @@ public class ToolMockModeSection extends ValidatingWorkflowNodePropertySection {
         final Composite sectionInstallationClient = factory.createFlatFormComposite(sectionProperties);
         sectionInstallationClient.setLayout(new GridLayout(1, false));
         checkBox = factory.createButton(sectionInstallationClient, "Use the integrated tool in tool run imitation mode", SWT.CHECK);
-        checkBox.setData(CONTROL_PROPERTY_KEY, ToolIntegrationConstants.KEY_IS_MOCK_MODE);
+        checkBox.setData(CONTROL_PROPERTY_KEY, ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE);
 
         factory.createLabel(sectionInstallationClient,
             "\nNote: The tool provider decides whether this component can be used in tool run imitation mode.\n\n"
@@ -65,7 +66,7 @@ public class ToolMockModeSection extends ValidatingWorkflowNodePropertySection {
         boolean isDeactivationSupported = Boolean.valueOf(workflowNode.getConfigurationDescription().getComponentConfigurationDefinition()
             .getReadOnlyConfiguration().getValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED));
         if (!isDeactivationSupported) {
-            setProperty(ToolIntegrationConstants.KEY_IS_MOCK_MODE, String.valueOf(false));
+            setProperty(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE, String.valueOf(false));
             checkBox.setSelection(false);
         }
         checkBox.setEnabled(isDeactivationSupported);

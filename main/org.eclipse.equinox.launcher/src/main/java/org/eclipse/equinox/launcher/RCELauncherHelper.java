@@ -9,8 +9,7 @@
 package org.eclipse.equinox.launcher;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Random;
 
 /**
  * As we want to minimize the code changes which have to be performed in the copied org.eclipse.equinox.launcher code, this class is
@@ -20,12 +19,35 @@ import java.net.URISyntaxException;
  */
 public final class RCELauncherHelper {
 
+    /**
+     * Indicates the semantic version of the RCE launcher. This number should only be updated if the code within the launcher changes.
+     * 
+     * This version number may be necessary during an update of RCE. After the update, RCE needs to be restarted. During the restart
+     * process, the rce.ini is not reevaluated and therefore, the new launcher is not used. This might be a problem, if later code assumes
+     * that the launcher guarantees certain preconditions.
+     * 
+     * If this version number is increased, additional code needs to be added to the LauncherVersionValidator class to handle the update
+     * case.
+     */
+    public static final int LAUNCHER_VERSION = 810;
+
+    /**
+     * System property for the launcher version.
+     */
+    public static final String PROP_RCE_LAUNCHER_VERSION = "de.rcenvironment.launcher.version";
+
+    static final String PROP_BUNDLE_CONFIGURATION_LOCATION = "bundles.configuration.location";
+
+    static final String PROP_OSGI_INSTALL_AREA = "osgi.install.area";
+
+    private static final String FILE_SCHEMA = "file:";
+
     // RCE: This system property is used to make sure that the custom RCE launcher was used.
     private static final String PROP_RCE_LAUNCHER = "de.rcenvironment.launcher";
 
-    private static final String PROP_BUNDLE_CONFIGURATION_LOCATION = "bundles.configuration.location";
-
-    private static final String PROP_OSGI_INSTALL_AREA = "osgi.install.area";
+    // RCE: This system property is used to mark the current launch uniquely. It will be used as a prefix for the startup debug and
+    // warnings log.
+    private static final String PROP_RCE_LAUNCH_ID = "rce.launch.id";
 
     /**
      * List of commands which implicitly suppress the splash screen.
@@ -45,8 +67,7 @@ public final class RCELauncherHelper {
     }
 
     /**
-     * Returns true, if the the splash screen should not be shown, since the given argument implicitly determines a nosplash/headless
-     * start.
+     * Returns true, if the the splash screen should not be shown, since the given argument implicitly determines a nosplash/headless start.
      * 
      * @param arg The argument that should be checked.
      * @return True, if arg is an argument which indicates a nosplash/headless start.
@@ -64,10 +85,27 @@ public final class RCELauncherHelper {
 
     /**
      * This system property is used later to make sure that the custom RCE launcher was used.
-     *
      */
     public static void setSystemPropertyToMarkCustomLaunch() {
         System.getProperties().put(PROP_RCE_LAUNCHER, PROP_RCE_LAUNCHER);
+    }
+
+    /**
+     * Sets the launcher version as a system property.
+     */
+    public static void setSystemPropertyToIdentifyLauncher() {
+        // We need to store this property as a String, since PAX Logging crashes if there is a single property that cannot be cast to
+        // String.
+        System.getProperties().put(PROP_RCE_LAUNCHER_VERSION, Integer.toString(LAUNCHER_VERSION));
+    }
+
+    /**
+     * This system property is used to mark the current instance uniquely. It will be used as a prefix for the startup debug and warnings
+     * log.
+     */
+    public static void setSystemPropertyToIdentifyInstance() {
+        System.getProperties().put(PROP_RCE_LAUNCH_ID, Long.toString(System.currentTimeMillis())
+            + "_" + Long.toString(new Random().nextLong()));
     }
 
     /**
@@ -88,7 +126,8 @@ public final class RCELauncherHelper {
         }
 
         // check if bundle.configuration.location is absolute
-        boolean absolute = new File(bundleConfigurationLocation).isAbsolute();
+        File bundleConfigurationLocationFile = new File(bundleConfigurationLocation);
+        boolean absolute = bundleConfigurationLocationFile.isAbsolute();
         if (!absolute) {
 
             String osgiInstallArea = System.getProperty(PROP_OSGI_INSTALL_AREA);
@@ -97,18 +136,18 @@ public final class RCELauncherHelper {
                 return;
             }
 
-            URI osgiInstallAreaUri;
-            try {
-                // the launcher stores osgi.install.area in URI format
-                osgiInstallAreaUri = new URI(osgiInstallArea);
-                File osgiInstallAreaFile = new File(osgiInstallAreaUri);
-                if (osgiInstallAreaFile.exists() && osgiInstallAreaFile.isDirectory()) {
-                    System.setProperty(PROP_BUNDLE_CONFIGURATION_LOCATION,
-                        new File(osgiInstallAreaFile, bundleConfigurationLocation).getAbsolutePath());
-                } else {
-                    System.err.println(OSGI_INSTALL_AREA_MISCONFIGURED + osgiInstallArea);
-                }
-            } catch (URISyntaxException e) {
+            // the launcher stores osgi.install.area as an unescaped file URL format
+            File osgiInstallAreaFile;
+            if (osgiInstallArea.startsWith(FILE_SCHEMA)) {
+                osgiInstallAreaFile = new File(osgiInstallArea.substring(FILE_SCHEMA.length()));
+            } else {
+                osgiInstallAreaFile = new File(osgiInstallArea);
+            }
+
+            if (osgiInstallAreaFile.exists() && osgiInstallAreaFile.isDirectory()) {
+                System.setProperty(PROP_BUNDLE_CONFIGURATION_LOCATION,
+                    new File(osgiInstallAreaFile, bundleConfigurationLocation).getAbsolutePath());
+            } else {
                 System.err.println(OSGI_INSTALL_AREA_MISCONFIGURED + osgiInstallArea);
             }
         }

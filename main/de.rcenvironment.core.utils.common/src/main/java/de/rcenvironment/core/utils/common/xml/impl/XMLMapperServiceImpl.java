@@ -95,7 +95,7 @@ public class XMLMapperServiceImpl implements XMLMapperService {
             transformer = tFactory.newTransformer(new StreamSource(xsltFile));
             transformer.setErrorListener(new XSLTErrorHandler());
             MessageEmitter em = new MessageEmitter();
-           // PipedReader reader = new PipedReader();
+            // PipedReader reader = new PipedReader();
             StringWriter writer = new StringWriter();
             em.setWriter(writer);
             ((net.sf.saxon.Controller) transformer).setMessageEmitter(em);
@@ -159,7 +159,19 @@ public class XMLMapperServiceImpl implements XMLMapperService {
 
             switch (mappingMode) {
             case Append:
-                final Document mappingDoc = createXPathMappings(sourceNodes.item(0), mapInfo);
+                Node sourceNode = sourceNodes.item(0);
+                Element sourceElement = null;
+                if (sourceNode.getNodeType() == Node.ELEMENT_NODE) {
+                    sourceElement = (Element) sourceNode;
+                } else if (sourceNode.getNodeType() == Node.DOCUMENT_NODE) {
+                    sourceElement = sourceDoc.getDocumentElement();
+                }
+                if (sourceElement == null) {
+                    //Never expected to happen
+                    throw new XMLException("Source node has an unsupported type.");
+                }
+                
+                final Document mappingDoc = createXPathMappings(sourceElement, mapInfo);
                 transformXMLFileWithXMLMappingInformation(sourceDoc, targetDoc, mappingDoc);
                 continue;
             case Delete:
@@ -194,7 +206,17 @@ public class XMLMapperServiceImpl implements XMLMapperService {
 
             // Loop over all source nodes and import them into the target doc
             for (int sourceIndex = 0; sourceIndex < sourceNodes.getLength(); sourceIndex++) {
-                final Element sourceElement = (Element) sourceNodes.item(sourceIndex);
+                Node sourceNode = sourceNodes.item(sourceIndex);
+                Element sourceElement = null;
+                if (sourceNode.getNodeType() == Node.ELEMENT_NODE) {
+                    sourceElement = (Element) sourceNode;
+                } else if (sourceNode.getNodeType() == Node.DOCUMENT_NODE) {
+                    sourceElement = sourceDoc.getDocumentElement();
+                }
+                if (sourceElement == null) {
+                    //Never expected to happen
+                    throw new XMLException("Source node has an unsupported type.");
+                }
                 final Element importElement = (Element) targetDoc.importNode(sourceElement, /* deep */true);
 
                 Node targetElement;
@@ -203,6 +225,12 @@ public class XMLMapperServiceImpl implements XMLMapperService {
                 } else {
                     targetElement = xmlSupport.createElement(targetDoc, targetNodeName);
                     targetParentNode.appendChild(targetElement);
+                }
+                if (targetElement == null) {
+                    // This happens if the targetXPath is "/", so no root node exists. In that case, create a root node with the
+                    //name of the source element
+                    targetElement = xmlSupport.createElement(targetDoc, sourceElement.getNodeName());
+                    targetDoc.appendChild(targetElement);
                 }
 
                 // Copy the attributes of the source element to the target element
@@ -327,13 +355,13 @@ public class XMLMapperServiceImpl implements XMLMapperService {
      * Creates a mapping document for the 'append' mapping mode. This mapping document contains mapping rules for every leaf element of a
      * given source node. (adapted from old XML mapper)
      * 
-     * @param sourceNode The source element for whose leafs the mapping rules must be created.
+     * @param sourceElement The source element for whose leafs the mapping rules must be created.
      * @param mapInfo Current mapping information with source and target XPaths
      * @return Returns a new mapping document with mapping rules for all leafs of the current element.
      */
-    private Document createXPathMappings(final Node sourceNode, final XMLMappingInformation mapInfo) throws XMLException {
+    private Document createXPathMappings(final Element sourceElement, final XMLMappingInformation mapInfo) throws XMLException {
         try {
-            final String sourceString = xmlSupport.writeXMLToString((Element) sourceNode);
+            final String sourceString = xmlSupport.writeXMLToString(sourceElement);
             final Source source = new StreamSource(new StringReader(sourceString));
 
             final Document mappingDoc = xmlSupport.createDocument();

@@ -34,6 +34,7 @@ import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.utils.common.ConsistencyChecks;
 
 /**
  * Default {@link ConnectionSetupService} implementation.
@@ -232,7 +233,7 @@ public class ConnectionSetupServiceImpl implements ConnectionSetupService, Addit
         if (messageChannel.getInitiatedByRemote()) {
             // consistency check: remote-initiated connections should never have a connection setup
             if (matchedSetup != null) {
-                log.error("Internal consistency error: Remote-initiated message channel had an associated connection setup: " + channelId);
+                ConsistencyChecks.reportFailure("Remote-initiated message channel had an associated connection setup: " + channelId);
             }
             return;
         }

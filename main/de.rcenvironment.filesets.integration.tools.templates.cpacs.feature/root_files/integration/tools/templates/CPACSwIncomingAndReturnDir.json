@@ -11,12 +11,16 @@
     "endpointFileName" : "CPACS_initial.xml",
     "endpointDataType" : "FileReference",
     "endpointName" : "CPACS initial",
+	"inputHandling" : "Single:Queue",
+    "defaultInputHandling" : "Queue",
     "endpointUsage" : "required"
   }, {
     "endpointFolder" : "Input folder",
     "endpointFileName" : "",
     "endpointDataType" : "DirectoryReference",
     "endpointName" : "Incoming directory",
+	"inputHandling" : "Single:Queue",
+    "defaultInputHandling" : "Queue",
     "endpointUsage" : "required"
   } ],
   "integrationType" : "CPACS",

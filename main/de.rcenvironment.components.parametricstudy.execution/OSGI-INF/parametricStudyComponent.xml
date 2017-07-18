@@ -27,8 +27,6 @@
     <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
     <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
     
-    <property name="rce.component.canHandleNotAValueDataTypes" type="String" value="true"/>
     <property name="rce.component.isDriverComponent" type="String" value="true"/>
-    
 
 </scr:component> 

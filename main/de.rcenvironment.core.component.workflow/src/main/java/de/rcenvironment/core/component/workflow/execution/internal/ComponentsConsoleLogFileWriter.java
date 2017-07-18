@@ -39,6 +39,11 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Writes {@link ConsoleRow}s into a log files and stores them into the data management.
  * 
  * @author Doreen Seider
+ * 
+ * Note: The console log file writing was added very late. I'm not happy with the link to the code that needs to trigger the writing
+ * and the data management. The data management only accepts console log files during a component run. If there is any log message
+ * written outside of one, it simply fails which is pretty bad. So, the underlying flaw might be found in the data model and not
+ * that much in this class though. -- seid_do
  */
 public class ComponentsConsoleLogFileWriter {
     
@@ -99,9 +104,11 @@ public class ComponentsConsoleLogFileWriter {
     }
     
     protected void flushAndDisposeLogFiles() {
+        //FIXME: Iteration over a view of a synchronized collection without holding a lock on the backing collection. - rode_to, Dec 2016
         for (BatchingConsoleRowsForwarder writer : completeConsoleRowWriters.values()) {
             writer.onConsoleRow(null); // should be improved by dedicated ConsoleRow instance
         }
+        //FIXME: Iteration over a view of a synchronized collection without holding a lock on the backing collection. - rode_to, Dec 2016
         for (BatchingConsoleRowsForwarder writer : errorConsoleRowWriters.values()) {
             writer.onConsoleRow(null); // should be improved by dedicated ConsoleRow instance
         }

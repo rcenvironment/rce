@@ -14,6 +14,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.dom4j.DocumentException;
+import org.junit.Ignore;
 
 /**
  * 
@@ -21,6 +22,8 @@ import org.dom4j.DocumentException;
  * 
  * @author Andre Nurzenski
  */
+//Ignore tests because the corresponding code is not used in RCE anymore
+@Ignore
 public class XMLIOSupportTest extends TestCase {
 
     /**

@@ -239,7 +239,7 @@ public class ConnectionDialogComposite extends Composite {
         targetFilter.setFilterString(targetFilterString);
         if (wasDoubleClicked) {
             targetFilter.setFilterMode(FilterMode.DOUBLECLICK);
-            targetFilter.setFilterString(sourceFilterString + ENDPOINT_SEPARATOR + targetFilterString);
+            targetFilter.setFilterString(targetFilterString);
         }
         sourceTreeViewer.refresh();
         canvas.redraw();
@@ -257,7 +257,7 @@ public class ConnectionDialogComposite extends Composite {
         sourceFilter.setFilterString(sourceFilterString);
         if (wasDoubleClicked) {
             sourceFilter.setFilterMode(FilterMode.DOUBLECLICK);
-            sourceFilter.setFilterString(sourceFilterString + ENDPOINT_SEPARATOR + targetFilterString);
+            sourceFilter.setFilterString(sourceFilterString);
         }
         sourceTreeViewer.refresh();
         canvas.redraw();
@@ -384,14 +384,7 @@ public class ConnectionDialogComposite extends Composite {
                 && connection.getTargetNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier()))) {
                 alreadyExistentBendpoints = connection.getBendpoints();
                 break;
-            } else if (connection.getSourceNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier())
-                && connection.getTargetNode().getIdentifier().equals(sourceNode.getIdentifier())) {
-                // invert order
-                for (Location l : connection.getBendpoints()) {
-                    alreadyExistentBendpoints.add(0, l);
-                }
-                break;
-            }
+            } 
         }
 
         Connection connection = new Connection(sourceNode, endpointManager.getEndpointDescription(sourceEndpointName),
@@ -632,14 +625,10 @@ public class ConnectionDialogComposite extends Composite {
                         return false;
                     }
                 } else if (filterMode.equals(FilterMode.DOUBLECLICK)) {
-                    // by convention, the source and target connection names are handed over separated by "###"
-                    if (filterString.split(ENDPOINT_SEPARATOR).length == 2) {
-                        String endpoint1 = filterString.split(ENDPOINT_SEPARATOR)[0];
-                        String endpoint2 = filterString.split(ENDPOINT_SEPARATOR)[1];
-                        if (!(item.getName().toLowerCase().equals(endpoint1.toLowerCase())
-                            || item.getName().toLowerCase().equals(endpoint2.toLowerCase()))) {
-                            return false;
-                        }
+                    // double click used to behave differently when one connection line contained both directions
+                    // for sake of readability this filter mode is still kept separately
+                    if (!(item.getName().toLowerCase().equals(filterString.toLowerCase()))) {
+                        return false;
                     }
                 }
             }

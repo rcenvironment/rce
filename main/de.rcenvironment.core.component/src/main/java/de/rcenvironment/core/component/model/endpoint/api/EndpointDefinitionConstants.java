@@ -17,6 +17,27 @@ public final class EndpointDefinitionConstants {
 
     /** JSON key used in .json definition file. */
     public static final String DEFAULT_DYNAMIC_ENDPOPINT_IDENTIFIER = "default";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_DEFAULT_INPUT_HANDLING = "defaultInputHandling";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_INPUT_HANDLING_OPTIONS = "inputHandlingOptions";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_DEFAULT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_EXECUTION_CONSTRAINT_OPTIONS = "inputExecutionConstraintOptions";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_DATATYPES = "dataTypes";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_DEFAULT_DATATYPE = "defaultDataType";
+    
+    /** JSON key used in .json definition file. */
+    public static final String KEY_METADATA = "metaData";
 
     /** JSON key used in .json definition file. */
     public static final String JSON_KEY_STATIC_INPUTS = "staticInputs";

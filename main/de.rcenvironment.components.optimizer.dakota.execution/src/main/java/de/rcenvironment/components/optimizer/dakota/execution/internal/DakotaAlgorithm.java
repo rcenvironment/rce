@@ -83,7 +83,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -96,7 +95,6 @@ import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
-import de.rcenvironment.components.optimizer.common.CommonBundleClasspathStub;
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentHistoryDataItem;
@@ -105,17 +103,18 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.configuration.ConfigurationException;
+import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.utils.common.LogUtils;
-import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
- * This class provides everything for running the dakota optimizer blackbox.
+ * This class provides everything for running the Dakota optimizer blackbox.
  * 
  * @author Sascha Zur
  */
@@ -167,8 +166,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         super(compContext, "dakotaInput.in", "results.out");
 
         typedDatumFactory = compContext.getService(TypedDatumService.class).getFactory();
-        this.algorithm =
-            compContext.getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
+        ConfigurationService confService = compContext.getService(ConfigurationService.class);
+        this.algorithm = compContext.getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
         this.outputValues = outputValues;
         this.input = input2;
         this.methodConfigurations = methodConfigurations;
@@ -185,61 +184,23 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
             }
 
             if (dakotaExecutablePath == null) {
-
                 try {
+                    dakotaExecutablePath = confService.getUnpackedFilesLocation("dakota");
                     if (OS.isFamilyWindows()) {
-                        dakotaExecutablePath =
-                            new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota.exe");
-
+                        dakotaExecutablePath = new File(dakotaExecutablePath, "dakota.exe");
                     } else if (OS.isFamilyUnix()) {
-                        dakotaExecutablePath =
-                            new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota");
-                    } else {
-                        dakotaExecutablePath = null;
+                        dakotaExecutablePath = new File(dakotaExecutablePath, "dakota");
                     }
-                } catch (IOException e) {
-                    throw new ComponentException("Failed to create temporary file (required to execute Dakota binaries)", e);
+                    dakotaExecutablePath.setExecutable(true);
+                } catch (ConfigurationException e1) {
+                    // TODO check: avoid "log and re-throw" here by adding information to the thrown exception instead? 
+                    LOGGER.error("Exception getting dakota executable path: " + e1.toString());
+                    throw new ComponentException("Could not find dakota binaries.");
                 }
             }
         }
         workingDir.setExecutable(true);
-        if (dakotaExecutablePath != null && !dakotaExecutablePath.exists()) {
-            String path = null;
-            if (OS.isFamilyWindows()) {
-                path = "/resources/binaries/dakota.exe";
-            } else if (OS.isFamilyUnix()) {
-                path = "/resources/binaries/dakota";
-            }
-            if (path != null) {
-                try (InputStream dakotaInput = CommonBundleClasspathStub.class.getResourceAsStream(path)) {
-                    if (dakotaInput != null) {
-                        FileUtils.copyInputStreamToFile(dakotaInput, dakotaExecutablePath);
-                        if (OS.isFamilyWindows()) {
-                            String[] dllFiles = new String[] { "libifcoremd.dll", "libmmd.dll",
-                                "msvcp100.dll", "msvcr100.dll" };
-                            for (String dll : dllFiles) {
-                                FileUtils.copyInputStreamToFile(CommonBundleClasspathStub.class
-                                    .getResourceAsStream("/resources/binaries/" + dll),
-                                    new File(dakotaExecutablePath.getParentFile(), dll));
-                            }
-
-                        }
-                    } else {
-                        initFailed.set(true);
-                        throw new ComponentException("Failed to copy Dakota binaries: Dakota files might not be installed.");
-                    }
-                } catch (IOException e) {
-                    initFailed.set(true);
-                    throw new ComponentException("Failed to copy Dakota binaries", e);
-                }
-                dakotaExecutablePath.setExecutable(true);
-            } else {
-                initFailed.set(true);
-                startFailedException = new ComponentException("Dakota binaries not found; "
-                    + "most likely because Dakota is not available for your operating system");
-            }
-            dakotaExecutablePath.setExecutable(true);
-        }
+        LOGGER.debug("Dakota executable path: " + dakotaExecutablePath);
     }
 
     @Override
@@ -270,7 +231,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 fw2.append(WHITESPACES);
                 if (compContext.getInputMetaDataValue(variableName, META_GOAL).equals("Maximize")) { // Maximize
                     // Dakota only minimizes functions so for maximizing you need to minimize -f(x)
-                    // see Dakota User Manuel Sec. 7.2.4
+                    // see Dakota User Manual Sec. 7.2.4
                     fw2.append("-");
                 }
                 if (functionVariables.get(key).isNaN()) {

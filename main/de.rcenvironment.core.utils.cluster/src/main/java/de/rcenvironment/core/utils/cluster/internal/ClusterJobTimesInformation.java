@@ -9,9 +9,9 @@
 package de.rcenvironment.core.utils.cluster.internal;
 
 
-
 /**
  * Holds information about specified times belonging to a cluster job.
+ * 
  * @author Doreen Seider
  */
 public class ClusterJobTimesInformation {

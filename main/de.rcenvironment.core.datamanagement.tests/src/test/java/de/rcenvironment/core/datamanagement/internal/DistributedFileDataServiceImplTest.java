@@ -36,10 +36,10 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.IdentifierException;
-import de.rcenvironment.core.communication.common.InstanceNodeId;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
@@ -63,6 +63,7 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  * 
  * @author Doreen Seider
  * @author Robert Mischke (adapted for new upload mechanism; id adaptations)
+ * @author Brigitte Boden (adapted usage of node ids)
  */
 public class DistributedFileDataServiceImplTest {
 
@@ -92,9 +93,9 @@ public class DistributedFileDataServiceImplTest {
 
     private FileDataServiceImpl fileDataService;
 
-    private InstanceNodeSessionId localInstanceSessionId;
+    private LogicalNodeSessionId localLogicalNodeSessionId;
 
-    private InstanceNodeSessionId unreachableInstanceSessionId;
+    private LogicalNodeSessionId unreachableLogicalNodeSessionId;
 
     private UUID referenceID;
 
@@ -109,9 +110,9 @@ public class DistributedFileDataServiceImplTest {
 
     private MetaDataSet mds;
 
-    private InstanceNodeSessionId mockRemoteInstanceSessionId;
+    private LogicalNodeSessionId mockRemoteLogicalNodeSessionId;
 
-    private InstanceNodeId mockRemoteInstanceId;
+    private LogicalNodeId mockRemoteLogicalNodeId;
 
     private MetaDataBackendService catalogBackend = EasyMock.createNiceMock(MetaDataBackendService.class);
 
@@ -121,13 +122,13 @@ public class DistributedFileDataServiceImplTest {
 
     private UUID notReachableReferenceID;
 
-    private InstanceNodeId localInstanceId;
+    private LogicalNodeId localDefaultLogicalNodeId;
 
-    private InstanceNodeId unreachableInstanceId;
+    private LogicalNodeId unreachableLogicalNodeId;
 
     public DistributedFileDataServiceImplTest() {
-        mockRemoteInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("mockRemote");
-        mockRemoteInstanceId = mockRemoteInstanceSessionId.convertToInstanceNodeId();
+        mockRemoteLogicalNodeSessionId = NodeIdentifierTestUtils.createTestLogicalNodeSessionIdWithDisplayName("mockRemote", true);
+        mockRemoteLogicalNodeId = mockRemoteLogicalNodeSessionId.convertToLogicalNodeId();
     }
 
     /**
@@ -139,21 +140,20 @@ public class DistributedFileDataServiceImplTest {
     public void setUp() throws IdentifierException {
         TempFileServiceAccess.setupUnitTestEnvironment();
 
-        localInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("horst");
-        // TODO use proper conversion method once available
-        localInstanceId = NodeIdentifierUtils.parseInstanceNodeIdString(localInstanceSessionId.getInstanceNodeIdString());
-        unreachableInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("unreachable");
-        unreachableInstanceId = NodeIdentifierUtils.parseInstanceNodeIdString(unreachableInstanceSessionId.getInstanceNodeIdString());
+        localLogicalNodeSessionId = NodeIdentifierTestUtils.createTestLogicalNodeSessionIdWithDisplayName("horst", true);
+        localDefaultLogicalNodeId = localLogicalNodeSessionId.convertToLogicalNodeId();
+        unreachableLogicalNodeSessionId = NodeIdentifierTestUtils.createTestLogicalNodeSessionIdWithDisplayName("unreachable", true);
+        unreachableLogicalNodeId = unreachableLogicalNodeSessionId.convertToLogicalNodeId();
         referenceID = UUID.randomUUID();
         notReachableReferenceID = UUID.randomUUID();
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
-        reference = new DataReference(referenceID.toString(), localInstanceId, birefs);
+        reference = new DataReference(referenceID.toString(), localDefaultLogicalNodeId, birefs);
         birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
         notReachableReference =
-            new DataReference(notReachableReferenceID.toString(), unreachableInstanceId, birefs);
+            new DataReference(notReachableReferenceID.toString(), unreachableLogicalNodeId, birefs);
 
         is = new InputStream() {
 
@@ -221,7 +221,7 @@ public class DistributedFileDataServiceImplTest {
     @Test
     public void testLocalNewReferenceFromStream() throws Exception {
         // test local
-        DataReference dr = fileDataService.newReferenceFromStream(is, mds, localInstanceSessionId);
+        DataReference dr = fileDataService.newReferenceFromStream(is, mds, localLogicalNodeSessionId);
         assertEquals(reference, dr);
         // test "null" (should be local)
         dr = fileDataService.newReferenceFromStream(is, mds, null);
@@ -235,13 +235,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStream() throws Exception {
-        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
-        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
+        assertFalse(localLogicalNodeSessionId.equals(mockRemoteLogicalNodeSessionId));
+        assertFalse(localDefaultLogicalNodeId.equals(mockRemoteLogicalNodeId));
         InputStream testStream = new ByteArrayInputStream(new byte[UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteLogicalNodeSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
+        assertEquals(mockRemoteLogicalNodeId, remoteRef.getStorageNodeId());
     }
 
     /**
@@ -251,13 +251,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStreamSmallUpload() throws Exception {
-        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
-        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
+        assertFalse(localLogicalNodeSessionId.equals(mockRemoteLogicalNodeSessionId));
+        assertFalse(localDefaultLogicalNodeId.equals(mockRemoteLogicalNodeId));
         InputStream testStream = new ByteArrayInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteLogicalNodeSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
+        assertEquals(mockRemoteLogicalNodeId, remoteRef.getStorageNodeId());
     }
 
     /**
@@ -267,13 +267,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStreamNoFullBuffer() throws Exception {
-        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
-        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
+        assertFalse(localLogicalNodeSessionId.equals(mockRemoteLogicalNodeSessionId));
+        assertFalse(localDefaultLogicalNodeId.equals(mockRemoteLogicalNodeId));
         InputStream testStream = new MockInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteLogicalNodeSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
+        assertEquals(mockRemoteLogicalNodeId, remoteRef.getStorageNodeId());
     }
 
     /**
@@ -287,9 +287,9 @@ public class DistributedFileDataServiceImplTest {
         @SuppressWarnings("unchecked")
         public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             if (iface == RemotableNotificationService.class
-                && nodeId.equals(localInstanceSessionId)) {
+                && nodeId.equals(localLogicalNodeSessionId)) {
                 return (T) new MockLocalFileDataService();
-            } else if (nodeId.equals(unreachableInstanceSessionId)) {
+            } else if (nodeId.equals(unreachableLogicalNodeSessionId)) {
                 return (T) new MockUnreachableFileDataService();
             } else {
                 return (T) new MockRemoteFileDataService();
@@ -368,7 +368,7 @@ public class DistributedFileDataServiceImplTest {
             birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
             lastMockRemoteDataReference =
-                new DataReference(referenceID.toString(), mockRemoteInstanceSessionId.convertToInstanceNodeId(), birefs);
+                new DataReference(referenceID.toString(), mockRemoteLogicalNodeSessionId.convertToLogicalNodeId(), birefs);
             return lastMockRemoteDataReference;
         }
 
@@ -446,12 +446,12 @@ public class DistributedFileDataServiceImplTest {
 
         @Override
         public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
-            return localInstanceSessionId;
+            return localLogicalNodeSessionId.convertToInstanceNodeSessionId();
         }
 
         @Override
         public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
-            return localInstanceSessionId.equals(nodeId);
+            return localLogicalNodeSessionId.isSameInstanceNodeAs(nodeId);
         }
 
     }

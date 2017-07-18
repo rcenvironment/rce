@@ -20,9 +20,12 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.gef.ContextMenuProvider;
 import org.eclipse.gef.DefaultEditDomain;
 import org.eclipse.gef.GraphicalViewer;
-import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
+import org.eclipse.gef.MouseWheelHandler;
+import org.eclipse.gef.MouseWheelZoomHandler;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.tools.PanningSelectionTool;
+import org.eclipse.gef.ui.actions.ZoomInAction;
+import org.eclipse.gef.ui.actions.ZoomOutAction;
 import org.eclipse.gef.ui.parts.GraphicalEditor;
 import org.eclipse.help.IContextProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -48,11 +51,11 @@ import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.gui.workflow.Activator;
-import de.rcenvironment.core.gui.workflow.EditorMouseWheelAndKeyListener;
 import de.rcenvironment.core.gui.workflow.UncompletedJobsShutdownListener;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorHelpContextProvider;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowScalableFreeformRootEditPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowRunEditorEditPartFactory;
-import de.rcenvironment.core.gui.workflow.view.Outline.OutlineView;
+import de.rcenvironment.core.gui.workflow.view.outline.OutlineView;
 import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -64,6 +67,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * @author Heinrich Wendel
  * @author Christian Weiss
  * @author Oliver Seebach
+ * @author Jan Flink
  */
 public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropertySheetPageContributor,
     SingleWorkflowStateChangeListener {
@@ -79,8 +83,6 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
     private GraphicalViewer viewer;
 
     private WorkflowExecutionInformation wfExeInfo;
-
-    private ZoomManager zoomManager;
 
     private AtomicBoolean initialWorkflowStateSet = new AtomicBoolean(false);
 
@@ -128,6 +130,8 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
             return new WorkflowEditorHelpContextProvider(viewer);
         } else if (type == IContentOutlinePage.class) {
             return new OutlineView(getGraphicalViewer());
+        } else if (type == ZoomManager.class) {
+            return getGraphicalViewer().getProperty(ZoomManager.class.toString());
         }
         return super.getAdapter(type);
     }
@@ -257,16 +261,16 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
     @Override
     protected void initializeGraphicalViewer() {
         viewer = getGraphicalViewer();
-        viewer.setRootEditPart(new ScalableFreeformRootEditPart());
+        WorkflowScalableFreeformRootEditPart rootEditPart = new WorkflowScalableFreeformRootEditPart();
+        viewer.setRootEditPart(rootEditPart);
         final ContextMenuProvider cmProvider = new WorkflowRunEditorContextMenuProvider(viewer);
         viewer.setContextMenu(cmProvider);
 
         tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
-        zoomManager = ((ScalableFreeformRootEditPart) getGraphicalViewer().getRootEditPart()).getZoomManager();
-
-        EditorMouseWheelAndKeyListener editorMouseWheelKeyListener = new EditorMouseWheelAndKeyListener(zoomManager);
-        viewer.getControl().addMouseWheelListener(editorMouseWheelKeyListener);
-        viewer.getControl().addKeyListener(editorMouseWheelKeyListener);
+        ZoomManager zoomManager = rootEditPart.getZoomManager();
+        getActionRegistry().registerAction(new ZoomInAction(zoomManager));
+        getActionRegistry().registerAction(new ZoomOutAction(zoomManager));
+        viewer.setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
         
         viewer.getEditDomain().setDefaultTool(new PanningSelectionTool());
         viewer.getEditDomain().loadDefaultTool();
@@ -324,6 +328,10 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
     @Override
     public void onWorkflowNotAliveAnymore(String errorMessage) {
         onWorkflowStateChanged(WorkflowState.UNKNOWN);
+    }
+
+    public GraphicalViewer getViewer() {
+        return viewer;
     }
 
 }

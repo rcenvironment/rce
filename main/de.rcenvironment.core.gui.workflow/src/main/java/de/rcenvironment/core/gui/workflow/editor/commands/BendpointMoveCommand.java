@@ -26,12 +26,7 @@ public class BendpointMoveCommand extends AbstractBendpointCommand {
         if (!connectionsInModel.isEmpty()) {
             oldLocation = new Location(connectionsInModel.get(0).getBendpoints().get(index).x, 
                 connectionsInModel.get(0).getBendpoints().get(index).y);
-        } else if (!connectionsInModelInverse.isEmpty()) {
-            int adaptedLocationIndex = (connectionsInModelInverse.get(0).getBendpoints().size() - index - 1);
-            oldLocation = new Location(connectionsInModelInverse.get(0).getBendpoints().get(adaptedLocationIndex).x, 
-                connectionsInModelInverse.get(0).getBendpoints().get(adaptedLocationIndex).y);
-        }
-        
+        } 
         redo();
     }
     
@@ -41,9 +36,6 @@ public class BendpointMoveCommand extends AbstractBendpointCommand {
         for (Connection connection : connectionsInModel){
             connection.setBendpoint(index, oldLocation.x, oldLocation.y, false);
         }
-        for (Connection connection : connectionsInModelInverse){
-            connection.setBendpoint(index, oldLocation.x, oldLocation.y, true);
-        }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, 
             this.getClass().getSimpleName() + " execute");
     }
@@ -52,9 +44,6 @@ public class BendpointMoveCommand extends AbstractBendpointCommand {
     public void redo() {
         for (Connection connection : connectionsInModel){
             connection.setBendpoint(index, newLocation.x, newLocation.y, false);
-        }
-        for (Connection connection : connectionsInModelInverse){
-            connection.setBendpoint(index, newLocation.x, newLocation.y, true);
         }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, 
             this.getClass().getSimpleName() + " execute or redo");

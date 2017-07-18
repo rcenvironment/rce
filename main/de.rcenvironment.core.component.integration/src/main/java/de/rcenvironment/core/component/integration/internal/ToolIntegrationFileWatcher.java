@@ -51,13 +51,13 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  */
 public class ToolIntegrationFileWatcher implements Runnable {
 
+    protected static final Log LOGGER = LogFactory.getLog(ToolIntegrationFileWatcher.class);
+
     private static final int MAX_RETRIES_REGISTER_ON_CREATE = 5;
 
     private static final int MAX_RETRIES_INTEGRATE_NEW_FILE = 5;
 
     private static final int SLEEPING_TIME = 50;
-
-    private static final Log LOGGER = LogFactory.getLog(ToolIntegrationFileWatcher.class);
 
     private WatchService watcher;
 
@@ -97,9 +97,12 @@ public class ToolIntegrationFileWatcher implements Runnable {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                throws IOException {
-                register(dir);
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                try {
+                    register(dir);
+                } catch (IOException e) {
+                    LOGGER.debug(StringUtils.format("Problem registering directory %s to watch service: %s", dir, e.getMessage()));
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
@@ -229,7 +232,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 try {
                     Thread.sleep(SLEEPING_TIME);
                 } catch (InterruptedException e1) {
-                    LOGGER.error("Integration watcher sleep interrupted.", e1);
+                    LOGGER.debug("Integration watcher sleep interrupted.", e1);
                 }
             }
         }

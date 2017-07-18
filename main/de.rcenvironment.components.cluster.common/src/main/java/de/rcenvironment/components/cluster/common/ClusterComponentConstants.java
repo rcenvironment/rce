@@ -10,6 +10,7 @@ package de.rcenvironment.components.cluster.common;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -82,8 +83,8 @@ public final class ClusterComponentConstants {
      */
     public static String getCommandsPathsAsPropertyString(Map<String, String> paths) {
         StringBuilder builder = new StringBuilder();
-        for (String command : paths.keySet()) {
-            builder.append(StringUtils.format("%s=%s;", command, paths.get(command)));
+        for (Entry<String, String> commandEntry : paths.entrySet()) {
+            builder.append(StringUtils.format("%s=%s;", commandEntry.getKey(), commandEntry.getValue()));
         }
         return builder.toString();
     }

@@ -29,11 +29,7 @@ public class BendpointDeleteCommand extends AbstractBendpointCommand {
         if (!connectionsInModel.isEmpty()) {
             oldLocation = new Location(connectionsInModel.get(0).getBendpoints().get(index).x, 
                 connectionsInModel.get(0).getBendpoints().get(index).y);
-        } else if (!connectionsInModelInverse.isEmpty()) {
-            int adaptedLocationIndex = (connectionsInModelInverse.get(0).getBendpoints().size() - index - 1);
-            oldLocation = new Location(connectionsInModelInverse.get(0).getBendpoints().get(adaptedLocationIndex).x, 
-                connectionsInModelInverse.get(0).getBendpoints().get(adaptedLocationIndex).y);
-        }
+        } 
         redo();
     }
 
@@ -45,9 +41,6 @@ public class BendpointDeleteCommand extends AbstractBendpointCommand {
         for (Connection connection : connectionsInModel) {
             connection.addBendpoint(index, oldLocation.x, oldLocation.y, false);
         }
-        for (Connection connection : connectionsInModelInverse) {
-            connection.addBendpoint(index, oldLocation.x, oldLocation.y, true);
-        }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, 
             this.getClass().getSimpleName() + " undo");
     }
@@ -56,9 +49,6 @@ public class BendpointDeleteCommand extends AbstractBendpointCommand {
     public void redo() {
         for (Connection connection : connectionsInModel) {
             connection.removeBendpoint(index, false);
-        }
-        for (Connection connection : connectionsInModelInverse) {
-            connection.removeBendpoint(index, true);
         }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, this.getClass()
             .getSimpleName() + " execute or redo");

@@ -52,7 +52,7 @@ public class ComponentContextBridge {
     private static final Log LOG = LogFactory.getLog(ComponentContextBridge.class);
 
     private static TypedDatumService typedDatumService;
-    
+
     private final Map<String, DataType> inputDataTypes = new HashMap<>();
 
     private ComponentExecutionRelatedInstances compExeRelatedInstances;
@@ -60,7 +60,7 @@ public class ComponentContextBridge {
     private Map<String, EndpointDatum> endpointDatumsForExecution = Collections.synchronizedMap(new HashMap<String, EndpointDatum>());
 
     private Map<String, Boolean> closedOutputs = Collections.synchronizedMap(new HashMap<String, Boolean>());
-    
+
     private List<OutputHolder> outputsOnHold = Collections.synchronizedList(new ArrayList<OutputHolder>());
 
     private final Object historyDataLock = new Object();
@@ -77,8 +77,8 @@ public class ComponentContextBridge {
     }
 
     /**
-     * Writes given {@link TypedDatum} to the output. If the output is connected to inputs, the {@link TypedDatum} will be delivered
-     * to all inputs.
+     * Writes given {@link TypedDatum} to the output. If the output is connected to inputs, the {@link TypedDatum} will be delivered to all
+     * inputs.
      * 
      * @param outputName name of the output to write
      * @param datumToSend {@link TypedDatum} to be sent
@@ -96,8 +96,8 @@ public class ComponentContextBridge {
         }
         if (endpointDescription.isConnected()) {
             validateOutputDataType(outputName, endpointDescription.getDataType(), datumToSend);
-            if (ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx.getComponentDescription()
-                .getConfigurationDescription().getComponentConfigurationDefinition())) {
+            if (ComponentExecutionUtils.isManualOutputVerificationRequired(
+                compExeRelatedInstances.compExeCtx.getComponentDescription().getConfigurationDescription())) {
                 holdOutput(outputName, datumToSend, outputDmId);
             } else {
                 sendOutput(outputName, datumToSend, outputDmId);
@@ -112,14 +112,17 @@ public class ComponentContextBridge {
             compExeRelatedInstances.compExeScheduler.addNotAValueDatumSent(((NotAValueTD) datumToSend).getIdentifier());
         }
     }
-    
+
     protected void holdOutput(String outputName, TypedDatum datumToSend, Long outputDmId) {
         outputsOnHold.add(new OutputHolder(outputName, datumToSend, outputDmId));
     }
-    
+
     protected void flushOutputs() {
-        for (OutputHolder outputHolder : outputsOnHold) {
-            sendOutput(outputHolder.outputName, outputHolder.datumToSend, outputHolder.outputDmId);
+        // note: iterating over synchronized lists must be synchronized explicitly
+        synchronized (outputsOnHold) {
+            for (OutputHolder outputHolder : outputsOnHold) {
+                sendOutput(outputHolder.outputName, outputHolder.datumToSend, outputHolder.outputDmId);
+            }
         }
     }
 
@@ -154,7 +157,7 @@ public class ComponentContextBridge {
             }
         }
     }
-    
+
     private void validateOutputDataType(String outputName, DataType dataType, TypedDatum datumToSent) {
         if (!datumToSent.getDataType().equals(DataType.NotAValue) && !datumToSent.getDataType().equals(DataType.Internal)) {
             if (datumToSent.getDataType() != dataType) {
@@ -215,8 +218,8 @@ public class ComponentContextBridge {
      * Prints given line to the workflow console. It is temporarily also used to send timeline events.
      * 
      * @param line line to print
-     * @param consoleRowType type of the console row. Must be one of {@link ConsoleRow.Type.STDOUT} or
-     *        {@link ConsoleRow.Type.STDERR} are allowed
+     * @param consoleRowType type of the console row. Must be one of {@link ConsoleRow.Type.STDOUT} or {@link ConsoleRow.Type.STDERR} are
+     *        allowed
      */
     public void printConsoleRow(String line, Type consoleRowType) {
         if (consoleRowType.equals(Type.LIFE_CYCLE_EVENT)) {
@@ -320,7 +323,7 @@ public class ComponentContextBridge {
             }
         }
     }
-    
+
     /**
      * @return data management id of latest component execution
      */
@@ -361,18 +364,18 @@ public class ComponentContextBridge {
             compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),
             compExeRelatedInstances.compExeCtx.getWorkflowExecutionIdentifier());
     }
-    
+
     /**
      * Holder class for outputs that are on hold because verification needs to be requested first.
      * 
      * @author Doreen Seider
      */
     class OutputHolder {
-        
+
         private final String outputName;
-        
+
         private final TypedDatum datumToSend;
-        
+
         private final Long outputDmId;
 
         OutputHolder(String outputName, TypedDatum datumToSend, Long outputDmId) {
@@ -381,7 +384,6 @@ public class ComponentContextBridge {
             this.outputDmId = outputDmId;
         }
     }
-    
 
     protected void bindTypedDatumService(TypedDatumService newService) {
         ComponentContextBridge.typedDatumService = newService;

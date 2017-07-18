@@ -219,7 +219,8 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
 
     private static Map<String, Deque<EndpointHistoryDataItem>> getEndpointsFromString(ObjectNode endpointObjectNode,
         TypedDatumSerializer serializer) {
-        Map<String, Deque<EndpointHistoryDataItem>> endpoints = new HashMap<>();
+        Map<String, Deque<EndpointHistoryDataItem>> endpoints = Collections.synchronizedMap(new HashMap<String,
+            Deque<EndpointHistoryDataItem>>());
 
         if (endpointObjectNode != null) {
             Iterator<String> endpointNamesIterator = endpointObjectNode.getFieldNames();

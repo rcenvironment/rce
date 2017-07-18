@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -113,6 +114,9 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyFilePath));
             sshd.setHost(sshConfiguration.getHost());
             sshd.setPort(sshConfiguration.getPort());
+
+            logger.debug("Configuring SSH session idle timeout of " + sshConfiguration.getIdleTimeoutSeconds() + " seconds");
+            sshd.getProperties().put(SshServer.IDLE_TIMEOUT, TimeUnit.SECONDS.toMillis(sshConfiguration.getIdleTimeoutSeconds()));
 
             // TODO review: why not use a single factory instance for both?
             sshd.setShellFactory(new CustomSshCommandFactory(authenticationManager, scpContextManager, commandExecutionService,

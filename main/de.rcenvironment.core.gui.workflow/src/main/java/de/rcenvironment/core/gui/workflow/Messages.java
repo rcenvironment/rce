@@ -42,6 +42,9 @@ public class Messages extends NLS {
     /** Constant. */
     public static String silentWorkflowUpdateFailureMessage;
 
+    /** Constant. */
+    public static String viewMenu;
+
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
     
     static {

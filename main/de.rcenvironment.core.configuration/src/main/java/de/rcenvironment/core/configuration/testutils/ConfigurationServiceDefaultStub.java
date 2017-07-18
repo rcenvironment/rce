@@ -113,7 +113,7 @@ public class ConfigurationServiceDefaultStub implements ConfigurationService {
     }
 
     @Override
-    public File getInstallationDir() {
+    public File getUnpackedFilesLocation(String filesetId) throws ConfigurationException {
         return null;
     }
 

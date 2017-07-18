@@ -8,6 +8,7 @@
 package de.rcenvironment.core.utils.ssh.jsch;
 
 import java.io.File;
+import java.security.SignatureException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -153,6 +154,34 @@ public final class JschSessionFactory {
 
         // TODO provide a constructor that accepts a SSHSessionConfiguration directly?
 
+        //Retry loop in case of a SignatureException (caused by a bug that occurs randomly). 
+        //The actual setup is done in the setupSessionInternal method.
+        int i = 5;
+        do {
+            try {
+                return setupSessionInternal(host, port, user, keyfileLocation, authPhrase, connectionLogger);
+            } catch (JSchException e) {
+                Throwable cause = e.getCause();
+                String message = e.getMessage();
+                if ((cause != null && cause instanceof SignatureException)
+                    || (message != null && message.contains("java.security.SignatureException"))) {
+                    log.debug("SignatureException occured, retry connecting...");
+                    i--;
+                    if (i == 0) {
+                        // This was the last try, rethrow exception
+                        throw e;
+                    }
+                } else {
+                    // Any other Exception should be rethrown.
+                    throw e;
+                }
+            }
+        } while (i > 0);
+        return null;
+    }
+
+    private static Session setupSessionInternal(String host, int port, String user, String keyfileLocation, String authPhrase,
+        Logger connectionLogger) throws JSchException, SshParameterException {
         JSch jsch = new JSch();
         Session jschSession = jsch.getSession(user, host, port);
         jschSession.setConfig("StrictHostKeyChecking", "no");

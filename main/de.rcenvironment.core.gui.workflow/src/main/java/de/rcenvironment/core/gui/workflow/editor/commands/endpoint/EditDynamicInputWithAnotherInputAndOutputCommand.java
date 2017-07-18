@@ -44,7 +44,7 @@ public class EditDynamicInputWithAnotherInputAndOutputCommand extends EditDynami
     public void execute() {
         EndpointDescriptionsManager inputManager = getProperties().getInputDescriptionsManager();
         EndpointDescription addInputDesc = inputManager.getEndpointDescription(oldDesc.getName() + inputNameSuffix);
-        Map<String, String> metaDataForInput = new HashMap<String, String>();
+        Map<String, String> metaDataForInput = new HashMap<>();
         metaDataForInput.putAll(newDesc.getMetaData());
         metaDataForInput.putAll(metaDataInputWithSuffix);
         if (!addOrRemoveOtherInput) {
@@ -67,7 +67,7 @@ public class EditDynamicInputWithAnotherInputAndOutputCommand extends EditDynami
         EndpointDescriptionsManager inputManager = getProperties().getInputDescriptionsManager();
         EndpointDescription inputConvergedDesc = getProperties().getInputDescriptionsManager()
             .getEndpointDescription(newDesc.getName() + inputNameSuffix);
-        Map<String, String> metaDataForInput = new HashMap<String, String>();
+        Map<String, String> metaDataForInput = new HashMap<>();
         metaDataForInput.putAll(oldDesc.getMetaData());
         metaDataForInput.putAll(metaDataInputWithSuffix);
         if (!addOrRemoveOtherInput) {

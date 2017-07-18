@@ -35,6 +35,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
  * "Properties" view tab for configuring cluster configuration.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class HostSection extends ValidatingWorkflowNodePropertySection {
 

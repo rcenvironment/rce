@@ -16,6 +16,7 @@ import de.rcenvironment.core.utils.cluster.ClusterJobStateChangeListener;
 
 /**
  * Listens for cluster job states (Completed and Unknown) to finish component run.
+ * 
  * @author Doreen Seider
  */
 public class ClusterJobFinishListener implements ClusterJobStateChangeListener {

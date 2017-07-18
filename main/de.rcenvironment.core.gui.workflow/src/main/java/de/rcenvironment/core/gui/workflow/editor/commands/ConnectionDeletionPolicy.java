@@ -50,7 +50,7 @@ public class ConnectionDeletionPolicy extends ConnectionEditPolicy {
             sourceNode = connectionWrapper.getSource();
             targetNode = connectionWrapper.getTarget();
         }
-        List<Connection> connections = ConnectionUtils.getConnectionsBetweenNodes(sourceNode, targetNode, description);
+        List<Connection> connections = ConnectionUtils.getConnectionsFromSourceToTarget(sourceNode, targetNode, description);
         for (Connection connection : connections){
             command.addConnectionForDeletion(connection);
         }

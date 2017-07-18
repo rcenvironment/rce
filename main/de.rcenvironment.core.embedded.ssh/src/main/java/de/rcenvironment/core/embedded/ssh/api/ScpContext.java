@@ -9,6 +9,7 @@
 package de.rcenvironment.core.embedded.ssh.api;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Represents a virtual SCP directory that is usable by a single SSH user. Operations on this SCP directory are mapped to a local directory.
@@ -32,5 +33,12 @@ public interface ScpContext {
      * @return the actual local directory that the root path for SCP operations is mapped to
      */
     File getLocalRootPath();
+
+    /**
+     * Dispose the temp directory for this context.
+     * 
+     * @throws IOException if deletion of temp directory fails.
+     */
+    void dispose() throws IOException;
 
 }

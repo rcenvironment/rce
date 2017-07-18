@@ -38,6 +38,10 @@ import de.rcenvironment.core.configuration.ConfigurationServiceMessage;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEvent;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.ParameterException;
+import de.rcenvironment.core.configuration.bootstrap.SystemExitException;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
 import de.rcenvironment.core.utils.common.TempFileService;
@@ -107,7 +111,7 @@ public class ConfigurationServiceImplTest {
         System.setProperty(USER_HOME_SYSTEM_PROPERTY, originalUserHome);
         // delete override properties
         System.clearProperty(ConfigurationService.SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE);
-        System.clearProperty(BootstrapConfiguration.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH);
+        System.clearProperty(ProfileUtils.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH);
     }
 
     /**
@@ -162,7 +166,7 @@ public class ConfigurationServiceImplTest {
      */
     @Test
     public void testProfileDirRelativePath() {
-        System.setProperty(BootstrapConfiguration.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH, "myDataDir");
+        System.setProperty(ProfileUtils.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH, "myDataDir");
 
         ConfigurationServiceImpl service = createDefaultTestInstance();
 
@@ -178,7 +182,7 @@ public class ConfigurationServiceImplTest {
     public void testProfileDirAbsolutePath() {
 
         File tempDir = createTempDir();
-        System.setProperty(BootstrapConfiguration.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH, tempDir.getAbsolutePath());
+        System.setProperty(ProfileUtils.SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH, tempDir.getAbsolutePath());
 
         ConfigurationServiceImpl service = createDefaultTestInstance();
 
@@ -204,7 +208,7 @@ public class ConfigurationServiceImplTest {
     @Test
     public void testBroken() {
         File tempDir = createTempDir();
-        System.setProperty(ConfigurationService.SYSTEM_PROPERTY_OSGI_INSTALL_AREA, tempDir.getAbsolutePath() + File.separator);
+        System.setProperty(BootstrapConfiguration.SYSTEM_PROPERTY_OSGI_INSTALL_AREA, tempDir.getAbsolutePath() + File.separator);
         createMockConfigurationFile(tempDir, ID, "asdkf");
 
         ConfigurationServiceImpl service = createDefaultTestInstance();
@@ -323,11 +327,19 @@ public class ConfigurationServiceImplTest {
     /**
      * Test.
      * 
-     * @throws IOException on unexpected failure
+     * @throws Exception on unexpected failure
      */
-    // TODO test does not fit the new mocking approach; rework? - misc_ro
+    // TODO (p2) test does not fit the new mocking approach; review/rework - misc_ro
     @Test
-    public void testGetConfigurationParsingErrors() throws IOException {
+    public void testGetConfigurationParsingErrors() throws Exception {
+
+        // NOTE: This is an ugly and potentially unsafe fix for this test failing if no other test called this method before.
+        // The problem is that the initialization may read system properties that have been set by other tests before, which makes it
+        // potentially unstable.
+        // It is okay as a transient fix, however, as the same initialization happened before already, just randomly by other code.
+        // The proper solution is to review and rework this test as a whole, as noted above. - misc_ro, 2017-07
+        BootstrapConfiguration.initialize();
+
         System.setProperty(ConfigurationService.SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE,
             mockInstallationDir.getAbsolutePath());
 
@@ -368,22 +380,22 @@ public class ConfigurationServiceImplTest {
     /** Tests the behavior with no explicit installation path and an undefined OSGi install area. */
     @Test
     public void testUnidentifiableInstallDataLocation() {
-        //Initialize bootstrap configuration to avoid NPE in case it has not been initialized before.
+        // Initialize bootstrap configuration to avoid NPE in case it has not been initialized before.
         if (!bootstrapSettingsInitialized) {
             try {
                 BootstrapConfiguration.initialize(); // apply simulated home directory
-            } catch (IOException e) {
+            } catch (ProfileException | ParameterException | SystemExitException e) {
                 throw new RuntimeException(e); // avoid IOException handling in many tests for a rare failure case
             }
             bootstrapSettingsInitialized = true;
-        }        
-        System.clearProperty(ConfigurationService.SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
+        }
+        System.clearProperty(BootstrapConfiguration.SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
         final ConfigurationServiceImpl service = new ConfigurationServiceImpl();
         try {
             service.mockActivate();
             fail("Exception expected");
         } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().contains(ConfigurationService.SYSTEM_PROPERTY_OSGI_INSTALL_AREA));
+            assertTrue(e.getMessage().contains(BootstrapConfiguration.SYSTEM_PROPERTY_OSGI_INSTALL_AREA));
         }
     }
 
@@ -529,7 +541,7 @@ public class ConfigurationServiceImplTest {
         if (!bootstrapSettingsInitialized) {
             try {
                 BootstrapConfiguration.initialize(); // apply simulated home directory
-            } catch (IOException e) {
+            } catch (ProfileException | ParameterException | SystemExitException e) {
                 throw new RuntimeException(e); // avoid IOException handling in many tests for a rare failure case
             }
             bootstrapSettingsInitialized = true;

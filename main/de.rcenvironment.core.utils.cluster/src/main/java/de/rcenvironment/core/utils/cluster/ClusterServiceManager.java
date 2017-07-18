@@ -12,7 +12,7 @@ import java.util.Map;
 
 
 /**
- * Creates {@link ClusterService}s.
+ * Creates, caches, and retrieves {@link ClusterService}s.
  * 
  * @author Doreen Seider
  */

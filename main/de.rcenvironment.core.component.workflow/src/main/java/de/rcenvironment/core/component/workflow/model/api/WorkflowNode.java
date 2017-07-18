@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
@@ -114,7 +115,8 @@ public class WorkflowNode extends PropertiesChangeSupport
     }
     
     public boolean isImitiationModeActive() {
-        return Boolean.valueOf(getConfigurationDescription().getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE));
+        return Boolean
+            .valueOf(getConfigurationDescription().getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE));
     }
     
     public boolean isImitationModeSupported() {
@@ -146,8 +148,8 @@ public class WorkflowNode extends PropertiesChangeSupport
      * @param isImitiationModeActive set <code>true</code> to activate or <code>false</code> to deactivate imitation mode
      */
     public void setImitiationModeActive(boolean isImitiationModeActive) {
-        getConfigurationDescription().setConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE, 
-            Boolean.valueOf(isImitiationModeActive).toString());
+        getConfigurationDescription().setConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE, 
+            Boolean.toString(isImitiationModeActive));
        
         firePropertyChange(PROPERTY_NODE_ATTRIBUTES);
     }

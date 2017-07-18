@@ -163,6 +163,10 @@ public class NumericalTextConstraintListener implements VerifyListener {
 
     private boolean checkIfInputIsFloat(String newS) {
         try {
+            if ((String.valueOf(Double.parseDouble(newS)).equals("Infinity"))
+                    || (String.valueOf(Double.parseDouble(newS)).equals("-Infinity"))) {
+                return false;
+            }
             Float.parseFloat(newS);
             return true;
         } catch (NumberFormatException e) {

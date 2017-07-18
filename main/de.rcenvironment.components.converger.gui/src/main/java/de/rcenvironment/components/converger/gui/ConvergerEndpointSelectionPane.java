@@ -27,6 +27,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicOu
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.ProcessEndpointsGroupCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
 
@@ -51,6 +52,15 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
         this.executor = executor;
         this.outputPane = outputPane;
         this.auxiliaryPane = auxiliaryPane;
+    }
+
+    @Override
+    protected void onEditClicked(String name, EndpointEditDialog dialog, Map<String, String> newMetaData) {
+
+        if (!endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
+            dialog.setReadOnlyType(EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY);
+        }
+        super.onEditClicked(name, dialog, newMetaData);
     }
 
     @Override
@@ -86,40 +96,42 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
         DataType newType = newDescription.getDataType();
         Map<String, String> newMetaData = newDescription.getMetaData();
         ProcessEndpointsGroupCommand groupCommand = new ProcessEndpointsGroupCommand(executor, this, outputPane);
-        groupCommand.add(new EditDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE,
+        groupCommand.add(new EditDynamicInputCommand(oldDescription.getDynamicEndpointIdentifier(),
             oldName, newName, newType, newMetaData, this, outputPane));
-        boolean oldHasStartValue = oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
-            && Boolean.parseBoolean(oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
-        boolean newHasStartValue = newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
-            && Boolean.parseBoolean(newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
-        if (!oldHasStartValue && !newHasStartValue) {
-            groupCommand.add(new EditDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
-                oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-                newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+        if (oldDescription.getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
+            boolean oldHasStartValue = oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
+                && Boolean.parseBoolean(oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
+            boolean newHasStartValue = newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
+                && Boolean.parseBoolean(newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
+            if (!oldHasStartValue && !newHasStartValue) {
+                groupCommand.add(new EditDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
+                    oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+                    newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+                    newType, new HashMap<String, String>(),
+                    LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
+            } else if (!oldHasStartValue && newHasStartValue) {
+                groupCommand.add(new RemoveDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
+                    oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this, outputPane));
+            } else if (oldHasStartValue && !newHasStartValue) {
+                groupCommand.add(new AddDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
+                    newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, newType,
+                    new HashMap<String, String>(),
+                    LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
+            }
+            groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE,
+                oldName, newName, newType, new HashMap<String, String>(),
+                this, outputPane));
+            groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY,
+                oldName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
+                newName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
+                DataType.Boolean, new HashMap<String, String>(),
+                this, auxiliaryPane));
+            groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_FINAL_TO_CONVERGE,
+                oldName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+                newName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
                 newType, new HashMap<String, String>(),
-                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
-        } else if (!oldHasStartValue && newHasStartValue) {
-            groupCommand.add(new RemoveDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
-                oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this, outputPane));
-        } else if (oldHasStartValue && !newHasStartValue) {
-            groupCommand.add(new AddDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_START_TO_CONVERGE,
-                newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, newType,
-                new HashMap<String, String>(),
-                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
+                this, outputPane));
         }
-        groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE,
-            oldName, newName, newType, new HashMap<String, String>(),
-            this, outputPane));
-        groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY,
-            oldName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
-            newName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
-            DataType.Boolean, new HashMap<String, String>(),
-            this, auxiliaryPane));
-        groupCommand.add(new EditDynamicOutputCommand(ConvergerComponentConstants.ENDPOINT_ID_FINAL_TO_CONVERGE,
-            oldName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-            newName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-            newType, new HashMap<String, String>(),
-            this, outputPane));
         execute(groupCommand);
     }
 

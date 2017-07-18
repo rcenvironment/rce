@@ -19,6 +19,11 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Is responsible for persistent component descriptions updates.
  *
  * @author Doreen Seider
+ * 
+ * Note: To check whether updates are available for a component in a workflow, update
+ * {@link RemotablePersistentComponentDescriptionUpdateService}s are requested. I'm not happy with this active polling approach as
+ * information are affected that are not likely to change very often in the network. Therefore, I would consider to make use of the
+ * node properties: https://mantis.sc.dlr.de/view.php?id=9548 --seid_do
  */
 @RemotableService
 public interface RemotablePersistentComponentDescriptionUpdateService {

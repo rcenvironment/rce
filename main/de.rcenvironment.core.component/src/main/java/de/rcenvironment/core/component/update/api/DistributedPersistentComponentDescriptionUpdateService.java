@@ -13,9 +13,10 @@ import java.util.List;
 
 
 /**
- * Is responsible for persistent component descriptions updates.
+ * Is responsible for persistent component descriptions updates. Means the snippet that is store in a workflow file for each component.
  *
  * @author Doreen Seider
+ * 
  */
 public interface DistributedPersistentComponentDescriptionUpdateService {
 

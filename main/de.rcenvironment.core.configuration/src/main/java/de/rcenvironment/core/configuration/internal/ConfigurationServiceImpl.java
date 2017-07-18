@@ -37,6 +37,7 @@ import de.rcenvironment.core.configuration.ConfigurationServiceMessageEvent;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener;
 import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -69,17 +70,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     protected static final boolean PROPERTY_SUBSTITUTION_MECHANISM_ENABLED = false;
 
     protected static final String MAIN_CONFIGURATION_FILENAME = "configuration.json";
-    
+
     protected static final String JDBC_SUBDIRECTORY_PATH = "extras/database_connectors";
 
     // debug option that writes/exports the active configuration to the profile's output folder
     private static final boolean AUTO_EXPORT_CONFIGURATION_ON_STARTUP = false;
 
     private static final String SPACE_CHARACTER = " ";
-
-    private File configurationLocation;
-
-    private String configurationLocationPath;
 
     private File parentTempDirectoryRoot;
 
@@ -105,7 +102,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     private List<File> readableConfigurationDirs;
 
-    private File profileDirectory;
+    private Profile profile;
 
     private boolean isUsingIntendedProfileDirectory;
 
@@ -122,6 +119,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private String resolvedInstanceName;
 
     private boolean usingDefaultConfigurationValues = false;
+
+    private UnpackedFilesDirectoryResolver unpackedFilesDirectoryResolver;
 
     public ConfigurationServiceImpl() {
         mapper = JsonUtils.getDefaultObjectMapper();
@@ -152,6 +151,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         if (PROPERTY_SUBSTITUTION_MECHANISM_ENABLED) {
             initializePropertySubstitution();
         }
+
+        unpackedFilesDirectoryResolver =
+            new UnpackedFilesDirectoryResolver(context, getConfigurablePath(ConfigurablePathId.INSTALLATION_DATA_ROOT));
     }
 
     private synchronized void loadRootConfiguration(boolean isReload) {
@@ -209,7 +211,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public File getProfileDirectory() {
-        return profileDirectory;
+        return profile.getProfileDirectory();
     }
 
     @Override
@@ -222,21 +224,21 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public boolean isUsingIntendedProfileDirectory() {
         return isUsingIntendedProfileDirectory;
     }
-    
+
     @Override
     public boolean isIntendedProfileDirectorySuccessfullyLocked() {
-        return bootstrapSettings.isIntendedProfileDirectorySuccessfullyLocked();
+        return bootstrapSettings.getOriginalProfile().isLocked();
     }
-    
+
     @Override
     public boolean hasIntendedProfileDirectoryValidVersion() {
-        return bootstrapSettings.hasIntendedProfileDirectoryValidVersion();
+        return bootstrapSettings.getOriginalProfile().hasValidVersion();
     }
 
     private void initializeProfileDirFromBootstrapSettings() {
-        profileDirectory = bootstrapSettings.getProfileDirectory();
-        isUsingIntendedProfileDirectory = bootstrapSettings.isIntendedProfileDirectorySuccessfullyLocked()
-            && bootstrapSettings.hasIntendedProfileDirectoryValidVersion();
+        profile = bootstrapSettings.getProfile();
+        isUsingIntendedProfileDirectory =
+            this.isIntendedProfileDirectorySuccessfullyLocked() && this.hasIntendedProfileDirectoryValidVersion();
         // initializeInstanceDataDirectory();
     }
 
@@ -362,7 +364,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         if (new File(path).isAbsolute()) {
             absolutePath = path;
         } else {
-            absolutePath = configurationLocationPath + File.separator + identifier + File.separator + path;
+            absolutePath = bootstrapSettings.getInstallationDir().getAbsolutePath() + File.separator + identifier + File.separator + path;
         }
         return absolutePath;
     }
@@ -398,7 +400,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public File getOriginalProfileDirectory() {
-        return bootstrapSettings.getOriginalProfileDirectory();
+        return bootstrapSettings.getOriginalProfile().getProfileDirectory();
+    }
+
+    @Override
+    public File getUnpackedFilesLocation(String filesetId) throws ConfigurationException {
+        return unpackedFilesDirectoryResolver.resolveIdToUnpackedFilesDirectory(filesetId);
     }
 
     @Override
@@ -470,25 +477,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.discoveryBootstrapService = newService;
     }
 
-    @Override
-    public File getInstallationDir() {
-        String osgiInstallArea = System.getProperty(SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
-        if (osgiInstallArea != null) {
-            configurationLocationPath = osgiInstallArea.replace("file:", "");
-            configurationLocation = new File(configurationLocationPath);
-            if (configurationLocation.isDirectory()) {
-                // success
-                return configurationLocation.getAbsoluteFile();
-            } else {
-                throw new IllegalStateException("Property '" + SYSTEM_PROPERTY_OSGI_INSTALL_AREA
-                    + "' is defined but does not point to a directory");
-            }
-        } else {
-            throw new IllegalStateException("Property '" + SYSTEM_PROPERTY_OSGI_INSTALL_AREA
-                + "' is null when it is required to determine the installation data directory");
-        }
-    }
-
     private void initializeParentTempDirectoryRoot(String parentTempDirectoryOverride) {
         File parentTempDir = null;
         if (parentTempDirectoryOverride != null && !parentTempDirectoryOverride.trim().isEmpty()) {
@@ -544,7 +532,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_SYSTEM_USER_NAME,
             System.getProperty(SYSTEM_PROPERTY_USER_NAME));
         instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_PROFILE_NAME,
-            profileDirectory.getName());
+            profile.getLocationDependentName());
         instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_VERSION,
             StringUtils.nullSafeToString(VersionUtils.getVersionOfProduct(), "<unknown>"));
 
@@ -564,7 +552,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private void initializeInstanceTempDirectoryRoot() {
         String instanceTempDirectoryPrefix;
         // TODO this uses the last part of the instance data dir for identification - sufficient?
-        instanceTempDirectoryPrefix = profileDirectory.getName();
+        instanceTempDirectoryPrefix = profile.getName();
         try {
             TempFileServiceAccess.setupLiveEnvironment(parentTempDirectoryRoot, instanceTempDirectoryPrefix);
         } catch (IOException e) {
@@ -581,7 +569,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // INSTALLATION_DATA_ROOT (default: "${osgi.install.area}/..")
         if (!configurePathFromOverridePropertyIfSet(ConfigurablePathId.INSTALLATION_DATA_ROOT,
             SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE)) {
-            File installationDirectory = getInstallationDir();
+            File installationDirectory = bootstrapSettings.getInstallationDir();
             log.info("Set installation data root directory to: " + installationDirectory.getAbsolutePath());
             configurablePathMap.put(ConfigurablePathId.INSTALLATION_DATA_ROOT, installationDirectory);
         }
@@ -596,7 +584,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         }
 
         // PROFILE_ROOT
-        configurablePathMap.put(ConfigurablePathId.PROFILE_ROOT, profileDirectory);
+        configurablePathMap.put(ConfigurablePathId.PROFILE_ROOT, profile.getProfileDirectory());
 
         // profile subdirectories
         // initializeRelativeProfilePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA,
@@ -617,7 +605,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // addDirectoryIfPresent(readableConfigurationDirs,
         // getConfigurablePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA));
         configurablePathListMap.put(ConfigurablePathListId.READABLE_CONFIGURATION_DIRS, readableConfigurationDirs);
-        
+
         List<File> jdbcDriverDirs = new ArrayList<>();
         addDirectoryIfPresent(jdbcDriverDirs, new File(installationDataRoot, JDBC_SUBDIRECTORY_PATH));
         configurablePathListMap.put(ConfigurablePathListId.JDBC_DRIVER_DIRS, jdbcDriverDirs);
@@ -671,7 +659,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     private void initializeRelativeProfilePath(ConfigurablePathId key, String relativePath) {
-        File subDir = new File(profileDirectory, relativePath).getAbsoluteFile();
+        File subDir = new File(profile.getProfileDirectory(), relativePath).getAbsoluteFile();
         subDir.mkdirs();
         if (!subDir.isDirectory()) {
             // TODO realistic enough to throw a checked exception instead?

@@ -30,6 +30,9 @@ import de.rcenvironment.core.notification.NotificationMockFactory;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.notification.NotificationTestConstants;
 
+// TODO there seem to be no explicit tests for multi-threaded usage, which is problematic; consider 
+// adding them, if it's still worth it before we replace this code completely -- misc_ro
+
 /**
  * Test cases for the class {@link NotificationServiceImpl}.
  * 
@@ -59,6 +62,7 @@ public class NotificationServiceImplTest {
 
     /**
      * Creates and initializes objects used for the tests.
+     * 
      * @throws Exception if an error occur.
      */
     public NotificationServiceImplTest() throws Exception {
@@ -128,6 +132,9 @@ public class NotificationServiceImplTest {
         final Long noNotificationsSentYet = new Long(-1);
         assertEquals(noNotificationsSentYet, notificationService.subscribe(notificationId, notificationSubscriber).get(notificationId));
         notificationService.send(notificationId, NOTIFICATION_TEXT);
+
+        notificationService.awaitAsyncTaskCompletion();
+
         assertEquals(new Long(0), notificationService.subscribe(notificationId, notificationSubscriber).get(notificationId));
 
         notificationService.subscribe(notificationId, notificationSubscriber);
@@ -191,6 +198,7 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < numberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         Map<String, SortedSet<NotificationHeader>> headers = notificationService
             .getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID);
@@ -205,6 +213,7 @@ public class NotificationServiceImplTest {
             notificationService.send(NotificationTestConstants.ANOTHER_PERSISTENT_NOTIFICATION_ID,
                 new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         headers = notificationService.getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_REGEX);
 
@@ -221,9 +230,10 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < numberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         headers = notificationService.getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID);
-
+        // TODO (p2) investigate: this check fails when using asynchronous sending, despite the awaitAsyncTaskCompletion() above
         assertEquals(1, headers.size());
         assertEquals(limitedBufferSize, headers.get(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID).size());
         assertEquals(10, headers.get(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID).first().getNumber());
@@ -236,6 +246,7 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < numberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         headers = notificationService.getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID);
         assertEquals(0, headers.size());
@@ -267,12 +278,14 @@ public class NotificationServiceImplTest {
         };
         notificationService.subscribe(notificationId, subscriber);
         notificationService.send(notificationId, NOTIFICATION_TEXT);
+        notificationService.awaitAsyncTaskCompletion();
 
         Thread.sleep(SLEEP);
         assertEquals(1, myCounter);
 
         notificationService.subscribe(notificationId, subscriber);
         notificationService.send(notificationId, NOTIFICATION_TEXT);
+        notificationService.awaitAsyncTaskCompletion();
 
         Thread.sleep(SLEEP);
         assertEquals(2, myCounter);
@@ -281,6 +294,9 @@ public class NotificationServiceImplTest {
         notificationService.subscribe(notificationId, subscriber);
 
         notificationService.removePublisher(notificationId);
+        notificationService.awaitAsyncTaskCompletion();
+
+        // TODO what does this test, exactly?
         notificationService.subscribe(notificationId, notificationSubscriber);
     }
 
@@ -290,6 +306,7 @@ public class NotificationServiceImplTest {
     @Test
     public final void testUnsubscribeForSanity() {
         NotificationSubscriber subscriber = new DefaultNotificationSubscriber() {
+
             @Override
             public void processNotification(Notification notification) {
                 myCounter++;
@@ -304,9 +321,11 @@ public class NotificationServiceImplTest {
         notificationService.subscribe(notificationId, subscriber);
         notificationService.unsubscribe(notificationId, subscriber);
         notificationService.send(notificationId, NOTIFICATION_TEXT);
+        notificationService.awaitAsyncTaskCompletion();
 
         assertEquals(0, myCounter);
 
+        // TODO what does this test, exactly?
         notificationService.subscribe(notificationId, subscriber);
         notificationService.unsubscribe(notificationId, subscriber);
     }
@@ -329,6 +348,8 @@ public class NotificationServiceImplTest {
             notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
 
+        notificationService.awaitAsyncTaskCompletion();
+
         Map<String, SortedSet<NotificationHeader>> headers = notificationService
             .getNotificationHeaders(NotificationTestConstants.NOTIFICATION_ID);
         assertTrue(headers.isEmpty());
@@ -346,6 +367,7 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < anotherNumberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.ANOTHER_PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         headers = notificationService.getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_REGEX);
 
@@ -373,6 +395,8 @@ public class NotificationServiceImplTest {
         notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, object);
         notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
 
+        notificationService.awaitAsyncTaskCompletion();
+
         Map<String, SortedSet<NotificationHeader>> headers = notificationService
             .getNotificationHeaders(NotificationTestConstants.NOTIFICATION_ID);
         assertTrue(headers.isEmpty());
@@ -390,6 +414,8 @@ public class NotificationServiceImplTest {
         notificationService.setBufferSize(NotificationTestConstants.ANOTHER_PERSISTENT_NOTIFICATION_ID, unlimitedBufferSize);
         String anotherObject = new String();
         notificationService.send(NotificationTestConstants.ANOTHER_PERSISTENT_NOTIFICATION_ID, anotherObject);
+
+        notificationService.awaitAsyncTaskCompletion();
 
         headers = notificationService.getNotificationHeaders(NotificationTestConstants.PERSISTENT_NOTIFICATION_REGEX);
 
@@ -416,6 +442,7 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < numberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         Map<String, List<Notification>> notifications = notificationService
             .getNotifications(NotificationTestConstants.NOTIFICATION_ID);
@@ -434,6 +461,7 @@ public class NotificationServiceImplTest {
         for (int i = 0; i < anotherNumberOfNotifications; i++) {
             notificationService.send(NotificationTestConstants.ANOTHER_PERSISTENT_NOTIFICATION_ID, new Integer(1));
         }
+        notificationService.awaitAsyncTaskCompletion();
 
         notifications = notificationService.getNotifications(NotificationTestConstants.PERSISTENT_NOTIFICATION_REGEX);
 

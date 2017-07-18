@@ -31,6 +31,15 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: {@link AbstractLoopComponent} and {@link AbstractNestedLoopComponent} should be merged as there is no difference between
+ * them anymore: Every loop component is also nested-loop-capable and I don't expect it to change in the future. Having those two
+ * classes brings in a complexity that is very hard to handle right now.
+ * 
+ * All of the loop behavior including reset of nested loops, handling fault-tolerance (at least most of it), etc. is done on component
+ * level. I would suggest to move it to the workflow engine level. One required step in that direction might be to introduce different
+ * kind of components: loops components, integrated tools, "simple" ones, etc. so that the engine is able to treat them differently.
+ * --seid_do
  */
 public abstract class AbstractLoopComponent extends DefaultComponent {
 
@@ -50,7 +59,9 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
 
     protected LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfNAV;
 
-    protected boolean loopFailureRequested = false;
+    protected ComponentException compExceptionToThrow = null;
+    
+    protected boolean loopFailed = false;
 
     private boolean anyRunFailedNAV = false;
 
@@ -230,7 +241,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         if (rerunCount >= maximumReruns) {
             String inputName2 = guardAgainstNaVValueAtForwardingInputs(componentContext.getInputsWithDatum());
             if (inputName2 != null) {
-                // TODO adapt error message if new data type beside not-a-value is introduced to indicated component crashes
+                // TODO adapt error message if new data type beside not-a-value is introduced to indicate component crashes
                 handled = handleFailure(new ComponentException(StringUtils.format("Received value of type 'Not a value' at"
                     + " input '%s' that is not allowed to be forwarded; most likely reason: failure in a fault-tolerant"
                     + " loop so that no reasonable value to forward was provided", inputName2)));
@@ -251,12 +262,13 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     }
 
     private boolean handleFailure(ComponentException e) throws ComponentException {
-        if (isFailLoopOnly()) {
-            loopFailureRequested = true;
-            return false;
+        if (isNestedLoop()) {
+            loopFailed = true;
+            compExceptionToThrow = e;
         } else {
             throw e;
         }
+        return false;
     }
 
     private boolean isFailLoopOnly() {
@@ -265,6 +277,10 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
 
     private boolean isFinallyFail() {
         return Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV));
+    }
+    
+    protected boolean isNestedLoop() {
+        return Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
     }
 
     private void rerunLoop() {
@@ -291,12 +307,18 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
 
     @Override
     public void reset() throws ComponentException {
-        if (loopFailureRequested) {
+        if (loopFailed) {
             resetComponentSpecific();
-            loopFailureRequested = false;
-            componentLog.componentInfo(RECEIVED_NAV_VALUES
-                + "-> forward to outer loop (as defined by behavior declaration in configuration tab 'Fault Tolerance')");
-            writeNAVValueToOuterLoop();
+            loopFailed = false;
+            ComponentException tempE = compExceptionToThrow;
+            compExceptionToThrow = null;
+            if (isFailLoopOnly()) {
+                componentLog.componentInfo(tempE.getMessage()
+                    + "-> forward to outer loop (as defined by behavior declaration in configuration tab 'Fault Tolerance')");
+                writeNAVValueToOuterLoop();                
+            } else {
+                throw tempE;
+            }
         } else {
             finishLoopComponentSpecific(false);
             sendLoopDoneValue(true);

@@ -59,18 +59,44 @@ public final class ConnectionUtils {
         }
         return connectionsBetweenNodes;
     }
+    
+    /**
+     * Finds connections between the two given nodes in the given workflow description. Considers just one direction, source to target.
+     * 
+     * @param sourceNode The first node to be considered.
+     * @param targetNode The second node to be considered.
+     * @param workflowDescription The workflow description to be searched in.
+     * @return The connections between the two given nodes.
+     */
+    public static List<Connection> getConnectionsFromSourceToTarget(WorkflowNode sourceNode, WorkflowNode targetNode,
+        WorkflowDescription workflowDescription) {
+
+        List<Connection> connectionsBetweenNodes = new ArrayList<>();
+
+        if (sourceNode != null && targetNode != null && workflowDescription != null) {
+            for (Connection connection : workflowDescription.getConnections()) {
+                if ((connection.getSourceNode().getIdentifier().equals(sourceNode.getIdentifier())
+                    && connection.getTargetNode().getIdentifier().equals(targetNode.getIdentifier()))) {
+                    connectionsBetweenNodes.add(connection);
+                }
+            }
+        }
+        return connectionsBetweenNodes;
+    }
+    
+    
 
     /**
      * Finds a list of bendpoints for a connection between two given workflow nodes in the given workflow description. As the bendpoints are
      * equal for all connections between the same nodes the result is returned as soon as the first connection matches the given source and
-     * target nodes.
+     * target nodes. Considers both directions.
      * 
      * @param source The source node.
      * @param target The target node.
      * @param workflowDescription The workflow description.
      * @return The list of
      */
-    public static List<Location> findAlreadyExistentBendpointsBySourceAndTarget(WorkflowNode source,
+    public static List<Location> findAlreadyExistentBendpointsBySourceAndTargetIgnoringDirection(WorkflowNode source,
         WorkflowNode target, WorkflowDescription workflowDescription) {
         List<Location> alreadyExistentBendpoints = new ArrayList<>();
         for (Connection connection : workflowDescription.getConnections()) {
@@ -84,6 +110,29 @@ public final class ConnectionUtils {
                 for (Location l : connection.getBendpoints()) {
                     alreadyExistentBendpoints.add(0, l);
                 }
+                break;
+            }
+        }
+        return alreadyExistentBendpoints;
+    }
+    
+    /**
+     * Finds a list of bendpoints for a connection between two given workflow nodes in the given workflow description. As the bendpoints are
+     * equal for all connections between the same nodes the result is returned as soon as the first connection matches the given source and
+     * target nodes. Considers just one direction, source to target.
+     * 
+     * @param source The source node.
+     * @param target The target node.
+     * @param workflowDescription The workflow description.
+     * @return The list of
+     */
+    public static List<Location> findAlreadyExistentBendpointsFromSourceToTarget(WorkflowNode source,
+        WorkflowNode target, WorkflowDescription workflowDescription) {
+        List<Location> alreadyExistentBendpoints = new ArrayList<>();
+        for (Connection connection : workflowDescription.getConnections()) {
+            if ((connection.getSourceNode().getIdentifier().equals(source.getIdentifier())
+                && connection.getTargetNode().getIdentifier().equals(target.getIdentifier()))) {
+                alreadyExistentBendpoints = connection.getBendpoints();
                 break;
             }
         }
@@ -116,7 +165,7 @@ public final class ConnectionUtils {
      */
     public static void validateConnectionWrapperForEqualBendpointLocations(WorkflowDescription workflowDescription,
         ConnectionWrapper connectionWrapper, String classAndMethod) {
-        List<Connection> connections = getConnectionsByWrapper(workflowDescription, connectionWrapper);
+        List<Connection> connections = getConnectionsByWrapperSameDirection(workflowDescription, connectionWrapper);
         validateConnections(connections, classAndMethod);
     }
     
@@ -162,13 +211,33 @@ public final class ConnectionUtils {
      * @param workflowDescription The workflow description to be considered
      * @return The connections in a connection wrapper.
      */
-    public static List<Connection> getConnectionsByWrapper(WorkflowDescription workflowDescription, ConnectionWrapper connectionWrapper) {
+    public static List<Connection> getConnectionsByWrapperIgnoreOrientation(
+            WorkflowDescription workflowDescription, ConnectionWrapper connectionWrapper) {
         List<Connection> connections = new ArrayList<>();
         for (Connection connectionInModel : workflowDescription.getConnections()) {
             if ((connectionWrapper.getSource().getIdentifier().equals(connectionInModel.getSourceNode().getIdentifier())
                 && connectionWrapper.getTarget().getIdentifier().equals(connectionInModel.getTargetNode().getIdentifier()))
                 || (connectionWrapper.getTarget().getIdentifier().equals(connectionInModel.getSourceNode().getIdentifier())
                     && connectionWrapper.getSource().getIdentifier().equals(connectionInModel.getTargetNode().getIdentifier()))) {
+                connections.add(connectionInModel);
+            }
+        }
+        return connections;
+    }
+    
+    /**
+     * Return the connections wrapped in a connection wrapper.
+     * 
+     * @param connectionWrapper The connection wrapper to be considered
+     * @param workflowDescription The workflow description to be considered
+     * @return The connections in a connection wrapper.
+     */
+    public static List<Connection> getConnectionsByWrapperSameDirection(
+            WorkflowDescription workflowDescription, ConnectionWrapper connectionWrapper) {
+        List<Connection> connections = new ArrayList<>();
+        for (Connection connectionInModel : workflowDescription.getConnections()) {
+            if ((connectionWrapper.getSource().getIdentifier().equals(connectionInModel.getSourceNode().getIdentifier())
+                && connectionWrapper.getTarget().getIdentifier().equals(connectionInModel.getTargetNode().getIdentifier()))) {
                 connections.add(connectionInModel);
             }
         }

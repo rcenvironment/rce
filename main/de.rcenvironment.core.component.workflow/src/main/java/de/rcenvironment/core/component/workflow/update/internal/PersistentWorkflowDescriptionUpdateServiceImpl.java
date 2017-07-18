@@ -10,7 +10,6 @@ package de.rcenvironment.core.component.workflow.update.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,17 +35,10 @@ import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
-import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.LogicalNodeId;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
-import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
-import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
@@ -59,6 +51,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  * @author Sascha Zur
  * @author Robert Mischke (8.0.0 id adaptations)
+ * 
+ * Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
  */
 public class PersistentWorkflowDescriptionUpdateServiceImpl implements PersistentWorkflowDescriptionUpdateService {
 
@@ -119,10 +113,6 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private DistributedPersistentComponentDescriptionUpdateService componentUpdateService;
 
-    private DistributedComponentKnowledgeService componentKnowledgeService;
-
-    private LogicalNodeId localLogicalNodeId;
-
     @Override
     public boolean isUpdateForWorkflowDescriptionAvailable(PersistentWorkflowDescription description, boolean silent) {
         if (!silent) {
@@ -149,6 +139,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         Set<String> endpoints = getEndpoints(description);
 
+        // TODO warum immer erst einmal silent=true, dann silent=false?
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE, description, true);
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE, description, false);
 
@@ -218,6 +209,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             writer.writeValueAsString(workflowDescriptionAsTree));
     }
 
+    /**
+     * Increases only the version number of the given {@link PersistentComponentDescription}.
+     */
     private PersistentWorkflowDescription updateWorkflowToCurrentVersion(PersistentWorkflowDescription description) {
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
@@ -256,6 +250,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private PersistentWorkflowDescription performComponentDescriptionUpdates(int formatVersion,
         PersistentWorkflowDescription description, boolean silent) throws IOException {
+
         List<PersistentComponentDescription> componentDescriptions = componentUpdateService
             .performComponentDescriptionUpdates(formatVersion, description.getComponentDescriptions(), silent);
 
@@ -520,10 +515,22 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             String workflowDescriptionString = writer.writeValueAsString(node);
-            return new PersistentWorkflowDescription(nodeDescriptionList, workflowDescriptionString);
+            PersistentWorkflowDescription result = new PersistentWorkflowDescription(nodeDescriptionList, workflowDescriptionString);
+            return result;
         }
     }
 
+    /**
+     * Creates a List of {@link PersistentComponentDescription}s from the {@link JsonNode} containing the component information.
+     * Furthermore, it replaces the persisted target node identifiers of the components with target nodes which are currently available in
+     * the network.
+     * 
+     * @param nodes
+     * @return
+     * @throws JsonGenerationException
+     * @throws JsonMappingException
+     * @throws IOException
+     */
     private List<PersistentComponentDescription> createComponentDescriptions(JsonNode nodes)
         throws JsonGenerationException, JsonMappingException, IOException {
 
@@ -535,72 +542,14 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
                 ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
                 ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-                componentDescriptions.add(new PersistentComponentDescription(writer.writeValueAsString(component)));
-            }
-            DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
 
-            for (PersistentComponentDescription componentDescription : componentDescriptions) {
-                checkAndSetNodeIdentifier(componentDescription, compKnowledge.getAllInstallations());
+                String compontentStr = writer.writeValueAsString(component);
+                PersistentComponentDescription pcd = new PersistentComponentDescription(compontentStr);
+                componentDescriptions.add(pcd);
             }
         }
 
         return componentDescriptions;
-    }
-
-    protected PersistentComponentDescription checkAndSetNodeIdentifier(PersistentComponentDescription compDesc,
-        Collection<ComponentInstallation> collection) {
-
-        ComponentInstallation exactlyMatchingComponent = null;
-
-        List<ComponentInstallation> matchingComponents = new ArrayList<ComponentInstallation>();
-
-        // for all registered components which match the persistent one (identifiers are equal and version of persistent one is greater or
-        // equal of registered one) decide:
-        // if the platform is equal as well, the component is registered on the node where it was when workflow was created, the update
-        // check can be directly done on the given node, the description can be returned as it is and this method is done otherwise add the
-        // basically matching component to the list of matching components which will be considered later on
-        for (ComponentInstallation compInst : collection) {
-            ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
-            String compId = compInterface.getIdentifier();
-            if (compId.contains(ComponentConstants.ID_SEPARATOR)) {
-                compId = compInterface.getIdentifier().split(ComponentConstants.ID_SEPARATOR)[0];
-            }
-            if (compId.equals(compDesc.getComponentIdentifier())
-                && (compDesc.getComponentVersion().equals("")
-                || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
-                if (compInst.getNodeId() == null || compInst.getNodeId().equals(localLogicalNodeId.getLogicalNodeIdString())) {
-                    compDesc.setNodeIdentifier(localLogicalNodeId);
-                    return compDesc;
-                } else if (compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
-                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getLogicalNodeIdString())) {
-                    exactlyMatchingComponent = compInst;
-                } else {
-                    matchingComponents.add(compInst);
-                }
-            }
-        }
-
-        // if there is not local component, take the exactly matching remote component if there is one
-        if (exactlyMatchingComponent != null) {
-            compDesc
-                .setNodeIdentifier(NodeIdentifierUtils
-                    .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(exactlyMatchingComponent.getNodeId()));
-            return compDesc;
-        }
-        // a matching component on the originally registered node was not found. thus set the node
-        // identifier of any matching component if there is at least one found
-        if (matchingComponents.size() > 0) {
-            compDesc.setNodeIdentifier(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(matchingComponents
-                .get(0).getNodeId()));
-            return compDesc;
-        }
-
-        // if there is no matching component found in the RCE network set the node identifier to
-        // local, thus the local update service will be requested and will return that it has no
-        // updater registered for the component as it is not registered at all
-        compDesc.setNodeIdentifier(localLogicalNodeId);
-        return compDesc;
-
     }
 
     /**
@@ -610,14 +559,6 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
      */
     public void bindComponentDescriptionUpdateService(DistributedPersistentComponentDescriptionUpdateService updateService) {
         this.componentUpdateService = updateService;
-    }
-
-    protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService service) {
-        this.componentKnowledgeService = service;
-    }
-
-    protected void bindPlatformService(PlatformService platformService) {
-        localLogicalNodeId = platformService.getLocalDefaultLogicalNodeId();
     }
 
 }

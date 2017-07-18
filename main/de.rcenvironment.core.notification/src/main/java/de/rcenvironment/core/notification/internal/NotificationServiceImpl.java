@@ -22,6 +22,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +36,8 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 
@@ -48,6 +51,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 public class NotificationServiceImpl implements NotificationService {
 
     private static final boolean TOPIC_STATISTICS_ENABLED = false;
+
+    private static final boolean FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING = false;
 
     /**
      * Helper class to hold local information about subscribers. This includes a set of the subscribed topics, and a {@link BatchAggregator}
@@ -155,6 +160,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     private PlatformService platformService;
 
+    private final AsyncOrderedExecutionQueue deferredPublishingQueue =
+        ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
+
     protected void bindPlatformService(PlatformService newPlatformService) {
         platformService = newPlatformService;
     }
@@ -173,8 +181,49 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void removePublisher(String notificationId) {
+    public void removePublisher(final String notificationId) {
 
+        if (FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING) {
+
+            deferredPublishingQueue.enqueue(new Runnable() {
+
+                @Override
+                public void run() {
+                    deleteTopicInternal(notificationId);
+                }
+            });
+
+        } else {
+
+            // old blocking behavior
+            deleteTopicInternal(notificationId);
+
+        }
+
+    }
+
+    @Override
+    public <T extends Serializable> void send(final String notificationId, final T notificationBody) {
+
+        if (FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING) {
+
+            deferredPublishingQueue.enqueue(new Runnable() {
+
+                @Override
+                public void run() {
+                    sendInternal(notificationId, notificationBody);
+                }
+            });
+
+        } else {
+
+            // old blocking behavior
+            sendInternal(notificationId, notificationBody);
+
+        }
+    }
+
+    private void deleteTopicInternal(String notificationId) {
         synchronized (topics) {
             NotificationTopic topic = getNotificationTopic(notificationId);
             if (topic != null) {
@@ -186,8 +235,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    @Override
-    public synchronized <T extends Serializable> void send(String notificationId, T notificationBody) {
+    private synchronized <T extends Serializable> void sendInternal(String notificationId, T notificationBody) {
 
         if (TOPIC_STATISTICS_ENABLED) {
             if (StatsCounter.isEnabled()) {
@@ -408,6 +456,24 @@ public class NotificationServiceImpl implements NotificationService {
                 }
             }
             return matchingTopics;
+        }
+    }
+
+    protected void awaitAsyncTaskCompletion() {
+        if (FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            deferredPublishingQueue.enqueue(new Runnable() {
+
+                @Override
+                public void run() {
+                    latch.countDown();
+                }
+            });
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Interrupted while waiting for asynchronous tasks to complete", e);
+            }
         }
     }
 

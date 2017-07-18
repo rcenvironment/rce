@@ -43,6 +43,11 @@ public interface LogicalNodeId extends CommonIdBase, ResolvableNodeId {
     String getLogicalNodeRecognitionPart();
 
     /**
+     * @return the instance node id contained in this id; effectively, this simply discards the logical node part.
+     */
+    InstanceNodeId convertToInstanceNodeId();
+
+    /**
      * @return the default logical node id for this id's instance; effectively, this substitutes the logical node part with the default
      *         value.
      */

@@ -14,6 +14,10 @@ import java.util.Set;
  * Describes the component's configuration options.
  *
  * @author Doreen Seider
+ * 
+ * Note: {@link ConfigurationDefinition} describes the configuration of a component as a kind of blueprint. Each
+ * {@link ComponentDescription} then has an actual implementation of it (with actual configuration values, etc.) in the form of a
+ * {@link ConfigurationDescription}. --seid_do
  */
 public interface ConfigurationDefinition {
 

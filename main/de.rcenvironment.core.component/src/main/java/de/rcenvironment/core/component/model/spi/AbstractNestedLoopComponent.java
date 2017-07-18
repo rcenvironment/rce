@@ -9,7 +9,6 @@
 package de.rcenvironment.core.component.model.spi;
 
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
@@ -40,25 +39,24 @@ import de.rcenvironment.core.datamodel.types.api.InternalTD;
  * 
  * @author Sascha Zur
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link AbstractLoopComponent}. --seid_do
  */
 public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent {
 
-    private boolean isInInnerLoop;
-    
     private boolean isFinallyDone = false;
 
     private boolean isReset;
 
     @Override
     public void startComponentSpecific() throws ComponentException {
-        isInInnerLoop = Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
         startNestedComponentSpecific();
     }
 
     @Override
     public void processInputsComponentSpecific() throws ComponentException {
         
-        if (loopFailureRequested) {
+        if (loopFailed) {
             isReset = true;
             sendReset();
         } else {
@@ -80,7 +78,7 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
     
     @Override
     protected boolean isDone() {
-        return isDoneNestedComponentSpecific() || (!isInInnerLoop() && isFinallyDone());
+        return isDoneNestedComponentSpecific() || (!isNestedLoop() && isFinallyDone());
     }
     
     @Override
@@ -88,17 +86,13 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
         return isFinallyDone;
     }
     
-    protected boolean isInInnerLoop() {
-        return isInInnerLoop;
-    }
-
     @Override
     protected boolean isReset() {
         return isReset;
     }
 
     private void loopIsFinished() throws ComponentException {
-        if (isInInnerLoop) {
+        if (isNestedLoop()) {
             isReset = true;
             sendReset();
         } else {
@@ -118,7 +112,7 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
     private void finishLoop(boolean outerLoopFinished) throws ComponentException {
         if (outerLoopFinished) {
             isFinallyDone = true;
-            if (!isInInnerLoop) {
+            if (!isNestedLoop()) {
                 sendFinalValues();
                 finishLoopNestedComponentSpecific();
             }

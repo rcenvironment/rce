@@ -16,6 +16,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputWithOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputWithOutputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputWithOutputCommand;
 
@@ -51,8 +52,14 @@ public class InputCoupledWithOutputSelectionPane extends ForwardingEndpointSelec
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        WorkflowNodeCommand command = new EditDynamicInputWithOutputCommand(oldDescription, newDescription, this, outputPane);
-        ((EditDynamicInputWithOutputCommand) command).setMetaDataOutput(metaDataOutput);
+        WorkflowNodeCommand command;
+        if (oldDescription.getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
+            command = new EditDynamicInputWithOutputCommand(oldDescription, newDescription, this, outputPane);
+            ((EditDynamicInputWithOutputCommand) command).setMetaDataOutput(metaDataOutput);
+        } else {
+            command = new EditDynamicInputCommand(oldDescription.getDynamicEndpointIdentifier(), oldDescription.getName(),
+                newDescription.getName(), newDescription.getDataType(), newDescription.getMetaData(), this);
+        }
         execute(command);
     }
 

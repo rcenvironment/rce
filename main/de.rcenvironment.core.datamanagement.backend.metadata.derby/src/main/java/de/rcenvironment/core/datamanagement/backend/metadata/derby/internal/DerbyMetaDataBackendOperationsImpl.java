@@ -59,7 +59,6 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VAL
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VALUE_FILES_DELETED_MANUALLY;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_COMPONENT_RUNS;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_COMPONENT_TIMELINE_INTERVALS;
-import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_ENDPOINT_DATA;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_ENDPOINT_INSTANCE_PROPERTIES;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_COMPONENTRUN;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_DATAREFERENCE;
@@ -189,14 +188,21 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_WORKFLOW_RUN + "("
             + NAME + COMMA + CONTROLLER_NODE_ID + COMMA + DATAMANAGEMENT_NODE_ID + COMMA + TO_BE_DELETED
             + ")" + VALUES + PLACEHOLDER_FOUR_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, workflowTitle);
-        stmt.setString(2, workflowControllerNodeId);
-        stmt.setString(3, workflowDataManagementNodeId);
-        stmt.setInt(4, NOT_MARKED_TO_BE_DELETED);
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
+        PreparedStatement stmt = null;
+        Long id;
+        try {
+            stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            stmt.setString(1, workflowTitle);
+            stmt.setString(2, workflowControllerNodeId);
+            stmt.setString(3, workflowDataManagementNodeId);
+            stmt.setInt(4, NOT_MARKED_TO_BE_DELETED);
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
+        } finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
         return id;
     }
 
@@ -214,11 +220,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql =
             UPDATE + DB_PREFIX + TABLE_WORKFLOW_RUN + SET + WORKFLOW_FILE_REFERENCE + EQUAL + QMARK + WHERE + WORKFLOW_RUN_ID
                 + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, wfFileReference);
-        stmt.setLong(2, workflowRunId);
-        stmt.execute();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, wfFileReference);
+            stmt.setLong(2, workflowRunId);
+            stmt.execute();
+        }
     }
 
     /**
@@ -251,14 +257,14 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = StringUtils.format(INSERT_INTO + DB_PREFIX + STRING_PLACEHOLDER + "("
             + idColumnName + COMMA + KEY + COMMA + VALUE + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES, propertiesTableName);
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        for (String key : properties.keySet()) {
-            stmt.setLong(1, relatedId);
-            stmt.setString(2, key);
-            stmt.setString(3, properties.get(key));
-            stmt.execute();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            for (String key : properties.keySet()) {
+                stmt.setLong(1, relatedId);
+                stmt.setString(2, key);
+                stmt.setString(3, properties.get(key));
+                stmt.execute();
+            }
         }
-        stmt.close();
     }
 
     /**
@@ -273,24 +279,24 @@ public class DerbyMetaDataBackendOperationsImpl {
      */
     public Map<String, Long> addComponentInstances(Long workflowRunId, Collection<ComponentInstance> componentInstances,
         Connection connection, boolean isRetry) throws SQLException {
-        Map<String, Long> result = new HashMap<String, Long>();
+        Map<String, Long> result = new HashMap<>();
         String sql = INSERT_INTO + DB_PREFIX + TABLE_COMPONENT_INSTANCE + "("
             + WORKFLOW_RUN_ID + COMMA + COMPONENT_ID + COMMA + COMPONENT_INSTANCE_NAME + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        ResultSet rs;
-        for (ComponentInstance ci : componentInstances) {
-            stmt.setLong(1, workflowRunId);
-            stmt.setString(2, ci.getComponentID());
-            stmt.setString(3, ci.getComponentInstanceName());
-            stmt.execute();
-            rs = stmt.getGeneratedKeys();
-            if (rs != null && rs.next()) {
-                result.put(ci.getComponentExecutionID(), rs.getLong(1));
-                rs.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ResultSet rs;
+            for (ComponentInstance ci : componentInstances) {
+                stmt.setLong(1, workflowRunId);
+                stmt.setString(2, ci.getComponentID());
+                stmt.setString(3, ci.getComponentInstanceName());
+                stmt.execute();
+                rs = stmt.getGeneratedKeys();
+                if (rs != null && rs.next()) {
+                    result.put(ci.getComponentExecutionID(), rs.getLong(1));
+                    rs.close();
+                }
             }
         }
-        stmt.close();
         return result;
     }
 
@@ -321,18 +327,19 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_TIMELINE_INTERVAL + "("
             + WORKFLOW_RUN_ID + COMMA + TYPE + COMMA + STARTTIME + COMMA + COMPONENT_RUN_ID + ")"
             + VALUES + PLACEHOLDER_FOUR_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setLong(1, workflowRunId);
-        stmt.setString(2, intervalType.toString());
-        stmt.setTimestamp(3, new Timestamp(starttime));
-        if (relatedComponentId != null) {
-            stmt.setLong(4, relatedComponentId);
-        } else {
-            stmt.setNull(4, java.sql.Types.BIGINT);
+        Long id;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setLong(1, workflowRunId);
+            stmt.setString(2, intervalType.toString());
+            stmt.setTimestamp(3, new Timestamp(starttime));
+            if (relatedComponentId != null) {
+                stmt.setLong(4, relatedComponentId);
+            } else {
+                stmt.setNull(4, java.sql.Types.BIGINT);
+            }
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
         }
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
         return id;
     }
 
@@ -353,14 +360,15 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_COMPONENT_RUN + "("
             + COMPONENT_INSTANCE_ID + COMMA + NODE_ID + COMMA + COUNTER + COMMA + REFERENCES_DELETED + ")"
             + VALUES + PLACEHOLDER_FOUR_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setLong(1, componentInstanceId);
-        stmt.setString(2, nodeId);
-        stmt.setInt(3, count);
-        stmt.setBoolean(4, false);
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
+        Long id;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setLong(1, componentInstanceId);
+            stmt.setString(2, nodeId);
+            stmt.setInt(3, count);
+            stmt.setBoolean(4, false);
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
+        }
         return id;
     }
 
@@ -382,14 +390,15 @@ public class DerbyMetaDataBackendOperationsImpl {
         String endpointSql = INSERT_INTO + DB_PREFIX + TABLE_ENDPOINT_DATA + "("
             + COMPONENT_RUN_ID + COMMA + TYPED_DATUM_ID + COMMA + ENDPOINT_INSTANCE_ID + COMMA + COUNTER + ")"
             + VALUES + PLACEHOLDER_FOUR_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(endpointSql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setLong(1, componentRunId);
-        stmt.setLong(2, typedDatumId);
-        stmt.setLong(3, endpointInstanceId);
-        stmt.setInt(4, count);
-        stmt.executeUpdate();
-        Long endpointDataId = getGeneratedKey(stmt);
-        stmt.close();
+        Long endpointDataId;
+        try (PreparedStatement stmt = connection.prepareStatement(endpointSql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setLong(1, componentRunId);
+            stmt.setLong(2, typedDatumId);
+            stmt.setLong(3, endpointInstanceId);
+            stmt.setInt(4, count);
+            stmt.executeUpdate();
+            endpointDataId = getGeneratedKey(stmt);
+        }
         return endpointDataId;
     }
 
@@ -413,12 +422,13 @@ public class DerbyMetaDataBackendOperationsImpl {
         } else {
             valueColumn = BIG_VALUE;
         }
-        PreparedStatement stmt = connection.prepareStatement(StringUtils.format(sql, valueColumn), Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, dataType);
-        stmt.setString(2, value);
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
+        Long id;
+        try (PreparedStatement stmt = connection.prepareStatement(StringUtils.format(sql, valueColumn), Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, dataType);
+            stmt.setString(2, value);
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
+        }
         return id;
     }
 
@@ -436,17 +446,17 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_BINARY_REFERENCE + "("
             + BINARY_REFERENCE_KEY + COMMA + COMPRESSION + COMMA + REVISION + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        Set<Long> ids = new HashSet<Long>();
-        for (BinaryReference br : binaryReferences) {
-            stmt.setString(1, br.getBinaryReferenceKey());
-            stmt.setString(2, br.getCompression().toString());
-            stmt.setString(3, br.getRevision());
-            stmt.executeUpdate();
-            ids.add(getGeneratedKey(stmt));
-            stmt.clearParameters();
+        Set<Long> ids = new HashSet<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            for (BinaryReference br : binaryReferences) {
+                stmt.setString(1, br.getBinaryReferenceKey());
+                stmt.setString(2, br.getCompression().toString());
+                stmt.setString(3, br.getRevision());
+                stmt.executeUpdate();
+                ids.add(getGeneratedKey(stmt));
+                stmt.clearParameters();
+            }
         }
-        stmt.close();
         return ids;
     }
 
@@ -465,12 +475,13 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_DATA_REFERENCE + "("
             + DATA_REFERENCE_KEY + COMMA + NODE_ID + ")"
             + VALUES + PLACEHOLDER_TWO_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, dataReferenceKey);
-        stmt.setString(2, nodeIdentifier);
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
+        Long id;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, dataReferenceKey);
+            stmt.setString(2, nodeIdentifier);
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
+        }
         return id;
     }
 
@@ -487,13 +498,14 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_BINARY_REFERENCE + "("
             + BINARY_REFERENCE_KEY + COMMA + COMPRESSION + COMMA + REVISION + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, binaryReference.getBinaryReferenceKey());
-        stmt.setString(2, binaryReference.getCompression().toString());
-        stmt.setString(3, binaryReference.getRevision());
-        stmt.executeUpdate();
-        Long id = getGeneratedKey(stmt);
-        stmt.close();
+        Long id;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, binaryReference.getBinaryReferenceKey());
+            stmt.setString(2, binaryReference.getCompression().toString());
+            stmt.setString(3, binaryReference.getRevision());
+            stmt.executeUpdate();
+            id = getGeneratedKey(stmt);
+        }
         return id;
     }
 
@@ -509,17 +521,17 @@ public class DerbyMetaDataBackendOperationsImpl {
     public DataReference getDataReference(String dataReferenceKey, Connection connection, boolean isRetry) throws SQLException {
         String sql = SELECT + DATA_REFERENCE_ID + COMMA + NODE_ID + FROM + DB_PREFIX + TABLE_DATA_REFERENCE
             + WHERE + DATA_REFERENCE_KEY + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setString(1, dataReferenceKey);
-        ResultSet rs = stmt.executeQuery();
         Long dataRefId = null;
         String dataRefNodeId = null;
-        if (rs != null && rs.next()) {
-            dataRefId = rs.getLong(DATA_REFERENCE_ID);
-            dataRefNodeId = rs.getString(NODE_ID).trim();
-            rs.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);) {
+            stmt.setString(1, dataReferenceKey);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                dataRefId = rs.getLong(DATA_REFERENCE_ID);
+                dataRefNodeId = rs.getString(NODE_ID).trim();
+                rs.close();
+            }
         }
-        stmt.close();
         if (dataRefId == null) {
             return null;
         }
@@ -528,24 +540,24 @@ public class DerbyMetaDataBackendOperationsImpl {
             + FROM + DB_PREFIX + REL_DATAREFERENCE_BINARYREFERENCE + INNER_JOIN + DB_PREFIX + TABLE_BINARY_REFERENCE + ON
             + TABLE_BINARY_REFERENCE + DOT + BINARY_REFERENCE_ID + EQUAL + REL_DATAREFERENCE_BINARYREFERENCE + DOT + BINARY_REFERENCE_ID
             + WHERE + REL_DATAREFERENCE_BINARYREFERENCE + DOT + DATA_REFERENCE_ID + EQUAL + QMARK;
-        stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, dataRefId);
-        rs = stmt.executeQuery();
         DataReference dataRef = null;
-        Set<BinaryReference> binaryReferences = new HashSet<BinaryReference>();
-        if (rs != null) {
-            while (rs.next()) {
-                binaryReferences.add(new BinaryReference(rs.getString(BINARY_REFERENCE_KEY).trim(), CompressionFormat.valueOf(rs
-                    .getString(COMPRESSION)), rs
-                    .getString(REVISION)));
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, dataRefId);
+            ResultSet rs = stmt.executeQuery();
+            Set<BinaryReference> binaryReferences = new HashSet<>();
+            if (rs != null) {
+                while (rs.next()) {
+                    binaryReferences.add(new BinaryReference(rs.getString(BINARY_REFERENCE_KEY).trim(), CompressionFormat.valueOf(rs
+                        .getString(COMPRESSION)), rs
+                        .getString(REVISION)));
+                }
+                dataRef =
+                    new DataReference(dataReferenceKey,
+                        NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(dataRefNodeId),
+                        binaryReferences);
+                rs.close();
             }
-            dataRef =
-                new DataReference(dataReferenceKey, NodeIdentifierUtils.parseInstanceNodeIdStringWithExceptionWrapping(NodeIdentifierUtils
-                    .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(dataRefNodeId).getInstanceNodeIdString()), 
-                    binaryReferences);
-            rs.close();
         }
-        stmt.close();
         return dataRef;
     }
 
@@ -570,23 +582,22 @@ public class DerbyMetaDataBackendOperationsImpl {
                 + DATA_REFERENCE_ID + AND + VIEW_WORKFLOWRUN_DATAREFERENCE + DOT + WORKFLOW_RUN_ID + EQUAL + QMARK
                 + ORDER_BY + DATA_REFERENCE_ID;
 
-        Map<Long, Set<String>> keys = new HashMap<Long, Set<String>>();
-        PreparedStatement stmtBinaryRefs;
-        stmtBinaryRefs =
+        Map<Long, Set<String>> keys = new HashMap<>();
+        try (PreparedStatement stmtBinaryRefs =
             connection.prepareStatement(sqlBinaryRefs, ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-        stmtBinaryRefs.setLong(1, workflowRunId);
-        ResultSet rs = stmtBinaryRefs.executeQuery();
-        if (rs != null) {
-            while (rs.next()) {
-                if (keys.get(rs.getLong(DATA_REFERENCE_ID)) == null) {
-                    keys.put(rs.getLong(DATA_REFERENCE_ID), new HashSet<String>());
+                ResultSet.CONCUR_READ_ONLY)) {
+            stmtBinaryRefs.setLong(1, workflowRunId);
+            ResultSet rs = stmtBinaryRefs.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    if (keys.get(rs.getLong(DATA_REFERENCE_ID)) == null) {
+                        keys.put(rs.getLong(DATA_REFERENCE_ID), new HashSet<String>());
+                    }
+                    keys.get(rs.getLong(DATA_REFERENCE_ID)).add(rs.getString(BINARY_REFERENCE_KEY).trim());
                 }
-                keys.get(rs.getLong(DATA_REFERENCE_ID)).add(rs.getString(BINARY_REFERENCE_KEY).trim());
+                rs.close();
             }
-            rs.close();
         }
-        stmtBinaryRefs.close();
         return keys;
     }
 
@@ -605,11 +616,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + REL_WORKFLOWRUN_DATAREFERENCE + "("
             + DATA_REFERENCE_ID + COMMA + WORKFLOW_RUN_ID + ")"
             + VALUES + PLACEHOLDER_TWO_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setLong(1, dataReferenceId);
-        stmt.setLong(2, workflowRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, dataReferenceId);
+            stmt.setLong(2, workflowRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -627,11 +638,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + REL_COMPONENTINSTANCE_DATAREFERENCE + "("
             + DATA_REFERENCE_ID + COMMA + COMPONENT_INSTANCE_ID + ")"
             + VALUES + PLACEHOLDER_TWO_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setLong(1, dataReferenceId);
-        stmt.setLong(2, componentInstanceId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, dataReferenceId);
+            stmt.setLong(2, componentInstanceId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -649,11 +660,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + REL_COMPONENTRUN_DATAREFERENCE + "("
             + DATA_REFERENCE_ID + COMMA + COMPONENT_RUN_ID + ")"
             + VALUES + PLACEHOLDER_TWO_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setLong(1, dataReferenceId);
-        stmt.setLong(2, componentRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, dataReferenceId);
+            stmt.setLong(2, componentRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -670,14 +681,14 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + REL_DATAREFERENCE_BINARYREFERENCE + "("
             + DATA_REFERENCE_ID + COMMA + BINARY_REFERENCE_ID + ")"
             + VALUES + PLACEHOLDER_TWO_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        for (Long id : binaryReferenceIds) {
-            stmt.setLong(1, dataReferenceId);
-            stmt.setLong(2, id);
-            stmt.executeUpdate();
-            stmt.clearParameters();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            for (Long id : binaryReferenceIds) {
+                stmt.setLong(1, dataReferenceId);
+                stmt.setLong(2, id);
+                stmt.executeUpdate();
+                stmt.clearParameters();
+            }
         }
-        stmt.close();
     }
 
     /**
@@ -693,11 +704,11 @@ public class DerbyMetaDataBackendOperationsImpl {
     public void markDeletion(Long workflowRunId, Integer type, Connection connection, boolean isRetry) throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_WORKFLOW_RUN + SET + TO_BE_DELETED + EQUAL + QMARK
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setInt(1, type);
-        stmt.setLong(2, workflowRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, type);
+            stmt.setLong(2, workflowRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -712,45 +723,44 @@ public class DerbyMetaDataBackendOperationsImpl {
     public void markDataReferencesDeleted(Long workflowRunId, Connection connection, boolean isRetry) throws SQLException {
         String sqlProperty = INSERT_INTO + DB_PREFIX + TABLE_WORKFLOW_RUN_PROPERTIES + "(" + WORKFLOW_RUN_ID + COMMA
             + KEY + COMMA + VALUE + ")" + VALUES + PLACEHOLDER_THREE_VALUES;
-        PreparedStatement stmtWorkflowRunProperty = connection.prepareStatement(sqlProperty);
-        stmtWorkflowRunProperty.setLong(1, workflowRunId);
-        stmtWorkflowRunProperty.setString(2, KEY_FILES_DELETED);
-        stmtWorkflowRunProperty.setString(3, VALUE_FILES_DELETED_MANUALLY);
-        try {
-            stmtWorkflowRunProperty.executeUpdate();
-        } catch (SQLException e) {
-            // If found duplicate from database view (Error 23503) ignore and continue, else throw exception
-            if (!e.getSQLState().equals("23503")) {
-                throw e;
+        try (PreparedStatement stmtWorkflowRunProperty = connection.prepareStatement(sqlProperty)) {
+            stmtWorkflowRunProperty.setLong(1, workflowRunId);
+            stmtWorkflowRunProperty.setString(2, KEY_FILES_DELETED);
+            stmtWorkflowRunProperty.setString(3, VALUE_FILES_DELETED_MANUALLY);
+            try {
+                stmtWorkflowRunProperty.executeUpdate();
+            } catch (SQLException e) {
+                // If found duplicate from database view (Error 23503) ignore and continue, else throw exception
+                if (!"23503".equals(e.getSQLState())) {
+                    throw e;
+                }
             }
-        } finally {
-            stmtWorkflowRunProperty.close();
         }
 
         String sqlComponentRunIds =
             SELECT + COMPONENT_RUN_ID + FROM + VIEW_WORKFLOWRUN_COMPONENTRUN + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtComponentRunIds =
-            connection.prepareStatement(sqlComponentRunIds, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtComponentRunIds.setLong(1, workflowRunId);
-        ResultSet rs = stmtComponentRunIds.executeQuery();
-        List<Long> crIds = new ArrayList<Long>();
-        if (rs != null) {
-            while (rs.next()) {
-                crIds.add(rs.getLong(COMPONENT_RUN_ID));
+        List<Long> crIds = new ArrayList<>();
+        try (PreparedStatement stmtComponentRunIds =
+            connection.prepareStatement(sqlComponentRunIds, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)){
+            stmtComponentRunIds.setLong(1, workflowRunId);
+            ResultSet rs = stmtComponentRunIds.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    crIds.add(rs.getLong(COMPONENT_RUN_ID));
+                }
+                rs.close();
             }
-            rs.close();
         }
-        stmtComponentRunIds.close();
-        if (crIds.size() > 0) {
+        if (!crIds.isEmpty()) {
             String sql = UPDATE + DB_PREFIX + TABLE_COMPONENT_RUN + SET + REFERENCES_DELETED + EQUAL + QMARK
                 + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK;
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            for (Long id : crIds) {
-                stmt.setBoolean(1, true);
-                stmt.setLong(2, id);
-                stmt.executeUpdate();
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                for (Long id : crIds) {
+                    stmt.setBoolean(1, true);
+                    stmt.setLong(2, id);
+                    stmt.executeUpdate();
+                }
             }
-            stmt.close();
         }
     }
 
@@ -766,17 +776,16 @@ public class DerbyMetaDataBackendOperationsImpl {
     public boolean isWorkflowFinished(Long workflowRunId, Connection connection, boolean isRetry) throws SQLException {
         String sql = SELECT + FINAL_STATE + FROM + DB_PREFIX + TABLE_WORKFLOW_RUN
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null && rs.next()) {
-            Boolean finished = rs.getString(FINAL_STATE) != null;
-            rs.close();
-            stmt.close();
-            return finished;
+        boolean finished = false;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                finished = rs.getString(FINAL_STATE) != null;
+                rs.close();
+            }
         }
-        stmt.close();
-        return false;
+        return finished;
     }
 
     /**
@@ -791,32 +800,32 @@ public class DerbyMetaDataBackendOperationsImpl {
     public void deleteTypedDatums(Long workflowRunId, Connection connection, boolean isRetry) throws SQLException {
         String sql = SELECT + TYPED_DATUM_ID + FROM + DB_PREFIX + VIEW_WORKFLOWRUN_TYPEDDATUM
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        ResultSet rs = stmt.executeQuery();
-        Set<Long> typedDatumIds = new HashSet<Long>();
-        if (rs != null) {
-            while (rs.next()) {
-                typedDatumIds.add(rs.getLong(TYPED_DATUM_ID));
+        Set<Long> typedDatumIds = new HashSet<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    typedDatumIds.add(rs.getLong(TYPED_DATUM_ID));
+                }
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
+
         String sqlEndpointData = DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_DATA + WHERE + TYPED_DATUM_ID + EQUAL + QMARK;
         String sqlTypedDatum = DELETE_FROM + DB_PREFIX + TABLE_TYPED_DATUM + WHERE + TYPED_DATUM_ID + EQUAL + QMARK;
 
-        PreparedStatement stmtEndpointData =
-            connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtTypedDatum =
-            connection.prepareStatement(sqlTypedDatum, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        for (Long id : typedDatumIds) {
-            stmtEndpointData.setLong(1, id);
-            stmtTypedDatum.setLong(1, id);
-            stmtEndpointData.execute();
-            stmtTypedDatum.execute();
+        try (PreparedStatement stmtEndpointData =
+                connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtTypedDatum =
+                connection.prepareStatement(sqlTypedDatum, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);) {
+            for (Long id : typedDatumIds) {
+                stmtEndpointData.setLong(1, id);
+                stmtTypedDatum.setLong(1, id);
+                stmtEndpointData.execute();
+                stmtTypedDatum.execute();
+            }
         }
-        stmtEndpointData.close();
-        stmtTypedDatum.close();
     }
 
     /**
@@ -848,39 +857,37 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sqlBinaryRef =
             DELETE_FROM + DB_PREFIX + TABLE_BINARY_REFERENCE + WHERE + BINARY_REFERENCE_KEY + EQUAL + QMARK;
         String sqlDataRef = DELETE_FROM + DB_PREFIX + TABLE_DATA_REFERENCE + WHERE + DATA_REFERENCE_ID + EQUAL + QMARK;
-        PreparedStatement stmtRelBinaryDataRef =
+
+        try (PreparedStatement stmtRelBinaryDataRef =
             connection.prepareStatement(sqlRelBinaryDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtRelCompRunDataRef =
+            PreparedStatement stmtRelCompRunDataRef =
             connection.prepareStatement(sqlRelCompRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtRelCompInstanceDataRef =
+            PreparedStatement stmtRelCompInstanceDataRef =
             connection.prepareStatement(sqlRelCompInstanceDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtRelWorkflowRunDataRef =
+            PreparedStatement stmtRelWorkflowRunDataRef =
             connection.prepareStatement(sqlRelWorkflowRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtBinaryRef =
+            PreparedStatement stmtBinaryRef =
             connection.prepareStatement(sqlBinaryRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        PreparedStatement stmtDataRef = connection.prepareStatement(sqlDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        for (Long id : dataReferenceKeys.keySet()) {
-            stmtRelBinaryDataRef.setLong(1, id);
-            result &= !stmtRelBinaryDataRef.execute();
-            stmtRelCompRunDataRef.setLong(1, id);
-            result &= !stmtRelCompRunDataRef.execute();
-            stmtRelCompInstanceDataRef.setLong(1, id);
-            result &= !stmtRelCompInstanceDataRef.execute();
-            stmtRelWorkflowRunDataRef.setLong(1, id);
-            result &= !stmtRelWorkflowRunDataRef.execute();
-            for (String key : dataReferenceKeys.get(id)) {
-                stmtBinaryRef.setString(1, key);
-                result &= !stmtBinaryRef.execute();
+            PreparedStatement stmtDataRef = connection.prepareStatement(sqlDataRef, ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY);) {
+           
+            for (Long id : dataReferenceKeys.keySet()) {
+                stmtRelBinaryDataRef.setLong(1, id);
+                result &= !stmtRelBinaryDataRef.execute();
+                stmtRelCompRunDataRef.setLong(1, id);
+                result &= !stmtRelCompRunDataRef.execute();
+                stmtRelCompInstanceDataRef.setLong(1, id);
+                result &= !stmtRelCompInstanceDataRef.execute();
+                stmtRelWorkflowRunDataRef.setLong(1, id);
+                result &= !stmtRelWorkflowRunDataRef.execute();
+                for (String key : dataReferenceKeys.get(id)) {
+                    stmtBinaryRef.setString(1, key);
+                    result &= !stmtBinaryRef.execute();
+                }
+                stmtDataRef.setLong(1, id);
+                result &= !stmtDataRef.execute();
             }
-            stmtDataRef.setLong(1, id);
-            result &= !stmtDataRef.execute();
-        }
-        stmtRelBinaryDataRef.close();
-        stmtRelCompRunDataRef.close();
-        stmtRelCompInstanceDataRef.close();
-        stmtRelWorkflowRunDataRef.close();
-        stmtBinaryRef.close();
-        stmtDataRef.close();
+        } 
         return result;
     }
 
@@ -897,11 +904,6 @@ public class DerbyMetaDataBackendOperationsImpl {
     public Boolean deleteWorkflowRunContent(Long workflowRunId, Connection connection, boolean isRetry) throws SQLException {
 
         String sqlTimelineInt = DELETE_FROM + DB_PREFIX + TABLE_TIMELINE_INTERVAL + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtTimelineInt =
-            connection.prepareStatement(sqlTimelineInt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtTimelineInt.setLong(1, workflowRunId);
-        stmtTimelineInt.execute();
-        stmtTimelineInt.close();
         String sqlCompInstIds =
             SELECT + COMPONENT_INSTANCE_ID + FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         String sqlCompRunIds =
@@ -909,69 +911,79 @@ public class DerbyMetaDataBackendOperationsImpl {
                 + TABLE_COMPONENT_INSTANCE + WHERE + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID + EQUAL
                 + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + AND + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID
                 + EQUAL + QMARK;
-
         String sqlcompRunProp =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN_PROPERTIES + WHERE + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtCompRunProp =
-            connection.prepareStatement(StringUtils.format(sqlcompRunProp, StringUtils.format(sqlCompRunIds, sqlCompInstIds)),
-                ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtCompRunProp.setLong(1, workflowRunId);
-        stmtCompRunProp.execute();
-        stmtCompRunProp.close();
         String sqlcompInstProp =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE_PROPERTIES + WHERE + COMPONENT_INSTANCE_ID + IN
                 + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtCompInstProp =
-            connection.prepareStatement(StringUtils.format(sqlcompInstProp, sqlCompInstIds), ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-        stmtCompInstProp.setLong(1, workflowRunId);
-        stmtCompInstProp.execute();
-        stmtCompInstProp.close();
         String sqlEndpointInstProp =
             DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE_PROPERTIES + WHERE + ENDPOINT_INSTANCE_ID + IN
                 + BRACKET_STRING_PLACEHOLDER;
-        String sqlEndInstIds = StringUtils.format(SELECT + ENDPOINT_INSTANCE_ID + FROM + TABLE_ENDPOINT_INSTANCE
-            + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER, sqlCompInstIds);
-        PreparedStatement stmtEndpointInstProp =
-            connection.prepareStatement(StringUtils.format(sqlEndpointInstProp, sqlEndInstIds), ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-        stmtEndpointInstProp.setLong(1, workflowRunId);
-        stmtEndpointInstProp.execute();
-        stmtEndpointInstProp.close();
+        String sqlEndInstIds = SELECT + ENDPOINT_INSTANCE_ID + FROM + TABLE_ENDPOINT_INSTANCE + COMMA + TABLE_COMPONENT_INSTANCE
+            + WHERE + TABLE_ENDPOINT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_INSTANCE + DOT
+            + COMPONENT_INSTANCE_ID + AND + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + EQUAL + QMARK;
         String sqlEndpointInst =
-            DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtEndpointInst =
-            connection.prepareStatement(StringUtils.format(sqlEndpointInst, sqlCompInstIds), ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-        stmtEndpointInst.setLong(1, workflowRunId);
-        stmtEndpointInst.execute();
-        stmtEndpointInst.close();
+            DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + ENDPOINT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
         String sqlCompRun =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtCompRun =
-            connection.prepareStatement(StringUtils.format(sqlCompRun, sqlCompInstIds), ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-        stmtCompRun.setLong(1, workflowRunId);
-        stmtCompRun.execute();
-        stmtCompRun.close();
         String sqlCompInst = DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtCompInst = connection.prepareStatement(sqlCompInst, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtCompInst.setLong(1, workflowRunId);
-        stmtCompInst.execute();
-        stmtCompInst.close();
         String sqlWorkflowRunProp =
             DELETE_FROM + DB_PREFIX + TABLE_WORKFLOW_RUN_PROPERTIES + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtWorkflowRunProp =
-            connection.prepareStatement(sqlWorkflowRunProp, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtWorkflowRunProp.setLong(1, workflowRunId);
-        stmtWorkflowRunProp.execute();
-        stmtWorkflowRunProp.close();
         String sqlWorkflowRun = DELETE_FROM + DB_PREFIX + TABLE_WORKFLOW_RUN + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtWorkflowRun =
-            connection.prepareStatement(sqlWorkflowRun, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtWorkflowRun.setLong(1, workflowRunId);
-        int affectedLines = stmtWorkflowRun.executeUpdate();
-        stmtWorkflowRun.close();
+
+        int affectedLines;
+        try (PreparedStatement stmtCompRunProp =
+            connection.prepareStatement(StringUtils.format(sqlcompRunProp, StringUtils.format(sqlCompRunIds, sqlCompInstIds)),
+                ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtCompInstProp =
+                connection.prepareStatement(StringUtils.format(sqlcompInstProp, sqlCompInstIds), ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtEndpointInstProp =
+                connection.prepareStatement(StringUtils.format(sqlEndpointInstProp, sqlEndInstIds), ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtEndpointInst =
+                connection.prepareStatement(StringUtils.format(sqlEndpointInst, sqlEndInstIds), ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtCompRun =
+                connection.prepareStatement(StringUtils.format(sqlCompRun, sqlCompInstIds), ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtCompInst =
+                connection.prepareStatement(sqlCompInst, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtWorkflowRunProp =
+                connection.prepareStatement(sqlWorkflowRunProp, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtWorkflowRun =
+                connection.prepareStatement(sqlWorkflowRun, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            PreparedStatement stmtTimelineInt =
+                connection.prepareStatement(sqlTimelineInt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);) {
+
+            stmtTimelineInt.setLong(1, workflowRunId);
+            stmtTimelineInt.execute();
+
+            stmtCompRunProp.setLong(1, workflowRunId);
+            stmtCompRunProp.execute();
+
+            stmtCompInstProp.setLong(1, workflowRunId);
+            stmtCompInstProp.execute();
+
+            stmtEndpointInstProp.setLong(1, workflowRunId);
+            stmtEndpointInstProp.execute();
+
+            stmtEndpointInst.setLong(1, workflowRunId);
+            stmtEndpointInst.execute();
+
+            stmtCompRun.setLong(1, workflowRunId);
+            stmtCompRun.execute();
+
+            stmtCompInst.setLong(1, workflowRunId);
+            stmtCompInst.execute();
+
+            stmtWorkflowRunProp.setLong(1, workflowRunId);
+            stmtWorkflowRunProp.execute();
+
+            stmtWorkflowRun.setLong(1, workflowRunId);
+            affectedLines = stmtWorkflowRun.executeUpdate();
+
+        }
         return affectedLines == 1;
     }
 
@@ -989,7 +1001,7 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         Long dataReferenceId =
             addDataReference(dataReference.getDataReferenceKey(),
-                DataManagementIdMapping.mapLogicalNodeIdToDbString(dataReference.getInstanceId().convertToDefaultLogicalNodeId()),
+                DataManagementIdMapping.mapLogicalNodeIdToDbString(dataReference.getStorageNodeId().convertToDefaultLogicalNodeId()),
                 connection, isRetry);
         Set<Long> binaryReferenceIds =
             addBinaryReferences(dataReference.getBinaryReferences(), connection, isRetry);
@@ -1028,17 +1040,17 @@ public class DerbyMetaDataBackendOperationsImpl {
         }
         String sql = StringUtils.format(SELECT + KEY + COMMA + VALUE
             + FROM + DB_PREFIX + STRING_PLACEHOLDER + WHERE + STRING_PLACEHOLDER + EQUAL + QMARK, tableName, relatedIdColumn);
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, relatedId);
-        Map<String, String> results = new HashMap<String, String>();
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null) {
-            while (rs.next()) {
-                results.put(rs.getString(KEY), rs.getString(VALUE));
+        Map<String, String> results = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, relatedId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    results.put(rs.getString(KEY), rs.getString(VALUE));
+                }
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
         return results;
     }
 
@@ -1057,23 +1069,23 @@ public class DerbyMetaDataBackendOperationsImpl {
             SELECT + STARTTIME + COMMA + ENDTIME + COMMA + TYPE + COMMA + COMPONENT_ID + COMMA + COMPONENT_INSTANCE_NAME
                 + FROM + DB_PREFIX + VIEW_COMPONENT_TIMELINE_INTERVALS
                 + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        ResultSet rs = stmt.executeQuery();
-        List<ComponentRunInterval> results = new ArrayList<ComponentRunInterval>();
-        if (rs != null) {
-            while (rs.next()) {
-                // end time might be NULL, avoid NPE
-                Long endtime = null;
-                if (rs.getTimestamp(ENDTIME) != null) {
-                    endtime = rs.getTimestamp(ENDTIME).getTime();
+        List<ComponentRunInterval> results = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    // end time might be NULL, avoid NPE
+                    Long endtime = null;
+                    if (rs.getTimestamp(ENDTIME) != null) {
+                        endtime = rs.getTimestamp(ENDTIME).getTime();
+                    }
+                    results.add(new ComponentRunInterval(rs.getString(COMPONENT_ID), rs.getString(COMPONENT_INSTANCE_NAME),
+                        TimelineIntervalType.valueOf(rs.getString(TYPE)), rs.getTimestamp(STARTTIME).getTime(), endtime));
                 }
-                results.add(new ComponentRunInterval(rs.getString(COMPONENT_ID), rs.getString(COMPONENT_INSTANCE_NAME),
-                    TimelineIntervalType.valueOf(rs.getString(TYPE)), rs.getTimestamp(STARTTIME).getTime(), endtime));
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
         return results;
     }
 
@@ -1090,23 +1102,23 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = SELECT + STARTTIME + COMMA + ENDTIME + FROM + DB_PREFIX + TABLE_TIMELINE_INTERVAL
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK
             + AND + TYPE + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        stmt.setString(2, TimelineIntervalType.WORKFLOW_RUN.toString());
-        ResultSet rs = stmt.executeQuery();
         TimelineInterval ti = null;
-        if (rs != null && rs.next()) {
-            // end time might be NULL, avoid NPE
-            Long endtime = null;
-            if (rs.getTimestamp(ENDTIME) != null) {
-                endtime = rs.getTimestamp(ENDTIME).getTime();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            stmt.setString(2, TimelineIntervalType.WORKFLOW_RUN.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                // end time might be NULL, avoid NPE
+                Long endtime = null;
+                if (rs.getTimestamp(ENDTIME) != null) {
+                    endtime = rs.getTimestamp(ENDTIME).getTime();
+                }
+                ti = new TimelineInterval(TimelineIntervalType.WORKFLOW_RUN, rs.getTimestamp(STARTTIME).getTime(), endtime);
             }
-            ti = new TimelineInterval(TimelineIntervalType.WORKFLOW_RUN, rs.getTimestamp(STARTTIME).getTime(), endtime);
+            if (rs != null) {
+                rs.close();
+            }
         }
-        if (rs != null) {
-            rs.close();
-        }
-        stmt.close();
         return ti;
     }
 
@@ -1122,18 +1134,16 @@ public class DerbyMetaDataBackendOperationsImpl {
     public String getWorkflowRunName(Long workflowRunId, Connection connection, boolean isRetry) throws SQLException {
         String sql = SELECT + NAME + FROM + DB_PREFIX + TABLE_WORKFLOW_RUN
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null && rs.next()) {
-            String name = rs.getString(NAME);
-            rs.close();
-            stmt.close();
-            return name;
+        String name = null;
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                name = rs.getString(NAME);
+                rs.close();
+            }
         }
-        stmt.close();
-        return null;
+        return name;
     }
 
     /**
@@ -1150,11 +1160,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = UPDATE + DB_PREFIX + TABLE_TIMELINE_INTERVAL + SET
             + ENDTIME + EQUAL + QMARK
             + WHERE + TIMELINE_INTERVAL_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setTimestamp(1, new Timestamp(endtime));
-        stmt.setLong(2, timelineIntervalId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setTimestamp(1, new Timestamp(endtime));
+            stmt.setLong(2, timelineIntervalId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1171,38 +1181,34 @@ public class DerbyMetaDataBackendOperationsImpl {
     public Map<String, Long> addEndpointInstances(Long componentInstanceId, Collection<EndpointInstance> endpointInstances,
         Connection connection,
         boolean isRetry) throws SQLException {
-        Map<String, Long> result = new HashMap<String, Long>();
+        Map<String, Long> result = new HashMap<>();
         String sql = INSERT_INTO + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + "("
             + COMPONENT_INSTANCE_ID + COMMA + NAME + COMMA + TYPE + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
         String sqlProperties = INSERT_INTO + DB_PREFIX + TABLE_ENDPOINT_INSTANCE_PROPERTIES + "("
             + ENDPOINT_INSTANCE_ID + COMMA + KEY + COMMA + VALUE + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
-        PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        PreparedStatement stmtProperties = connection.prepareStatement(sqlProperties);
-        ResultSet rs;
-        for (EndpointInstance ei : endpointInstances) {
-            stmt.setLong(1, componentInstanceId);
-            stmt.setString(2, ei.getEndpointName());
-            stmt.setString(3, ei.getEndpointType().name());
-            stmt.execute();
-            rs = stmt.getGeneratedKeys();
-            if (rs != null && rs.next()) {
-                Long id = rs.getLong(1);
-                result.put(ei.getEndpointName(), id);
-                for (String key : ei.getMetaData().keySet()) {
-                    stmtProperties.setLong(1, id);
-                    stmtProperties.setString(2, key);
-                    stmtProperties.setString(3, ei.getMetaData().get(key));
-                    stmtProperties.execute();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement stmtProperties = connection.prepareStatement(sqlProperties)) {
+            for (EndpointInstance ei : endpointInstances) {
+                stmt.setLong(1, componentInstanceId);
+                stmt.setString(2, ei.getEndpointName());
+                stmt.setString(3, ei.getEndpointType().name());
+                stmt.execute();
+                ResultSet rs = stmt.getGeneratedKeys();
+                if (rs != null && rs.next()) {
+                    Long id = rs.getLong(1);
+                    result.put(ei.getEndpointName(), id);
+                    for (String key : ei.getMetaData().keySet()) {
+                        stmtProperties.setLong(1, id);
+                        stmtProperties.setString(2, key);
+                        stmtProperties.setString(3, ei.getMetaData().get(key));
+                        stmtProperties.execute();
+                    }
+                    rs.close();
                 }
             }
-            if (rs != null) {
-                rs.close();
-            }
         }
-        stmtProperties.close();
-        stmt.close();
         return result;
     }
 
@@ -1217,32 +1223,123 @@ public class DerbyMetaDataBackendOperationsImpl {
      */
     public Collection<ComponentRun> getComponentRuns(Long componentInstanceId, Connection connection, boolean isRetry)
         throws SQLException {
-        String sql = SELECT + COMPONENT_RUN_ID + COMMA + COMPONENT_INSTANCE_ID + COMMA + NODE_ID + COMMA
-            + COUNTER + COMMA + STARTTIME + COMMA + ENDTIME + COMMA + HISTORY_DATA_ITEM + COMMA + REFERENCES_DELETED
-            + FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + EQUAL + QMARK + ORDER_BY + STARTTIME + DESCENDING;
-        Collection<ComponentRun> results = new TreeSet<ComponentRun>();
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, componentInstanceId);
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null) {
-            while (rs.next()) {
-                // end time might be NULL, avoid NPE
-                Long endtime = null;
-                if (rs.getTimestamp(ENDTIME) != null) {
-                    endtime = rs.getTimestamp(ENDTIME).getTime();
+
+        Map<Long, Map<String, String>> endpointProperties = new HashMap<>();
+        String sqlEndpointProperties =
+            SELECT_ALL + FROM + DB_PREFIX + VIEW_ENDPOINT_INSTANCE_PROPERTIES + WHERE + ENDPOINT_INSTANCE_ID + IN
+                + BRACKET_STRING_PLACEHOLDER;
+        String sqlEndpointInstanceId =
+            SELECT + ENDPOINT_INSTANCE_ID + FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + COMPONENT_INSTANCE_ID + EQUAL
+                + QMARK;
+        try (PreparedStatement stmtEndpointProperties =
+            connection.prepareStatement(StringUtils.format(sqlEndpointProperties, sqlEndpointInstanceId), ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY)) {
+            stmtEndpointProperties.setLong(1, componentInstanceId);
+            ResultSet rsEndpointProperties = stmtEndpointProperties.executeQuery();
+            if (rsEndpointProperties != null) {
+                while (rsEndpointProperties.next()) {
+                    Long endpointInstanceId = rsEndpointProperties.getLong(ENDPOINT_INSTANCE_ID);
+                    String key = rsEndpointProperties.getString(KEY);
+                    String value = rsEndpointProperties.getString(VALUE);
+                    if (endpointProperties.get(endpointInstanceId) != null) {
+                        endpointProperties.get(endpointInstanceId).put(key, value);
+                    } else {
+                        Map<String, String> map = new HashMap<>();
+                        map.put(key, value);
+                        endpointProperties.put(endpointInstanceId, map);
+                    }
                 }
-                FinalComponentRunState finalState = null;
-                if (rs.getString(COMPONENT_RUN_FINAL_STATE) != null) {
-                    finalState = FinalComponentRunState.valueOf(rs.getString(COMPONENT_RUN_FINAL_STATE));
-                }
-                results.add(new ComponentRun(rs.getLong(COMPONENT_RUN_ID), rs.getLong(COMPONENT_INSTANCE_ID), rs.getString(NODE_ID).trim(),
-                    rs.getInt(COUNTER), rs.getTimestamp(STARTTIME).getTime(), endtime, rs.getString(HISTORY_DATA_ITEM),
-                    rs.getBoolean(REFERENCES_DELETED), getProperties(TABLE_COMPONENT_RUN_PROPERTIES, rs.getLong(COMPONENT_RUN_ID),
-                        connection, isRetry), finalState));
             }
-            rs.close();
         }
-        stmt.close();
+
+        Map<Long, Set<EndpointData>> endpointData = new HashMap<>();
+        String sqlEndpointData =
+            SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA
+                + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID + COMMA
+                + TABLE_ENDPOINT_DATA + DOT + COUNTER + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + NAME + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + TYPE + " AS ENDPOINT_TYPE" + COMMA
+                + TABLE_TYPED_DATUM + DOT + TYPE + " AS DATUM_TYPE" + COMMA
+                + TABLE_TYPED_DATUM + DOT + VALUE + COMMA
+                + TABLE_TYPED_DATUM + DOT + BIG_VALUE
+                + FROM + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN + COMMA + TABLE_ENDPOINT_DATA
+                + COMMA + TABLE_ENDPOINT_INSTANCE + COMMA + TABLE_TYPED_DATUM
+                + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                + COMPONENT_INSTANCE_ID
+                + AND + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID
+                + AND + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + ENDPOINT_INSTANCE_ID
+                + AND + TABLE_TYPED_DATUM + DOT + TYPED_DATUM_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + TYPED_DATUM_ID
+                + AND + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
+        String sqlComponentRunId = SELECT + COMPONENT_RUN_ID + FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE
+            + COMPONENT_INSTANCE_ID + EQUAL + QMARK;
+        try (PreparedStatement stmtEndpointData =
+            connection.prepareStatement(StringUtils.format(sqlEndpointData, sqlComponentRunId), ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY)) {
+            stmtEndpointData.setLong(1, componentInstanceId);
+            ResultSet rsEndpointData = stmtEndpointData.executeQuery();
+            if (rsEndpointData != null) {
+                while (rsEndpointData.next()) {
+                    String value = rsEndpointData.getString(VALUE);
+                    if (value == null) {
+                        value = rsEndpointData.getString(BIG_VALUE);
+                    }
+                    Long id = rsEndpointData.getLong(COMPONENT_RUN_ID);
+                    if (endpointData.get(id) == null) {
+                        endpointData.put(id, new HashSet<EndpointData>());
+                    }
+                    Long endpointInstanceId = rsEndpointData.getLong(ENDPOINT_INSTANCE_ID);
+                    endpointData.get(id).add(
+                        new EndpointData(new EndpointInstance(rsEndpointData.getString(NAME), EndpointType
+                            .valueOf(rsEndpointData
+                                .getString("ENDPOINT_TYPE")),
+                            endpointProperties.get(endpointInstanceId)),
+                            rsEndpointData.getInt(COUNTER), value));
+                }
+                rsEndpointData.close();
+            }
+        }
+
+        String sql = SELECT + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + COMMA + TABLE_COMPONENT_RUN + DOT
+            + COMPONENT_INSTANCE_ID + COMMA + TABLE_COMPONENT_RUN + DOT + NODE_ID + COMMA + TABLE_COMPONENT_RUN
+            + DOT + COUNTER + COMMA + TABLE_TIMELINE_INTERVAL + DOT + STARTTIME + COMMA + TABLE_TIMELINE_INTERVAL
+            + DOT + ENDTIME + COMMA + TABLE_COMPONENT_RUN + DOT + HISTORY_DATA_ITEM + COMMA
+            + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_FINAL_STATE + COMMA
+            + TABLE_COMPONENT_RUN + DOT + REFERENCES_DELETED
+            + FROM + DB_PREFIX + TABLE_COMPONENT_RUN + COMMA + DB_PREFIX + TABLE_TIMELINE_INTERVAL
+            + WHERE + TABLE_TIMELINE_INTERVAL + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+            + COMPONENT_RUN_ID + AND + TABLE_TIMELINE_INTERVAL + DOT + TYPE + EQUAL + QMARK + AND
+            + TABLE_COMPONENT_RUN + DOT
+            + COMPONENT_INSTANCE_ID + EQUAL + QMARK + ORDER_BY
+            + TABLE_TIMELINE_INTERVAL + DOT + STARTTIME + DESCENDING;
+        Collection<ComponentRun> results = new TreeSet<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setString(1, TimelineIntervalType.COMPONENT_RUN.toString());
+            stmt.setLong(2, componentInstanceId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    // end time might be NULL, avoid NPE
+                    Long endtime = null;
+                    if (rs.getTimestamp(ENDTIME) != null) {
+                        endtime = rs.getTimestamp(ENDTIME).getTime();
+                    }
+                    FinalComponentRunState finalState = null;
+                    if (rs.getString(COMPONENT_RUN_FINAL_STATE) != null) {
+                        finalState = FinalComponentRunState.valueOf(rs.getString(COMPONENT_RUN_FINAL_STATE));
+                    }
+                    Long componentRunId = rs.getLong(COMPONENT_RUN_ID);
+                    ComponentRun cr = new ComponentRun(componentRunId, rs.getLong(COMPONENT_INSTANCE_ID), rs.getString(NODE_ID).trim(),
+                        rs.getInt(COUNTER), rs.getTimestamp(STARTTIME).getTime(), endtime, rs.getString(HISTORY_DATA_ITEM),
+                        rs.getBoolean(REFERENCES_DELETED), getProperties(TABLE_COMPONENT_RUN_PROPERTIES, rs.getLong(COMPONENT_RUN_ID),
+                            connection, isRetry),
+                        finalState);
+                    cr.setEndpointData(endpointData.get(componentRunId));
+                    results.add(cr);
+                }
+                rs.close();
+            }
+        }
         return results;
     }
 
@@ -1265,118 +1362,139 @@ public class DerbyMetaDataBackendOperationsImpl {
                 + TABLE_TIMELINE_INTERVAL + DOT + WORKFLOW_RUN_ID + EQUAL + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID
                 + WHERE + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID + EQUAL + QMARK + AND + TABLE_TIMELINE_INTERVAL + DOT + TYPE + EQUAL
                 + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, workflowRunId);
-        stmt.setString(2, TimelineIntervalType.WORKFLOW_RUN.toString());
+
         WorkflowRun workflowRun = null;
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null && rs.next()) {
-            // end time might be NULL, avoid NPE
-            Long endtime = null;
-            if (rs.getTimestamp(ENDTIME) != null) {
-                endtime = rs.getTimestamp(ENDTIME).getTime();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, workflowRunId);
+            stmt.setString(2, TimelineIntervalType.WORKFLOW_RUN.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                // end time might be NULL, avoid NPE
+                Long endtime = null;
+                if (rs.getTimestamp(ENDTIME) != null) {
+                    endtime = rs.getTimestamp(ENDTIME).getTime();
+                }
+                // final state might be NULL, avoid NPE
+                FinalWorkflowState finalState = null;
+                if (rs.getString(FINAL_STATE) != null) {
+                    finalState = FinalWorkflowState.valueOf(rs.getString(FINAL_STATE));
+                }
+                Long wfRunId = rs.getLong(WORKFLOW_RUN_ID);
+                String wfFileReference = rs.getString(WORKFLOW_FILE_REFERENCE);
+                workflowRun =
+                    new WorkflowRun(wfRunId, rs.getString(NAME), rs.getString(CONTROLLER_NODE_ID).trim(),
+                        rs.getString(DATAMANAGEMENT_NODE_ID).trim(), rs.getTimestamp(STARTTIME).getTime(),
+                        endtime, finalState, null, null, getProperties(TABLE_WORKFLOW_RUN_PROPERTIES, workflowRunId, connection, isRetry),
+                        wfFileReference);
+                rs.close();
             }
-            // final state might be NULL, avoid NPE
-            FinalWorkflowState finalState = null;
-            if (rs.getString(FINAL_STATE) != null) {
-                finalState = FinalWorkflowState.valueOf(rs.getString(FINAL_STATE));
-            }
-            Long wfRunId = rs.getLong(WORKFLOW_RUN_ID);
-            String wfFileReference = rs.getString(WORKFLOW_FILE_REFERENCE);
-            workflowRun =
-                new WorkflowRun(wfRunId, rs.getString(NAME), rs.getString(CONTROLLER_NODE_ID).trim(),
-                    rs.getString(DATAMANAGEMENT_NODE_ID).trim(), rs.getTimestamp(STARTTIME).getTime(),
-                    endtime, finalState, null, null, getProperties(TABLE_WORKFLOW_RUN_PROPERTIES, workflowRunId, connection, isRetry),
-                    wfFileReference);
-            rs.close();
         }
-        stmt.close();
         if (workflowRun == null) {
             return null;
         }
-        Map<Long, Map<String, String>> endpointProperties = new HashMap<Long, Map<String, String>>();
+        Map<Long, Map<String, String>> endpointProperties = new HashMap<>();
         String sqlEndpointProperties =
             SELECT_ALL + FROM + DB_PREFIX + VIEW_ENDPOINT_INSTANCE_PROPERTIES + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtEndpointProperties =
-            connection.prepareStatement(sqlEndpointProperties, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtEndpointProperties.setLong(1, workflowRunId);
-        ResultSet rsEndpointProperties = stmtEndpointProperties.executeQuery();
-        if (rsEndpointProperties != null) {
-            while (rsEndpointProperties.next()) {
-                Long endpointInstanceId = rsEndpointProperties.getLong(ENDPOINT_INSTANCE_ID);
-                String key = rsEndpointProperties.getString(KEY);
-                String value = rsEndpointProperties.getString(VALUE);
-                if (endpointProperties.get(endpointInstanceId) != null) {
-                    endpointProperties.get(endpointInstanceId).put(key, value);
-                } else {
-                    Map<String, String> map = new HashMap<String, String>();
-                    map.put(key, value);
-                    endpointProperties.put(endpointInstanceId, map);
+        try (PreparedStatement stmtEndpointProperties =
+            connection.prepareStatement(sqlEndpointProperties, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmtEndpointProperties.setLong(1, workflowRunId);
+            ResultSet rsEndpointProperties = stmtEndpointProperties.executeQuery();
+            if (rsEndpointProperties != null) {
+                while (rsEndpointProperties.next()) {
+                    Long endpointInstanceId = rsEndpointProperties.getLong(ENDPOINT_INSTANCE_ID);
+                    String key = rsEndpointProperties.getString(KEY);
+                    String value = rsEndpointProperties.getString(VALUE);
+                    if (endpointProperties.get(endpointInstanceId) != null) {
+                        endpointProperties.get(endpointInstanceId).put(key, value);
+                    } else {
+                        Map<String, String> map = new HashMap<>();
+                        map.put(key, value);
+                        endpointProperties.put(endpointInstanceId, map);
+                    }
                 }
             }
+            rsEndpointProperties.close();
         }
 
-        Map<Long, Set<EndpointData>> endpointData = new HashMap<Long, Set<EndpointData>>();
+        Map<Long, Set<EndpointData>> endpointData = new HashMap<>();
         String sqlEndpointData =
-            SELECT_ALL + FROM + DB_PREFIX + VIEW_ENDPOINT_DATA
-                + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtEndpointData =
-            connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmtEndpointData.setLong(1, workflowRunId);
-        ResultSet rsEndpointData = stmtEndpointData.executeQuery();
-        if (rsEndpointData != null) {
-            while (rsEndpointData.next()) {
-                String value = rsEndpointData.getString(VALUE);
-                if (value == null) {
-                    value = rsEndpointData.getString(BIG_VALUE);
+            SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA
+                + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID + COMMA
+                + TABLE_ENDPOINT_DATA + DOT + COUNTER + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + NAME + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + TYPE + " AS ENDPOINT_TYPE" + COMMA
+                + TABLE_TYPED_DATUM + DOT + TYPE + " AS DATUM_TYPE" + COMMA
+                + TABLE_TYPED_DATUM + DOT + VALUE + COMMA
+                + TABLE_TYPED_DATUM + DOT + BIG_VALUE
+                + FROM + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN + COMMA + TABLE_ENDPOINT_DATA
+                + COMMA + TABLE_ENDPOINT_INSTANCE + COMMA + TABLE_TYPED_DATUM
+                + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                + COMPONENT_INSTANCE_ID
+                + AND + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID
+                + AND + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + ENDPOINT_INSTANCE_ID
+                + AND + TABLE_TYPED_DATUM + DOT + TYPED_DATUM_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + TYPED_DATUM_ID
+                + AND + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + EQUAL + QMARK;
+        try (PreparedStatement stmtEndpointData =
+            connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmtEndpointData.setLong(1, workflowRunId);
+            ResultSet rsEndpointData = stmtEndpointData.executeQuery();
+            if (rsEndpointData != null) {
+                while (rsEndpointData.next()) {
+                    String value = rsEndpointData.getString(VALUE);
+                    if (value == null) {
+                        value = rsEndpointData.getString(BIG_VALUE);
+                    }
+                    Long id = rsEndpointData.getLong(COMPONENT_RUN_ID);
+                    if (endpointData.get(id) == null) {
+                        endpointData.put(id, new HashSet<EndpointData>());
+                    }
+                    Long endpointInstanceId = rsEndpointData.getLong(ENDPOINT_INSTANCE_ID);
+                    endpointData.get(id).add(
+                        new EndpointData(new EndpointInstance(rsEndpointData.getString(NAME), EndpointType
+                            .valueOf(rsEndpointData
+                                .getString("ENDPOINT_TYPE")),
+                            endpointProperties.get(endpointInstanceId)),
+                            rsEndpointData.getInt(COUNTER), value));
                 }
-                Long id = rsEndpointData.getLong(COMPONENT_RUN_ID);
-                if (endpointData.get(id) == null) {
-                    endpointData.put(id, new HashSet<EndpointData>());
-                }
-                Long endpointInstanceId = rsEndpointData.getLong(ENDPOINT_INSTANCE_ID);
-                endpointData.get(id).add(
-                    new EndpointData(new EndpointInstance(rsEndpointData.getString(NAME), EndpointType
-                        .valueOf(rsEndpointData
-                            .getString("ENDPOINT_TYPE")), endpointProperties.get(endpointInstanceId)),
-                        rsEndpointData.getInt(COUNTER), value));
+                rsEndpointData.close();
             }
-            rsEndpointData.close();
         }
-        stmtEndpointData.close();
-        String sqlComponentRuns = SELECT_ALL + FROM + DB_PREFIX + VIEW_COMPONENT_RUNS + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtComponentRuns =
-            connection.prepareStatement(sqlComponentRuns, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        stmtComponentRuns.setLong(1, workflowRunId);
-        ResultSet rsComponentRuns = stmtComponentRuns.executeQuery();
-        if (rsComponentRuns != null) {
-            while (rsComponentRuns.next()) {
-                // end time might be NULL, avoid NPE
-                Long endtime = null;
-                if (rsComponentRuns.getTimestamp(ENDTIME) != null) {
-                    endtime = rsComponentRuns.getTimestamp(ENDTIME).getTime();
-                }
-                ComponentInstance ci =
-                    new ComponentInstance(rsComponentRuns.getString(COMPONENT_ID), rsComponentRuns.getString(COMPONENT_INSTANCE_NAME),
-                        rsComponentRuns.getString(FINAL_STATE));
-                Long crId = rsComponentRuns.getLong(COMPONENT_RUN_ID);
-                FinalComponentRunState finalState = null;
-                if (rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE) != null) {
-                    finalState = FinalComponentRunState.valueOf(rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE));
-                }
-                ComponentRun cr =
-                    new ComponentRun(rsComponentRuns.getLong(COMPONENT_RUN_ID), rsComponentRuns.getString(NODE_ID).trim(),
-                        rsComponentRuns.getInt(COUNTER), rsComponentRuns.getTimestamp(
-                            STARTTIME).getTime(), endtime,
-                        rsComponentRuns.getString(HISTORY_DATA_ITEM), rsComponentRuns.getBoolean(REFERENCES_DELETED),
-                        getProperties(TABLE_COMPONENT_RUN_PROPERTIES, crId, connection, isRetry), finalState);
 
-                cr.setEndpointData(endpointData.get(crId));
-                workflowRun.addComponentRun(ci, cr);
+        String sqlComponentRuns = SELECT_ALL + FROM + DB_PREFIX + VIEW_COMPONENT_RUNS + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
+        try (PreparedStatement stmtComponentRuns =
+            connection.prepareStatement(sqlComponentRuns, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            stmtComponentRuns.setLong(1, workflowRunId);
+            ResultSet rsComponentRuns = stmtComponentRuns.executeQuery();
+            if (rsComponentRuns != null) {
+                while (rsComponentRuns.next()) {
+                    // end time might be NULL, avoid NPE
+                    Long endtime = null;
+                    if (rsComponentRuns.getTimestamp(ENDTIME) != null) {
+                        endtime = rsComponentRuns.getTimestamp(ENDTIME).getTime();
+                    }
+                    ComponentInstance ci =
+                        new ComponentInstance(rsComponentRuns.getString(COMPONENT_ID), rsComponentRuns.getString(COMPONENT_INSTANCE_NAME),
+                            rsComponentRuns.getString(FINAL_STATE));
+                    Long crId = rsComponentRuns.getLong(COMPONENT_RUN_ID);
+                    FinalComponentRunState finalState = null;
+                    if (rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE) != null) {
+                        finalState = FinalComponentRunState.valueOf(rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE));
+                    }
+                    ComponentRun cr =
+                        new ComponentRun(rsComponentRuns.getLong(COMPONENT_RUN_ID), rsComponentRuns.getString(NODE_ID).trim(),
+                            rsComponentRuns.getInt(COUNTER), rsComponentRuns.getTimestamp(
+                                STARTTIME).getTime(),
+                            endtime,
+                            rsComponentRuns.getString(HISTORY_DATA_ITEM), rsComponentRuns.getBoolean(REFERENCES_DELETED),
+                            getProperties(TABLE_COMPONENT_RUN_PROPERTIES, crId, connection, isRetry), finalState);
+
+                    cr.setEndpointData(endpointData.get(crId));
+                    workflowRun.addComponentRun(ci, cr);
+                }
+                rsComponentRuns.close();
             }
-            rsComponentRuns.close();
         }
-        stmtComponentRuns.close();
         return workflowRun;
     }
 
@@ -1399,33 +1517,33 @@ public class DerbyMetaDataBackendOperationsImpl {
                 + TABLE_TIMELINE_INTERVAL + DOT + WORKFLOW_RUN_ID + EQUAL + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID
                 + WHERE + TABLE_TIMELINE_INTERVAL + DOT + TYPE + EQUAL + QMARK + AND + TO_BE_DELETED + NOT_EQUAL + QMARK
                 + ORDER_BY + STARTTIME + DESCENDING;
-        Set<WorkflowRunDescription> results = new HashSet<WorkflowRunDescription>();
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setString(1, TimelineIntervalType.WORKFLOW_RUN.toString());
-        stmt.setInt(2, WORKFLOW_RUN_TO_BE_DELETED);
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null) {
-            while (rs.next()) {
-                // end time might be NULL, avoid NPE
-                Long endtime = null;
-                if (rs.getTimestamp(ENDTIME) != null) {
-                    endtime = rs.getTimestamp(ENDTIME).getTime();
+        Set<WorkflowRunDescription> results = new HashSet<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setString(1, TimelineIntervalType.WORKFLOW_RUN.toString());
+            stmt.setInt(2, WORKFLOW_RUN_TO_BE_DELETED);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    // end time might be NULL, avoid NPE
+                    Long endtime = null;
+                    if (rs.getTimestamp(ENDTIME) != null) {
+                        endtime = rs.getTimestamp(ENDTIME).getTime();
+                    }
+                    FinalWorkflowState finalState = null;
+                    if (rs.getString(FINAL_STATE) != null) {
+                        finalState = FinalWorkflowState.valueOf(rs.getString(FINAL_STATE));
+                    }
+                    Long wfRunId = rs.getLong(WORKFLOW_RUN_ID);
+                    boolean markedForDeletion = rs.getInt(TO_BE_DELETED) != NOT_MARKED_TO_BE_DELETED;
+                    Boolean areFilesDeleted =
+                        deletionStates.get(wfRunId) != null && deletionStates.get(wfRunId).equals(VALUE_FILES_DELETED_MANUALLY);
+                    results.add(new WorkflowRunDescription(wfRunId, rs.getString(NAME), rs.getString(CONTROLLER_NODE_ID)
+                        .trim(), rs.getString(DATAMANAGEMENT_NODE_ID).trim(), rs.getTimestamp(STARTTIME).getTime(), endtime, finalState,
+                        areFilesDeleted, markedForDeletion, getProperties(TABLE_WORKFLOW_RUN_PROPERTIES, wfRunId, connection, isRetry)));
                 }
-                FinalWorkflowState finalState = null;
-                if (rs.getString(FINAL_STATE) != null) {
-                    finalState = FinalWorkflowState.valueOf(rs.getString(FINAL_STATE));
-                }
-                Long wfRunId = rs.getLong(WORKFLOW_RUN_ID);
-                boolean markedForDeletion = rs.getInt(TO_BE_DELETED) != NOT_MARKED_TO_BE_DELETED;
-                Boolean areFilesDeleted =
-                    deletionStates.get(wfRunId) != null && deletionStates.get(wfRunId).equals(VALUE_FILES_DELETED_MANUALLY);
-                results.add(new WorkflowRunDescription(wfRunId, rs.getString(NAME), rs.getString(CONTROLLER_NODE_ID)
-                    .trim(), rs.getString(DATAMANAGEMENT_NODE_ID).trim(), rs.getTimestamp(STARTTIME).getTime(), endtime, finalState,
-                    areFilesDeleted, markedForDeletion, getProperties(TABLE_WORKFLOW_RUN_PROPERTIES, wfRunId, connection, isRetry)));
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
         return results;
     }
 
@@ -1433,17 +1551,17 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql =
             SELECT + WORKFLOW_RUN_ID + COMMA + VALUE + FROM + TABLE_WORKFLOW_RUN_PROPERTIES
                 + WHERE + KEY + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, KEY_FILES_DELETED);
-        ResultSet rs = stmt.executeQuery();
-        Map<Long, String> counts = new HashMap<Long, String>();
-        if (rs != null) {
-            while (rs.next()) {
-                counts.put(rs.getLong(WORKFLOW_RUN_ID), rs.getString(VALUE));
+        Map<Long, String> counts = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, KEY_FILES_DELETED);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    counts.put(rs.getLong(WORKFLOW_RUN_ID), rs.getString(VALUE));
+                }
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
         return counts;
     }
 
@@ -1460,11 +1578,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         boolean isRetry) throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_COMPONENT_INSTANCE + SET + FINAL_STATE + EQUAL + QMARK
             + WHERE + COMPONENT_INSTANCE_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, finalState.toString());
-        stmt.setLong(2, componentInstanceId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, finalState.toString());
+            stmt.setLong(2, componentInstanceId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1483,20 +1601,18 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_TIMELINE_INTERVAL + SET + ENDTIME + EQUAL + QMARK
             + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK + AND + TYPE + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setTimestamp(1, new Timestamp(endtime));
-        stmt.setLong(2, componentRunId);
-        stmt.setString(3, TimelineIntervalType.COMPONENT_RUN.toString());
-        stmt.executeUpdate();
-        stmt.close();
-
         String sql2 = UPDATE + DB_PREFIX + TABLE_COMPONENT_RUN + SET + COMPONENT_RUN_FINAL_STATE + EQUAL + QMARK
             + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt2 = connection.prepareStatement(sql2);
-        stmt2.setString(1, finalState.toString());
-        stmt2.setLong(2, componentRunId);
-        stmt2.executeUpdate();
-        stmt2.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql); PreparedStatement stmt2 = connection.prepareStatement(sql2);) {
+            stmt.setTimestamp(1, new Timestamp(endtime));
+            stmt.setLong(2, componentRunId);
+            stmt.setString(3, TimelineIntervalType.COMPONENT_RUN.toString());
+            stmt.executeUpdate();
+
+            stmt2.setString(1, finalState.toString());
+            stmt2.setLong(2, componentRunId);
+            stmt2.executeUpdate();
+        }
     }
 
     /**
@@ -1512,12 +1628,12 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_TIMELINE_INTERVAL + SET + ENDTIME + EQUAL + QMARK
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK + AND + TYPE + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setTimestamp(1, new Timestamp(endtime));
-        stmt.setLong(2, workflowRunId);
-        stmt.setString(3, TimelineIntervalType.WORKFLOW_RUN.toString());
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setTimestamp(1, new Timestamp(endtime));
+            stmt.setLong(2, workflowRunId);
+            stmt.setString(3, TimelineIntervalType.WORKFLOW_RUN.toString());
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1534,11 +1650,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_WORKFLOW_RUN + SET + FINAL_STATE + EQUAL + QMARK
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, finalState.toString());
-        stmt.setLong(2, workflowRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, finalState.toString());
+            stmt.setLong(2, workflowRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1554,11 +1670,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_WORKFLOW_RUN + SET + TIMELINE_DATA_ITEM + EQUAL + QMARK
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, timelineDataItem);
-        stmt.setLong(2, workflowRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, timelineDataItem);
+            stmt.setLong(2, workflowRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1577,15 +1693,15 @@ public class DerbyMetaDataBackendOperationsImpl {
                 + FROM + DB_PREFIX + TABLE_WORKFLOW_RUN + INNER_JOIN + TABLE_COMPONENT_INSTANCE + ON + TABLE_COMPONENT_INSTANCE + DOT
                 + WORKFLOW_RUN_ID + EQUAL + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID
                 + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setLong(1, componentInstanceId);
-        ResultSet rs = stmt.executeQuery();
         Long id = null;
-        if (rs != null && rs.next()) {
-            id = rs.getLong(WORKFLOW_RUN_ID);
-            rs.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setLong(1, componentInstanceId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null && rs.next()) {
+                id = rs.getLong(WORKFLOW_RUN_ID);
+                rs.close();
+            }
         }
-        stmt.close();
         return id;
     }
 
@@ -1602,11 +1718,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_COMPONENT_RUN + SET + HISTORY_DATA_ITEM + EQUAL + QMARK
             + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmt = connection.prepareStatement(sql);
-        stmt.setString(1, historyDataItem);
-        stmt.setLong(2, componentRunId);
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, historyDataItem);
+            stmt.setLong(2, componentRunId);
+            stmt.executeUpdate();
+        }
     }
 
     /**
@@ -1621,9 +1737,10 @@ public class DerbyMetaDataBackendOperationsImpl {
     public Integer cleanUpWorkflowRunFinalStates(Connection connection, boolean isRetry) throws SQLException {
         String sql = UPDATE + TABLE_WORKFLOW_RUN + SET + FINAL_STATE + EQUAL + SINGE_QOUTE + STRING_PLACEHOLDER + SINGE_QOUTE
             + WHERE + FINAL_STATE + IS_NULL;
-        Statement stmt = connection.createStatement();
-        int affectedLines = stmt.executeUpdate(StringUtils.format(sql, FinalWorkflowState.CORRUPTED));
-        stmt.close();
+        int affectedLines;
+        try (Statement stmt = connection.createStatement()) {
+            affectedLines = stmt.executeUpdate(StringUtils.format(sql, FinalWorkflowState.CORRUPTED));
+        }
         return affectedLines;
     }
 
@@ -1638,17 +1755,17 @@ public class DerbyMetaDataBackendOperationsImpl {
     public Map<Long, Integer> getWorkflowRunsToBeDeleted(Connection connection, boolean isRetry) throws SQLException {
         String sql = SELECT + WORKFLOW_RUN_ID + COMMA + TO_BE_DELETED + FROM + TABLE_WORKFLOW_RUN
             + WHERE + TO_BE_DELETED + NOT_EQUAL + QMARK;
-        Map<Long, Integer> wfsToBeDeleted = new HashMap<Long, Integer>();
-        PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setInt(1, NOT_MARKED_TO_BE_DELETED);
-        ResultSet rs = stmt.executeQuery();
-        if (rs != null) {
-            while (rs.next()) {
-                wfsToBeDeleted.put(rs.getLong(WORKFLOW_RUN_ID), rs.getInt(TO_BE_DELETED));
+        Map<Long, Integer> wfsToBeDeleted = new HashMap<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+            stmt.setInt(1, NOT_MARKED_TO_BE_DELETED);
+            ResultSet rs = stmt.executeQuery();
+            if (rs != null) {
+                while (rs.next()) {
+                    wfsToBeDeleted.put(rs.getLong(WORKFLOW_RUN_ID), rs.getInt(TO_BE_DELETED));
+                }
+                rs.close();
             }
-            rs.close();
         }
-        stmt.close();
         return wfsToBeDeleted;
     }
 

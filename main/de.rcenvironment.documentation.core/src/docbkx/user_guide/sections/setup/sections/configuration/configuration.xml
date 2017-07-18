@@ -446,6 +446,14 @@
 						<entry>-</entry>
 					</row>
 					<row>
+						<entry>idleTimeoutSeconds</entry>
+						<entry>The time to keep an idle SSH connection alive, in seconds. For
+							typical SSH usage, the default value is usually sufficient. Higher
+							values are, for example, needed when invoking long-running tools using
+							the SSH Remote Access feature.</entry>
+						<entry>10</entry>
+					</row>
+					<row>
 						<entry>accounts</entry>
 						<entry>A map of accounts. For each account a unique identifier (account
 							name) must be given.</entry>
@@ -683,7 +691,7 @@
 				</imageobject>
 			</mediaobject>
 		</figure>
-		
+
 		<sect3>
 			<title>Remote Access: SSH account configuration</title>		
 		
@@ -703,15 +711,17 @@
 			<title>Mail: SMTP server configuration</title>		
 			
 			<para>
-				If you want to send e-mails from a RCE instance, you need to configure a SMTP server. RCE 
-				does not send e-mails directly to the recipient, but instead sends the e-mails to a SMTP
+				If you want to send e-mails from a RCE instance, you need to configure an SMTP server. RCE 
+				does not send e-mails directly to the recipient, but instead sends the e-mails to an SMTP
 				server, which delivers them to the recipient. You need to use the Configuration UI to configure
-				such a SMTP server, since the password used for authentication needs to be obfuscated before it 
+				such an SMTP server, since the password used for authentication needs to be obfuscated before it 
 				is stored in the configuration file. The SMTP server parameters that need to be configured are
 				described in more detail in <xref linkend="smtpServerParameterTable"/>
 			</para>
 			<note>
-				<para>Due to a known bug on Windows system with a German keyboard layout, the Configuration UI inserts the characers "q@" into a text field if you want to insert the @ sign. You can manually remove the additional character "q". </para>
+				<para>Due to a known bug on Windows system with a German keyboard layout, the Configuration UI
+					inserts the characters "q@" into a text field if you want to insert the @ sign.
+					You can manually remove the additional character "q". </para>
 			</note>
 		</sect3>
 

@@ -75,6 +75,16 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Heinrich Wendel
  * @author Robert Mischke
  * @author Sascha Zur
+ * 
+ * Note: The concept of component registration should be replaced with one that doesn't require a temporary OSGi service
+ * registration. It is just not needed anymore (components are no OSGi services anymore) and on the other side, it is kind of
+ * complicated to temporary register an OSGi service just to fetch its properties. The properties instead should not be stored as
+ * OSGi service properties anymore but e.g. next to the configuration.json, inputs.json, etc. The main advantage of the current
+ * approach: Components just get injected to this class here with the help of OSGi DS and certain bind method. I could imagine to
+ * keep this benefit by just registering an OSGi service per component that provides all of the information belonging to a component
+ * and keeps registered until the component's bundle got removed.
+ * There is also a specific issue regarding the registration: https://mantis.sc.dlr.de/view.php?id=12916
+ * --seid_do
  */
 public class ComponentRegistryImpl implements ComponentRegistry {
 
@@ -112,13 +122,9 @@ public class ComponentRegistryImpl implements ComponentRegistry {
 
     private final Object installationLock = new Object();
 
-    // FIXME Currently, tokens, which were not used, are not removed over time->
-    // memory leak, but
-    // only minor because of small amount of
-    // unused tokens and because of small size of each token. But anyways: token
-    // garbage collection
-    // must be added -- seid_do, Nov 2013
-    // (see: https://www.sistec.dlr.de/mantis/view.php?id=9539)
+    // FIXME Currently, tokens, which were not used, are not removed over time-> memory leak, but only minor because of small amount of
+    // unused tokens and because of small size of each token. But anyways: token garbage collection must be added -- seid_do, Nov 2013 (see:
+    // https://www.sistec.dlr.de/mantis/view.php?id=9539)
     private final Set<String> instantiationAuthTokens = Collections.synchronizedSet(new HashSet<String>());
 
     protected synchronized void activate(org.osgi.service.component.ComponentContext newContext) {

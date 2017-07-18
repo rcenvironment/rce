@@ -61,7 +61,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class EndpointEditDialog extends Dialog {
 
     protected static final String COLON = ":";
-    
+
     protected static final String MINUS = "-";
 
     private static final int GROUPS_MIN_WIDTH = 235;
@@ -69,7 +69,7 @@ public class EndpointEditDialog extends Dialog {
     private static final int MINIMUM_HEIGHT = 125;
 
     private static final int MINIMUM_WIDTH = 250;
-    
+
     protected final ComponentInstanceProperties configuration;
 
     protected final EndpointType type;
@@ -116,6 +116,8 @@ public class EndpointEditDialog extends Dialog {
 
     private Map<String, InputExecutionContraint> guiNameToInputExecutionConstraint;
 
+    private int readOnlyType;
+
     /**
      * Dialog for creating or editing an endpoint.
      * 
@@ -124,8 +126,14 @@ public class EndpointEditDialog extends Dialog {
      * @param configuration the containing endpoint manager
      */
     public EndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
+        EndpointType direction, String id, boolean isStatic, EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
+        this(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues,
+            getReadOnlyValue(isStatic));
+    }
+
+    public EndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic,
-        EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
+        EndpointMetaDataDefinition metaData, Map<String, String> metadataValues, int readOnlyType) {
         super(parentShell);
         setShellStyle(SWT.CLOSE | SWT.TITLE | SWT.BORDER | SWT.RESIZE | SWT.APPLICATION_MODAL);
         this.configuration = configuration;
@@ -141,12 +149,19 @@ public class EndpointEditDialog extends Dialog {
         this.title = StringUtils.format(Messages.title, actionType, direction);
         this.metaData = metaData;
         this.metadataValues = metadataValues;
-
+        this.readOnlyType = readOnlyType;
         if (!isStatic) { // if static initializeValues is called with the actual name
             setDataType();
             setInputHandling();
             setInputExecutionConstraint();
         }
+    }
+
+    private static int getReadOnlyValue(boolean isStatic) {
+        if (isStatic) {
+            return EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY;
+        }
+        return EndpointSelectionPane.NOTHING_READ_ONLY;
     }
 
     private void setDataType() {
@@ -211,20 +226,20 @@ public class EndpointEditDialog extends Dialog {
     }
 
     protected Control createConfigurationArea(Composite parent) {
-        widgetToKeyMap = new HashMap<Widget, String>();
+        widgetToKeyMap = new HashMap<>();
         if (!metaData.getMetaDataKeys().isEmpty()) {
             Composite settingsComposite = (Composite) super.createDialogArea(parent);
             GridData g = new GridData(GridData.FILL, GridData.FILL, true, true);
             settingsComposite.setLayoutData(g);
             if (metaData != null) {
-                Map<String, Map<Integer, String>> groups = new TreeMap<String, Map<Integer, String>>();
+                Map<String, Map<Integer, String>> groups = new TreeMap<>();
                 for (String key : metaData.getMetaDataKeys()) {
                     String group = metaData.getGuiGroup(key);
                     Map<Integer, String> groupTree;
                     if (groups.containsKey(group)) {
                         groupTree = groups.get(group);
                     } else {
-                        groupTree = new TreeMap<Integer, String>();
+                        groupTree = new TreeMap<>();
                     }
                     int position = metaData.getGuiPosition(key);
                     if (position < 0) {
@@ -387,7 +402,8 @@ public class EndpointEditDialog extends Dialog {
 
         textfieldName = new Text(container, SWT.SINGLE | SWT.BORDER);
         textfieldName.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        textfieldName.setEditable((!isStatic && !epManager.getDynamicEndpointDefinition(id).isNameReadOnly()));
+        textfieldName.setEditable((!isStatic && !epManager.getDynamicEndpointDefinition(id).isNameReadOnly())
+            && readOnlyType != EndpointSelectionPane.ALL_READ_ONLY && readOnlyType != EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY);
         textfieldName.addListener(SWT.Verify, new AlphanumericalTextContraintListener(true, true));
 
         // store initial name to skip validation if unchanged
@@ -428,11 +444,11 @@ public class EndpointEditDialog extends Dialog {
             if (epManager.getDynamicEndpointDefinition(id) != null) {
                 possibleDataTypes = epManager.getDynamicEndpointDefinition(id).getPossibleDataTypes();
             } else {
-                possibleDataTypes = new LinkedList<DataType>();
+                possibleDataTypes = new LinkedList<>();
             }
         }
-        guiNameToDataType = new HashMap<String, DataType>();
-        List<String> dataTypesGuiNames = new LinkedList<String>();
+        guiNameToDataType = new HashMap<>();
+        List<String> dataTypesGuiNames = new LinkedList<>();
         for (DataType t : possibleDataTypes) {
             dataTypesGuiNames.add(t.getDisplayName());
             guiNameToDataType.put(t.getDisplayName(), t);
@@ -447,7 +463,8 @@ public class EndpointEditDialog extends Dialog {
                 .getDisplayName()));
         }
 
-        comboDataType.setEnabled(possibleDataTypes.size() > 1);
+        comboDataType.setEnabled(possibleDataTypes.size() > 1 && readOnlyType != EndpointSelectionPane.ALL_READ_ONLY
+            && readOnlyType != EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY);
     }
 
     private void createInputHandlingComboBox(Composite container) {
@@ -461,11 +478,11 @@ public class EndpointEditDialog extends Dialog {
             if (epManager.getDynamicEndpointDefinition(id) != null) {
                 possibleInputinputHandlingOptions = epManager.getDynamicEndpointDefinition(id).getInputDatumOptions();
             } else {
-                possibleInputinputHandlingOptions = new LinkedList<EndpointDefinition.InputDatumHandling>();
+                possibleInputinputHandlingOptions = new LinkedList<>();
             }
         }
-        guiNameToInputDatumHandling = new HashMap<String, EndpointDefinition.InputDatumHandling>();
-        List<String> inputHandlingGuiNames = new LinkedList<String>();
+        guiNameToInputDatumHandling = new HashMap<>();
+        List<String> inputHandlingGuiNames = new LinkedList<>();
         for (EndpointDefinition.InputDatumHandling t : possibleInputinputHandlingOptions) {
             inputHandlingGuiNames.add(t.getDisplayName());
             guiNameToInputDatumHandling.put(t.getDisplayName(), t);
@@ -495,11 +512,11 @@ public class EndpointEditDialog extends Dialog {
             if (epManager.getDynamicEndpointDefinition(id) != null) {
                 possibleInputHandlingOptions = epManager.getDynamicEndpointDefinition(id).getInputExecutionConstraintOptions();
             } else {
-                possibleInputHandlingOptions = new LinkedList<EndpointDefinition.InputExecutionContraint>();
+                possibleInputHandlingOptions = new LinkedList<>();
             }
         }
-        guiNameToInputExecutionConstraint = new HashMap<String, EndpointDefinition.InputExecutionContraint>();
-        List<String> executionConstraintsGuiNames = new LinkedList<String>();
+        guiNameToInputExecutionConstraint = new HashMap<>();
+        List<String> executionConstraintsGuiNames = new LinkedList<>();
         for (EndpointDefinition.InputExecutionContraint t : possibleInputHandlingOptions) {
             executionConstraintsGuiNames.add(t.getDisplayName());
             guiNameToInputExecutionConstraint.put(t.getDisplayName(), t);
@@ -793,5 +810,9 @@ public class EndpointEditDialog extends Dialog {
     @Override
     public void setBlockOnOpen(boolean shouldBlock) {
         super.setBlockOnOpen(true);
+    }
+
+    public void setReadOnlyType(int readOnlyType) {
+        this.readOnlyType = readOnlyType;
     }
 }

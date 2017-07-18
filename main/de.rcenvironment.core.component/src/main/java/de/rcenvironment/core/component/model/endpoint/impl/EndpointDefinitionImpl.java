@@ -43,20 +43,6 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
 
     private static final String KEY_READ_ONLY = "readOnly";
 
-    private static final String KEY_DATATYPES = "dataTypes";
-
-    private static final String KEY_DEFAULT_DATATYPE = "defaultDataType";
-
-    private static final String KEY_INPUT_HANDLING_OPTIONS = "inputHandlingOptions";
-
-    private static final String KEY_DEFAULT_INPUT_HANDLING = "defaultInputHandling";
-
-    private static final String KEY_EXECUTION_CONSTRAINT_OPTIONS = "inputExecutionConstraintOptions";
-
-    private static final String KEY_DEFAULT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
-
-    private static final String KEY_METADATA = "metaData";
-
     private static final String KEY_INITIAL_ENDPOINTS = "initialEndpoints";
 
     private static final long serialVersionUID = -3853446362359127472L;
@@ -115,7 +101,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     @JsonIgnore
     @Override
     public DataType getDefaultDataType() {
-        return DataType.valueOf((String) definition.get(KEY_DEFAULT_DATATYPE));
+        return DataType.valueOf((String) definition.get(EndpointDefinitionConstants.KEY_DEFAULT_DATATYPE));
     }
 
     @JsonIgnore
@@ -127,8 +113,8 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     @JsonIgnore
     @Override
     public InputDatumHandling getDefaultInputDatumHandling() {
-        if (definition.containsKey(KEY_DEFAULT_INPUT_HANDLING)) {
-            return InputDatumHandling.valueOf((String) definition.get(KEY_DEFAULT_INPUT_HANDLING));
+        if (definition.containsKey(EndpointDefinitionConstants.KEY_DEFAULT_INPUT_HANDLING)) {
+            return InputDatumHandling.valueOf((String) definition.get(EndpointDefinitionConstants.KEY_DEFAULT_INPUT_HANDLING));
         } else {
             return getInputDatumOptions().get(0);
         }
@@ -143,8 +129,8 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     @JsonIgnore
     @Override
     public InputExecutionContraint getDefaultInputExecutionConstraint() {
-        if (definition.containsKey(KEY_DEFAULT_EXECUTION_CONSTRAINT)) {
-            return InputExecutionContraint.valueOf((String) definition.get(KEY_DEFAULT_EXECUTION_CONSTRAINT));
+        if (definition.containsKey(EndpointDefinitionConstants.KEY_DEFAULT_EXECUTION_CONSTRAINT)) {
+            return InputExecutionContraint.valueOf((String) definition.get(EndpointDefinitionConstants.KEY_DEFAULT_EXECUTION_CONSTRAINT));
         } else {
             return getInputExecutionConstraintOptions().get(0);
         }
@@ -171,12 +157,12 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     public List<InitialDynamicEndpointDefinition> getInitialDynamicEndpointDefinitions() {
         return new ArrayList<InitialDynamicEndpointDefinition>(initialEndpointDefinitions);
     }
-    
+
     @Override
     public EndpointType getEndpointType() {
         return endpointType;
     }
-    
+
     public Map<String, Object> getRawEndpointDefinition() {
         return rawEndpointDefinition;
     }
@@ -188,7 +174,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     public void setEndpointType(EndpointType type) {
         this.endpointType = type;
     }
-    
+
     /**
      * Initializes fields with raw endpoint information.
      * 
@@ -198,40 +184,42 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     public void setRawEndpointDefinition(Map<String, Object> rawEndpointDefinition) {
         this.rawEndpointDefinition = rawEndpointDefinition;
         this.rawEndpointGroupDefinition = rawEndpointDefinition;
-        this.definition = new HashMap<String, Object>(rawEndpointDefinition);
+        this.definition = new HashMap<>(rawEndpointDefinition);
 
-        this.dataTypes = new ArrayList<DataType>();
-        for (String dataType : (List<String>) definition.get(KEY_DATATYPES)) {
+        this.dataTypes = new ArrayList<>();
+        for (String dataType : (List<String>) definition.get(EndpointDefinitionConstants.KEY_DATATYPES)) {
             dataTypes.add(DataType.valueOf(dataType));
         }
         Collections.sort(dataTypes);
 
-        this.inputDatumHandlings = new ArrayList<InputDatumHandling>();
-        if (definition.containsKey(KEY_INPUT_HANDLING_OPTIONS)) {
-            for (String inputDatumHandling : (List<String>) definition.get(KEY_INPUT_HANDLING_OPTIONS)) {
+        this.inputDatumHandlings = new ArrayList<>();
+        if (definition.containsKey(EndpointDefinitionConstants.KEY_INPUT_HANDLING_OPTIONS)) {
+            for (String inputDatumHandling : (List<String>) definition.get(EndpointDefinitionConstants.KEY_INPUT_HANDLING_OPTIONS)) {
                 inputDatumHandlings.add(InputDatumHandling.valueOf(inputDatumHandling));
             }
         } else {
             inputDatumHandlings.add(InputDatumHandling.Single);
         }
 
-        this.inputExecutionContraints = new ArrayList<InputExecutionContraint>();
-        if (definition.containsKey(KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
-            for (String inputExecutionContraint : (List<String>) definition.get(KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
+        this.inputExecutionContraints = new ArrayList<>();
+        if (definition.containsKey(EndpointDefinitionConstants.KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
+            for (String inputExecutionContraint : (List<String>) definition
+                .get(EndpointDefinitionConstants.KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
                 inputExecutionContraints.add(InputExecutionContraint.valueOf(inputExecutionContraint));
             }
         } else {
             inputExecutionContraints.add(InputExecutionContraint.Required);
         }
 
-        Map<String, Map<String, Object>> metaData = (Map<String, Map<String, Object>>) definition.get(KEY_METADATA);
+        Map<String, Map<String, Object>> metaData =
+            (Map<String, Map<String, Object>>) definition.get(EndpointDefinitionConstants.KEY_METADATA);
         if (metaData == null) {
-            metaData = new HashMap<String, Map<String, Object>>();
+            metaData = new HashMap<>();
         }
         this.metaDataDefinition = new EndpointMetaDataDefinitionImpl();
         metaDataDefinition.setRawMetaData(metaData);
 
-        definition.remove(KEY_METADATA);
+        definition.remove(EndpointDefinitionConstants.KEY_METADATA);
 
         // sanity checks
         if (!dataTypes.contains(getDefaultDataType())) {
@@ -248,7 +236,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
                 inputExecutionContraints));
         }
 
-        initialEndpointDefinitions = new ArrayList<InitialDynamicEndpointDefinitionImpl>();
+        initialEndpointDefinitions = new ArrayList<>();
         List<Map<String, Object>> rawInitialEndpoints = (List<Map<String, Object>>) definition.get(KEY_INITIAL_ENDPOINTS);
         if (rawInitialEndpoints != null) {
             for (Map<String, Object> defaultEndpoint : rawInitialEndpoints) {
@@ -271,10 +259,11 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     @SuppressWarnings("unchecked")
     public void setRawEndpointDefinitionExtension(Map<String, Object> rawEndpointDefinitionExtension) {
         this.rawEndpointDefinitionExtension = rawEndpointDefinitionExtension;
-        this.endpointDefinitionExtension = new HashMap<String, Object>(rawEndpointDefinitionExtension);
-        Map<String, Map<String, Object>> metaData = (Map<String, Map<String, Object>>) endpointDefinitionExtension.get(KEY_METADATA);
+        this.endpointDefinitionExtension = new HashMap<>(rawEndpointDefinitionExtension);
+        Map<String, Map<String, Object>> metaData =
+            (Map<String, Map<String, Object>>) endpointDefinitionExtension.get(EndpointDefinitionConstants.KEY_METADATA);
         if (metaData == null) {
-            metaData = new HashMap<String, Map<String, Object>>();
+            metaData = new HashMap<>();
         }
         metaDataDefinition.setRawMetaDataExtensions(metaData);
     }

@@ -15,6 +15,18 @@ import de.rcenvironment.core.component.registration.api.Registerable;
  * Interface for workflow components.
  * 
  * @author Doreen Seider
+ * 
+ * Note: I think this interface is well settled in general except some methods that were added over time which I am not happy with:
+ * 
+ * - {@link #treatStartAsComponentRun()}: It passes the concept of component runs to workflow components which should only be aware
+ * of starting and processing inputs.
+ * 
+ * - {@link #handleVerificationToken(String)} and {@link #completeStartOrProcessInputsAfterVerificationDone()}: Manual output
+ * verification can only be configured for integrated tool. So, I don't like it to be present in this general {@link Component}
+ * interface. Technical reasons (workflow engine needed to interact with the tool integrator component that is just a
+ * {@link Component} implementation) made it unavoidable at the time of the implementation.
+ * 
+ * --seid_do
  */
 public interface Component extends Registerable {
 

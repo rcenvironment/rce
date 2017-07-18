@@ -47,6 +47,16 @@
 		commandId="org.eclipse.ui.edit.paste"
 		sequence="M1+V"
 		schemeId="de.rcenvironment.core.start.gui.binding" />
+		
+	<key
+		commandId="org.eclipse.gef.zoom_in"
+		sequence="M1++"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+		
+	<key
+		commandId="org.eclipse.gef.zoom_out"
+		sequence="M1+-"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
 	</extension>
 	   
 	  <!-- Splash handler -->

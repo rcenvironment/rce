@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.0.2.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.1.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -136,15 +136,15 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </plugins>
 
    <features>
+      <feature id="de.rcenvironment.binaries.dakota.feature"/>
+      <feature id="de.rcenvironment.binaries.tiglviewer.feature"/>
       <feature id="de.rcenvironment.componentgroups.cpacs.feature"/>
-      <feature id="de.rcenvironment.componentgroups.dakota.binaries.feature"/>
       <feature id="de.rcenvironment.componentgroups.special.feature"/>
       <feature id="de.rcenvironment.componentgroups.standard.feature"/>
       <feature id="de.rcenvironment.core.combined.feature"/>
       <feature id="de.rcenvironment.core.gui.branding.default.feature"/>
       <feature id="de.rcenvironment.core.gui.branding.default.versioninfo.feature"/>
       <feature id="de.rcenvironment.core.gui.tiglviewer.feature"/>
-      <feature id="de.rcenvironment.core.gui.tiglviewer.binaries.feature"/>
       <feature id="de.rcenvironment.documentation.core.feature"/>
       <feature id="de.rcenvironment.filesets.configuration.samples.feature"/>
       <feature id="de.rcenvironment.filesets.extras.feature"/>
@@ -157,7 +157,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <feature id="de.vonloesch.pdf4eclipse"/>
       <feature id="nu.psnet.quickimage"/>
       <feature id="org.eclipse.wst.xml_ui.feature"/>
-      <feature id="de.rcenvironment.core.gui.help.feature" version="8.0.2.qualifier"/>
+      <feature id="de.rcenvironment.core.gui.help.feature"/>
    </features>
 
    <configurations>
@@ -167,7 +167,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <plugin id="de.rcenvironment.core.component" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.component.workflow" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.configuration" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.configuration.bootstrap" autoStart="true" startLevel="1" />
+      <plugin id="de.rcenvironment.core.configuration.bootstrap" autoStart="true" startLevel="3" />
       <plugin id="de.rcenvironment.core.datamanagement" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.datamanagement.backend.data.efs" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.datamanagement.backend.metadata.derby" autoStart="true" startLevel="0" />

@@ -11,6 +11,7 @@ package de.rcenvironment.components.script.execution.validator;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -44,6 +46,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Jascha Riedel
  * @author Martin Misiak
  * @author David Scholz
+ * @author Doreen Seider (caching)
  */
 public class ScriptComponentValidator extends AbstractComponentValidator {
 
@@ -55,7 +58,9 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
 
     private static final String COLON = ": ";
 
-    private Log logger = LogFactory.getLog(ScriptComponentValidator.class);
+    private static Log logger = LogFactory.getLog(ScriptComponentValidator.class);
+
+    private ExecutionOutputCache executionOutputCache = createExecutionOutputCache();
 
     @Override
     public String getIdentifier() {
@@ -65,7 +70,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     @Override
     protected List<ComponentValidationMessage> validateComponentSpecific(ComponentDescription componentDescription) {
 
-        final List<ComponentValidationMessage> messages = new ArrayList<ComponentValidationMessage>();
+        final List<ComponentValidationMessage> messages = new ArrayList<>();
 
         String script = getProperty(componentDescription, SshExecutorConstants.CONFIG_KEY_SCRIPT);
         if (script == null || script.isEmpty()) {
@@ -91,10 +96,9 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     }
 
     /**
-     * The method returns true if either whitespaces or tabs are exclusively used for the indentation of a script. False otherwise.
-     * 
      * @param script String containing the script
-     * @return
+     * @return <code>true</code> if either whitespace or tabs are exclusively used for the indentation of a script; <code>false</code>
+     *         otherwise.
      */
     private boolean checkScriptIndentationConsistency(String script) {
 
@@ -128,99 +132,104 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     @Override
     protected List<ComponentValidationMessage> validateOnWorkflowStartComponentSpecific(
         ComponentDescription componentDescription) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public List<ComponentValidationMessage> validateOnWorkflowStart(ComponentDescription componentDescription) {
-        final List<ComponentValidationMessage> messages = new ArrayList<ComponentValidationMessage>();
+        final List<ComponentValidationMessage> messages = new ArrayList<>();
         if (getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE).equals("Python")) {
             String pythonInstallation = getProperty(componentDescription, PythonComponentConstants.PYTHON_INSTALLATION);
 
             if (!pythonInstallation.isEmpty()) {
-
-                final LocalApacheCommandLineExecutor executor;
-
-                TextStreamWatcher stdOutTextStreamWatcher;
-                TextStreamWatcher stdErrTextStreamWatcher;
-                final PythonVersionRegexValidator validator;
-                String command = "\"" + pythonInstallation + "\"" + " --version";
-                
-                try {
-
-                    validator = new PythonVersionRegexValidator();
-                    executor = new LocalApacheCommandLineExecutor(new File("/"));
-                    executor.start(command);
-                    stdOutTextStreamWatcher = new TextStreamWatcher(executor.getStdout(),
-                        ConcurrencyUtils.getAsyncTaskService(), new CapturingTextOutReceiver("") {
-
-                            @Override
-                            public synchronized void addOutput(String line) {
-                                super.addOutput(line);
-                                validator.validatePythonVersion(getBufferedOutput().toString());
-                            }
-
-                        });
-                    stdErrTextStreamWatcher =
-                        new TextStreamWatcher(executor.getStderr(), ConcurrencyUtils.getAsyncTaskService(),
-                            new CapturingTextOutReceiver("") {
-
-                                @Override
-                                public synchronized void addOutput(String line) {
-                                    super.addOutput(line);
-                                    validator.validatePythonVersion(getBufferedOutput().toString());
-                                }
-
-                            });
-
-                    stdOutTextStreamWatcher.start();
-                    stdErrTextStreamWatcher.start();
-
-                    final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
-                    Future<?> task = asyncTaskService.submit(new Runnable() {
-
-                        @TaskDescription("Waits for python validation to finish")
-                        @Override
-                        public void run() {
-                            try {
-                                executor.waitForTermination();
-                            } catch (IOException e) {
-                                logger.error(PYTHON_VALIDATION_ERROR, e);
-                            } catch (InterruptedException e) {
-                                logger.error(PYTHON_VALIDATION_ERROR, e);
-                            }
-                        }
-                    });
-
-                    try {
-                        task.get(PYTHON_TEST_TIMEOUT, TimeUnit.SECONDS);
-                    } catch (TimeoutException e) {
-                        executor.cancel();
-                    } catch (ExecutionException e) {
-                        logger.error(PYTHON_VALIDATION_ERROR, e);
-                    } finally {
-                        executor.cancel();
-                    }
-
-                    processPythonValidationResult(validator, messages, pythonInstallation);
-
-                } catch (IOException | InterruptedException e) {
-                    logger.error(PYTHON_VALIDATION_ERROR, e);
+                final PythonVersionRegexValidator validator = new PythonVersionRegexValidator();
+                if (executionOutputCache.containsKey(pythonInstallation)) {
+                    replayValidationWithCachedExecutionOutput(pythonInstallation, validator);
+                } else {
+                    executeAndValidate(pythonInstallation, validator);
                 }
-
+                processPythonValidationResult(validator, messages, pythonInstallation);
             }
-
         }
 
         return messages;
     }
 
-    private void createPythonExecutionSuccessfulMessage(PythonVersionRegexValidator validator) {
-        LogFactory.getLog(this.getClass())
-            .debug("Python Version Used: " + validator.getMajorPythonVersion() + "."
-                + validator.getMinorPythonVersion() + "."
-                + validator.getMicroPythonVersion());
+    private void replayValidationWithCachedExecutionOutput(final String pythonInstallation, final PythonVersionRegexValidator validator) {
+        for (String output : executionOutputCache.get(pythonInstallation)) {
+            validator.validatePythonVersion(output);
+        }
+    }
+
+    private void executeAndValidate(final String pythonInstallation, final PythonVersionRegexValidator validator) {
+        final LocalApacheCommandLineExecutor executor;
+
+        TextStreamWatcher stdOutTextStreamWatcher;
+        TextStreamWatcher stdErrTextStreamWatcher;
+        String command = "\"" + pythonInstallation + "\"" + " --version";
+
+        try {
+
+            executor = createCommandLineExecutor(new File("/"));
+            executor.start(command);
+            stdOutTextStreamWatcher = new TextStreamWatcher(executor.getStdout(),
+                ConcurrencyUtils.getAsyncTaskService(), new CapturingTextOutReceiver("") {
+
+                    @Override
+                    public synchronized void addOutput(String line) {
+                        super.addOutput(line);
+                        validator.validatePythonVersion(getBufferedOutput());
+                    }
+
+                });
+            stdErrTextStreamWatcher =
+                new TextStreamWatcher(executor.getStderr(), ConcurrencyUtils.getAsyncTaskService(),
+                    new CapturingTextOutReceiver("") {
+
+                        @Override
+                        public synchronized void addOutput(String line) {
+                            super.addOutput(line);
+                            validator.validatePythonVersion(getBufferedOutput());
+                        }
+
+                    });
+
+            stdOutTextStreamWatcher.start();
+            stdErrTextStreamWatcher.start();
+
+            final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
+            Future<?> task = asyncTaskService.submit(new Runnable() {
+
+                @TaskDescription("Waits for python validation to finish")
+                @Override
+                public void run() {
+                    try {
+                        executor.waitForTermination();
+                    } catch (IOException e) {
+                        logger.error(PYTHON_VALIDATION_ERROR, e);
+                    } catch (InterruptedException e) {
+                        logger.error(PYTHON_VALIDATION_ERROR, e);
+                    }
+                }
+            });
+
+            // TODO review exception handling: why is executor.cancel() called in any case? and in case of a TimeoutException it is actually
+            // called twice. TimeoutException should be handled in some way, at least logged --seid_do
+            try {
+                task.get(PYTHON_TEST_TIMEOUT, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                executor.cancel();
+            } catch (ExecutionException e) {
+                logger.error(PYTHON_VALIDATION_ERROR, e);
+            } finally {
+                executor.cancel();
+            }
+
+            executionOutputCache.put(pythonInstallation, validator.getOutputValidated());
+
+        } catch (IOException | InterruptedException e) {
+            logger.error(PYTHON_VALIDATION_ERROR, e);
+        }
     }
 
     private void processPythonValidationResult(PythonVersionRegexValidator validator,
@@ -229,7 +238,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
             && validator.getMajorPythonVersion() == MINUS_ONE) {
             final ComponentValidationMessage message = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, PythonComponentConstants.PYTHON_INSTALLATION,
-                 Messages.pythonExecutionTestErrorRelative, StringUtils.format(Messages.pythonExecutionTestErrorRelative, path));
+                Messages.pythonExecutionTestErrorRelative, StringUtils.format(Messages.pythonExecutionTestErrorRelative, path));
             messages.add(message);
         } else if (!validator.isPythonExecutionSuccessful() && (validator.getMinorPythonVersion() < 6
             && validator.getMajorPythonVersion() >= 2)) {
@@ -239,62 +248,109 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                 Messages.pythonExecutionUnsupportedVersionRelative);
             messages.add(message);
         } else if (validator.isPythonExecutionSuccessful()) {
-            createPythonExecutionSuccessfulMessage(validator);
+            logPythonExecutionSuccessfulMessage(validator);
         }
     }
-    
+
+    private void logPythonExecutionSuccessfulMessage(PythonVersionRegexValidator validator) {
+        LogFactory.getLog(this.getClass())
+            .debug("Python Version Used: " + validator.getMajorPythonVersion() + "."
+                + validator.getMinorPythonVersion() + "."
+                + validator.getMicroPythonVersion());
+    }
+
     /**
-     * 
      * @return the {@link PythonVersionRegexValidator}. Intended for unit testing.
      */
-    public PythonVersionRegexValidator createPythonVersionRegexValidator() {
+    protected PythonVersionRegexValidator createPythonVersionRegexValidator() {
         return new PythonVersionRegexValidator();
     }
 
+    /**
+     * @return the {@link LocalApacheCommandLineExecutor} to use. Intended for unit testing.
+     */
+    protected LocalApacheCommandLineExecutor createCommandLineExecutor(File workDirPath) throws IOException {
+        return new LocalApacheCommandLineExecutor(workDirPath);
+    }
+
+    /**
+     * @return the {@link ExecutionOutputCache} to use. Intended for unit testing.
+     */
+    protected ExecutionOutputCache createExecutionOutputCache() {
+        return new ExecutionOutputCache();
+    }
+
+    /**
+     * Caches the execution output produced when executing the given Python installation path.
+     * 
+     * @author Doreen Seider
+     */
+    protected static class ExecutionOutputCache {
+
+        private static final int CACHE_EVICTION_TIME_MILLIS = 3000;
+
+        private PassiveExpiringMap<String, List<String>> cachedExecutionOutput = new PassiveExpiringMap<>(CACHE_EVICTION_TIME_MILLIS);
+
+        protected void put(String key, List<String> output) {
+            cachedExecutionOutput.put(key, output);
+        }
+
+        protected List<String> get(String key) {
+            return cachedExecutionOutput.get(key);
+        }
+
+        protected boolean containsKey(String key) {
+            return cachedExecutionOutput.containsKey(key);
+        }
+
+    }
+
+    // TODO add JavaDoc --seid_do
     /**
      * 
      * @author David Scholz
      *
      */
-    public class PythonVersionRegexValidator {
+    protected static class PythonVersionRegexValidator {
 
         private static final int MINUS_ONE = -1;
 
-        private boolean pythonExecutionSuccessful = false;
+        private static final Pattern MATCH_PATTERN = Pattern.compile("^Python\\s([0-9]+)\\.([0-9]+)\\.([0-9]+)");
 
-        private final Pattern matchPattern;
+        private volatile int majorPythonVersion = MINUS_ONE;
 
-        private int majorPythonVersion = MINUS_ONE;
+        private volatile int minorPythonVersion = MINUS_ONE;
 
-        private int minorPythonVersion = MINUS_ONE;
+        private volatile int microPythonVersion = MINUS_ONE;
 
-        private int microPythonVersion = MINUS_ONE;
+        private volatile boolean pythonExecutionSuccessful = false;
 
-        PythonVersionRegexValidator() {
-            this.matchPattern = Pattern.compile("^Python\\s([0-9]+)\\.([0-9]+)\\.([0-9]+)");
-        }
+        private List<String> outputValidated = Collections.synchronizedList(new ArrayList<String>());
 
         /**
          * 
          * @param bufferedOutput stdout or stderr of the python exe.
          */
         public synchronized void validatePythonVersion(String bufferedOutput) {
-            Matcher matcher = matchPattern.matcher(bufferedOutput);
+            outputValidated.add(bufferedOutput);
+            Matcher matcher = MATCH_PATTERN.matcher(bufferedOutput);
             if (matcher.find()) {
                 majorPythonVersion = Integer.parseInt(matcher.group(1));
                 minorPythonVersion = Integer.parseInt(matcher.group(2));
                 microPythonVersion = Integer.parseInt(matcher.group(3));
             }
 
-            if (majorPythonVersion == 2 && minorPythonVersion >= 6) {
-                pythonExecutionSuccessful = true;
-            } else if (majorPythonVersion == 3) {
+            if (majorPythonVersion == 3 || majorPythonVersion == 2 && minorPythonVersion >= 6) {
                 pythonExecutionSuccessful = true;
             }
         }
 
         public boolean isPythonExecutionSuccessful() {
             return pythonExecutionSuccessful;
+        }
+
+        public List<String> getOutputValidated() {
+            return outputValidated;
         }
 
         public int getMajorPythonVersion() {

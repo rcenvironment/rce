@@ -12,11 +12,14 @@ import java.io.Serializable;
 import java.util.Set;
 
 import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 
 /**
  * Identifier for data references holding {@link BinaryReference}s.
  * 
  * @author Jan Flink
+ * @author Brigitte Boden (adapted used node id type)
+ * @author Robert Mischke (minor id fix)
  */
 public final class DataReference implements Serializable {
 
@@ -24,13 +27,14 @@ public final class DataReference implements Serializable {
 
     private final String dataReferenceKey;
 
-    private final InstanceNodeId storageInstanceId;
+    private final InstanceNodeId storageInstanceId; // TODO (p1) 9.0.0 rename to storageNodeId again; breaks serialization if changed
 
     private Set<BinaryReference> binaryReferences;
 
-    public DataReference(String dataReferenceKey, InstanceNodeId storageInstanceId, Set<BinaryReference> binaryReferences) {
+    public DataReference(String dataReferenceKey, LogicalNodeId storageInstanceId, Set<BinaryReference> binaryReferences) {
         this.dataReferenceKey = dataReferenceKey;
-        this.storageInstanceId = storageInstanceId;
+        // TODO (p1) 9.0.0 remove conversion again
+        this.storageInstanceId = storageInstanceId.convertToInstanceNodeId();
         this.binaryReferences = binaryReferences;
     }
 
@@ -55,10 +59,11 @@ public final class DataReference implements Serializable {
     }
 
     /**
-     * @return the {@link InstanceNodeId} of the platform this {@link DataReference} is hosted.
+     * @return the {@link LogicalNodeId} of the platform this {@link DataReference} is hosted.
      */
-    public InstanceNodeId getInstanceId() {
-        return storageInstanceId;
+    public LogicalNodeId getStorageNodeId() {
+        // TODO (p1) 9.0.0 remove conversion again
+        return storageInstanceId.convertToDefaultLogicalNodeId();
     }
 
     @Override

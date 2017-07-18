@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -88,7 +89,7 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
         storeEvaluationMemory(evalMemory);
     }
     
-    private void storeEvaluationMemory(Properties evalMemory) throws FileNotFoundException, IOException {
+    private void storeEvaluationMemory(Properties evalMemory) throws IOException {
         evalMemory.put(VERSION, VERSION_NUMBER);
         evalMemory.put(TYPE, EvaluationMemoryComponentConstants.COMPONENT_ID);
         try (FileOutputStream memoryFileOutputStream = new FileOutputStream(evalMemoryFile)) {
@@ -138,9 +139,9 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
 
     private String createEndpointDefinitionEntry(Map<String, DataType> endpoints) {
         List<String> parts = new ArrayList<>();
-        for (String output: endpoints.keySet()) {
-            parts.add(output);
-            parts.add(endpoints.get(output).name());
+        for (Entry<String, DataType> outputEntry: endpoints.entrySet()) {
+            parts.add(outputEntry.getKey());
+            parts.add(outputEntry.getValue().name());
         }
         return StringUtils.escapeAndConcat(parts);
     }
@@ -169,11 +170,11 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
             throwIOException(endpoints, typedDatums);
         }
         int i = 0;
-        for (String endpointName : endpoints.keySet()) {
+        for (DataType dataType : endpoints.values()) {
             if (ALWAYS_VALID_OUTPUT_DATATYPES.contains(typedDatums.get(i).getDataType())) {
                 continue;
             }
-            if (endpoints.get(endpointName) != typedDatums.get(i).getDataType()) {
+            if (dataType != typedDatums.get(i).getDataType()) {
                 throwIOException(endpoints, typedDatums);
             }
             i++;
@@ -222,12 +223,12 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
     private boolean areEndpointsEqual(Map<String, DataType> endpointsExpected, Map<String, DataType> actualEndpoints, boolean inputs) {
         boolean equals = endpointsExpected.size() == actualEndpoints.size();
         if (equals) {
-            for (String endpoint : actualEndpoints.keySet()) {
-                if (!inputs && ALWAYS_VALID_OUTPUT_DATATYPES.contains(actualEndpoints.get(endpoint))) {
+            for (Entry<String, DataType> endpointEntry : actualEndpoints.entrySet()) {
+                if (!inputs && ALWAYS_VALID_OUTPUT_DATATYPES.contains(endpointEntry.getValue())) {
                     continue;
                 }
-                if (!endpointsExpected.containsKey(endpoint)
-                    || !endpointsExpected.get(endpoint).equals(actualEndpoints.get(endpoint))) {
+                if (!endpointsExpected.containsKey(endpointEntry.getKey())
+                    || !endpointsExpected.get(endpointEntry.getKey()).equals(endpointEntry.getValue())) {
                     equals = false;
                     break;                        
                 }
@@ -266,8 +267,8 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
     
     private SortedMap<String, DataType> getEndpoints(SortedMap<String, TypedDatum> endpoints) {
         SortedMap<String, DataType> endpointsWithDataType = new TreeMap<>();
-        for (String endpoint : endpoints.keySet()) {
-            endpointsWithDataType.put(endpoint, endpoints.get(endpoint).getDataType());
+        for (Entry<String, TypedDatum> endpointEntry : endpoints.entrySet()) {
+            endpointsWithDataType.put(endpointEntry.getKey(), endpointEntry.getValue().getDataType());
         }
         return endpointsWithDataType;
     }

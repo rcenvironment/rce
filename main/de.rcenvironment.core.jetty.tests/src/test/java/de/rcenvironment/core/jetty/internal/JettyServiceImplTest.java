@@ -57,6 +57,7 @@ public class JettyServiceImplTest {
      * 'de.rcenvironment.rce.communication.jetty.internal.JettyServiceImpl.undeployJetty()' for
      * success.
      */
+    @Ignore
     @Test
     public void testUndeployWebServiceForSuccess() {
         jettyService.undeployWebService(ADDRESS);
@@ -85,6 +86,7 @@ public class JettyServiceImplTest {
     /**
      * Test method for 'de.rcenvironment.rce.communication.jetty.internal.WebCallImpl' for success.
      */
+    @Ignore
     @Test
     public void testCallForSucess() {
         WebCallImpl testCall = new WebCallImpl();

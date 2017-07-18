@@ -20,6 +20,7 @@
 		<module>${modules-root}/branding.default</module>
 		<module>${modules-root}/filesets.default</module>
 		<module>${modules-root}/cpacs.nonComponent</module>
+		<module>${modules-root}/product.binaries</module>
 		<module>${modules-root}/repository.intermediate</module>
 	</modules>
 

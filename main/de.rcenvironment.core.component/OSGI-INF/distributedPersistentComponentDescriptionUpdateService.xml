@@ -9,4 +9,16 @@
 		bind="bindCommunicationService"
 		policy="dynamic"
 	/>
+	<reference name="Distributed Component Knowledge Service"
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"
+		bind="bindDistributedComponentKnowledgeService"
+		ardinality="1..1"
+		policy="dynamic"
+	/>
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
 </scr:component>

@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.testutils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +67,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
     private ComponentHistoryDataItem historyDataItem;
 
-    private Set<String> inputsNotConnected = new HashSet<String>();
+    private Set<String> inputsNotConnected = new HashSet<>();
 
     /**
      * Defines a dynamic or static endpoint of the component.
@@ -204,7 +205,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
     @Override
     public Set<String> getInputsWithDatum() {
-        return new HashSet<String>(inputValues.keySet());
+        return new HashSet<>(inputValues.keySet());
     }
 
     @Override
@@ -457,4 +458,14 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
         inputsNotConnected.add(name);
     }
 
+    @Override
+    public List<String> getDynamicInputsWithIdentifier(String identifier) {
+        List<String> result = new LinkedList<>();
+        for (String endpoint : simulatedInputs.keySet()) {
+            if (isDynamicInput(endpoint) && getDynamicInputIdentifier(endpoint).equals(identifier)) {
+                result.add(endpoint);
+            }
+        }
+        return result;
+    }
 }

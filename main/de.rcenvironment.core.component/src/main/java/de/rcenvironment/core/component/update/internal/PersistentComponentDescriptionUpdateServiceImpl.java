@@ -26,6 +26,8 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  * Implementation of {@link RemotablePersistentComponentDescriptionUpdateService}.
  * 
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
  */
 public class PersistentComponentDescriptionUpdateServiceImpl implements RemotablePersistentComponentDescriptionUpdateService {
 

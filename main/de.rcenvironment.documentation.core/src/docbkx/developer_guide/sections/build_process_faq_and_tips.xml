@@ -18,20 +18,22 @@
             <qandaentry>
                 <question>
                     <para>When running a product build, how can I change the server URL where p2
-                    artifacts (e.g. the "target platform" or the Dakota or TiGLViewer binaries) are
-                    loaded from?</para>
+                    artifacts (e.g. the "target platform") are loaded from?</para>
                 </question>
                 <answer>
                     <para>To support typical build use cases, p2 server URLs are normally assembled
                     from two parts: a common URL "root" part, and a repository-specific URL segment.
                     The default values for these are defined in the build pre-processor script at
-                        <code>/de.rcenvironment/maven/initial/scripts/RCEBuildPreprocessor.groovy</code> .<note>
+                        <code>/de.rcenvironment/maven/preprocessor/scripts/RCEBuildPreprocessor.groovy</code> .<note>
                         <para>For example, the default "target platform" repository URL for the
-                            7.1.0 release is the concatenation of the default URL "root" part
-                                <code>https://software.dlr.de/updates/rce/7.x/repositories/</code>
-                            and the specific repository segment <code>releases/7.1.0</code>. The
+                            8.1.0 release is the concatenation of the default URL "root" part
+                                <code>https://software.dlr.de/updates/rce/8.x/repositories/</code>
+                            and the specific repository segment <code>releases/8.1.0</code>. The
                             same pattern using the same "root" URL, but different specific segments
-                            is also used for the Dakota and TiGLViewer binary repositories. </para>
+                            would also be used for other repositories. However, as of 8.1.0, the
+                            "platform" repository is the only one used during the default build. The
+                            only other valid option is "intermediate", which is only used in special
+                            builds.</para>
                     </note></para>
                     <para>There are three ways to change these URLs, depending on the build use case.<itemizedlist>
                         <listitem>
@@ -46,7 +48,7 @@
                                 Maven property
                                         <code>rce.maven.repositories.<replaceable>&lt;id></replaceable>.rootUrl</code>,
                                 with <code><replaceable>&lt;id></replaceable></code> being
-                                "platform", "dakotaBinaries" or "tiglViewerBinaries".</para>
+                                "platform" or "intermediate".</para>
                         </listitem>
                         <listitem>
                             <para>Alternatively, you can also override the complete URL of a
@@ -62,29 +64,28 @@
                     build environment, or for local building and testing. To change the repository
                     paths permanently (e.g. when preparing a new release), edit the default values
                     in the build pre-processor script at
-                        <code>/de.rcenvironment/maven/initial/scripts/RCEBuildPreprocessor.groovy</code>.
+                        <code>/de.rcenvironment/maven/preprocessor/scripts/RCEBuildPreprocessor.groovy</code>.
                     Note that there are two sets of specific repository URL segments which are used
                     for snapshot and RC/release builds, respectively.</para>
                 </answer>
             </qandaentry>
         <qandaentry>
             <question>
-                <para>I created a new snapshot / RC / release build of the target platform / Dakota
-                    binaries / TiGLViewer binaries repository. What do I have to edit to make the
-                    product build use it?</para>
+                <para>I created a new snapshot / RC / release build of the "platform" repository.
+                    What do I have to edit to make the product build use it?</para>
             </question>
             <answer>
                 <para>The default repository references are configured in the
                         <code>defaultRepositoryUrlSuffixes</code> map within the build pre-processor
                     script at
-                        <code>/de.rcenvironment/maven/initial/scripts/RCEBuildPreprocessor.groovy</code>.
+                        <code>/de.rcenvironment/maven/preprocessor/scripts/RCEBuildPreprocessor.groovy</code>.
                     Snapshot and RC/release references are configured separately to support
                     developing against snapshot builds. These references are the repository-specific
                     URL suffixes; see the question above for examples.</para>
                 <para>Note that when preparing for a new major release, you may also have to adapt
                     the "root" URL part (e.g. changing it from
-                        <code>&lt;...>/rce/7.x/repositories/</code> to
-                        <code>&lt;...>/rce/8.x/repositories/</code>), and have to deploy the
+                        <code>&lt;...>/rce/8.x/repositories/</code> to
+                        <code>&lt;...>/rce/9.x/repositories/</code>), and have to deploy the
                     referenced repository builds to that new location.</para>
             </answer>
         </qandaentry>

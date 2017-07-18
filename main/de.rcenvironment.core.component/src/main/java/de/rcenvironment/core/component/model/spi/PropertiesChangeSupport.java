@@ -19,6 +19,10 @@ import java.beans.PropertyChangeSupport;
  *
  * @author Heinrich Wendel
  * @author Doreen Seider
+ * 
+ * Note: Model changes (WorkflowDescription, etc.) are announced but the underlying system evolved over time and seems to get a bit
+ * eroded. It starts with the identifiers of the events announced (no scheme behind and constants spreaded) and includes also
+ * missing overview which events are announced when. I can imagine that there might by too many events overall. --seid_do
  */
 public abstract class PropertiesChangeSupport {
 

@@ -14,6 +14,9 @@ import java.util.Map;
  * Describes extended configuration options of components as they can be contributed by fragments.
  * 
  * @author Doreen Seider
+ * 
+ * Note: The concept of configuration extensions was introduces for the Pyranha optimizer fragments. It is kind of unintuitive and
+ * should be reviewed where it is still used and whether it can be improved. --seid_do
  */
 public interface ConfigurationExtensionDefinition extends ConfigurationDefinition {
 

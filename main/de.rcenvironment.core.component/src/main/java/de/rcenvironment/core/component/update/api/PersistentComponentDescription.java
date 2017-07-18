@@ -24,6 +24,7 @@ import org.codehaus.jackson.node.TextNode;
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
@@ -32,6 +33,9 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Doreen Seider
  * @author Sascha Zur
  * @author Robert Mischke (8.0.0 id adaptations)
+ * 
+ * Note: This is a model for the string representation of a component in the workflow file. I'm not right happy with it not having a
+ * link to the {@link ComponentDescription} e.g. Although, I'm not sure if required.  --seid_do
  */
 public class PersistentComponentDescription implements Serializable {
 

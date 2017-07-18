@@ -117,7 +117,8 @@ public final class EditorsHelper {
             callbacks);
     }
     
-    private static void openAndObserveFileInEditor(final ObservedFile observedFile, final IEditorDescriptor editorDescriptor,
+    
+    private static IEditorPart openAndObserveFileInEditor(final ObservedFile observedFile, final IEditorDescriptor editorDescriptor,
         final IEditorInput editorInput, final Runnable... callbacks) throws PartInitException {
         
         final IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().openEditor(editorInput,
@@ -138,15 +139,17 @@ public final class EditorsHelper {
     
                 @Override
                 public boolean preShutdown(IWorkbench workbench, boolean arg1) {
-                    editor.getSite().getPage().closeEditor(editor, false);
-                    return true;
+                    return editor.getSite().getPage().closeEditor(editor, true);
                 }
     
                 @Override
                 public void postShutdown(IWorkbench workbench) {}
             });
         }
+        return editor;
     }
+    
+    
     
     /**
      * Observes a file and call the action upon each safe action.

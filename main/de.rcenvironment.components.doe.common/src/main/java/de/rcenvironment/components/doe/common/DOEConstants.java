@@ -31,8 +31,11 @@ public final class DOEConstants {
     public static final String DOE_ALGORITHM_CUSTOM_TABLE = "Custom design table";
 
     /** Constant. */
+    public static final String DOE_ALGORITHM_CUSTOM_TABLE_INPUT = "Custom design table as input";
+
+    /** Constant. */
     public static final String[] ALGORITMS = new String[] { DOE_ALGORITHM_FULLFACT, DOE_ALGORITHM_LHC, DOE_ALGORITHM_MONTE_CARLO,
-        DOE_ALGORITHM_CUSTOM_TABLE };
+        DOE_ALGORITHM_CUSTOM_TABLE, DOE_ALGORITHM_CUSTOM_TABLE_INPUT };
 
     /** Constant. */
     public static final String KEY_TABLE = "table";
@@ -66,6 +69,12 @@ public final class DOEConstants {
 
     /** Constant. */
     public static final String INPUT_ID_NAME = "default";
+
+    /** Constant. */
+    public static final String CUSTOM_TABLE_ENDPOINT_NAME = "Custom table";
+
+    /** Constant. */
+    public static final String CUSTOM_TABLE_ENDPOINT_ID = "startTable";
 
     private DOEConstants() {
 

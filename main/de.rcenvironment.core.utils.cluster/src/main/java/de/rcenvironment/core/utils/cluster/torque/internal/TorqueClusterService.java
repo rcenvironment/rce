@@ -19,6 +19,7 @@ import java.util.Set;
 
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation.ClusterJobState;
+import de.rcenvironment.core.utils.cluster.ClusterQueuingSystemConstants;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.internal.AbstractClusterService;
 import de.rcenvironment.core.utils.cluster.internal.ClusterJobInformationImpl;
@@ -27,6 +28,9 @@ import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
 
 /**
  * TORQUE implementation of {@link ClusterService}.
+ * 
+ * Note: ClusterService implementations should be an OSGi service --seid_do
+ * 
  * @author Doreen Seider
  */
 public class TorqueClusterService extends AbstractClusterService {
@@ -53,34 +57,34 @@ public class TorqueClusterService extends AbstractClusterService {
     
     private static final int SECTION_BLOCKED_JOBS = 2;
     
-    // only for OSGi
-    @Deprecated
-    public TorqueClusterService() {}
-    
     public TorqueClusterService(SshSessionConfiguration sshConfiguration, Map<String, String> pathToQueuingSystemCommands) {
         super(sshConfiguration, pathToQueuingSystemCommands);
     }
 
     @Override
-    protected Set<ClusterJobInformation> fetchAndParseClusterJobInformation() throws IOException {
-        String stdout = executesCommand(jschSession, buildMainCommand("qstat") + " -a", REMOTE_WORK_DIR);
+    public Set<ClusterJobInformation> fetchClusterJobInformation() throws IOException {
+        ensureJschSessionEstablished();
+        String stdout = executesCommand(jschSession, buildMainCommand(ClusterQueuingSystemConstants.COMMAND_QSTAT)
+            + " -a", REMOTE_WORK_DIR);
         Map<String, ClusterJobInformation> jobInformation = parseStdoutForClusterJobInformation(stdout);
 
         latestFetchedJobInformation = Collections.unmodifiableMap(jobInformation);
         latestFetch = new Date().getTime();
-        
-        stdout = executesCommand(jschSession, buildMainCommand("showq"), REMOTE_WORK_DIR);
+
+        ensureJschSessionEstablished();
+        stdout = executesCommand(jschSession, buildMainCommand(ClusterQueuingSystemConstants.COMMAND_SHOWQ), REMOTE_WORK_DIR);
         Map<String, ClusterJobTimesInformation> jobTimesInformation = parseStdoutForClusterJobTimesInformation(stdout);
         return enhanceClusterJobInformation(jobInformation, jobTimesInformation);
     }
     
     @Override
     public String cancelClusterJobs(List<String> jobIds) throws IOException {
-        StringBuilder commandBuilder = new StringBuilder(buildMainCommand("qdel") + " ");
+        StringBuilder commandBuilder = new StringBuilder(buildMainCommand(ClusterQueuingSystemConstants.COMMAND_QDEL) + " ");
         for (String jobId : jobIds) {
             commandBuilder.append(" ");
             commandBuilder.append(jobId);
         }
+        ensureJschSessionEstablished();
         try {
             executesCommand(jschSession, commandBuilder.toString(), REMOTE_WORK_DIR);
         } catch (IllegalArgumentException e) {
@@ -200,12 +204,12 @@ public class TorqueClusterService extends AbstractClusterService {
     }
     
     private String getTime(String[] lineTokens, int startIndex) {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder strBuilder = new StringBuilder();
         for (int i = startIndex; i < lineTokens.length; i++) {
-            stringBuffer.append(lineTokens[i]);
-            stringBuffer.append(" ");
+            strBuilder.append(lineTokens[i]);
+            strBuilder.append(" ");
         }
-        return stringBuffer.delete(stringBuffer.length() - 1, stringBuffer.length()).toString();
+        return strBuilder.delete(strBuilder.length() - 1, strBuilder.length()).toString();
     }
     
     private ClusterJobInformation extractClusterJobInformation(String[] lineTokens) {

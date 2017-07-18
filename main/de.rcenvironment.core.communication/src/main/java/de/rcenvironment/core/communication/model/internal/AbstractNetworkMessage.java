@@ -25,7 +25,10 @@ import de.rcenvironment.core.communication.utils.MessageUtils;
 public class AbstractNetworkMessage implements NetworkMessage {
 
     // TODO review
-    private static final String METADATA_KEY_REQUEST_ID = "common.requestId";
+    /**
+     * The key of the metadata field containing the request id.
+     */
+    public static final String METADATA_KEY_REQUEST_ID = "common.requestId";
 
     protected MessageMetaData metaDataWrapper;
 

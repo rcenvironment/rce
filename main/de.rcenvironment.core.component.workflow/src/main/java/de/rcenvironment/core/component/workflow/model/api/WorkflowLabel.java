@@ -136,6 +136,7 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     public void setLocation(int newX, int newY) {
         setX(newX);
         setY(newY);
+        firePropertyChange(PROPERTY_CHANGE);
     }
 
     public int getX() {

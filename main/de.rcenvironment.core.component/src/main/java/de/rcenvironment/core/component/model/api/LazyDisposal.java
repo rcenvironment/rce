@@ -14,7 +14,7 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Marks components which {@link Component#dispose()} method should be called on workflow disposal and
- * not immediately after the component had reached a final state (Finished, failed, cancelled), which is the default behavior.
+ * not immediately after the component had reached a final state (finished, failed, cancelled), which is the default behavior.
  * 
  * @author Doreen Seider
  */

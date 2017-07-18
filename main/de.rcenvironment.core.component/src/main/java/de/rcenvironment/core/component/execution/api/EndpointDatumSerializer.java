@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.execution.api;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 
 /**
- * (De-)Serializes {@link EndpointDatum} objects.
+ * (De-)Serializes {@link EndpointDatum} objects. Used when sent between components.
  * 
  * @author Doreen Seider
  *

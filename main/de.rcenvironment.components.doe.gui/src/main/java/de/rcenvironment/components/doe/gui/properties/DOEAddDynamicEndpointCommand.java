@@ -33,7 +33,7 @@ public class DOEAddDynamicEndpointCommand extends AddDynamicEndpointCommand {
     protected static final Log LOGGER = LogFactory.getLog(DOEAddDynamicEndpointCommand.class);
 
     public DOEAddDynamicEndpointCommand(EndpointType direction, String id, String name, DataType type, Map<String, String> metaData,
-        EndpointSelectionPane refresh) {
+        EndpointSelectionPane... refresh) {
         super(direction, id, name, type, metaData, refresh);
     }
 

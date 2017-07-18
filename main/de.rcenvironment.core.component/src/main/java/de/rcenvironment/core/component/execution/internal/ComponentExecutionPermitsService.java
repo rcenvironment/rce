@@ -16,6 +16,9 @@ import de.rcenvironment.core.component.execution.api.Component;
  * Handles permits for execution of components. This allows the limitation of the count of parallel component executions.
  * 
  * @author Doreen Seider
+ * 
+ * Note: For each component execution, a permit is acquired although a permit limit can only be set for integrated tools. For all
+ * components other than *ToolIntegrator, a permit is always granted. --seid_do
  */
 public interface ComponentExecutionPermitsService {
 

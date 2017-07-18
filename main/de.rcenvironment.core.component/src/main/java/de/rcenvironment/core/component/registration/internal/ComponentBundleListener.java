@@ -24,7 +24,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * {@link BundleListener} to recognize when new {@link Bundle}s providing a {@link Component} are installed in oder to start this
- * {@link Bundle}.
+ * {@link Bundle} and thus enforce the registration of the containing component.
  * 
  * @author Doreen Seider
  */

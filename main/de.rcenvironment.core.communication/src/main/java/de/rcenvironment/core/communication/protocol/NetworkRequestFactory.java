@@ -15,6 +15,7 @@ import java.util.Map;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.impl.NetworkRequestImpl;
+import de.rcenvironment.core.communication.model.internal.AbstractNetworkMessage;
 
 /**
  * Central factory for {@link NetworkRequest} instances. Encapsulates metadata generation and reconstruction of {@link NetworkRequest}s from
@@ -80,7 +81,7 @@ public final class NetworkRequestFactory {
      * @return the reconstructed {@link NetworkRequest}
      */
     public static NetworkRequest reconstructNetworkRequest(byte[] contentBytes, Map<String, String> metaData) {
-        return new NetworkRequestImpl(contentBytes, metaData);
+        return new NetworkRequestImpl(contentBytes, metaData, metaData.get(AbstractNetworkMessage.METADATA_KEY_REQUEST_ID));
     }
 
     /**

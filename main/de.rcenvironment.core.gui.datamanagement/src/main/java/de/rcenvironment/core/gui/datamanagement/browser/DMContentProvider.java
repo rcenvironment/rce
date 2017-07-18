@@ -170,17 +170,17 @@ public class DMContentProvider implements ITreeContentProvider {
     private Map<String, ComponentHistoryDataItemSubtreeBuilder> historySubtreeBuilders;
 
     /** Cached results for the MetaDataQuery. */
-    private Map<DMBrowserNode, WorkflowRun> workflowMetaDataMap = new HashMap<DMBrowserNode, WorkflowRun>();
+    private Map<DMBrowserNode, WorkflowRun> workflowMetaDataMap = new HashMap<>();
 
     /** Used to format timestamps in MetaData to readable dates. */
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private final List<DMBrowserNodeContentAvailabilityHandler> contentAvailabilityHandlers =
-        new CopyOnWriteArrayList<DMBrowserNodeContentAvailabilityHandler>();
+        new CopyOnWriteArrayList<>();
 
-    private final Set<DMBrowserNode> inProgress = new CopyOnWriteArraySet<DMBrowserNode>();
+    private final Set<DMBrowserNode> inProgress = new CopyOnWriteArraySet<>();
 
-    private final Set<String> warningIsShown = new CopyOnWriteArraySet<String>();
+    private final Set<String> warningIsShown = new CopyOnWriteArraySet<>();
 
     private InstanceNodeSessionId localInstanceSessionId;
 
@@ -196,7 +196,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
     private void registerBuilders() {
 
-        historySubtreeBuilders = new HashMap<String, ComponentHistoryDataItemSubtreeBuilder>();
+        historySubtreeBuilders = new HashMap<>();
 
         // get all extensions
         IConfigurationElement[] config = Platform.getExtensionRegistry()
@@ -246,7 +246,7 @@ public class DMContentProvider implements ITreeContentProvider {
                     } finally {
                         monitor.done();
                     }
-                };
+                }
             };
             job.setUser(true);
             job.schedule();
@@ -349,7 +349,7 @@ public class DMContentProvider implements ITreeContentProvider {
         Set<WorkflowRunDescription> workflowDescriptions = metaDataService.getWorkflowRunDescriptions();
 
         log.debug(StringUtils.format("query for all workflow run descriptions on all known nodes took %d ms",
-            (System.currentTimeMillis() - start)));
+            System.currentTimeMillis() - start));
 
         // map<id, node> to keep track of already-known contexts and their tree nodes
         final Map<String, DMBrowserNode> encounteredContexts = new HashMap<>();
@@ -357,7 +357,7 @@ public class DMContentProvider implements ITreeContentProvider {
         // parallelization later one
         Map<String, Map<String, DMBrowserNode>> encounteredContextsByInstanceNode = new HashMap<>();
         // map<id, node> to keep track of already-known contexts and their tree nodes
-        final Map<String, Long> workflowStarts = new HashMap<String, Long>();
+        final Map<String, Long> workflowStarts = new HashMap<>();
 
         /*
          * Iterate over the results and for each new workflow create a node and register the subnodes as children.
@@ -939,7 +939,7 @@ public class DMContentProvider implements ITreeContentProvider {
             Image decoratedImage = componentIcon;
 
             // If component is failed, add small failed icon
-            ImageDescriptor overlayIconDescriptor = null;
+            ImageDescriptor overlayIconDescriptor;
             if (isFailed) {
                 overlayIconDescriptor = DMBrowserImages.FAILED_SMALL;
                 if (overlayIconDescriptor != null) {
@@ -1008,7 +1008,7 @@ public class DMContentProvider implements ITreeContentProvider {
         }
         DefaultComponentHistoryDataItem defaultHistoryDataItem = new DefaultComponentHistoryDataItem();
         if (componentRun.getEndpointData() != null && !componentRun.getEndpointData().isEmpty()) {
-            List<EndpointData> ed = new ArrayList<EndpointData>();
+            List<EndpointData> ed = new ArrayList<>();
             ed.addAll(componentRun.getEndpointData());
             Collections.sort(ed);
             for (EndpointData endpointData : ed) {
@@ -1045,8 +1045,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
     @Override
     public DMBrowserNode[] getElements(Object inputElement) {
-        final DMBrowserNode[] result = getChildren(inputElement);
-        return result;
+        return getChildren(inputElement);
     }
 
     @Override

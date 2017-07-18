@@ -38,6 +38,10 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Heinrich Wendel
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: This class was continuously subject to change for a pretty long time and got eroded over time. A Mantis issue covers that:
+ * https://mantis.sc.dlr.de/view.php?id=12071. Especially, the properties change support has some flaws, one resulting in
+ * https://mantis.sc.dlr.de/view.php?id=11707.
  */
 public class WorkflowDescription extends PropertiesChangeSupport implements Serializable, Cloneable {
 

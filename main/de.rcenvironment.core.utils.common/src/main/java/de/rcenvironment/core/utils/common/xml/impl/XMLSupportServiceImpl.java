@@ -144,6 +144,7 @@ public class XMLSupportServiceImpl implements XMLSupportService {
 
     /**
      * We have to initialize a new formatter because it is not thread safe.
+     * 
      * @throws XMLException if transformer cannot be created.
      * 
      */
@@ -353,7 +354,19 @@ public class XMLSupportServiceImpl implements XMLSupportService {
             for (int i = 0; i < nodes.getLength(); i++) {
                 final Node node = nodes.item(i);
                 final Node parentNode = node.getParentNode();
-                parentNode.removeChild(node);
+                if (parentNode != null) {
+                    parentNode.removeChild(node);
+                } else if (node.getNodeType() == Node.DOCUMENT_NODE) {
+                    // parentNode should only be null if the node is the document root node.
+                    // In this case, everything should be deleted.
+                    NodeList children = node.getChildNodes();
+                    for (int j = 0; j < children.getLength(); j++) {
+                        node.removeChild(children.item(j));
+                    }
+                } else {
+                    // Never expected to happen
+                    throw new XMLException("Parent node is null, but node is not the document root node.");
+                }
             }
         } catch (final XPathExpressionException e) {
             throw new XMLException("Error while deleting element: " + e.toString());

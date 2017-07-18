@@ -165,6 +165,11 @@ final class WorkflowPage extends WizardPage {
             @Override
             public void modifyText(ModifyEvent e) {
                 String name = WorkflowPage.this.workflowComposite.workflowNameText.getText();
+                if (name.isEmpty()) {
+                    setPageComplete(true);
+                } else {
+                    setPageComplete(false);
+                }
                 WorkflowPage.this.workflowDescription.setName(name);
             }
         });
@@ -174,8 +179,8 @@ final class WorkflowPage extends WizardPage {
         refreshControllersTargetInstance();
 
         // configure the workflow components table viewer
-        workflowComposite.componentsTableViewer
-            .setContentProvider(new WorkflowDescriptionContentProvider(SWT.UP, TableSortSelectionListener.COLUMN_NAME));
+        workflowComposite.componentsTableViewer.setContentProvider(
+            new WorkflowDescriptionContentProvider(SWT.UP, TableSortSelectionListener.COLUMN_NAME));
         workflowComposite.componentsTableViewer.setInput(workflowDescription);
 
         workflowComposite.additionalInformationText.addModifyListener(new ModifyListener() {
@@ -206,21 +211,19 @@ final class WorkflowPage extends WizardPage {
             }
         });
 
-        workflowComposite.controllerTargetNodeCombo
-            .addSelectionListener(new SelectionAdapter() {
+        workflowComposite.controllerTargetNodeCombo.addSelectionListener(new SelectionAdapter() {
 
-                @Override
-                public void widgetSelected(SelectionEvent event) {
-                    int index = workflowComposite.controllerTargetNodeCombo
-                        .getSelectionIndex();
-                    LogicalNodeId platform = (LogicalNodeId) workflowComposite.controllerTargetNodeCombo
-                        .getData(PLATFORM_DATA_PREFIX + index);
-                    workflowDescription.setControllerNode(platform);
-                    refreshControllersTargetInstance();
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                int index = workflowComposite.controllerTargetNodeCombo.getSelectionIndex();
+                LogicalNodeId platform = (LogicalNodeId) workflowComposite.controllerTargetNodeCombo
+                    .getData(PLATFORM_DATA_PREFIX + index);
+                workflowDescription.setControllerNode(platform);
+                refreshControllersTargetInstance();
 
-                }
+            }
 
-            });
+        });
 
     }
 
@@ -235,38 +238,32 @@ final class WorkflowPage extends WizardPage {
             comboControllerTarget.removeAll();
 
             // configure the workflow controller combo box
-            comboControllerTarget.add(localNodeId.getAssociatedDisplayName()
-                + " " + Messages.localPlatformSelectionTitle);
+            comboControllerTarget
+                .add(localNodeId.getAssociatedDisplayName() + " " + Messages.localPlatformSelectionTitle);
             comboControllerTarget.setData(PLATFORM_DATA_PREFIX + 0, null);
-            final List<LogicalNodeId> nodes = nodeIdConfigHelper
-                .getWorkflowControllerNodesSortedByName();
+            final List<LogicalNodeId> nodes = nodeIdConfigHelper.getWorkflowControllerNodesSortedByName();
             nodes.remove(localNodeId);
             int index = 0;
 
             for (LogicalNodeId node : nodes) {
                 index++;
-                comboControllerTarget.add(node
-                    .getAssociatedDisplayName());
-                comboControllerTarget.setData(
-                    PLATFORM_DATA_PREFIX + index, node);
+                comboControllerTarget.add(node.getAssociatedDisplayName());
+                comboControllerTarget.setData(PLATFORM_DATA_PREFIX + index, node);
 
             }
             // select the configured platform or default to the local platform
             LogicalNodeId selectedNode = workflowDescription.getControllerNode();
-            if (selectedNode == null || selectedNode.equals(localNodeId)
-                || !nodes.contains(selectedNode)) {
+            if (selectedNode == null || selectedNode.equals(localNodeId) || !nodes.contains(selectedNode)) {
                 comboControllerTarget.select(0);
 
             } else {
-                int indexNode = nodes
-                    .indexOf(selectedNode) + 1;
+                int indexNode = nodes.indexOf(selectedNode) + 1;
                 comboControllerTarget.select(indexNode);
 
             }
             index = comboControllerTarget.getSelectionIndex();
 
-            LogicalNodeId platform = (LogicalNodeId) comboControllerTarget
-                .getData(PLATFORM_DATA_PREFIX + index);
+            LogicalNodeId platform = (LogicalNodeId) comboControllerTarget.getData(PLATFORM_DATA_PREFIX + index);
             workflowDescription.setControllerNode(platform);
         }
     }
@@ -285,7 +282,10 @@ final class WorkflowPage extends WizardPage {
 
         setErrorMessage(null);
         setDescription(Messages.configure);
-
+        String name = WorkflowPage.this.workflowComposite.workflowNameText.getText();
+        if (name.isEmpty()) {
+            return false;
+        }
         return true;
 
     }
@@ -314,7 +314,8 @@ final class WorkflowPage extends WizardPage {
         // Sorting of invalid nodes in list
         Collections.sort(nodes);
 
-        // list only the first three nodes in error message to ensure readability
+        // list only the first three nodes in error message to ensure
+        // readability
         int count = 0;
         String errorNodes = " ";
         for (WorkflowNode node : nodes) {
@@ -386,8 +387,7 @@ final class WorkflowPage extends WizardPage {
          * @author Christian Weiss
          * @author Goekhan Guerkan
          */
-        private class WorkflowNodeNameLabelProvider extends
-            StyledCellLabelProvider {
+        private class WorkflowNodeNameLabelProvider extends StyledCellLabelProvider {
 
             @Override
             protected void paint(Event event, Object element) {
@@ -412,8 +412,7 @@ final class WorkflowPage extends WizardPage {
          * @author Goekhan Guerkan
          */
 
-        private final class WorkflowNodeNameLabelTreeProvider extends
-            StyledCellLabelProvider {
+        private final class WorkflowNodeNameLabelTreeProvider extends StyledCellLabelProvider {
 
             private final int offsetName = 30;
 
@@ -440,7 +439,8 @@ final class WorkflowPage extends WizardPage {
                     final int positionnName = bounds.x + offsetName;
                     final int postionPicture = bounds.x + offsetPic;
 
-                    gc.drawImage(targetNodeLabelProviderTree.getImage(node.getWorkflowNode()), postionPicture, bounds.y);
+                    gc.drawImage(targetNodeLabelProviderTree.getImage(node.getWorkflowNode()), postionPicture,
+                        bounds.y);
                     gc.drawText(node.getComponentName(), positionnName, bounds.y);
 
                 } else {
@@ -477,7 +477,9 @@ final class WorkflowPage extends WizardPage {
         /** Group for bulk Operation. */
         private Group grpComponentsTp;
 
-        /** Text field for the additional information of the selected workflow. */
+        /**
+         * Text field for the additional information of the selected workflow.
+         */
         private Text additionalInformationText;
 
         /** Filter for the table. */
@@ -493,7 +495,9 @@ final class WorkflowPage extends WizardPage {
 
         private TableBehaviour tableUpdater;
 
-        /** Image to "fake" check box in a TableColumn. SWT does not support check box for a column */
+        /**
+         * Image to "fake" check box in a TableColumn. SWT does not support check box for a column
+         */
 
         private Image checkedImg;
 
@@ -528,32 +532,26 @@ final class WorkflowPage extends WizardPage {
             Group groupName = new Group(containerMain, SWT.NONE);
             groupName.setLayout(new GridLayout(1, false));
             groupName.setText(Messages.nameGroupTitle);
-            groupName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-                false, 1, 1));
+            groupName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
             workflowNameText = new Text(groupName, SWT.BORDER);
             workflowNameText.setText("");
-            workflowNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
-                true, false, 1, 1));
+            workflowNameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
             Group grpTargetPlatform = new Group(containerMain, SWT.NONE);
 
             grpTargetPlatform.setLayout(new GridLayout(1, false));
             grpTargetPlatform.setText(Messages.controlTP);
-            grpTargetPlatform.setLayoutData(new GridData(SWT.FILL, SWT.TOP,
-                true, false, 1, 1));
+            grpTargetPlatform.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1));
 
-            controllerTargetNodeCombo = new CCombo(grpTargetPlatform,
-                SWT.READ_ONLY | SWT.BORDER);
-            controllerTargetNodeCombo.setLayoutData(new GridData(SWT.FILL,
-                SWT.CENTER, true, false, 1, 1));
+            controllerTargetNodeCombo = new CCombo(grpTargetPlatform, SWT.READ_ONLY | SWT.BORDER);
+            controllerTargetNodeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
             controllerTargetNodeCombo.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 
             grpComponentsTp = new Group(containerMain, SWT.NONE);
             grpComponentsTp.setLayout(new GridLayout(4, false));
             grpComponentsTp.setText(Messages.componentsTP);
-            grpComponentsTp.setLayoutData(new GridData(SWT.FILL, SWT.FILL,
-                true, true, 1, 1));
+            grpComponentsTp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
             final int tableHWin = 200;
             final int tableHLinux = 170;
@@ -643,19 +641,16 @@ final class WorkflowPage extends WizardPage {
                 }
             });
 
-            componentsTableViewer = new TableViewer(grpComponentsTp, SWT.H_SCROLL
-                | SWT.V_SCROLL | SWT.BORDER);
+            componentsTableViewer = new TableViewer(grpComponentsTp, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
 
             componentsTableViewer.getTable().addControlListener(new ResizeListener());
 
             final Table componentsTable = componentsTableViewer.getTable();
             componentsTable.setHeaderVisible(true);
             final int visibleRows = 5;
-            GridData data = new GridData(SWT.FILL, SWT.FILL,
-                true, true, 4, 1);
+            GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1);
             data.minimumHeight = tableHeight;
-            data.heightHint = (visibleRows + 1)
-                * componentsTable.getItemHeight();
+            data.heightHint = (visibleRows + 1) * componentsTable.getItemHeight();
             componentsTable.setLayoutData(data);
 
             editingSupport = new TargetNodeEditingSupport(nodeIdConfigHelper, localNodeId, componentsTableViewer, 1);
@@ -830,7 +825,10 @@ final class WorkflowPage extends WizardPage {
                 componentsTableViewer.getTable().setVisible(false);
             } else {
                 filterTable.setSearchText(search.getText());
-                tableUpdater.setCurrentlyUsedSortingColumn(1); // back to default after change of view.
+                tableUpdater.setCurrentlyUsedSortingColumn(1); // back to
+                                                               // default after
+                                                               // change of
+                                                               // view.
                 tableUpdater.refreshColumns();
                 dataTable.exclude = false;
                 componentsTableViewer.getTable().setVisible(true);
@@ -843,11 +841,10 @@ final class WorkflowPage extends WizardPage {
         }
 
         private void buildTree() {
-            componentsTreeViewer = new TreeViewer(grpComponentsTp, SWT.H_SCROLL
-                | SWT.V_SCROLL | SWT.BORDER);
+            componentsTreeViewer = new TreeViewer(grpComponentsTp, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
             componentsTreeViewer.getTree().addControlListener(new ResizeListener());
-            targetNodeLabelProviderTree = new WorkflowNodeTargetPlatformLabelProvider(
-                editingSupport, workflowDescription, getWizard());
+            targetNodeLabelProviderTree = new WorkflowNodeTargetPlatformLabelProvider(editingSupport,
+                workflowDescription, getWizard());
             checkboxProviderTree = new CheckboxLabelProvider();
             targetNodeLabelProviderTree.setPage(WorkflowPage.this);
             componentsTreeViewer.getTree().addListener(SWT.Expand, new Listener() {
@@ -871,17 +868,15 @@ final class WorkflowPage extends WizardPage {
             componentsTreeViewer.setInput(workflowDescription);
             componentsTreeViewer.getTree().setHeaderVisible(true);
             final int visibleRows = 5;
-            GridData dataOfTree = new GridData(SWT.FILL, SWT.FILL,
-                true, true, 1, 1);
+            GridData dataOfTree = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
             dataOfTree.horizontalSpan = 10;
             dataOfTree.exclude = true;
             dataOfTree.minimumHeight = tableHeight;
-            dataOfTree.heightHint = (visibleRows + 1)
-                * componentsTreeViewer.getTree().getItemHeight();
+            dataOfTree.heightHint = (visibleRows + 1) * componentsTreeViewer.getTree().getItemHeight();
             componentsTreeViewer.getTree().setLayoutData(dataOfTree);
             componentsTreeViewer.getTree().setVisible(false);
-            final TreeViewerColumn columnViewerBox =
-                createTreeColumn(componentsTreeViewer, checkboxProviderTree, "", WIDTH_BOX_COLUMN);
+            final TreeViewerColumn columnViewerBox = createTreeColumn(componentsTreeViewer, checkboxProviderTree, "",
+                WIDTH_BOX_COLUMN);
             columnViewerBox.getColumn().setImage(uncheckedImg);
             columnViewerBox.getColumn().setText(ALL);
             columnViewerBox.getColumn().addSelectionListener(new SelectionAdapter() {
@@ -925,8 +920,8 @@ final class WorkflowPage extends WizardPage {
                 }
             });
 
-            TreeViewerColumn columnViewer =
-                createTreeColumn(componentsTreeViewer, new WorkflowNodeNameLabelTreeProvider(), Messages.component, WIDTH_NAME_COLUMN);
+            TreeViewerColumn columnViewer = createTreeColumn(componentsTreeViewer,
+                new WorkflowNodeNameLabelTreeProvider(), Messages.component, WIDTH_NAME_COLUMN);
             componentsTreeViewer.getTree().setSortColumn(columnViewer.getColumn());
             componentsTreeViewer.getTree().setSortDirection(SWT.UP);
             columnViewer.getColumn().addSelectionListener(new SelectionAdapter() {
@@ -963,17 +958,20 @@ final class WorkflowPage extends WizardPage {
                 }
             });
 
-            createTreeColumn(componentsTreeViewer, targetNodeLabelProviderTree, Messages.targetPlatform, WIDTH_INSTANCE_COLUMN);
+            createTreeColumn(componentsTreeViewer, targetNodeLabelProviderTree, Messages.targetPlatform,
+                WIDTH_INSTANCE_COLUMN);
             filterTree = new Filter(treeUpdater);
             componentsTreeViewer.addFilter(filterTree);
             componentsTreeViewer.refresh();
             componentsTreeViewer.getTree().setVisible(false);
-            // Disabled Selection, as selection overrides the color of the background and it has no use in this case.
+            // Disabled Selection, as selection overrides the color of the
+            // background and it has no use in this case.
             componentsTreeViewer.getTree().addListener(SWT.EraseItem, new Listener() {
 
                 @Override
                 public void handleEvent(Event event) {
-                    // Selection: ( On linux it highlights the text white if disabled, included white background it's bad).
+                    // Selection: ( On linux it highlights the text white if
+                    // disabled, included white background it's bad).
                     event.detail &= ~SWT.SELECTED;
                     // MouseOver:
                     event.detail &= ~SWT.HOT;
@@ -1009,8 +1007,7 @@ final class WorkflowPage extends WizardPage {
         private TreeViewerColumn createTreeColumn(TreeViewer treeViewer, CellLabelProvider provider,
             String columnHeader, int width) {
 
-            TreeViewerColumn column = new TreeViewerColumn(
-                componentsTreeViewer, SWT.HIDE_SELECTION);
+            TreeViewerColumn column = new TreeViewerColumn(componentsTreeViewer, SWT.HIDE_SELECTION);
 
             column.getColumn().setAlignment(SWT.LEFT);
 
@@ -1027,11 +1024,12 @@ final class WorkflowPage extends WizardPage {
 
         private void buildTable() {
 
-            targetNodeLabelProviderTable = new WorkflowNodeTargetPlatformLabelProvider(
-                editingSupport, workflowDescription, getWizard());
+            targetNodeLabelProviderTable = new WorkflowNodeTargetPlatformLabelProvider(editingSupport,
+                workflowDescription, getWizard());
 
             checkboxProviderTable = new CheckboxLabelProvider();
-            tableUpdater = new TableBehaviour(componentsTableViewer, targetNodeLabelProviderTable, checkboxProviderTable);
+            tableUpdater = new TableBehaviour(componentsTableViewer, targetNodeLabelProviderTable,
+                checkboxProviderTable);
             checkboxProviderTable.setUpdater(tableUpdater);
             targetNodeLabelProviderTable.setUpdater(tableUpdater);
             targetNodeLabelProviderTable.setPage(WorkflowPage.this);
@@ -1041,7 +1039,8 @@ final class WorkflowPage extends WizardPage {
 
             WorkflowNodeNameLabelProvider providerNames = new WorkflowNodeNameLabelProvider();
 
-            final TableColumn columnCheck = createTableColumn(componentsTableViewer, checkboxProviderTable, "", WIDTH_BOX_COLUMN);
+            final TableColumn columnCheck = createTableColumn(componentsTableViewer, checkboxProviderTable, "",
+                WIDTH_BOX_COLUMN);
             columnCheck.setText(ALL);
             columnCheck.addSelectionListener(new SelectionAdapter() {
 
@@ -1096,17 +1095,20 @@ final class WorkflowPage extends WizardPage {
 
             columnCheck.setImage(uncheckedImg);
 
-            TableColumn columnName = createTableColumn(componentsTableViewer, providerNames, Messages.component, WIDTH_NAME_COLUMN);
+            TableColumn columnName = createTableColumn(componentsTableViewer, providerNames, Messages.component,
+                WIDTH_NAME_COLUMN);
             columnName.setData(TableSortSelectionListener.COLUMN_NAME);
 
-            TableColumn columnInstance =
-                createTableColumn(componentsTableViewer, targetNodeLabelProviderTable, Messages.targetPlatform, WIDTH_INSTANCE_COLUMN);
+            TableColumn columnInstance = createTableColumn(componentsTableViewer, targetNodeLabelProviderTable,
+                Messages.targetPlatform, WIDTH_INSTANCE_COLUMN);
             columnInstance.setData(TableSortSelectionListener.COLUMN_INSTANCE);
 
-            TableSortSelectionListener listenerColumnOne = new TableSortSelectionListener(componentsTableViewer, columnName, SWT.DOWN);
+            TableSortSelectionListener listenerColumnOne = new TableSortSelectionListener(componentsTableViewer,
+                columnName, SWT.DOWN);
             listenerColumnOne.setUpdaterTable(tableUpdater);
 
-            TableSortSelectionListener listenerColumnTwo = new TableSortSelectionListener(componentsTableViewer, columnInstance, SWT.DOWN);
+            TableSortSelectionListener listenerColumnTwo = new TableSortSelectionListener(componentsTableViewer,
+                columnInstance, SWT.DOWN);
             listenerColumnTwo.setUpdaterTable(tableUpdater);
 
             componentsTableViewer.getTable().setSortColumn(columnName);
@@ -1116,11 +1118,9 @@ final class WorkflowPage extends WizardPage {
 
         }
 
-        private TableColumn createTableColumn(TableViewer viewer, CellLabelProvider provider, String text,
-            int width) {
+        private TableColumn createTableColumn(TableViewer viewer, CellLabelProvider provider, String text, int width) {
 
-            TableViewerColumn column = new TableViewerColumn(
-                viewer, SWT.FILL);
+            TableViewerColumn column = new TableViewerColumn(viewer, SWT.FILL);
 
             column.setLabelProvider(provider);
 
@@ -1140,7 +1140,8 @@ final class WorkflowPage extends WizardPage {
 
             @Override
             public void handleEvent(Event event) {
-                // Selection: ( On linux it highlights the text white if disabled, included white background it's bad).
+                // Selection: ( On linux it highlights the text white if
+                // disabled, included white background it's bad).
                 event.detail &= ~SWT.SELECTED;
 
                 // MouseOver:
@@ -1201,12 +1202,10 @@ final class WorkflowPage extends WizardPage {
             List<WorkflowNode> invalidNodesList = new ArrayList<WorkflowNode>();
 
             if (componentsTableViewer.getTable().isVisible()) {
-                entries = targetNodeLabelProviderTable
-                    .getNodesValidList().entrySet().iterator();
+                entries = targetNodeLabelProviderTable.getNodesValidList().entrySet().iterator();
             } else {
 
-                entries = targetNodeLabelProviderTree
-                    .getNodesValidList().entrySet().iterator();
+                entries = targetNodeLabelProviderTree.getNodesValidList().entrySet().iterator();
             }
 
             while (entries.hasNext()) {

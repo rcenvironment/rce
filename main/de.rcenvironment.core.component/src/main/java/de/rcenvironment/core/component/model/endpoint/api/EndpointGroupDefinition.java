@@ -12,6 +12,8 @@ package de.rcenvironment.core.component.model.endpoint.api;
  * Describes an input group which can contain inputs and other input groups.
  * 
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link EndpointDefinition}. --seid_do
  */
 public interface EndpointGroupDefinition {
 

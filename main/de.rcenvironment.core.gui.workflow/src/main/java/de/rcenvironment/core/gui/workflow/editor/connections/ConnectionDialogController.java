@@ -21,7 +21,6 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 
-
 /**
  * Controller class for the connection dialog.
  * 
@@ -43,16 +42,16 @@ public class ConnectionDialogController {
     private WorkflowNode targetWorkflowNode;
 
     private boolean wasDoubleClicked;
-    
+
     public ConnectionDialogController(WorkflowDescription description, WorkflowNode source, WorkflowNode target, boolean wasDoubleClicked) {
 
         this.description = description;
 
         this.sourceWorkflowNode = source;
         this.targetWorkflowNode = target;
-        
+
         this.wasDoubleClicked = wasDoubleClicked;
-        
+
         dialog = new ConnectionDialog(Display.getCurrent().getActiveShell());
 
         dialog.create();
@@ -61,10 +60,10 @@ public class ConnectionDialogController {
         initialize();
 
         // prevent auto connect on double click
-        if (!wasDoubleClicked){
+        if (!wasDoubleClicked) {
             boolean autoConnected = checkForAutoConnection();
             dialog.getAutoConnectInfoLabel().setVisible(autoConnected);
-            if (autoConnected){
+            if (autoConnected) {
                 dialog.getConnectionDialogComposite().getTargetTreeViewer().refresh();
                 dialog.getConnectionDialogComposite().getSourceTreeViewer().refresh();
             }
@@ -95,7 +94,7 @@ public class ConnectionDialogController {
         dialog.getConnectionDialogComposite().setWasDoubleClicked(wasDoubleClicked);
         dialog.getConnectionDialogComposite().applySourceFilter();
         dialog.getConnectionDialogComposite().applyTargetFilter();
-        
+
         // start with empty selection
         dialog.getConnectionDialogComposite().getSourceTreeViewer().setSelection(StructuredSelection.EMPTY);
         dialog.getConnectionDialogComposite().getTargetTreeViewer().setSelection(StructuredSelection.EMPTY);
@@ -124,11 +123,12 @@ public class ConnectionDialogController {
                             return false;
                         }
                     }
-                    
-                    List<Location> bendpoints = 
-                        ConnectionUtils.findAlreadyExistentBendpointsBySourceAndTarget(sourceWorkflowNode, targetWorkflowNode, description);
-                    
-                    Connection newConnection = 
+
+                    List<Location> bendpoints =
+                        ConnectionUtils.findAlreadyExistentBendpointsFromSourceToTarget(
+                            sourceWorkflowNode, targetWorkflowNode, description);
+
+                    Connection newConnection =
                         new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput, bendpoints);
                     if (!description.getConnections().contains(newConnection)) {
                         description.addConnection(newConnection);
@@ -138,11 +138,11 @@ public class ConnectionDialogController {
             } else if (sourceWorkflowNode.getOutputDescriptionsManager().getEndpointDescriptions().size() > 0
                 && targetWorkflowNode.getInputDescriptionsManager().getEndpointDescriptions().size() > 0) {
                 // what to do with more than one endpoint
-                for (EndpointDescription sourceOutput : sourceWorkflowNode.getOutputDescriptionsManager().getEndpointDescriptions()){
-                    for (EndpointDescription targetInput : targetWorkflowNode.getInputDescriptionsManager().getEndpointDescriptions()){
+                for (EndpointDescription sourceOutput : sourceWorkflowNode.getOutputDescriptionsManager().getEndpointDescriptions()) {
+                    for (EndpointDescription targetInput : targetWorkflowNode.getInputDescriptionsManager().getEndpointDescriptions()) {
                         List<Connection> connectionsToBeAdded = new ArrayList<>();
-                        if (sourceOutput.getDataType().equals(targetInput.getDataType()) 
-                            && sourceOutput.getName().equals(targetInput.getName())){
+                        if (sourceOutput.getDataType().equals(targetInput.getDataType())
+                            && sourceOutput.getName().equals(targetInput.getName())) {
                             // if input is already connected - no auto connect
                             boolean alreadyExists = false;
                             for (Connection connection : description.getConnections()) {
@@ -151,9 +151,9 @@ public class ConnectionDialogController {
                                     break;
                                 }
                             }
-                            List<Location> bendpoints = ConnectionUtils.findAlreadyExistentBendpointsBySourceAndTarget(sourceWorkflowNode
-                                , targetWorkflowNode, description);
-                            Connection newConnection = 
+                            List<Location> bendpoints = ConnectionUtils.findAlreadyExistentBendpointsFromSourceToTarget(sourceWorkflowNode,
+                                targetWorkflowNode, description);
+                            Connection newConnection =
                                 new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput, bendpoints);
                             if (!description.getConnections().contains(newConnection) && !alreadyExists) {
                                 connectionsToBeAdded.add(newConnection);
@@ -168,8 +168,5 @@ public class ConnectionDialogController {
         }
         return autoConnected;
     }
-    
-    
-    
 
 }

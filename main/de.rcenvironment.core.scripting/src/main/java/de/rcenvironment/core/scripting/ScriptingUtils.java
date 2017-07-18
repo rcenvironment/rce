@@ -11,7 +11,9 @@ package de.rcenvironment.core.scripting;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -25,6 +27,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Platform;
+import org.osgi.framework.Bundle;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -41,7 +46,6 @@ import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
-import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
@@ -66,13 +70,22 @@ public final class ScriptingUtils {
 
     protected static final Log LOGGER = LogFactory.getLog(ScriptingUtils.class);
 
-    private static final String JYTHON_JAR = "jython-standalone-2.5.1.jar";
+    /**
+     * Name of the bundle containing the Jython jar. The bundle de.rcenvironment.platform.maven.other is specified as required in the
+     * MANIFEST.MF of this scriping bundle.
+     */
+    private static final String BUNDLE_CONTAINING_JYTHON_JAR = "de.rcenvironment.platform.maven.other";
+
+    /**
+     * Path to the Jython jar within the bundle containing the jar.
+     */
+    private static final String PATH_TO_JYTHON_JAR = "lib/maven/jython-standalone-2.5.1.jar";
 
     private static final String NOT_A_VALUE_UUID = "not_a_value_7fdc603e";
 
     private static final String USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING = " use Python as script language instead";
 
-    private static String jythonPath = null;
+    private static File jythonPath = null;
 
     private static final String SLASH = "/";
 
@@ -96,25 +109,30 @@ public final class ScriptingUtils {
 
     /**
      * Determines the location of the jython.jar.
-     * 
+     *
      * @throws IOException no valid file
      * @return path if found, else null
      */
-    public static synchronized String getJythonPath() throws IOException {
+    public static synchronized File getJythonPath() throws IOException {
         if (jythonPath == null) {
             // getting the Path where the Jython.jar is located. This is needed to
             // import Libraries to the jython script, e.g. os or re.
-            String osgiConfigurationArea = System.getProperty("osgi.configuration.area");
-            String decode = URLDecoder.decode(osgiConfigurationArea, "UTF-8");
-            File osgiBundlestoreDir = null;
-            if (decode.startsWith("file:/")) {
-                osgiBundlestoreDir = new File(decode.substring(decode.indexOf("/")));
+
+            Bundle bundle = Platform.getBundle(BUNDLE_CONTAINING_JYTHON_JAR);
+            URL fileURL = bundle.getEntry(PATH_TO_JYTHON_JAR); // TODO write a test case for this, in case the path or the plugin bundles
+                                                               // changes
+            // resolves the searched file in the temp. unpacked JAR
+            URL resolvedFileURL = FileLocator.toFileURL(fileURL);
+            // We need to use the 3-arg constructor of URI in order to properly escape file system chars
+            URI resolvedURI;
+            try {
+                resolvedURI = new URI(resolvedFileURL.getProtocol(), resolvedFileURL.getPath(), null);
+            } catch (URISyntaxException e) {
+                throw new IOException(e);
             }
-            if (osgiBundlestoreDir != null) {
-                jythonPath = findJythonPath(osgiBundlestoreDir);
-            }
+
+            jythonPath = new File(resolvedURI).toPath().resolve("Lib").toFile();
         }
-        // return null;
         return jythonPath;
     }
 
@@ -123,7 +141,7 @@ public final class ScriptingUtils {
      * 
      * @param path to set
      */
-    public static synchronized void setJythonPath(String path) {
+    public static synchronized void setJythonPath(File path) {
         jythonPath = path;
     }
 
@@ -134,33 +152,6 @@ public final class ScriptingUtils {
     // System.setProperty("python.import.site", "false");
     // System.setProperty("python.console.encoding", "UTF-8");
     // }
-
-    /**
-     * Determines the location of the jython.jar.
-     * 
-     * @param file directory
-     * @throws IOException no valid file
-     * @return path if found, else null
-     */
-    private static String findJythonPath(File file) throws IOException {
-        if (file.isDirectory()) {
-            File[] children = file.listFiles();
-            for (File element : children) {
-                String path = findJythonPath(element);
-                if (path != null) {
-                    return path;
-                }
-            }
-        } else {
-            String path = file.getAbsolutePath();
-            path = path.replaceAll(ESCAPESLASH, SLASH);
-            String[] splitted = path.split(SLASH);
-            if (splitted[splitted.length - 1].equals(JYTHON_JAR)) {
-                return path + "/Lib";
-            }
-        }
-        return null;
-    }
 
     /**
      * Prepares a header script for using RCE Python API with Jython.
@@ -486,7 +477,7 @@ public final class ScriptingUtils {
      * @param workingPath for files
      * @param historyDataItem of component instance
      * @param lastRunStaticOutputValues map if the outputs should be saved
-     * @throws ComponentException e if there is an error
+     * @throws ComponentException e
      */
     @SuppressWarnings("unchecked")
     public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext, ScriptEngine engine,
@@ -502,7 +493,7 @@ public final class ScriptingUtils {
             if (datas != null) {
                 for (Object value : datas) {
                     if (value != null && !String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
-                        TypedDatum outputValue = getOutputByType(value, type, outputName, workingPath, engine, componentContext);
+                        TypedDatum outputValue = getOutputByType(value, type, outputName, workingPath, componentContext);
                         writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName, outputValue);
                     } else if (String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
                         writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName,
@@ -555,217 +546,32 @@ public final class ScriptingUtils {
         return returnSet;
     }
 
-    @SuppressWarnings("unchecked")
-    protected static TypedDatum getOutputByType(Object value, DataType type, String name, String workingPath, ScriptEngine engine,
-        ComponentContext componentContext)
-        throws ComponentException {
+    /**
+     * @param value Java object which should be parsed to {@link TypedDatum}.
+     * @param type {@link DataType} of the output.
+     * @param name Output name.
+     * @param workingPath Relevant for {@link FileReferenceTD} and {@link DirectoryReferenceTD} types.
+     * @param componentContext 
+     * @return The parsed {@link TypedDatum}
+     * @throws ComponentException e
+     */
+    public static TypedDatum getOutputByType(Object value, DataType type, String name, String workingPath,
+        ComponentContext componentContext) throws ComponentException {
         TypedDatum outputValue = null;
         switch (type) {
-        case ShortText:
-            outputValue = typedDatumFactory.createShortText(value.toString());
-            break;
-        case Boolean:
-            String stringValue = value.toString();
-            boolean isNumber = true;
 
-            try {
-                float numberValue = Float.parseFloat(stringValue);
-                if (Math.abs(numberValue) > 0) {
-                    outputValue = typedDatumFactory.createBoolean(true);
-                } else {
-                    outputValue = typedDatumFactory.createBoolean(false);
-                }
-            } catch (NumberFormatException e) {
-                isNumber = false;
-            }
-
-            if (!isNumber && (stringValue.equalsIgnoreCase("0") || stringValue.equalsIgnoreCase("0L") || stringValue.equalsIgnoreCase("0.0")
-                || stringValue.equalsIgnoreCase("0j") || stringValue.equalsIgnoreCase("()") || stringValue.equalsIgnoreCase("[]")
-                || stringValue.isEmpty() || stringValue.equalsIgnoreCase("{}") || stringValue.equalsIgnoreCase("false")
-                || stringValue.equalsIgnoreCase("none"))) {
-
-                outputValue = typedDatumFactory.createBoolean(false);
-
-            } else if (!isNumber) {
-                outputValue = typedDatumFactory.createBoolean(true);
-            }
-            break;
-        case Float:
-            try {
-                outputValue = typedDatumFactory.createFloat(Double.parseDouble(value.toString()));
-            } catch (NumberFormatException e) {
-                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float."
-                    + " Possible reasons (not restricted): Output value too big (max. %.1e),"
-                    + " or output value contains non numeric characters.",
-                    value.toString(), Double.MAX_VALUE));
-            }
-
-            break;
-        case Integer:
-            try {
-                outputValue = typedDatumFactory.createInteger(Long.parseLong(value.toString()));
-            } catch (NumberFormatException e) {
-                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Integer."
-                    + " Possible reasons (not restricted): Output value too big (max. 2E"
-                    + Long.toBinaryString(Long.MAX_VALUE).length() + " - 1),"
-                    + " or output value contains non numeric characters.",
-                    value.toString()));
-            }
-
-            break;
         case FileReference:
             outputValue = handeFileOrDirectoryOutput(value, "file", name, workingPath, componentContext, outputValue);
             break;
         case DirectoryReference:
             outputValue = handeFileOrDirectoryOutput(value, "directory ", name, workingPath, componentContext, outputValue);
             break;
-        case Vector:
-            VectorTD vector = null;
-            List<Object> vectorRow = (List<Object>) value;
-            vector = typedDatumFactory.createVector(vectorRow.size());
-            int index = 0;
-            for (Object element : vectorRow) {
-                double convertedValue = 0;
-                if (element instanceof List) {
-                    throw new ComponentException(StringUtils
-                        .format("Value for endpoint %s was a matrix, but endpoint is of type Vector", name));
-                }
-                if (element == null) {
-                    throw new ComponentException(StringUtils
-                        .format("Value \"None\" of cell %s is not valid for type Vector \"%s\"", index, name));
-                } else if (element instanceof Integer) {
-                    convertedValue = (Integer) element;
-                } else {
-                    convertedValue = (Double) element;
-                }
-                vector.setFloatTDForElement(typedDatumFactory.createFloat(convertedValue), index);
-                index++;
-            }
-            outputValue = vector;
-            break;
-        case Matrix:
-            outputValue = createResultMatrix(value, name);
-            break;
-        case SmallTable:
-            TypedDatum[][] result = createResultArray(value);
-            outputValue = typedDatumFactory.createSmallTable(result);
-            break;
         default:
-            outputValue = typedDatumFactory.createShortText(engine.get(name).toString());
+            outputValue = ScriptDataTypeHelper.parseToTypedDatum(value, typedDatumFactory, type);
             break;
         }
+
         return outputValue;
-    }
-
-    /**
-     * Converts the output of the script to a {@link MatrixTD}.
-     * 
-     * @param value result of script
-     * @param name of output
-     * @return created matrix
-     * @throws ComponentException if the dimensions are not correct.
-     */
-    @SuppressWarnings("unchecked")
-    public static MatrixTD createResultMatrix(Object value, String name) throws ComponentException {
-        if (!(value instanceof List)) {
-            throw new ComponentException(StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", value, name));
-        }
-        List<Object> rowArray = (List<Object>) value;
-        if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
-            int columnDimension = ((List<Object>) rowArray.get(0)).size();
-            MatrixTD matrix = typedDatumFactory.createMatrix(rowArray.size(), columnDimension);
-            int i = 0;
-            for (Object columnObject : rowArray) {
-                if (!(columnObject instanceof List)) {
-                    throw new ComponentException(
-                        StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", columnObject, name));
-                }
-                List<Object> columnArray = (List<Object>) columnObject;
-                if (columnArray.size() == 0) {
-                    throw new ComponentException(StringUtils.format("Column %s of matrix \"%s\" does not contain any elements.", i, name));
-                }
-                if (columnArray.size() != columnDimension) {
-                    throw new ComponentException(
-                        StringUtils.format("Column %s of matrix %s has the wrong dimension (%s, should be %s).", i, name,
-                            columnArray.size(), columnDimension));
-                }
-                int j = 0;
-                for (Object element : columnArray) {
-                    TypedDatum cellValue = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
-                    if (cellValue instanceof FloatTD) {
-                        matrix.setFloatTDForElement((FloatTD) cellValue, i, j++);
-                    } else if (cellValue instanceof IntegerTD) {
-                        matrix.setFloatTDForElement(typedDatumFactory.createFloat(((IntegerTD) cellValue).getIntValue()), i, j++);
-                    } else if (cellValue instanceof ShortTextTD && ((ShortTextTD) cellValue).getShortTextValue().equals("+Infinity")) {
-                        matrix.setFloatTDForElement(typedDatumFactory.createFloat(Double.POSITIVE_INFINITY), i, j++);
-                    } else {
-                        String elementString = "None";
-                        if (element != null) {
-                            elementString = element.toString();
-                        }
-                        throw new ComponentException(
-                            StringUtils.format("Value \"%s\" of cell (%s, %s) of matrix \"%s\" is not an integer or a float value.",
-                                elementString, i, j, name));
-                    }
-                }
-                i++;
-            }
-            return matrix;
-        }
-        throw new ComponentException(StringUtils.format("Dimensions of %s not correct to convert to a Matrix", name));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static TypedDatum[][] createResultArray(Object value) throws ComponentException {
-        if (!(value instanceof List)) {
-            throw new ComponentException(StringUtils.format("Value \"%s\" is not of type small table.", value));
-        }
-        List<Object> rowArray = (List<Object>) value;
-        TypedDatum[][] result = new TypedDatum[rowArray.size()][];
-        Object first = "";
-        if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
-            int i = 0;
-            int size = 0;
-            for (Object columnObject : rowArray) {
-                if (!(columnObject instanceof List)) {
-                    throw new ComponentException(StringUtils.format("Value \"%s\" is not of type small table.", columnObject));
-                }
-                List<Object> columnArray = (List<Object>) columnObject;
-                if (size == 0) {
-                    first = columnObject;
-                    size = columnArray.size();
-                }
-
-                if (size != columnArray.size()) {
-                    throw new ComponentException(StringUtils.format(
-                        "Each row must have the same number of elements in a small table. "
-                            + "Element count of \"%s\" and \"%s\" does not match.",
-                        first, columnObject));
-                }
-
-                if (columnArray.size() == 0) {
-                    result[i] = new TypedDatum[1];
-                    result[i][0] = typedDatumFactory.createEmpty();
-                } else {
-                    result[i] = new TypedDatum[columnArray.size()];
-                }
-
-                int j = 0;
-                for (Object element : columnArray) {
-                    result[i][j++] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
-                }
-                i++;
-            }
-        } else {
-            int i = 0;
-            // ??
-            for (Object element : rowArray) {
-                result[i] = new TypedDatum[1];
-                result[i][0] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
-                i++;
-            }
-        }
-        return result;
     }
 
     private static TypedDatum handeFileOrDirectoryOutput(Object value, String type, String name, String workingPath,

@@ -602,26 +602,26 @@ public class LogView extends ViewPart {
     }
 
     protected void displayLogEntry(final SerializableLogEntry logEntry) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder builder = new StringBuilder();
         if (logEntry != null) {
-            buffer.append(logEntry.getMessage().replaceAll(SerializableLogEntry.RCE_SEPARATOR, "\n"));
+            builder.append(logEntry.getMessage().replaceAll(SerializableLogEntry.RCE_SEPARATOR, "\n"));
             if (logEntry.getException() != null) {
-                if (buffer.length() == 0) {
-                    buffer.append("(no message)");
+                if (builder.length() == 0) {
+                    builder.append("(no message)");
                 }
                 if (logEntry.getException() != null && !logEntry.getException().isEmpty()) {
                     // note: there were line breaks added here before, but that doesn't make sense with compacted exceptions anymore
-                    if (buffer.charAt(buffer.length() - 1) == ':') {
+                    if (builder.charAt(builder.length() - 1) == ':') {
                         // avoid double colons
-                        buffer.append(" ");
+                        builder.append(" ");
                     } else {
-                        buffer.append(": ");
+                        builder.append(": ");
                     }
-                    buffer.append(logEntry.getException());
+                    builder.append(logEntry.getException());
                 }
             }
         }
-        String text = buffer.toString();
+        String text = builder.toString();
         text = WordUtils.wrap(text, TEXT_AREA_WORD_WRAP_WIDTH, "\n", false);
         myMessageTextArea.setText(text);
         displayedLogEntry = logEntry;

@@ -16,6 +16,15 @@ import de.rcenvironment.core.component.execution.api.ComponentState;
  * Callback interface. Called on certain component lifecycle changes.
  * 
  * @author Doreen Seider
+ * 
+ * Note: Communication between a workflow controller and its components is done with RPCs. E.g., if a workflow controller wants all
+ * of its components to start, it calls their start method and waits for certain callbacks which announce certain states. It
+ * continues not before all of the states are reached.
+ * This class is used to get notified if the components reached certain states, e.g. all of them are finished.
+ * 
+ * In a future implementation I would consider to move from the RPC-based approach to a messaging-based approach for the
+ * workflow-component communication. I would expect to get cleaner code without so many waiting implemented in the workflow engine
+ * code which is error-prone. --seid_do
  */
 public interface ComponentStatesChangedEntirelyListener {
 

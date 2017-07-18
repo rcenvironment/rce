@@ -102,7 +102,7 @@ public final class InstanceOperationsImplReleaseLockDecorator extends AbstractIn
             }
             for (File f : profile.listFiles()) {
                 if (f.getName().equals(fileName)) {
-                    log.info("try to delete " + fileName + " file of profile: " + profile.getName());
+                    log.debug("Attempting to delete " + fileName + " file of profile " + profile.getName());
                     synchronized (profile) {
                         boolean success = f.delete();
                         if (!success) {

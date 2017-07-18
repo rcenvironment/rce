@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "a7ec9b7f-4043-4dd3-9c8a-a3703eaccfb9",
     "name" : "Discipline 1",
-    "location" : "551:97",
+    "location" : "260:40",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -64,13 +64,12 @@
       "identifier" : "1f3848f5-2aab-48d7-bea6-adadf455e997",
       "name" : "y1",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "dc6e6892-7661-4524-822e-f43f78220f9d",
     "name" : "Discipline 2",
-    "location" : "551:245",
+    "location" : "260:400",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -120,13 +119,12 @@
       "identifier" : "86390507-e59f-46e5-bc01-7ab04b6ccdea",
       "name" : "y2",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "bc02467f-0494-4516-b98c-896293a0bd28",
     "name" : "Objective",
-    "location" : "419:171",
+    "location" : "260:220",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -206,31 +204,28 @@
       "identifier" : "f62b466a-29cf-463e-b62a-1f6cb016458d",
       "name" : "coup1",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     }, {
       "identifier" : "dfaaecee-7cf2-4b99-8fd3-6221af8f39c3",
       "name" : "coup2",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     }, {
       "identifier" : "d624a31e-81cc-402e-b842-3392f2f1030f",
       "name" : "f",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "451b43d2-f062-4246-a0b2-5b95d32c81b4",
     "name" : "Optimizer",
-    "location" : "228:171",
+    "location" : "40:220",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "name" : "Optimizer",
-      "version" : "8"
+      "version" : "8",
+      "name" : "Optimizer"
     },
     "configuration" : {
       "CustomDakotaPath" : "false",
@@ -321,30 +316,20 @@
     "staticOutputs" : [ {
       "identifier" : "660d0a7d-dcfb-42af-b131-c3e39c24c19d",
       "name" : "Done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : { }
+      "datatype" : "Boolean"
     }, {
       "identifier" : "e8e2c4d5-1841-4bf0-b8ec-3ac6a7272599",
       "name" : "Gradient request",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : { }
+      "datatype" : "Boolean"
     }, {
       "identifier" : "a3d7dfdf-12d4-44da-a4b8-76d9e3ffeb09",
       "name" : "Iteration",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Integer",
-      "metadata" : { }
+      "datatype" : "Integer"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "77aa28bc-301a-4f9b-aa94-37ba5bef9205",
       "name" : "x1",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -363,7 +348,6 @@
       "identifier" : "6af75d95-71f8-450a-9c84-738a1f3b3c7a",
       "name" : "x1_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -379,7 +363,6 @@
       "identifier" : "87808858-d077-433a-bdb1-4a69572f2b9b",
       "name" : "y1c",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -398,7 +381,6 @@
       "identifier" : "b0e823ef-7d46-481e-b5cc-c5e6323a7d57",
       "name" : "y1c_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -414,7 +396,6 @@
       "identifier" : "2b9b59e3-4d65-4705-a271-2a79540bbe89",
       "name" : "y2c",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -433,7 +414,6 @@
       "identifier" : "8f7d7320-6a4d-4388-a31d-c780a8f8d408",
       "name" : "y2c_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -449,7 +429,6 @@
       "identifier" : "f57ee3eb-c9c7-4884-bf8b-441d338292f1",
       "name" : "z1",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -468,7 +447,6 @@
       "identifier" : "523442cd-337a-43eb-9ee5-68081d2d4609",
       "name" : "z1_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -484,7 +462,6 @@
       "identifier" : "23b8290c-a3c1-43a3-86cc-6be9b3eb79bc",
       "name" : "z2",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",
@@ -503,7 +480,6 @@
       "identifier" : "502c6992-a9f7-48d5-a142-886948cfb6fd",
       "name" : "z2_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "base" : "0.0",

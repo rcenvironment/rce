@@ -10,6 +10,8 @@
     "endpointFileName" : "CPACS_initial.xml",
     "endpointDataType" : "FileReference",
     "endpointName" : "CPACS initial",
+	"inputHandling" : "Single:Queue",
+    "defaultInputHandling" : "Queue",
     "endpointUsage" : "required"
   } ],
   "integrationType" : "CPACS",

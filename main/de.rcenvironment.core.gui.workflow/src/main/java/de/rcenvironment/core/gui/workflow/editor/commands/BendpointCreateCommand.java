@@ -30,9 +30,6 @@ public class BendpointCreateCommand extends AbstractBendpointCommand {
         for (Connection connection : connectionsInModel){
             connection.removeBendpoint(index, false);
         }
-        for (Connection connection : connectionsInModelInverse){
-            connection.removeBendpoint(index, true);
-        }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, 
             this.getClass().getSimpleName() + " undo");
     }
@@ -41,9 +38,6 @@ public class BendpointCreateCommand extends AbstractBendpointCommand {
     public void redo() {
         for (Connection connection : connectionsInModel){
             connection.addBendpoint(index, newLocation.x, newLocation.y, false);
-        }
-        for (Connection connection : connectionsInModelInverse){
-            connection.addBendpoint(index, newLocation.x, newLocation.y, true);
         }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedwrapper, 
             this.getClass().getSimpleName() + " execute or redo");
@@ -57,12 +51,7 @@ public class BendpointCreateCommand extends AbstractBendpointCommand {
                 equals(connectionsInModel.get(0).getTargetNode().getIdentifier())) {
                 return false;
             }
-        } else if (!connectionsInModelInverse.isEmpty()) {
-            if (connectionsInModelInverse.get(0).getSourceNode().getIdentifier()
-                .equals(connectionsInModelInverse.get(0).getTargetNode().getIdentifier())) {
-                return false;
-            }
-        }
+        } 
         return true;
     }
   

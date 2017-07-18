@@ -61,10 +61,10 @@ eval_cmd() {
 executeAsUser() {
   case `cat /proc/version` in
 	*Debian* | *Ubuntu*) 
-		sudo -u $USER $@ &	
+		sudo -u $USER $@
 		;;
 	*Red\ Hat* | *SUSE*)
-		su --session-command '$@' $USER &
+		su --session-command '$@' $USER
 		;;
   esac
 }
@@ -87,17 +87,24 @@ start() {
   # make sure RCE executable is executable by all users, including the daemon user
   chmod a+x $RCE_BINARY
   
-  # make sure the daemon profile, startup log file and default temp directory are not readable by non-group users, 
+  # make sure the daemon profile, startup log file and default temp directory are not readable by non-group users,
   # as they may contain sensitive data
   executeAsUser mkdir -p "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
-  executeAsUser touch $LOG_FILE
-
   chown --quiet $USER:$USER "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
+
+  if [ -e $LOG_FILE ]; then
+    chown --quiet $USER:$USER $LOG_FILE
+  else
+    executeAsUser touch $LOG_FILE
+  fi
+
   chmod --quiet o-rwx "$PROFILE_DIR" "$DEFAULT_TEMP_DIR" "$LOG_FILE"
+
 
   # start RCE
   case `cat /proc/version` in
-	*Debian* | *Ubuntu*) 
+	*Debian* | *Ubuntu*)
+		# output redirection is performed with root privileges
 		sudo -u $USER $RCE_BINARY $start_arguments &>$LOG_FILE &	
 		;;
 	*Red\ Hat* | *SUSE*)
@@ -153,7 +160,11 @@ stop() {
   PROFILE_DIR="$DAEMON_USER_HOME/.rce/$INSTANCE_ID"
   printf "Stopping RCE daemon (log file $LOG_FILE, RCE profile $PROFILE_DIR)"
   
-  executeAsUser touch $LOG_FILE
+  if [ -e $LOG_FILE ]; then
+    chown --quiet $USER:$USER $LOG_FILE
+  else
+    executeAsUser touch $LOG_FILE
+  fi
   chmod --quiet o-rwx $LOG_FILE
 
   # stop RCE

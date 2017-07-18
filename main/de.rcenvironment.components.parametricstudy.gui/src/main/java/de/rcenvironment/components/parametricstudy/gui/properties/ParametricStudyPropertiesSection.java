@@ -28,7 +28,7 @@ public class ParametricStudyPropertiesSection extends EndpointPropertySection {
 
         EndpointSelectionPane designValuesPane = new EndpointSelectionPane("Inputs (configuration)",
             EndpointType.INPUT, ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS, new String[] {}, new String[] {}, this,
-            true, true);
+            EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY, true);
 
         EndpointSelectionPane inputPane = new EndpointSelectionPane("Inputs (evaluation results received from loop)",
             EndpointType.INPUT, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, new String[] {}, new String[] {}, this, false,

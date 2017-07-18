@@ -52,7 +52,7 @@ public class WorkflowDescriptionValidationResult {
 
     @Override
     public String toString() {
-        StringBuffer causeLogMsg = new StringBuffer();
+        StringBuilder causeLogMsg = new StringBuilder();
         if (missingControllerNodeId != null) {
             causeLogMsg
                 .append(StringUtils.format("target instance for workflow controller unknown: %s", missingControllerNodeId));

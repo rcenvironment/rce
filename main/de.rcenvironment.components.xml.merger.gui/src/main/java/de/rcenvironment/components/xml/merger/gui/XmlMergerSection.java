@@ -144,6 +144,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         fileContentText = new StyledText(contentGroup, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
         fileContentText.setEditable(false);
         fileContentText.setLayoutData(gridData);
+        fileContentText.setCaret(null);
         fileContentText.setData(CONTROL_PROPERTY_KEY, XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
 
         section.setClient(client);

@@ -1,8 +1,8 @@
 ACTIVE JOBS--------------------
 JOBNAME            USERNAME      STATE  PROC   REMAINING            STARTTIME
 
-606                 seid_do    Running     1    00:30:02  Tue Aug 28 16:54:22
-569                 litz_ma    Running     1 94:20:20:45  Thu Aug 23 14:15:11
+606                 user_1    Running     1    00:30:02  Tue Aug 28 16:54:22
+569                 user_2    Running     1 94:20:20:45  Thu Aug 23 14:15:11
 
      2 Active Jobs       2 of   17 Processors Active (11.76%)
                          2 of    3 Nodes Active      (66.67%)
@@ -10,7 +10,7 @@ JOBNAME            USERNAME      STATE  PROC   REMAINING            STARTTIME
 IDLE JOBS----------------------
 JOBNAME            USERNAME      STATE  PROC     WCLIMIT            QUEUETIME
 
-607                 seid_do       Idle     1    00:00:05  Tue Aug 28 17:54:24
+607                 user_1       Idle     1    00:00:05  Tue Aug 28 17:54:24
 
 1 Idle Job 
 

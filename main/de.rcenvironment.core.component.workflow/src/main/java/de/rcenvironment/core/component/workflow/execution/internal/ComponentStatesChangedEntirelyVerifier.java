@@ -19,6 +19,8 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
  * Default implementation of {@link ComponentStatesChangedEntirelyVerifier}.
  * 
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link ComponentStatesChangedEntirelyListener}. --seid_do
  */
 public class ComponentStatesChangedEntirelyVerifier {
 

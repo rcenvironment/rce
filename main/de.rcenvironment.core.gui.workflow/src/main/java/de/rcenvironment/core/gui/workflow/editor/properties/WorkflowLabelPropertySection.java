@@ -273,6 +273,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
             @Override
             public void focusLost(FocusEvent arg0) {
                 editTextCommand = null;
+                headerTextField.setSelection(0);
             }
 
         });
@@ -391,6 +392,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
             @Override
             public void focusLost(FocusEvent arg0) {
                 editTextCommand = null;
+                textfield.setSelection(0);
             }
 
             @Override

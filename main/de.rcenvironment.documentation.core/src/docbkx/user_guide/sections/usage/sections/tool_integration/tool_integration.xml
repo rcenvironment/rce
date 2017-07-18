@@ -111,6 +111,23 @@
                 </note>
             </para>
         </sect3>
+        <sect3>
+            <title>Tool Execution Return Codes</title>
+            <para>The tools are executed by using a command line call on the operating system via
+                the "Execution Script". When the tool finished executing (with or without error),
+                its exit code is handed back to the execution script and can be analyzed in this
+                script. If in the script nothing else is done, the exit code is handed back to RCE.
+                When there is an exit code that is not "0", RCE assumes that the tool crashed and
+                thus lets the component crash without executing the "Post Script". Using the option
+                "Exit codes other than 0 is not an error" can prevent the component to crash
+                immediately. With this option enabled, the post script wil be executed in any way
+                and the exit code from the tool execution can be read by using the placeholder from "Additional
+                Properties". In this case, the post script can run any post processing and either
+                not fail the component, so the workflow runs as normal, or let the compoennt crash
+                after some debugging information was written using the Script API
+                "RCE.fail("reason")".</para>
+            <para/>
+        </sect3>
     </sect2>
     <sect2>
         <title>Integration of CPACS Tools</title>

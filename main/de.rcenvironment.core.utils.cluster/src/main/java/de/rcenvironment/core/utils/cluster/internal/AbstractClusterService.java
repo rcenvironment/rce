@@ -26,10 +26,8 @@ import com.jcraft.jsch.Session;
 
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation.ClusterJobState;
-import de.rcenvironment.core.utils.cluster.ClusterJobSourceService;
 import de.rcenvironment.core.utils.cluster.ClusterJobStateChangeListener;
 import de.rcenvironment.core.utils.cluster.ClusterService;
-import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
@@ -37,19 +35,17 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.JSchCommandLineExecutor;
 
 /**
  * Abstract implementation of {@link ClusterService} with common functionality.
+ * 
  * @author Doreen Seider
  */
 public abstract class AbstractClusterService implements ClusterService {
 
     protected static final String REMOTE_WORK_DIR = "~";
 
-    protected static ClusterJobSourceService informationService
-        = ServiceUtils.createFailingServiceProxy(ClusterJobSourceService.class);
-    
     protected SshSessionConfiguration sshConfiguration;
     
     protected Map<String, String> pathsToQueuingSystemCommands;
-    
+
     protected Session jschSession;
     
     protected volatile long latestFetch = 0;
@@ -69,29 +65,17 @@ public abstract class AbstractClusterService implements ClusterService {
         this.pathsToQueuingSystemCommands = pathsToQueuingSystemCommands;
     }
     
-    /**
-     * OSGi bind method.
-     * @param newService instance of {@link ClusterJobSourceService}
-     */
-    public void bindClusterJobSourceService(ClusterJobSourceService newService) {
-        informationService = newService;
-    }
-    
-    protected void unbindDistributedClusterJobSourceInformationService(ClusterJobSourceService oldService) {}
-    
     public void setPathsToQueuingSystemCommands(Map<String, String> pathsToQueuingSystemCommands) {
         this.pathsToQueuingSystemCommands = pathsToQueuingSystemCommands;
     }
     
-    @Override
-    public Set<ClusterJobInformation> fetchClusterJobInformation() throws IOException {
+    protected void ensureJschSessionEstablished() throws IOException {
         synchronized (this) {
             if (jschSession == null || !jschSession.isConnected()) {
                 try {
                     jschSession = JschSessionFactory.setupSession(sshConfiguration.getDestinationHost(),
                         sshConfiguration.getPort(), sshConfiguration.getSshAuthUser(), null,
                         sshConfiguration.getSshAuthPhrase(), null);
-                    
                 } catch (JSchException e) {
                     throw new IOException("Establishing connection to cluster failed: " + ExceptionUtils.getRootCauseMessage(e), e);
                 } catch (SshParameterException e) {
@@ -99,11 +83,7 @@ public abstract class AbstractClusterService implements ClusterService {
                 }
             }   
         }
-        
-        return fetchAndParseClusterJobInformation();
     }
-    
-    protected abstract Set<ClusterJobInformation> fetchAndParseClusterJobInformation() throws IOException;
     
     protected String buildMainCommand(String command) {
         // with Java 8 this can be improved by Map.getOrDefault()

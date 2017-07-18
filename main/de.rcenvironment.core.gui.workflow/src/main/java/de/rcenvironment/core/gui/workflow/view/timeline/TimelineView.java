@@ -321,8 +321,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                         @Override
                         public void run() {
                             if (!parentComposite.isDisposed()) {
-                                updateContent(timelineAsString);
-                                if (!actualContentSet) { // replace placeholder content with actual content
+                                
+                                if (updateContent(timelineAsString) && !actualContentSet) { // replace placeholder content with actual
+                                                                                            // content
                                     refreshLabel.setParent(new Shell());
                                     refreshLabel.dispose();
                                     rootComposite.setParent(parentComposite);
@@ -435,7 +436,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      * @param resource the resource
      */
     @SuppressWarnings("unchecked")
-    public void updateContent(String resource) {
+    private boolean updateContent(String resource) {
         // delete all!
         this.list.clear();
 
@@ -457,7 +458,12 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 || jsonWorkflowStart == null || jsonWorkflowStart.equals("")
                 || jsonWorkflowEnd == null || jsonWorkflowEnd.equals("")
                 || jsonComponentList == null || jsonComponentList.isEmpty()) {
-                return;
+                String message =
+                    "Unable to open the timeline view for the selected workflow run."
+                        + " An unexpected problem occured while reading the timeline data.";
+                LogFactory.getLog(TimelineView.class).error(message);
+                refreshLabel.setText(message);
+                return false;
             }
             workflowNameLabel.setText(jsonWorkflowName);
             workflowNameLabel.pack();
@@ -503,7 +509,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     }
                 });
                 List<TimelineActivityPart> currentActivities = new ArrayList<TimelineActivityPart>();
-                int run = 1;
+                boolean extToolRunPrev = false;
+                int run = 0;
                 for (Object jsonCurrentActivity : jsonActivityList) {
                     Map<String, String> currentActivityMap = (Map<String, String>) jsonCurrentActivity;
 
@@ -524,11 +531,19 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     }
                     TimelineActivityPart currentActivity = null;
                     if (eventType == TimelineActivityType.COMPONENT_RUN) {
+                        if (extToolRunPrev) {
+                            extToolRunPrev = false;
+                        } else {
+                            run++;
+                        }
                         currentActivity = new TimelineActivityPart(currentComponentName,
-                            eventType, currentActivityTime, String.valueOf(run++), comment);
+                            eventType, currentActivityTime, String.valueOf(run), comment);
                     } else {
                         currentActivity = new TimelineActivityPart(currentComponentName,
-                            eventType, currentActivityTime, comment);
+                            eventType, currentActivityTime, String.valueOf(run), comment);
+                        if (eventType == TimelineActivityType.EXTERNAL_TOOL_RUN_IN_COMPONENT_RUN) {
+                            extToolRunPrev = true;
+                        }
                     }
 
                     if (currentActivities.size() == 0
@@ -561,9 +576,10 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
         } catch (IOException e) {
             LogFactory.getLog(TimelineView.class).error(e);
-            return;
+            return false;
         }
         showComponentRows(this.rows);
+        return true;
     }
 
     private void setVisibleArea(Date visibleStartTime, Date visibleEndTime) {
@@ -670,9 +686,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 }
                 TimelineFilterDialog dialog = new TimelineFilterDialog(
                     Display.getCurrent().getActiveShell(),
-                    allowedComponentNames);
+                    allowedComponentNames, rows);
                 dialog.create();
-                dialog.setContent(rows);
+                dialog.updateContent();
                 if (dialog.open() == 0) { // 0 = ok
                     allowedComponentNames = dialog.getFilteredNames();
                     showComponentRows(rows);

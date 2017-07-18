@@ -196,6 +196,43 @@ public class ComponentExecutionSchedulerTest {
     }
 
     /**
+     * Set up: one input (constant, required) and one input(single, required) in two different and groups, Groups in one parent Or group.
+     * 
+     * Expected: Constant input runs on receiving an input.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testConstantInputWithOrAndAndGroup() throws ComponentExecutionException {
+        InputGroupMockInformation mainGroup = new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.LogicOperation.Or);
+        InputGroupMockInformation andSingleGroup =
+            new InputGroupMockInformation("AndSingle", EndpointGroupDefinition.LogicOperation.And, OR_GROUP);
+        InputGroupMockInformation andConstGroup =
+            new InputGroupMockInformation("AndConst", EndpointGroupDefinition.LogicOperation.And, OR_GROUP);
+
+        List<InputGroupMockInformation> inputGroupMockInfos = new ArrayList<>();
+        inputGroupMockInfos.add(mainGroup);
+        inputGroupMockInfos.add(andSingleGroup);
+        inputGroupMockInfos.add(andConstGroup);
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
+            EndpointDefinition.InputExecutionContraint.Required, "AndConst", CONNECTED));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
+            EndpointDefinition.InputExecutionContraint.Required, "AndSingle", CONNECTED));
+
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionScheduler compExeScheduler =
+            setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
+
+        List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
+        endpointDatumsSent.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
+        sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);
+        assertNewSchedulingStateEventPosted(capturedEvent);
+        assertTrue(compExeScheduler.isExecutable());
+    }
+
+    /**
      * Set up: one input (constant, required); two values received. Expected: Failure event posted to {@link ComponentStateMachine}.
      * 
      * @throws Exception on unexpected error
@@ -798,7 +835,7 @@ public class ComponentExecutionSchedulerTest {
         assertEquals(State.FINISHED, compExeScheduler.getSchedulingState());
         assertFalse(compExeScheduler.isEnabled());
     }
-    
+
     /**
      * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#SAME_LOOP}
      * for finish detection if component is a loop driver having outer loop inputs.
@@ -837,7 +874,7 @@ public class ComponentExecutionSchedulerTest {
     public void testFinishNonDriverWithOuterLoopInputs() throws ComponentExecutionException {
         testFinishConsiderOuterLoopInputs(false);
     }
-    
+
     /**
      * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#OUTER_LOOP}
      * for finish detection if component is a nested loop driver.
@@ -875,13 +912,13 @@ public class ComponentExecutionSchedulerTest {
         assertEquals(State.FINISHED, compExeScheduler.getSchedulingState());
         assertFalse(compExeScheduler.isEnabled());
     }
-    
+
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent)
         throws ComponentExecutionException {
         return setUpExecutionScheduler(inputMockInfos, capturedEvent, UUID.randomUUID().toString());
     }
-    
+
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent, boolean isLoopDriver, boolean isNestedLoopDriver)
         throws ComponentExecutionException {
@@ -900,7 +937,7 @@ public class ComponentExecutionSchedulerTest {
         return setUpExecutionScheduler(inputMockInfos, new ArrayList<InputGroupMockInformation>(), capturedEvent, executionId, isLoopDriver,
             isNestedLoopDriver);
     }
-    
+
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent, String executionId)
         throws ComponentExecutionException {
@@ -920,7 +957,7 @@ public class ComponentExecutionSchedulerTest {
         compExeScheduler.enable();
         return compExeScheduler;
     }
-    
+
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent, String executionId,
         boolean isLoopDriver, boolean isNestedLoopDriver) throws ComponentExecutionException {

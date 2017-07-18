@@ -38,28 +38,31 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class EndpointDatumSerializerImplTest {
 
     private static final String COLON = ":";
-    
+
+    private static final String SERIAL_FLOAT_TD = "{\"t\":\"Flt\"}";
+
+    private static final String ESCAPED_SERIAL_FLOAT_TD = "{\"t\"\\:\"Flt\"}";
 
     private final InstanceNodeSessionId targetCompNodeInstanceSessionId = NodeIdentifierTestUtils
         .createTestInstanceNodeSessionIdWithDisplayName("comp-node_t");
 
     private final LogicalNodeId targetCompNodeLogicalNodeId = targetCompNodeInstanceSessionId.convertToDefaultLogicalNodeId();
 
-    private final String targetCompNodeSerializedForm = StringUtils.escapeSeparator(targetCompNodeLogicalNodeId.getLogicalNodeIdString());
+    private final String targetCompNodeSerial = StringUtils.escapeSeparator(targetCompNodeLogicalNodeId.getLogicalNodeIdString());
 
     private final InstanceNodeSessionId sourceCompNodeInstanceSessionId = NodeIdentifierTestUtils
         .createTestInstanceNodeSessionIdWithDisplayName("comp-node_s");
 
     private final LogicalNodeId sourceCompNodeLogicalNodeId = sourceCompNodeInstanceSessionId.convertToDefaultLogicalNodeId();
 
-    private final String sourceCompNodeSerializedForm = StringUtils.escapeSeparator(sourceCompNodeLogicalNodeId.getLogicalNodeIdString());
+    private final String sourceCompNodeSerial = StringUtils.escapeSeparator(sourceCompNodeLogicalNodeId.getLogicalNodeIdString());
 
     private final InstanceNodeSessionId wfCtrlNodeId =
         NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("wf-ctrl-node");
 
     private final LogicalNodeId wfCtrlNodeLogicalNodeId = wfCtrlNodeId.convertToDefaultLogicalNodeId();
 
-    private final String wfCtrlNodeSerializedForm = StringUtils.escapeSeparator(wfCtrlNodeLogicalNodeId.getLogicalNodeIdString());
+    private final String wfCtrlNodeSerial = StringUtils.escapeSeparator(wfCtrlNodeLogicalNodeId.getLogicalNodeIdString());
 
     /**
      * Test the serialization of {@link EndpointDatum}s with an internal {@link TypedDatum} as value.
@@ -88,10 +91,9 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.expect(internalEndpointDatumMock.getDataManagementId()).andReturn(null).anyTimes();
         EasyMock.replay(internalEndpointDatumMock);
 
-        String expectedSerializedEndpointDatum =
-            "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-"
-                + "3a12-48aa-9440-c078646e7172\"}:comp-exe-id-1:comp name 1:" + targetCompNodeSerializedForm
-                + ":comp-exe-id-4:" + sourceCompNodeSerializedForm + ":wf-exe-id-1:" + wfCtrlNodeSerializedForm + COLON;
+        String expectedSerializedEndpointDatum = StringUtils.format(
+            "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}:comp-exe-id-1:comp name 1"
+            + ":%s:comp-exe-id-4:%s:wf-exe-id-1:%s:", targetCompNodeSerial, sourceCompNodeSerial, wfCtrlNodeSerial);
 
         String serializedEndpointDatum = endpointDatumSerializer.serializeEndpointDatum(internalEndpointDatumMock);
         assertEquals(expectedSerializedEndpointDatum, serializedEndpointDatum);
@@ -122,7 +124,7 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.replay(typedDatumMock);
 
         TypedDatumSerializer typedDatumSerializerMock = EasyMock.createStrictMock(TypedDatumSerializer.class);
-        EasyMock.expect(typedDatumSerializerMock.serialize(typedDatumMock)).andReturn("serial-float-td");
+        EasyMock.expect(typedDatumSerializerMock.serialize(typedDatumMock)).andReturn(SERIAL_FLOAT_TD);
         EasyMock.replay(typedDatumSerializerMock);
 
         TypedDatumService typedDatumServiceMock = EasyMock.createStrictMock(TypedDatumService.class);
@@ -145,8 +147,8 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.replay(internalEndpointDatumMock);
 
         String expectedSerializedEndpointDatum =
-            "input-name:serial-float-td:comp-exe-id-2:comp name 2" + COLON + targetCompNodeSerializedForm + ":comp-exe-id-5:"
-                + sourceCompNodeSerializedForm + ":wf-exe-id-2:" + wfCtrlNodeSerializedForm + COLON;
+            StringUtils.format("input-name:%s:comp-exe-id-2:comp name 2:%s:comp-exe-id-5:%s:wf-exe-id-2:%s:", ESCAPED_SERIAL_FLOAT_TD,
+                targetCompNodeSerial, sourceCompNodeSerial, wfCtrlNodeSerial);
         if (dmId != null) {
             expectedSerializedEndpointDatum += dmId;
         }
@@ -161,11 +163,9 @@ public class EndpointDatumSerializerImplTest {
     public void testDeserializationOfEndDatumWithInternalTypedDatum() {
         EndpointDatumSerializerImpl endpointDatumSerializer = new EndpointDatumSerializerImpl();
         EndpointDatum deserializeEndpointDatum =
-            endpointDatumSerializer
-                .deserializeEndpointDatum(
-                    "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}:"
-                        + "comp-exe-id-1:comp name 1:" + targetCompNodeSerializedForm + ":comp-exe-id-3:" + sourceCompNodeSerializedForm
-                        + ":wf-exe-id-1:" + wfCtrlNodeSerializedForm + COLON);
+            endpointDatumSerializer.deserializeEndpointDatum(StringUtils.format(
+                "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}:comp-exe-id-1:comp name 1"
+                    + ":%s:comp-exe-id-3:%s:wf-exe-id-1:%s:", targetCompNodeSerial, sourceCompNodeSerial, wfCtrlNodeSerial));
 
         assertEquals("int-input-name", deserializeEndpointDatum.getInputName());
         assertNull(deserializeEndpointDatum.getDataManagementId());
@@ -204,7 +204,7 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.replay(typedDatumMock);
 
         TypedDatumSerializer typedDatumSerializerMock = EasyMock.createStrictMock(TypedDatumSerializer.class);
-        EasyMock.expect(typedDatumSerializerMock.deserialize("serial-float-td")).andReturn(typedDatumMock);
+        EasyMock.expect(typedDatumSerializerMock.deserialize(SERIAL_FLOAT_TD)).andReturn(typedDatumMock);
         EasyMock.replay(typedDatumSerializerMock);
 
         TypedDatumService typedDatumServiceMock = EasyMock.createStrictMock(TypedDatumService.class);
@@ -213,10 +213,8 @@ public class EndpointDatumSerializerImplTest {
 
         endpointDatumSerializer.bindTypedDatumService(typedDatumServiceMock);
 
-        String serializedEndpointDatum =
-            "input-name:serial-float-td:comp-exe-id-2:comp name 2"
-                + COLON + targetCompNodeSerializedForm + ":comp-exe-id-5:" + sourceCompNodeSerializedForm + ":wf-exe-id-2:"
-                + wfCtrlNodeSerializedForm + COLON;
+        String serializedEndpointDatum = StringUtils.format("input-name:%s:comp-exe-id-2:comp name 2:%s:comp-exe-id-5:%s:wf-exe-id-2:%s:",
+            ESCAPED_SERIAL_FLOAT_TD, targetCompNodeSerial, sourceCompNodeSerial, wfCtrlNodeSerial);
         if (dmId != null) {
             serializedEndpointDatum += dmId + COLON;
         }

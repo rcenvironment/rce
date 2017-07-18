@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
@@ -32,10 +32,12 @@ public class ProfileDirectoryVersionValidator implements InstanceValidator {
     @Override
     public InstanceValidationResult validate() {
 
+        //TODO this error message is contained in the BootstrapConfiguration class, deduplicate this!
+        
         if (!configService.hasIntendedProfileDirectoryValidVersion()) {
             // error and shutdown
             String errorText1 =
-                "The required version of the profile directory is " + BootstrapConfiguration.PROFILE_VERSION_NUMBER
+                "The required version of the profile directory is " + Profile.PROFILE_VERSION_NUMBER
                     + " but the profile directory's current version is newer. Most likely reason: It was used with"
                     + " a newer version of RCE before.";
             String errorText2 =

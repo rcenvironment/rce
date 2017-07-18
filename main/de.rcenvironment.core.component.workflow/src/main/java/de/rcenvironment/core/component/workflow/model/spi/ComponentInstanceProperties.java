@@ -18,6 +18,8 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsMa
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * 
+ * Note: Naming is confusing and throughout the code base not unified: configuration vs. properties. --seid_do
  */
 public interface ComponentInstanceProperties {
 

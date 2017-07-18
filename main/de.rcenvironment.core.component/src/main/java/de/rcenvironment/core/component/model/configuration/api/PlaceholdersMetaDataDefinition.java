@@ -13,6 +13,8 @@ package de.rcenvironment.core.component.model.configuration.api;
  * Describes meta data of configuration placeholder.
  * 
  * @author Doreen Seider
+ * 
+ * Note: Used to show placeholders with proper display names in the workflow execution wizard. --seid_do
  */
 public interface PlaceholdersMetaDataDefinition {
     

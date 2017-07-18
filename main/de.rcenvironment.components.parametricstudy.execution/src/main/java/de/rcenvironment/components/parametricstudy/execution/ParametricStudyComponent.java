@@ -103,7 +103,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                 runFullStudyAtOnce();
             }
         } else {
-            if (isInInnerLoop()) {
+            if (isNestedLoop()) {
                 if (!hasEvaluationResultFromLoopInput() && !hasForwardingStartInputs()) {
                     throw new ComponentException("Component is in a nested loop and"
                         + " thus needs at least one 'foward' or 'evaluation result' input to control the flow of the inner loop.");

@@ -32,14 +32,17 @@ import org.eclipse.swt.widgets.Text;
 
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
+import de.rcenvironment.core.gui.utils.incubator.PasteListeningText;
+import de.rcenvironment.core.gui.utils.incubator.PasteListeningText.PasteListener;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Abstract class for NetworkConnectionDialogs, such as AddNetworkConnectionDialog and EditNetworkConnectionDialog.
  * 
  * @author Oliver Seebach
+ * @author Hendrik Abbenhaus
  */
-public abstract class AbstractNetworkConnectionDialog extends Dialog {
+public abstract class AbstractNetworkConnectionDialog extends Dialog implements ModifyListener, VerifyListener, PasteListener {
 
     protected static final String ACTIVEMQ_PREFIX = "activemq-tcp:";
 
@@ -93,6 +96,12 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
 
     private Button useDefaultSettings;
 
+    private Text portTextField;
+
+    private PasteListeningText hostTextField;
+
+    private Text nameText;
+
     private Text settingsTextField;
 
     private Label nameLabel;
@@ -111,9 +120,9 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
         super(parentShell);
         this.connectionName = connectionName;
         this.networkContactPointID = connectionString;
-        host = networkContactPointID.substring(0, networkContactPointID.indexOf(COLON));
-        port = networkContactPointID.substring(networkContactPointID.indexOf(COLON) + 1);
-        settings = new ConnectionSettings();
+        this.host = networkContactPointID.substring(0, networkContactPointID.indexOf(COLON));
+        this.port = networkContactPointID.substring(networkContactPointID.indexOf(COLON) + 1);
+        this.settings = new ConnectionSettings();
     }
 
     @Override
@@ -150,21 +159,25 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
         Label cpLabel = new Label(container, SWT.NULL);
         cpLabel.setText(HOST_LABEL);
 
-        final Text hostTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
+        hostTextField = new PasteListeningText(container, SWT.SINGLE | SWT.BORDER);
         hostTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         if (!host.isEmpty()) {
             hostTextField.setText(host);
         }
+        hostTextField.addPasteListener(this);
+        hostTextField.addModifyListener(this);
 
         Label cpLabelPort = new Label(container, SWT.NULL);
         cpLabelPort.setText(PORT_LABEL);
 
-        final Text portTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
+        portTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
         portTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         if (!port.isEmpty()) {
             portTextField.setText(port);
         }
-        addPortVerifyListener(portTextField);
+        portTextField.addVerifyListener(this);
+        portTextField.addModifyListener(this);
+
         GridData separatorGridData = new GridData();
         separatorGridData.horizontalAlignment = GridData.FILL;
         separatorGridData.grabExcessHorizontalSpace = true;
@@ -173,18 +186,38 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
         nameLabel = new Label(container, SWT.NULL);
         nameLabel.setText(NAME_LABEL);
 
-        final Text nameText = new Text(container, SWT.SINGLE | SWT.BORDER);
+        nameText = new Text(container, SWT.SINGLE | SWT.BORDER);
         nameText.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         nameText.setText(connectionName);
         nameText.setEnabled(!isDefaultName);
 
-        @SuppressWarnings("unused") final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
+        final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
+        placeholderLabel.setText("");
 
         useDefaultNameButton = new Button(container, SWT.CHECK);
-        useDefaultNameButton.setSelection(true);
         useDefaultNameButton.setText("Use default name (host" + COLON + "port)");
         useDefaultNameButton.setLayoutData(useDefaultCheckboxGridData);
         useDefaultNameButton.setSelection(isDefaultName);
+        useDefaultNameButton.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                nameText.setEnabled(!useDefaultNameButton.getSelection());
+                nameText.setText("");
+                if (useDefaultNameButton.getSelection()) {
+                    if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
+                        nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
+                    }
+                }
+                updateOkButtonActivation();
+
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent e) {
+                widgetDefaultSelected(e);
+            }
+        });
 
         buildSettingsField();
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
@@ -200,38 +233,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
         hintGridData.horizontalSpan = 2;
         persistHint.setText(hint);
         persistHint.setLayoutData(hintGridData);
-        hostTextField.addModifyListener(new ModifyListener() {
 
-            @Override
-            public void modifyText(ModifyEvent e) {
-                host = hostTextField.getText();
-                if (useDefaultNameButton.getSelection()) {
-                    if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
-                    } else {
-                        nameText.setText("");
-                    }
-                }
-                updateOkButtonActivation();
-            }
-        });
-
-        portTextField.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent e) {
-                port = portTextField.getText();
-                if (useDefaultNameButton.getSelection()) {
-                    if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
-                    } else {
-                        nameText.setText("");
-                    }
-                }
-                updateOkButtonActivation();
-            }
-        });
-        connectionName = nameText.getText();
         nameText.addModifyListener(new ModifyListener() {
 
             @Override
@@ -252,113 +254,102 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
                 widgetSelected(event);
             }
         });
-        useDefaultNameButton.addSelectionListener(new SelectionListener() {
 
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (useDefaultNameButton.getSelection()) {
-                    // if selection is enabled
-                    nameText.setEnabled(false);
-
-                    if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
-                    } else {
-                        nameText.setText("");
-                    }
-                } else {
-                    // if selection is disabled
-                    nameText.setEnabled(true);
-                    nameText.setText("");
-                }
-                updateOkButtonActivation();
-
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent e) {
-                widgetDefaultSelected(e);
-            }
-        });
         return container;
     }
 
+    @Override
+    public void modifyText(ModifyEvent e) {
+        host = hostTextField.getText();
+        port = portTextField.getText();
+        if (useDefaultNameButton.getSelection()) {
+            if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
+                nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
+            } else {
+                nameText.setText("");
+            }
+        }
+        updateOkButtonActivation();
+    }
+
+    @Override
+    public void paste(String text) {
+        if (!text.contains(COLON)) {
+            return;
+        }
+        String integer = hostTextField.getText().substring(hostTextField.getText().lastIndexOf(COLON) + 1);
+        if (integer.length() > 5) {
+            return;
+        }
+
+        if (!isValidPort(integer)) {
+            return;
+        }
+
+        portTextField.setText(integer);
+        hostTextField.setText(hostTextField.getText().substring(0, hostTextField.getText().length() - integer.length() - 1));
+    }
+
+    @Override
+    public void verifyText(VerifyEvent e) {
+        String currentText = ((Text) e.widget).getText();
+        String portID = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+
+        e.doit = isValidPort(portID);
+    }
+
+    private boolean isValidPort(String p) {
+        final int maxPort = 65535;
+        try {
+            int portNum = Integer.valueOf(p);
+            if (portNum <= 0 || portNum > maxPort) {
+                return false;
+            }
+
+        } catch (NumberFormatException ex) {
+            if (!p.equals("")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void buildSettingsField() {
+        final int maxDefault = 300;
+        final double multi = 1.5;
 
         Label cpSettingsLbl = new Label(container, SWT.NULL);
         cpSettingsLbl.setText(SETTINGS);
 
         settingsTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
         settingsTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
-        settingsTextField.setEnabled(false);
-        final int maxDefault = 300;
-        final double multi = 1.5;
+        settingsTextField.setEnabled(!settingsText.isEmpty());
+        settingsTextField.setText(settingsText);
+        if (settingsText.isEmpty()) {
+            settingsTextField.setText(settings.createStringForsettings(5, maxDefault, multi));
+        }
 
-        @SuppressWarnings("unused") final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
+        final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
+        placeholderLabel.setText("");
 
         GridData useDefaultData = new GridData();
         useDefaultData.horizontalSpan = 1;
         useDefaultData.grabExcessHorizontalSpace = false;
 
         useDefaultSettings = new Button(container, SWT.CHECK);
-        useDefaultSettings.setSelection(true);
+        useDefaultSettings.setSelection(settingsText.isEmpty());
         useDefaultSettings.setText("Use default settings");
         useDefaultSettings.setLayoutData(useDefaultData);
-
-        if (settingsText.isEmpty()) {
-            settingsTextField.setText(settings.createStringForsettings(5, maxDefault, multi));
-            useDefaultSettings.setSelection(true);
-
-        } else {
-            settingsTextField.setText(settingsText);
-            useDefaultSettings.setSelection(false);
-            settingsTextField.setEnabled(true);
-
-        }
 
         useDefaultSettings.addSelectionListener(new SelectionAdapter() {
 
             private ConnectionSettings settings = new ConnectionSettings();
 
-            private final int maxDelay = 300;
-
-            private final double multi = 1.5;
-
             @Override
             public void widgetSelected(SelectionEvent e) {
-
+                settingsTextField.setEnabled(!useDefaultSettings.getSelection());
                 if (useDefaultSettings.getSelection()) {
-                    settingsTextField.setEnabled(false);
-                    settingsTextField.setText(settings.createStringForsettings(5, maxDelay, multi));
-
-                } else {
-                    settingsTextField.setEnabled(true);
-                }
-            }
-        });
-
-    }
-
-    private void addPortVerifyListener(Text portTextField) {
-
-        portTextField.addVerifyListener(new VerifyListener() {
-
-            @Override
-            public void verifyText(VerifyEvent e) {
-                String currentText = ((Text) e.widget).getText();
-                String portID = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
-
-                final int maxPort = 65535;
-                try {
-                    int portNum = Integer.valueOf(portID);
-                    if (portNum <= 0 || portNum > maxPort) {
-                        e.doit = false;
-                    }
-
-                } catch (NumberFormatException ex) {
-                    if (!portID.equals("")) {
-                        e.doit = false;
-
-                    }
+                    settingsTextField.setText(settings.createStringForsettings(5, maxDefault, multi));
                 }
             }
         });
@@ -373,7 +364,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
 
     @Override
     protected void okPressed() {
-        boolean canParse = false;
+        boolean canParse = true;
 
         if (getNetworkContactPointID().contains(INVALID_IP)) {
             MessageDialog.openError(this.getParentShell(), "Invalid host address", "The IP address 0.0.0.0"
@@ -383,24 +374,15 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
 
         try {
             catchSettingsFields();
-
         } catch (IllegalArgumentException ex) {
-
             String errorMessage = StringUtils.format("The settings are not in a valid format.");
             log.debug(errorMessage);
             MessageDialog.openError(this.getParentShell(), "Invalid format", errorMessage);
-
             return;
-
         }
 
         try {
-
-            if (connectImmediately) {
-                settings.setConnectOnStartup(true);
-            } else {
-                settings.setConnectOnStartup(false);
-            }
+            settings.setConnectOnStartup(connectImmediately);
 
             String hostAndPortString = StringUtils.format("%s:%s", host, port);
             String temp =
@@ -410,20 +392,18 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
             if (!contactPoint.startsWith(ACTIVEMQ_PREFIX)) {
                 contactPoint = ACTIVEMQ_PREFIX + contactPoint;
             }
-
             parsedNetworkContactPoint = NetworkContactPointUtils.parseStringRepresentation(contactPoint);
-            canParse = true;
         } catch (IllegalArgumentException e) {
             canParse = false;
         }
 
-        if (!canParse) {
+        if (canParse) {
+            super.okPressed();
+        } else {
             String errorMessage = StringUtils.format("'%s' is invalid for the host. It must be of format e.g. 192.168.0.15",
                 host);
             log.debug(errorMessage);
             MessageDialog.openError(this.getParentShell(), "Invalid format", errorMessage);
-        } else {
-            super.okPressed();
         }
     }
 
@@ -431,46 +411,44 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog {
 
         String text = settingsTextField.getText();
 
-        if (!text.isEmpty()) {
+        if (text.isEmpty()) {
+            return;
+        }
 
-            if (!text.contains(AUTO_RETRY_INITIAL_DELAY_STR) || !text.contains(AUTO_RETRY_MAXI_DELAY_STR)
-                || !text.contains(AUTO_RETRY_DELAY_MULTIPL)) {
-                throw new IllegalArgumentException();
-            }
+        if (!text.contains(AUTO_RETRY_INITIAL_DELAY_STR) || !text.contains(AUTO_RETRY_MAXI_DELAY_STR)
+            || !text.contains(AUTO_RETRY_DELAY_MULTIPL)) {
+            throw new IllegalArgumentException();
+        }
 
-            int indexFirstCom = 0;
-            int indexSecondCom = 0;
+        int indexFirstCom = 0;
+        int indexSecondCom = 0;
 
-            String numberOnly = settingsTextField.getText().replaceAll("[^0-9=,.]", "");
+        String numberOnly = settingsTextField.getText().replaceAll("[^0-9=,.]", "");
 
-            if (settingsTextField.getText().contains(AUTO_RETRY_INITIAL_DELAY_STR)) {
-
-                if (!numberOnly.isEmpty() && numberOnly.contains(COM)) {
-
-                    indexFirstCom = numberOnly.indexOf(COM);
-                    String temp = numberOnly.substring(0, indexFirstCom);
-                    String initDelay = temp.replaceAll(DECIMAL, "");
-                    settings.setAutoRetryInitialDelay(Integer.parseInt(initDelay));
-                }
-            }
-
-            if (settingsTextField.getText().contains(AUTO_RETRY_MAXI_DELAY_STR)) {
-
-                indexSecondCom = numberOnly.indexOf(COM, numberOnly.indexOf(COM) + 1);
-                String temp = numberOnly.substring(indexFirstCom, indexSecondCom);
-                String maxiDelay = temp.replaceAll(DECIMAL, "");
-                settings.setAutoRetryMaximumDelay(Integer.parseInt(maxiDelay));
-
-            }
-
-            if (settingsTextField.getText().contains(AUTO_RETRY_DELAY_MULTIPL)) {
-
-                String temp = numberOnly.substring(indexSecondCom);
-                String multiplier = temp.replaceAll("[^0-9.]", "");
-                settings.setAutoRetryDelayMultiplier(Double.parseDouble(multiplier));
-
+        if (settingsTextField.getText().contains(AUTO_RETRY_INITIAL_DELAY_STR)) {
+            if (!numberOnly.isEmpty() && numberOnly.contains(COM)) {
+                indexFirstCom = numberOnly.indexOf(COM);
+                String temp = numberOnly.substring(0, indexFirstCom);
+                String initDelay = temp.replaceAll(DECIMAL, "");
+                settings.setAutoRetryInitialDelay(Integer.parseInt(initDelay));
             }
         }
+
+        if (settingsTextField.getText().contains(AUTO_RETRY_MAXI_DELAY_STR)) {
+            indexSecondCom = numberOnly.indexOf(COM, numberOnly.indexOf(COM) + 1);
+            String temp = numberOnly.substring(indexFirstCom, indexSecondCom);
+            String maxiDelay = temp.replaceAll(DECIMAL, "");
+            settings.setAutoRetryMaximumDelay(Integer.parseInt(maxiDelay));
+
+        }
+
+        if (settingsTextField.getText().contains(AUTO_RETRY_DELAY_MULTIPL)) {
+            String temp = numberOnly.substring(indexSecondCom);
+            String multiplier = temp.replaceAll("[^0-9.]", "");
+            settings.setAutoRetryDelayMultiplier(Double.parseDouble(multiplier));
+
+        }
+
     }
 
     private String removeEmptySpaces(String string) {

@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.tiglviewer.feature"
       label="RCE Core GUI TiGLViewer Feature"
-      version="8.0.2.qualifier"
+      version="8.1.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -110,17 +110,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <discovery label="RCE (Remote Component Environment)" url="http://www.rcenvironment.de"/>
       <discovery label="Eclipse" url="http://www.eclipse.org"/>
    </url>
-
-   <plugin
-         id="de.rcenvironment.core.gui.tiglviewer.win32.x86"
-         os="win32"
-         ws="win32"
-         arch="x86"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
 
    <plugin
          id="de.rcenvironment.core.gui.tiglviewer.win32.x86_64"

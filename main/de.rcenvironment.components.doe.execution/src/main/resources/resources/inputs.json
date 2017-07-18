@@ -15,6 +15,23 @@
             "defaultInputExecutionConstraint": "Required"
         },
         {
+            "identifier": "startTable",
+            "character": "outerLoop",
+            "group" : "startValues",
+            "inputHandlingOptions": [
+                "Single",
+                "Constant"
+            ],
+            "dataTypes": [
+                "Matrix"
+            ],
+            "defaultDataType": "Matrix",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required"
+        },
+        {
             "identifier": "toForward",
             "group" : "default",
             "dataTypes": [
@@ -53,7 +70,8 @@
             ],
             "defaultDataType": "FileReference",
             "inputHandlingOptions": [
-                "Single"
+                "Single",
+                "Constant"
             ],
             "defaultInputHandling": "Single",
             "inputExecutionConstraintOptions": [

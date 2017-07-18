@@ -250,12 +250,12 @@ public class FileDataServiceImpl implements FileDataService {
         throws AuthorizationException, CommunicationException {
 
         try {
-            InputStream rawStream = getRemoteFileDataService(dataReference.getInstanceId()).getStreamFromDataReference(dataReference,
-                !platformService.matchesLocalInstance(dataReference.getInstanceId()));
+            InputStream rawStream = getRemoteFileDataService(dataReference.getStorageNodeId()).getStreamFromDataReference(dataReference,
+                !platformService.matchesLocalInstance(dataReference.getStorageNodeId()));
             return new BufferedInputStream(rawStream, DOWNLOAD_STREAM_BUFFER_SIZE);
         } catch (RemoteOperationException e) {
             throw new CommunicationException(StringUtils.format("Failed to get stream from data reference from remote node %s: ",
-                dataReference.getInstanceId()) + e.getMessage());
+                dataReference.getStorageNodeId()) + e.getMessage());
         }
     }
 
@@ -374,11 +374,11 @@ public class FileDataServiceImpl implements FileDataService {
 
         try {
             for (BinaryReference br : dataReference.getBinaryReferences()) {
-                getRemoteFileDataService(dataReference.getInstanceId()).deleteReference(br.getBinaryReferenceKey());
+                getRemoteFileDataService(dataReference.getStorageNodeId()).deleteReference(br.getBinaryReferenceKey());
             }
         } catch (RemoteOperationException e) {
             throw new CommunicationException(StringUtils.format("Failed to delete data reference on remote node %s: ",
-                dataReference.getInstanceId()) + e.getMessage());
+                dataReference.getStorageNodeId()) + e.getMessage());
         }
     }
 

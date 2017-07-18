@@ -38,6 +38,14 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
  * @author Christian Weiss
  * @author Sascha Zur
  * @author David Scholz
+ * 
+ * Note: It is actually the model of a component when it is dragged into the workflow editor. It holds the configuration of a
+ * component, its dynamic endpoints, etc. More editor-related information are put into the {@link WorkflowNode}.
+ * {@link ComponentDescription} is embedded in a {@link WorkflowNode}. A {@link ComponentDescription} belongs to exactly one
+ * {@link ComponentInstallation}. The {@link ComponentInstallation} is mutable which I doubt to be good. It is done to change the
+ * {@link ComponentInstallation} at workflow start to the one of the target instance the user chose to run the component on.
+ * --seid_do
+ * 
  */
 public class ComponentDescription implements Serializable, Cloneable, Comparable<ComponentDescription> {
 

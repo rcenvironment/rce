@@ -66,7 +66,7 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
     }
 
     @Override
-    protected Command getCreateBendpointCommand(BendpointRequest request) {
+    protected Command getCreateBendpointCommand(BendpointRequest request) {      
         EditPart parent = request.getSource().getParent();
         if (parent == null) {
             return null;
@@ -116,6 +116,10 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         }
     }
 
+
+
+
+    
     @Override
     protected Command getMoveBendpointCommand(BendpointRequest request) {
         EditPart parent = request.getSource().getParent();

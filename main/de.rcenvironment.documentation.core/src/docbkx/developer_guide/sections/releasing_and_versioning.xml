@@ -44,14 +44,10 @@
 		<title>Step 4: Post-release actions</title>
 		<sect3>
 			<title>Upgrading Version Numbers (and Verification)</title>
-			<para>
-				By convention, the version numbers of all plugins and features are
-				increased in the trunk immediately
-				<emphasis>after</emphasis>
-				a release has been performed. This way, every snapshot build is associated
-				with the upcoming release (e.g., all snapshot builds after the 2.5.0
-				release are named "2.5.1.xxx_SNAPSHOT").
-			</para>
+			<para> By convention, the version numbers of all plugins and features are increased in the trunk
+				immediately <emphasis>after</emphasis> a release has been performed. This way, every
+				snapshot build is associated with the upcoming release. For example, all snapshot
+				builds after the 8.1.0 release should be named named "8.2.0.xxx_SNAPSHOT".</para>
 			<para> The version upgrade process of RCE Core is mostly automated: <itemizedlist>
 					<listitem>
 						<para> Open a shell or command window in
@@ -66,31 +62,19 @@
 									<replaceable>new core version</replaceable>
 								</arg>
 							</cmdsynopsis></para>
-						<para> Example: <code>upgrade-core 2.5.0 2.5.1</code>
+						<para> Example: <code>upgrade-core 8.0.0 8.1.0</code>
 						</para>
+						<note>
+							<para>Due to major structural changes in 8.1.0, the version upgrade
+								script tagged as part of the 8.1.0 release may not be updated to
+								perform the version upgrade to 8.2.0 yet; adapting this script will
+								be one of the first actions after the release.</para>
+						</note>
 					</listitem>
 					<listitem>
-						<para> Build the core repository locally to verify that the build setup is
-							consistent: <itemizedlist>
-								<listitem>
-									<para>(Option 1) To build from Eclipse, use the launch files in
-										"/de.rcenvironment/eclipse/build/using default (release or
-										snapshot) remote repositories". The best way to ensure
-										proper configuration of the local code base is the "RCE 6.x
-										- product.singleStep (snapshot).launch" configuration, as it
-										uses the same setup as the CI build on Jenkins. </para>
-								</listitem>
-								<listitem>
-									<para>(Option 2) To build with plain Maven, open a shell in
-										"/de.rcenvironment/maven/initial" and run the command "mvn
-										clean package --Drce.maven.buildVariant=product.singleStep". </para>
-								</listitem>
-							</itemizedlist></para>
-						<para>Note that both options will only work if you have network access to the
-							"software.dlr.de" host that provides RCE Platform releases. If this is
-							not the case, build a local RCE Platform repository and use the "RCE 6.x
-							- product.singleStep (using local platform repository).launch"
-							configuration from eclipse. </para>
+						<para> Build the platform repository and the full product locally to verify that the build
+							setup is consistent; see the "getting started" section on how to do
+							this.</para>
 					</listitem>
 					<listitem>
 						<para>Create a Mantis issue "release x.y.z" for the new version if it does
@@ -100,11 +84,9 @@
 						<para>Commit the changes under this issue. </para>
 					</listitem>
 					<listitem>
-						<para> Verify the CI/Jenkins build: <itemizedlist>
+						<para> Verify the CI/Jenkins build<itemizedlist>
 								<listitem>
-									<para>(Option 1) Manually trigger a snapshot build using the
-										Jenkins job "RCE_Tycho_Trunk_Snapshot_RCE_CoreRepo_USDD" and
-										check that it completes normally. </para>
+									<para>(Option 1) TODO update this section for 8.1.0+</para>
 								</listitem>
 							</itemizedlist><itemizedlist>
 								<listitem>
@@ -120,13 +102,9 @@
 	</sect2>
 	<sect2>
 		<title>Creating a maintenance/hotfix release</title>
-		<para>
-			When creating a release that is not based on the current development trunk,
-			the release process is slightly different. Such ""maintenance or "hotfix"
-			releases must
-			<emphasis>always</emphasis>
-			be derived from a stable release.
-		</para>
+		<para> When creating a release that is not based on the current development trunk, the release
+			process is slightly different. Such "maintenance" or "hotfix" releases must
+				<emphasis>always</emphasis> be derived from a stable release. </para>
 		<para>
 			To create a new release based on a previously-released version:
 			<itemizedlist>

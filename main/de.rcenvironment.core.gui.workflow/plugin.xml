@@ -24,6 +24,7 @@
 			name="Workflow Editor">
 		</editor>
   		<editor class="de.rcenvironment.core.gui.workflow.view.WorkflowRunEditor"
+        	contributorClass="de.rcenvironment.core.gui.workflow.WorkflowActionBarContributor"
         	default="false"
         	filenames="*.wfr"
         	icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16.gif"
@@ -31,6 +32,7 @@
         	name="Workflow Viewer">
         </editor>
   		<editor class="de.rcenvironment.core.gui.workflow.editor.ReadOnlyWorkflowEditor"
+			contributorClass="de.rcenvironment.core.gui.workflow.WorkflowActionBarContributor"
 			default="false"  
 			icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16_disabled.gif"
 			id="de.rcenvironment.rce.gui.workflow.editor.ReadOnlyWorkflowEditor" 
@@ -330,60 +332,64 @@
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.disable"
-            name="disable">
+            name="Disable">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.copy"
-            name="copy">
+            name="Copy ">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.cut"
-            name="cut">
+            name="Cut">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.paste"
-            name="paste">
+            name="Paste">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.rename"
-            name="rename">
+            name="Rename">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.node.delete"
-            name="delete">
+            name="Delete">
       </command>
       <command
       		id="de.rcenvironment.core.gui.workflow.part.sendback"
-      		name="sendpartback">
+      		name="Send back">
 	  </command>
 	  <command
       		id="de.rcenvironment.core.gui.workflow.part.sendforward"
-      		name="sendpartforward">
+      		name="Send forward">
 	  </command>
 	  <command
       		id="de.rcenvironment.core.gui.workflow.part.sendtobackground"
-      		name="sendparttobackground">
+      		name="Send to background">
 	  </command>
 	  <command
       		id="de.rcenvironment.core.gui.workflow.part.sendtoforeground"
-      		name="sendparttoforeground">
+      		name="Send to foreground">
 	  </command>
       <command
             id="de.rcenvironment.core.gui.workflow.connectioneditor"
-            name="connectioneditor">
+            name="Open Connection Editor">
       </command>
       	  <!-- ### -->
       <command
             id="de.rcenvironment.core.gui.workflow.bendpoints.delete"
-            name="bendpoints_delete">
+            name="Delete Bendpoint">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.propertiesview"
-            name="properties">
+            name="Show View (Properties View)">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.helpview"
-            name="help">
+            name="Help">
+      </command>
+      <command
+            id="de.rcenvironment.core.gui.workflow.saveasimage"
+            name="Save as Image">
       </command>
       <command
             categoryId="de.rcenvironment.core.gui.workflow.integration"
@@ -398,11 +404,11 @@
       </category>
       <command
             id="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool"
-            name="SelectConnectionTool">
+            name="Mouse-Mode: Draw Connection">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.editor.selectselectiontool"
-            name="SelectSelectionTool">
+            name="Mouse-Mode: Select">
       </command>
    </extension>
    <extension
@@ -433,6 +439,16 @@
          <command
                   commandId="de.rcenvironment.core.gui.component.verify"
                   label="Verify tool results..."
+                  style="push">
+            </command>
+      </menuContribution>
+
+      <menuContribution
+      		allPopups="false"
+            locationURI="menu:file?after=saveall">
+      <command
+                  commandId="de.rcenvironment.core.gui.workflow.saveasimage"
+                  label="%exportAsImageLabel"
                   style="push">
             </command>
       </menuContribution>
@@ -888,6 +904,25 @@
          </visibleWhen>
       </handler>
       <handler
+            class="de.rcenvironment.core.gui.workflow.editor.handlers.SaveAsImageHandler"
+            commandId="de.rcenvironment.core.gui.workflow.saveasimage">
+         <enabledWhen>
+        	<reference
+              definitionId="saveAsImageContext">
+        	</reference>
+         </enabledWhen>
+         <visibleWhen>
+             <or>
+            	<reference
+                  definitionId="workflowEditorContext">
+            	</reference>
+            	<reference
+                  definitionId="workflowContext">
+            	</reference>
+            </or>
+         </visibleWhen>
+      </handler>
+      <handler
             class="de.rcenvironment.core.gui.workflow.editor.handlers.OpenConnectionsViewHandler"
             commandId="de.rcenvironment.core.gui.workflow.connectioneditor">
          <enabledWhen>
@@ -953,6 +988,32 @@
                 </with>
              </and>
 	       </or>
+      </definition>
+            <definition
+            id="saveAsImageContext">
+         <or>
+			<with variable="activeEditorId">
+				<equals value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+				</equals>
+			</with>
+			<with variable="activeEditorId">
+				<equals value="de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor">
+				</equals>
+			</with>
+			<with variable="activeEditorId">
+				<equals value="de.rcenvironment.rce.gui.workflow.editor.ReadOnlyWorkflowEditor">
+				</equals>
+			</with>
+			<with variable="selection">
+				<iterate
+			   		ifEmpty="false"
+			   		operator="or">
+					<instanceof
+			      		value="de.rcenvironment.core.component.workflow.WorkflowInformation">
+					</instanceof>
+			 	</iterate>
+			</with>
+         </or>
       </definition>
       <definition
             id="workflowContext">

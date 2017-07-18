@@ -8,15 +8,11 @@
 
 package de.rcenvironment.core.start.headless.textui;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.text.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -25,9 +21,7 @@ import com.googlecode.lanterna.gui.Action;
 import com.googlecode.lanterna.gui.DefaultBackgroundRenderer;
 import com.googlecode.lanterna.gui.GUIScreen;
 import com.googlecode.lanterna.gui.Window;
-import com.googlecode.lanterna.gui.component.Button;
 import com.googlecode.lanterna.gui.component.Label;
-import com.googlecode.lanterna.gui.component.Panel;
 import com.googlecode.lanterna.gui.component.PasswordBox;
 import com.googlecode.lanterna.gui.component.RadioCheckBoxList;
 import com.googlecode.lanterna.gui.component.TextBox;
@@ -41,8 +35,8 @@ import com.googlecode.lanterna.input.Key;
 import com.googlecode.lanterna.input.Key.Kind;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
-import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.ui.LanternaUtils;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
 import de.rcenvironment.core.mail.SMTPServerConfiguration;
@@ -56,15 +50,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class ConfigurationTextUI {
 
-    private static final int WORD_WRAPPING_MAX_LINE_LENGTH = 60;
-
     private static final String OPTION_CHANGE_PASSWORD = "Change password";
 
     private static final String OPTION_CONVERT_TO_RA_ACCOUNT = "Convert to a Remote Access account (change \"role\")";
-
-    private static final String DIALOG_TITLE_SUCCESS = "Success";
-
-    private static final String DIALOG_TITLE_ERROR = "Error";
 
     private static final int DEFAULT_TEXT_FIELD_WIDTH = 40;
 
@@ -82,12 +70,8 @@ public class ConfigurationTextUI {
 
     private static final String REMOTE_ACCESS_ROLE_ID = "remote_access_user";
 
-    //This was the name of the remote access role in earlier versions, keep for backwards compatibility
+    // This was the name of the remote access role in earlier versions, keep for backwards compatibility
     private static final String REMOTE_ACCESS_ROLE_ID_ALIAS = "remote access";
-
-    // private static final String OPTION_EXIT = "Exit";
-
-    private final ConfigurationService configurationService;
 
     private final SshAccountConfigurationService sshAccountOperations;
 
@@ -169,7 +153,7 @@ public class ConfigurationTextUI {
             super(initialContent, width);
             this.enterAction = enterAction;
         }
-        
+
         @Override
         public void setText(String text) {
             if (text != null) {
@@ -237,9 +221,9 @@ public class ConfigurationTextUI {
                         sshAccountOperations.createAccount(loginName, password);
                         // success -> close dialog
                         AddAccountWindow.this.close();
-                        showSuccessMessageBox("The account \"" + loginName + "\" was successfully added.");
+                        LanternaUtils.showSuccessMessageBox(guiScreen, "The account \"" + loginName + "\" was successfully added.");
                     } catch (ConfigurationException e) {
-                        showErrorMessageBox("Failed to create the account: " + e.getMessage());
+                        LanternaUtils.showErrorMessageBox(guiScreen, "Failed to create the account: " + e.getMessage());
                     }
                 }
             };
@@ -259,7 +243,7 @@ public class ConfigurationTextUI {
             addComponent(new Label("Password:"));
             addComponent(textBoxPassword);
 
-            addComponent(createOkCancelButtonPanel(okAction, cancelAction));
+            addComponent(LanternaUtils.createOkCancelButtonPanel(okAction, cancelAction));
 
             addWindowListener(new WindowAdapter() {
 
@@ -323,9 +307,9 @@ public class ConfigurationTextUI {
                         smtpServerConfigurationOperations.configureSMTPServer(host, port, encryption, username, password, sender);
                         // success -> close dialog
                         ConfigureSMTPServerWindow.this.close();
-                        showSuccessMessageBox("Successfully stored the SMTP server configuration.");
+                        LanternaUtils.showSuccessMessageBox(guiScreen, "Successfully stored the SMTP server configuration.");
                     } catch (ConfigurationException e) {
-                        showErrorMessageBox("Unable to store the configuration: " + e.getMessage());
+                        LanternaUtils.showErrorMessageBox(guiScreen, "Unable to store the configuration: " + e.getMessage());
                     }
                 }
             };
@@ -368,7 +352,7 @@ public class ConfigurationTextUI {
                 textBoxSender.setText(smtpServerConfiguration.getSenderAsString());
             }
 
-            addComponent(createOkCancelButtonPanel(okAction, cancelAction));
+            addComponent(LanternaUtils.createOkCancelButtonPanel(okAction, cancelAction));
 
             addWindowListener(new WindowAdapter() {
 
@@ -389,9 +373,9 @@ public class ConfigurationTextUI {
         }
     }
 
-    public ConfigurationTextUI(ConfigurationService configurationService, SshAccountConfigurationService sshConfigurationService,
+    public ConfigurationTextUI(SshAccountConfigurationService sshConfigurationService,
         SMTPServerConfigurationService smtpServerConfigurationOperations) {
-        this.configurationService = configurationService;
+        // this.configurationService = configurationService;
         this.sshAccountOperations = sshConfigurationService;
         this.smtpServerConfigurationOperations = smtpServerConfigurationOperations;
     }
@@ -406,7 +390,8 @@ public class ConfigurationTextUI {
             return;
 
         }
-        guiScreen.setBackgroundRenderer(new DefaultBackgroundRenderer("RCE Configuration Shell"));
+        String profileName = BootstrapConfiguration.getInstance().getProfile().getLocationDependentName();
+        guiScreen.setBackgroundRenderer(new DefaultBackgroundRenderer("RCE Configuration Shell, editing profile : " + profileName));
         guiScreen.getScreen().startScreen();
 
         String verifyError = sshAccountOperations.verifyExpectedStateForConfigurationEditing();
@@ -414,12 +399,12 @@ public class ConfigurationTextUI {
             try {
                 runMainLoop();
             } catch (RuntimeException e) {
-                showErrorMessageBox("There was an internal error running the configuration menu. "
+                LanternaUtils.showErrorMessageBox(guiScreen, "There was an internal error running the configuration menu. "
                     + "Please check the log file for details");
                 log.error("Uncaught RuntimeException in text UI", e);
             }
         } else {
-            showErrorMessageBox(verifyError);
+            LanternaUtils.showErrorMessageBox(guiScreen, verifyError);
         }
 
         guiScreen.getScreen().stopScreen();
@@ -456,30 +441,30 @@ public class ConfigurationTextUI {
         return result;
     }
 
-    @Deprecated
-    // left in for now; can be deleted when UI is finished
-    private void showGeneratePasswordHashDialog() {
-        final String name =
-            TextInputDialog.showTextInputBox(guiScreen, "Password hash generation (temporary)",
-                "Enter an id (this will determine the output file's name)", "");
-        if (name == null) {
-            return;
-        }
-        final String pw =
-            TextInputDialog.showPasswordInputBox(guiScreen, "Password hash generation (temporary)", "Enter the new password", "");
-        if (pw == null) {
-            return;
-        }
-        final String hash = sshAccountOperations.generatePasswordHash(pw);
-        final File outputDir = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
-        final File outFile = new File(outputDir, "pwhash_" + name + ".txt");
-        try {
-            FileUtils.write(outFile, hash);
-            log.info("Password hash written to " + outFile.getAbsolutePath());
-        } catch (IOException e) {
-            log.error(e.getStackTrace());
-        }
-    }
+    // @Deprecated
+    // // left in for now; can be deleted when UI is finished
+    // private void showGeneratePasswordHashDialog() {
+    // final String name =
+    // TextInputDialog.showTextInputBox(guiScreen, "Password hash generation (temporary)",
+    // "Enter an id (this will determine the output file's name)", "");
+    // if (name == null) {
+    // return;
+    // }
+    // final String pw =
+    // TextInputDialog.showPasswordInputBox(guiScreen, "Password hash generation (temporary)", "Enter the new password", "");
+    // if (pw == null) {
+    // return;
+    // }
+    // final String hash = sshAccountOperations.generatePasswordHash(pw);
+    // final File outputDir = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
+    // final File outFile = new File(outputDir, "pwhash_" + name + ".txt");
+    // try {
+    // FileUtils.write(outFile, hash);
+    // log.info("Password hash written to " + outFile.getAbsolutePath());
+    // } catch (IOException e) {
+    // log.error(e.getStackTrace());
+    // }
+    // }
 
     private void showAddAccountDialog() {
         guiScreen.showWindow(new AddAccountWindow(), GUIScreen.Position.CENTER);
@@ -492,7 +477,7 @@ public class ConfigurationTextUI {
             accountMap = sshAccountOperations.getAllAccountsByLoginName();
         } catch (ConfigurationException e) {
             log.error("Error getting account data", e);
-            showErrorMessageBox(e.getMessage());
+            LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
             return;
         }
         for (Entry<String, SshAccount> accountEntry : accountMap.entrySet()) {
@@ -517,7 +502,7 @@ public class ConfigurationTextUI {
             options.add(new SshAccountUIEntry(displayText, account));
         }
         if (options.isEmpty()) {
-            showErrorMessageBox("There are no SSH accounts (yet)!");
+            LanternaUtils.showErrorMessageBox(guiScreen, "There are no SSH accounts (yet)!");
             return;
         }
         SshAccountUIEntry accountEntry =
@@ -558,23 +543,23 @@ public class ConfigurationTextUI {
                     TextInputDialog.showPasswordInputBox(guiScreen, OPTION_CHANGE_PASSWORD,
                         "Enter the new passwword for account \"" + loginName + "\":", "");
                 if (StringUtils.isNullorEmpty(newPW)) {
-                    showErrorMessageBox("Password change aborted");
+                    LanternaUtils.showErrorMessageBox(guiScreen, "Password change aborted");
                     return;
                 }
                 sshAccountOperations.updatePasswordHash(loginName, newPW);
-                showSuccessMessageBox("Account password updated");
+                LanternaUtils.showSuccessMessageBox(guiScreen, "Account password updated");
                 break;
             case OPTION_CONVERT_TO_RA_ACCOUNT:
                 sshAccountOperations.updateRole(loginName, REMOTE_ACCESS_ROLE_ID);
-                showSuccessMessageBox("Converted to \"Remote Access\" account");
+                LanternaUtils.showSuccessMessageBox(guiScreen, "Converted to \"Remote Access\" account");
                 break;
             case OPTION_ENABLE_ACCOUNT:
                 sshAccountOperations.setAccountEnabled(loginName, true);
-                showSuccessMessageBox("Account enabled");
+                LanternaUtils.showSuccessMessageBox(guiScreen, "Account enabled");
                 return;
             case OPTION_DISABLE_ACCOUNT:
                 sshAccountOperations.setAccountEnabled(loginName, false);
-                showSuccessMessageBox("Account disabled");
+                LanternaUtils.showSuccessMessageBox(guiScreen, "Account disabled");
                 return;
             case OPTION_DELETE_ACCOUNT:
                 DialogResult confirmation =
@@ -584,40 +569,15 @@ public class ConfigurationTextUI {
                     return;
                 }
                 sshAccountOperations.deleteAccount(loginName);
-                showSuccessMessageBox("Account \"" + loginName + "\" deleted");
+                LanternaUtils.showSuccessMessageBox(guiScreen, "Account \"" + loginName + "\" deleted");
                 return;
             default:
-                showErrorMessageBox("Internal error: no such option");
+                LanternaUtils.showErrorMessageBox(guiScreen, "Internal error: no such option");
                 break;
             }
         } catch (ConfigurationException e) {
-            showErrorMessageBox("Operation failed: " + e.getMessage());
+            LanternaUtils.showErrorMessageBox(guiScreen, "Operation failed: " + e.getMessage());
         }
-    }
-
-    private Panel createOkCancelButtonPanel(final Action okAction, final Action cancelAction) {
-        Button buttonOk = new Button("Ok", okAction);
-        Button buttonCancel = new Button("Cancel", cancelAction);
-        Panel buttonPanel = new Panel(Panel.Orientation.HORISONTAL);
-        // apparently, this is the standard way to do this; see the ActionListDialog() constructor
-        // TODO improve by calculating indentation width?
-        buttonPanel.addComponent(new Label("                   "));
-        buttonPanel.addComponent(buttonOk);
-        buttonPanel.addComponent(buttonCancel);
-        return buttonPanel;
-    }
-
-    private void showSuccessMessageBox(final String message) {
-        MessageBox.showMessageBox(guiScreen, DIALOG_TITLE_SUCCESS, applyWordWrapping(message));
-    }
-
-    private void showErrorMessageBox(String message) {
-        MessageBox.showMessageBox(guiScreen, DIALOG_TITLE_ERROR, applyWordWrapping(message));
-    }
-
-    private String applyWordWrapping(String input) {
-        // note: assuming screen width of 80 characters; can it be different?
-        return WordUtils.wrap(input, WORD_WRAPPING_MAX_LINE_LENGTH, "\n", true); // true = break long words
     }
 
     private boolean isRemoteAccessAccount(SshAccount account) {

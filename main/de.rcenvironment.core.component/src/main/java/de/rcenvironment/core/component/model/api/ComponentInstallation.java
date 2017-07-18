@@ -18,6 +18,11 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
  * component nodes (which define a {@link ComponentRevision}) should be executed.
  * 
  * @author Robert Mischke
+ * 
+ * Note: The concept of {@link ComponentInstallation}, {@link ComponentRevision}, and {@link ComponentInterface} are introduced
+ * later on compared to {@link ComponentDescription}. The concept was not fully implemented yet. Implementation of
+ * {@link ComponentRevision} is missing at all. Also, the concept was not applied in a way that the benefits of this approach really
+ * come through. --seid_do
  */
 public interface ComponentInstallation extends Comparable<ComponentInstallation>, Cloneable {
 

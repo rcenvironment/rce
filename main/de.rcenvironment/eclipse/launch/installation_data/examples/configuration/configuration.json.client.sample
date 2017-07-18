@@ -1,6 +1,6 @@
 {
 	"general" : {
-		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName}"
+		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName} with profile \"${profileName}\""
 	},
 	"network" : {
 		"connections" : {

@@ -1,33 +1,30 @@
-{ 
-	"configuration": [
-        {
-            "key":"mem_file",
-            "defaultValue": ""
-        },
-        {
-            "key":"store_failures",
-            "defaultValue": "false"
-        },
-        {
-            "key":"select_at_wf_start",
-            "defaultValue": "true"
-        },
-        {
-            "key":"mem_file_wf_start",
-            "defaultValue": "${memory_file}"
-        }
-    ],
-    "placeholders": [
-        {
-            "key": "memory_file",
-            "guiName": "Memory file",
-            "guiPosition": "1",
-            "dataType": "file"
-        }
-    ],
-    "activationFilter": {
-        "select_at_wf_start": [
-            "true"
-        ]
-    }
+{
+	"configuration": [{
+			"key": "mem_file",
+			"defaultValue": ""
+		},
+		{
+			"key": "store_failures",
+			"defaultValue": "false"
+		},
+		{
+			"key": "select_at_wf_start",
+			"defaultValue": "true"
+		},
+		{
+			"key": "mem_file_wf_start",
+			"defaultValue": "${memory_file}",
+			"activationFilter": {
+				"select_at_wf_start": [
+					"true"
+				]
+			}
+		}
+	],
+	"placeholders": [{
+		"key": "memory_file",
+		"guiName": "Memory file",
+		"guiPosition": "1",
+		"dataType": "file"
+	}]
 }

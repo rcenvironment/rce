@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.internal.UnpackedFilesDirectoryResolver;
 
 /**
  * Service that can be used to retrieve configuration values, based on simple Java POJO mapping.
@@ -91,15 +92,6 @@ public interface ConfigurationService {
      * Standard Java "user.name" property.
      */
     String SYSTEM_PROPERTY_USER_NAME = "user.name";
-
-    /**
-     * Standard OSGi "osgi.install.area" property.
-     * 
-     * Note that (contrary to what the name suggests) this is *not* the actual installation directory which, for example, the /plugin and
-     * /feature directories are located in. Instead, this property points to the /configuration directory inside that installation
-     * directory.
-     */
-    String SYSTEM_PROPERTY_OSGI_INSTALL_AREA = "osgi.install.area";
 
     /**
      * Identifies various directories/locations that are affected by the chosen profile directory, or other configuration settings.
@@ -187,7 +179,7 @@ public interface ConfigurationService {
          * The current instance's existing locations for reading integration data from.
          */
         READABLE_INTEGRATION_DIRS,
-        
+
         /**
          * The current instance's existing locations for reading JDBC driver jars from.
          */
@@ -325,7 +317,7 @@ public interface ConfigurationService {
      * @return the directory
      */
     File getProfileDirectory();
-    
+
     /**
      * Returns the location of the current profile's main configuration file, for example for presenting it to the user (e.g. for manual
      * editing), or exporting it.
@@ -341,20 +333,20 @@ public interface ConfigurationService {
      *         {@link #hasIntendedProfileDirectoryValidVersion()} return <code>true</code>
      */
     boolean isUsingIntendedProfileDirectory();
-    
+
     /**
      * Determines whether the version of the configured "instance data" directory is valid, i.e., it is <= the current one.
      * 
      * @return <code>true</code> if the configured "instance data" has a version number <= the current one
      */
     boolean hasIntendedProfileDirectoryValidVersion();
-    
+
     /**
-    * Determines if the configured "instance data" directory was successfully locked; if this is the case, it is reserved for exclusive
-    * usage by this current instance.
-    * 
-    * @return <code>true</code> if the configured "instance data" was successfully locked
-    */
+     * Determines if the configured "instance data" directory was successfully locked; if this is the case, it is reserved for exclusive
+     * usage by this current instance.
+     * 
+     * @return <code>true</code> if the configured "instance data" was successfully locked
+     */
     boolean isIntendedProfileDirectorySuccessfullyLocked();
 
     /**
@@ -411,12 +403,15 @@ public interface ConfigurationService {
      * @return true if the default configuration file is used.
      */
     boolean isUsingDefaultConfigurationValues();
-
+    
     /**
-     * Returns the installation directory.
+     * Attempts to resolve the given fileset id to a directory containing unpacked files (which should always be considered read-only).
+     * Refer to the {@link UnpackedFilesDirectoryResolver} JavaDoc for details of the resolution process.
      * 
-     * @return the installation directory
+     * @param filesetId the id of the fileset to find
+     * @return the (potentially read-only) directory containing the unpacked files on lookup success
+     * @throws ConfigurationException on lookup failure
      */
-    File getInstallationDir();
+    File getUnpackedFilesLocation(String filesetId) throws ConfigurationException;
 
 }

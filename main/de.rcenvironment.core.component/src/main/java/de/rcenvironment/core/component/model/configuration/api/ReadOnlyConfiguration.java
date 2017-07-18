@@ -15,6 +15,9 @@ import java.util.Set;
  * Describes the component's read-only configuration.
  *
  * @author Doreen Seider
+ * 
+ * Note: Mainly used for integrated tools. The values stored in the configuration.json file of an integrated tools goes into the
+ * {@link ConfigurationDefinition} (and {@link ConfigurationDescription}) as read-only configuration values. --seid_do
  */
 public interface ReadOnlyConfiguration {
 

@@ -35,29 +35,29 @@ public class ClusterServiceManagerImpl implements ClusterServiceManager {
     public synchronized ClusterService retrieveSshBasedClusterService(ClusterQueuingSystem system,
         Map<String, String> pathsToQueuingSystemCommands, String host, int port, String sshAuthUser, String sshAuthPhrase) {
         
-        String informationServiceId = createIdentifier(system, host, port, sshAuthUser, sshAuthPhrase,
+        String clusterServiceId = createIdentifier(system, host, port, sshAuthUser, sshAuthPhrase,
             pathsToQueuingSystemCommands.toString());
         
-        ClusterService informationService;
+        ClusterService clusterService;
         
-        if (informationServices.containsKey(informationServiceId)) {
-            informationService = informationServices.get(informationServiceId);
+        if (informationServices.containsKey(clusterServiceId)) {
+            clusterService = informationServices.get(clusterServiceId);
         } else {
             SshSessionConfiguration sshConfiguration = SshSessionConfigurationFactory
                 .createSshSessionConfigurationWithAuthPhrase(host, port, sshAuthUser, sshAuthPhrase);
             switch (system) {
             case TORQUE:
-                informationService = new TorqueClusterService(sshConfiguration, pathsToQueuingSystemCommands);
+                clusterService = new TorqueClusterService(sshConfiguration, pathsToQueuingSystemCommands);
                 break;
             case SGE:
-                informationService = new SgeClusterService(sshConfiguration, pathsToQueuingSystemCommands);
+                clusterService = new SgeClusterService(sshConfiguration, pathsToQueuingSystemCommands);
                 break;
             default:
                 throw new UnsupportedOperationException("Cluster queuing system not supported: " + system);
             }
-            informationServices.put(informationServiceId, informationService);
+            informationServices.put(clusterServiceId, clusterService);
         }
-        return informationService;
+        return clusterService;
     }
     
     private String createIdentifier(ClusterQueuingSystem system, String host, int port, String sshAuthUser, String sshAuthPhrase,

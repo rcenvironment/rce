@@ -23,6 +23,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
 import de.rcenvironment.core.utils.incubator.ZipFolderUtil;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * I/O operations for managing external installations, like downloading, unpacking, deleting etc.
@@ -36,6 +37,8 @@ public class DeploymentOperationsImpl {
     private static final int BYTE_TO_MEGABYTE_FACTOR = 1024 * 1024;
 
     private static final int CONSOLE_SHOW_PROGRESS_INTERVAL = 500;
+
+    private static final String DELETION_MARKER_FILE_NAME = "markedForDeletion";
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -76,6 +79,7 @@ public class DeploymentOperationsImpl {
             ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
+                @TaskDescription("Instance Management: Print download progress to console")
                 public void run() {
                     while (downloadRunning && targetFile.length() < sizeOfRequestedFile) {
                         userOutputReceiver.addOutput("Downloaded " + targetFile.length() / BYTE_TO_MEGABYTE_FACTOR
@@ -148,9 +152,14 @@ public class DeploymentOperationsImpl {
         boolean containsP2Folder = false;
         boolean containsPluginsFolder = false;
         boolean containsFeaturesFolder = false;
+        boolean containsDeletionMarkerFile = false;
         for (File file : installationDir.listFiles()) {
-            if (file.isFile() && (file.getName().equals("rce.exe") || file.getName().equals(RCE))) {
-                containsRCEExecutable = true;
+            if (file.isFile()) {
+                if (file.getName().equals("rce.exe") || file.getName().equals(RCE)) {
+                    containsRCEExecutable = true;
+                } else if (file.getName().equals(DELETION_MARKER_FILE_NAME)) {
+                    containsDeletionMarkerFile = true;
+                }
             } else if (file.isDirectory()) {
                 if (file.getName().equals("p2")) {
                     containsP2Folder = true;
@@ -162,9 +171,9 @@ public class DeploymentOperationsImpl {
             }
         }
 
-        if (containsFeaturesFolder && containsP2Folder && containsPluginsFolder && containsRCEExecutable) {
-            int i = 5;
-            final int waitTime = 100;
+        if ((containsFeaturesFolder && containsP2Folder && containsPluginsFolder && containsRCEExecutable) || containsDeletionMarkerFile) {
+            int i = 10;
+            final int waitTime = 1000;
             boolean wasDeleted = false;
             do {
                 FileSystemOperations.deleteSandboxDirectory(installationDir);
@@ -181,6 +190,13 @@ public class DeploymentOperationsImpl {
                 i--;
             } while (i > 0);
             if (!wasDeleted) {
+                // Create a marker file which indicates the directory should be deleted in a later try.
+                File markerFile = new File(installationDir, DELETION_MARKER_FILE_NAME);
+                if (!markerFile.exists() && !markerFile.createNewFile()) {
+                    throw new IOException("Could not delete installation directory at location " + installationDir.getAbsolutePath()
+                        + " and could not create a file marking it for future deletion. Possibly access rights are missing.");
+                }
+
                 throw new IOException("Could not delete installation directory at location " + installationDir.getAbsolutePath()
                     + ". Most likely it is used by another program.");
             }

@@ -56,7 +56,7 @@ public class ConnectionBendpointDeleteHandler extends AbstractHandler {
                 ConnectionPart part = (ConnectionPart) element;
                 connectionWrapper = (ConnectionWrapper) part.getModel();
                 BendpointDeleteAllCommand bendpointDeleteCommand = new BendpointDeleteAllCommand();
-                bendpointDeleteCommand.setConnections(ConnectionUtils.getConnectionsBetweenNodes(
+                bendpointDeleteCommand.setConnections(ConnectionUtils.getConnectionsFromSourceToTarget(
                     connectionWrapper.getSource(), connectionWrapper.getTarget(), model));
                 bendpointDeleteCommand.setReferencedModel(connectionWrapper);
                 bendpointDeleteCommand.setWorkflowDescription(model);

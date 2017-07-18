@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -43,9 +44,12 @@ import de.rcenvironment.core.component.execution.impl.ComponentContextImpl;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionContextImpl;
 import de.rcenvironment.core.component.execution.internal.ComponentExecutor.ComponentExecutionType;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -66,6 +70,12 @@ import de.rcenvironment.toolkit.utils.common.IdGenerator;
  * 
  * @author Doreen Seider
  * @author Robert Mischke (tweaked error handling)
+ * 
+ * Note: The component state transition graph created with the definition of the valid state transition seems to have some flaws. I
+ * wouldn't trust it to be rock-solid. Nevertheless, it works right now and I wouldn't touch it except the workflow engine I gets a
+ * re-design instead of replacing it with a workflow engine II.
+ * --seid_do
+ * 
  */
 public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<ComponentState, ComponentStateMachineEvent> {
 
@@ -1169,18 +1179,20 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.FINISHED));
                 break;
             case PROCESS_INPUT_DATA:
-                requestProcessingInputDatums();
+                requestProcessingInputDatums(compExeRelatedInstances.compExeScheduler.fetchEndpointDatums());
                 break;
             case PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA:
                 ComponentInterface compInterface =
                     compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
                         .getComponentRevision().getComponentInterface();
-                if (compInterface.getIsLoopDriver() || compInterface.getCanHandleNotAValueDataTypes()) {
-                    requestProcessingInputDatums();
+                Map<String, EndpointDatum> endpointDatums = compExeRelatedInstances.compExeScheduler.fetchEndpointDatums();
+                if (compInterface.getCanHandleNotAValueDataTypes()
+                    || (compInterface.getIsLoopDriver() && wasNotAValueReceivedOnlyAtSameLoopInput(endpointDatums))) {
+                    requestProcessingInputDatums(endpointDatums);
                 } else {
                     // it must contain at least one of DataType 'not a value' if the state was
                     // PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA
-                    for (EndpointDatum endpointDatum : compExeRelatedInstances.compExeScheduler.fetchEndpointDatums().values()) {
+                    for (EndpointDatum endpointDatum : endpointDatums.values()) {
                         if (endpointDatum.getValue().getDataType().equals(DataType.NotAValue)) {
                             forwardNotAValueData(endpointDatum);
                             break;
@@ -1211,6 +1223,21 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             return currentState;
         }
 
+        private boolean wasNotAValueReceivedOnlyAtSameLoopInput(Map<String, EndpointDatum> endpointDatums) {
+            EndpointDescriptionsManager inputDescManager =
+                compExeRelatedInstances.compExeCtx.getComponentDescription().getInputDescriptionsManager();
+
+            for (Entry<String, EndpointDatum> datum : endpointDatums.entrySet()) {
+                if (datum.getValue().getValue().getDataType().equals(DataType.NotAValue)) {
+                    if (inputDescManager.getEndpointDescription(datum.getKey()).getEndpointDefinition().getEndpointCharacter()
+                        .equals(EndpointCharacter.OUTER_LOOP)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
         private void forwardInternalTD(InternalTDImpl internalTD) {
             Queue<WorkflowGraphHop> hopsToTraverse = internalTD.getHopsToTraverse();
             WorkflowGraphHop currentHop = hopsToTraverse.poll();
@@ -1230,21 +1257,25 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         }
 
         private void forwardNotAValueData(EndpointDatum nAVEndpointDatum) {
+            ComponentInterface compInterface =
+                compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
+                .getComponentRevision().getComponentInterface();
             for (EndpointDescription output : compExeRelatedInstances.compExeCtx.getComponentDescription()
-                .getOutputDescriptionsManager()
-                .getEndpointDescriptions()) {
-                compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutput(output.getName(), nAVEndpointDatum.getValue());
-                LOG.info(StringUtils.format("Component '%s' of workflow '%s' did not run because of 'not a value' "
-                    + "value at input '%s'", compExeRelatedInstances.compExeCtx.getInstanceName(),
-                    compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),
-                    nAVEndpointDatum.getInputName()));
+                .getOutputDescriptionsManager().getEndpointDescriptions()) {
+                if (!compInterface.getIsLoopDriver()
+                    || output.getEndpointDefinition().getEndpointCharacter().equals(EndpointCharacter.OUTER_LOOP)) {
+                    compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutput(output.getName(), nAVEndpointDatum.getValue());
+                }
             }
+            LOG.info(StringUtils.format("Component '%s' of workflow '%s' did not run because of 'not a value' "
+                + "value at input '%s'", compExeRelatedInstances.compExeCtx.getInstanceName(),
+                compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),
+                nAVEndpointDatum.getInputName()));
         }
 
-        private void requestProcessingInputDatums() {
+        private void requestProcessingInputDatums(Map<String, EndpointDatum> endpointDatums) {
             try {
-                compExeRelatedInstances.compCtxBridge
-                    .setEndpointDatumsForExecution(compExeRelatedInstances.compExeScheduler.fetchEndpointDatums());
+                compExeRelatedInstances.compCtxBridge.setEndpointDatumsForExecution(endpointDatums);
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUT_DATUMS_REQUESTED));
             } catch (ComponentExecutionException e) {
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED));
@@ -1301,8 +1332,9 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
             ComponentState newState = currentState;
             if (!isCanceling(currentState)) {
-                if (ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx.getComponentDescription()
-                    .getConfigurationDescription().getComponentConfigurationDefinition())) {
+                ConfigurationDescription compConfigDesc = compExeRelatedInstances.compExeCtx.getComponentDescription()
+                    .getConfigurationDescription();
+                if (ComponentExecutionUtils.isManualOutputVerificationRequired(compConfigDesc)) {
                     postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULT_APPROVAL_REQUESTED));
                 } else {
                     newState = new IdleRequestedEventProcessor().processEvent(currentState, event);

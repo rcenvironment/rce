@@ -27,6 +27,17 @@ import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
  * 
  * @author Doreen Seider
  * @author Robert Mischke
+ * 
+ * Note: The console row handling evolved over time and that can be seen in the code. Functionality related to console rows are kind
+ * of patched together.
+ * Functionalities are:
+ * - sending console rows to the workflow controller
+ * - fetching console rows by the GUI (workflow console view), waiting for them at the time the component terminates as they might be
+ * delayed due to batching them when sending
+ * - storing them in the data management bundle together in a file per component run
+ * 
+ * --seid_do
+ * 
  */
 public final class ConsoleRowUtils {
 

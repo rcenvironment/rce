@@ -190,6 +190,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                         resultFile, "Result.csv");
 
                 historyDataItem.setResultFileReference(resultFileReference.getFileReference());
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(resultFile);
             } catch (IOException e) {
                 String errorMessage = "Failed to store result file into the data management"
                     + "; it is not available in the workflow data browser";
@@ -478,13 +479,13 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             throw new ComponentException("Design variables or target functions not configured");
         }
         try {
-            if (configurations != null && !configurations.equals("")) {
+            if (configurations != null && !configurations.isEmpty()) {
                 methodConfigurations = mapper.readValue(configurations, new HashMap<String, MethodDescription>().getClass());
                 for (String key : methodConfigurations.keySet()) {
                     methodConfigurations.put(key, mapper.convertValue(methodConfigurations.get(key), MethodDescription.class));
                 }
             } else {
-                methodConfigurations = OptimizerFileLoader.getAllMethodDescriptions("optimizer");
+                methodConfigurations = OptimizerFileLoader.getAllMethodDescriptions("/optimizer");
             }
         } catch (IOException e) {
             throw new ComponentException("Failed to load or parse method file", e);

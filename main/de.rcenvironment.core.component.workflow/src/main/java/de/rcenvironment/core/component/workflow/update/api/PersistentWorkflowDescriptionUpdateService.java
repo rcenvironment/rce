@@ -12,11 +12,15 @@ import java.io.IOException;
 
 import org.codehaus.jackson.JsonParseException;
 
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
+
 
 /**
  * Is responsible for persistent workflow description updates. 
  *
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
  */
 public interface PersistentWorkflowDescriptionUpdateService {
 

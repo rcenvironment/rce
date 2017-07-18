@@ -1020,6 +1020,12 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         if (executionException != null) {
             throw executionException;
         }
+        
+        try {
+            tempFileService.disposeManagedTempDirOrFile(executionSetup.getWorkflowFile());
+        } catch (IOException e) {
+            log.warn("Could not delete temporary workflow file");
+        }
 
         return finalState;
     }

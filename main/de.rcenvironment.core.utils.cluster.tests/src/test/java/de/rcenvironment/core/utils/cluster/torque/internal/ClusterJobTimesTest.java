@@ -17,6 +17,7 @@ import de.rcenvironment.core.utils.cluster.internal.ClusterJobTimesInformation;
 
 /**
  * Test cases for {@link ClusterJobTimesInformation}.
+ * 
  * @author Doreen Seier
  */
 public class ClusterJobTimesTest {

@@ -199,7 +199,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
         binaryReferences.add(binaryReference);
         // create a new data reference
         DataReference dataReference = new DataReference(uuid.toString(),
-            platformService.getLocalInstanceNodeId(), binaryReferences);
+            platformService.getLocalDefaultLogicalNodeId(), binaryReferences);
 
         // get the meta data backend and add the newly created data reference
         MetaDataBackendService metaDataBackend = BackendSupport.getMetaDataBackend();

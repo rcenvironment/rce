@@ -8,10 +8,14 @@
 
 package de.rcenvironment.core.start.validators.internal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -28,14 +32,14 @@ public class ProfileDirectoryNotInUseValidator extends DefaultInstanceValidator 
     @Override
     public InstanceValidationResult validate() {
         final String validationDisplayName = "Profile directory lock";
-        
+
         if (!configService.isIntendedProfileDirectorySuccessfullyLocked()) {
             String errorMessage = StringUtils.format(Messages.instanceIdAlreadyInUse, configService
                 .getOriginalProfileDirectory().getAbsolutePath());
             return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(
                 validationDisplayName, errorMessage, errorMessage);
         }
-        
+
         return InstanceValidationResultFactory.createResultForPassed(validationDisplayName);
     }
 
@@ -43,5 +47,12 @@ public class ProfileDirectoryNotInUseValidator extends DefaultInstanceValidator 
         configService = configIn;
     }
 
-
+    @Override
+    public List<Class<? extends InstanceValidator>> getNecessaryPredecessors() {
+        ArrayList<Class<? extends InstanceValidator>> predecessors = new ArrayList<Class<? extends InstanceValidator>>();
+        // we need to make sure that the original profile has the correct version, otherwise this test might be executed first and produce a
+        // misleading error message
+        predecessors.add(ProfileDirectoryVersionValidator.class);
+        return predecessors;
+    }
 }

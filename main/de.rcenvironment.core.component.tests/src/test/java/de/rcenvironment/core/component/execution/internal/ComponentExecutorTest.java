@@ -361,8 +361,7 @@ public class ComponentExecutorTest {
 
         ComponentExecutionType compExeType = ComponentExecutionType.CompleteVerification;
         compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_REJECTED);
-        ComponentExecutor compExecutor =
-            new ComponentExecutor(compExeRelatedInstancesStub, compExeType);
+        ComponentExecutor compExecutor = new ComponentExecutor(compExeRelatedInstancesStub, compExeType);
         compExecutor.bindComponentExecutionPermitsService(createComponentExecutionPermitServiceMock());
 
         compExecutor.executeByConsideringLimitations();
@@ -815,7 +814,7 @@ public class ComponentExecutorTest {
         ComponentDescription compDescMock = EasyMock.createStrictMock(ComponentDescription.class);
         EasyMock.expect(compDescMock.getIdentifier()).andStubReturn(COMP_ID);
         EasyMock.expect(compDescMock.getConfigurationDescription())
-            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(requiresOutputApproval));
+            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(requiresOutputApproval, false));
 
         EasyMock.replay(compDescMock);
 

@@ -70,6 +70,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Marc Stammerjohann
  * @author Oliver Seebach
  * @author Robert Mischke (8.0.0 id adaptations)
+ * 
+ * Note: Very low-level parsing. See issue https://mantis.sc.dlr.de/view.php?id=11849 that covers the rework. --seid_do
  */
 public class WorkflowDescriptionPersistenceHandler {
 
@@ -1189,16 +1191,9 @@ public class WorkflowDescriptionPersistenceHandler {
         }
 
         for (Connection connection : connections) {
-            if ((connection.getTargetNode().getIdentifier().equals(inputNode.getIdentifier()) && connection.getSourceNode().getIdentifier()
-                .equals(outputNode.getIdentifier()))) {
+            if ((connection.getTargetNode().getIdentifier().equals(inputNode.getIdentifier())
+                && connection.getSourceNode().getIdentifier().equals(outputNode.getIdentifier()))) {
                 connection.setBendpoints(bendpoints);
-            } else if (connection.getTargetNode().getIdentifier().equals(outputNode.getIdentifier())
-                && connection.getSourceNode().getIdentifier().equals(inputNode.getIdentifier())) {
-                List<Location> invertedBendpointsToAdd = new ArrayList<>();
-                for (Location l : bendpoints) {
-                    invertedBendpointsToAdd.add(0, l);
-                }
-                connection.setBendpoints(invertedBendpointsToAdd);
             }
         }
     }
@@ -1220,10 +1215,8 @@ public class WorkflowDescriptionPersistenceHandler {
                 String bendpointString = parseListOfBendpointsToString(bendpoints);
                 // note that for sake of simplicity the same separator as for bendpoints is used here
                 String connectionString = sourceId + BENDPOINT_COORDINATE_SEPARATOR + targetId;
-                String inverseConnectionString = targetId + BENDPOINT_COORDINATE_SEPARATOR + sourceId;
                 // if not already existent - add it
-                if (!connectionBendpointMapping.keySet().contains(connectionString)
-                    && !connectionBendpointMapping.keySet().contains(inverseConnectionString)) {
+                if (!connectionBendpointMapping.keySet().contains(connectionString)) {
                     connectionBendpointMapping.put(connectionString, bendpointString);
                 }
             }

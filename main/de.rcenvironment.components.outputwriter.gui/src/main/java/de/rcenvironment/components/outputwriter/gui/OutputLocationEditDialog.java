@@ -319,7 +319,6 @@ public class OutputLocationEditDialog extends Dialog {
     }
 
     protected void createFormatSection(Composite container) {
-
         Group configGroup = new Group(container, SWT.CENTER);
         GridData g = new GridData(GridData.FILL_HORIZONTAL);
         configGroup.setLayoutData(g);
@@ -345,10 +344,9 @@ public class OutputLocationEditDialog extends Dialog {
             }
         });
 
-        WhitespaceShowListener headerWhitespaceListener = new WhitespaceShowListener();
-        headerWhitespaceListener.setScriptingText(header);
+        WhitespaceShowListener headerWhitespaceListener = new WhitespaceShowListener(header);
         header.addPaintListener(headerWhitespaceListener);
-        headerWhitespaceListener.setOn(true);
+        headerWhitespaceListener.setEnabled(true);
         headerWhitespaceListener.drawStyledText();
 
         new Label(configGroup, SWT.NONE).setText("");
@@ -377,10 +375,9 @@ public class OutputLocationEditDialog extends Dialog {
             }
         });
 
-        WhitespaceShowListener formatWhitespaceListener = new WhitespaceShowListener();
-        formatWhitespaceListener.setScriptingText(formatString);
+        WhitespaceShowListener formatWhitespaceListener = new WhitespaceShowListener(formatString);
         formatString.addPaintListener(formatWhitespaceListener);
-        formatWhitespaceListener.setOn(true);
+        formatWhitespaceListener.setEnabled(true);
         formatWhitespaceListener.drawStyledText();
 
         new Label(configGroup, SWT.NONE).setText("");

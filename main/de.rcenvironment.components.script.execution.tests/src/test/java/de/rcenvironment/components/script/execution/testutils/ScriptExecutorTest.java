@@ -10,7 +10,6 @@ package de.rcenvironment.components.script.execution.testutils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,7 +29,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
@@ -115,8 +113,8 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(scriptingService.createScriptEngine(getScriptLanguage())).andReturn(scriptEngine).anyTimes();
         EasyMock.replay(scriptingService);
         context.addService(ScriptingService.class, scriptingService);
-        context.setConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION, "hellö");
-        
+        context.setConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION, "hellï¿½");
+
         testPrepareHook();
 
         executor.prepareExecutor(context);
@@ -168,44 +166,6 @@ public abstract class ScriptExecutorTest {
     protected abstract ScriptLanguage getScriptLanguage();
 
     protected abstract void testPrepareHook();
-
-    /**
-     * Test post run method.
-     * 
-     * @throws IOException .
-     * 
-     * @throws ComponentException .
-     */
-    @Test
-    public void testPostRun() throws ComponentException, IOException {
-
-        ScriptEngine scriptEngine = getScriptingEngine();
-        File testfile = null;
-        try {
-            testfile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("test.txt");
-            dataInputs[4][2] = testfile.getAbsolutePath();
-        } catch (IOException e) {
-            Assert.fail("Could not create test file. " + e.getMessage());
-            return;
-        }
-
-        addOutputsToEngine(scriptEngine, testfile);
-        prepareScriptingUtilsAndContext();
-
-        executor.setComponentContext(context);
-        executor.setHistoryDataItem(new ScriptComponentHistoryDataItem());
-        executor.setScriptEngine(scriptEngine);
-        executor.setStateMap(new HashMap<String, Object>());
-        executor.setWorkingPath(testfile.getParent());
-        executor.setStdoutWriter(EasyMock.createNiceMock(Writer.class));
-        executor.setStderrWriter(EasyMock.createNiceMock(Writer.class));
-        executor.postRun();
-
-        for (Object[] dataInput : dataInputs) {
-            Assert.assertEquals(context.getCapturedOutput((String) dataInput[0]).size(), 1);
-        }
-        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(testfile);
-    }
 
     @SuppressWarnings("rawtypes")
     private void addOutputsToEngine(ScriptEngine scriptEngine, File testfile) {
@@ -288,7 +248,7 @@ public abstract class ScriptExecutorTest {
         BooleanTD booleanMock = EasyMock.createMock(BooleanTD.class);
         EasyMock.expect(booleanMock.getDataType()).andReturn(DataType.Boolean);
         EasyMock.replay(booleanMock);
-        EasyMock.expect(tdf.createBoolean(EasyMock.anyBoolean())).andReturn(booleanMock);
+        EasyMock.expect(tdf.createBoolean(EasyMock.anyBoolean())).andReturn(booleanMock).anyTimes();
 
         FloatTD floatMock = EasyMock.createMock(FloatTD.class);
         EasyMock.expect(floatMock.getDataType()).andReturn(DataType.Float);
@@ -304,17 +264,26 @@ public abstract class ScriptExecutorTest {
         ShortTextTD textMock = EasyMock.createMock(ShortTextTD.class);
         EasyMock.expect(textMock.getDataType()).andReturn(DataType.ShortText);
         EasyMock.replay(textMock);
-        EasyMock.expect(tdf.createShortText(EasyMock.anyObject(String.class))).andReturn(textMock);
+        EasyMock.expect(tdf.createShortText(EasyMock.anyObject(String.class))).andReturn(textMock).anyTimes();
 
         VectorTD vectorMock = EasyMock.createMock(VectorTD.class);
         EasyMock.expect(vectorMock.getDataType()).andReturn(DataType.Vector);
         EasyMock.replay(vectorMock);
-        EasyMock.expect(tdf.createVector(EasyMock.anyInt())).andReturn(vectorMock);
+        EasyMock.expect(tdf.createVector(EasyMock.anyInt())).andReturn(vectorMock).anyTimes();
 
         MatrixTD matrixMock = EasyMock.createNiceMock(MatrixTD.class);
         EasyMock.expect(matrixMock.getDataType()).andReturn(DataType.Matrix);
         EasyMock.replay(matrixMock);
-        EasyMock.expect(tdf.createMatrix(EasyMock.anyInt(), EasyMock.anyInt())).andReturn(matrixMock);
+        EasyMock.expect(tdf.createMatrix(EasyMock.anyInt(), EasyMock.anyInt())).andReturn(matrixMock).anyTimes();
+        FloatTD[][] matrixArray = new FloatTD[2][2];
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                matrixArray[i][j] = EasyMock.createNiceMock(FloatTD.class);
+                EasyMock.expect(matrixArray[i][j].getDataType()).andReturn(DataType.Float).anyTimes();
+                EasyMock.replay(matrixArray[i][j]);
+            }
+        }
+        EasyMock.expect(tdf.createMatrix(matrixArray)).andReturn(matrixMock).anyTimes();
 
     }
 }

@@ -8,23 +8,26 @@
 
 package de.rcenvironment.core.configuration.bootstrap;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
-import java.nio.file.Files;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.configuration.bootstrap.profile.BaseProfile;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
+import de.rcenvironment.core.configuration.bootstrap.ui.ProfileSelectionUI;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Helper class that chooses the profile directory and related paths to use, based on command-line or .ini file parameters.
  * 
  * @author Robert Mischke
  * @author Oliver Seebach
- * @author Tobias Rodehutskors
+ * @author Tobias Brieden
  */
 public final class BootstrapConfiguration {
 
@@ -34,219 +37,150 @@ public final class BootstrapConfiguration {
     public static final String DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE = "rce.launch.exitOnLockedProfile";
 
     /**
-     * A system property that can be used to override the parent directory for profiles defined by a relative path or id (default "~/.rce").
-     */
-    public static final String SYSTEM_PROPERTY_PROFILES_PARENT_DIRECTORY_OVERRIDE = "rce.profiles.parentDir";
-
-    /**
-     * A system property that can be used to override the default profile id/path (default id: "default"). It is only applied if no "-p"
-     * launch parameter is set, and can be either a relative or absolute path.
-     */
-    public static final String SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH = "rce.profile.default";
-
-    /**
-     * The relative path where the shutdown information (*not* the temporary shutdown *profile*!) of a profile is stored. Made public to
-     * allow sending shutdown signals to external instances.
-     */
-    public static final String PROFILE_SHUTDOWN_DATA_SUBDIR = "internal";
-
-    /**
-     * The current profile's version number. Needs to be updated manually whenever changed in the profile require an update.
-     */
-    public static final Integer PROFILE_VERSION_NUMBER = 1;
-
-    /** The name of the file containing the profile version. */
-    public static final String PROFILE_VERSION_FILE_NAME = "profile.version";
-
-    /**
-     * The name of the lock file to signal that the containing profile is in use.
-     */
-    public static final String PROFILE_DIR_LOCK_FILE_NAME = "instance.lock";
-
-    private static final String SYSTEM_PROPERTY_USER_HOME = "user.home";
-
-    private static final String SYSTEM_PROPERTY_SYSTEM_TEMP_DIR = "java.io.tmpdir";
-
-    /**
-     * Standard OSGi "osgi.configuration.area" property.
+     * Standard OSGi "osgi.install.area" property.
      * 
-     * This is the directory where OSGi stores all runtime data which is not stored inside the workspace (the "instance area" in OSGi
-     * terms).
+     * Note that (contrary to what the name suggests) this is *not* the actual installation directory which, for example, the /plugin and
+     * /feature directories are located in. Instead, this property points to the /configuration directory inside that installation
+     * directory.
      */
-    private static final String SYSTEM_PROPERTY_OSGI_CONFIGURATION_AREA = "osgi.configuration.area";
+    public static final String SYSTEM_PROPERTY_OSGI_INSTALL_AREA = "osgi.install.area";
 
-    private static final String PROFILE_INTERNAL_DATA_SUBDIR = "internal";
+    private static final String USING_SHUTDOWN_PROFILE = "Using shutdown profile.";
 
-    private static final String PROFILE_RELATIVE_OSGI_STORAGE_PATH = PROFILE_INTERNAL_DATA_SUBDIR + "/osgi";
+    private static final String USING_FALLBACK_PROFILE = "Using fallback profile.";
 
-    private static final String PROFILE_LOGFILES_PATH_PROPERTY = "profile.logfiles.path"; // set by this class
+    private static final String FAILED_TO_LOCK_PROFILE_TEMPLATE =
+        "Failed to lock profile directory %s - most likely, another instance is already using it.";
 
-    private static final String PROFILE_LOGFILES_PREFIX_PROPERTY = "profile.logfiles.prefix"; // set by this class
+    private static final String NO_LOCK_ON_FALLBACK_TEMPLATE =
+        "Could not acquire a lock on the fallback profile directory %s either - giving up";
+
+    private static final String FALLBACK_PROFILE_IS_DISABLED_SHUTTING_DOWN = "Fallback profile is disabled, shutting down.";
 
     private static final String PROFILE_OPTION_HINT = " (use -p/--profile <id or path> to override)";
+
+    private static final String NEWER_PROFILE_VERSION_TEMPLATE =
+        "The required version of the profile directory is %d"
+            + " but the profile directory's current version is newer. Most likely, this is the case "
+            + " because it has been used with a newer RCE version before. As downgrading of profiles is not supported,"
+            + " the configured profile directory cannot be used with this RCE version."
+            + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
+
+    private static final String PROFILE_OPTION_LONG_KEY = "--profile";
+
+    private static final String PROFILE_OPTION_SHORT_KEY = "-p";
 
     // note: not using the singleton pattern so it can be reset by unit tests - misc_ro
     private static volatile BootstrapConfiguration instance;
 
-    private static String introText;
+    private final Profile originalProfile;
 
-    private final File originalProfileDirectory;
-
-    private final boolean intendedProfileDirectoryLocked;
-
-    private final boolean hasIntendedProfileDirectoryValidVersion;
-
-    private final File finalProfileDirectory;
-
-    private final File internalDataDirectory;
-
-    private final String finalProfileDirectoryPath;
-
-    // the temporary/stub profile location for the process sending the shutdown signal
-    private final File shutdownProfileDirectory;
-
-    // the shutdown.dat location of the process which should be terminated
-    private final File targetShutdownDataDirectory;
+    private final Profile finalProfile;
 
     private final boolean shutdownRequested;
 
-    private final File profilesRootDirectory;
+    private String profileOptionHintToPrint;
 
-    private final boolean fallbackProfileDisabled;
-
-    /**
-     * True, if either of the options -p or --profile were used.
-     */
-    private boolean profileOptionUsed = false;
+    private final Log log = LogFactory.getLog(getClass());
 
     /**
      * Performs the bootstrap profile initialization.
      * 
+     * @throws ParameterException
+     * @throws ProfileException
+     * @throws SystemExitException
+     * @throws BootstrapException
+     * 
      * @throws IOException on bootstrap profile path errors
      */
-    private BootstrapConfiguration() throws IOException {
+    private BootstrapConfiguration() throws ProfileException, ParameterException, SystemExitException {
 
-        PrintStream stdErr = System.err;
+        // TODO which of these calls should be replaced by log calls?
+        // circumvent CheckStyle rule to generate basic output before the log system is initialized
+        PrintStream stderr = System.err;
+        PrintStream stdout = System.out;
 
         LaunchParameters launchParameters = LaunchParameters.getInstance();
 
-        profilesRootDirectory = determineProfilesParentDirectory();
+        originalProfile = determineOriginalProfileDir(launchParameters);
 
-        originalProfileDirectory = determineOriginalProfileDir(launchParameters);
-        File preliminaryProfileDir = originalProfileDirectory;
-
-        shutdownRequested = launchParameters.containsToken("--shutdown");
+        Profile preliminaryProfile = originalProfile;
 
         // For headless mode, fallback profile is automatically disabled.
-        fallbackProfileDisabled =
+        final boolean fallbackProfileDisabled =
             System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
                 || launchParameters.containsToken("--batch");
 
-        boolean isProfileAccessible = true;
-        boolean hasIntendedProfileDirectoryValidVersionTemp;
-        try {
-            // check profile version number.
-            // if the preliminary profile is not read and/or not writable this method will throw an IOException
-            hasIntendedProfileDirectoryValidVersionTemp = validateProfileDirectoryVersionNumber(preliminaryProfileDir, stdErr);
-        } catch (IOException e) {
-            isProfileAccessible = false;
-            hasIntendedProfileDirectoryValidVersionTemp = false;
-        }
-        // using a temporary local variable since the member variable should be final
-        hasIntendedProfileDirectoryValidVersion = hasIntendedProfileDirectoryValidVersionTemp;
-
         // In case of error either start in fallback profile or don't start
-        if (!isProfileAccessible || !hasIntendedProfileDirectoryValidVersion) {
-            // fail if fallback profile disabled
+        if (!originalProfile.hasValidVersion()) {
             if (fallbackProfileDisabled) {
-                String errorMessage;
-
-                if (!isProfileAccessible) {
-                    errorMessage = "The specified profile folder " + preliminaryProfileDir.getAbsolutePath()
-                        + " is either nor readable and/or not writeable. "
-                        + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
-                } else { // !hasIntendedProfileDirectoryValidVersion
-                    errorMessage =
-                        "The required version of the profile directory is "
-                            + BootstrapConfiguration.PROFILE_VERSION_NUMBER
-                            + " but the profile directory's current version is newer. Most likely, this is the case "
-                            + " because it has been used with a newer RCE version before. As downgrading of profiles is not supported,"
-                            + " the configured profile directory cannot be used with this RCE version."
-                            + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
-                }
-                stdErr.println(errorMessage + " Fallback profile is disabled, shutting down.");
-                System.exit(1);
+                // fail if the fallback profile is disabled
+                log.error(StringUtils.format(NEWER_PROFILE_VERSION_TEMPLATE, Profile.PROFILE_VERSION_NUMBER));
+                stderr.println(StringUtils.format(NEWER_PROFILE_VERSION_TEMPLATE, Profile.PROFILE_VERSION_NUMBER));
+                throw new SystemExitException(0);
             } else {
                 // else go on in the process with the fallback profile; instance validator will inform the user and force shutdown
-                preliminaryProfileDir = determineFallbackProfileDirectory(originalProfileDirectory);
+                stderr.println(USING_FALLBACK_PROFILE);
+                preliminaryProfile = ProfileUtils.getFallbackProfile();
             }
         }
 
-        // the temporary/stub profile location for the process sending the shutdown signal
-        shutdownProfileDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR + "/shutdown");
-
-        targetShutdownDataDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
-
+        shutdownRequested = launchParameters.containsToken("--shutdown");
         if (shutdownRequested) {
-            // if used as a shutdown trigger, use the shutdown data sub-directory as profile directory
-            preliminaryProfileDir = shutdownProfileDirectory;
-            introText = "Using shutdown profile directory";
+            // the stub profile location for the process sending the shutdown signal is located in the data sub-directory
+            preliminaryProfile = new Profile(new File(originalProfile.getInternalDirectory(), "shutdown"), true, true);
+            stdout.println(USING_SHUTDOWN_PROFILE);
         }
 
-        intendedProfileDirectoryLocked = attemptToLockProfileDirectory(preliminaryProfileDir);
-        if (intendedProfileDirectoryLocked) {
-            finalProfileDirectory = preliminaryProfileDir;
-            introText = "Using profile directory";
+        if (preliminaryProfile.attemptToLockProfileDirectory()) {
+            finalProfile = preliminaryProfile;
         } else {
-            stdErr.println("Failed to lock profile directory " + preliminaryProfileDir
-                + " - most likely, another instance is already using it");
-            // If the "--disable-profile-fallback" option is set, shut down, else try to create a fallback profile directory
+            stderr.println(StringUtils.format(FAILED_TO_LOCK_PROFILE_TEMPLATE, preliminaryProfile.getProfileDirectory()));
             if (fallbackProfileDisabled) {
-                stdErr.println("Fallback profile is disabled, shutting down.");
-                System.exit(1);
-            }
-            preliminaryProfileDir = determineFallbackProfileDirectory(originalProfileDirectory);
-            if (attemptToLockProfileDirectory(preliminaryProfileDir)) {
-                finalProfileDirectory = preliminaryProfileDir;
-                introText = "Using fallback profile directory";
+                // If the fallback profile is disabled, shut down ...
+                log.error(FALLBACK_PROFILE_IS_DISABLED_SHUTTING_DOWN);
+                stderr.println(FALLBACK_PROFILE_IS_DISABLED_SHUTTING_DOWN);
+                throw new SystemExitException(0);
             } else {
-                throw new IOException("Could not acquire a lock on the fallback profile directory " + preliminaryProfileDir
-                    + " either - giving up");
+                // ... else try to create a fallback profile directory
+                preliminaryProfile = ProfileUtils.getFallbackProfile();
+                stderr.println(USING_FALLBACK_PROFILE);
+
+                if (preliminaryProfile.attemptToLockProfileDirectory()) {
+                    finalProfile = preliminaryProfile;
+                } else {
+                    throw new ProfileException(StringUtils.format(NO_LOCK_ON_FALLBACK_TEMPLATE, preliminaryProfile.getProfileDirectory()));
+                }
             }
         }
 
-        finalProfileDirectoryPath = finalProfileDirectory.getAbsolutePath();
-
-        internalDataDirectory = new File(finalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
-        // create internal data directory only if it was not already created by profile version checking procedure
-        if (!internalDataDirectory.exists()) {
-            internalDataDirectory.mkdirs();
-            if (!internalDataDirectory.isDirectory()) {
-                throw new IOException("Failed to initialize internal data directory " + internalDataDirectory.getAbsolutePath());
-            }
-        }
-
-        String profileOptionHintToPrint = PROFILE_OPTION_HINT;
         // if the user specified profile directory is used, print a modified profile option hint
-        if (profileOptionUsed && finalProfileDirectory.getCanonicalPath().equals(originalProfileDirectory.getCanonicalPath())) {
-            profileOptionHintToPrint = " (as specified by the -p/--profile option)";
+        if (finalProfile.equals(originalProfile)) {
+            stdout.println(StringUtils.format("Using profile directory %s %s", finalProfile.getProfileDirectory().getAbsolutePath(),
+                profileOptionHintToPrint));
         }
 
-        // circumvent CheckStyle rule to generate basic output before the log system is initialized
-        PrintStream stdout = System.out;
-        stdout.println(String.format("%s %s%s", introText, finalProfileDirectoryPath, profileOptionHintToPrint));
-        setLoggingParameters();
+        // mark the selected profile as recently used, but only if it neither a shutdown profile nor a fallback profile
+        if (finalProfile.equals(originalProfile)) {
+            try {
+                originalProfile.markAsRecentlyUsed();
+            } catch (ProfileException e) {
+                // catch this exception. otherwise we could not start anymore only because the profile could not be marked correctly.
+                log.warn("Unable to mark the profile as recently used.", e);
+            }
+        }
 
-        // TODO/NOTE: this does not take full effect; apparently, the setting has already been read and applied
-        // setOsgiStorageLocation();
+        loggingSetup();
     }
 
     /**
      * Initializes the singleton instance from system properties and launch parameters.
      * 
-     * @throws IOException on bootstrap profile path errors
+     * @throws ParameterException re-thrown
+     * @throws ProfileException re-thrown
+     * @throws SystemExitException re-thrown
      */
-    public static void initialize() throws IOException {
+    public static void initialize() throws ProfileException, ParameterException, SystemExitException {
         instance = new BootstrapConfiguration();
     }
 
@@ -261,8 +195,85 @@ public final class BootstrapConfiguration {
         return instance;
     }
 
+    /**
+     * Determines which profile should be used as the original profile:
+     * 
+     * 1. Absolute or relative profile folder specified using the -p command line option
+     * 
+     * 2. Profile selected using the Profile Selection Dialog
+     * 
+     * 3. Fall back to the default profile
+     * 
+     * @throws SystemExitException Thrown if the Profile Selection Dialog was exited without a selection.
+     */
+    private Profile determineOriginalProfileDir(LaunchParameters launchParams)
+        throws ProfileException, ParameterException, SystemExitException {
+
+        String profilePath = null;
+
+        // 1.
+        // can be null if none of the options is used
+        profilePath = launchParams.getNamedParameter(PROFILE_OPTION_SHORT_KEY, PROFILE_OPTION_LONG_KEY);
+
+        if (profilePath != null) {
+            this.profileOptionHintToPrint = "(as specified by the -p/--profile option)";
+        } else {
+            // 2.
+            // if no argument was provided, but the option was still present, we start the profile selection dialog
+            if (launchParams.containsToken(PROFILE_OPTION_SHORT_KEY, PROFILE_OPTION_LONG_KEY)) {
+                Profile selectedProfile = new ProfileSelectionUI().run();
+
+                // if no profile was selected we should exit completely
+                if (selectedProfile == null) {
+                    throw new SystemExitException(0);
+                } else {
+                    profilePath = selectedProfile.getProfileDirectory().getAbsolutePath();
+                    this.profileOptionHintToPrint = "(as specified by the profile selection dialog)";
+                }
+            }
+        }
+
+        // 3.
+        if (profilePath == null) {
+            this.profileOptionHintToPrint = PROFILE_OPTION_HINT;
+            // TODO it would be nice if different hints could be displayed depending on how the default was selected
+            profilePath = ProfileUtils.getDefaultProfilePath().getAbsolutePath();
+        }
+
+        File configuredPath = new File(profilePath);
+        File profileDir;
+        if (configuredPath.isAbsolute()) {
+            profileDir = configuredPath;
+        } else {
+            File profilesRootDirectory = ProfileUtils.getProfilesParentDirectory();
+            profileDir = new File(profilesRootDirectory, profilePath).getAbsoluteFile();
+        }
+
+        return new Profile(profileDir, true, true);
+    }
+
+    /**
+     * Before the final profile is known, all log messages are written to a startup log file in the common profile directory. As soon as the
+     * final profile is known, the logging will be reconfigured to write new log messages into log files within the profile directory.
+     * Furthermore, all logged messages from the old log file will be copied to the start of the new log file.
+     */
+    private void loggingSetup() {
+
+        // deletes the old previous log and renames the existing old log to the new previous log
+        LogArchiver.run(finalProfile.getProfileDirectory());
+        String logfilesPrefix = "";
+        if (shutdownRequested) {
+            logfilesPrefix = "shutdown-";
+        }
+        LoggingReconfigurationHelper.reconfigure(finalProfile.getProfileDirectory(), logfilesPrefix);
+    }
+
     public File getProfileDirectory() {
-        return finalProfileDirectory;
+        return finalProfile.getProfileDirectory();
+    }
+
+    public Profile getProfile() {
+        return finalProfile;
     }
 
     /**
@@ -272,220 +283,67 @@ public final class BootstrapConfiguration {
      * @return the location for internal data files; default: "<profile dir>/internal"
      */
     public File getInternalDataDirectory() {
-        return internalDataDirectory;
+        return finalProfile.getInternalDirectory();
     }
 
-    public File getOriginalProfileDirectory() {
-        return originalProfileDirectory;
+    /**
+     * Deletes the internal data directory if it is empty.
+     * 
+     * @return true if and only if the file or directory is successfully deleted
+     */
+    public boolean deleteInternalDataDirectoryIfEmpty() {
+
+        // TODO the existence of this profile version file is an implementation detail of BaseProfile and therefore its deletion shouln't be
+        // handled here.
+
+        // delete the profile.version file within the internal data directory, this should be the only file in there
+        new File(getInternalDataDirectory(), BaseProfile.PROFILE_VERSION_FILE_NAME).delete();
+
+        return this.getInternalDataDirectory().delete();
+    }
+
+    public Profile getOriginalProfile() {
+        return originalProfile;
     }
 
     public boolean isShutdownRequested() {
         return shutdownRequested;
     }
 
-    // the shutdown.dat location for the process sending the shutdown signal is within its own profile directory
+    /**
+     * @return the shutdown.dat location for the process sending the shutdown signal is within its own profile directory
+     */
     public File getOwnShutdownDataDirectory() {
-        return internalDataDirectory;
+        return finalProfile.getInternalDirectory();
     }
 
+    /**
+     * @return The location of the shutdown.dat of the process which should be terminated.
+     */
     public File getTargetShutdownDataDirectory() {
-        return targetShutdownDataDirectory;
+        return originalProfile.getInternalDirectory();
     }
 
-    public boolean isIntendedProfileDirectorySuccessfullyLocked() {
-        return intendedProfileDirectoryLocked;
-    }
-
+    // TODO move this method out of this class?
     /**
-     * @return <code>true</code> if profile directory has valid version (<= current one)
+     * @return The path to the installation directory as defined through the osgi.install.area property.
      */
-    public boolean hasIntendedProfileDirectoryValidVersion() {
-        return hasIntendedProfileDirectoryValidVersion;
-    }
+    public static File getInstallationDir() {
+        String osgiInstallArea = System.getProperty(SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
+        if (osgiInstallArea != null) {
+            String installationLocationPath = osgiInstallArea.replace("file:", "");
 
-    public File getProfilesRootDirectory() {
-        return profilesRootDirectory;
-    }
-
-    /**
-     * Ensures that the current profiles root directory exists and is a directory.
-     * 
-     * @throws IOException if the conditions are not met
-     */
-    public void initializeProfilesRootDirectory() throws IOException {
-        profilesRootDirectory.mkdirs();
-        if (!profilesRootDirectory.isDirectory()) {
-            throw new IOException(String.format(
-                "Failed to create the default profile root directory \"%s\"", profilesRootDirectory.getAbsolutePath()));
-        }
-    }
-
-    private File determineProfilesParentDirectory() throws IOException {
-        String parentPathOverride = System.getProperty(SYSTEM_PROPERTY_PROFILES_PARENT_DIRECTORY_OVERRIDE);
-        File profilesRootDir;
-        if (parentPathOverride != null) {
-            profilesRootDir = new File(parentPathOverride);
-            if (!profilesRootDir.isDirectory()) {
-                throw new IOException(String.format(
-                    "The configured profile parent directory \"%s\" does not exist; please check your launch settings",
-                    profilesRootDir.getAbsolutePath()));
-            }
-        } else {
-            String userHome = System.getProperty(SYSTEM_PROPERTY_USER_HOME);
-            profilesRootDir = new File(userHome, ".rce").getAbsoluteFile();
-            // do not create yet; the specified profile directory may be absolute - misc_ro
-        }
-        return profilesRootDir;
-    }
-
-    private File determineOriginalProfileDir(LaunchParameters launchParams) throws IOException {
-
-        String profilePathShortOption = launchParams.getNamedParameter("-p");
-        String profilePathLongOption = launchParams.getNamedParameter("--profile");
-
-        String profilePath;
-        if (profilePathShortOption != null) {
-            profilePath = profilePathShortOption;
-            // sanity check: forbid "rce -p path1 --profile path2"
-            if (profilePathLongOption != null) {
-                // TODO use more appropriate exception type?
-                throw new IOException("Invalid combination of command-line parameters: cannot specify -p and --profile at the same time");
-            }
-        } else {
-            profilePath = profilePathLongOption; // can still be null if none of the options is used
-        }
-
-        if (profilePath == null) {
-            String explicitDefault = System.getProperty(SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH);
-            if (explicitDefault != null) {
-                profilePath = explicitDefault;
+            File installationLocation = new File(installationLocationPath);
+            if (installationLocation.isDirectory()) {
+                // success
+                return installationLocation.getAbsoluteFile();
             } else {
-                profilePath = "default";
-            }
-        } else if (profilePath.equals("common")) {
-            throw new IOException("Error: The profile \"common\" can not be used as it is reserved for cross-profile settings");
-        } else if (profilePath != null) {
-            profileOptionUsed  = true;
-        }
-
-        File configuredPath = new File(profilePath);
-        File profileDir;
-        if (configuredPath.isAbsolute()) {
-            profileDir = configuredPath;
-        } else {
-            initializeProfilesRootDirectory();
-            profileDir = new File(profilesRootDirectory, profilePath).getAbsoluteFile();
-        }
-        if (profileDir.exists() && !profileDir.isDirectory()) {
-            throw new IOException(String.format(
-                "The configured profile directory \"%s\" points to a file, it must either point to an existing profile directory "
-                    + "or must be a path pointing to a not yet existing directory; please check your launch settings",
-                profileDir.getAbsolutePath()));
-        }
-        return profileDir;
-    }
-
-    private File determineFallbackProfileDirectory(File originalProfileDir) {
-        String fallbackProfileName = "rce-fallback-profile-" + System.currentTimeMillis();
-        return new File(System.getProperty(SYSTEM_PROPERTY_SYSTEM_TEMP_DIR), fallbackProfileName);
-    }
-
-    private void setLoggingParameters() {
-        // make the profile path available to log4j/pax-logging
-        System.setProperty(PROFILE_LOGFILES_PATH_PROPERTY, finalProfileDirectory.getAbsolutePath());
-        if (shutdownRequested) {
-            System.setProperty(PROFILE_LOGFILES_PREFIX_PROPERTY, "shutdown-");
-        } else {
-            System.setProperty(PROFILE_LOGFILES_PREFIX_PROPERTY, "");
-        }
-    }
-
-    private void setOsgiStorageLocation() {
-        File location = new File(finalProfileDirectory, PROFILE_RELATIVE_OSGI_STORAGE_PATH);
-        location.mkdirs();
-        System.setProperty(SYSTEM_PROPERTY_OSGI_CONFIGURATION_AREA, location.getAbsolutePath());
-    }
-
-    /**
-     * Attempts to acquire an exclusive lock on the given file. Note that this is not an OS-level lock, but only protects against locks made
-     * by other JVM applications; see {@link FileChannel#tryLock(long, long, boolean)} for details.
-     * 
-     * As a side effect of locking, this method also verifies that the profile directory exists and is actually a directory.
-     * 
-     * @param profileDir the profile directory to lock
-     * @return true if the lock was acquired, false if the lock is already held by another JVM application
-     * @throws IOException on unusual errors; should not occur on a simple failure to acquire the lock
-     */
-    // note: technically, this method produces a resource leak, but this is irrelevant as the lock must be held anyway
-    // made this method public to be able to use it during testing ~ rode_to
-    public static boolean attemptToLockProfileDirectory(File profileDir) throws IOException {
-        profileDir.mkdirs();
-        if (!profileDir.isDirectory()) {
-            throw new IOException("Profile directory " + profileDir.getAbsolutePath() + " can not be created or is not a directory");
-        }
-
-        File lockfile = new File(profileDir, PROFILE_DIR_LOCK_FILE_NAME);
-        FileLock lock = null;
-        // create lock file if it does not exist
-        lockfile.createNewFile();
-        // try to get a lock on this file
-        try {
-            lock = new RandomAccessFile(lockfile, "rw").getChannel().tryLock();
-        } catch (IOException | OverlappingFileLockException e) {
-            throw new IOException("Unexpected error when trying to acquire a file lock on " + lockfile, e);
-        }
-        // NOTE: It is not necessary to release the lock on the file, this is automatically done
-        // by the Java VM or in case of an abnormal end by the operating system
-        return lock != null;
-    }
-
-    /**
-     * Validates profile directory version number.
-     * 
-     * @param profileFolder the profile folder
-     * @param stdErr the std err
-     * @return true, if successful
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private boolean validateProfileDirectoryVersionNumber(File profileFolder, PrintStream stdErr) throws IOException {
-        File versionFile = new File(new File(profileFolder, PROFILE_INTERNAL_DATA_SUBDIR), PROFILE_VERSION_FILE_NAME);
-        if (versionFile.isFile() && versionFile.exists()) {
-            try {
-                String content = new String(Files.readAllBytes(versionFile.toPath()));
-                int currentProfilesVersionNumber = Integer.parseInt(content);
-                if (currentProfilesVersionNumber > PROFILE_VERSION_NUMBER) {
-                    // if RCE started although the profile version was higher, something when wrong
-                    return false;
-                } else if (currentProfilesVersionNumber < PROFILE_VERSION_NUMBER) {
-                    // else update version number
-                    writeProfileVersionNumberToProfile(versionFile, PROFILE_VERSION_NUMBER);
-                }
-            } catch (NumberFormatException e) {
-                stdErr.println("Failed to read version of profile directory; considered as invalid: " + e.getMessage());
-                // if profile could not be read, return false
-                return false;
+                throw new IllegalStateException("Property '" + SYSTEM_PROPERTY_OSGI_INSTALL_AREA
+                    + "' is defined but does not point to a directory");
             }
         } else {
-            // if version number file does not exist: create it
-            writeProfileVersionNumberToProfile(versionFile, PROFILE_VERSION_NUMBER);
+            throw new IllegalStateException("Property '" + SYSTEM_PROPERTY_OSGI_INSTALL_AREA
+                + "' is null when it is required to determine the installation data directory");
         }
-        return true;
     }
-
-    private void writeProfileVersionNumberToProfile(File versionFile, int versionNumber) throws IOException {
-        // if version file's parent folder does not exist, create it
-        if (!versionFile.getParentFile().exists()) {
-            versionFile.getParentFile().mkdirs();
-        }
-        // if file does not exist, create it
-        if (!versionFile.exists()) {
-            versionFile.createNewFile();
-        }
-        // don't append but overwrite file's content
-        FileWriter fw = new FileWriter(versionFile, false);
-        BufferedWriter bw = new BufferedWriter(fw);
-        bw.write(String.valueOf(versionNumber));
-        bw.close();
-    }
-
 }

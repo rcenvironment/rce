@@ -501,8 +501,17 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performDispose(CommandContext context) throws CommandException {
-        getAndValidateSshAccount(context);
-        // TODO >5.0.0: actually dispose ScpContext - misc_ro
+        SshAccount account = getAndValidateSshAccount(context);
+        String usedCommandVariant = context.getOriginalTokens().get(0); // e.g. "ra" or "ra-admin"
+        final String sessionToken = context.consumeNextToken();
+        
+        String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
+        ScpContext scpContext = scpContextManager.getMatchingScpContext(account.getLoginName(), virtualScpRootPath);
+        try {
+            scpContextManager.disposeScpContext(scpContext);
+        } catch (IOException e) {
+            throw CommandException.executionError(e.getMessage(), context);
+        }
     }
 
     private void performAdminPublishWf(CommandContext context) throws CommandException {

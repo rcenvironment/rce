@@ -16,6 +16,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputWithOutputsCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputWithOutputsCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputWithOutputsCommand;
 
@@ -27,7 +28,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
 public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSelectionPane {
 
     private final String dynEndpointId;
-    
+
     private final String addDynOutputId;
 
     private final String outputNameSuffix;
@@ -62,10 +63,15 @@ public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSele
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        WorkflowNodeCommand command =
-            new EditDynamicInputWithOutputsCommand(oldDescription, newDescription, outputNameSuffix, this, outputPane);
-        ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutput(metaDataOutput);
-        ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutputWithSuffix(metaDataOutputWithSuffix);
+        WorkflowNodeCommand command;
+        if (oldDescription.getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
+            command = new EditDynamicInputWithOutputsCommand(oldDescription, newDescription, outputNameSuffix, this, outputPane);
+            ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutput(metaDataOutput);
+            ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutputWithSuffix(metaDataOutputWithSuffix);
+        } else {
+            command = new EditDynamicInputCommand(oldDescription.getDynamicEndpointIdentifier(), oldDescription.getName(),
+                newDescription.getName(), newDescription.getDataType(), newDescription.getMetaData(), this);
+        }
         execute(command);
     }
 

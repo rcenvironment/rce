@@ -172,7 +172,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     private boolean dontCrashOnNonZeroExitCodes;
 
-    private String jythonPath;
+    private File jythonPath;
 
     private String workingPath;
 
@@ -316,8 +316,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     protected boolean isMockMode() {
         boolean isMockMode = false;
         if (Boolean.valueOf(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED))
-            && componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE) != null) {
-            isMockMode = Boolean.valueOf(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE));
+            && componentContext.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE) != null) {
+            isMockMode = Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE));
         }
         return isMockMode;
     }
@@ -678,7 +678,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 }
                 script = replacePlaceholder(script, inputValues, inputNamesToLocalFile, SubstitutionContext.JYTHON);
                 try {
-                    engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath + QUOTE);
+                    engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE);
                     if (!setToolDirectoryAsWorkingDirectory) {
                         engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
                     } else {
@@ -810,7 +810,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     }
 
                 } else {
-                    TypedDatum valueTD = ScriptDataTypeHelper.getTypedDatum(value, typedDatumFactory);
+                    TypedDatum valueTD = ScriptDataTypeHelper.parseToTypedDatum(value, typedDatumFactory,
+                        componentContext.getOutputDataType(outputMapping.get(key)));
                     componentContext.writeOutput(outputMapping.get(key), valueTD);
                     lastRunStaticOutputValues.put(outputMapping.get(key), valueTD);
                 }

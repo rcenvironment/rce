@@ -54,12 +54,15 @@ import org.eclipse.gef.ContextMenuProvider;
 import org.eclipse.gef.DefaultEditDomain;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.GraphicalViewer;
+import org.eclipse.gef.MouseWheelHandler;
+import org.eclipse.gef.MouseWheelZoomHandler;
 import org.eclipse.gef.SnapToGeometry;
 import org.eclipse.gef.SnapToGrid;
+import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.gef.dnd.TemplateTransferDragSourceListener;
 import org.eclipse.gef.dnd.TemplateTransferDropTargetListener;
-import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
+import org.eclipse.gef.editparts.AbstractGraphicalEditPart;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.palette.CombinedTemplateCreationEntry;
 import org.eclipse.gef.palette.ConnectionCreationToolEntry;
@@ -69,6 +72,8 @@ import org.eclipse.gef.palette.PaletteGroup;
 import org.eclipse.gef.palette.PaletteRoot;
 import org.eclipse.gef.ui.actions.ToggleGridAction;
 import org.eclipse.gef.ui.actions.ToggleSnapToGeometryAction;
+import org.eclipse.gef.ui.actions.ZoomInAction;
+import org.eclipse.gef.ui.actions.ZoomOutAction;
 import org.eclipse.gef.ui.palette.FlyoutPaletteComposite;
 import org.eclipse.gef.ui.palette.FlyoutPaletteComposite.FlyoutPreferences;
 import org.eclipse.gef.ui.palette.PaletteViewer;
@@ -83,8 +88,6 @@ import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DragDetectEvent;
-import org.eclipse.swt.events.DragDetectListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
@@ -151,7 +154,6 @@ import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWiza
 import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationRemoveHandler;
 import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationWizardHandler;
 import de.rcenvironment.core.gui.workflow.Activator;
-import de.rcenvironment.core.gui.workflow.EditorMouseWheelAndKeyListener;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.WorkflowNodeLabelConnectionHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeDeleteCommand;
@@ -164,7 +166,7 @@ import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowEditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
-import de.rcenvironment.core.gui.workflow.view.Outline.OutlineView;
+import de.rcenvironment.core.gui.workflow.view.outline.OutlineView;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -198,13 +200,18 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     /** Key for show labels preference. */
     public static final String SHOW_LABELS_PREFERENCE_KEY = "showConnections";
 
+    /**
+     * Flag to indicate if the workflow editor is in dragging state regarding bendpoints.
+     */
+    public static final String DRAG_STATE_BENDPOINT = "DRAG_STATE_BENDPOINT";
+    
     protected static final int DEFAULT_TOLERANCE = 10;
+    
+    private static final int MOVEMENT = 1;
 
     private static final String REMOTEACCESS = "remoteaccess";
 
     private static final Log LOGGER = LogFactory.getLog(WorkflowEditor.class);
-
-    private static final String DRAG_STATE = "DRAG_STATE";
 
     private static final char SELECTION_KEYCODE = 's'; // for ALT + s as shortcut
 
@@ -229,7 +236,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     private static final int TILE_OFFSET = 30;
 
     private static final int TILE_SIZE = 60;
-
+    
     protected WorkflowDescription workflowDescription;
 
     protected final ServiceRegistryPublisherAccess serviceRegistryAccess;
@@ -239,8 +246,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     private TabbedPropertySheetPage tabbedPropertySheetPage;
 
     private GraphicalViewer viewer;
-
-    private ZoomManager zoomManager;
 
     private PaletteRoot paletteRoot;
 
@@ -353,8 +358,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     protected void initializeGraphicalViewer() {
 
         viewer = getGraphicalViewer();
-
-        viewer.setRootEditPart(new ScalableFreeformRootEditPart());
+        WorkflowScalableFreeformRootEditPart rootEditPart = new WorkflowScalableFreeformRootEditPart();
+        viewer.setRootEditPart(rootEditPart);
         viewer.setEditPartFactory(new WorkflowEditorEditPartFactory());
 
         getCommandStack().setUndoLimit(UNDO_LIMIT);
@@ -371,12 +376,10 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         viewer.setContextMenu(cmProvider);
         getSite().registerContextMenu(cmProvider, viewer);
 
-        zoomManager = ((ScalableFreeformRootEditPart) getGraphicalViewer().getRootEditPart()).getZoomManager();
-        zoomManager.setZoomAnimationStyle(ZoomManager.ANIMATE_ZOOM_IN_OUT);
-        EditorMouseWheelAndKeyListener editorMouseWheelKeyListener = new EditorMouseWheelAndKeyListener(zoomManager);
-        viewer.getControl().addMouseWheelListener(editorMouseWheelKeyListener);
-        viewer.getControl().addKeyListener(editorMouseWheelKeyListener);
-
+        WorkflowZoomManager zoomManager = (WorkflowZoomManager) rootEditPart.getZoomManager();
+        getActionRegistry().registerAction(new ZoomInAction(zoomManager));
+        getActionRegistry().registerAction(new ZoomOutAction(zoomManager));
+        viewer.setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
         tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
 
         registerChangeListeners();
@@ -416,32 +419,18 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             }
         });
 
-        viewer.getControl().setData(DRAG_STATE, false);
-        viewer.getControl().addDragDetectListener(new DragDetectListener() {
-
-            @Override
-            public void dragDetected(DragDetectEvent arg0) {
-                // mark control as currently dragging to prevent erroneous selection of connection
-                viewer.getControl().setData(DRAG_STATE, true);
-            }
-        });
+        viewer.getControl().setData(DRAG_STATE_BENDPOINT, false);
 
         viewer.getControl().addMouseListener(new MouseListener() {
 
             @Override
             public void mouseUp(MouseEvent ev) {
-                // only try to select connection when no dragging is active
-                if (!((boolean) viewer.getControl().getData(DRAG_STATE))) {
-                    selectConnection(ev);
-                }
-                viewer.getControl().setData(DRAG_STATE, false);
+                // Nothing to do here.
             }
 
             @Override
             public void mouseDown(MouseEvent ev) {
-                selectConnection(ev);
-                mouseX = ev.x;
-                mouseY = ev.y;
+                // Nothing to do here.
             }
 
             @Override
@@ -1082,7 +1071,10 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             return new WorkflowEditorHelpContextProvider(viewer);
         } else if (type == IContentOutlinePage.class) {
             return new OutlineView(getGraphicalViewer());
+        } else if (type == ZoomManager.class) {
+            return getGraphicalViewer().getProperty(ZoomManager.class.toString());
         }
+
         return super.getAdapter(type);
     }
 
@@ -1517,6 +1509,76 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         public void keyPressed(KeyEvent e) {
             if (e.stateMask == SWT.ALT && e.keyCode == OPEN_CONNECTION_VIEW_KEYCODE) {
                 openConnectionEditor();
+            } else if (e.keyCode == SWT.ARROW_UP){
+                movePart(0, -MOVEMENT);
+            } else if (e.keyCode == SWT.ARROW_DOWN){
+                movePart(0, MOVEMENT);
+            } else if (e.keyCode == SWT.ARROW_LEFT){
+                movePart(-MOVEMENT, 0);
+            } else if (e.keyCode == SWT.ARROW_RIGHT){
+                movePart(MOVEMENT, 0);
+            }
+            
+            
+        }
+    }
+    
+    private void movePart(final int movementHorizontal, final int movementVertical){
+        @SuppressWarnings("unchecked") 
+        List<AbstractGraphicalEditPart> selected = getGraphicalViewer().getSelectedEditParts();
+        
+        getCommandStack().execute(new MovementCommand(selected, movementHorizontal, movementVertical)); 
+    }
+    
+    /**
+     * Command to move node via arrow keys.
+     * @author Hendrik Abbenhaus
+     */
+    private class MovementCommand extends Command{
+        private int movementHorizontal = 0;
+        private int movementVertical = 0;
+        private List<AbstractGraphicalEditPart> selected;
+        
+        /**
+         * Constructor for command.
+         * @param sel selected Parts
+         * @param h horizontal movement
+         * @param v vertival movement
+         */
+        MovementCommand(List<AbstractGraphicalEditPart> sel, int h, int v) {
+            this.movementHorizontal = h;
+            this.movementVertical = v;
+            this.selected = sel;
+        }
+        
+        
+        @Override
+        public void undo() {
+            super.undo();
+            setValue(-movementHorizontal, -movementVertical);
+        }
+        
+        @Override
+        public void redo() {
+            super.redo();
+            setValue(movementHorizontal, movementVertical);
+        }
+        
+        @Override
+        public void execute() {
+            super.execute();
+            setValue(movementHorizontal, movementVertical);
+        }
+        
+        private void setValue(int h, int v){
+            for (AbstractGraphicalEditPart s : selected){
+                if (s.getModel() instanceof WorkflowLabel){
+                    WorkflowLabel label = (WorkflowLabel) s.getModel();
+                    label.setLocation(label.getX() + h, label.getY() + v);
+                } else if (s.getModel() instanceof WorkflowNode){
+                    WorkflowNode node = (WorkflowNode) s.getModel();
+                    node.setLocation(node.getX() + h, node.getY() + v);
+                }
             }
         }
     }
@@ -1598,5 +1660,4 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             return false;
         }
     }
-
 }

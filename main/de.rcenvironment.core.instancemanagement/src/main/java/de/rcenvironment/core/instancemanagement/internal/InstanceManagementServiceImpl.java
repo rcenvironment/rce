@@ -49,10 +49,11 @@ import com.jcraft.jsch.Session;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
-import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
@@ -223,13 +224,13 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         // Get instances running with this installation
         List<String> instancesForInstallation = getInstancesRunningInstallation(installationId);
-        
-        //Stop running instances
+
+        // Stop running instances
         if (!instancesForInstallation.isEmpty()) {
             stopInstance(instancesForInstallation, userOutputReceiver, timeout);
         }
 
-        //Reinstall
+        // Reinstall
         switch (installationPolicy) {
         case IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT:
             installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver);
@@ -243,8 +244,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         default:
             throw new IOException("Not supported yet: " + installationPolicy);
         }
-        
-        //Start instances with new installation
+
+        // Start instances with new installation
         if (!instancesForInstallation.isEmpty()) {
             startInstance(installationId, instancesForInstallation, userOutputReceiver, timeout, false);
         }
@@ -553,7 +554,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 profileDirList.remove(profile);
                 if (profile.isDirectory()) {
                     for (File file : profile.listFiles()) {
-                        if (file.getName().equals(BootstrapConfiguration.PROFILE_DIR_LOCK_FILE_NAME)) {
+                        if (file.getName().equals(Profile.PROFILE_DIR_LOCK_FILE_NAME)) {
                             boolean success = file.delete();
                             if (e != null && !success) {
                                 throw new IOException("Failed to delete instance.lock file.", e);
@@ -642,7 +643,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         for (File instanceFile : profilesRootDir.listFiles()) {
             if (instanceFile.isDirectory() && instanceId.equals(instanceFile.getName())) {
                 for (File fileInInstanceFolder : instanceFile.listFiles()) {
-                    if (fileInInstanceFolder.getName().equals(BootstrapConfiguration.PROFILE_DIR_LOCK_FILE_NAME)) {
+                    if (fileInInstanceFolder.getName().equals(Profile.PROFILE_DIR_LOCK_FILE_NAME)) {
                         throw new IOException("Instance with ID " + instanceId + " currently in use. "
                             + "To stop it use 'im stop " + instanceId + "'.");
                     }
@@ -857,7 +858,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private void forceReinstall(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver) throws IOException {
         String version = fetchVersionInformation(userOutputReceiver, urlQualifier);
         // TODO validate remote version: not empty, plausible major version
-        log.info("Identified remote version: " + version);
+        log.info(StringUtils.format("Identified version of remote installation package '%s': %s", urlQualifier, version));
         reinstall(installationId, version, urlQualifier, userOutputReceiver, false);
     }
 
@@ -875,7 +876,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         String newVersion = fetchVersionInformation(userOutputReceiver, urlQualifier);
         // TODO validate remote version: not empty, plausible major version
-        log.info("Identified remote version: " + newVersion);
+        log.info(StringUtils.format("Identified version of remote installation package '%s': %s", urlQualifier, newVersion));
 
         // load local installed version information
         String oldVersion = getVersionOfInstallation(installationId);
@@ -897,7 +898,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         File zipFile;
         if (force) {
-            log.info("Forces new download");
+            log.info("Reinstalling with 'force new download' option set");
             zipFile = forceFetchingProductZip(urlQualifier, version);
         } else {
             // download installation package if not already present
@@ -931,7 +932,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 String runningState = "Not running";
                 for (File fileInProfile : instanceFile.listFiles()) {
                     synchronized (profileIdToInstallationIdMap) {
-                        if (fileInProfile.isFile() && fileInProfile.getName().equals(BootstrapConfiguration.PROFILE_DIR_LOCK_FILE_NAME)) {
+                        if (fileInProfile.isFile() && fileInProfile.getName().equals(Profile.PROFILE_DIR_LOCK_FILE_NAME)) {
                             runningState = "Running (" + profileIdToInstallationIdMap.get(instanceFile.getName()) + ")";
 
                         }

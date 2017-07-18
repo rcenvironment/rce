@@ -19,6 +19,12 @@
 		<module>${projects-root}/de.rcenvironment.core.utils.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.incubator</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.testing</module>
+		
+		<!-- toolkit and the core-toolkit integration bridge -->
+		<module>${projects-root}/de.rcenvironment.core.toolkitbridge</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.core</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common.tests</module>		
 	</modules>
 
 </project>

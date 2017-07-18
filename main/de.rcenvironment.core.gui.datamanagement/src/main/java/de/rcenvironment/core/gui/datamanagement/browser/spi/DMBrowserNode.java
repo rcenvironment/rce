@@ -503,8 +503,8 @@ public final class DMBrowserNode {
      * @return {@link InstanceNodeSessionId}
      */
     public ResolvableNodeId getNodeIdentifier() {
-        if (dataReference != null && dataReference.getInstanceId() != null) {
-            return dataReference.getInstanceId();
+        if (dataReference != null && dataReference.getStorageNodeId() != null) {
+            return dataReference.getStorageNodeId();
         } else {
             if (metaData != null) {
                 String instanceNodeIdentifier = metaData.getValue(new MetaData(MetaDataKeys.NODE_IDENTIFIER, true, true));

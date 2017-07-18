@@ -79,7 +79,7 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             relationshipLabel.setVisible(false);
             connection.add(relationshipLabel, connectionLocator);
         }
-        
+
         return connection;
     }
 
@@ -112,15 +112,14 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             Object modelObject = contents.getModel();
             WorkflowDescription workflowDescription = getWorkflowDescriptionFromModelObject(modelObject);
             ConnectionWrapper connectionWrapper = (ConnectionWrapper) getModel();
-
+            
             for (Connection connection : workflowDescription.getConnections()) {
                 if ((connectionWrapper.getSource().getIdentifier().equals(connection.getSourceNode().getIdentifier())
                     && connectionWrapper.getTarget().getIdentifier().equals(connection.getTargetNode().getIdentifier()))
-                    || (connectionWrapper.getSource().getIdentifier().equals(connection.getTargetNode().getIdentifier())
-                    && connectionWrapper.getTarget().getIdentifier().equals(connection.getSourceNode().getIdentifier()))) {
+                    ) {
                     addBendpointsFromModelToGraphics(connection);
                     return;
-                }
+                } 
             }
         }
     }
@@ -197,6 +196,5 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
         }
         return workflowDescription;
     }
-    
-    
+
 }

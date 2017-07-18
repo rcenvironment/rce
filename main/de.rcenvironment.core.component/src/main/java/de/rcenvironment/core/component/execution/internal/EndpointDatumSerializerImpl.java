@@ -59,11 +59,15 @@ public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
     public EndpointDatum deserializeEndpointDatum(String serializedEndpoint) {
         String[] parts = StringUtils.splitAndUnescape(serializedEndpoint);
         EndpointDatumImpl endpoint = new EndpointDatumImpl();
-        try {
-            endpoint.setValue(InternalTDImpl.fromString(parts[1]));
-        } catch (IllegalArgumentException e) {
-            endpoint.setValue(typedDatumSerializer.deserialize(parts[1]));
+        // the distinction between internal TDs and the other "normal" TDs should be improved; trial and error approach should be avoided;
+        // e.g. provide type information in the serialized endpoint string explicitly or even better use the TypedDatumSerializer also for
+        // internal TDs (note: TypedDatumSerializer is also used by components which should not (de-)serialize or even see internal TDs)
+        // --seid_do
+        TypedDatum typedDatum = InternalTDImpl.fromString(parts[1]);
+        if (typedDatum == null) {
+            typedDatum = typedDatumSerializer.deserialize(parts[1]);
         }
+        endpoint.setValue(typedDatum);
 
         EndpointDatumRecipient endpointDatumRecipient =
             EndpointDatumRecipientFactory.createEndpointDatumRecipient(parts[0], parts[2], parts[3],

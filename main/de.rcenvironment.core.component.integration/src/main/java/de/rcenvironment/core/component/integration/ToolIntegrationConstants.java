@@ -187,9 +187,6 @@ public final class ToolIntegrationConstants {
     public static final String KEY_MOCK_MODE_SUPPORTED = "imitationModeSupported";
 
     /** Constant. */
-    public static final String KEY_IS_MOCK_MODE = "isImitationMode";
-    
-    /** Constant. */
     public static final String KEY_VERIFICATION_TOKEN_LOCATION = "verificationKeyLocation";
     
     /** Constant. */

@@ -1,7 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Cluster Job Source Service">
-	<implementation class="de.rcenvironment.core.utils.cluster.internal.ClusterJobSourceServiceImpl" />
-	<service>
-    	<provide interface="de.rcenvironment.core.utils.cluster.ClusterJobSourceService"/>
-	</service>
-</scr:component>
- 

@@ -96,14 +96,16 @@ public class EndpointChangeListener implements PropertyChangeListener {
                     outputDescManager.removeConnectedDataType(connection.getOutput().getName(),
                         epChange.getOldEndpointDescription().getDataType());
                     outputDescManager.addConnectedDataType(connection.getOutput().getName(),
-                        epChange.getEndpointDescription().getDataType());
+                        newDataType);
+                    connection.getInput().setDataType(newDataType);
                 } else if (connection.getOutput().getIdentifier().equals(epChange.getEndpointDescription().getIdentifier())) {
                     EndpointDescriptionsManager inputDescManager = workflowDesc.getWorkflowNode(connection.getTargetNode().getIdentifier())
                         .getComponentDescription().getInputDescriptionsManager();
                     inputDescManager.removeConnectedDataType(connection.getInput().getName(),
                         epChange.getOldEndpointDescription().getDataType());
                     inputDescManager.addConnectedDataType(connection.getInput().getName(),
-                        epChange.getEndpointDescription().getDataType());
+                        newDataType);
+                    connection.getOutput().setDataType(newDataType);
                 }
             }
         } else {

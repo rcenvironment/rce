@@ -12,7 +12,7 @@
                 <listitem>
                     <para>Make sure you have a <ulink
                             url="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
-                            >Java Development Kit</ulink>, Version 7, installed on your system. <note>
+                            >Java Development Kit</ulink>, Version 8, installed on your system. <note>
                             <para>If you are installing a JDK on a centrally administered computer
                                 that already has Java installed, it is usually a good idea to
                                     <emphasis>uncheck</emphasis> the "Install public JRE" option
@@ -88,7 +88,7 @@
                         necessary. You should now see a long list of projects in the "Package
                         Explorer" on the left.<note>
                             <para>If the checkout was performed correctly, there should be a small
-                                "M" (for "Maven") on each project's icon, and a small "J" (for
+                                "M" (for "Maven") on most projects' icons, and also a small "J" (for
                                 "Java") on most of them.</para>
                         </note></para>
                 </listitem>
@@ -129,8 +129,9 @@
                         open the "Problems" view ("Window > Show View > Problems"). You should see a
                         lot of "Plugin execution not covered by lifecycle configuration" entries.
                         Right-click one of them, select "Quick Fix" from the context menu, select
-                        "Discover new m2e connectors" and click "Finish". Eclipse should present a
-                        "Tycho configurator" for installation. Confirm the installation and restart eclipse.<note>
+                        "Discover new m2e connectors" and click "Finish". Eclipse should present one
+                        or more installation options with "Tycho" in their name. Confirm their
+                        installation and restart eclipse.<note>
                             <para>You only need to do this once per Eclipse installation.</para>
                         </note></para>
                 </listitem>
@@ -196,8 +197,13 @@
             sub-folder is not relevant; adapt if you like.) This sub-folder now contains common
             rules on its top level, and optional or experimental rules in sub-folders. Copy all
             common rules to the parent folder (the one you started in), and add any optional rules
-            that you want to apply as well. (TODO add and describe batch/shell files for
-            this.)</para>
+            that you want to apply as well. (TODO add and describe batch/shell files for this.)<note>
+                <para>These rule files will most likely be integrated into the main project at some
+                    point, making this extra checkout step unnecessary. Please note that these rule
+                    files are currently not available as part of the <ulink
+                        url="https://github.com/rcenvironment/rce">GitHub source code mirror</ulink>
+                    or the released source zip files either.</para>
+            </note></para>
         <para>The next time you open a workspace, Workspace Mechanic should pick up these rule files
             and show a notice asking if it should apply them. See the plugin's <ulink
                 url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/">web
@@ -243,38 +249,58 @@
         <para>You can also build a standalone version of  RCE from Eclipse using Maven.</para>
         <itemizedlist>
             <listitem>
-                <para>If you haven't already done so, download Maven 3.0.5 from <ulink
-                        url="http://maven.apache.org/">http://maven.apache.org/</ulink> (the build
-                    doesn't work with the embedded Maven in Eclipse.)</para>
-            </listitem>
-            <listitem>
-                <para>There are several pre-defined buildconfigurations for RCE. To find them,
+                <para>There are several pre-defined build configurations for RCE. To find them,
                     navigate to <code>de.rcenvironment/eclipse/build</code> in the "Project
                     Explorer" on the left.</para>
             </listitem>
             <listitem>
-                <para>A good starting point is the "RCE 6.x - product.singleStep (snapshot).launch"
-                    configuration in the "using default (release or snapshot) remote repositories"
-                    folder. Before you launch it for the first time, right-click on it and choose
-                    "Run As > Run configurations" from the context menu. In the run configuration
-                    for this launch file (near the bottom of the page), select your  downloaded
-                    maven version as "Maven Runtime" instead of the embedded maven and click
-                    "Run".</para>
+                <para>To run a .launch file, right-click on it and choose the single entry in the
+                    "Run As" submenu of the context menu that appears.</para>
             </listitem>
             <listitem>
-                <para>If you already changed the run configuration and want to build RCE again,
-                    right-click on the "RCE 6.x - product.singleStep (snapshot).launch" file and
-                    choose "Run As > RCE 6.x - product.singleStep (snapshot).launch" from the
-                    context menu.</para>
+                <para>Building a standalone RCE installation (which is called a "product" in Eclipse
+                    RCP terms) generally consists of two steps: Providing a so-called "platform
+                    repository", and then building the actual product on top of it. There are two
+                    possible approaches for this:<itemizedlist>
+                        <listitem>
+                            <para>The proper way to build completely from source is to compile a
+                                local platform repository. This is simply done by navigaring to the
+                                    "<code>de.rcenvironment.platform/eclipse</code> folder (from the
+                                root of your workspace) and executing the single .launch file that
+                                is located there. On the first run, the build process may download
+                                quite a few resources from Maven Central; subsequent runs should be
+                                fairly quick. Once the build has finished (there should be a
+                                "SUCCESS" message near the bottom of the console output), you can
+                                build the main product using the .launch files in the "<code>using
+                                    local repository builds</code>" sub-folder of the previously
+                                mentioned location.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Using the .launch files in the "<code>using default remote
+                                    repository builds</code>" sub-folder, it is possible to avoid
+                                building your own platform repository, and fetch a pre-built one
+                                from the main repository servers (currently hosted at DLR) instead.
+                                One reason for this can be be to ensure that you are building
+                                against the exact same platform repository as some previous RCE
+                                release.</para>
+                        </listitem>
+                    </itemizedlist></para>
+                <para>In both cases, running the "<code>RCE - build default product (snapshot, using
+                        &lt;...>)</code> .launch file is the best way to produce a standard local
+                    product build. The other .launch files are intended for more specific use
+                    cases.</para>
             </listitem>
             <listitem>
-                <para>RCE should now be build, which will take several minutes. When the build is
-                    completed, you will find the .zip files containing the final product in the
+                <para>The main product build takes several minutes to complete. Once it has
+                    finished, you will find the .zip files containing the final product in the
                     folder
                         <code>de.rcenvironment/target/de.rcenvironment.modules.repository.mainProduct/products</code>
                     (You may have to refresh the de.rcenvironment project in the Project Explorer to
                     see it.)</para>
             </listitem>
         </itemizedlist>
+        <note>
+            <para>TODO: document building from the command line</para>
+        </note>
     </sect2>
 </sect1>

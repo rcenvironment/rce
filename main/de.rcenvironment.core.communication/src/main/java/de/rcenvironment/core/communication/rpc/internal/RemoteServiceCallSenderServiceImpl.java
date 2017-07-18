@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.Assertions;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Default {@link RemoteServiceCallSenderService} implementation.
@@ -42,6 +43,8 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
     private final boolean forceLocalRPCSerialization = System
         .getProperty(NodeConfigurationService.SYSTEM_PROPERTY_FORCE_LOCAL_RPC_SERIALIZATION) != null;
 
+    private final boolean verboseRequestLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("NetworkRequests");
+
     private final Log log = LogFactory.getLog(getClass());
 
     public RemoteServiceCallSenderServiceImpl() {}
@@ -54,6 +57,11 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
                 log.debug(StringUtils.format("Handling local RPC with forced serialization: %s#%s()", serviceCallRequest.getServiceName(),
                     serviceCallRequest.getMethodName()));
             }
+            if (verboseRequestLoggingEnabled) {
+                log.debug(StringUtils.format("Converted RPC to %s.%s() into a network payload of %d bytes",
+                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serializedRequest.length));
+            }
+
             NetworkResponse networkResponse =
                 routingService.performRoutedRequest(serializedRequest, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC,
                     serviceCallRequest.getTargetNodeId().convertToInstanceNodeSessionId());

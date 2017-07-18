@@ -46,13 +46,18 @@ public class ForwardingEndpointSelectionPane extends EndpointSelectionPane {
         boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
-
-        EndpointInputWithOutputEditDialog dialog =
-            new EndpointInputWithOutputEditDialog(Display.getDefault().getActiveShell(),
+        EndpointInputWithOutputEditDialog dialog = null;
+        if (name.endsWith("_start")) {
+            dialog = new EndpointInputWithOutputEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(),
-                newMetaData);
+                endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier(), isStaticEndpoint,
+                endpoint.getEndpointDefinition().getMetaDataDefinition(), newMetaData, EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY);
+        } else {
+            dialog = new EndpointInputWithOutputEditDialog(Display.getDefault().getActiveShell(),
+                EndpointActionType.EDIT, configuration, endpointType,
+                endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier(), isStaticEndpoint,
+                endpoint.getEndpointDefinition().getMetaDataDefinition(), newMetaData);
+        }
 
         onEditClicked(name, dialog, newMetaData);
     }

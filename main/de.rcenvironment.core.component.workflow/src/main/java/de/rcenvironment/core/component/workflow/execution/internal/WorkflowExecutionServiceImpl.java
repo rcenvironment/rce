@@ -284,6 +284,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }
     }
 
+    /**
+     * Invokes the update of the workflow description and stores the updated workflow description in the specified file.
+     */
     private void updateWorkflow(PersistentWorkflowDescription persWfDescr, File file, boolean hasNonSilentUpdate) throws IOException {
         try (InputStream tempInputStream = IOUtils.toInputStream(wfUpdateService
             .performWorkflowDescriptionUpdate(persWfDescr).getWorkflowDescriptionAsString(), WorkflowConstants.ENCODING_UTF8)) {

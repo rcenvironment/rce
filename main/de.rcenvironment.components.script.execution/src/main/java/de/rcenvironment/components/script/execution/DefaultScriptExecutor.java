@@ -27,10 +27,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
-import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
-import de.rcenvironment.core.datamodel.api.TypedDatumService;
-import de.rcenvironment.core.scripting.ScriptDataTypeHelper;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
@@ -126,9 +123,10 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
         stdoutWriter.close();
     }
 
-    protected TypedDatum getTypedDatum(Object value) {
-        return ScriptDataTypeHelper.getTypedDatum(value, componentContext.getService(TypedDatumService.class).getFactory());
-    }
+    //No longer needed since "dev_scripting_output" branch has been merged
+//    protected TypedDatum getTypedDatum(Object value) {
+//        return ScriptDataTypeHelper.getTypedDatum(value, componentContext.getService(TypedDatumService.class).getFactory());
+//    }
 
     @Override
     public void deleteTempFiles() {

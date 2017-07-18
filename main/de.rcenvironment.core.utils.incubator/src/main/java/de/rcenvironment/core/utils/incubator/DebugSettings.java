@@ -37,10 +37,10 @@ public final class DebugSettings {
     private static final DebugSettings INSTANCE = new DebugSettings();
 
     // the effective setting, configured from the constant and the optional system property
-    private final ClassNameFilter sharedVerboseLoggingClassNameFilter;
+    private final IdFilter sharedVerboseLoggingIdFilter;
 
     // mainly intended to suppress logging the flag state more than once per class; the caching is just an almost-free side effect - misc_ro
-    private final Map<Class<?>, Boolean> cache = new ConcurrentHashMap<Class<?>, Boolean>();
+    private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
 
     /**
      * Compiles a given pattern string to a regular expression and tests given class names against it. If the pattern string is empty or
@@ -50,11 +50,11 @@ public final class DebugSettings {
      * 
      * @author Robert Mischke
      */
-    protected static final class ClassNameFilter {
+    protected static final class IdFilter {
 
         private final Pattern regexp; // null = disabled
 
-        public ClassNameFilter(String patternString) {
+        public IdFilter(String patternString) {
             if (patternString.isEmpty()) {
                 regexp = null; // disable
                 return;
@@ -65,20 +65,20 @@ public final class DebugSettings {
             try {
                 tempRegexp = Pattern.compile(regexpString);
                 LogFactory.getLog(getClass()).info(
-                    "Using verbose logging configuration value '" + patternString + "', compiled to class name regexp '"
+                    "Using verbose logging configuration value '" + patternString + "', compiled to filter regexp '"
                         + regexpString + "'");
             } catch (PatternSyntaxException e) {
-                System.err.println("Error in verbose logging configuration value '" + patternString + "', compiled to class name regexp '"
+                System.err.println("Error in verbose logging configuration value '" + patternString + "', compiled to filter regexp '"
                     + regexpString + "': " + e.toString());
             }
             regexp = tempRegexp;
         }
 
-        public boolean matches(String className) {
+        public boolean matches(String id) {
             if (regexp == null) {
                 return false;
             } else {
-                return regexp.matcher(className).matches();
+                return regexp.matcher(id).matches();
             }
         }
     }
@@ -89,30 +89,40 @@ public final class DebugSettings {
         if (pattern == null) {
             pattern = DEFAULT_VERBOSE_LOGGING_PATTERN;
         }
-        sharedVerboseLoggingClassNameFilter = new ClassNameFilter(pattern);
+        sharedVerboseLoggingIdFilter = new IdFilter(pattern);
     }
 
     /**
-     * @param callerClass the caller's class, so verbose logging can be controlled selectively
+     * @param callerClass the caller's class, which is converted to its FQN, and used as id
      * @return true if verbose logging should be enabled for this caller
      */
     public static boolean getVerboseLoggingEnabled(Class<?> callerClass) {
-        return INSTANCE.getVerboseLoggingEnabledInternal(callerClass);
+        return INSTANCE.getVerboseLoggingEnabledInternal(callerClass.getName());
+    }
+
+    /**
+     * @param id the id to check against the filter definition
+     * @return true if verbose logging should be enabled for this id
+     */
+    public static boolean getVerboseLoggingEnabled(String id) {
+        return INSTANCE.getVerboseLoggingEnabledInternal(id);
     }
 
     protected boolean getVerboseLoggingEnabledInternal(Class<?> callerClass) {
-        Boolean cached = cache.get(callerClass);
+        return getVerboseLoggingEnabledInternal(callerClass.getName());
+    }
+
+    protected boolean getVerboseLoggingEnabledInternal(String id) {
+        final Boolean cached = cache.get(id);
         if (cached != null) {
             return cached;
         }
-        boolean enableLogging = false;
-        String className = callerClass.getName();
 
-        enableLogging = sharedVerboseLoggingClassNameFilter.matches(className);
-
-        cache.put(callerClass, enableLogging); // thread-safe map
+        final boolean enableLogging = sharedVerboseLoggingIdFilter.matches(id);
+        cache.put(id, enableLogging); // thread-safe map
         LogFactory.getLog(DebugSettings.class).debug(
-            StringUtils.format("Set 'verbose logging' flag to %s for %s", enableLogging, className));
+            StringUtils.format("Set 'verbose logging' flag to %s for id %s", enableLogging, id));
         return enableLogging;
     }
+
 }

@@ -10,11 +10,13 @@ package de.rcenvironment.core.gui.resources.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.ImageSource;
@@ -35,16 +37,30 @@ public class ImageManagerImpl extends ImageManager {
     }
 
     @Override
-    public Image getSharedImage(ImageSource source) {
-        synchronized (sharedImages) {
-            Image image = sharedImages.get(source);
-            if (image == null) {
-                // TODO handle image failures explicitly?
-                image = source.getImageDescriptor().createImage();
-                sharedImages.put(source, image);
+    public Image getSharedImage(final ImageSource source) {
+        final AtomicReference<Image> ref = new AtomicReference<>();
+        // always run the code triggering potential Image creation within the SWT thread; see Mantis #15416
+        Display.getDefault().syncExec(new Runnable() {
+
+            @Override
+            public void run() {
+                synchronized (sharedImages) { // probably redundant, but doesn't hurt either
+                    Image image = sharedImages.get(source);
+                    if (image == null) {
+                        // TODO handle image failures explicitly?
+                        image = source.getImageDescriptor().createImage();
+                        sharedImages.put(source, image);
+                    }
+                    ref.set(image);
+                }
             }
-            return image;
+        });
+        final Image image = ref.get();
+        // sanity check
+        if (image == null) {
+            throw new IllegalStateException("Image reference null at the end of getSharedImage()");
         }
+        return image;
     }
 
     @Override
@@ -61,7 +77,7 @@ public class ImageManagerImpl extends ImageManager {
 
     @Override
     public void dispose() {
-        synchronized (sharedImages) {
+        synchronized (sharedImages) { // probably redundant, but doesn't hurt either
             log.debug("Disposing " + sharedImages.values().size() + " shared images");
             for (Image image : sharedImages.values()) {
                 image.dispose();

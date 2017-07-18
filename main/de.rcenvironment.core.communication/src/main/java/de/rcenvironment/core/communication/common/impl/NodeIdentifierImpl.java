@@ -30,6 +30,7 @@ import de.rcenvironment.core.communication.model.NodeInformationRegistry;
 import de.rcenvironment.core.communication.model.SharedNodeInformationHolder;
 import de.rcenvironment.core.communication.model.internal.SharedNodeInformationHolderImpl;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.toolkit.utils.common.ConsistencyChecks;
 
 /**
  * A {@link InstanceNodeSessionId} based on a persistent, random, UUID-like identifier. All identity-defining information is immutable; the
@@ -288,6 +289,8 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
         case INSTANCE_NODE_ID:
             return this;
         case INSTANCE_NODE_SESSION_ID:
+        case LOGICAL_NODE_ID:
+        case LOGICAL_NODE_SESSION_ID:
             return new NodeIdentifierImpl(instanceIdPart, null, null, nodeInformationRegistry, IdType.INSTANCE_NODE_ID);
         default:
             throw new IllegalArgumentException(idType.toString());
@@ -363,8 +366,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
 
         }
         if (!this.getInstanceNodeIdString().equals(instanceSessionId.getInstanceNodeIdString())) {
-            throw new IllegalStateException("Internal consistency error: The ids to combine cannot refer to different instances! "
-                + this + " / " + instanceSessionId);
+            ConsistencyChecks.reportFailure("The ids to combine cannot refer to different instances! " + this + " / " + instanceSessionId);
         }
         // combine
         return new NodeIdentifierImpl(instanceIdPart, logicalNodePart, instanceSessionId.getSessionIdPart(), nodeInformationRegistry,
@@ -388,11 +390,11 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     @Override
     public boolean isSameInstanceNodeSessionAs(InstanceNodeSessionId otherId) {
         final NodeIdentifierImpl otherIdImpl = (NodeIdentifierImpl) otherId;
-        if (this.idType != IdType.INSTANCE_NODE_SESSION_ID && this.idType != IdType.LOGICAL_NODE_SESSION_ID) {
-            throw new IllegalStateException("Internal error: Tried to compare session identity on a non-session identifier");
-        }
+        ConsistencyChecks.assertTrue(
+            this.idType == IdType.INSTANCE_NODE_SESSION_ID || this.idType == IdType.LOGICAL_NODE_SESSION_ID,
+            "Tried to compare session identity from a non-session identifier");
         if (otherIdImpl.idType != IdType.INSTANCE_NODE_SESSION_ID) {
-            throw new IllegalStateException("Unexpected parameter type: " + otherIdImpl.idType);
+            ConsistencyChecks.reportFailure("Unexpected parameter type: " + otherIdImpl.idType);
         }
         // note: fields cannot be null after internal consistency checks
         return instanceIdPart.equals(otherIdImpl.instanceIdPart) && sessionIdPart.equals(otherIdImpl.sessionIdPart);

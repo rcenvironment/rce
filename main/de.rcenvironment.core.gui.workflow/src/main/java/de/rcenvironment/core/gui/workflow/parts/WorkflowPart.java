@@ -109,7 +109,8 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
     }
 
     private void refreshConnectionLabels(Object part) {
-        boolean labelsShown = Activator.getInstance().getPreferenceStore().getBoolean(WorkflowEditor.SHOW_LABELS_PREFERENCE_KEY);
+        boolean labelsShown = Activator.getInstance().getPreferenceStore()
+            .getBoolean(WorkflowEditor.SHOW_LABELS_PREFERENCE_KEY);
         List<ConnectionPart> sourceAndTargetConnectionParts = new ArrayList<>();
         sourceAndTargetConnectionParts.addAll(((WorkflowNodePart) part).getTargetConnections());
         sourceAndTargetConnectionParts.addAll(((WorkflowNodePart) part).getSourceConnections());
@@ -149,41 +150,29 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         List<Connection> connectionsInModel = ((WorkflowDescription) getModel()).getConnections();
 
         for (Connection c : connectionsInModel) {
-            final int minuseOne = -1;
 
-            int contains2 = minuseOne;
-            for (int i = 0; i < connections.size(); i++) {
-                if (connections.get(i).getSource().equals(c.getTargetNode())
-                    && connections.get(i).getTarget().equals(c.getSourceNode())) {
-                    contains2 = i;
+            boolean alreadyPresent = false;
+            for (ConnectionWrapper connectionWrapper : connections) {
+                if (connectionWrapper.getSource().equals(c.getSourceNode())
+                    && connectionWrapper.getTarget().equals(c.getTargetNode())) {
+                    alreadyPresent = true;
                     break;
                 }
             }
 
-            int contains1 = minuseOne;
-            for (int i = 0; i < connections.size(); i++) {
-                if (connections.get(i).getSource().equals(c.getSourceNode())
-                    && connections.get(i).getTarget().equals(c.getTargetNode())) {
-                    contains1 = i;
-                    break;
-                }
-            }
-            if (contains2 != minuseOne) {
-                connections.get(contains2).setSourceArrow(true);
-            } else if (contains1 == minuseOne) {
+            if (!alreadyPresent) {
                 ConnectionWrapper w = new ConnectionWrapper(c.getSourceNode(), c.getTargetNode());
                 w.setTargetArrow(true);
                 connections.add(w);
             }
+
         }
 
         // Add up channels in both directions to show number of channels on GUI
         for (ConnectionWrapper wrapper : connections) {
             for (Connection c : connectionsInModel) {
-                if ((c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
-                    && c.getTargetNode().getIdentifier().equals(wrapper.getTarget().getIdentifier()))
-                    || c.getTargetNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
-                        && c.getSourceNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
+                if (c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
+                    && c.getTargetNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
                     wrapper.incrementNumberOfConnections();
                 }
             }
@@ -200,7 +189,6 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         ConnectionLayer connLayer = (ConnectionLayer) getLayer(LayerConstants.CONNECTION_LAYER);
         connLayer.setAntialias(SWT.ON);
         connLayer.setConnectionRouter(new CustomShortestPathConnectionRouter(f));
-
         return f;
     }
 
@@ -211,7 +199,6 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         installEditPolicy("Snap Feedback", new SnapFeedbackPolicy());
     }
 
-
     /**
      * Policy responsible for creating new WorkflowNodes.
      * 
@@ -221,7 +208,8 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
     class WorkflowXYLayoutEditPolicy extends XYLayoutEditPolicy {
 
         @Override
-        protected Command createChangeConstraintCommand(final ChangeBoundsRequest request, final EditPart child, final Object constraint) {
+        protected Command createChangeConstraintCommand(final ChangeBoundsRequest request, final EditPart child,
+            final Object constraint) {
             if (child instanceof WorkflowNodePart && constraint instanceof Rectangle) {
 
                 // Find all connections between the selected nodes
@@ -229,15 +217,18 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 if (getModel() instanceof WorkflowDescription) {
                     WorkflowDescription workflowDescription = (WorkflowDescription) getModel();
                     for (Connection connection : workflowDescription.getConnections()) {
-                        if (((connection.getTargetNode().getIdentifier().equals(((WorkflowNode) child.getModel()).getIdentifier()))
-                            || (connection.getSourceNode().getIdentifier().equals(((WorkflowNode) child.getModel()).getIdentifier())))
-                            && checkIfSourceAndTargetAreSelected(connection.getSourceNode(), connection.getTargetNode(), child.getViewer()
-                                .getSelectedEditParts())) {
+                        if (((connection.getTargetNode().getIdentifier()
+                            .equals(((WorkflowNode) child.getModel()).getIdentifier()))
+                            || (connection.getSourceNode().getIdentifier()
+                                .equals(((WorkflowNode) child.getModel()).getIdentifier())))
+                            && checkIfSourceAndTargetAreSelected(connection.getSourceNode(),
+                                connection.getTargetNode(), child.getViewer().getSelectedEditParts())) {
                             relatedConnections.add(connection);
                         }
                     }
                 }
-                return new WorkflowNodeMoveCommand((WorkflowNode) child.getModel(), request, (Rectangle) constraint, relatedConnections);
+                return new WorkflowNodeMoveCommand((WorkflowNode) child.getModel(), request, (Rectangle) constraint,
+                    relatedConnections);
             }
             if (child instanceof WorkflowLabelPart && constraint instanceof Rectangle) {
                 return new WorkflowLabelMoveCommand((WorkflowLabel) child.getModel(), request, (Rectangle) constraint);
@@ -259,7 +250,8 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             }
         }
 
-        private boolean checkIfSourceAndTargetAreSelected(WorkflowNode sourceNode, WorkflowNode targetNode, List<?> selectedEditParts) {
+        private boolean checkIfSourceAndTargetAreSelected(WorkflowNode sourceNode, WorkflowNode targetNode,
+            List<?> selectedEditParts) {
             boolean sourceContained = false;
             boolean targetContained = false;
 
@@ -294,9 +286,9 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             protected List<MoveHandle> createSelectionHandles() {
                 List<MoveHandle> list = new ArrayList<>();
                 if (isDragAllowed()) {
-                    if (child instanceof WorkflowNodePart
-                        && ((WorkflowNode) ((WorkflowNodePart) child).getModel()).getComponentDescription().getComponentInstallation()
-                            .getComponentRevision().getComponentInterface().getShape() == ComponentShape.CIRCLE) {
+                    if (child instanceof WorkflowNodePart && ((WorkflowNode) ((WorkflowNodePart) child).getModel())
+                        .getComponentDescription().getComponentInstallation().getComponentRevision()
+                        .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
                         list.add(new OvalBorderMoveHandle((GraphicalEditPart) child));
                     } else {
                         list.add(new MoveHandle((GraphicalEditPart) child));
@@ -306,19 +298,20 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             }
         }
 
-
         @Override
         protected Command getCreateCommand(final CreateRequest request) {
 
             Object childClass = request.getNewObjectType();
             if (childClass == WorkflowNode.class) {
-                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowNode) request.getNewObject(),
-                    (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
+                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(
+                    (WorkflowNode) request.getNewObject(), (WorkflowDescription) getHost().getModel(),
+                    (Rectangle) getConstraintFor(request));
                 return helper.createCommand();
             }
             if (childClass == WorkflowLabel.class) {
-                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowLabel) request.getNewObject(),
-                    (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
+                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(
+                    (WorkflowLabel) request.getNewObject(), (WorkflowDescription) getHost().getModel(),
+                    (Rectangle) getConstraintFor(request));
                 return helper.createCommand();
             }
             return null;

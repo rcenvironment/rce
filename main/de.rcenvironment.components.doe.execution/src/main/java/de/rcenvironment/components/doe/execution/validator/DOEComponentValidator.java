@@ -49,6 +49,7 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
 
         final boolean hasOutputs = getOutputs(componentDescription).size() > 0;
 
+        String methodName = getProperty(componentDescription, DOEConstants.KEY_METHOD);
         if (!hasOutputs) {
             final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, "", Messages.noOutputsDefinedLong,
@@ -60,7 +61,7 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
             final ComponentValidationMessage tooManySamplesMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, "", Messages.tooManySamples, Messages.tooManySamples);
 
-            if (getProperty(componentDescription, DOEConstants.KEY_METHOD)
+            if (methodName
                 .equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
                 if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
                     messages.add(tooManySamplesMessage);
@@ -71,9 +72,8 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
                 }
             }
         }
-        if (!(getProperty(componentDescription, DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-            || getProperty(componentDescription, DOEConstants.KEY_METHOD)
-                .equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO))
+        if (!(methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) || methodName.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
+            || methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT))
             && getOutputs(componentDescription).size() < 2) {
             final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.numOutputsG2Long,
@@ -81,11 +81,11 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
             messages.add(outputTooLow);
 
         }
-        if (getProperty(componentDescription, DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
             checkStartAndEndSample(componentDescription, messages);
             checkTableDimensions(componentDescription, messages);
         }
-        if (getProperty(componentDescription, DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
             if (getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER) == null
                 || Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER)) < 2) {
                 final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(

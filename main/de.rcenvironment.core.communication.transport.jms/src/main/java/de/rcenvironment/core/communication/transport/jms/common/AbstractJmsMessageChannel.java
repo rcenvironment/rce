@@ -33,6 +33,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
@@ -60,6 +61,8 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     private RequestSender requestSender;
 
     private NonBlockingResponseInboxConsumer responseInboxConsumer;
+
+    private final boolean verboseRequestLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("NetworkRequests");
 
     /**
      * A {@link Runnable} that holds a single queue for outgoing {@link NetworkRequest}, and sends them sequentially.
@@ -375,6 +378,10 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     private void sendNonBlockingRequest(final Session session, final Queue destinationQueue, final NetworkRequest request,
         final MessageChannelResponseHandler responseHandler, final int timeoutMsec) {
         try {
+            if (verboseRequestLoggingEnabled) {
+                log.debug(StringUtils.format("Sending request   %s: type %s, payload length %d", request.getRequestId(),
+                    request.getMessageType(), request.getContentBytes().length));
+            }
             // construct message
             Message jmsRequest = JmsProtocolUtils.createMessageFromNetworkRequest(request, session);
             final Queue replyToQueue = session.createQueue(sharedResponseQueueName);
@@ -390,6 +397,10 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                     NetworkResponse response;
                     try {
                         response = JmsProtocolUtils.createNetworkResponseFromMessage(jmsResponse, request);
+                        if (verboseRequestLoggingEnabled) {
+                            log.debug(StringUtils.format("Received response %s: payload length %d", response.getRequestId(),
+                                response.getContentBytes().length));
+                        }
                         responseHandler.onResponseAvailable(response);
                     } catch (JMSException e) {
                         // check: log full stacktrace here, or compress it?

@@ -142,20 +142,20 @@ public class LogTableFilter extends ViewerFilter implements SelectionListener, K
         // Escape all regex expressions except for the *
         char[] regexsymbols = { '(', ')', '{', '}', '[', ']', '^', '?', '.', '\\', '$', '|', '+' };
         mySearchTerm = searchTerm.toLowerCase();
-        StringBuffer searchTermBuffer = new StringBuffer(mySearchTerm);
+        StringBuilder searchTermBuilder = new StringBuilder(mySearchTerm);
 
         int offset = 0;
         for (int i = 0; i < mySearchTerm.length(); i++) {
             for (int j = 0; j < regexsymbols.length; j++) {
                 // Insert '\' before regexsymbol
                 if (mySearchTerm.charAt(i) == regexsymbols[j]) {
-                    searchTermBuffer.insert(i + offset, "\\");
+                    searchTermBuilder.insert(i + offset, "\\");
                     offset++;
                 }
             }
         }
 
-        mySearchTerm = searchTermBuffer.toString();
+        mySearchTerm = searchTermBuilder.toString();
         while (mySearchTerm.contains(" ")) {
             if (mySearchTerm.indexOf(" ") != mySearchTerm.length() - 1) {
                 mySearchTerm = mySearchTerm.replaceFirst(" ", ".");

@@ -32,6 +32,12 @@ public class EndpointInputWithOutputEditDialog extends EndpointEditDialog {
         super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
     }
 
+    public EndpointInputWithOutputEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
+        EndpointType direction, String id, boolean isStatic,
+        EndpointMetaDataDefinition metaData, Map<String, String> newMetaData, int readOnlyType) {
+        super(parentShell, actionType, configuration, direction, id, isStatic, metaData, newMetaData, readOnlyType);
+    }
+
     @Override
     protected void validateInput() {
         String name = getNameInputFromUI();

@@ -26,7 +26,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
- * Helper class to call components in parallel.
+ * Helper class to call multiple components in parallel.
  * 
  * @author Doreen Seider
  */

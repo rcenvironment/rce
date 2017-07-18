@@ -14,9 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IConfigurationElement;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.draw2d.ChopboxAnchor;
 import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.EllipseAnchor;
@@ -31,6 +28,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.CompoundSnapToHelper;
 import org.eclipse.gef.ConnectionEditPart;
+import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.GraphicalEditPart;
 import org.eclipse.gef.NodeEditPart;
@@ -52,8 +50,8 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.IPropertySource;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentShape;
@@ -61,6 +59,8 @@ import de.rcenvironment.core.component.model.api.ComponentSize;
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
+import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecutionInformationImpl;
+import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.resources.api.ColorManager;
@@ -68,7 +68,8 @@ import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardColors;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorAction;
+import de.rcenvironment.core.gui.workflow.ConnectionUtils;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionDrawCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.ComponentPropertySource;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowDescriptionValidationUtils;
@@ -87,6 +88,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Sascha Zur
  * @author Doreen Seider
  * @author Jascha Riedel (#13765)
+ * @author Oliver Seebach
+ * @author Jan Flink
+ * 
  */
 public class WorkflowNodePart extends AbstractGraphicalEditPart implements PropertyChangeListener, NodeEditPart {
 
@@ -100,6 +104,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
      */
     public static final int WORKFLOW_NODE_WIDTH = 81;
 
+    private static final int OFFSET_FACTOR = 2;
+
     private static final int MAX_LABELTEXT_SIZE = 30;
 
     private static final String LABEL_TEXT_SEPARATOR = "...";
@@ -112,11 +118,21 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private static final Image LOCAL_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.LOCAL);
 
-    private static final Image IMITATION_MODE_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.IMITATION_MODE);
+    private static final Image IMITATION_MODE_IMAGE = ImageManager.getInstance()
+        .getSharedImage(StandardImages.IMITATION_MODE);
 
     private static final Image DEPRECATED_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.DEPRECATED);
 
-    private Image imageToDispose = null;
+    protected final IFigure informationFigure = new ImageFigure(LOCAL_IMAGE);
+
+    {
+        final int offsetX = 62;
+        final int offsetY = 62;
+        final int size = 16;
+        informationFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
+        informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
+        informationFigure.setVisible(false);
+    }
 
     private final IFigure errorFigure = new ImageFigure(ERROR_IMAGE);
     {
@@ -135,16 +151,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         warningFigure.setVisible(false);
     }
 
-    private final IFigure informationFigure = new ImageFigure(LOCAL_IMAGE);
-    {
-        final int offsetX = 62;
-        final int offsetY = 62;
-        final int size = 16;
-        informationFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
-        informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
-        informationFigure.setVisible(false);
-    }
-
     private final IFigure deprecatedFigure = new ImageFigure(DEPRECATED_IMAGE);
     {
         final int offsetX = 23;
@@ -155,9 +161,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         deprecatedFigure.setVisible(false);
     }
 
+    private final ToolIntegrationContextRegistry toolIntegrationRegistry;
+
     private String currentLabel = "";
 
-    private final ToolIntegrationContextRegistry toolIntegrationRegistry;
+    private Image imageToDispose = null;
 
     public WorkflowNodePart() {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
@@ -182,7 +190,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     public void deactivate() {
         super.deactivate();
 
-        // TODO is this the correct method to call the disposal of objects?
         if (imageToDispose != null) {
             imageToDispose.dispose();
         }
@@ -192,9 +199,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     private List<ComponentValidationMessage> getValidationMessages() {
-        final List<ComponentValidationMessage> result = ComponentValidationMessageStore.getInstance()
+        return ComponentValidationMessageStore.getInstance()
             .getMessagesByComponentId(getWorkflowNode().getIdentifier());
-        return result;
     }
 
     private String getValidationMessageText(final ComponentValidationMessage.Type type) {
@@ -240,10 +246,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         }
         refresh();
         refreshVisuals();
-        // outcommented because it is likely to cause Mantis Issue #0014726; seeb_ol, November 23, 2016
-//        if (errorText.equals("") && warningText.equals("")) {
-//            getWorkflowNode().setValid(true);
-//        }
+        // outcommented because it is likely to cause Mantis Issue #0014726;
+        // seeb_ol, November 23, 2016
+        // if (errorText.equals("") && warningText.equals("")) {
+        // getWorkflowNode().setValid(true);
+        // }
     }
 
     protected WorkflowNode getWorkflowNode() {
@@ -334,7 +341,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         } else if (ci.getColor() == null) {
             return ColorManager.getInstance().getSharedColor(StandardColors.RCE_COLOR_2);
         } else if (Boolean.valueOf(((WorkflowNode) getModel()).getConfigurationDescription()
-            .getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            .getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))) {
             return ColorManager.getInstance().getSharedColor(StandardColors.RCE_IMITATION);
         } else {
             // TODO There is currently only one ComponentColor specified.
@@ -409,7 +416,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             enabled = "not available";
         }
         if (Boolean.valueOf(
-            node.getConfigurationDescription().getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            node.getConfigurationDescription().getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))) {
             enabled += " (imitation mode)";
         }
 
@@ -460,7 +467,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
             informationFigure.setVisible(true);
         } else if (Boolean.valueOf(((WorkflowNode) getModel()).getConfigurationDescription()
-            .getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            .getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))) {
             ((ImageFigure) informationFigure).setImage(IMITATION_MODE_IMAGE);
             informationFigure.setToolTip(new Label(Messages.imitationMode));
             informationFigure.setVisible(true);
@@ -495,9 +502,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     public void propertyChange(PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
         ((WorkflowNode) getModel()).setValid(false);
-        if (WorkflowNode.PROPERTY_COMMUNICATION_NODE.equals(prop)) {
-            refreshVisuals();
-        } else if (WorkflowNode.PROPERTY_NODE_ATTRIBUTES.equals(prop)) {
+        if (WorkflowNode.PROPERTY_COMMUNICATION_NODE.equals(prop) || WorkflowNode.PROPERTY_NODE_ATTRIBUTES.equals(prop)) {
             refreshVisuals();
         }
     }
@@ -512,7 +517,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     @Override
     public ConnectionAnchor getSourceConnectionAnchor(ConnectionEditPart connection) {
-
         // handle reconnections
         if (connection != null) {
             if (connection.getSource() != null && connection.getTarget() != null) {
@@ -521,12 +525,21 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 }
             }
         }
-
         if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
             .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
+            // small round components -> circle as anchor
             return new EllipseAnchor(getFigure());
         } else {
-            return new ChopboxAnchor(getFigure());
+            boolean hasInverseConnection = checkIfConnectionHasReverseConnectionInWorkflow(connection);
+            boolean isSmallComponent = (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
+                .getComponentRevision().getComponentInterface().getSize() == ComponentSize.SMALL);
+            if (hasInverseConnection && !isSmallComponent) {
+                // medium rectangle components -> custom anchor
+                return new BidirectionalChopboxAnchor(getFigure(), connection, AnchorType.SOURCE);
+            } else {
+                // small rectangle components -> box as anchor
+                return new ChopboxAnchor(getFigure());
+            }
         }
 
     }
@@ -552,13 +565,41 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 }
             }
         }
-
         if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
             .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
+            // small round components -> circle as anchor
             return new EllipseAnchor(getFigure());
         } else {
-            return new ChopboxAnchor(getFigure());
+            boolean hasInverseConnection = checkIfConnectionHasReverseConnectionInWorkflow(connection);
+            boolean isSmallComponent = (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
+                .getComponentRevision().getComponentInterface().getSize() == ComponentSize.SMALL);
+            if (hasInverseConnection && !isSmallComponent) {
+                // medium rectangle components -> custom anchor
+                return new BidirectionalChopboxAnchor(getFigure(), connection, AnchorType.TARGET);
+            } else {
+                // small rectangle components -> box as anchor
+                return new ChopboxAnchor(getFigure());
+            }
         }
+    }
+
+    private boolean checkIfConnectionHasReverseConnectionInWorkflow(ConnectionEditPart connection) {
+        List<Connection> connections = new ArrayList<>();
+        if (getViewer().getContents().getModel() instanceof WorkflowDescription) {
+            connections = ((WorkflowDescription) getViewer().getContents().getModel()).getConnections();
+        } else if (getViewer().getContents().getModel() instanceof WorkflowExecutionInformationImpl) {
+            connections =
+                ((WorkflowExecutionInformationImpl) getViewer().getContents().getModel()).getWorkflowDescription().getConnections();
+        }
+
+        for (Connection connectionInWorkflow : connections) {
+            if (connectionInWorkflow.getSourceNode().equals(((ConnectionWrapper) connection.getModel()).getTarget())
+                && connectionInWorkflow.getTargetNode()
+                    .equals(((ConnectionWrapper) connection.getModel()).getSource())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -608,7 +649,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             if (Boolean.TRUE.equals(getViewer().getProperty(SnapToGrid.PROPERTY_GRID_ENABLED))) {
                 helpers.add(new SnapToGrid(this));
             }
-            if (helpers.size() == 0) {
+            if (helpers.isEmpty()) {
                 return null;
             } else {
                 return new CompoundSnapToHelper(helpers.toArray(new SnapToHelper[0]));
@@ -639,41 +680,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new ConnectEditPolicy());
     }
 
-    /**
-     * Checks for registered editor actions and if it finds one for the selected component, this is invoked. As no action is currently
-     * required here, the method is deprecated.
-     */
-    @Deprecated
-    private void performDefaultAction() {
-        IConfigurationElement[] confElements = Platform.getExtensionRegistry()
-            .getConfigurationElementsFor("de.rcenvironment.core.gui.workflow.editorActions"); //$NON-NLS-1$
-
-        for (final IConfigurationElement confElement : confElements) {
-
-            WorkflowNode node = getWorkflowNode();
-
-            if (node.getComponentDescription().getIdentifier().matches(confElement.getAttribute("component"))
-                && confElement.getAttribute("default") != null
-                && Boolean.TRUE.toString().matches(confElement.getAttribute("default"))) { //$NON-NLS-1$
-
-                final WorkflowEditorAction action;
-                try {
-                    Object actionObject = confElement.createExecutableExtension("class");
-                    if (!(actionObject instanceof WorkflowEditorAction)) {
-                        throw new RuntimeException(de.rcenvironment.core.utils.common.StringUtils.format(
-                            "Class in attribute 'class' is not a subtype of '%s'.",
-                            WorkflowEditorAction.class.getName()));
-                    }
-                    action = (WorkflowEditorAction) actionObject;
-                } catch (CoreException e) {
-                    throw new RuntimeException(e);
-                }
-                action.setWorkflowNode(node);
-                action.performAction();
-                break;
-            }
-        }
-    }
 
     /**
      * EditPolicy that allows connections.
@@ -757,6 +763,276 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             return new Rectangle(new Point(x, y), new Point(x, y));
         }
 
+    }
+
+
+    
+
+
+    /**
+     * Chopbox anchor which is uses for bidirectional connections. Adds an offset to the anchor to distinquish the connection lines.
+     *
+     * @author Oliver Seebach
+     * @author Jan Flink (minor refactorings)
+     */
+    private class BidirectionalChopboxAnchor extends ChopboxAnchor {
+
+        private ConnectionEditPart connectionEditPart;
+
+        private AnchorType type;
+        
+        BidirectionalChopboxAnchor(IFigure figure, ConnectionEditPart connection, AnchorType type) {
+            super.setOwner(figure);
+            this.connectionEditPart = connection;
+            this.type = type;
+        }
+
+        @Override
+        protected Rectangle getBox() {
+            ConnectionPart correspondingConnectionPart = findInverseConnectionPart(connectionEditPart);
+            if (correspondingConnectionPart != null) {
+                WorkflowNode targetNode = (WorkflowNode) connectionEditPart.getTarget().getModel();
+                WorkflowNode sourceNode = (WorkflowNode) connectionEditPart.getSource().getModel();
+                WorkflowDescription workflowDescription = null;
+                if (getViewer().getContents().getModel() instanceof WorkflowDescription) {
+                    workflowDescription = (WorkflowDescription) getViewer().getContents().getModel();
+                } else if (getViewer().getContents().getModel() instanceof WorkflowExecutionInformationImpl) {
+                    workflowDescription =
+                        ((WorkflowExecutionInformationImpl) getViewer().getContents().getModel()).getWorkflowDescription();
+                }
+                boolean hasBendpointsInAnyDirection =
+                    !ConnectionUtils.findAlreadyExistentBendpointsFromSourceToTarget(sourceNode, targetNode, workflowDescription).isEmpty();
+                hasBendpointsInAnyDirection |=
+                    !ConnectionUtils.findAlreadyExistentBendpointsFromSourceToTarget(targetNode, sourceNode, workflowDescription).isEmpty();
+                boolean draggingAtConnection =
+                    (connectionEditPart.getSelected() == SWT.SELECTED
+                        && getViewer().getControl().getData(WorkflowEditor.DRAG_STATE_BENDPOINT) != null
+                        && (boolean) getViewer().getControl().getData(WorkflowEditor.DRAG_STATE_BENDPOINT));
+
+                if (!draggingAtConnection && !hasBendpointsInAnyDirection) {
+                    // no bendpoints -> special anchors to distinguish connection lines
+                    Rectangle referenceRectangle = getOwner().getBounds();
+                    Point sourcePoint = new Point(sourceNode.getX(), sourceNode.getY());
+                    Point targetPoint = new Point(targetNode.getX(), targetNode.getY());
+                    int nodeWidth = determineSizeOfNode(connectionEditPart);
+                    Orientation orientation = determineOrientationForAnchor(sourcePoint, targetPoint, nodeWidth);
+                    if (type.equals(AnchorType.TARGET)) {
+                        switch (orientation) {
+                        case NORTHWEST:
+                            return ConnectionAnchorUtils.getBottomRightRect(referenceRectangle);
+                        case NORTH:
+                            return ConnectionAnchorUtils.getBottomLeftRect(referenceRectangle);
+                        case NORTHEAST:
+                            return ConnectionAnchorUtils.getLeftLowerRect(referenceRectangle);
+                        case WEST:
+                            return ConnectionAnchorUtils.getRightLowerRect(referenceRectangle);
+                        case EAST:
+                            return ConnectionAnchorUtils.getLeftUpperRect(referenceRectangle);
+                        case SOUTHWEST:
+                            return ConnectionAnchorUtils.getRightUpperRect(referenceRectangle);
+                        case SOUTH:
+                            return ConnectionAnchorUtils.getTopRightRect(referenceRectangle);
+                        case SOUTHEAST:
+                            return ConnectionAnchorUtils.getTopLeftRect(referenceRectangle);
+                        case MIDDLE:
+                        default:
+                            return super.getBox();
+                        }
+                    }
+                    if (type.equals(AnchorType.SOURCE)) {
+
+                        switch (orientation) {
+                        case NORTHWEST:
+                            return ConnectionAnchorUtils.getLeftUpperRect(referenceRectangle);
+                        case NORTH:
+                            return ConnectionAnchorUtils.getTopLeftRect(referenceRectangle);
+                        case NORTHEAST:
+                            return ConnectionAnchorUtils.getTopRightRect(referenceRectangle);
+                        case WEST:
+                            return ConnectionAnchorUtils.getLeftLowerRect(referenceRectangle);
+                        case EAST:
+                            return ConnectionAnchorUtils.getRightUpperRect(referenceRectangle);
+                        case SOUTHWEST:
+                            return ConnectionAnchorUtils.getBottomLeftRect(referenceRectangle);
+                        case SOUTH:
+                            return ConnectionAnchorUtils.getBottomRightRect(referenceRectangle);
+                        case SOUTHEAST:
+                            return ConnectionAnchorUtils.getRightLowerRect(referenceRectangle);
+                        case MIDDLE:
+                        default:
+                            return super.getBox();
+                        }
+                    }
+                }
+            }
+            return super.getBox();
+        }
+
+        private int determineSizeOfNode(ConnectionEditPart cPart) {
+            int nodeWidth = 0;
+            EditPart part = null;
+            if (type.equals(AnchorType.TARGET)) {
+                part = cPart.getTarget();
+            } else {
+                part = cPart.getSource();
+            }
+            if (part instanceof WorkflowNodePart) {
+                WorkflowNodePart workflowNodePart = (WorkflowNodePart) part;
+                nodeWidth = workflowNodePart.getFigure().getBounds().width;
+            }
+            return nodeWidth;
+        }
+
+        @SuppressWarnings("unchecked")
+        private ConnectionPart findInverseConnectionPart(ConnectionEditPart cPart) {
+            List<Object> allConnections = new ArrayList<>();
+            allConnections.addAll(getSourceConnections());
+            allConnections.addAll(getTargetConnections());
+
+            for (Object connection : allConnections) {
+                if (connection instanceof ConnectionPart) {
+                    ConnectionPart connectionPartCandidate = (ConnectionPart) connection;
+
+                    WorkflowNode connectionPartTempsSourceNode = (WorkflowNode) connectionPartCandidate.getSource().getModel();
+                    WorkflowNode connectionPartTempsTargetNode = (WorkflowNode) connectionPartCandidate.getTarget().getModel();
+                    WorkflowNode originalConnectionPartsTargetNode = (WorkflowNode) cPart.getTarget().getModel();
+                    WorkflowNode originalConnectionPartsSourceNode = (WorkflowNode) cPart.getSource().getModel();
+
+                    if (connectionPartTempsSourceNode.getIdentifier().equals(originalConnectionPartsTargetNode.getIdentifier())
+                        && connectionPartTempsTargetNode.getIdentifier().equals(originalConnectionPartsSourceNode.getIdentifier())) {
+                        return connectionPartCandidate;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private Orientation determineOrientationForAnchor(Point sourcePoint, Point targetPoint, int nodeWidth) {
+            Orientation orientation = Orientation.MIDDLE;
+            int targetX = targetPoint.x;
+            int targetY = targetPoint.y;
+            int sourceX = sourcePoint.x;
+            int sourceY = sourcePoint.y;
+
+            if (targetY <= sourceY - OFFSET_FACTOR * nodeWidth) {
+                if (targetX <= sourceX - OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.NORTHWEST;
+                } else if (targetX > sourceX - OFFSET_FACTOR * nodeWidth && targetX <= sourceX + OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.NORTH;
+                } else if (targetX > sourceX + OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.NORTHEAST;
+                }
+            } else if (targetY > sourceY - OFFSET_FACTOR * nodeWidth && targetY <= sourceY + OFFSET_FACTOR * nodeWidth) {
+                if (targetX <= sourceX - OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.WEST;
+                } else if (targetX > sourceX - OFFSET_FACTOR * nodeWidth && targetX <= sourceX + OFFSET_FACTOR * nodeWidth) {
+                    // inner part
+                    if (targetY <= sourceY - nodeWidth) {
+                        if (targetX <= sourceX - nodeWidth) {
+                            orientation = Orientation.NORTHWEST;
+                        } else if (targetX > sourceX - nodeWidth && targetX <= sourceX + nodeWidth) {
+                            orientation = Orientation.NORTH;
+                        } else if (targetX > sourceX + nodeWidth) {
+                            orientation = Orientation.NORTHEAST;
+                        }
+                    } else if (targetY > sourceY - nodeWidth && targetY <= sourceY + nodeWidth) {
+                        if (targetX <= sourceX - nodeWidth) {
+                            orientation = Orientation.WEST;
+                        } else if (targetX > sourceX - nodeWidth && targetX <= sourceX + nodeWidth) {
+                            orientation = Orientation.MIDDLE;
+                        } else if (targetX > sourceX + nodeWidth) {
+                            orientation = Orientation.EAST;
+                        }
+                    } else if (targetY > sourceY + nodeWidth) {
+                        if (targetX <= sourceX - nodeWidth) {
+                            orientation = Orientation.SOUTHWEST;
+                        } else if (targetX > sourceX - nodeWidth && targetX <= sourceX + nodeWidth) {
+                            orientation = Orientation.SOUTH;
+                        } else if (targetX > sourceX + nodeWidth) {
+                            orientation = Orientation.SOUTHEAST;
+                        }
+                    }
+                } else if (targetX > sourceX + OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.EAST;
+                }
+            } else if (targetY > sourceY + OFFSET_FACTOR * nodeWidth) {
+                if (targetX <= sourceX - OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.SOUTHWEST;
+                } else if (targetX > sourceX - OFFSET_FACTOR * nodeWidth && targetX <= sourceX + OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.SOUTH;
+                } else if (targetX > sourceX + OFFSET_FACTOR * nodeWidth) {
+                    orientation = Orientation.SOUTHEAST;
+                }
+            }
+
+            return orientation;
+
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object == this) {
+                return true;
+            }
+            if (object instanceof BidirectionalChopboxAnchor) {
+                BidirectionalChopboxAnchor anchor = (BidirectionalChopboxAnchor) object;
+                if (anchor.getOwner().equals(this.getOwner())
+                    && anchor.connectionEditPart.equals(this.connectionEditPart)
+                    && anchor.type.equals(this.type)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 1;
+            final int factor = 31;
+            hash = hash * factor + getOwner().hashCode();
+            hash = hash * factor + connectionEditPart.hashCode();
+            hash = hash * factor + type.hashCode();
+            return hash;
+        }
+
+    }
+
+    /**
+     * Defines the corresponding component of connection anchors.
+     *
+     * @author Jan Flink
+     */
+    private enum AnchorType {
+        /** Anchor at the connections source component. **/
+        SOURCE,
+        /** Anchor at the connections target component. **/
+        TARGET
+    }
+
+    /**
+     * Orientations between source and target component of a connection.
+     *
+     * @author Oliver Seebach
+     */
+    private enum Orientation {
+        /** Northwest orientation. */
+        NORTHWEST,
+        /** North orientation. */
+        NORTH,
+        /** Northeast orientation. */
+        NORTHEAST,
+        /** West orientation. */
+        WEST,
+        /** Middle orientation. */
+        MIDDLE,
+        /** East orientation. */
+        EAST,
+        /** Southwest orientation. */
+        SOUTHWEST,
+        /** South orientation. */
+        SOUTH,
+        /** Southeast orientation. */
+        SOUTHEAST;
     }
 
 }

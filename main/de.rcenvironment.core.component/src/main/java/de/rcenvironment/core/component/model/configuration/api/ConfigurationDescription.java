@@ -29,6 +29,8 @@ import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
  * Provides information about the component configuration.
  * 
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link ConfigurationDefinition}. --seid_do
  */
 public class ConfigurationDescription extends PropertiesChangeSupport implements Serializable {
 

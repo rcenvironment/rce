@@ -158,7 +158,8 @@
             ],
             "defaultDataType":"FileReference",
             "inputHandlingOptions":[
-                "Single"
+                "Single",
+                "Constant"
             ],
             "defaultInputHandling":"Single",
             "inputExecutionConstraintOptions":[
@@ -175,19 +176,11 @@
                 "Float",
                 "Vector"
             ],
-            "defaultDataType": "Float",
-            "metaData": {
-                "usage": {
-                    "guiName": "Usage",
-                    "guiPosition": "0",
-                    "guiGroup": "Scheduling",
-                    "visibility": "shown",
-                    "possibleValues": [
-                        "initial"
-                    ],
-                    "defaultValue": "initial"
-                }
-            }
+             "inputHandlingOptions":[
+                "Single",
+                "Constant"
+            ],
+            "defaultDataType": "Float"
         },
          {
             "identifier": "stepvalues",
@@ -197,19 +190,12 @@
                 "Float",
                 "Vector"
             ],
-            "defaultDataType": "Float",
-            "metaData": {
-                "usage": {
-                    "guiName": "Usage",
-                    "guiPosition": "0",
-                    "guiGroup": "Scheduling",
-                    "visibility": "shown",
-                    "possibleValues": [
-                        "initial"
-                    ],
-                    "defaultValue": "initial"
-                }
-            }
+             "inputHandlingOptions":[
+                "Single",
+                "Constant"
+            ],
+            "defaultDataType": "Float"
+            
         },
         {
             "identifier": "gradients",
@@ -220,19 +206,8 @@
                 "Vector",
                 "Matrix"
             ],
-            "defaultDataType": "Float",
-            "metaData": {
-                "usage": {
-                    "guiName": "Usage",
-                    "guiPosition": "0",
-                    "guiGroup": "Scheduling",
-                    "visibility": "developerConfigurable",
-                    "possibleValues": [
-                        "initial"
-                    ],
-                    "defaultValue": "required"
-                }
-            }
+            "defaultDataType": "Float"
+            
         }
     ],
      "staticInputGroups":[

@@ -74,6 +74,21 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
  */
 public class EndpointSelectionPane implements Refreshable {
 
+    /**
+     * Constant for read only type.
+     */
+    public static final int NOTHING_READ_ONLY = 1;
+
+    /**
+     * Constant for read only type.
+     */
+    public static final int NAME_AND_TYPE_READ_ONLY = 2;
+
+    /**
+     * Constant for read only type.
+     */
+    public static final int ALL_READ_ONLY = 4;
+
     private static final String NO_DATA_STRING = "-";
 
     protected EndpointType endpointType;
@@ -127,11 +142,11 @@ public class EndpointSelectionPane implements Refreshable {
 
     private Map<String, String> metaDataInput = new HashMap<>();
 
-    private boolean readOnly = true;
-
     private boolean refreshDynEndpointIdsToShow = false;
 
     private boolean refreshStatEndpointNamesToShow = false;
+
+    private int readOnlyType = 0;
 
     /**
      * @param dynEndpointIdToManage dynamic endpoint identifier to manage or <code>null</code> for none
@@ -150,6 +165,13 @@ public class EndpointSelectionPane implements Refreshable {
 
     public EndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, String[] dynEndpointIdsToShow,
         String[] statEndpointNamesToShow, WorkflowNodeCommand.Executor executor, boolean readOnly, boolean showCharacter) {
+        this(title, direction, dynEndpointIdToManage, dynEndpointIdsToShow, statEndpointNamesToShow, executor, getButtons(readOnly),
+            showCharacter);
+
+    }
+
+    public EndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, String[] dynEndpointIdsToShow,
+        String[] statEndpointNamesToShow, WorkflowNodeCommand.Executor executor, int readOnlyType, boolean showCharacter) {
         this.paneTitle = title;
         this.endpointType = direction;
         this.dynEndpointIdToManagePassed = dynEndpointIdToManage;
@@ -168,8 +190,16 @@ public class EndpointSelectionPane implements Refreshable {
             this.statEndpointNamesToShow = Arrays.asList(statEndpointNamesToShow);
         }
         this.executor = executor;
-        this.readOnly = readOnly;
+        this.readOnlyType = readOnlyType;
         icon = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_RCE_ICON_16);
+    }
+
+    private static int getButtons(boolean readOnly) {
+        int buttons = ALL_READ_ONLY;
+        if (!readOnly) {
+            buttons = NOTHING_READ_ONLY;
+        }
+        return buttons;
     }
 
     /**
@@ -234,14 +264,26 @@ public class EndpointSelectionPane implements Refreshable {
         }
 
         tableBuilt = false;
-
-        if (!readOnly) {
+        if ((readOnlyType & ALL_READ_ONLY) != 1) {
+            buttonListener = getButtonListener();
+        }
+        if ((readOnlyType & NOTHING_READ_ONLY) == 1) {
             buttonAdd = toolkit.createButton(client, EndpointActionType.ADD.getButtonText(), SWT.FLAT);
             buttonAdd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            buttonAdd.addSelectionListener(buttonListener);
+        }
+        if ((readOnlyType & (NOTHING_READ_ONLY | NAME_AND_TYPE_READ_ONLY)) != 0) {
             buttonEdit = toolkit.createButton(client, EndpointActionType.EDIT.getButtonText(), SWT.FLAT);
             buttonEdit.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            buttonEdit.addSelectionListener(buttonListener);
+        }
+        if ((readOnlyType & NOTHING_READ_ONLY) == 1) {
             buttonRemove = toolkit.createButton(client, EndpointActionType.REMOVE.getButtonText(), SWT.FLAT);
             buttonRemove.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            buttonRemove.addSelectionListener(buttonListener);
+            table.addKeyListener(new DeleteKeyListener());
+        }
+        if ((readOnlyType & ALL_READ_ONLY) != 1) {
             table.addSelectionListener(new SelectionAdapter() {
 
                 @Override
@@ -251,13 +293,7 @@ public class EndpointSelectionPane implements Refreshable {
 
             });
 
-            buttonListener = getButtonListener();
-            buttonAdd.addSelectionListener(buttonListener);
-            buttonEdit.addSelectionListener(buttonListener);
-            buttonRemove.addSelectionListener(buttonListener);
-
             fillContextMenu(table);
-            table.addKeyListener(new DeleteKeyListener());
         }
 
         section.setClient(client);
@@ -269,19 +305,21 @@ public class EndpointSelectionPane implements Refreshable {
 
     private void fillContextMenu(Table tab) {
         Menu menu = new Menu(tab);
-
-        itemAdd = new MenuItem(menu, SWT.PUSH);
-        itemAdd.setText(EndpointActionType.ADD.toString());
-        itemAdd.addSelectionListener(buttonListener);
-
-        itemEdit = new MenuItem(menu, SWT.PUSH);
-        itemEdit.setText(EndpointActionType.EDIT.toString());
-        itemEdit.addSelectionListener(buttonListener);
-
-        itemRemove = new MenuItem(menu, SWT.PUSH);
-        itemRemove.setText(EndpointActionType.REMOVE.toString());
-        itemRemove.addSelectionListener(buttonListener);
-
+        if (buttonAdd != null) {
+            itemAdd = new MenuItem(menu, SWT.PUSH);
+            itemAdd.setText(EndpointActionType.ADD.toString());
+            itemAdd.addSelectionListener(buttonListener);
+        }
+        if (buttonEdit != null) {
+            itemEdit = new MenuItem(menu, SWT.PUSH);
+            itemEdit.setText(EndpointActionType.EDIT.toString());
+            itemEdit.addSelectionListener(buttonListener);
+        }
+        if (buttonRemove != null) {
+            itemRemove = new MenuItem(menu, SWT.PUSH);
+            itemRemove.setText(EndpointActionType.REMOVE.toString());
+            itemRemove.addSelectionListener(buttonListener);
+        }
         tab.setMenu(menu);
     }
 
@@ -440,7 +478,7 @@ public class EndpointSelectionPane implements Refreshable {
             item.setData(name);
             item.setText(0, name);
             Display display = Display.getCurrent();
-            if (readOnly || endpointManager.getEndpointDescription(name).getEndpointDefinition().isReadOnly()) {
+            if (readOnlyType != NOTHING_READ_ONLY || endpointManager.getEndpointDescription(name).getEndpointDefinition().isReadOnly()) {
                 item.setForeground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
             }
             if (endpointType == EndpointType.INPUT) {
@@ -470,9 +508,10 @@ public class EndpointSelectionPane implements Refreshable {
                     item.setText(2, endpointManager.getEndpointDescription(name).getEndpointDefinition()
                         .getDefaultInputDatumHandling().getDisplayName());
                 }
-                if (endpointManager.getEndpointDescription(name).getEndpointDefinition()
-                    .getInputDatumOptions().size() < 2) {
+                if (endpointManager.getEndpointDescription(name).getEndpointDefinition().getInputDatumOptions().size() < 2) {
                     item.setForeground(2, display.getSystemColor(SWT.COLOR_DARK_GRAY));
+                } else {
+                    item.setForeground(2, display.getSystemColor(SWT.COLOR_BLACK));
                 }
                 if (getMetaData(name).containsKey(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)) {
                     item.setText(3, EndpointDefinition.InputExecutionContraint.valueOf(getMetaData(name)
@@ -481,9 +520,10 @@ public class EndpointSelectionPane implements Refreshable {
                     item.setText(3, endpointManager.getEndpointDescription(name).getEndpointDefinition()
                         .getDefaultInputExecutionConstraint().getDisplayName());
                 }
-                if (endpointManager.getEndpointDescription(name).getEndpointDefinition()
-                    .getInputExecutionConstraintOptions().size() < 2) {
+                if (endpointManager.getEndpointDescription(name).getEndpointDefinition().getInputExecutionConstraintOptions().size() < 2) {
                     item.setForeground(3, display.getSystemColor(SWT.COLOR_DARK_GRAY));
+                } else {
+                    item.setForeground(3, display.getSystemColor(SWT.COLOR_BLACK));
                 }
                 lastIndex = 3;
             }
@@ -561,28 +601,29 @@ public class EndpointSelectionPane implements Refreshable {
             removable = !containsStaticOrReadOnly;
             if (selection.length == 1) {
                 EndpointDefinition definition = endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition();
-                if (definition.isStatic()) {
-                    editable = definition.getPossibleDataTypes().size() > 1
-                        || definition.getInputDatumOptions().size() > 1
-                        || definition.getInputExecutionConstraintOptions().size() > 1;
-                    EndpointMetaDataDefinition metaDescription = definition.getMetaDataDefinition();
-                    if (metaDescription != null && metaDescription.getMetaDataKeys().size() > 0) {
-                        for (String key : metaDescription.getMetaDataKeys()) {
-                            editable |= isValueEditable(selection[0].getText(), key);
-
-                        }
+                editable = (definition.getPossibleDataTypes().size() > 1 && readOnlyType == NOTHING_READ_ONLY)
+                    || definition.getInputDatumOptions().size() > 1
+                    || definition.getInputExecutionConstraintOptions().size() > 1;
+                EndpointMetaDataDefinition metaDescription = definition.getMetaDataDefinition();
+                if (metaDescription != null && !metaDescription.getMetaDataKeys().isEmpty()) {
+                    for (String key : metaDescription.getMetaDataKeys()) {
+                        editable |= isValueEditable(selection[0].getText(), key);
                     }
                 }
             }
         }
-
-        buttonAdd.setEnabled(addible);
-        buttonEdit.setEnabled(editable);
-        buttonRemove.setEnabled(removable);
-
-        itemAdd.setEnabled(addible);
-        itemEdit.setEnabled(editable);
-        itemRemove.setEnabled(removable);
+        if (buttonAdd != null) {
+            buttonAdd.setEnabled(addible);
+            itemAdd.setEnabled(addible && buttonAdd.isVisible());
+        }
+        if (buttonEdit != null) {
+            buttonEdit.setEnabled(editable);
+            itemEdit.setEnabled(editable);
+        }
+        if (buttonRemove != null) {
+            buttonRemove.setEnabled(removable);
+            itemRemove.setEnabled(removable && buttonRemove.isVisible());
+        }
     }
 
     private boolean selectionContainsStaticOrReadOnly(List<TableItem> tableItems) {
@@ -605,7 +646,7 @@ public class EndpointSelectionPane implements Refreshable {
     protected void updateTable() {
         if (!getControl().isDisposed()) {
             fillTable();
-            if (!readOnly) {
+            if (readOnlyType == NOTHING_READ_ONLY || readOnlyType == NAME_AND_TYPE_READ_ONLY) {
                 updateButtonActivation();
             }
         }
@@ -735,7 +776,6 @@ public class EndpointSelectionPane implements Refreshable {
             String newName = dialog.getChosenName();
             DataType newType = dialog.getChosenDataType();
             newMetaData = dialog.getMetadataValues();
-
             if (isEndpointChanged(oldDesc, newName, newType, newMetaData)) {
 
                 if (EndpointHandlingHelper.editEndpointDataType(endpointType, oldDesc, newType)) {
@@ -750,14 +790,10 @@ public class EndpointSelectionPane implements Refreshable {
         boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
-
-        EndpointEditDialog dialog =
-            new EndpointEditDialog(Display.getDefault().getActiveShell(),
-                EndpointActionType.EDIT, configuration, endpointType,
-                dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(),
-                newMetaData);
-
+        EndpointEditDialog dialog = new EndpointEditDialog(Display.getDefault().getActiveShell(),
+            EndpointActionType.EDIT, configuration, endpointType,
+            endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier(), isStaticEndpoint,
+            endpoint.getEndpointDefinition().getMetaDataDefinition(), newMetaData, readOnlyType);
         onEditClicked(name, dialog, newMetaData);
     }
 

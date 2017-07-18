@@ -344,7 +344,7 @@ public class WfCommandPlugin implements CommandPlugin {
                 if (retries >= MAXIMUM_WORKFLOW_PARSE_RETRIES) {
                     log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
                         MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
-                    outputReceiver.addOutput(StringUtils.format("Workflow component(s) of '%s' unknown: %s (full path: %s)",
+                    outputReceiver.addOutput(StringUtils.format("Workflow component(s) of '%s' unknown (full path: %s)",
                         wfFile.getName(), wfFile.getAbsolutePath()));
                     return false;
                 }
@@ -910,6 +910,9 @@ public class WfCommandPlugin implements CommandPlugin {
         // [--basedir <dir>]
         // <filename> [<filename> ...]"
         // TODO replace File with a custom class when more parameters are needed - misc_ro
+        if (!context.hasRemainingTokens()) {
+            throw CommandException.wrongNumberOfParameters(context);
+        }
         List<File> wfFiles = new ArrayList<>();
 
         String lastBaseDirOption = null;
@@ -1065,7 +1068,7 @@ public class WfCommandPlugin implements CommandPlugin {
         final HeadlessWorkflowExecutionService.DeletionBehavior delete) throws CommandException {
         Date startTime = new Date();
         if (wfFiles.isEmpty()) {
-            throw CommandException.syntaxError("Error: at least one workflow file must be specified", context);
+            throw CommandException.syntaxError("at least one workflow file must be specified", context);
         }
         final HeadlessWorkflowExecutionVerificationRecorder wfVerificationResultRecorder;
         try {

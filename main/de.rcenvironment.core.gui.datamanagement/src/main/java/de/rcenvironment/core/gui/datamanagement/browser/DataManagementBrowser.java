@@ -51,6 +51,9 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.PopupDialog;
+import org.eclipse.jface.layout.GridDataFactory;
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -58,15 +61,25 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeViewerListener;
+import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TreeItem;
@@ -135,11 +148,23 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private static final MetaData METADATA_WORKFLOW_IS_MARKED_FOR_DELETION = new MetaData(
         MetaDataKeys.WORKFLOW_MARKED_FOR_DELETION, true, true);
 
+    private static final List<DMBrowserNodeType> SAVABLE_NODE_TYPES = new ArrayList<>();
+
+    private static final List<DMBrowserNodeType> SAVE_AS_FOLDER_NODE_TYPES = new ArrayList<>();
+
+    private static final List<DMBrowserNodeType> DELETABLE_NODE_TYPES = new ArrayList<>();
+
+    private static final List<DMBrowserNodeType> REFRESHABLE_NODE_TYPES = new ArrayList<>();
+
+    private static final List<DMBrowserNodeType> COMPARABLE_NODE_TYPES = new ArrayList<>();
+    
+    private static final List<DMBrowserNodeType> OPEN_IN_EDITOR_NODE_TYPES = new ArrayList<>();
+
     protected final Log log = LogFactory.getLog(getClass());
 
     protected DMTreeSorter treeSorter;
 
-    private Object[] expandedNodes = null;
+    private Object[] visibleExpandedElements = null;
 
     private TreeViewer viewer;
 
@@ -185,6 +210,69 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private Action sortTimestampDesc;
 
     private ServiceRegistryAccess serviceRegistryAccess;
+    
+    static {
+        /*
+         * Set all savable DMBrowserNodeTypes.
+         */
+        // Set all DMBrowserNodeTypes which are to save as folder.
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.Timeline);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.Components);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.Component);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.HistoryObject);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.Input);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.Output);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.IntermediateInputsFolder);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.LogFolder);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.ToolInputOutputFolder);
+        SAVE_AS_FOLDER_NODE_TYPES.add(DMBrowserNodeType.DMDirectoryReference);
+        // Set all savable DMBrowserNodeTypes.
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.HistoryRoot);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.DMFileResource);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Resource);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Float);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Vector);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.ShortText);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Boolean);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Integer);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.SmallTable);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.Indefinite);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.File);
+        SAVABLE_NODE_TYPES.add(DMBrowserNodeType.CommonText);
+
+        /*
+         * Set all deletable DMBrowserNodeTypes.
+         */
+        DELETABLE_NODE_TYPES.add(DMBrowserNodeType.Workflow);
+
+        /*
+         * Whitelist: Nodes which can be refreshed.
+         */
+        REFRESHABLE_NODE_TYPES.add(DMBrowserNodeType.Workflow);
+        REFRESHABLE_NODE_TYPES.add(DMBrowserNodeType.Timeline);
+        REFRESHABLE_NODE_TYPES.add(DMBrowserNodeType.Components);
+        REFRESHABLE_NODE_TYPES.add(DMBrowserNodeType.WorkflowRunInformation);
+
+        /*
+         * Set all comparable DMBrowserNodeTypes.
+         */
+        COMPARABLE_NODE_TYPES.add(DMBrowserNodeType.DMFileResource);
+
+        /*
+         * Node types that can be opened in an editor
+         */
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.Boolean);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.CommonText);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.DMFileResource);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.File);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.Float);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.Integer);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.ShortText);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.SmallTable);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.Matrix);
+        OPEN_IN_EDITOR_NODE_TYPES.add(DMBrowserNodeType.Vector);
+
+    }
 
     /**
      * An {@link Action} to export data management entries to local files.
@@ -194,46 +282,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class CustomExportAction extends SelectionProviderAction {
 
-        private final List<DMBrowserNode> selectedNodes = new LinkedList<DMBrowserNode>();
+        private final List<DMBrowserNode> selectedNodes = new LinkedList<>();
 
         private Display display;
 
-        private final List<DMBrowserNodeType> savableNodeTypes = new ArrayList<DMBrowserNodeType>();
-
-        private final List<DMBrowserNodeType> savableNodeAsFolder = new ArrayList<DMBrowserNodeType>();
-
-        /*
-         * Set all savable DMBrowserNodeTypes.
-         */
-        {
-            // Set all DMBrowserNodeTypes which are to save as folder.
-            savableNodeAsFolder.add(DMBrowserNodeType.Timeline);
-            savableNodeAsFolder.add(DMBrowserNodeType.Components);
-            savableNodeAsFolder.add(DMBrowserNodeType.Component);
-            savableNodeAsFolder.add(DMBrowserNodeType.HistoryObject);
-            savableNodeAsFolder.add(DMBrowserNodeType.Input);
-            savableNodeAsFolder.add(DMBrowserNodeType.Output);
-            savableNodeAsFolder.add(DMBrowserNodeType.IntermediateInputsFolder);
-            savableNodeAsFolder.add(DMBrowserNodeType.LogFolder);
-            savableNodeAsFolder.add(DMBrowserNodeType.ToolInputOutputFolder);
-            savableNodeAsFolder.add(DMBrowserNodeType.DMDirectoryReference);
-            // Set all savable DMBrowserNodeTypes.
-            savableNodeTypes.add(DMBrowserNodeType.HistoryRoot);
-            savableNodeTypes.add(DMBrowserNodeType.DMFileResource);
-            savableNodeTypes.add(DMBrowserNodeType.Resource);
-            savableNodeTypes.add(DMBrowserNodeType.Float);
-            savableNodeTypes.add(DMBrowserNodeType.Vector);
-            savableNodeTypes.add(DMBrowserNodeType.ShortText);
-            savableNodeTypes.add(DMBrowserNodeType.Boolean);
-            savableNodeTypes.add(DMBrowserNodeType.Integer);
-            savableNodeTypes.add(DMBrowserNodeType.SmallTable);
-            savableNodeTypes.add(DMBrowserNodeType.Indefinite);
-            savableNodeTypes.add(DMBrowserNodeType.File);
-            savableNodeTypes.add(DMBrowserNodeType.CommonText);
-        }
 
         private CustomExportAction(ISelectionProvider provider, String text) {
             super(provider, text);
+            setEnabled(false);
         }
 
         @Override
@@ -241,7 +297,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             // clear the old selection
             selectedNodes.clear();
             // the 'save' action is only enabled, if a DataService is
-            // connected to delegate the deletion request to and the
+            // connected to delegate the save request to and the
             // selected is not empty
             boolean enabled = fileDataService != null && !selection.isEmpty();
             if (enabled) {
@@ -250,16 +306,15 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     DMBrowserNode selectedNode = iter.next();
                     DMBrowserNodeType nodeType = selectedNode.getType();
                     if (selectedNode.isEnabled() && !selectedNode.areAllChildrenDisabled()
-                        && (savableNodeTypes.contains(nodeType) || savableNodeAsFolder.contains(nodeType))) {
+                        && (SAVABLE_NODE_TYPES.contains(nodeType) || SAVE_AS_FOLDER_NODE_TYPES.contains(nodeType))) {
                         selectedNodes.add(selectedNode);
+                    } else {
+                        enabled = false;
                     }
                 }
-                // action is only enabled, if at least one node is deletable
-                // according to the deletable DMBrowserNodeTypes list
-                enabled &= !selectedNodes.isEmpty();
                 // action is only enabled if a potential content node is
                 // selected
-                enabled = mightHaveContent(selectedNodes);
+                enabled &= mightHaveContent(selectedNodes);
                 // store the Display to show the DirectoryDialog in 'run'
                 display = Display.getCurrent();
             }
@@ -268,7 +323,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         @Override
         public void run() {
-            final List<DMBrowserNode> browserNodesToSave = new LinkedList<DMBrowserNode>(selectedNodes);
+            final List<DMBrowserNode> browserNodesToSave = new LinkedList<>(selectedNodes);
             FileDialog fileDialog = new FileDialog(display.getActiveShell(), SWT.SAVE);
             fileDialog.setText("Export");
             fileDialog.setFileName(browserNodesToSave.get(0).getTitle().replace(":", "_"));
@@ -287,16 +342,18 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
                             @Override
                             public void run() {
-                                String location;
+                                final String location;
                                 if (job.getTargetFile() != null) {
-                                    location = StringUtils.format(Messages.exportSuccessText, browserNodesToSave.toString(),
-                                        job.getTargetFile().getAbsolutePath()).replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "");
+                                    location = StringUtils.format(Messages.exportLocationText,
+                                        job.getTargetFile().getAbsolutePath());
                                 } else {
-                                    location = StringUtils.format(Messages.exportSuccessText,
-                                        browserNodesToSave.toString(), targetDirectory.getAbsolutePath()).replace(BRACKET_OPEN, "")
-                                        .replace(BRACKET_CLOSE, "");
+                                    location = StringUtils.format(Messages.exportLocationText,
+                                        targetDirectory.getAbsolutePath());
                                 }
-                                MessageDialog.openInformation(display.getActiveShell(), "Export", location);
+                                new CustomPopupDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                                    "Workflow Data Browser\nData export", StringUtils.format(Messages.exportSuccessText,
+                                        browserNodesToSave.toString().replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "")),
+                                    location).open();
                             }
                         });
                     } else if (event.getResult() == Status.CANCEL_STATUS) {
@@ -328,6 +385,98 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             });
             job.setUser(true);
             job.schedule();
+        }
+
+        /**
+         * An eclipse-style read-only info popup. The popup closes automatically after the DISPLAY_TIME.
+         *
+         * @author Jan Flink
+         */
+        private final class CustomPopupDialog extends PopupDialog {
+
+            private static final int OFFSET = 15;
+
+            private static final int DISPLAY_TIME = 10000;
+
+            private final MouseListener mouseListener = new MouseListener() {
+
+                @Override
+                public void mouseUp(MouseEvent arg0) {
+                    close();
+                }
+
+                @Override
+                public void mouseDown(MouseEvent arg0) {
+                    // Nothing to do here.
+                }
+
+                @Override
+                public void mouseDoubleClick(MouseEvent arg0) {
+                    // Nothing to do here.
+
+                }
+            };
+
+            private String messageText;
+
+            private String titleText;
+
+            CustomPopupDialog(Shell parent, String titleText, String messageText, String infoText) {
+                super(parent, PopupDialog.INFOPOPUP_SHELLSTYLE, false, false, false, false, false, titleText, infoText);
+                this.titleText = titleText;
+                this.messageText = messageText;
+                display.timerExec(DISPLAY_TIME, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        CustomPopupDialog.this.close();
+                    }
+                });
+            }
+
+            @Override
+            protected Control createDialogArea(Composite parent) {
+                Label infoText = new Label(parent, SWT.SINGLE);
+                infoText.setText(messageText);
+                return infoText;
+            }
+
+            @Override
+            protected Control createTitleControl(Composite parent) {
+                Composite c = new Composite(parent, SWT.NONE);
+                GridLayoutFactory.fillDefaults().margins(0, 0).spacing(0, 0).numColumns(2).applyTo(c);
+                Label titleLabel = new Label(c, SWT.NONE);
+                if (titleText != null) {
+                    titleLabel.setText(titleText);
+                }
+                Label closeLabel = new Label(parent, SWT.NONE);
+                closeLabel.setText("X");
+                closeLabel.setAlignment(SWT.END);
+
+                Font font = titleLabel.getFont();
+                FontData[] fontDatas = font.getFontData();
+                for (int i = 0; i < fontDatas.length; i++) {
+                    fontDatas[i].setStyle(SWT.BOLD);
+                }
+                Font titleFont = new Font(titleLabel.getDisplay(), fontDatas);
+                titleLabel.setFont(titleFont);
+                closeLabel.setFont(titleFont);
+
+                GridDataFactory.fillDefaults().indent(0, 0).applyTo(c);
+                GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.CENTER).grab(true, false).indent(0, 0).applyTo(c);
+                GridDataFactory.fillDefaults().align(SWT.END, SWT.TOP).grab(true, false).indent(0, 0).applyTo(closeLabel);
+
+                closeLabel.addMouseListener(mouseListener);
+                return c;
+            }
+
+            @Override
+            protected Point getInitialLocation(Point initialSize) {
+                Rectangle bounds = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell().getBounds();
+                return new Point(bounds.width + bounds.x - this.getDefaultSize().x - OFFSET,
+                    bounds.height + bounds.y - this.getDefaultSize().y - OFFSET);
+            }
+
         }
 
         /**
@@ -374,7 +523,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             }
 
             private void saveNode(final DMBrowserNode browserNode) {
-                if (savableNodeAsFolder.contains(browserNode.getType())) {
+                if (SAVE_AS_FOLDER_NODE_TYPES.contains(browserNode.getType())) {
                     if (!targetDirectory.exists()) {
                         targetDirectory.mkdir();
                     }
@@ -467,13 +616,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 try {
                     DataManagementWorkbenchUtils.getInstance().saveReferenceToFile(dataReferenceId, fileReferencePath,
                         new File(directory, filename).getAbsolutePath(), rceNodeIdentifier);
-                } catch (NullPointerException e) {
-                    log.error("");
-                    // FIXME: log and warn
-                    e = null;
-                } catch (AuthorizationException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
+                } catch (NullPointerException | AuthorizationException | IOException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -546,22 +689,15 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class CustomDeleteAction extends SelectionProviderAction {
 
-        private final List<DMBrowserNode> selectedNodes = new LinkedList<DMBrowserNode>();
+        private final List<DMBrowserNode> selectedNodes = new LinkedList<>();
 
         private Display display;
 
-        private final List<DMBrowserNodeType> deletableNodeTypes = new ArrayList<DMBrowserNodeType>();
 
         private boolean hasNotFinishedWorkflows;
 
         private boolean isFileAction;
 
-        /*
-         * Set all deletable DMBrowserNodeTypes.
-         */
-        {
-            deletableNodeTypes.add(DMBrowserNodeType.Workflow);
-        }
 
         private CustomDeleteAction(ISelectionProvider provider, String text, boolean isFileAction) {
             super(provider, text);
@@ -579,14 +715,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 @SuppressWarnings("unchecked") final Iterator<DMBrowserNode> iter = selection.iterator();
                 while (iter.hasNext()) {
                     DMBrowserNode selectedNode = iter.next();
-                    if (deletableNodeTypes.contains(selectedNode.getType())) {
+                    if (DELETABLE_NODE_TYPES.contains(selectedNode.getType())) {
                         boolean hasfinalState =
                             selectedNode.getMetaData() != null
                                 && selectedNode.getMetaData().getValue(META_DATA_WORKFLOW_FINAL_STATE) != null;
                         boolean hasDataReferences =
-                            !Boolean.valueOf(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_FILES_DELETED));
+                            !Boolean.parseBoolean(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_FILES_DELETED));
                         boolean isMarkedForDeletion =
-                            Boolean.valueOf(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_IS_MARKED_FOR_DELETION));
+                            Boolean.parseBoolean(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_IS_MARKED_FOR_DELETION));
                         if (hasfinalState && !isMarkedForDeletion && (hasDataReferences || !isFileAction)) {
                             selectedNodes.add(selectedNode);
                         }
@@ -605,7 +741,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         @Override
         public void run() {
-            final List<DMBrowserNode> browserNodesToDelete = new LinkedList<DMBrowserNode>(
+            final List<DMBrowserNode> browserNodesToDelete = new LinkedList<>(
                 selectedNodes);
             String jobTitle;
             if (isFileAction) {
@@ -713,16 +849,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 DMBrowserNode node = (DMBrowserNode) obj;
 
                 if (node.isEnabled()
-                    && (node.getType() == DMBrowserNodeType.Boolean
-                        || node.getType() == DMBrowserNodeType.CommonText
-                        || node.getType() == DMBrowserNodeType.DMFileResource
-                        || node.getType() == DMBrowserNodeType.File
-                        || node.getType() == DMBrowserNodeType.Float
-                        || node.getType() == DMBrowserNodeType.Integer
-                        || node.getType() == DMBrowserNodeType.ShortText
-                        || node.getType() == DMBrowserNodeType.SmallTable
-                        || node.getType() == DMBrowserNodeType.Matrix
-                        || node.getType() == DMBrowserNodeType.Vector)) {
+                    && OPEN_IN_EDITOR_NODE_TYPES.contains(node.getType())) {
                     setEnabled(true);
                     return;
                 }
@@ -765,19 +892,10 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class RefreshNodeAction extends SelectionProviderAction {
 
-        private final List<DMBrowserNode> selectedNodes = new LinkedList<DMBrowserNode>();
+        private final List<DMBrowserNode> selectedNodes = new LinkedList<>();
 
-        private final List<DMBrowserNodeType> refreshableNodes = new ArrayList<DMBrowserNodeType>();
 
-        /*
-         * Whitelist: Nodes which can be refreshed.
-         */
-        {
-            refreshableNodes.add(DMBrowserNodeType.Workflow);
-            refreshableNodes.add(DMBrowserNodeType.Timeline);
-            refreshableNodes.add(DMBrowserNodeType.Components);
-            refreshableNodes.add(DMBrowserNodeType.WorkflowRunInformation);
-        }
+
 
         private RefreshNodeAction(ISelectionProvider provider, String text) {
             super(provider, text);
@@ -794,7 +912,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 @SuppressWarnings("unchecked") final Iterator<DMBrowserNode> iter = selection.iterator();
                 while (iter.hasNext()) {
                     DMBrowserNode selectedNode = iter.next();
-                    if (refreshableNodes.contains(selectedNode.getType())) {
+                    if (REFRESHABLE_NODE_TYPES.contains(selectedNode.getType())) {
                         selectedNodes.add(selectedNode);
                     } else {
                         enabled = false;
@@ -909,7 +1027,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         @Override
         public void run() {
             viewer.collapseAll();
-            expandedNodes = new Object[] {};
+            visibleExpandedElements = viewer.getVisibleExpandedElements();
         }
 
     }
@@ -920,7 +1038,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class CustomSortAction extends SelectionProviderAction {
 
-        private final List<DMBrowserNode> selectedNodes = new LinkedList<DMBrowserNode>();
+        private final List<DMBrowserNode> selectedNodes = new LinkedList<>();
 
         private final int sortingType;
 
@@ -956,6 +1074,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         @Override
         public void run() {
+            visibleExpandedElements = viewer.getVisibleExpandedElements();
             if (selectedNodes.isEmpty() || containsNodeTypeWorkflow(selectedNodes)) {
                 treeSorter.setSortingType(sortingType);
                 treeSorter.enableSorting(true);
@@ -971,6 +1090,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     }
                 }
             }
+            viewer.setExpandedElements(visibleExpandedElements);
         }
 
         private boolean containsNodeTypeWorkflow(List<DMBrowserNode> nodes) {
@@ -1018,19 +1138,10 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class CustomCompareAction extends SelectionProviderAction {
 
-        private final List<DMBrowserNodeType> comparableNodeTypes = new ArrayList<DMBrowserNodeType>();
-
         private DMBrowserNode node;
 
         private DMBrowserNode node2;
 
-        /*
-         * Set all comparable DMBrowserNodeTypes.
-         */
-        {
-            comparableNodeTypes.add(DMBrowserNodeType.DMFileResource);
-            // add comparable node typs like double, float...
-        }
 
         protected CustomCompareAction(ISelectionProvider provider, String text) {
             super(provider, text);
@@ -1046,7 +1157,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     node = (DMBrowserNode) obj;
                     node2 = (DMBrowserNode) obj2;
                     boolean compareEnabled = false;
-                    if (comparableNodeTypes.contains(node.getType()) && comparableNodeTypes.contains(node2.getType())
+                    if (COMPARABLE_NODE_TYPES.contains(node.getType()) && COMPARABLE_NODE_TYPES.contains(node2.getType())
                         && node.getType() == node2.getType()) {
                         compareEnabled = true;
                     }
@@ -1085,7 +1196,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                         cc.setRightLabel(right.getName());
                         CompareUI.openCompareEditor(new FileCompareInput(cc, left, right));
                     } catch (IOException e) {
-                        throw new RuntimeException(e.getCause());
+                        throw new RuntimeException(e);
                     } catch (CommunicationException e) {
                         throw new RuntimeException(StringUtils.format(
                             "Failed to copy data reference from remote node @%s to local file: ",
@@ -1117,7 +1228,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     timelineAction.run();
                 } else if (event.keyCode == SWT.F5 && refreshNodeAction.isEnabled()) {
                     // add shortcut for refresh selected action
-                    refreshNodeAction.run();
+                    if (refreshNodeAction.isEnabled()) {
+                        refreshNodeAction.run();
+                    }
                 }
             } else if (event.keyCode == SWT.DEL) {
                 // add shortcut for delete action
@@ -1126,7 +1239,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 }
             } else if (event.keyCode == SWT.F5) {
                 // add shortcut for refresh all action
-                actionRefreshAll.run();
+                if (actionRefreshAll.isEnabled()) {
+                    actionRefreshAll.run();
+                }
             }
         }
 
@@ -1149,13 +1264,12 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
 
     private void refresh(final DMBrowserNode node) {
-        // clear children of selected node
+        visibleExpandedElements = viewer.getVisibleExpandedElements();
         DMBrowserNode toRefresh = node.getNodeWithTypeWorkflow();
+        // clear children of selected node
         toRefresh.clearChildren();
         contentProvider.clear(toRefresh);
-
         if (viewer.getExpandedState(toRefresh)) {
-            expandedNodes = viewer.getVisibleExpandedElements();
             viewer.refresh(toRefresh);
         } else {
             // Called in order to update the workflow node's title (update "not terminated yet") even if node is not expanded.
@@ -1175,10 +1289,32 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
             @Override
             public void doubleClick(DoubleClickEvent event) {
-                // TreeViewer viewer = (TreeViewer) event.getViewer();
                 IStructuredSelection thisSelection = (IStructuredSelection) event.getSelection();
                 Object selectedNode = thisSelection.getFirstElement();
                 viewer.setExpandedState(selectedNode, !viewer.getExpandedState(selectedNode));
+                visibleExpandedElements = viewer.getVisibleExpandedElements();
+            }
+        });
+        viewer.addTreeListener(new ITreeViewerListener() {
+
+            @Override
+            public void treeExpanded(TreeExpansionEvent e) {
+                List<Object> elements = new ArrayList<>();
+                if (visibleExpandedElements != null) {
+                    elements.addAll(Arrays.asList(visibleExpandedElements));
+                }
+                elements.add(e.getElement());
+                visibleExpandedElements = elements.toArray();
+            }
+
+            @Override
+            public void treeCollapsed(TreeExpansionEvent e) {
+                List<Object> elements = new ArrayList<>();
+                if (visibleExpandedElements != null) {
+                    elements.addAll(Arrays.asList(visibleExpandedElements));
+                }
+                elements.remove(e.getElement());
+                visibleExpandedElements = elements.toArray();
             }
         });
         viewer.getControl().addKeyListener(new DataManagementKeyListener());
@@ -1265,7 +1401,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         manager.add(actionRefreshAll);
 
         manager.add(new Separator());
-        // manager.add(autoRefreshAction);
         manager.add(new Separator());
         drillDownAdapter.addNavigationActions(manager);
         manager.add(new Separator());
@@ -1281,8 +1416,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         manager.add(new Separator());
         manager.add(compareAction);
         manager.add(new Separator());
-        // Other plug-ins can contribute there actions here
-        // manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
     }
 
     private void fillLocalToolBar(IToolBarManager manager) {
@@ -1293,7 +1426,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         manager.add(new Separator());
         manager.add(refreshNodeAction);
         manager.add(actionRefreshAll);
-        // manager.add(autoRefreshAction);
         manager.add(collapseAllNodesAction);
         manager.add(deleteNodeAction);
         manager.add(new Separator());
@@ -1364,24 +1496,21 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     }
 
     private void refresh() {
-        contentProvider.clear();
-        // disable the widget
-        viewer.getTree().setEnabled(false);
-        // disable the action
-        // FIXME: ensure re-enabling upon errors
-        actionRefreshAll.setEnabled(false);
-        DMBrowserNode rootNode = (DMBrowserNode) viewer.getInput();
-        if (rootNode == null) {
-            rootNode = createRootNode();
-            viewer.setInput(rootNode);
-        } else {
-            rootNode.clearChildren();
+        if (!viewer.getTree().isDisposed()) {
+            actionRefreshAll.setEnabled(false);
+            contentProvider.clear();
+            viewer.getTree().setEnabled(false);
+            DMBrowserNode rootNode = (DMBrowserNode) viewer.getInput();
+            if (rootNode == null) {
+                rootNode = createRootNode();
+                viewer.setInput(rootNode);
+            } else {
+                rootNode.clearChildren();
+            }
+            viewer.getTree().setEnabled(true);
+            viewer.getTree().setFocus();
+            viewer.refresh();
         }
-
-        expandedNodes = viewer.getVisibleExpandedElements();
-        viewer.getTree().setEnabled(true);
-        viewer.getTree().setFocus();
-        viewer.refresh();
     }
 
     private boolean mightHaveContent(final DMBrowserNode node) {
@@ -1489,10 +1618,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     return;
                 }
                 viewer.refresh(node);
-                if (node == viewer.getInput()) {
-                    viewer.getTree().setEnabled(true);
-                    actionRefreshAll.setEnabled(true);
-                }
                 if (node.getType() != DMBrowserNodeType.HistoryRoot) {
                     DMBrowserNode workflowNode = node.getNodeWithTypeWorkflow();
                     if (workflowNode != null && !workflowNode.getWorkflowHostName().equals(LOCAL)
@@ -1500,17 +1625,20 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                         disableUnreachableNode(workflowNode.getNodeIdentifier());
                     }
                 }
-
-                for (final Object expNode : expandedNodes) {
-                    if (node.getChildren().contains(expNode)) {
-                        viewer.expandToLevel(expNode, 1);
-                    }
-                }
-                if (node.getChildren().isEmpty()) {
+                if (!node.areChildrenKnown()) {
                     viewer.setExpandedState(node, false);
+                } else {
+                    viewer.setExpandedState(node, true);
+                }
+
+                if (visibleExpandedElements != null) {
+                    viewer.setExpandedElements(visibleExpandedElements);
+                }
+                if (node == viewer.getInput()) {
+                    viewer.getTree().setEnabled(true);
+                    actionRefreshAll.setEnabled(true);
                 }
             }
-
         });
     }
 
@@ -1540,7 +1668,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             }
         });
 
-    };
+    }
 
     // recursively browse parent nodes until history root is found
     private void findAndDisableRootnode(DMBrowserNode node) {
@@ -1600,7 +1728,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             try {
                 return new ByteArrayInputStream(FileUtils.readFileToString(contents).getBytes());
             } catch (IOException e) {
-                return null;
+                throw new RuntimeException(e);
             }
         }
 

@@ -35,6 +35,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -78,23 +79,27 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private volatile boolean canceled = false;
 
+    private String method = "";
+
     @Override
     public void startNestedComponentSpecific() throws ComponentException {
         outputs = new LinkedList<>(componentContext.getOutputs());
         removeOutputsNotConsidered();
         Collections.sort(outputs);
+        method = componentContext.getConfigurationValue(DOEConstants.KEY_METHOD);
         int runNumberCount = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_RUN_NUMBER));
         int seedNumber = 0;
         if (componentContext.getConfigurationValue(DOEConstants.KEY_SEED_NUMBER) != null) {
             seedNumber = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_SEED_NUMBER));
         }
         valuesTable = new Double[0][0];
-        if (!(componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-            || componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO))
+        if (!(method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+            || method.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
+            || method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT))
             && outputs.size() < 2) {
             throw new ComponentException("Number of outputs for chosen method too few - must be >=2, but is " + outputs.size());
         }
-        switch (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD)) {
+        switch (method) {
         case DOEConstants.DOE_ALGORITHM_FULLFACT:
             if (runNumberCount >= 2) {
                 valuesTable = DOEAlgorithms.populateTableFullFactorial(outputs.size(), runNumberCount);
@@ -112,55 +117,10 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             valuesTable = DOEAlgorithms.populateTableMonteCarlo(outputs.size(), runNumberCount, seedNumber);
             break;
         case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE:
-            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-            try {
-                if (componentContext.getConfigurationValue(DOEConstants.KEY_TABLE) != null
-                    && !componentContext.getConfigurationValue(DOEConstants.KEY_TABLE).isEmpty()) {
-                    this.valuesTable = mapper.readValue(componentContext.getConfigurationValue(DOEConstants.KEY_TABLE), Double[][].class);
-                    if (valuesTable == null) {
-                        throw new ComponentException("No table given");
-                    }
-                } else {
-                    throw new ComponentException("No table given");
-                }
-                if (componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE) != null
-                    && !componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE).isEmpty()) {
-                    this.runNumber = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE));
-                }
-                if (componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE) != null
-                    && !componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE).isEmpty()) {
-                    this.endSample = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE));
-                }
-                if (this.runNumber < 0) {
-                    componentLog.componentInfo("Start sample value < 0 -> set it to 0");
-                    this.runNumber = 0;
-                }
-                if (this.runNumber >= valuesTable.length) {
-                    throw new ComponentException(StringUtils.format("Start sample value (%s) is greater than the number of samples (%s)",
-                        this.runNumber,
-                        valuesTable.length));
-                }
-                if (this.runNumber > this.endSample) {
-                    throw new ComponentException(StringUtils.format("Start sample value (%s) is greater than end sample value (%s)",
-                        this.runNumber,
-                        this.endSample));
-                }
-                if (valuesTable.length > 0 && valuesTable[0].length < outputs.size()) {
-                    throw new ComponentException(StringUtils.format(
-                        "Number of values per sample (%s) is lower than the number of outputs (%s)",
-                        valuesTable[0].length,
-                        outputs.size()));
-                }
-                for (int i = 0; i < endSample && i < valuesTable.length; i++) {
-                    for (int j = 0; j < valuesTable[i].length; j++) {
-                        if (valuesTable[i][j] == null) {
-                            throw new ComponentException("Values in table are uncomplete");
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new ComponentException("Failed to read given table", e);
-            }
+            readCustomTable();
+            break;
+        case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT:
+            valuesTable = new Double[0][0];
             break;
         default:
             break;
@@ -168,6 +128,68 @@ public class DOEComponent extends AbstractNestedLoopComponent {
         if (this.endSample < 0) {
             this.endSample = valuesTable.length;
         }
+        if (!DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT.equals(method)) {
+            codeOutputsAndWriteToFile();
+        }
+
+        if (treatStartAsComponentRun()) {
+            processInputsNestedComponentSpecific();
+        }
+    }
+
+    private void readCustomTable() throws ComponentException {
+        try {
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+            if (componentContext.getConfigurationValue(DOEConstants.KEY_TABLE) != null
+                && !componentContext.getConfigurationValue(DOEConstants.KEY_TABLE).isEmpty()) {
+                this.valuesTable = mapper.readValue(componentContext.getConfigurationValue(DOEConstants.KEY_TABLE), Double[][].class);
+                if (valuesTable == null) {
+                    throw new ComponentException("No table given");
+                }
+            } else {
+                throw new ComponentException("No table given");
+            }
+            if (componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE) != null
+                && !componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE).isEmpty()) {
+                this.runNumber = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE));
+            }
+            if (componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE) != null
+                && !componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE).isEmpty()) {
+                this.endSample = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_END_SAMPLE));
+            }
+            if (this.runNumber < 0) {
+                componentLog.componentInfo("Start sample value < 0 -> set it to 0");
+                this.runNumber = 0;
+            }
+            if (this.runNumber >= valuesTable.length) {
+                throw new ComponentException(StringUtils.format("Start sample value (%s) is greater than the number of samples (%s)",
+                    this.runNumber,
+                    valuesTable.length));
+            }
+            if (this.runNumber > this.endSample) {
+                throw new ComponentException(StringUtils.format("Start sample value (%s) is greater than end sample value (%s)",
+                    this.runNumber,
+                    this.endSample));
+            }
+            if (valuesTable.length > 0 && valuesTable[0].length < outputs.size()) {
+                throw new ComponentException(StringUtils.format(
+                    "Number of values per sample (%s) is lower than the number of outputs (%s)",
+                    valuesTable[0].length,
+                    outputs.size()));
+            }
+            for (int i = 0; i <= endSample && i < valuesTable.length; i++) {
+                for (int j = 0; j < valuesTable[i].length; j++) {
+                    if (valuesTable[i][j] == null) {
+                        throw new ComponentException("Values in table are incomplete");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ComponentException("Failed to read given table", e);
+        }
+    }
+
+    private void codeOutputsAndWriteToFile() {
         try {
             int i = 0;
             codedValues = new Double[valuesTable.length][valuesTable[0].length];
@@ -181,9 +203,10 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                 }
                 i++;
             }
-            if (outputs.size() > 0) {
+            if (!outputs.isEmpty()) {
                 tableFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOETable*.csv");
-                if (!(componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE))) {
+                if (!(method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+                    || method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT))) {
                     DOEUtils.writeTableToCSVFile(codedValues, tableFile.getAbsolutePath(), outputs);
                 } else {
                     DOEUtils.writeTableToCSVFile(valuesTable, tableFile.getAbsolutePath(), outputs);
@@ -193,10 +216,6 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             String errorMessage = "Failed to write DOE table file";
             componentLog.componentError(StringUtils.format(PLACEHOLDER_STRING, errorMessage, e.getMessage()));
             LOGGER.error(errorMessage, e);
-        }
-
-        if (treatStartAsComponentRun()) {
-            processInputsNestedComponentSpecific();
         }
     }
 
@@ -215,11 +234,16 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     @Override
     public boolean treatStartAsComponentRun() {
-        return !hasForwardingStartInputs();
+        return !hasForwardingStartInputs()
+            && componentContext.getDynamicInputsWithIdentifier(DOEConstants.CUSTOM_TABLE_ENDPOINT_ID).isEmpty();
     }
 
     @Override
     public void processInputsNestedComponentSpecific() throws ComponentException {
+        if (componentContext.getInputsWithDatum().contains(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
+            readCustomTableFromInput();
+            codeOutputsAndWriteToFile();
+        }
         initializeNewHistoryDataItem();
         if (historyDataItem != null && tableFileReference != null) {
             historyDataItem.setTableFileReference(tableFileReference.getFileReference());
@@ -236,8 +260,27 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     }
 
+    private void readCustomTableFromInput() throws ComponentException {
+        MatrixTD customTable = (MatrixTD) componentContext.readInput(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME);
+        int rowDimension = customTable.getRowDimension();
+        int columnDimension = customTable.getColumnDimension();
+        if (!(rowDimension > 0 && columnDimension > 0)) {
+            throw new ComponentException(StringUtils.format("Dimension of table must be > 0 but is %sx%s", rowDimension, columnDimension));
+        }
+        if (columnDimension != outputs.size()) {
+            throw new ComponentException(StringUtils.format("Column dimension (%s) of table does not match number of outputs (%s)",
+                columnDimension, outputs.size()));
+        }
+        valuesTable = new Double[rowDimension][columnDimension];
+        for (int i = 0; i < rowDimension; i++) {
+            for (int j = 0; j < columnDimension; j++) {
+                valuesTable[i][j] = customTable.getFloatTDOfElement(i, j).getFloatValue();
+            }
+        }
+    }
+
     private void createTableFileReference() {
-        if (historyDataItem != null) {
+        if (historyDataItem != null && tableFile != null) {
             try {
                 tableFileReference =
                     componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
@@ -284,11 +327,12 @@ public class DOEComponent extends AbstractNestedLoopComponent {
     }
 
     private void writeResultFile() {
-        if (!componentContext.getInputsWithDatum().isEmpty() && historyDataItem != null) {
+        if (!componentContext.getDynamicInputsWithIdentifier(DOEConstants.INPUT_ID_NAME).isEmpty() && historyDataItem != null) {
             File resultFile = null;
             try {
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOEResult*.csv");
-                if (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+                if (method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+                    || method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
                     DOEUtils.writeResultToCSVFile(valuesTable, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
                 } else {
                     DOEUtils.writeResultToCSVFile(codedValues, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
@@ -316,7 +360,9 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private void writeNewOutput() {
         if (valuesTable != null) {
-            if (componentContext.getInputs().isEmpty() && !hasForwardingStartInputs()) {
+            if (componentContext.getDynamicInputsWithIdentifier(DOEConstants.INPUT_ID_NAME).isEmpty()
+                && componentContext.getDynamicInputsWithIdentifier(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD).isEmpty()
+                && !hasForwardingStartInputs()) {
                 writeAllOutputs();
             } else if (runNumber < valuesTable.length) {
                 writeNextOutput();
@@ -335,7 +381,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
     }
 
     private void writeNextOutput() {
-        if (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+        if (method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
             && runNumber > endSample) {
             setLoopDone();
             return;
@@ -345,8 +391,9 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
             Double up = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_UPPER));
             double value = valuesTable[runNumber][i++];
-            if (!componentContext.getConfigurationValue(DOEConstants.KEY_METHOD)
-                .equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+            if (!method
+                .equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) && !method
+                    .equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
                 value = DOEAlgorithms.convertValue(low, up, value);
             }
             writeOutput(output,
@@ -360,17 +407,16 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private void writeAllOutputs() {
         while (runNumber < valuesTable.length) {
-            if (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-                && runNumber > endSample) {
+            if (method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) && runNumber > endSample) {
                 break;
             }
             int i = 0;
             for (String output : outputs) {
-                Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
-                Double up = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_UPPER));
                 double value = valuesTable[runNumber][i++];
-                if (!componentContext.getConfigurationValue(DOEConstants.KEY_METHOD)
-                    .equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+                if (!method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+                    && !method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
+                    Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
+                    Double up = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_UPPER));
                     value = DOEAlgorithms.convertValue(low, up, value);
                 }
                 writeOutput(output,
@@ -385,7 +431,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
         setLoopDone();
     }
 
-    private void processInput() throws ComponentException {
+    private void processInput() {
         if (!componentContext.getInputsWithDatum().isEmpty()) {
             Map<String, Double> runInput = new HashMap<>();
             for (String inputName : componentContext.getInputsWithDatum()) {
@@ -408,7 +454,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
     }
 
     private void writeFinalHistoryDataItem() {
-        if (historyDataItem != null && outputs.size() > 0
+        if (historyDataItem != null && !outputs.isEmpty()
             && Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             componentContext.writeFinalHistoryDataItem(historyDataItem);
         }
@@ -427,7 +473,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     @Override
     protected void finishLoopNestedComponentSpecific() {
-
+        // Not needed in DOE
     }
 
     @Override

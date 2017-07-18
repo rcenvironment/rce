@@ -18,6 +18,7 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
@@ -35,6 +36,8 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
     private final MessageChannelEndpointHandler endpointHandler;
 
     private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
+
+    private final boolean verboseRequestLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("NetworkRequests");
 
     public RequestInboxConsumer(String queueName, Connection connection, MessageChannelEndpointHandler endpointHandler)
         throws JMSException {
@@ -80,10 +83,16 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
             log.warn("Received message with undefined message type");
             return;
         }
-        NetworkRequest request;
+        final NetworkRequest request;
         try {
             if (JmsProtocolConstants.MESSAGE_TYPE_REQUEST.equals(messageType)) {
                 request = JmsProtocolUtils.createNetworkRequestFromMessage(message);
+
+                if (verboseRequestLoggingEnabled) {
+                    log.debug(StringUtils.format("Received request  %s: type %s, payload length %d", request.getRequestId(),
+                        request.getMessageType(), request.getContentBytes().length));
+                }
+
                 // on the messaging level, senders and receivers are identified by instance session ids
                 String senderIdString = request.accessMetaData().getSenderIdString();
                 long startTime = System.currentTimeMillis();
@@ -103,6 +112,10 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
                         return; // no graceful handling possible
                     }
                     jmsResponse.setJMSCorrelationID(messageId); // set correlation id for non-blocking response handling
+                    if (verboseRequestLoggingEnabled) {
+                        log.debug(StringUtils.format("Sending response  %s: payload length %d", request.getRequestId(),
+                            response.getContentBytes().length));
+                    }
                     JmsProtocolUtils.sendWithTransientProducer(session, jmsResponse, message.getJMSReplyTo());
                 } catch (JMSException e) {
                     log.debug(StringUtils

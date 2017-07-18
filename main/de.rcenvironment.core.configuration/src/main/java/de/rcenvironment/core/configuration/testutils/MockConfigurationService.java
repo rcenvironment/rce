@@ -135,7 +135,7 @@ public abstract class MockConfigurationService implements ConfigurationService {
         }
 
         @Override
-        public File getInstallationDir() {
+        public File getUnpackedFilesLocation(String filesetId) throws ConfigurationException {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
         }
 

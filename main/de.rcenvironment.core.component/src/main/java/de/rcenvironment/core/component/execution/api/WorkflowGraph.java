@@ -29,6 +29,11 @@ import de.rcenvironment.core.utils.incubator.GraphvizUtils.DotFileBuilder;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: The workflow graph was introduced to reset nested loops and later to realize fault-tolerant loops. From a semantic point of
+ * view, it is kind of redundant to the WorkflowDescription or at least keeps semantically similar information but is not linked to
+ * it at all. This is only for historical reasons and should changed/merged in the future. --seid_do
+ * 
  */
 public class WorkflowGraph implements Serializable {
 

@@ -48,9 +48,12 @@
 		<module>${projects-root}/de.rcenvironment.core.component.xml.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap</module>
-		<module>${projects-root}/de.rcenvironment.core.configuration.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.discovery</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.discovery.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.logging</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.ui</module>
 		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.metadata.derby</module>
 		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.metadata.derby.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.data.efs</module>
@@ -66,6 +69,7 @@
 		<module>${projects-root}/de.rcenvironment.core.instancemanagement.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.jetty</module>
 		<module>${projects-root}/de.rcenvironment.core.jetty.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.launcher.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.log</module>
 		<module>${projects-root}/de.rcenvironment.core.log.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.login</module>
@@ -118,7 +122,6 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.remoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.utils.common</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.utils.incubator</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.utils.ole</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.wizards.exampleproject</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.wizards.toolintegration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow</module>

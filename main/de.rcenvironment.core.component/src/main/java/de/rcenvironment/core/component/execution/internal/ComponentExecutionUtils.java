@@ -12,7 +12,7 @@ import org.apache.commons.logging.Log;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
-import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -33,9 +33,11 @@ public final class ComponentExecutionUtils {
     
     private ComponentExecutionUtils() {}
     
-    protected static boolean isVerificationRequired(ConfigurationDefinition configDef) {
+    protected static boolean isManualOutputVerificationRequired(ConfigurationDescription configDesc) {
         return Boolean
-            .valueOf(configDef.getReadOnlyConfiguration().getValue(ComponentConstants.COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL));
+            .valueOf(configDesc.getComponentConfigurationDefinition().getReadOnlyConfiguration()
+                .getValue(ComponentConstants.COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL))
+            && !Boolean.valueOf(configDesc.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE));
     }
     
     protected static void logCallbackSuccessAfterFailure(Log log, String logMessage, int failureCount) {

@@ -42,6 +42,7 @@ import de.rcenvironment.core.datamanagement.DataManagementIdMapping;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.ComponentInstance;
+import de.rcenvironment.core.datamanagement.commons.ComponentRun;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.EndpointInstance;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
@@ -51,6 +52,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
@@ -73,6 +75,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Robert Mischke
  */
 public class DerbyMetaDataBackendTest {
+
+    private static final int MILLISECONDS_1000 = 1000;
 
     // "safety net" test timeout to avoid blocking continuous integration test runs
     private static final int COMPLEX_SCENARIO_TEST_TIMEOUT = 300000;
@@ -243,6 +247,11 @@ public class DerbyMetaDataBackendTest {
                 derbyMetaDataBackend.addComponentRun(ciid, DataManagementIdMapping.createDummyNodeIdStringForTesting(), 1,
                     System.currentTimeMillis());
             assertNotNull(id);
+            derbyMetaDataBackend.setComponentRunFinished(id, System.currentTimeMillis() + MILLISECONDS_1000,
+                FinalComponentRunState.FINISHED);
+            Collection<ComponentRun> runs = derbyMetaDataBackend.getComponentRuns(ciid);
+            assertFalse(runs.isEmpty());
+            assertEquals(1, runs.size());
         }
 
     }
@@ -347,7 +356,7 @@ public class DerbyMetaDataBackendTest {
             brefs.add(new BinaryReference(key, CompressionFormat.GZIP, "1.1"));
             // note: the following line is creating a new instance id on each call; kept this way to maintain pre-8.0 test behavior
             derbyMetaDataBackend.addDataReferenceToComponentRun(crunId,
-                new DataReference(key, NodeIdentifierTestUtils.createTestInstanceNodeId(), brefs));
+                new DataReference(key, NodeIdentifierTestUtils.createTestDefaultLogicalNodeId(), brefs));
         }
         log.debug(StringUtils.format("Added %d component runs to workflow run id %d", (numComponents * numRunsPerComponent), wfRunId));
         // mark as finished, otherwise file deletion will (correctly) fail

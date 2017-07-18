@@ -128,53 +128,50 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        String text = "[";
-        String formattedLabel = "";
+        StringBuilder strBuilder = new StringBuilder("[");
 
         TypedDatum[][] tdArray = toArray();
         for (int j = 0; j < getColumnCount(); j++) {
-            TypedDatum datum = tdArray[0][j];
-            text += datum.toString();
-            text += ",";
-            if (text.length() > maxLength) {
+            strBuilder.append(tdArray[0][j].toString());
+            strBuilder.append(",");
+            if (strBuilder.length() > maxLength) {
                 break;
             }
         }
         // remove last comma and whitespace
-        text = text.substring(0, text.length() - 1);
-        if (text.length() > maxLength) {
-            text = text.substring(0, maxLength) + "...";
+        strBuilder.setLength(strBuilder.length() - 1);
+        if (strBuilder.length() > maxLength) {
+            strBuilder.setLength(maxLength);
+            strBuilder.append("...");
         }
-        text += "]";
-        text += "...";
-        formattedLabel += text;
-        String dimensionsText = " (" + "size: " + getRowCount() + "x" + getColumnCount() + ")";
-        formattedLabel += dimensionsText;
-
-        return formattedLabel;
+        strBuilder.append("]");
+        if (tdArray.length > 1) {
+            strBuilder.append(",...");
+        }
+        strBuilder.append(StringUtils.format(" (%dx%d)", getRowCount(), getColumnCount()));
+        return strBuilder.toString();
     }
 
     @Override
     public String toString() {
-        String fullContent = "";
-        // fill fullcontent String
+        StringBuilder strBuilder = new StringBuilder();
         TypedDatum[][] tdArray = toArray();
         for (int i = 0; i < getRowCount(); i++) {
             for (int j = 0; j < getColumnCount(); j++) {
-                fullContent += tdArray[i][j];
-                fullContent += ", ";
+                strBuilder.append(tdArray[i][j].toString());
+                strBuilder.append(", ");
             }
-            fullContent = fullContent.substring(0, fullContent.length() - 2);
-            fullContent += "\r\n";
+            // remove last comma and whitespace
+            strBuilder.setLength(strBuilder.length() - 2);
+            strBuilder.append(System.lineSeparator());
         }
-        return fullContent;
+        return strBuilder.toString();
     }
     
     private boolean isAllowedAsCellType(TypedDatum typedDatum) {
         TypedDatumConverter converter = new DefaultTypedDatumConverter();
         boolean convertibleToSmallTable = converter.isConvertibleTo(typedDatum.getDataType(), DataType.SmallTable);
-        boolean allowedCellType = convertibleToSmallTable && typedDatum.getDataType() != DataType.Matrix
+        return convertibleToSmallTable && typedDatum.getDataType() != DataType.Matrix
             && typedDatum.getDataType() != DataType.Vector;
-        return allowedCellType;
     }
 }

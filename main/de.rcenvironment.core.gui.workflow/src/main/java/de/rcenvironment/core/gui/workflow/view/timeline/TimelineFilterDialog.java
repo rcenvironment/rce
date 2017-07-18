@@ -35,14 +35,20 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
 
 /**
  * Dialog that helps to manage filter settings.
  * 
  * @author Hendrik Abbenhaus
  */
-public class TimelineFilterDialog extends Dialog implements ICheckStateListener {
+public class TimelineFilterDialog extends Dialog implements ICheckStateListener, ModifyListener {
+    
+    /** Size of the shell. **/
+    private static final int SHELL_SIZE = 500;
+    
+    private static final int DIALOG_WINDOW_OFFSET_Y = 100;
+
+    private static final int DIALOG_WINDOW_OFFSET_X = 150;
 
     /** Initial string. */
     public String initialFilterText = "";
@@ -56,17 +62,30 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
     private Tree tree;
 
     private ComponentViewerFilter filter;
-
-    private Set<String> componentNameFilter = new HashSet<String>();
     
-    private TimelineFilterTreeNode[] currentCheckedElements = null;
-    
+    private TimelineFilterTreeNode rootNode = null;
 
-    public TimelineFilterDialog(Shell parentShell, String[] currentFilter) {
+    public TimelineFilterDialog(Shell parentShell, String[] currentFilter, TimelineComponentRow[] componentRows) {
         super(parentShell);
         this.setShellStyle(SWT.RESIZE | SWT.MAX | SWT.PRIMARY_MODAL);
-        for (String currentString : currentFilter) {
-            componentNameFilter.add(currentString);
+
+        if (componentRows == null || componentRows.length == 0){
+            return;
+        }
+        
+        this.rootNode = new TimelineFilterTreeNode();
+        for (TimelineComponentRow current : componentRows) {
+            TimelineFilterTreeNode parentNode = rootNode.hasChildWithComponentID(current.getComponentID());
+            if (parentNode == null) {
+                parentNode = new TimelineFilterTreeNode();
+                parentNode.setComponentID(current.getComponentID());
+                parentNode.setParent(rootNode);
+                rootNode.addChild(parentNode);
+            }
+            TimelineFilterTreeNode n = new TimelineFilterTreeNode();
+            n.setRow(current);
+            n.setChecked(isAllowedComponentName(currentFilter, current.getName()));
+            parentNode.addChild(n);
         }
 
     }
@@ -97,8 +116,7 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
         tree = viewer.getTree();
         tree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         tree.setLinesVisible(true);
-
-        // viewer.addCheckStateListener(
+        
         filter = new ComponentViewerFilter(initialFilterText);
         viewer.addFilter(filter);
         viewer.setUseHashlookup(true);
@@ -117,30 +135,11 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
         sourceFilterText.setMessage(Messages.filterDialogFilterDefault);
         sourceFilterText.setToolTipText(Messages.filterDialogToolTipText);
         sourceFilterText.setLayoutData(gridData31);
-        if (!initialFilterText.equals("")) {
-            sourceFilterText.setText(initialFilterText);
-        }
-        
-        sourceFilterText.addModifyListener(new FilterTextModifyListener(currentCheckedElements));
+        sourceFilterText.setText(initialFilterText);
+        sourceFilterText.addModifyListener(this);
 
         return container;
     }
-
-    @Override
-    protected void okPressed() {
-        componentNameFilter.clear();
-        for (TreeItem currentObj : viewer.getTree().getItems()) {
-            TimelineFilterTreeNode currentNode = (TimelineFilterTreeNode) currentObj.getData();
-            for (TimelineFilterTreeNode c : currentNode.getChildren()){
-                if (viewer.getChecked(c)){
-                    componentNameFilter.add(c.getDisplayName());
-                }
-            }
-            
-        }
-        
-        super.okPressed();
-    };
 
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
@@ -153,42 +152,40 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
         newShell.setText(Messages.filterDialogTitle);
+        newShell.setSize(SHELL_SIZE, SHELL_SIZE);
+        
+     // place shell in the middle of the screen
+        newShell.setLocation(newShell.getParent().getLocation().x + newShell.getParent().getSize().x / 2 - DIALOG_WINDOW_OFFSET_X,
+            newShell.getParent().getLocation().y + newShell.getParent().getSize().y / 2 - DIALOG_WINDOW_OFFSET_Y);
+        
     }
 
     /**
      * Sets the content of the timeline.
-     * @param newrows the rows
      */
-    public void setContent(TimelineComponentRow[] newrows) {
-        if (newrows == null || newrows.length == 0){
-            return;
-        }
-        List<TimelineFilterTreeNode> checkedElements = new ArrayList<TimelineFilterTreeNode>();
-        TimelineFilterTreeNode root = new TimelineFilterTreeNode();
-        for (TimelineComponentRow current : newrows) {
-            TimelineFilterTreeNode parentNode = root.hasChildWithComponentID(current.getComponentID());
-            if (parentNode == null) {
-                parentNode = new TimelineFilterTreeNode();
-                parentNode.setComponentID(current.getComponentID());
-                parentNode.setParent(root);
-                root.addChild(parentNode);
-            }
-            TimelineFilterTreeNode n = new TimelineFilterTreeNode();
-            n.setRow(current);
-            if (isAllowedComponentName(current.getName())){
-                checkedElements.add(n);
-            }
-            parentNode.addChild(n);
-        }
-
-        viewer.setInput(root);
+    public void updateContent() {
+        viewer.setInput(rootNode);
         viewer.refresh();
         viewer.expandAll();
-        this.currentCheckedElements = checkedElements.toArray(new TimelineFilterTreeNode[checkedElements.size()]);
-        viewer.setCheckedElements(this.currentCheckedElements);
-        for (TimelineFilterTreeNode currentNode : checkedElements){
+        
+        TimelineFilterTreeNode[] e = getCheckedNodeElements();
+        viewer.setCheckedElements(e);
+        
+        for (TimelineFilterTreeNode currentNode : e){
             updateTree(currentNode, getCheckedElements(), true);
         }
+    }
+    
+    private TimelineFilterTreeNode[] getCheckedNodeElements(){
+        List<TimelineFilterTreeNode> checkedElements = new ArrayList<TimelineFilterTreeNode>();
+        for (TimelineFilterTreeNode cat : rootNode.getChildren()){
+            for (TimelineFilterTreeNode ele : cat.getChildren()){
+                if (ele.isChecked()){
+                    checkedElements.add(ele);
+                }
+            }
+        }
+        return checkedElements.toArray(new TimelineFilterTreeNode[checkedElements.size()]);
     }
     
     /**
@@ -197,11 +194,11 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
      * @return Returns {@value false}, if the given component-name is not allowed and 
      * {@value true} if there is no componentNameFilter or contains the given name. 
      */
-    private boolean isAllowedComponentName(String name){
-        if (componentNameFilter == null){
+    private boolean isAllowedComponentName(String[] currentFilter, String name){
+        if (currentFilter == null){
             return true;
         }
-        for (String currentFilterString : componentNameFilter){
+        for (String currentFilterString : currentFilter){
             if (name.equals(currentFilterString)){
                 return true;
             }
@@ -211,7 +208,8 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
 
     @Override
     public void checkStateChanged(CheckStateChangedEvent event) {
-        Object node = event.getElement();
+        TimelineFilterTreeNode node = (TimelineFilterTreeNode) event.getElement();
+        node.setChecked(event.getChecked());
         if (viewer.getGrayed(node)) {
             viewer.setGrayChecked(node, false);
         }
@@ -224,7 +222,15 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
      * @return the array of filtered Component names
      */
     public String[] getFilteredNames() {
-        return componentNameFilter.toArray(new String[componentNameFilter.size()]);
+        List<String> checkedElements = new ArrayList<String>();
+        for (TimelineFilterTreeNode cat : rootNode.getChildren()){
+            for (TimelineFilterTreeNode ele : cat.getChildren()){
+                if (ele.isChecked()){
+                    checkedElements.add(ele.getDisplayName());
+                }
+            }
+        }
+        return checkedElements.toArray(new String[checkedElements.size()]);
     }
 
     /**
@@ -340,36 +346,6 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
     }
 
     /**
-     * Listener that updates tree on filter modification.
-     *
-     * @author Oliver Seebach
-     */
-    private final class FilterTextModifyListener implements ModifyListener {
-
-        
-        /**
-         * Constructor receiving the currently checked elements in the tree.
-         * 
-         * @param currentCheckedElements The currently checked elements in the tree
-         */
-        FilterTextModifyListener(TimelineFilterTreeNode[] currentCheckedElements) {
-
-        }
-        
-        @Override
-        public void modifyText(ModifyEvent arg0) {
-            currentCheckedElements = getCheckedElements().toArray(new TimelineFilterTreeNode[getCheckedElements().size()]);
-            filter.setFilterString(((Text) arg0.getSource()).getText());
-            viewer.refresh();
-            viewer.expandAll();
-            viewer.setCheckedElements(currentCheckedElements);
-            for (TimelineFilterTreeNode currentNode : currentCheckedElements){
-                updateTree(currentNode, getCheckedElements(), true);
-            }
-        }
-    }
-
-    /**
      * Label Provider for Component Tree.
      * @author Hendrik Abbenhaus
      */
@@ -442,15 +418,14 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
         private String filterString = "";
 
         public ComponentViewerFilter(String initialText) {
-            if (!initialText.equals("")) {
-                filterString = initialText;
-            }
+            filterString = initialText;
         }
         
         @Override
         public boolean select(Viewer arg0, Object arg1, Object arg2) {
             if (arg2 instanceof TimelineFilterTreeNode) {
                 TimelineFilterTreeNode item = ((TimelineFilterTreeNode) arg2);
+                
                 if (item.getDisplayName().toLowerCase().toString().contains(filterString.toLowerCase())) {
                     return true;
                 }
@@ -482,6 +457,13 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener 
         public void setFilterString(String filterString) {
             this.filterString = filterString;
         }
+    }
+
+    @Override
+    public void modifyText(ModifyEvent arg0) {
+        Text sourceText = (Text) arg0.getSource();
+        filter.setFilterString(sourceText.getText());
+        updateContent();
     }
 
 }

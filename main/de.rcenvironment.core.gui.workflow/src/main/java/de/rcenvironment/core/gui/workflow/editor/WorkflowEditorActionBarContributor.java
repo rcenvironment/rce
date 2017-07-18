@@ -9,7 +9,6 @@
 package de.rcenvironment.core.gui.workflow.editor;
 
 import org.eclipse.gef.internal.GEFMessages;
-import org.eclipse.gef.ui.actions.ActionBarContributor;
 import org.eclipse.gef.ui.actions.DeleteRetargetAction;
 import org.eclipse.gef.ui.actions.GEFActionConstants;
 import org.eclipse.gef.ui.actions.RedoRetargetAction;
@@ -22,15 +21,17 @@ import org.eclipse.ui.actions.RetargetAction;
 
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.workflow.WorkflowActionBarContributor;
 
 /**
  * Make Edit->Undo/Redo/Delete work.
  * 
  * @author Heinrich Wendel
  * @author Sascha Zur
+ * @author Jan Flink
  */
 @SuppressWarnings("restriction")
-public class WorkflowEditorActionBarContributor extends ActionBarContributor {
+public class WorkflowEditorActionBarContributor extends WorkflowActionBarContributor {
 
     private static final String SHOW_NUMBER_OF_CONNECTIONS = "ShowNumberOfConnections";
 
@@ -38,6 +39,7 @@ public class WorkflowEditorActionBarContributor extends ActionBarContributor {
     
     @Override
     protected void buildActions() {
+        super.buildActions();
         addRetargetAction(new DeleteRetargetAction());
         addRetargetAction(new UndoRetargetAction());
         addRetargetAction(new RedoRetargetAction());
@@ -73,11 +75,13 @@ public class WorkflowEditorActionBarContributor extends ActionBarContributor {
         toolBarManager.add(getAction(GEFActionConstants.TOGGLE_GRID_VISIBILITY));
         toolBarManager.add(getAction(GEFActionConstants.TOGGLE_SNAP_TO_GEOMETRY));
         toolBarManager.add(getAction(SHOW_NUMBER_OF_CONNECTIONS));
+        toolBarManager.add(new Separator());
+        super.contributeToToolBar(toolBarManager);
     }
 
     @Override
     protected void declareGlobalActionKeys() {
-        // currently none
+        super.declareGlobalActionKeys();
     }
     
 }

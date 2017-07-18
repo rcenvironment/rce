@@ -245,12 +245,31 @@ public class ComponentContextBridgeTest {
     }
 
     /**
-     * Tests writing a value to an output.
+     * Tests if values written to an output are directly sent in case verification is not required.
      * 
      * @throws ComponentExecutionException on unexpected error
      */
     @Test
-    public void testWriteOutputNoVerificationRequired() throws ComponentExecutionException {
+    public void testWriteOutputVerificationNotRequired() throws ComponentExecutionException {
+        testWriteOutputNoVerificationRequired(false, false);
+    }
+    
+    /**
+     * Tests if values written to an output are directly sent in case verification is required but tool runs in imitation mode.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testWriteOutputIfVerificationDeclaredButNotRequired() throws ComponentExecutionException {
+        testWriteOutputNoVerificationRequired(true, true);
+    }
+    
+    private void testWriteOutputNoVerificationRequired(boolean verificationRequired, boolean imitationMode)
+        throws ComponentExecutionException {
+
+        if (verificationRequired != imitationMode) {
+            fail("Expect either both of them to be true or false");
+        }
 
         TypedDatumToOutputWriter typedDatumToOutputWriterMock = EasyMock.createStrictMock(TypedDatumToOutputWriter.class);
         Capture<String> nameCapture = new Capture<>();
@@ -260,7 +279,7 @@ public class ComponentContextBridgeTest {
             EasyMock.capture(datumToSendCapture), EasyMock.captureLong(dmIdCapture));
         EasyMock.replay(typedDatumToOutputWriterMock);
 
-        testWriteOutput(typedDatumToOutputWriterMock, false);
+        testWriteOutput(typedDatumToOutputWriterMock, verificationRequired, imitationMode);
 
         assertEquals(OUTPUT_2, nameCapture.getValue());
         assertEquals(outputTypedDatum, datumToSendCapture.getValue());
@@ -270,7 +289,7 @@ public class ComponentContextBridgeTest {
     }
 
     /**
-     * Tests if values sent to an output are not sent to another component in case verification is required.
+     * Tests if values written to an output are not sent in case verification is required.
      * 
      * @throws ComponentExecutionException on unexpected error
      */
@@ -280,12 +299,13 @@ public class ComponentContextBridgeTest {
         TypedDatumToOutputWriter typedDatumToOutputWriterMock = EasyMock.createStrictMock(TypedDatumToOutputWriter.class);
         EasyMock.replay(typedDatumToOutputWriterMock);
 
-        testWriteOutput(typedDatumToOutputWriterMock, true);
+        testWriteOutput(typedDatumToOutputWriterMock, true, false);
     }
-
-    private void testWriteOutput(TypedDatumToOutputWriter typedDatumToOutputWriterMock, boolean verificationRequired)
+    
+    private void testWriteOutput(TypedDatumToOutputWriter typedDatumToOutputWriterMock, boolean verificationRequired, boolean imitationMode)
         throws ComponentExecutionException {
-        ComponentExecutionRelatedInstances compExeRelatedInstances = createComponentExecutionRelatedInstances(verificationRequired);
+        ComponentExecutionRelatedInstances compExeRelatedInstances =
+            createComponentExecutionRelatedInstances(verificationRequired, imitationMode);
         ComponentContextBridge compCtxBridge = new ComponentContextBridge(compExeRelatedInstances);
 
         ComponentExecutionStorageBridge compExeStorageBridgeMock = EasyMock.createStrictMock(ComponentExecutionStorageBridge.class);
@@ -616,10 +636,11 @@ public class ComponentContextBridgeTest {
     }
 
     private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstances() {
-        return createComponentExecutionRelatedInstances(false);
+        return createComponentExecutionRelatedInstances(false, false);
     }
 
-    private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstances(boolean verificationRequired) {
+    private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstances(boolean verificationRequired,
+        boolean imitationMode) {
 
         Map<String, EndpointDescription> inputDescriptions = new HashMap<>();
         inputDescriptions.put(INPUT_1, createEndpointDescriptionMock(INPUT_1, DATA_TYPE_1));
@@ -635,7 +656,7 @@ public class ComponentContextBridgeTest {
         EasyMock.expect(compDescMock.getInputDescriptionsManager()).andStubReturn(inputDescManagerMock);
         EasyMock.expect(compDescMock.getOutputDescriptionsManager()).andStubReturn(outputDescManagerMock);
         EasyMock.expect(compDescMock.getConfigurationDescription())
-            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(verificationRequired));
+            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(verificationRequired, imitationMode));
         EasyMock.replay(compDescMock);
 
         ComponentExecutionRelatedInstances compExeRelatedInstances = new ComponentExecutionRelatedInstances();

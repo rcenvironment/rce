@@ -32,8 +32,9 @@ public class OptimizerEndpointPropertySection extends EndpointPropertySection {
             EndpointType.OUTPUT, OptimizerComponentConstants.ID_DESIGN, this, false);
         OptimizerEndpointSelectionPane gradientsPane = new OptimizerEndpointSelectionPane("Gradients (Inputs)",
             EndpointType.INPUT, OptimizerComponentConstants.ID_GRADIENTS, this, true);
-        OptimizerEndpointSelectionPane startValuesPane = new OptimizerEndpointSelectionPane(Messages.startValueInput,
-            EndpointType.INPUT, OptimizerComponentConstants.ID_STARTVALUES, this, true);
+        EndpointSelectionPane startValuesPane = new EndpointSelectionPane(Messages.startValueInput,
+            EndpointType.INPUT, OptimizerComponentConstants.ID_STARTVALUES, new String[] { OptimizerComponentConstants.ID_STARTVALUES },
+            new String[] {}, this, EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY, true);
         OptimizerEndpointSelectionPane optimumPane = new OptimizerEndpointSelectionPane(Messages.optimalSolutionOutput,
             EndpointType.OUTPUT, OptimizerComponentConstants.ID_OPTIMA, this, true);
 

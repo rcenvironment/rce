@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.update.api;
 
 import java.io.IOException;
@@ -21,21 +21,24 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
- * Encapsulates information about a persistent workflow description (content of workflow files).
+ * Encapsulates information about a persistent workflow description (content of workflow files). This class is only a thin wrapper around
+ * the JSON content of the workflow file.
  *
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: See note in {@link PersistentComponentDescription}. --seid_do
  */
 public class PersistentWorkflowDescription implements Serializable {
 
     private static final long serialVersionUID = -5664277831346681518L;
 
     private static final String WORKFLOW_VERSION = "workflowVersion";
-    
+
     private String workflowVersion = "";
-    
+
     private List<PersistentComponentDescription> componentDescriptions;
-    
+
     /** contains everything except the component's parts. */
     private String workflowDescriptionString;
 
@@ -67,7 +70,7 @@ public class PersistentWorkflowDescription implements Serializable {
     public String getWorkflowDescriptionAsString() {
         return workflowDescriptionString;
     }
-    
+
     @Override
     public String toString() {
         return getWorkflowDescriptionAsString();

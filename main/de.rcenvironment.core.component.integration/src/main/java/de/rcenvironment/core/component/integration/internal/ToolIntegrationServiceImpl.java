@@ -42,6 +42,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.RemoteToolIntegrationService;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
@@ -81,6 +82,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Implementation of {@link ToolIntegrationService}.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke (minor fix)
  */
 public class ToolIntegrationServiceImpl implements ToolIntegrationService, RemoteToolIntegrationService {
 
@@ -131,11 +133,11 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     private Set<String> publishedComponents = Collections.synchronizedSet(new HashSet<String>());
 
-    private PlatformService platformService;
-
     private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private ToolIntegrationFileWatcherManager watchManager;
+
+    private LogicalNodeId localLogicalNodeId;
 
     public ToolIntegrationServiceImpl() {
         this.watchManager = new ToolIntegrationFileWatcherManager(this);
@@ -240,7 +242,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     new ComponentRevisionBuilder()
                         .setComponentInterface(componentInterface)
                         .setClassName(toolClassName).build())
-                .setNodeId(platformService.getLocalDefaultLogicalNodeId())
+                .setNodeId(localLogicalNodeId)
                 .setInstallationId(componentInterface.getIdentifier())
                 .setIsPublished(isPublished)
                 .setMaximumCountOfParallelInstances(maxParallelCount)
@@ -792,6 +794,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     private void readPublishedComponents(ToolIntegrationContext context) {
         File toolsfolder = new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
         if (publishedComponents == null) {
+            //FIXME: Field 'publishedComponents' re-assigned while holding an intrinsic lock on its value. - rode_to, Dec 2016
             publishedComponents = Collections.synchronizedSet(new HashSet<String>());
         }
         if (toolsfolder.exists()) {
@@ -864,11 +867,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     }
 
     protected void bindPlatformService(PlatformService newService) {
-        platformService = newService;
+        // fetch and store the node id; decoupling this from the service also guards it 
+        // against access from asynchronous task runs after this service was shut down
+        localLogicalNodeId = newService.getLocalDefaultLogicalNodeId();
     }
 
     protected void unbindPlatformService(PlatformService newService) {
-        platformService = ServiceUtils.createFailingServiceProxy(PlatformService.class);
+        // TODO (p3) remove unneeded method
     }
 
     @Override

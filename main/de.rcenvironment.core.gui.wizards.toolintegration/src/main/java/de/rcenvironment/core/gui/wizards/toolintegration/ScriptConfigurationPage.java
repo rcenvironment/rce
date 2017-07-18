@@ -37,8 +37,6 @@ import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
-import de.rcenvironment.core.gui.resources.api.FontManager;
-import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 
@@ -469,7 +467,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                 }
             });
             executionPathLabel = new Label(executionPropertiesGroup, SWT.NONE);
-            executionPathLabel.setText("Execute (command(s), pre execution/post exectuion/tool run imitation script) from");
+            executionPathLabel.setText("Execute (command(s), pre execution/post execution/tool run imitation script) from");
             setWorkingDirAsCwdButton = new Button(executionPropertiesGroup, SWT.RADIO);
             setWorkingDirAsCwdButton.setSelection(true);
             setWorkingDirAsCwdButton.setText("Working directory");
@@ -501,12 +499,6 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                     widgetSelected(arg0);
                 }
             });
-        }
-
-        for (LineNumberStyledText textField : textFields) {
-            if (textField != null) {
-                textField.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
-            }
         }
 
         if (buttonIndex == 3) {

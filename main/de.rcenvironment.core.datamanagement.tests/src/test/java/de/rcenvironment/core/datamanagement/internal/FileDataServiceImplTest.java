@@ -19,7 +19,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.datamanagement.backend.DataBackend;
@@ -42,7 +42,7 @@ public class FileDataServiceImplTest {
 
     private final URI location = URI.create("test");
 
-    private InstanceNodeId nodeId;
+    private LogicalNodeId nodeId;
 
     private UUID drId;
 
@@ -55,7 +55,7 @@ public class FileDataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        nodeId = NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy");
+        nodeId = NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy");
         drId = UUID.randomUUID();
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
@@ -67,7 +67,13 @@ public class FileDataServiceImplTest {
         anotherDr = new DataReference(UUID.randomUUID().toString(), nodeId, birefs);
 
         fileDataService = new RemotableFileDataServiceImpl();
-        fileDataService.bindPlatformService(new PlatformServiceDefaultStub());
+        fileDataService.bindPlatformService(new PlatformServiceDefaultStub() {
+
+            @Override
+            public LogicalNodeId getLocalDefaultLogicalNodeId() {
+                return nodeId;
+            }
+        });
 
         MetaDataBackendService metaDataBackendService = EasyMock.createNiceMock(MetaDataBackendService.class);
         EasyMock.replay(metaDataBackendService);

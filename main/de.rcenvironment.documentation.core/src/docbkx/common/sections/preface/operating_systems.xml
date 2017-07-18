@@ -44,8 +44,8 @@
     <sect2>
         <title>Support of 32 Bit Operating Systems</title>
         <para>Starting with release 8.0.0, RCE is only shipped for 64 bit systems. If you still
-            require 32 bit packages, you can continue to use the the previous RCE version, but you
-            will not receive any new features or updates.</para>
+            require 32 bit packages, you can continue to use the previous RCE version, but you will
+            not receive any new features or updates.</para>
     </sect2>
     <sect2>
         <title>Known Issues</title>
@@ -79,6 +79,21 @@
             It is a known issue in the theme Oxygen and happens on other Eclipse-based applications as well. If you encounter such an issue, 
             please choose a different theme like "Raleigh" or "Adwaita".</para>
             
+        </sect3>
+        <sect3>
+        <title>Jython scripts are executed sequentially</title>
+        <para>The Script component can use Jython for the evaluation of scripts and the pre- and
+                postprocessing of integrated tools always uses Jython. Due to a known bug in the
+                Jython implementation it is not possible to execute several Jython instances in
+                parallel. Therefore, the execution will be done sequentially. If several Script
+                components should be executed in parallel, Python should be used  instead. </para>
+        </sect3>
+        <sect3>
+        <title>32-bit Java is not supported</title>
+        <para>Running RCE with a 32-bit Java Runtime Environment doesn't work. On some operating
+                systems an error dialog will be displayed in this case, on some other systems
+                nothing will happen at all. Therefore, always make sure a 64-bit Java Runtime
+                Environment is used to run RCE.</para>
         </sect3>
     </sect2>
 </sect1>

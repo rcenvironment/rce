@@ -56,7 +56,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
 
     protected String foot;
 
-    protected String jythonPath = "";
+    protected File jythonPath;
 
     protected String workingPath = "";
 
@@ -117,8 +117,9 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
 
             prepareOutputForRun();
             try {
-                // include two important paths wich the header script need
-                scriptEngine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath + QUOTE);
+                // include two important paths which the header script need
+                scriptEngine
+                    .eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE);
                 scriptEngine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
 
                 // execute the headerScript, this defines the RCE_Channel class and some important

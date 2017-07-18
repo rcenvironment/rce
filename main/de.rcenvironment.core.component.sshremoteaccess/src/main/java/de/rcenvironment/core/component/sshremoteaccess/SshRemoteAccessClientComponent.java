@@ -225,6 +225,12 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         } catch (IOException | JSchException e1) {
             throw new ComponentException("Downloading outputput directory via SCP failed", e1);
         }
+        
+        try {
+            rceExecutor.start(StringUtils.format("ra dispose %s", sessionToken));
+        } catch (IOException e1) {
+            throw new ComponentException("Disposing SCP context failed.", e1);
+        }
 
         // Write the component output
         TypedDatum output;

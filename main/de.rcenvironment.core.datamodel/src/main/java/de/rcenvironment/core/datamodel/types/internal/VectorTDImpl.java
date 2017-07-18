@@ -17,6 +17,7 @@ import de.rcenvironment.core.datamodel.internal.TypedDatumServiceImpl;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link VectorTD}.
@@ -119,56 +120,37 @@ public class VectorTDImpl extends AbstractTypedDatum implements VectorTD {
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        String text = "[";
-        String formattedLabel = "";
+        StringBuilder strBuilder = new StringBuilder("[");
 
         for (FloatTD f : toArray()) {
             // remove comma for integers
-            String floatValue = toPrettyString(f.getFloatValue());
-            text += floatValue;
-            text += COMMA;
-            if (text.length() > maxLength) {
+            strBuilder.append(f.toString());
+            strBuilder.append(COMMA);
+            if (strBuilder.length() > maxLength) {
                 break;
             }
         }
         // remove last comma
-        text = text.substring(0, text.length() - 1);
-        
-        if (text.length() > maxLength) {
-            text = text.substring(0, maxLength);
-            text = text.substring(0, text.lastIndexOf(COMMA));
-            text += COMMA;
-            text += "...";
+        strBuilder.setLength(strBuilder.length() - 1);
+        if (strBuilder.length() > maxLength) {
+            strBuilder.setLength(maxLength);
+            strBuilder.append("...");
         }
-        text += "]";
-        formattedLabel += text;
-        String dimensionsText = " (" + getRowDimension() + "-dim)";
-        formattedLabel += dimensionsText;
-        
-        return formattedLabel;
+        strBuilder.append("]");
+        strBuilder.append(StringUtils.format(" (%d-dim)", getRowDimension()));
+        return strBuilder.toString();
     }
     
     @Override
     public String toString() {
-        String fullContent = "";
+        StringBuilder strBuilder = new StringBuilder();
         for (FloatTD f : toArray()) {
-            // remove comma for integers
-            String floatValue = toPrettyString(f.getFloatValue());
-            fullContent += floatValue;
-            fullContent += ", ";
+            strBuilder.append(f.toString());
+            strBuilder.append(", ");
         }
         // remove last comma and whitespace
-        fullContent = fullContent.substring(0, fullContent.length() - 2);
-        return fullContent;
+        strBuilder.setLength(strBuilder.length() - 2);
+        return strBuilder.toString();
     }
     
-    protected static String toPrettyString(double d) {
-        int i = (int) d;
-        if (d == i) {
-            return String.valueOf(i);
-        } else {
-            return String.valueOf(d);
-        }
-    }
-
 }

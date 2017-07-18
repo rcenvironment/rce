@@ -13,6 +13,8 @@ package de.rcenvironment.core.component.model.configuration.api;
  * Describes meta data information for configuration options.
  * 
  * @author Doreen Seider
+ * 
+ * Note: Only used by integrated tools to show a configuration table with proper display names, etc. --seid_do
  */
 public interface ConfigurationMetaDataDefinition {
     

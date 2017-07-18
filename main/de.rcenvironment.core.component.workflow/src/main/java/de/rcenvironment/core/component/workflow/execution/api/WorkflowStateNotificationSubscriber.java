@@ -25,6 +25,9 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * Subscriber for {@link WorkflowState} notifications.
  * 
  * @author Doreen Seider
+ * 
+ * Note: Subscribers are the GUI and the headless workflow execution command. --seid_do
+ * 
  */
 public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubscriber {
 

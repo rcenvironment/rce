@@ -39,7 +39,7 @@ import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Defines the scheduling state of a component. Inputs received are intended to be add immediately. There are validated and queued. If the
+ * Defines the scheduling state of a component. Inputs received are intended to be added immediately. They are validated and queued. If the
  * {@link ComponentExecutionScheduler} is enabled, the scheduling state is calculated on each new input. If disabled, nothing is calculated
  * when a new input was queued. The calculation starts immediately when the {@link ComponentExecutionScheduler} is enabled again.
  * 
@@ -104,7 +104,7 @@ public class ComponentExecutionScheduler {
     private AtomicReference<State> state = new AtomicReference<>(State.IDLING);
 
     private boolean isEnabled = false;
-    
+
     private volatile boolean schedulingFailed = false;
 
     /**
@@ -139,7 +139,7 @@ public class ComponentExecutionScheduler {
         int inputsOuterCount = 0;
         Set<String> inputsSame = new HashSet<>();
         for (EndpointDescription endpointDescription : inputDescriptionsManager.getEndpointDescriptions()) {
-            
+
             switch (endpointDescription.getEndpointDefinition().getEndpointCharacter()) {
             case OUTER_LOOP:
                 inputsOuterCount++;
@@ -151,7 +151,7 @@ public class ComponentExecutionScheduler {
                 throw new IllegalArgumentException(
                     "Endpoint type unknown: " + endpointDescription.getEndpointDefinition().getEndpointCharacter());
             }
-            
+
             endpointDataTypes.put(endpointDescription.getName(), endpointDescription.getDataType());
             endpointDatums.put(endpointDescription.getName(), new LinkedList<EndpointDatum>());
             Map<String, String> metaData = endpointDescription.getMetaData();
@@ -200,18 +200,18 @@ public class ComponentExecutionScheduler {
                 addToRequiredInputsOrGroups(inputDescriptionsManager, endpointDescription);
             }
         }
-        
+
         if (!isDriver(compExeContext) && inputsOuterCount > 0 || isNestedDriver(compExeContext)) {
             inputsConsideredForFinished.removeAll(inputsSame);
         }
 
     }
-    
+
     boolean isNestedDriver(ComponentExecutionContext compExeContext) {
         return Boolean.valueOf(compExeContext.getComponentDescription().getConfigurationDescription()
             .getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
     }
-    
+
     boolean isDriver(ComponentExecutionContext compExeContext) {
         return compExeContext.getComponentDescription().getComponentInterface().getIsLoopDriver();
     }
@@ -236,7 +236,7 @@ public class ComponentExecutionScheduler {
             compExeRelatedInstances.compStateMachine
                 .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.SCHEDULING_FAILED, e));
             schedulingFailed = true;
-            isEnabled = false;            
+            isEnabled = false;
         }
     }
 
@@ -583,14 +583,14 @@ public class ComponentExecutionScheduler {
             if (consumingInputs.contains(inputName)
                 && !endpointDatums.get(inputName).isEmpty()) {
                 // log here as the relevant typed datums are not intended to leave this class
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder strBuilder = new StringBuilder();
                 for (EndpointDatum datum : endpointDatums.get(inputName)) {
-                    buffer.append(datum.getValue().toString());
-                    buffer.append(", ");
+                    strBuilder.append(datum.getValue().toString());
+                    strBuilder.append(", ");
                 }
-                buffer.delete(buffer.length() - 3, buffer.length() - 1);
+                strBuilder.delete(strBuilder.length() - 3, strBuilder.length() - 1);
                 logMessage = StringUtils.format("Component is finished or reset, "
-                    + "but there are values for input '%s' left that are not processed yet: %s", inputName, buffer.toString());
+                    + "but there are values for input '%s' left that are not processed yet: %s", inputName, strBuilder.toString());
                 if (notRequiredInputs.contains(inputName)) {
                     LogFactory.getLog(ComponentExecutionScheduler.class).warn(logMessage);
                     logMessage = null;
@@ -604,7 +604,7 @@ public class ComponentExecutionScheduler {
         }
     }
 
-    private boolean isExecutable() {
+    protected boolean isExecutable() {
         return constantInputsProcessed.size() < inputsCount && isExecutableWithAndCondition(requiredInputsOrGroups);
     }
 
@@ -619,12 +619,20 @@ public class ComponentExecutionScheduler {
                     return false;
                 }
             } else {
-                if (endpointDatums.get(identifier).isEmpty()) {
+                if (endpointDatums.get(identifier).isEmpty() || allGroupInputsConstantAndSent(inputsOrGroupIds)) {
                     inputsWithValue.clear();
                     return false;
-                } else {
-                    inputsWithValue.add(identifier);
                 }
+                inputsWithValue.add(identifier);
+            }
+        }
+        return true;
+    }
+
+    private boolean allGroupInputsConstantAndSent(Set<String> inputsOrGroupIds) {
+        for (String identifier : inputsOrGroupIds) {
+            if (!(constantInputs.contains(identifier) && constantInputsProcessed.contains(identifier))) {
+                return false;
             }
         }
         return true;

@@ -28,20 +28,44 @@
             </itemizedlist>To control the verbose logging, set the <code>rce.verboseLogging</code>
             system property. Example: <code>rce -p myProfile -vmargs
                 -Drce.verboseLogging=*.NodePropertiesServiceImpl,*Workflow*</code>. The syntax of
-            the pattern is a comma-separated list of Java class name patterns. The "*" wildcard
-            matches any part of the class name, including the dot ("."). An empty string disables
-            all verbose logging.<note>
+            the pattern is a comma-separated list of identifiers. A "*" wildcard matches any part of
+            the class name, including the dot ("."). An empty string disables all verbose logging.<note>
                 <para>As with any other JVM property, this parameter must be placed behind the
                         <code>-vmargs</code> delimiter, which separates it from the "direct" RCE
                     command-line arguments (like <code>--headless</code> or <code>-p
                         &lt;profile></code>). This rule also applies when adding this parameter to
                     an <code>rce.ini</code> file.</para>
             </note></para>
-        <para>If the system property is not set, the
+        <para>If this system property is not set, the
                 <code>DebugSettings.DEFAULT_VERBOSE_LOGGING_PATTERN</code> constant's value is used.
             While developing in Eclipse, it can be useful to enter a verbose logging pattern there,
             as this affects all local RCE instances at once without editing multiple launch
             configurations. (As usual, it is your responsibility to make sure these local debug
             values are not commited into version control.)</para>
+        <para>Identifiers created before 8.1.0 were fully qualified Java class names; since 8.1.0,
+            identifiers are arbitrary strings. For existing identifiers, these strings were set to
+            the pre-8.1.0 FQNs. Over time, all existing identifiers are planned to be migrated to
+            more intuitive strings.</para>
+        <para>The following table lists some identifiers that may be useful for debugging:<table
+                frame="all">
+                <title>Useful Verbose Logging Identifiers</title>
+                <tgroup cols="2">
+                    <colspec colname="c1" colnum="1" colwidth="1.0*"/>
+                    <colspec colname="c2" colnum="2" colwidth="1.0*"/>
+                    <thead>
+                        <row>
+                            <entry>Identifier</entry>
+                            <entry>Description</entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry>NetworkRequests</entry>
+                            <entry>outgoing and received network requests and responses, and
+                                possibly other related operations (e.g. conversions)</entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </table></para>
     </sect2>
 </sect1>

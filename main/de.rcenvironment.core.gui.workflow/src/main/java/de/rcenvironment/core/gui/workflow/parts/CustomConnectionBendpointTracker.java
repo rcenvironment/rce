@@ -35,6 +35,8 @@ import org.eclipse.gef.requests.BendpointRequest;
 import org.eclipse.gef.tools.ConnectionBendpointTracker;
 import org.eclipse.swt.SWT;
 
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
+
 /**
  * A derived ConnectionBendpointTracker that overrides the updateSourceRequest method allowing bendpoints to snap to grid.
  * 
@@ -53,13 +55,17 @@ public class CustomConnectionBendpointTracker extends ConnectionBendpointTracker
 
     private Point originalLocation = null;
 
+    private ConnectionEditPart host;
+
     public CustomConnectionBendpointTracker(ConnectionEditPart host, int index) {
         super(host, index);
+        this.host = host;
     }
 
     /*
      * @see org.eclipse.gef.tools.SimpleDragTracker#updateSourceRequest()
      */
+    @Override
     protected void updateSourceRequest() {
         BendpointRequest request = (BendpointRequest) getSourceRequest();
 
@@ -127,10 +133,18 @@ public class CustomConnectionBendpointTracker extends ConnectionBendpointTracker
     /*
      * @see org.eclipse.gef.tools.AbstractTool#handleDragStarted()
      */
+    @Override
     protected boolean handleDragStarted() {
         originalLocation = null;
         sourceRectangle = null;
+        host.getViewer().getControl().setData(WorkflowEditor.DRAG_STATE_BENDPOINT, true);
         return super.handleDragStarted();
+    }
+
+    @Override
+    protected void performDrag() {
+        host.getViewer().getControl().setData(WorkflowEditor.DRAG_STATE_BENDPOINT, false);
+        super.performDrag();
     }
 
 }

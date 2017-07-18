@@ -10,6 +10,7 @@ package de.rcenvironment.core.component.model.endpoint.api;
 
 import java.util.List;
 
+import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -20,6 +21,10 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: {@link EndpointDefinition} describes an endpoint of a component as a kind of blueprint. An actual implementation of an
+ * endpoint is represented by an {@link EndpointDescription} which is then associated to an {@link ComponentDescription}. The same
+ * applies to {@link EndpointGroupDefinition}. --seid_do
  */
 public interface EndpointDefinition extends EndpointGroupDefinition {
 

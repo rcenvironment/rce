@@ -10,6 +10,7 @@ package de.rcenvironment.components.evaluationmemory.execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -238,9 +239,9 @@ public class EvaluationMemoryComponent extends DefaultComponent {
         Set<String> inputsWithDatum = componentContext.getInputsWithDatum();
         SortedMap<String, TypedDatum> evaluationResults = getDynamicInputValuesSortedByInputsName(inputsWithDatum);
         
-        for (String input : evaluationResults.keySet()) {
-            if (componentContext.isDynamicInput(input)) {
-                componentContext.writeOutput(input, evaluationResults.get(input));                
+        for (Entry<String, TypedDatum> inputEntry : evaluationResults.entrySet()) {
+            if (componentContext.isDynamicInput(inputEntry.getKey())) {
+                componentContext.writeOutput(inputEntry.getKey(), inputEntry.getValue());                
             }
         }
         
@@ -337,8 +338,8 @@ public class EvaluationMemoryComponent extends DefaultComponent {
     }
     
     private void forwardValues(SortedMap<String, TypedDatum> inputValues) {
-        for (String input : inputValues.keySet()) {
-            componentContext.writeOutput(input, inputValues.get(input));
+        for (Entry<String, TypedDatum> inputEntry : inputValues.entrySet()) {
+            componentContext.writeOutput(inputEntry.getKey(), inputEntry.getValue());
         }
     }
     

@@ -5,7 +5,7 @@
   "nodes" : [ {
     "identifier" : "0f408ce8-44fa-4f30-8ff5-74749133b1a1",
     "name" : "Discipline 1",
-    "location" : "777:81",
+    "location" : "300:80",
     "zIndex" : "6",
     "active" : "true",
     "component" : {
@@ -70,7 +70,7 @@
   }, {
     "identifier" : "8d2d78bf-5e29-4d48-81f7-691b2bf54157",
     "name" : "Discipline 1 Calculation",
-    "location" : "777:-26",
+    "location" : "161:80",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -215,7 +215,7 @@
   }, {
     "identifier" : "e8fe1495-4a30-4d35-ad00-4959eb644e76",
     "name" : "Discipline 1_post",
-    "location" : "548:-26",
+    "location" : "300:221",
     "zIndex" : "8",
     "active" : "true",
     "component" : {
@@ -280,7 +280,7 @@
   }, {
     "identifier" : "e0285743-b6f6-41a0-b5c5-41d6bfd50035",
     "name" : "Discipline 2",
-    "location" : "777:300",
+    "location" : "300:640",
     "zIndex" : "4",
     "active" : "true",
     "component" : {
@@ -335,7 +335,7 @@
   }, {
     "identifier" : "1a25996b-2a63-4611-81ab-9040f004ae3c",
     "name" : "Discipline 2 Calculation",
-    "location" : "777:404",
+    "location" : "161:640",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -456,7 +456,7 @@
   }, {
     "identifier" : "1bc02f6a-cc73-4401-9924-39e655134492",
     "name" : "Discipline 2_post",
-    "location" : "548:404",
+    "location" : "300:500",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -511,7 +511,7 @@
   }, {
     "identifier" : "688ac22d-463c-48bb-878f-b8e83e3cc585",
     "name" : "Local Optimizer Discipline 1",
-    "location" : "657:81",
+    "location" : "161:221",
     "zIndex" : "7",
     "active" : "true",
     "component" : {
@@ -912,7 +912,7 @@
   }, {
     "identifier" : "137d0767-5b35-48cb-8ac7-f508572febd1",
     "name" : "Local Optimizer Discipline 2",
-    "location" : "657:300",
+    "location" : "161:500",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -1225,7 +1225,7 @@
   }, {
     "identifier" : "47532eca-2efd-4ba2-9fb8-97192b94e9d2",
     "name" : "Objective",
-    "location" : "439:191",
+    "location" : "300:360",
     "zIndex" : "5",
     "active" : "true",
     "component" : {
@@ -1400,7 +1400,7 @@
   }, {
     "identifier" : "8f258a49-e681-4f66-87fc-29ac247c2e16",
     "name" : "Optimizer",
-    "location" : "252:191",
+    "location" : "21:360",
     "zIndex" : "9",
     "active" : "true",
     "component" : {
@@ -2019,5 +2019,5 @@
     "target" : "47532eca-2efd-4ba2-9fb8-97192b94e9d2",
     "input" : "f1299ec5-d93a-416d-8cbb-1d6f93c8da4e"
   } ],
-  "labels" : "[{\"identifier\":\"38f150c6-b373-4172-ba0d-b2cfcdab78e1\",\"headerText\":\"\",\"text\":\"Calculate an optimum for Discipline 1 with the given constraints\",\"location\":\"535:-54\",\"size\":\"365:246\",\"alpha\":\"197\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"e3d16af5-fbe2-451c-9f90-fea338683c24\",\"headerText\":\"\",\"text\":\"Calculate an optimum for Discipline 2 with the given constraints\",\"location\":\"535:265\",\"size\":\"365:246\",\"alpha\":\"197\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:128:255\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
+  "labels" : "[{\"identifier\":\"38f150c6-b373-4172-ba0d-b2cfcdab78e1\",\"headerText\":\"\",\"text\":\"Calculate an optimum for Discipline 1 with the given constraints\",\"location\":\"140:20\",\"size\":\"262:301\",\"alpha\":\"197\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"e3d16af5-fbe2-451c-9f90-fea338683c24\",\"headerText\":\"\",\"text\":\"Calculate an optimum for Discipline 2 with the given constraints\",\"location\":\"140:480\",\"size\":\"262:301\",\"alpha\":\"197\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:128:255\",\"labelPosition\":\"BOTTOMCENTER\",\"textAlignmentType\":\"CENTER\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
 }

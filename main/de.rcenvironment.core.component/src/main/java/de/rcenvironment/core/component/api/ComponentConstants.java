@@ -237,7 +237,16 @@ public final class ComponentConstants {
     /** Constant. */
     public static final String CONFIG_KEY_STORE_DATA_ITEM = "storeComponentHistoryData";
 
-    /** Constant. */
+    /**
+     * Constant. Note: Semantically, it is related to tool integration, but as it is needed in {@link ComponentStateMachine} class, it is
+     * put here.
+     */
+    public static final String COMPONENT_CONFIG_KEY_IS_MOCK_MODE = "isImitationMode";
+
+    /**
+     * Constant. Note: Semantically, it is related to tool integration, but as it is needed in {@link ComponentStateMachine} class, it is
+     * put here.
+     */
     public static final String COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL = "requiresOutputApproval";
 
     /** Constant. */

@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.start.headless;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,12 +18,15 @@ import org.eclipse.equinox.app.IApplication;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.configuration.CommandLineArguments;
-import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.ui.ErrorTextUI;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
 import de.rcenvironment.core.mail.SMTPServerConfigurationService;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.start.common.InstanceRunner;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
 import de.rcenvironment.core.start.headless.textui.ConfigurationTextUI;
+import de.rcenvironment.core.start.headless.textui.QuestionDialogTextUI;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -62,11 +67,10 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
         if (CommandLineArguments.isConfigurationShellRequested()) {
             log.debug("Running text-mode configuration UI");
             final ServiceRegistryAccess serviceAccess = ServiceRegistry.createAccessFor(this);
-            final ConfigurationService configurationService = serviceAccess.getService(ConfigurationService.class);
             final SshAccountConfigurationService sshConfigurationService = serviceAccess.getService(SshAccountConfigurationService.class);
             final SMTPServerConfigurationService smtpServerConfigurationService =
                 serviceAccess.getService(SMTPServerConfigurationService.class);
-            new ConfigurationTextUI(configurationService, sshConfigurationService, smtpServerConfigurationService).run();
+            new ConfigurationTextUI(sshConfigurationService, smtpServerConfigurationService).run();
             log.debug("Shutting down after text-mode configuration UI has terminated");
         } else if (CommandLineArguments.isBatchModeRequested()) {
             if (commandExecutionFuture != null) {
@@ -84,6 +88,26 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
         }
 
         return exitCode.get();
+    }
+
+    @Override
+    public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
+
+        if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
+            InstanceValidationResult result = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).get(0);
+            new ErrorTextUI("Instance validation failure: " + result.getGuiDialogMessage() + "\n\nRCE will be shut down.").run();
+            return false;
+        }
+
+        if (validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size() > 0) {
+            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
+                if (!new QuestionDialogTextUI("Instance validation failure",
+                    result.getGuiDialogMessage() + "\n\nDo you like to proceed anyway?").run()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override

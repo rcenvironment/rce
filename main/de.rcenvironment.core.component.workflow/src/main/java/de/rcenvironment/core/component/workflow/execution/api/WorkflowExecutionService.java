@@ -23,6 +23,10 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * 
  * @author Doreen Seider
  * @author Robert Mischke (added fail-on-update flag)
+ * 
+ * Note: Loading {@link WorkflowDescription} evolved over time. Especially, adding robustness and the fact that there are slight
+ * differences when loaded in editor compared to loading prior to headless workflow execution result in multiple methods dealing
+ * with loading {@link WorkflowDescription} which I'm not happy with. --seid_do
  */
 public interface WorkflowExecutionService {
 

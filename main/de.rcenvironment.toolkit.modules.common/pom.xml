@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.toolkit.modules.common</artifactId>
 	<name>RCE Toolkit - Common Modules</name>
-	<version>1.0.0.qualifier</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<!-- sharing the RCE core parent POM for now -->

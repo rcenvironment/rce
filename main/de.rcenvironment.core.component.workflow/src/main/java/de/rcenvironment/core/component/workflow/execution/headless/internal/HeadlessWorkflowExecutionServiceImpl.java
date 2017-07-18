@@ -53,6 +53,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -64,6 +65,10 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * @author Phillip Kroll
  * @author Robert Mischke
  * @author Doreen Seider
+ * 
+ * Note: Implementation of headless workflow execution is eroded for different reasons. Root cause is that it was introduce without
+ * a reliable concept but just by start implementing. The code is also a bit messed up as {@link NotificationSubscriber}s must be
+ * implemented to recognize certain workflow states. I would suggest to start over at some point in time. --seid_do
  */
 public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExecutionService {
 

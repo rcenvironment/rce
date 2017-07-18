@@ -24,6 +24,8 @@ public class TimelineFilterTreeNode {
     private TimelineComponentRow row = null; 
 
     private TimelineFilterTreeNode parent;
+    
+    private boolean checked = true;
 
     public TimelineFilterTreeNode() {
        
@@ -52,6 +54,24 @@ public class TimelineFilterTreeNode {
 
     public void setParent(TimelineFilterTreeNode parent) {
         this.parent = parent;
+    }
+    
+    /**
+     * Sets itself and its children checked or unchecked.
+     * @param checked <code>true</code> or <code>false</code>
+     */
+    public void setChecked(boolean checked) {
+        this.checked = checked;
+        if (!children.isEmpty()){
+            for (TimelineFilterTreeNode child : children){
+                child.setChecked(checked);
+            }
+        }
+    }
+    
+    
+    public boolean isChecked() {
+        return checked;
     }
 
     /**

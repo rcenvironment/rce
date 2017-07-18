@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.0.2.qualifier
+Bundle-Version: 8.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
@@ -11,7 +11,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.gef,
  org.eclipse.core.resources,
  de.rcenvironment.core.component,
- org.eclipse.jface
+ org.eclipse.jface,
+ org.junit
 Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,

@@ -32,11 +32,17 @@ public class SshConfiguration {
 
     protected static final String DEFAULT_HOST = "127.0.0.1"; // conservative default: bind to localhost, not 0.0.0.0
 
+    protected static final Integer DEFAULT_IDLE_TIMEOUT_SECONDS = 10; // TODO (p3) review default timeout
+
+    private static final String CONFIG_PROPERTY_IDLE_TIMEOUT_SECONDS = "idleTimeoutSeconds";
+
     private boolean enabled = false;
 
     private String host;
 
     private int port;
+
+    private Integer idleTimeoutSeconds;
 
     private List<SshAccountImpl> accounts = new ArrayList<>();
 
@@ -56,6 +62,13 @@ public class SshConfiguration {
         roles = createPredefinedRoles();
 
         enabled = configurationSegment.getBoolean("enabled", false);
+
+        idleTimeoutSeconds = configurationSegment.getInteger(CONFIG_PROPERTY_IDLE_TIMEOUT_SECONDS, DEFAULT_IDLE_TIMEOUT_SECONDS);
+        if (idleTimeoutSeconds <= 0) {
+            LogFactory.getLog(getClass()).warn("Invalid value for SSH server setting '" + CONFIG_PROPERTY_IDLE_TIMEOUT_SECONDS
+                + "' - using default of " + DEFAULT_IDLE_TIMEOUT_SECONDS);
+            idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
+        }
 
         String oldHostSetting = configurationSegment.getString("host"); // deprecated alias
         String newHostSetting = configurationSegment.getString("ip");
@@ -225,6 +238,10 @@ public class SshConfiguration {
 
     public int getPort() {
         return port;
+    }
+
+    public Integer getIdleTimeoutSeconds() {
+        return idleTimeoutSeconds;
     }
 
     public void setPort(int sshContactPoint) {

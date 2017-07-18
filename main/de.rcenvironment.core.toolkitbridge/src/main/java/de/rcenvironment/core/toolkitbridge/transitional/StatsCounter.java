@@ -72,7 +72,7 @@ public final class StatsCounter {
 
     /**
      * Convenience method for the common case where occurrences of classes should be counted, with proper handling of null objects. The
-     * counter key is the name of the object's class acquired using {@link Class#getName()}; for null objects, "<null>" is used as the
+     * counter key is the name of the object's class acquired using {@link Class#getName()}; for null objects, "&lt;null>" is used as the
      * counter key.
      * 
      * @param category the category identifier

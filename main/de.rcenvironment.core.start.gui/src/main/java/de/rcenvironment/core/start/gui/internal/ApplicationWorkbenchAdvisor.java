@@ -8,12 +8,6 @@
 
 package de.rcenvironment.core.start.gui.internal;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IWorkspace;
@@ -31,12 +25,7 @@ import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchAdvisor;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 import org.eclipse.ui.ide.IDE;
-import org.eclipse.ui.internal.WorkbenchPlugin;
-import org.eclipse.ui.internal.dialogs.WorkbenchWizardElement;
-import org.eclipse.ui.internal.wizards.AbstractExtensionWizardRegistry;
 import org.eclipse.ui.navigator.resources.ProjectExplorer;
-import org.eclipse.ui.wizards.IWizardCategory;
-import org.eclipse.ui.wizards.IWizardDescriptor;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.gui.utils.incubator.ContextMenuItemRemover;
@@ -48,8 +37,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Christian Weiss
  */
-// TODO this class references several classes from org.eclipse.ui.internal; review this while/after switching to e4
-@SuppressWarnings("restriction")
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
     private static final String READ_ONLY_WF_EDITOR_ID = "de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor";
@@ -63,7 +50,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     private static ConfigurationService configService;
 
     private static String windowTitle = "%s (%s)";
-
+    
     public ApplicationWorkbenchAdvisor() {}
 
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
@@ -130,7 +117,12 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
                 // remove unwanted menu entries from project explorer's context menu
                 ContextMenuItemRemover.removeUnwantedMenuEntries(view.getCommonViewer().getControl());
 
-                removeUnwantedNewWizards();
+                UnwantedUIRemover.removeUnwantedNewWizards();
+                UnwantedUIRemover.removeUnwantedExportWizards();
+                UnwantedUIRemover.removeUnwantedImportWizards();
+                UnwantedUIRemover.removeUnWantedPerspectives();
+                UnwantedUIRemover.removeUnWantedViews();
+                EclipsePreferencesUIOrganizer.removeUnwantetPreferencePages();
 
                 // setting minimum size for the whole RCE window
                 PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
@@ -140,39 +132,10 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
             }
         });
     }
+    
+    
 
-    private void removeUnwantedNewWizards() {
-
-        final Properties unwanted = new Properties();
-        try {
-            unwanted.load(ApplicationActionBarAdvisor.class.getResourceAsStream("unwanted.properties"));
-        } catch (IOException e) {
-            LOGGER.error("Failed to remove unwanted elements from UI:", e);
-        }
-
-        // remove unwanted action sets
-        final String unwantedNewWizardIdsProperty = unwanted.getProperty("unwantedNewWizards");
-        if (unwantedNewWizardIdsProperty != null && !unwantedNewWizardIdsProperty.trim().isEmpty()) {
-            List<String> unwantedNewWizardIds = Arrays.asList(unwantedNewWizardIdsProperty.split(","));
-            IWizardCategory[] categories = WorkbenchPlugin.getDefault().getNewWizardRegistry().getRootCategory().getCategories();
-            for (IWizardDescriptor wizard : getAllWizards(categories)) {
-                WorkbenchWizardElement wizardElement = (WorkbenchWizardElement) wizard;
-                if (unwantedNewWizardIds.contains(wizardElement.getId())) {
-                    ((AbstractExtensionWizardRegistry) WorkbenchPlugin.getDefault().getNewWizardRegistry()).
-                        removeExtension(wizardElement.getConfigurationElement().getDeclaringExtension(), new Object[] { wizardElement });
-                }
-            }
-        }
-    }
-
-    private IWizardDescriptor[] getAllWizards(IWizardCategory... categories) {
-        List<IWizardDescriptor> results = new ArrayList<IWizardDescriptor>();
-        for (IWizardCategory wizardCategory : categories) {
-            results.addAll(Arrays.asList(wizardCategory.getWizards()));
-            results.addAll(Arrays.asList(getAllWizards(wizardCategory.getCategories())));
-        }
-        return results.toArray(new IWizardDescriptor[0]);
-    }
+   
 
     @Override
     public boolean preShutdown() {

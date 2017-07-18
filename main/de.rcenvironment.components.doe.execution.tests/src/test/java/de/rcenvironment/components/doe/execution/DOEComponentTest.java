@@ -11,6 +11,7 @@ package de.rcenvironment.components.doe.execution;
 import static org.easymock.EasyMock.anyObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import de.rcenvironment.core.component.testutils.ComponentTestWrapper;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
@@ -134,7 +136,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, DOEConstants.INPUT_ID_NAME, DataType.Float, true, null);
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1));
 
         component.start();
@@ -178,7 +180,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, DOEConstants.INPUT_ID_NAME, DataType.Float, true, null);
 
         final double[] expectedValuesX = { -1, -1, 1, -1, 1 };
         final double[] expectedValuesY = { -10, -10, -10, 10, 10 };
@@ -220,18 +222,20 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, DOEConstants.INPUT_ID_NAME, DataType.Float, true, null);
 
         component.start();
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createNotAValue());
         Assert.assertEquals(1, context.getCapturedOutput(X).size());
         Assert.assertEquals(1, context.getCapturedOutput(Y).size());
-        exception.expect(ComponentException.class);
-        component.processInputs();
+        try {
+            component.processInputs();
+            fail();
+        } catch (ComponentException e) {
+            assertTrue(true);
+        }
         checkLoopDoneSent(false);
-        component.processInputs();
-        checkLoopDoneSent(true);
-        checkClosedOutputs(2);
+        checkNoOutputsClosed();
     }
 
     /**
@@ -247,7 +251,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, DOEConstants.INPUT_ID_NAME, DataType.Float, true, null);
         addStaticOutputs();
 
         component.start();
@@ -516,6 +520,68 @@ public class DOEComponentTest {
 
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
+
+    }
+
+    /**
+     * Test the custom table from input for DOE.
+     * 
+     * @throws ComponentException :
+     */
+    @Test
+    public void testCustomTableInputNoDefaultInput() throws ComponentException {
+
+        addStaticOutputs();
+        addNewOutput(X, MINUS_1, ONE);
+        addNewOutput(Y, MINUS_1, ONE);
+
+        context.addSimulatedInput(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, DOEConstants.CUSTOM_TABLE_ENDPOINT_ID, DataType.Matrix, true,
+            new HashMap<String, String>());
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT, ONE, FIVE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, "");
+        // exception.expect(ComponentException.class);
+        // exception.expectMessage("No table");
+        component.start();
+        Assert.assertEquals(0, context.getCapturedOutput(X).size());
+        TypedDatumFactory factory = context.getService(TypedDatumService.class).getFactory();
+        FloatTD[][] values =
+            { { factory.createFloat(1.0), factory.createFloat(1.0) }, { factory.createFloat(2.0), factory.createFloat(2.0) } };
+        context.setInputValue(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME,
+            factory.createMatrix(values));
+        component.processInputs();
+        Assert.assertEquals(2, context.getCapturedOutput(X).size());
+    }
+
+    /**
+     * Test the custom table from input with another input for DOE.
+     * 
+     * @throws ComponentException :
+     */
+    @Test
+    public void testCustomTableInputWithDefaultInput() throws ComponentException {
+
+        addStaticOutputs();
+        addNewOutput(X, MINUS_1, ONE);
+        addNewOutput(Y, MINUS_1, ONE);
+
+        context.addSimulatedInput(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, DOEConstants.CUSTOM_TABLE_ENDPOINT_ID, DataType.Matrix, true,
+            new HashMap<String, String>());
+        context.addSimulatedInput(I, DOEConstants.INPUT_ID_NAME, DataType.Float, true, new HashMap<String, String>());
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT, ONE, FIVE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, "");
+        // exception.expect(ComponentException.class);
+        // exception.expectMessage("No table");
+        component.start();
+        Assert.assertEquals(0, context.getCapturedOutput(X).size());
+        TypedDatumFactory factory = context.getService(TypedDatumService.class).getFactory();
+        FloatTD[][] values =
+            { { factory.createFloat(1.0), factory.createFloat(1.0) }, { factory.createFloat(2.0), factory.createFloat(2.0) } };
+        context.setInputValue(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, factory.createMatrix(values));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(X).size());
+        context.setInputValue(I, factory.createFloat(1.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(X).size());
 
     }
 
@@ -869,6 +935,10 @@ public class DOEComponentTest {
 
     private void checkClosedOutputs(int dynInputCount) {
         assertEquals(STATIC_OUTPUTS_COUNT + dynInputCount, context.getCapturedOutputClosings().size());
+    }
+
+    private void checkNoOutputsClosed() {
+        assertEquals(0, context.getCapturedOutputClosings().size());
     }
 
 }

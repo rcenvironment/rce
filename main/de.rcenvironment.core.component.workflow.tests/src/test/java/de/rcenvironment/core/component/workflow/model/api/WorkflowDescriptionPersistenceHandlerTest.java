@@ -36,6 +36,7 @@ import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.component.ComponentInstallationMockFactory;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -46,7 +47,6 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDesc
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.testutils.ComponentDescriptionFactoryServiceDefaultStub;
 import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeServiceDefaultStub;
-import de.rcenvironment.core.component.workflow.ComponentInstallationMockFactory;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;

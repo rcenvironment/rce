@@ -55,10 +55,11 @@ import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Class providing utility methods used for handling component properties.
+ * Class providing utility methods related to components.
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
  */
 public final class ComponentUtils {
 

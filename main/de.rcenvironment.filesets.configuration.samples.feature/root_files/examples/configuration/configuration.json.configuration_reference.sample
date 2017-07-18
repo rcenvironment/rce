@@ -82,6 +82,7 @@
 		"enabled" : true,
 		"ip" : "127.0.0.1",
 		"port" : 31005,
+		"idleTimeoutSeconds" : 10,
 		"accounts" : {
 			"ra_demo" : {
 				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!

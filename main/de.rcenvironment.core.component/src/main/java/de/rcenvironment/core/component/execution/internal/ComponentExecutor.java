@@ -57,12 +57,18 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * executions.
  * 
  * @author Doreen Seider
+ * 
+ * Note: This class eroded over time as new functionality was added, like the support for canceling component runs or manual output
+ * verification. With each new functionality added, it felt like working a bit "against" this class which showed to me that this
+ * class or how it is coupled to the calling context doesn't satisfy the demand of having an extensible and maintainable class here
+ * anymore. --seid_do
+ * 
  */
 public class ComponentExecutor {
 
     protected static final int DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_MSEC = 60000;
 
-    protected static final int DEAFULT_WAIT_INTERVAL_NOT_RUN_MSEC = 60000;
+    protected static final int DEAFULT_WAIT_INTERVAL_NOT_RUN_MSEC = 120000;
 
     protected static int waitIntervalAfterCacelledCalledMSec = DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_MSEC;
 
@@ -169,8 +175,8 @@ public class ComponentExecutor {
     protected ComponentExecutor(ComponentExecutionRelatedInstances compExeRelatedInstances, ComponentExecutionType compExeType) {
         this.compExeRelatedInstances = compExeRelatedInstances;
         this.compExeType = compExeType;
-        this.isVerificationRequired = ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx
-            .getComponentDescription().getConfigurationDescription().getComponentConfigurationDefinition());
+        this.isVerificationRequired = ComponentExecutionUtils.isManualOutputVerificationRequired(compExeRelatedInstances.compExeCtx
+            .getComponentDescription().getConfigurationDescription());
         this.treatAsRun = compExeType == ComponentExecutionType.StartAsRun || compExeType == ComponentExecutionType.ProcessInputs;
         this.writesCompRunRelatedDataToDM = treatAsRun;
         this.isTearDown = compExeType == ComponentExecutionType.TearDown;

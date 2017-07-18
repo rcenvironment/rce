@@ -68,8 +68,12 @@ public class OptimizerEndpointSelectionPane extends EndpointSelectionPane {
         TableItem[] selection = table.getSelection();
         if (selection.length > 0 && (selection[0].getText(0).contains(OptimizerComponentConstants.GRADIENT_DELTA)
             || (selection[0].getText(0).contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)))) {
-            buttonEdit.setEnabled(false);
-            buttonRemove.setEnabled(false);
+            if (buttonEdit != null) {
+                buttonEdit.setEnabled(false);
+            }
+            if (buttonRemove != null) {
+                buttonRemove.setEnabled(false);
+            }
         }
     }
 

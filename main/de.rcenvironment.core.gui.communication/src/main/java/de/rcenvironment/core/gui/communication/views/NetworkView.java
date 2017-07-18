@@ -21,10 +21,13 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TreePath;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
@@ -33,8 +36,6 @@ import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
@@ -321,21 +322,15 @@ public class NetworkView extends ViewPart {
             }
         });
 
-        viewer.getTree().addMouseListener(new MouseListener() {
+        viewer.addDoubleClickListener(new IDoubleClickListener() {
 
             @Override
-            public void mouseUp(MouseEvent event) {}
-
-            @Override
-            public void mouseDown(MouseEvent event) {}
-
-            @Override
-            public void mouseDoubleClick(MouseEvent event) {
-                
+            public void doubleClick(DoubleClickEvent arg0) {
                 expandSelectedNode();
                 if (editAction.isEnabled()) {
                     editAction.run();
                 }
+
             }
         });
         
@@ -352,7 +347,6 @@ public class NetworkView extends ViewPart {
             @Override
             public void keyReleased(KeyEvent arg0) {
                 // TODO Auto-generated method stub
-                
             }
             
         });
@@ -462,6 +456,7 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         model.networkGraph = networkGraph;
                         model.updateGraphWithProperties();
                         if (viewer.getControl().isDisposed()) {
@@ -469,6 +464,7 @@ public class NetworkView extends ViewPart {
                         }
                         // update the tree, but no need to update existing labels
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
+                        viewer.setExpandedTreePaths(expandedTreePaths);
                     }
                 });
             }
@@ -482,6 +478,7 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         model.nodeProperties.putAll(updatedPropertyMaps); // inner maps are
                                                                           // immutable
                         model.updateGraphWithProperties();
@@ -489,6 +486,7 @@ public class NetworkView extends ViewPart {
                             return;
                         }
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
+                        viewer.setExpandedTreePaths(expandedTreePaths);
                     }
                 });
             }
@@ -501,11 +499,13 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         model.componentKnowledge = newKnowledge;
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
+                        viewer.setExpandedTreePaths(expandedTreePaths);
                     }
                 });
             }

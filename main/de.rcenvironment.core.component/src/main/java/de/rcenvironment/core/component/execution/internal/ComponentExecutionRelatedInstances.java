@@ -17,7 +17,8 @@ import de.rcenvironment.core.component.execution.api.WorkflowExecutionController
 
 /**
  * Stores instances that are used when executing a {@link Component} and that need to be shared by multiple instances. This approach is not
- * intended to be a perfect solution but to be a migration path. It was introduced to purge ComponentExecutionControllerImpl.
+ * intended to be a perfect solution but to be a migration path. It was introduced to purge ComponentExecutionControllerImpl and to allow
+ * for better unit testing.
  * 
  * @author Doreen Seider
  */

@@ -71,6 +71,47 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
             return typeIsPublic;
         }
 
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getContributor().hashCode();
+            if (instanceNode == null) {
+                result = prime * result;
+            } else {
+                result = prime * result + instanceNode.hashCode() + Boolean.valueOf(typeIsPublic).hashCode();
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            ComponentFolderNode other = (ComponentFolderNode) obj;
+            if (typeIsPublic != other.typeIsPublic) {
+                return false;
+            }
+            if (!getContributor().equals(other.getContributor())) {
+                return false;
+            }
+            if (instanceNode == null) {
+                if (other.instanceNode != null) {
+                    return false;
+                }
+            } else if (!instanceNode.equals(other.instanceNode)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
     private Image folderImage;

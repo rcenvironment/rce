@@ -8,6 +8,7 @@
 
 package de.rcenvironment.components.script.execution.jython;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.script.ScriptEngine;
@@ -39,7 +40,8 @@ public class JythonScriptExecutorTest extends ScriptExecutorTest {
 
     @Override
     protected void testPrepareHook() {
-        ScriptingUtils.setJythonPath("");
+        // TODO this is not a valid Jython location. Why is this working?
+        ScriptingUtils.setJythonPath(new File(""));
     }
 
     @Override

@@ -18,8 +18,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
@@ -28,8 +26,6 @@ import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
-import de.rcenvironment.core.gui.resources.api.FontManager;
-import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
@@ -39,35 +35,20 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * Abstract component for the ScriptSection.
  * 
  * @author Sascha Zur
+ * @author Hendrik Abbenhaus
  */
 public abstract class AbstractScriptSection extends ValidatingWorkflowNodePropertySection {
-
-    /** Load script from local file system should be supported. */
-    public static final int LOCAL_FILE = 1;
-
-    /** Use script from built-in editor should be supported. */
-    public static final int NEW_SCRIPT_FILE = 4;
-
-    /** Both supported. */
-    public static final int ALL = LOCAL_FILE | NEW_SCRIPT_FILE;
-
-    /** None supported. */
-    public static final int NO_SCRIPT_FILENAME = 8;
 
     /** Check WhiteSpaceCharacter key. */
     public static final String CHECKBOX_KEY = "checkShowWhitespace";
 
     private static final String KEY_SCRIPT_WHITESPACE_BOX = "ScriptWhitespaceBox";
 
-    private static final int MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT = 200;
-
     protected Button openInEditorButton;
 
     protected Button checkBoxWhitespace;
 
     protected WhitespaceShowListener whitespaceListener;
-
-    protected Composite newScriptArea;
 
     protected EditScriptRunnable esr = null;
 
@@ -77,10 +58,9 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     private final PersistentSettingsService persistentSettingsService;
 
-    public AbstractScriptSection(int style, String scriptName) {
+    public AbstractScriptSection(String scriptName) {
         this.scriptName = scriptName;
-        whitespaceListener = new WhitespaceShowListener();
-        persistentSettingsService =
+        this.persistentSettingsService =
             ServiceRegistry.createAccessFor(this).getService(PersistentSettingsService.class);
 
     }
@@ -94,27 +74,27 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
+        parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        parent.setLayout(new GridLayout(1, true));
+        
+        final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+        composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        composite.setLayout(new GridLayout(1, true));
+        
+        final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
+        scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        scriptSection.setText(Messages.configureScript);
+        
+        Composite scriptComposite = getWidgetFactory().createFlatFormComposite(scriptSection);
+        scriptComposite.setLayout(new GridLayout(1, false));
+        scriptComposite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
 
-        TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
-
-        Section jobSection = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
-        jobSection.setText(Messages.configureScript);
-
-        Composite jobParent = factory.createFlatFormComposite(jobSection);
-
-        createCompositeContentAtVeryTop(jobParent, factory);
-
-        GridLayout layout = new GridLayout();
-        layout.numColumns = 1;
-        jobParent.setLayout(layout);
-
-        GridData gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment = GridData.FILL;
-        gridData.widthHint = 1;
-
-        openInEditorButton = factory.createButton(jobParent, Messages.openInEditor, SWT.PUSH);
-        checkBoxWhitespace = factory.createButton(jobParent, Messages.showWhitespace, SWT.CHECK);
+        scriptSection.setClient(scriptComposite);
+        
+        createCompositeContentAtVeryTop(scriptComposite, getWidgetFactory());
+        
+        openInEditorButton = getWidgetFactory().createButton(scriptComposite, Messages.openInEditor, SWT.PUSH);
+        checkBoxWhitespace = getWidgetFactory().createButton(scriptComposite, Messages.showWhitespace, SWT.CHECK);
 
         openInEditorButton.addSelectionListener(new SelectionListener() {
 
@@ -132,46 +112,26 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
             }
         });
 
-        gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment = GridData.FILL;
-        gridData.widthHint = 1;
-
-        newScriptArea = factory.createFlatFormComposite(jobParent);
-        newScriptArea.setLayoutData(gridData);
-
-        layout = new GridLayout();
-        layout.numColumns = 2;
-        newScriptArea.setLayout(layout);
-
-        gridData = new GridData();
-        gridData.horizontalSpan = 2;
+        GridData gridData = new GridData();
         gridData.grabExcessHorizontalSpace = true;
         gridData.horizontalAlignment = GridData.FILL;
         gridData.grabExcessVerticalSpace = true;
         gridData.verticalAlignment = GridData.FILL;
+        gridData.widthHint = 1;
+        gridData.heightHint = 1;
+        scriptingText = new LineNumberStyledText(scriptComposite, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER | SWT.WRAP);
 
-        final int aKeyCode = 97;
-
-        scriptingText = new LineNumberStyledText(newScriptArea, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER | SWT.WRAP);
-
-        scriptingText.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
+        scriptingText.setLayoutData(gridData);
+        scriptingText.setData(CONTROL_PROPERTY_KEY, SshExecutorConstants.CONFIG_KEY_SCRIPT);
         scriptingText.addKeyListener(new KeyAdapter() {
-
+            
             @Override
             public void keyPressed(KeyEvent e) {
-
-                if (e.stateMask == SWT.CTRL && e.keyCode == aKeyCode) {
-                    scriptingText.selectAll();
-                }
-
                 updateEditor(node);
-
             }
 
         });
-
-        whitespaceListener.setScriptingText(scriptingText);
+        whitespaceListener = new WhitespaceShowListener(scriptingText);
         scriptingText.addPaintListener(whitespaceListener);
 
         checkBoxWhitespace.addSelectionListener(new SelectionAdapter() {
@@ -180,31 +140,24 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
                 boolean selected = checkBoxWhitespace.getSelection();
                 if (selected) {
-                    whitespaceListener.setOn(true);
+                    whitespaceListener.setEnabled(true);
                     whitespaceListener.drawStyledText();
                     updateEditor(node);
 
                 } else {
-                    whitespaceListener.setOn(false);
+                    whitespaceListener.setEnabled(false);
                     whitespaceListener.redrawAll();
                 }
                 persistentSettingsService.saveStringValue(KEY_SCRIPT_WHITESPACE_BOX, String.valueOf(checkBoxWhitespace.getSelection()));
             }
         });
 
-        scriptingText.setLayoutData(gridData);
-        scriptingText.setData(CONTROL_PROPERTY_KEY, SshExecutorConstants.CONFIG_KEY_SCRIPT);
-        ((GridData) newScriptArea.getLayoutData()).heightHint = MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT;
 
-        addResizingListenerForJobScriptingText(parent.getParent());
-
-        jobSection.setClient(jobParent);
+        
     }
 
     private void updateEditor(WorkflowNode node) {
-
         if (esr != null && scriptingText != null && esr.getNode().equals(node)) {
-
             esr.update(scriptingText.getText());
         }
     }
@@ -216,37 +169,18 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         String whitespaceBoxSelection = persistentSettingsService.readStringValue(KEY_SCRIPT_WHITESPACE_BOX);
         if (whitespaceBoxSelection == null || !Boolean.parseBoolean(whitespaceBoxSelection)) {
             checkBoxWhitespace.setSelection(false);
-            whitespaceListener.setOn(false);
+            whitespaceListener.setEnabled(false);
             whitespaceListener.redrawAll();
         } else {
             checkBoxWhitespace.setSelection(true);
-            whitespaceListener.setOn(true);
+            whitespaceListener.setEnabled(true);
             whitespaceListener.drawStyledText();
             updateEditor(node);
         }
     }
 
-    private void addResizingListenerForJobScriptingText(final Composite parent) {
-
-        parent.addListener(SWT.Resize, new Listener() {
-
-            @Override
-            public void handleEvent(Event e) {
-                setSizeOfJobScriptingText(parent);
-            }
-        });
-    }
-
-    private void setSizeOfJobScriptingText(Composite parent) {
-        final int topMargin = 125;
-        if (parent.getSize().y < MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT) {
-            ((GridData) newScriptArea.getLayoutData()).heightHint = MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT;
-        } else {
-            ((GridData) newScriptArea.getLayoutData()).heightHint = parent.getSize().y - topMargin;
-            newScriptArea.update();
-        }
-    }
-
+   
+    
     /**
      * Implementation of {@link AbstractEditScriptRunnable}.
      * 

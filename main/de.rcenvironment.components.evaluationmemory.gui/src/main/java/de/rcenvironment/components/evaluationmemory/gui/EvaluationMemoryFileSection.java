@@ -103,7 +103,7 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         memOptionsSection.setText("Evaluation Memory Options");
         
         final Composite memOptionsComposite = propSheetPage.getWidgetFactory().createComposite(parent);
-        memOptionsComposite.setLayout(new GridLayout(2, true));
+        memOptionsComposite.setLayout(new GridLayout(1, false));
         memOptionsComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
 
         storeLoopFailures = new Button(memOptionsComposite, SWT.CHECK);

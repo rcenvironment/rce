@@ -54,7 +54,6 @@ public class EvaluationMemoryComponentValidator extends AbstractComponentValidat
     @Override
     protected List<ComponentValidationMessage> validateOnWorkflowStartComponentSpecific(
         ComponentDescription componentDescription) {
-        // TODO Auto-generated method stub
         return null;
     }
 

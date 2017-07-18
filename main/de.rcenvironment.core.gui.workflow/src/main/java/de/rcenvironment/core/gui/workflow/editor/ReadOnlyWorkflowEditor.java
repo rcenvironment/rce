@@ -21,6 +21,7 @@ import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.ui.palette.FlyoutPaletteComposite.FlyoutPreferences;
 import org.eclipse.gef.ui.palette.PaletteViewer;
 import org.eclipse.gef.ui.palette.PaletteViewerProvider;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -105,6 +106,7 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
         viewer.setEditPartFactory(new ReadOnlyWorkflowEditorEditPartFactory());
         viewer.setContents(super.getWorkflowDescription());
         viewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
+        viewer.setContextMenu(new MenuManager()); // removes context menu
         
         int[] eventTypes = { SWT.MouseDoubleClick, SWT.DragDetect };
         removeListeners(viewer.getControl(), eventTypes);

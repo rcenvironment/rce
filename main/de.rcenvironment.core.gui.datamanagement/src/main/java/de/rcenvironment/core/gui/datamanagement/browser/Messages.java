@@ -99,6 +99,9 @@ public class Messages extends NLS {
     public static String exportSuccessText;
 
     /** Constant. */
+    public static String exportLocationText;
+
+    /** Constant. */
     public static String shortcutDelete;
 
     /** Constant. */

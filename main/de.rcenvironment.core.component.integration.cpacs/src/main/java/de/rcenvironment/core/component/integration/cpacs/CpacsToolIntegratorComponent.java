@@ -66,7 +66,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     private static final String FILE_SUFFIX_MAPPED = "-mapped";
 
-    private static final String STRING_CPACS_RESULT_FILE_CREATED = "CPACS result file created (%s)): %s";
+    private static final String STRING_CPACS_RESULT_FILE_CREATED = "Created CPACS result file '%s'.";
 
     private static final String SUFFIX_MAPPED = "-mapped";
 
@@ -76,7 +76,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     private static final String STRING_XML_ERROR_DURING_MAPPING = "Failed to perform %s mapping";
 
-    private static final String STRING_TOOL_INPUT_CREATED = "Tool input file created (%s)): %s";
+    private static final String STRING_TOOL_INPUT_CREATED = "Created tool input file '%s'.";
 
     private static final String STRING_MAPPING_USAGE = "Using %s %s mapping...";
 
@@ -101,7 +101,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     private static final String CREATE_MAPPING_XSLT_FILEPATH = "/resources/CreateMapping.xslt";
 
     private static final String XMLFILE_SEPARATOR = "/";
-    
+
     /**
      * Implementation of TextLinesReceiver for CpacsToolIntegratorComponent.
      *
@@ -210,8 +210,10 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     // Build tool input document
                     String toolInputFilePath = getToolInput();
                     xmlMapper.transformXMLFileWithXMLMappingInformation(new File(cpacsInitial), new File(toolInputFilePath), mappingDoc);
-                    componentLog.componentInfo(StringUtils.format(STRING_TOOL_INPUT_CREATED,
-                        toolInputFilePath, String.valueOf(new File(toolInputFilePath).exists())));
+                    if (new File(toolInputFilePath).exists()) {
+                        componentLog.componentInfo(StringUtils.format(STRING_TOOL_INPUT_CREATED,
+                            toolInputFilePath));
+                    }
                 } catch (XPathExpressionException | XMLException e) {
                     throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
                         STRING_TOOL_MAPPING_DIRECTION_INPUT), e);
@@ -454,22 +456,6 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     }
 
     @Override
-    protected void afterCommandExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
-        throws ComponentException {
-        if (getHistoryDataItem() != null) {
-            String toolOutputFileReference;
-            try {
-                File outputFile = new File(getToolOutput());
-                toolOutputFileReference = datamanagementService.createTaggedReferenceFromLocalFile(componentContext,
-                    outputFile, outputFile.getName());
-                getHistoryDataItem().setToolOutputFile(outputFile.getName(), toolOutputFileReference);
-            } catch (IOException e) {
-                throw new ComponentException(StringUtils.format("Failed to find tool output file: %s", getToolOutput()), e);
-            }
-        }
-    }
-
-    @Override
     protected void afterPostScriptExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
 
@@ -484,30 +470,47 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             return;
         }
 
-        try {
-            if (needsToRun && !new File(getToolOutput()).exists()) {
+        File outputFile = new File(getToolOutput());
+
+        if (needsToRun) {
+            if (!outputFile.exists()) {
                 throw new ComponentException(
                     StringUtils.format(
                         "Failed to perform output mapping. Tool output file is missing after post script execution: %s",
                         getToolOutput()));
             }
-
             if (!isAlwaysRun()) {
-                if (needsToRun) {
+                try {
                     if (tmpOutputFile != null && tmpOutputFile.exists()) {
                         TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tmpOutputFile);
                     }
                     tmpOutputFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("cpacsToolOutput-*.xml");
-                    FileUtils.copyFile(new File(getToolOutput()), tmpOutputFile);
-                } else {
-                    if (!tmpOutputFile.exists()) {
-                        throw new ComponentException(
-                            "Failed to perform output mapping after skipped tool execution. "
-                                + "The temporary tool output file of last execution is missing.");
-                    }
-                    FileUtils.copyFile(tmpOutputFile, new File(getToolOutput()));
+                    FileUtils.copyFile(outputFile, tmpOutputFile);
+                } catch (IOException e) {
+                    throw new ComponentException(
+                        "Failed to generate the temporary file for caching tool results.");
                 }
             }
+        } else {
+            try {
+                FileUtils.copyFile(tmpOutputFile, outputFile);
+            } catch (IOException e) {
+                throw new ComponentException(
+                    "Failed to perform output mapping after skipped tool execution. "
+                        + "The temporary tool output file of last execution is missing.");
+            }
+        }
+
+        if (getHistoryDataItem() != null) {
+            try {
+                String toolOutputFileReference = datamanagementService.createTaggedReferenceFromLocalFile(componentContext,
+                    outputFile, outputFile.getName());
+                getHistoryDataItem().setToolOutputFile(outputFile.getName(), toolOutputFileReference);
+            } catch (IOException e) {
+                throw new ComponentException(StringUtils.format("Failed to find tool output file: %s", getToolOutput()));
+            }
+        }
+        try {
 
             String cpacsInitial = inputNamesToLocalFile.get(getCpacsInitialEndpointName());
             performOutputMapping(cpacsInitial);
@@ -516,12 +519,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             FileReferenceTD outgoingCPACSFileReference =
                 datamanagementService.createFileReferenceTDFromLocalFile(componentContext, resultFile,
                     componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_RESULT_FILENAME));
-            try {
-                componentContext.writeOutput(getCpacsOutputName(), outgoingCPACSFileReference);
-            } catch (NullPointerException e) {
-                throw new ComponentException(StringUtils.format(
-                    "Failed to write output to CPACS output; output '%s' is not configured", getCpacsOutputName()), e);
-            }
+            componentContext.writeOutput(getCpacsOutputName(), outgoingCPACSFileReference);
             if (getHistoryDataItem() != null) {
                 getHistoryDataItem().addOutput(getCpacsOutputName(), outgoingCPACSFileReference);
             }
@@ -529,6 +527,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             throw new ComponentException("Failed to extract dynamic output values from CPACS", e);
         } catch (IOException e) {
             throw new ComponentException("Failed to create result CPACS file", e);
+        } catch (NullPointerException e) {
+            throw new ComponentException(StringUtils.format(
+                "Failed to write output to CPACS output '%s'.", getCpacsOutputName()), e);
         }
 
     }
@@ -561,8 +562,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
                     xmlMapper.transformXMLFileWithXMLMappingInformation(new File(getToolOutput()), resultFile, mappingDoc);
 
-                    componentLog.componentInfo(StringUtils.format(STRING_CPACS_RESULT_FILE_CREATED,
-                        cpacsResultFilePath, String.valueOf(new File(cpacsResultFilePath).exists())));
+                    if (resultFile.exists()) {
+                        componentLog.componentInfo(StringUtils.format(STRING_CPACS_RESULT_FILE_CREATED, cpacsResultFilePath));
+                    }
                 } catch (XPathExpressionException | IOException | XMLException e) {
                     throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
                         STRING_TOOL_MAPPING_DIRECTION_OUTPUT), e);

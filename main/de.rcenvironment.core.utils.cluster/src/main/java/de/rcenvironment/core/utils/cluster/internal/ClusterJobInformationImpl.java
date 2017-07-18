@@ -13,6 +13,7 @@ import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 
 /**
  * Implementation of {@link ClusterJobInformation} enhanced with setter methods to modify information by other classes within this bundle.
+ * 
  * @author Doreen Seider
  */
 public class ClusterJobInformationImpl implements ClusterJobInformation {

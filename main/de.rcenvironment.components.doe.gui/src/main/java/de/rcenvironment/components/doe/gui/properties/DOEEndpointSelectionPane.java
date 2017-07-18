@@ -61,4 +61,5 @@ public class DOEEndpointSelectionPane extends EndpointSelectionPane {
         WorkflowNodeCommand command = new DOERemoveDynamicEndpointCommand(endpointType, dynEndpointIdToManage, names, this);
         execute(command);
     }
+
 }

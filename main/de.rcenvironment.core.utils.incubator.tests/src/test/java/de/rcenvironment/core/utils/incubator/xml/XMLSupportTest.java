@@ -11,6 +11,7 @@ package de.rcenvironment.core.utils.incubator.xml;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.junit.Ignore;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -24,6 +25,8 @@ import org.dom4j.Node;
  * 
  * @author Andre Nurzenski
  */
+//Ignore tests because the corresponding code is not used in RCE anymore
+@Ignore 
 public class XMLSupportTest extends TestCase {
 
     /**

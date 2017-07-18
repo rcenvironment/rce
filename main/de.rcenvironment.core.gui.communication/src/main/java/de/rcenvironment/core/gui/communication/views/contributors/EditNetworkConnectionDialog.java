@@ -26,9 +26,7 @@ public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog
         + "Changes will be applied after restarting the connection.";
 
     public EditNetworkConnectionDialog(Shell parentShell, String connectionName, String networkContactPointID) {
-        super(parentShell);
-        this.connectionName = connectionName;
-        this.networkContactPointID = networkContactPointID;
+        super(parentShell, connectionName, networkContactPointID);
         if (this.networkContactPointID.startsWith(ACTIVEMQ_PREFIX)) {
             this.networkContactPointID = this.networkContactPointID.replace(ACTIVEMQ_PREFIX, "");
         }

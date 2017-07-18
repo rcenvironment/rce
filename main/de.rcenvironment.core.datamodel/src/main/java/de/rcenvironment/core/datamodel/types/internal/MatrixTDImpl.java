@@ -19,6 +19,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link MatrixTD}.
@@ -131,48 +132,46 @@ public class MatrixTDImpl extends AbstractTypedDatum implements MatrixTD {
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        String text = "[";
-        String formattedLabel = "";
+        StringBuilder strBuilder = new StringBuilder("[");
 
         VectorTD firstRow = getRowVector(0);
         for (FloatTD f : firstRow.toArray()) {
-            text += f.toString();
-            text += ",";
-            if (text.length() > maxLength) {
+            strBuilder.append(f.toString());
+            strBuilder.append(",");
+            if (strBuilder.length() > maxLength) {
                 break;
             }
         }
-            // remove last comma
-        text = text.substring(0, text.length() - 1);
-        if (text.length() > maxLength) {
-            text = text.substring(0, maxLength) + " ...";
+        // remove last comma
+        strBuilder.setLength(strBuilder.length() - 1);
+        if (strBuilder.length() > maxLength) {
+            strBuilder.setLength(maxLength);
+            strBuilder.append("...");
         }
-        text += "]";
-        text += "...";
-        formattedLabel += text;
-        String dimensionsText = " (" + getColumnDimension() + "x" + getRowDimension() + ")";
-        formattedLabel += dimensionsText;
-        return formattedLabel;
+        strBuilder.append("]");
+        if (getRowDimension() > 1) {
+            strBuilder.append(",...");
+        }
+        strBuilder.append(StringUtils.format(" (%dx%d)", getRowDimension(), getColumnDimension()));
+        return strBuilder.toString();
     }
 
     @Override
     public String toString() {
-        String fullContent = "";
+        StringBuilder strBuilder = new StringBuilder();
 
         for (int i = 0; i < getRowDimension(); i++) {
-            // fill fullcontent
             VectorTD row = getRowVector(i);
             for (FloatTD f : row.toArray()) {
-                // remove comma for integers
-                String floatValue = VectorTDImpl.toPrettyString(f.getFloatValue());
-                fullContent += floatValue;
-                fullContent += ", ";
+                strBuilder.append(f.toString());
+                strBuilder.append(", ");
             }
-            fullContent = fullContent.substring(0, fullContent.length() - 2);
-            fullContent += "\r\n";
+            // remove last comma and whitespace
+            strBuilder.setLength(strBuilder.length() - 2);
+            strBuilder.append(System.lineSeparator());
         }
         
-        return fullContent;
+        return strBuilder.toString();
     }
 
 }

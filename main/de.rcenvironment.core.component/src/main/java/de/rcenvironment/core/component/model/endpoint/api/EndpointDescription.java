@@ -30,6 +30,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Provides information about a single endpoint.
  * 
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link EndpointDefinition}. --seid_do
  */
 public class EndpointDescription extends EndpointGroupDescription {
 
@@ -249,12 +251,8 @@ public class EndpointDescription extends EndpointGroupDescription {
                 copiedDesc.setMetaDataValue(key, endpointDescription.getMetaData().get(key));
             }
         }
-        try {
-            copiedDesc.setName(endpointDescription.getName());
-        } catch (UnsupportedOperationException e) {
-            // nothing to do here. it says that we have an static endpoint here. name is
-            // unmodifiable and already defined in declarative description
-            e = null;
+        if (endpointDescription.getEndpointDefinition() == null || !endpointDescription.getEndpointDefinition().isStatic()) {
+            copiedDesc.setName(endpointDescription.getName());            
         }
         return copiedDesc;
     }

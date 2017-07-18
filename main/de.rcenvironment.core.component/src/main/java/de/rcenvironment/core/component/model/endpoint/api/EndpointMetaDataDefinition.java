@@ -20,6 +20,8 @@ import de.rcenvironment.core.datamodel.api.DataType;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * 
+ * Note: Used to generate GUI elements in the endpoint dialog and to provide proper display names, proper ordering, etc. --seid_do
  */
 public interface EndpointMetaDataDefinition {
 

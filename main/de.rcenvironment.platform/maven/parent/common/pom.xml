@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.platform.parent.common</artifactId>
+	<name>RCE Platform Parent POMs - Common</name>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
+		<version>8.1.0-SNAPSHOT</version>
+		<relativePath >../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
+	</parent>
+
+	<properties>
+		<!-- default Eclipse repository; can be overridden to use another mirror, 
+			or in case it is not available anymore -->
+		<rce.maven.eclipseRepositoryUrl>
+			<!-- Indigo SR2 -->
+			http://download.eclipse.org/releases/indigo/201202240900/
+		</rce.maven.eclipseRepositoryUrl>
+		<!-- default Eclipse Orbit repository; can be overridden to use another 
+			mirror, or in case it is not available anymore -->
+		<rce.maven.eclipseOrbitRepositoryUrl>
+			<!-- retention policy of release R20140114142710: "infinite" -->
+			http://download.eclipse.org/tools/orbit/downloads/drops/R20140114142710/repository/
+		</rce.maven.eclipseOrbitRepositoryUrl>
+		<!-- default Eclipse Nebula repository; can be overridden to use another 
+			mirror, or in case it is not available anymore -->
+		<rce.maven.eclipseNebulaRepositoryUrl>
+			<!-- retention policy of archived Q32014 release: "two years" -->
+			http://download.eclipse.org/technology/nebula/archives/Q32014/release/
+		</rce.maven.eclipseNebulaRepositoryUrl>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<configuration>
+					<pomDependencies>consider</pomDependencies>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

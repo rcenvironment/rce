@@ -14,11 +14,12 @@ import java.util.Set;
 
 /**
  * Provides runtime information about a cluster.
+ * 
  * @author Doreen Seider
  */
 public interface ClusterService {
     
-    /** Period for continuously fetch cluster job information. */
+    /** Interval to poll cluster job information. */
     int FETCH_INTERVAL = 60000;
     
     /**

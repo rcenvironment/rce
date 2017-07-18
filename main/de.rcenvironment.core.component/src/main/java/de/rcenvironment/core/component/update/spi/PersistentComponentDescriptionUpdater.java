@@ -11,12 +11,15 @@ package de.rcenvironment.core.component.update.spi;
 import java.io.IOException;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 
 
 /**
  * Must be implemented by all components which need to update its persistent JSON descriptions in workflow files.
  *
  * @author Doreen Seider
+ * 
+ * Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
  */
 public interface PersistentComponentDescriptionUpdater {
 

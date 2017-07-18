@@ -78,6 +78,13 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * 
  * @author Doreen Seider
  * @author Robert Mischke (tweaked notification setup)
+ * 
+ * Note: I wouldn't trust the workflow state transition graph blindly but I consider it as sufficient for now.
+ * 
+ * I'm not happy with the communication to the components and the resulting control flow including waiting for certain callbacks,
+ * etc. See note in {@link ComponentStatesChangedEntirelyListener}.
+ * 
+ * --seid_do
  */
 public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<WorkflowState, WorkflowStateMachineEvent>
     implements ComponentStatesChangedEntirelyListener {
@@ -120,7 +127,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         { WorkflowState.CANCELING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.CANCELING, WorkflowState.FAILED },
         { WorkflowState.CANCELING_AFTER_FAILED, WorkflowState.FAILED },
-        { WorkflowState.RUNNING, WorkflowState.CANCELING_AFTER_RESULTS_REJECTED },        
+        { WorkflowState.RUNNING, WorkflowState.CANCELING_AFTER_RESULTS_REJECTED },
         { WorkflowState.CANCELING_AFTER_RESULTS_REJECTED, WorkflowState.RESULTS_REJECTED },
         { WorkflowState.RESULTS_REJECTED, WorkflowState.DISPOSING },
         { WorkflowState.FAILED, WorkflowState.DISPOSING }
@@ -536,7 +543,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         validatedNestedLoopDriverConfiguration(workflowDescription, workflowGraph);
         return workflowGraph;
     }
-    
+
     private void validatedNestedLoopDriverConfiguration(WorkflowDescription workflowDescription, WorkflowGraph workflowGraph)
         throws WorkflowExecutionException {
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
@@ -551,13 +558,15 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                         storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR,
                             StringUtils.format(
                                 "Potential configuration error: '%s' is configured as a nested loop driver component but doesn't seem "
-                                + "to be part of a loop driven by an outer loop driver component", 
-                                wn.getComponentDescription().getName()), "", "");
+                                    + "to be part of a loop driven by an outer loop driver component",
+                                wn.getComponentDescription().getName()),
+                            "", "");
                     } else if (!nestedLoop && workflowGraph.getLoopDriver(compExeId) != null) {
                         storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR,
                             StringUtils.format("Potential configuration error: '%s' is part of a loop driven by an outer loop driver "
-                                + "component but is not configured as a nested loop driver component", 
-                                wn.getComponentDescription().getName()), "", "");
+                                + "component but is not configured as a nested loop driver component",
+                                wn.getComponentDescription().getName()),
+                            "", "");
                     }
                 } catch (ComponentExecutionException e) {
                     throw new WorkflowExecutionException("Wokflow logic invalid", e);
@@ -823,7 +832,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                         try {
                             componentExecutionService.cancel(compExeId, componentNodeIds.get(compExeId));
                         } catch (ExecutionControllerException e) {
-                            LOG.debug(StringUtils.format("Failed to cancel component(s) of %s; cause: %s", 
+                            LOG.debug(StringUtils.format("Failed to cancel component(s) of %s; cause: %s",
                                 getMethodToCallAsString(), e.toString()));
                         }
                     }

@@ -12,9 +12,8 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>6.0.0</version>
-		<!-- see http://jira.codehaus.org/browse/MNG-4687 -->
-		<relativePath />
+		<version>8.1.0-SNAPSHOT</version>
+		<relativePath >../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
 	</parent>
 
 	<properties>
@@ -31,17 +30,6 @@
 		<!-- by default, ignore all test failures -->
 		<maven.test.failure.ignore>true</maven.test.failure.ignore>
 	</properties>
-
-	<repositories>
-		<repository>
-			<!-- used to fetch RCE parent POMs -->
-			<id>rce-common-https</id>
-			<url>https://repo.sc.dlr.de/nexus/content/repositories/rce-public-6.x</url>
-			<snapshots>
-				<updatePolicy>always</updatePolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 
 	<profiles>
 		<profile>
@@ -119,7 +107,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.6.2.201302030002</version>
+						<version>0.7.9</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
@@ -180,45 +168,5 @@
 			</build>
 		</profile>
 	</profiles>
-	
-	<build>
-		<pluginManagement>
-			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											com.agilejava.docbkx
-										</groupId>
-										<artifactId>
-											docbkx-maven-plugin
-										</artifactId>
-										<versionRange>
-											[2.0.14,)
-										</versionRange>
-										<goals>
-											<goal>generate-xhtml</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<execute>
-											<runOnIncremental>false</runOnIncremental>
-										</execute>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
 
 </project>

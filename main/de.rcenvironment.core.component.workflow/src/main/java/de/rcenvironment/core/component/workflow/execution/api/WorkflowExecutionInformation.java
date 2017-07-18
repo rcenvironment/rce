@@ -19,6 +19,8 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
  * Workflow specific extension of {@link ExecutionInformation}.
  * 
  * @author Doreen Seider
+ * 
+ * Note: Extended on demand. I missed from time to time a review which information must be provided to whom and which must not. --seid_do
  */
 public interface WorkflowExecutionInformation extends ExecutionInformation, Comparable<WorkflowExecutionInformation> {
 

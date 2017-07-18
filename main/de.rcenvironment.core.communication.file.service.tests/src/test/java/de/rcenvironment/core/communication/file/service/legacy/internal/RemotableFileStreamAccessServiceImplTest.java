@@ -76,7 +76,8 @@ public class RemotableFileStreamAccessServiceImplTest {
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
-        dataRef = new DataReference(dmUuid.toString(), NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy"), birefs);
+        dataRef =
+            new DataReference(dmUuid.toString(), NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy"), birefs);
         inputStream = EasyMock.createNiceMock(InputStream.class);
         EasyMock.expect(inputStream.read()).andReturn(noOfBytes).anyTimes();
         EasyMock.expect(inputStream.read(EasyMock.aryEq(new byte[noOfBytes]),

@@ -88,7 +88,7 @@ public final class IdGenerator {
     private static String endodeBytesAsHexAndValidateLength(byte[] bytes, int length) {
         String string = Hex.encodeHexString(bytes);
         if (string.length() != length) {
-            throw new IllegalStateException("Internal consistency error - string of unexpected length: " + string);
+            ConsistencyChecks.reportFailure("Unexpected string length: " + string);
         }
         return string;
     }

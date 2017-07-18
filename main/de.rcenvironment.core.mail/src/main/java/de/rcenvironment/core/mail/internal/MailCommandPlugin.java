@@ -120,10 +120,10 @@ public class MailCommandPlugin implements CommandPlugin {
     @Override
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(CMD_MAIL, "<recipient> <subject> <body>", false, "Sends an email.",
+        contributions.add(new CommandDescription(CMD_MAIL, "<recipient> \"<subject>\" \"<body>\"", false, "Sends an email.",
             "<recipient> - The recipient to whom the mail should be addressed.",
-            "<subject> - The subject of the mail.",
-            "<body> - The mail body."));
+            "\"<subject>\" - The subject of the mail.",
+            "\"<body>\" - The mail body."));
         return contributions;
     }
 

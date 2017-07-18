@@ -8,17 +8,7 @@
                 "Integer",
                 "Boolean"
             ],
-            "defaultDataType": "Float",
-            "inputHandlingOptions":[
-	            "Single",
-                "Queue"
-            ],
-            "defaultInputHandling":"Single",
-            "inputExecutionConstraintOptions":[
-                "Required",
-                "RequiredIfConnected"
-            ],
-            "defaultInputExecutionConstraint":"Required"
+            "defaultDataType": "Float"
         },
         {
             "identifier": "evaluation_results",
@@ -28,17 +18,7 @@
                 "Integer",
                 "Boolean"
             ],
-            "defaultDataType": "Float",
-            "inputHandlingOptions":[
-	            "Single",
-                "Queue"
-            ],
-            "defaultInputHandling":"Single",
-            "inputExecutionConstraintOptions":[
-                "Required",
-                "RequiredIfConnected"
-            ],
-            "defaultInputExecutionConstraint":"Required"
+            "defaultDataType": "Float"
         }
      ]
 

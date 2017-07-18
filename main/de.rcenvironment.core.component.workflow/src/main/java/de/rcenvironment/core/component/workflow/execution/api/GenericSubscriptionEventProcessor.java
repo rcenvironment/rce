@@ -31,6 +31,9 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  * 
  * @author Doreen Seider
  * @author Robert Mischke
+ * 
+ * Note: Consider it as broken. Not because of the code here but because of the {@link NotificationService} and a missing, reliable
+ * concept for event streams. --seid_do
  */
 public abstract class GenericSubscriptionEventProcessor extends DefaultNotificationSubscriber {
 

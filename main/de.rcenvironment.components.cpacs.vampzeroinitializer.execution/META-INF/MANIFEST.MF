@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS VAMPzero Initializer Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.cpacs.vampzeroinitializer.execution
-Bundle-Version: 8.0.2.qualifier
+Bundle-Version: 8.1.0.qualifier
 Import-Package: de.rcenvironment.components.cpacs.vampzeroinitializer.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.api,

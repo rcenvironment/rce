@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Scripting
 Bundle-SymbolicName: de.rcenvironment.core.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.0.2.qualifier
+Bundle-Version: 8.1.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.internal,
@@ -41,4 +41,5 @@ Import-Package: de.rcenvironment.core.authentication,
  org.python.jsr223;version="2.5.1"
 Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/*.xml
-Require-Bundle: org.eclipse.core.runtime
+Require-Bundle: org.eclipse.core.runtime,
+ de.rcenvironment.platform.maven.other

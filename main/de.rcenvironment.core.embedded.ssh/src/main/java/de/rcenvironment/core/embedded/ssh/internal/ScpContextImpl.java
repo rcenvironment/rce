@@ -66,6 +66,7 @@ public class ScpContextImpl implements ScpContext {
      * 
      * @throws IOException if deletion fails
      */
+    @Override
     public void dispose() throws IOException {
         TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(localRootPath);
     }

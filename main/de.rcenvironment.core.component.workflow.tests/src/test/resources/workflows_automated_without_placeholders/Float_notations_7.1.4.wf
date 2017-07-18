@@ -42,7 +42,7 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "myLong = long(120000000000000000000000)\r\nmyInt = int(120000)\r\nmySmallFloat = 12.4\r\nmyFloatString = \"123.456\"\r\n\r\nprint type(myLong)\r\nprint type(myInt)\r\nprint type(mySmallFloat)\r\nprint type(myFloatString)\r\n\r\nRCE.write_output(\"double\", myLong)\r\nRCE.write_output(\"double\", myInt)\r\nRCE.write_output(\"double\", mySmallFloat)\r\nRCE.write_output(\"double\", myFloatString)",
+      "script" : "myLong = long(120000000000000000000000)\r\nmyInt = int(120000)\r\nmySmallFloat = 12.4\r\nmyFloatString = \"123.456\"\r\n\r\nprint type(myLong)\r\nprint type(myInt)\r\nprint type(mySmallFloat)\r\nprint type(myFloatString)\r\n\r\nRCE.write_output(\"double\", myLong)\r\nRCE.write_output(\"double\", myInt)\r\nRCE.write_output(\"double\", mySmallFloat)\r\nRCE.write_output(\"double\", float(myFloatString))",
       "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"

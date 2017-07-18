@@ -26,6 +26,8 @@
 	<modules>
 		<module>${modules-root}/globalData.reset</module>
 		<module>${maven-folder}/buildScopes/${rce.maven.buildScope}</module>
+		<!-- artificial module to ensure a stable output path for the report -->
+		<module>${modules-root}/jqassistant.report</module>
 	</modules>
 
 	<profiles>
@@ -40,79 +42,6 @@
 				<module>${modules-root}/coverage.report</module>
 			</modules>
 		</profile>
-
-		<profile>
-			<id>collectJQADataIfEnabled</id>
-			<activation>
-				<property>
-					<name>rce.maven.collectJQAData</name>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<!-- Note: As of version 1.0.0-M2, jQAssistant seems to be a bit unstable 
-							when it comes to multi-module builds (maybe when used in combination with 
-							Tycho?), so performing the "analysis" and "report" steps in the same build 
-							is difficult. I've decided to put the analysis and reporting steps into a 
-							separate Maven build for now, because even if it could be made to work, the 
-							resulting setup would most likely be brittle and unmaintainable. - misc_ro -->
-						<groupId>com.buschmais.jqassistant.maven</groupId>
-						<artifactId>jqassistant-maven-plugin</artifactId>
-						<version>1.0.0-M2</version>
-						<executions>
-							<execution>
-								<id>jqassistant-scan</id>
-								<goals>
-									<goal>scan</goal>
-								</goals>
-								<phase>prepare-package</phase>
-								<configuration>
-									<!-- TODO add explicit clean step? -->
-									<storeDirectory>${projects-root}/target/jqassistant/datastore</storeDirectory>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
-		<!-- TODO 6.0.0 document chaining approach -->
-		<profile>
-			<id>generateJQAReport</id>
-			<activation>
-				<property>
-					<name>rce.maven.generateJQAReport.triggeredByPreprocessor</name>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.3.2</version>
-						<executions>
-							<execution>
-								<goals>
-									<goal>java</goal>
-								</goals>
-								<phase>prepare-package</phase>
-								<configuration>
-									<mainClass>org.codehaus.plexus.classworlds.launcher.Launcher</mainClass>
-									<commandlineArgs><![CDATA[
-										-f ${rce.maven.preprocessor.projectRoot}/de.rcenvironment/maven/modules/jqassistant.report/pom.xml -B clean compile
-									]]></commandlineArgs>
-									<includeProjectDependencies>false</includeProjectDependencies>
-									<killAfter>-1</killAfter> <!-- suppress deprecation warning -->
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-
 	</profiles>
 
 </project>

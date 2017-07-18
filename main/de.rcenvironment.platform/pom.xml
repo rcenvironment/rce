@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.platform</artifactId>
+	<name>RCE Platform Master Project</name>
+	<version>8.1.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.platform.parent.common</artifactId>
+		<version>1.0.0</version>
+		<relativePath>maven/parent/common</relativePath>
+	</parent>
+		
+	<build>
+		<!-- set output directory to a sub-folder of /target so /target is not 
+			erased in the "clean" phase of the master project - R. Mischke, April 2013 -->
+		<directory>target/master</directory>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>buildPlatformRepository</id>
+			<activation>
+				<property>
+					<name>!rce.maven.skipPlatformRepository</name>
+				</property>
+			</activation>
+			<modules>
+				<module>projects/de.rcenvironment.platform.repository</module>
+			</modules>
+		</profile>
+	</profiles>
+
+	<modules>
+		<!-- resolution stub for package imports fulfilled by Maven dependencies -->
+		<module>projects/de.rcenvironment.platform.maven-osgi.paxlogging.feature/resolution-stub</module>
+		<!-- cross-platform library bundles -->
+		<module>projects/de.rcenvironment.platform.maven.auth</module>
+		<module>projects/de.rcenvironment.platform.maven.database</module>
+		<module>projects/de.rcenvironment.platform.maven.graph</module>
+		<module>projects/de.rcenvironment.platform.maven.gui</module>
+		<module>projects/de.rcenvironment.platform.maven.mail</module>
+		<module>projects/de.rcenvironment.platform.maven.jms</module>
+		<module>projects/de.rcenvironment.platform.maven.webservice</module>
+		<module>projects/de.rcenvironment.platform.maven.ssh.server</module>
+		<module>projects/de.rcenvironment.platform.maven.testing</module>
+		<module>projects/de.rcenvironment.platform.maven.xml</module>
+		<module>projects/de.rcenvironment.platform.maven.other</module>
+		<!-- platform-specific library bundles -->
+		<module>projects/de.rcenvironment.platform.maven.native.common</module>
+		<module>projects/de.rcenvironment.platform.maven.native.win32</module>
+		<!-- merge libraries from all sources into p2 features -->
+		<module>projects/de.rcenvironment.platform.maven.all.feature</module>
+		<module>projects/de.rcenvironment.platform.maven.native.feature</module>
+		<module>projects/de.rcenvironment.platform.maven-osgi.other.feature</module>
+		<module>projects/de.rcenvironment.platform.maven-osgi.paxlogging.feature</module>
+		<module>projects/de.rcenvironment.platform.p2.eclipse.feature</module>
+		<module>projects/de.rcenvironment.platform.p2.other.feature</module>
+		<!-- combine local and external features into single 'platform' feature -->
+		<module>projects/de.rcenvironment.platform.combined.feature</module>
+	</modules>
+
+</project>

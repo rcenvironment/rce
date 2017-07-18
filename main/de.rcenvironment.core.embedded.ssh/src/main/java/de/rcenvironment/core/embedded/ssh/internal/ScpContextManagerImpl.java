@@ -47,11 +47,12 @@ public class ScpContextManagerImpl implements ScpContextManager {
     }
 
     @Override
-    public synchronized void disposeScpContext(ScpContext scpContext) {
+    public synchronized void disposeScpContext(ScpContext scpContext) throws IOException {
         boolean removed = contexts.remove(scpContext);
         if (!removed) {
             log.warn("ScpContext handed in for disposal, but not present in internal list: " + scpContext.toString());
         }
+        scpContext.dispose();
     }
 
 }

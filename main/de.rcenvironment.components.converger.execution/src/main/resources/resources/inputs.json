@@ -49,7 +49,8 @@
             ],
             "defaultDataType": "Float",
             "inputHandlingOptions": [
-                "Single"
+                "Single",
+                "Constant"
             ],
             "defaultInputHandling": "Single",
             "inputExecutionConstraintOptions": [
@@ -98,7 +99,8 @@
             ],
             "defaultDataType": "FileReference",
             "inputHandlingOptions": [
-                "Single"
+                "Single",
+                "Constant"
             ],
             "defaultInputHandling": "Single",
             "inputExecutionConstraintOptions": [

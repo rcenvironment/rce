@@ -2,8 +2,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- Note: This POM should not be run together with other modules, as this 
-		causes weird side effects with the jQAssistant plugin - misc_ro, Oct 2014 -->
+	<!-- UPDATE: Repurposed this module for a workaround to ensure a stable 
+		report output path regardless of the selected build scope. The core aspect 
+		is that this module is always called last, regardless of the selected build 
+		scope. As it uses the same parent POM containing the jQAssistant plugin definitions, 
+		and this one is guaranteed to be the last one executed, this is where jQAssistant 
+		runs the analyze and report steps. This, in turn, makes the output path construction 
+		predictable. - misc_ro, 2017-03-22 -->
 
 	<artifactId>de.rcenvironment.modules.jqassistant.report</artifactId>
 	<name>RCE Module ${project.artifactId}</name>
@@ -11,39 +16,11 @@
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<artifactId>de.rcenvironment.core.parent</artifactId>
 		<version>1.0.0</version>
-		<relativePath>../../parent/module</relativePath>
+		<relativePath>../../../../de.rcenvironment.core/maven/coreParent.pom</relativePath>
 	</parent>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>com.buschmais.jqassistant.maven</groupId>
-				<artifactId>jqassistant-maven-plugin</artifactId>
-				<version>1.0.0-M2</version>
-				<executions>
-					<execution>
-						<id>jqa-analyze</id>
-						<goals>
-							<goal>analyze</goal>
-						</goals>
-						<phase>compile</phase>
-						<configuration>
-							<storeDirectory>${projects-root}/target/jqassistant/datastore</storeDirectory>
-							<failOnConstraintViolations>false</failOnConstraintViolations>
-						</configuration>
-					</execution>
-					<execution>
-						<id>jqa-report</id>
-						<goals>
-							<goal>report</goal>
-						</goals>
-						<phase>compile</phase>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+
 
 </project>

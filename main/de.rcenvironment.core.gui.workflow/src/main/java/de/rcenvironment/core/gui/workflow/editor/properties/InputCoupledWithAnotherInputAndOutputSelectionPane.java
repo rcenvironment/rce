@@ -17,6 +17,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputWithAnotherInputAndOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputWithAnotherInputAndOutputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputWithAnotherPossibleInputAndOutputCommand;
 
@@ -28,9 +29,9 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
 public class InputCoupledWithAnotherInputAndOutputSelectionPane extends ForwardingEndpointSelectionPane {
 
     private final String dynEndpointId;
-    
+
     private final String addDynInputId;
-    
+
     private final String inputNameSuffix;
 
     private final Refreshable outputPane;
@@ -64,12 +65,16 @@ public class InputCoupledWithAnotherInputAndOutputSelectionPane extends Forwardi
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        WorkflowNodeCommand command =
-            new EditDynamicInputWithAnotherInputAndOutputCommand(oldDescription, newDescription, inputNameSuffix,
+        WorkflowNodeCommand command;
+        if (oldDescription.getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
+            command = new EditDynamicInputWithAnotherInputAndOutputCommand(oldDescription, newDescription, inputNameSuffix,
                 LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, false, this, outputPane);
-        ((EditDynamicInputWithAnotherInputAndOutputCommand) command).addMetaDataToInputWithSuffix(metaDataInputWithSuffix);
-        ((EditDynamicInputWithAnotherInputAndOutputCommand) command).setMetaDataOutput(metaDataOutput);
-
+            ((EditDynamicInputWithAnotherInputAndOutputCommand) command).addMetaDataToInputWithSuffix(metaDataInputWithSuffix);
+            ((EditDynamicInputWithAnotherInputAndOutputCommand) command).setMetaDataOutput(metaDataOutput);
+        } else {
+            command = new EditDynamicInputCommand(oldDescription.getDynamicEndpointIdentifier(), oldDescription.getName(),
+                newDescription.getName(), newDescription.getDataType(), newDescription.getMetaData(), this);
+        }
         execute(command);
     }
 

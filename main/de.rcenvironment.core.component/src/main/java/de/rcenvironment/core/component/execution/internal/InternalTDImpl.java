@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.internal;
 
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
@@ -32,60 +33,60 @@ import de.rcenvironment.core.utils.common.JsonUtils;
 public class InternalTDImpl implements InternalTD {
 
     private static final String SERIALIZE_KEY_TYPE = "t";
-    
+
     private static final String SERIALIZE_KEY_IDENTIFIER = "i";
-    
+
     private static final String SERIALIZE_KEY_HOPS = "h";
-    
+
     private static final String SERIALIZE_KEY_PAYLOAD = "p";
-    
+
     /**
      * Type of possible purposes an {@link InternalTDImpl} can have.
      * 
      * @author Doreen Seider
      */
     public enum InternalTDType {
-        
+
         /** Used to detect if a workflow is finished. */
         WorkflowFinish,
-        
+
         /** Used to reset nested loops. */
         NestedLoopReset,
-        
+
         /** Used to announce failure to loop driver. */
         FailureInLoop;
     }
-    
+
     private final String identifier;
-    
+
     private final InternalTDType type;
-    
+
     private Queue<WorkflowGraphHop> hopsToTraverse = null;
-    
+
     private String payload = null;
-    
+
     public InternalTDImpl(InternalTDType type) {
         this(type, UUID.randomUUID().toString());
     }
-    
+
     public InternalTDImpl(InternalTDType type, String identifier) {
         this.identifier = identifier;
         this.type = type;
     }
-    
+
     public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse) {
         this(type, UUID.randomUUID().toString(), hopsToTraverse);
     }
-    
+
     public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse) {
         this(type, identifier);
         this.hopsToTraverse = hopsToTraverse;
     }
-    
+
     public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
         this(type, UUID.randomUUID().toString(), hopsToTraverse, payload);
     }
-    
+
     public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
         this(type, identifier);
         this.hopsToTraverse = hopsToTraverse;
@@ -96,7 +97,7 @@ public class InternalTDImpl implements InternalTD {
     public DataType getDataType() {
         return DataType.Internal;
     }
-    
+
     public String getIdentifier() {
         return identifier;
     }
@@ -104,20 +105,20 @@ public class InternalTDImpl implements InternalTD {
     public InternalTDType getType() {
         return type;
     }
-    
+
     public Queue<WorkflowGraphHop> getHopsToTraverse() {
         return hopsToTraverse;
     }
-    
+
     public String getPayload() {
         return payload;
     }
-    
+
     @Override
     public String toString() {
         return "Internal: " + getType().name();
     }
-    
+
     /**
      * @return serialized {@link InternalTDImpl}
      */
@@ -145,13 +146,14 @@ public class InternalTDImpl implements InternalTD {
         }
         return rootNode.toString();
     }
-    
+
     /**
      * Creates {@link InternalTDImpl} instance out of a serialized string.
      * 
      * @param value serialized string
      * @return {@link InternalTDImpl} instance
      */
+    // why is this called "fromString" and not deserialize to match the counter part? --seid_do
     public static InternalTDImpl fromString(String value) {
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode;
@@ -160,7 +162,11 @@ public class InternalTDImpl implements InternalTD {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
-        InternalTDType type = InternalTDImpl.InternalTDType.valueOf(rootNode.get(SERIALIZE_KEY_TYPE).getTextValue());
+        String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).getTextValue();
+        if (!EnumUtils.isValidEnum(InternalTDType.class, typeStr)) {
+            return null;
+        }
+        InternalTDType type = InternalTDImpl.InternalTDType.valueOf(typeStr);
         String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).getTextValue();
         Queue<WorkflowGraphHop> hops = null;
         if (rootNode.has(SERIALIZE_KEY_HOPS)) {

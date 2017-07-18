@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Headless
 Bundle-SymbolicName: de.rcenvironment.core.start.headless;singleton:=true
-Bundle-Version: 8.0.2.qualifier
+Bundle-Version: 8.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: com.googlecode.lanterna;version="2.1.9",
  com.googlecode.lanterna.gui;version="2.1.9",
@@ -20,6 +20,10 @@ Import-Package: com.googlecode.lanterna;version="2.1.9",
  de.rcenvironment.core.command.api,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.configuration.bootstrap,
+ de.rcenvironment.core.configuration.bootstrap.profile,
+ de.rcenvironment.core.configuration.bootstrap.ui,
+ de.rcenvironment.core.configuration.ui,
  de.rcenvironment.core.embedded.ssh.api,
  de.rcenvironment.core.mail,
  de.rcenvironment.core.notification,

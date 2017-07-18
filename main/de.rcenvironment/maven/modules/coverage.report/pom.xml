@@ -65,7 +65,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.6.2.201302030002</version>
+				<version>0.7.9</version>
 				<executions>
 					<execution>
 						<id>merged-jacoco-report</id>
@@ -82,6 +82,7 @@
 								<exclude>**/gui/**</exclude>
 								<exclude>**/*Test*</exclude>
 							</excludes>
+							<outputDirectory>${projects-root}/de.rcenvironment/target/reports/jacoco</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>

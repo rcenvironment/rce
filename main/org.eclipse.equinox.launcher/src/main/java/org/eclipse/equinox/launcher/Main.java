@@ -1313,36 +1313,36 @@ public class Main {
 		String value = System.getProperty(prop, ""); //$NON-NLS-1$
 		return value + source.substring(var.length());
 	}
+    
+    /** 
+     * Retuns the default file system path for the configuration location.
+     * By default the configuration information is in the installation directory
+     * if this is writeable.  Otherwise it is located somewhere in the user.home
+     * area relative to the current product. 
+     * @return the default file system path for the configuration information
+     */
+    private String computeDefaultConfigurationLocation() {
+        // 1) We store the config state relative to the 'eclipse' directory if possible
+        // 2) If this directory is read-only 
+        //    we store the state in <user.home>/.eclipse/<application-id>_<version> where <user.home> 
+        //    is unique for each local user, and <application-id> is the one 
+        //    defined in .eclipseproduct marker file. If .eclipseproduct does not
+        //    exist, use "eclipse" as the application-id.
 
-	/** 
-	 * Retuns the default file system path for the configuration location.
-	 * By default the configuration information is in the installation directory
-	 * if this is writeable.  Otherwise it is located somewhere in the user.home
-	 * area relative to the current product. 
-	 * @return the default file system path for the configuration information
-	 */
-	private String computeDefaultConfigurationLocation() {
-		// 1) We store the config state relative to the 'eclipse' directory if possible
-		// 2) If this directory is read-only 
-		//    we store the state in <user.home>/.eclipse/<application-id>_<version> where <user.home> 
-		//    is unique for each local user, and <application-id> is the one 
-		//    defined in .eclipseproduct marker file. If .eclipseproduct does not
-		//    exist, use "eclipse" as the application-id.
+        URL install = getInstallLocation();
+        if (protectBase) {
+            return computeDefaultUserAreaLocation(CONFIG_DIR);
+        }
 
-		URL install = getInstallLocation();
-		if (protectBase) {
-			return computeDefaultUserAreaLocation(CONFIG_DIR);
-		}
-
-		// TODO a little dangerous here.  Basically we have to assume that it is a file URL.
-		if (install.getProtocol().equals("file")) { //$NON-NLS-1$
-			File installDir = new File(install.getFile());
-			if (canWrite(installDir))
-				return installDir.getAbsolutePath() + File.separator + CONFIG_DIR;
-		}
-		// We can't write in the eclipse install dir so try for some place in the user's home dir
-		return computeDefaultUserAreaLocation(CONFIG_DIR);
-	}
+        // TODO a little dangerous here.  Basically we have to assume that it is a file URL.
+        if (install.getProtocol().equals("file")) { //$NON-NLS-1$
+            File installDir = new File(install.getFile());
+            if (canWrite(installDir))
+                return installDir.getAbsolutePath() + File.separator + CONFIG_DIR;
+        }
+        // We can't write in the eclipse install dir so try for some place in the user's home dir
+        return computeDefaultUserAreaLocation(CONFIG_DIR);
+    }
 
 	private static boolean canWrite(File installDir) {
 		if (installDir.canWrite() == false)
@@ -1523,6 +1523,8 @@ public class Main {
 		try {
 
 			RCELauncherHelper.setSystemPropertyToMarkCustomLaunch();
+            RCELauncherHelper.setSystemPropertyToIdentifyLauncher();
+			RCELauncherHelper.setSystemPropertyToIdentifyInstance();
 
 			basicRun(args);
 			String exitCode = System.getProperty(PROP_EXITCODE);

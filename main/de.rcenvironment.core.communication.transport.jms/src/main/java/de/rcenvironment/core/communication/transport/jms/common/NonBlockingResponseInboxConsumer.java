@@ -83,7 +83,7 @@ public final class NonBlockingResponseInboxConsumer extends AbstractJmsQueueCons
 
         // sanity check
         if (messageId == null) {
-            log.error("Internal consistency error: There was already a response listener registered for message id " + messageId);
+            log.error("Internal consistency error: message id == null");
             jmsResponseListener.onTimeoutReached(); // arbitrary handling in case of this abnormal situation
             return;
         }

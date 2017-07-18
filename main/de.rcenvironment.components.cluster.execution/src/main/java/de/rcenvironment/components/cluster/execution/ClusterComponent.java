@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,6 +67,20 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 /**
  * Submits a job to a cluster batch system with upload and download of directories.
  * 
+ * Some general notes:
+ * 
+ * -The cluster component is able to submit multiple jobs at once (within one component run). If I'd design it anew nowadays, I'd cut this
+ * feature and would only support one job submission per component run. From my point of view, the cluster component functionality was not
+ * well designed in the first place due to some misunderstandings on the use case side
+ * 
+ * - The "multiple job" feature results in an endpoint interface that is complicated. If I'd design it anew nowadays, I'd go for one input
+ * directory and one output directory and would get rid of the job count indicating how many input directories are expected
+ * 
+ * - The code and especially the exception handling has some flaws, I'd do it nowadays a bit different, more robust, less RuntimeExceptions.
+ * So, it might be worth to refactor the code a bit to keep it maintainable on the long run.
+ * 
+ * -- seid_do
+ * 
  * @author Doreen Seider
  */
 public class ClusterComponent extends DefaultComponent {
@@ -85,18 +100,14 @@ public class ClusterComponent extends DefaultComponent {
     private static final String PATH_PATTERN = "iteration-%d/cluster-job-%d";
 
     private static Log log = LogFactory.getLog(ClusterComponent.class);
-    
+
     private final Object executorLock = new Object();
-    
+
     private ComponentLog componentLog;
 
     private ComponentContext componentContext;
 
-    private ClusterServiceManager clusterServiceManager;
-
     private ComponentDataManagementService dataManagementService;
-
-    private ClusterComponentConfiguration clusterConfiguration;
 
     private SshSessionConfiguration sshConfiguration;
 
@@ -111,13 +122,13 @@ public class ClusterComponent extends DefaultComponent {
     private Map<String, String> pathsToQueuingSystemCommands;
 
     private List<String> jobIds = Collections.synchronizedList(new ArrayList<String>());
-    
-    private AtomicReference<CountDownLatch> jobsCountDefinedLatch = new AtomicReference<CountDownLatch>(null);
-    
-    private AtomicReference<CountDownLatch> jobsSubmittedLatch = new AtomicReference<CountDownLatch>(null);
-    
-    private AtomicBoolean isCancelled = new AtomicBoolean(true);
-    
+
+    private AtomicReference<CountDownLatch> jobsCountDefinedLatch = new AtomicReference<>(null);
+
+    private AtomicReference<CountDownLatch> jobsSubmittedLatch = new AtomicReference<>(null);
+
+    private AtomicBoolean isCancelled = new AtomicBoolean(false);
+
     private Integer jobCount = null;
 
     private boolean considerSharedInputDir = true;
@@ -125,11 +136,11 @@ public class ClusterComponent extends DefaultComponent {
     private int iteration = 0;
 
     private Semaphore upDownloadSemaphore;
-    
+
     private boolean isJobScriptProvidedWithinInputDir;
 
-    private Map<String, Deque<TypedDatum>> inputValues = new HashMap<String, Deque<TypedDatum>>();
-    
+    private Map<String, Deque<TypedDatum>> inputValues = new HashMap<>();
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -138,12 +149,12 @@ public class ClusterComponent extends DefaultComponent {
 
     @Override
     public void start() throws ComponentException {
-        clusterServiceManager = componentContext.getService(ClusterServiceManager.class);
+        ClusterServiceManager clusterServiceManager = componentContext.getService(ClusterServiceManager.class);
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
 
         ConfigurationService configurationService = componentContext.getService(ConfigurationService.class);
         // TODO 6.0.0 review: preliminary path
-        clusterConfiguration = new ClusterComponentConfiguration(
+        ClusterComponentConfiguration clusterConfiguration = new ClusterComponentConfiguration(
             configurationService.getConfigurationSegment("componentSettings/de.rcenvironment.cluster"));
 
         isJobScriptProvidedWithinInputDir = Boolean.valueOf(componentContext.getConfigurationValue(
@@ -212,18 +223,18 @@ public class ClusterComponent extends DefaultComponent {
         if (jobCount != null && inputValues.containsKey(ClusterComponentConstants.INPUT_JOBINPUTS)
             && inputValues.get(ClusterComponentConstants.INPUT_JOBINPUTS).size() >= jobCount
             && (!considerSharedInputDir || (inputValues.containsKey(ClusterComponentConstants.INPUT_SHAREDJOBINPUT)
-            && inputValues.get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).size() >= 1))) {
+                && inputValues.get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).size() >= 1))) {
             jobsSubmittedLatch.set(new CountDownLatch(jobCount));
             jobsCountDefinedLatch.get().countDown();
             // consume inputs
-            List<DirectoryReferenceTD> inputDirs = new ArrayList<DirectoryReferenceTD>();
+            List<DirectoryReferenceTD> inputDirs = new ArrayList<>();
             for (int i = 0; i < jobCount; i++) {
                 inputDirs.add((DirectoryReferenceTD) inputValues.get(ClusterComponentConstants.INPUT_JOBINPUTS).poll());
             }
             DirectoryReferenceTD sharedInputDir = null;
             if (considerSharedInputDir) {
                 sharedInputDir = (DirectoryReferenceTD) inputValues
-                    .get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).poll();                
+                    .get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).poll();
             }
 
             // upload
@@ -243,7 +254,7 @@ public class ClusterComponent extends DefaultComponent {
             iteration++;
         }
     }
-    
+
     @Override
     public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
         isCancelled.set(true);
@@ -260,7 +271,7 @@ public class ClusterComponent extends DefaultComponent {
             componentLog.componentError("Failed to cancel cluster job(s): " + e.getMessage());
         }
     }
-    
+
     private Integer readAndEvaluateJobCount() throws ComponentException {
         Integer count = Integer.valueOf((int) ((IntegerTD) inputValues.get(ClusterComponentConstants.INPUT_JOBCOUNT).poll()).getIntValue());
         if (count <= 0) {
@@ -298,7 +309,9 @@ public class ClusterComponent extends DefaultComponent {
         try {
             File jobFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
                 ClusterComponentConstants.JOB_SCRIPT_NAME);
-            FileUtils.write(jobFile, componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT));
+            // replace Windows newline as TORQUE complains if Windows text format
+            FileUtils.write(jobFile,
+                componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT).replaceAll("\r\n", "\n"));
             componentLog.componentInfo("Uploading job script: " + jobFile.getName());
             upDownloadSemaphore.acquire();
             executor.uploadFileToWorkdir(jobFile, ".");
@@ -337,7 +350,7 @@ public class ClusterComponent extends DefaultComponent {
 
         if (sharedInputDir != null) {
             callablesGroup.add(new Callable<RuntimeException>() {
-    
+
                 @Override
                 @TaskDescription("Upload shared input directory for cluster job execution")
                 public RuntimeException call() throws Exception {
@@ -373,7 +386,6 @@ public class ClusterComponent extends DefaultComponent {
                 throw e;
             }
         }
-
         componentLog.componentInfo("Input directories uploaded");
     }
 
@@ -381,11 +393,13 @@ public class ClusterComponent extends DefaultComponent {
         String message = "Failed to upload directory: ";
         try {
             File dir = TempFileServiceAccess.getInstance().createManagedTempDir();
-            dataManagementService.copyDirectoryReferenceTDToLocalDirectory(componentContext, jobDir,
-                dir);
+            dataManagementService.copyDirectoryReferenceTDToLocalDirectory(componentContext, jobDir, dir);
             componentLog.componentInfo("Uploading directory: " + jobDir.getDirectoryName());
             File inputDir = new File(dir, dirName);
-            new File(dir, jobDir.getDirectoryName()).renameTo(inputDir);
+            File origDir = new File(dir, jobDir.getDirectoryName());
+            if (!origDir.renameTo(inputDir)) {
+                throw new IOException(StringUtils.format("Failed to rename directory for an unknown reason: %s->%s", origDir, inputDir));
+            }
             upDownloadSemaphore.acquire();
             executor.uploadDirectoryToWorkdir(inputDir, "iteration-" + iteration + directoryParent);
             upDownloadSemaphore.release();
@@ -397,7 +411,7 @@ public class ClusterComponent extends DefaultComponent {
     }
 
     private Queue<BlockingQueue<String>> submitJobs() throws ComponentException {
-        Queue<BlockingQueue<String>> blockingQueues = new LinkedList<BlockingQueue<String>>();
+        Queue<BlockingQueue<String>> blockingQueues = new LinkedList<>();
         for (int i = 0; i < jobCount; i++) {
             blockingQueues.add(submitJob(i));
         }
@@ -417,9 +431,9 @@ public class ClusterComponent extends DefaultComponent {
             executor.waitForTermination();
             String qsubCommand = buildQsubCommand(getJobFolderPath(job));
             executor.start(qsubCommand);
-            componentLog.componentInfo(StringUtils.format("Job submitted: %s from %s", 
+            componentLog.componentInfo(StringUtils.format("Job submitted: %s from %s",
                 ClusterComponentConstants.JOB_SCRIPT_NAME, getJobFolderPath(job)));
-            
+
             try (InputStream stdoutStream = executor.getStdout();
                 InputStream stderrStream = executor.getStderr()) {
 
@@ -442,7 +456,7 @@ public class ClusterComponent extends DefaultComponent {
 
                     // do it after termination because stdout and stderr is needed for component logic and not only for logging purposes.
                     // the delay is short because cluster job submission produces only few console output and terminates very quickly
-                    for (String line : stdout.split("\n")) {
+                    for (String line : stdout.split(SystemUtils.LINE_SEPARATOR)) {
                         componentLog.toolStdout(line);
                     }
                 }
@@ -456,7 +470,7 @@ public class ClusterComponent extends DefaultComponent {
         jobIds.add(jobId);
         jobsSubmittedLatch.get().countDown();
         componentLog.componentInfo("Id of submitted job: " + jobId);
-        BlockingQueue<String> synchronousQueue = new SynchronousQueue<String>();
+        BlockingQueue<String> synchronousQueue = new SynchronousQueue<>();
         clusterService.addClusterJobStateChangeListener(jobId, new ClusterJobFinishListener(synchronousQueue));
 
         return synchronousQueue;
@@ -465,10 +479,10 @@ public class ClusterComponent extends DefaultComponent {
     private String buildQsubCommand(String path) throws ComponentException {
         String jobScript = ClusterComponentConstants.JOB_SCRIPT_NAME;
         if (isJobScriptProvidedWithinInputDir) {
-            jobScript = "input" + SLASH + jobScript;
+            jobScript = StringUtils.format("input%s%s", SLASH, jobScript);
         } else {
-            for (@SuppressWarnings("unused") String subdir : path.split(SLASH)) {
-                jobScript = ".." + SLASH + jobScript;
+            for (int i = 0; i < path.split(SLASH).length; i++) {
+                jobScript = StringUtils.format("..%s%s", SLASH, jobScript);
             }
         }
         return buildQsubCommand(path, jobScript);
@@ -496,25 +510,25 @@ public class ClusterComponent extends DefaultComponent {
     }
 
     private String buildTorqueQsubCommand(String path, String jobScript) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("cd " + path);
-        buffer.append(" && ");
-        buffer.append(buildQsubMainCommand());
-        buffer.append(" -d $PWD");
-        buffer.append(" ");
-        buffer.append(jobScript);
-        return buffer.toString();
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("cd " + path);
+        strBuilder.append(" && ");
+        strBuilder.append(buildQsubMainCommand());
+        strBuilder.append(" -d $PWD");
+        strBuilder.append(" ");
+        strBuilder.append(jobScript);
+        return strBuilder.toString();
     }
 
     private String buildSgeQsubCommand(String path, String scriptFileName) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("cd " + path);
-        buffer.append(" && ");
-        buffer.append(buildQsubMainCommand());
-        buffer.append(" -wd $PWD");
-        buffer.append(" ");
-        buffer.append(scriptFileName);
-        return buffer.toString();
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append("cd " + path);
+        strBuilder.append(" && ");
+        strBuilder.append(buildQsubMainCommand());
+        strBuilder.append(" -wd $PWD");
+        strBuilder.append(" ");
+        strBuilder.append(scriptFileName);
+        return strBuilder.toString();
     }
 
     private String extractJobIdFromQsubStdout(String stdout) throws ComponentException {
@@ -529,7 +543,7 @@ public class ClusterComponent extends DefaultComponent {
     }
 
     private String extractJobIdFromTorqueQsubStdout(String stdout) throws ComponentException {
-        Matcher matcher = Pattern.compile("\\d+\\.\\w+").matcher(stdout);
+        Matcher matcher = Pattern.compile("\\d+\\.\\S*").matcher(stdout);
         if (matcher.find()) {
             return matcher.group();
         } else {
@@ -566,23 +580,21 @@ public class ClusterComponent extends DefaultComponent {
                 @TaskDescription("Wait for Job termination, check for failure, and download output directory afterwards")
                 public ComponentException call() throws Exception {
                     try {
-                        try {
-                            if (queueSnapshot.take().equals(ClusterComponentConstants.CLUSTER_FETCHING_FAILED)) {
-                                throw new ComponentException(FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED);
-                            }
-                            if (!isCancelled.get()) {
-                                checkIfClusterJobSucceeded(jobSnapshot);
-                                downloadDirectoryAndSendToOutput(jobSnapshot);
-                            }
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException("Interrupted while waiting for job termination");
+                        if (queueSnapshot.take().equals(ClusterComponentConstants.CLUSTER_FETCHING_FAILED)) {
+                            return new ComponentException(FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED);
                         }
-                        return null;
+                    } catch (InterruptedException e) {
+                        return new ComponentException("Interrupted while waiting for job termination", e);
+                    }
+                    try {
+                        if (!isCancelled.get()) {
+                            checkIfClusterJobSucceeded(jobSnapshot);
+                            downloadDirectoryAndSendToOutput(jobSnapshot);
+                        }
                     } catch (ComponentException e) {
                         return e;
-                    } catch (RuntimeException e) {
-                        return new ComponentException("Unexpected error when waiting for job termination or during failure check", e);
                     }
+                    return null;
                 }
             });
         }
@@ -659,7 +671,10 @@ public class ClusterComponent extends DefaultComponent {
             executor.downloadDirectoryFromWorkdir(path, dir);
             upDownloadSemaphore.release();
             File outputDir = new File(dir, OUTPUT_FOLDER_NAME + "-" + job);
-            new File(dir, OUTPUT_FOLDER_NAME).renameTo(outputDir);
+            File origDir = new File(dir, OUTPUT_FOLDER_NAME);
+            if (!origDir.renameTo(outputDir)) {
+                throw new IOException(StringUtils.format("Failed to rename directory for an unknown reason: %s->%s", origDir, outputDir));
+            }
             DirectoryReferenceTD dirRef = dataManagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext,
                 outputDir, outputDir.getName());
             componentContext.writeOutput(ClusterComponentConstants.OUTPUT_JOBOUTPUTS, dirRef);

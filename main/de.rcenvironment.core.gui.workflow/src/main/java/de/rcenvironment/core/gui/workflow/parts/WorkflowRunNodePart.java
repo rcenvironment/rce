@@ -70,6 +70,14 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  */
 public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
 
+    private static final int INTEGER_15 = 15;
+
+    private static final int INTEGER_16 = 16;
+
+    private static final int INTEGER_20 = 20;
+
+    private static final int INTEGER_22 = 22;
+
     private static final Log LOGGER = LogFactory.getLog(WorkflowRunNodePart.class);
 
     // It is intended that the component state figure is updated at most every 400msec (can be
@@ -142,30 +150,31 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
         // enhance the figure with an activity display element
         stateFigure = new ComponentStateFigureImpl();
         createExecutionCountLabel();
-        final int stateFigureWidthHeight = 22;
-        final int executionLabelHeight = 15; 
         ComponentInterface ci =
             ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface();
         if (ci.getShape() == ComponentShape.CIRCLE) {
-            stateFigure.setBounds(new Rectangle(1, 1, stateFigureWidthHeight, stateFigureWidthHeight));
+            stateFigure.setBounds(new Rectangle(1, 1, INTEGER_22, INTEGER_22));
             final int x = 19;
             final int executionLabelWidth = 15;
-            runCountLabel.setBounds(new Rectangle(x, 2, executionLabelWidth, executionLabelHeight));
+            runCountLabel.setBounds(new Rectangle(x, 2, executionLabelWidth, INTEGER_15));
+            informationFigure.setBounds(new Rectangle(INTEGER_22, INTEGER_20, INTEGER_16, INTEGER_16));
         } else if (ci.getSize() == ComponentSize.SMALL) {
             final int xy = -2;
-            stateFigure.setBounds(new Rectangle(xy, xy, stateFigureWidthHeight, stateFigureWidthHeight));
+            stateFigure.setBounds(new Rectangle(xy, xy, INTEGER_22, INTEGER_22));
             final int x = 16;
             final int y = -1;
             final int executionLabelWidth = 21;
-            runCountLabel.setBounds(new Rectangle(x, y, executionLabelWidth, executionLabelHeight)); 
+            runCountLabel.setBounds(new Rectangle(x, y, executionLabelWidth, INTEGER_15));
+            informationFigure.setBounds(new Rectangle(INTEGER_22, INTEGER_22, INTEGER_16, INTEGER_16));
         } else {
             final int x = 22;
             final int executionLabelWidth = 50;
-            runCountLabel.setBounds(new Rectangle(x, 1, executionLabelWidth, executionLabelHeight));
-            stateFigure.setBounds(new Rectangle(0, 0, stateFigureWidthHeight, stateFigureWidthHeight));
+            runCountLabel.setBounds(new Rectangle(x, 1, executionLabelWidth, INTEGER_15));
+            stateFigure.setBounds(new Rectangle(0, 0, INTEGER_22, INTEGER_22));
         }
         figure.add(stateFigure);
         figure.add(runCountLabel);
+        figure.add(informationFigure);
         
         return figure;
     }

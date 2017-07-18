@@ -23,23 +23,23 @@ import org.junit.Test;
 
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation.ClusterJobState;
-import de.rcenvironment.core.utils.cluster.internal.ClusterJobSourceServiceImpl;
-import de.rcenvironment.core.utils.cluster.internal.ClusterJobTimesInformation;
-import de.rcenvironment.core.utils.cluster.internal.ClusterJobSourceServiceImplTest;
 import de.rcenvironment.core.utils.cluster.internal.ClusterJobInformationImpl;
+import de.rcenvironment.core.utils.cluster.internal.ClusterJobTimesInformation;
+import de.rcenvironment.core.utils.cluster.internal.TestUtils;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
 
 /**
  * Test cases for {@link TorqueClusterService}.
+ * 
  * @author Doreen Seider
  */
 public class TorqueClusterServiceTest {
     
     private TorqueClusterService clusterService;
     
-    private ClusterJobSourceServiceImplTest helperTestClass
-        = new ClusterJobSourceServiceImplTest();
+    private TestUtils helperTestClass
+        = new TestUtils();
     
     /** Set up. */
     @Before
@@ -48,7 +48,6 @@ public class TorqueClusterServiceTest {
         SshSessionConfiguration sshConfiguration = SshSessionConfigurationFactory
             .createSshSessionConfigurationWithAuthPhrase(helperTestClass.localHost, helperTestClass.port, randomString, randomString);
         clusterService = new TorqueClusterService(sshConfiguration, new HashMap<String, String>());
-        clusterService.bindClusterJobSourceService(new ClusterJobSourceServiceImpl());
     }
     
     /**
@@ -63,29 +62,29 @@ public class TorqueClusterServiceTest {
         
         assertEquals(4, jobInformation.size());
         
-        ClusterJobInformation information = jobInformation.get("506.bssc075dl");
+        ClusterJobInformation information = jobInformation.get("506.host");
         assertEquals("job", information.getJobName());
         assertEquals(ClusterJobState.Running, information.getJobState());
         assertEquals("qtest", information.getQueue());
-        assertEquals("seid_do", information.getUser());
+        assertEquals("user_1", information.getUser());
         
-        information = jobInformation.get("507.bssc075dl");
+        information = jobInformation.get("507.host");
         assertEquals("jib", information.getJobName());
         assertEquals(ClusterJobState.Queued, information.getJobState());
         assertEquals("mem", information.getQueue());
-        assertEquals("litz_ma", information.getUser());
+        assertEquals("user_2", information.getUser());
         
-        information = jobInformation.get("508.bssc075dl");
+        information = jobInformation.get("508.host");
         assertEquals("job", information.getJobName());
         assertEquals(ClusterJobState.Completed, information.getJobState());
         assertEquals("qtest", information.getQueue());
-        assertEquals("seid_do", information.getUser());
+        assertEquals("user_1", information.getUser());
         
-        information = jobInformation.get("509.bssc075dl");
+        information = jobInformation.get("509.host");
         assertEquals("jab", information.getJobName());
         assertEquals(ClusterJobState.Queued, information.getJobState());
         assertEquals("fast", information.getQueue());
-        assertEquals("sipp_ja", information.getUser());
+        assertEquals("user_3", information.getUser());
     }
     
     /**

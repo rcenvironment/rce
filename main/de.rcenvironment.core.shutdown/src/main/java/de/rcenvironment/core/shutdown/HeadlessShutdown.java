@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.toolkitbridge.api.ToolkitBridge;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -90,7 +91,7 @@ public class HeadlessShutdown {
      * @throws IOException if sending the shutdown signal fails
      */
     public void shutdownExternalInstance(File externalProfileDir) throws IOException {
-        sendShutdownTokenInternal(new File(externalProfileDir, BootstrapConfiguration.PROFILE_SHUTDOWN_DATA_SUBDIR));
+        sendShutdownTokenInternal(new File(externalProfileDir, Profile.PROFILE_SHUTDOWN_DATA_SUBDIR));
     }
 
     private void writeToLog(String text) {
@@ -183,11 +184,16 @@ public class HeadlessShutdown {
     // SENDER PART
     private void sendShutdownTokenInternal(File shutdownDataDir) throws IOException, UnknownHostException {
         File secretFile = new File(shutdownDataDir, TOKEN_FILENAME);
+        if (!secretFile.exists()) {
+            logger.warn("The shutdown configuration file does not exit. Most likely, the target instance is not running.");
+            return;
+        }
+
         String content;
         try {
             content = FileUtils.readFileToString(secretFile);
         } catch (IOException e) {
-            logger.error("Failed to load shutdown configuration file: " + e.getMessage());
+            logger.warn("Failed to load shutdown configuration file: " + e.getMessage());
             throw e;
         }
 
@@ -206,7 +212,7 @@ public class HeadlessShutdown {
 
     private void tryToRemoveInternalProfileDir() {
         // this will only delete the directory if it is empty, so there is no harm in trying
-        if (!bootstrapSettings.getInternalDataDirectory().delete()) {
+        if (!bootstrapSettings.deleteInternalDataDirectoryIfEmpty()) {
             logger.warn("Failed to remove temporary profile directory " + bootstrapSettings.getInternalDataDirectory()
                 + " although it should not contain any files");
         }
