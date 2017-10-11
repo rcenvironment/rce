@@ -45,6 +45,7 @@
 								<phase>generate-resources</phase>
 								<configuration>
 									<srcDir>src/docbkx/diagrams/svg</srcDir>
+									<srcIncludes>*.svg</srcIncludes>
 									<destDir>target/docbkx/diagrams/img-gen</destDir>
 								</configuration>
 							</execution>
