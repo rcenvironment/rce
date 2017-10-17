@@ -1,0 +1,14 @@
+Qt5Gui.dll filter=lfs diff=lfs merge=lfs -text
+Qt5Script.dll filter=lfs diff=lfs merge=lfs -text
+msvcp100.dll filter=lfs diff=lfs merge=lfs -text
+msvcr100.dll filter=lfs diff=lfs merge=lfs -text
+vcomp100.dll filter=lfs diff=lfs merge=lfs -text
+Qt5Core.dll filter=lfs diff=lfs merge=lfs -text
+tbb.dll filter=lfs diff=lfs merge=lfs -text
+tbbmalloc.dll filter=lfs diff=lfs merge=lfs -text
+TIXI.dll filter=lfs diff=lfs merge=lfs -text
+platforms/qwindows.dll filter=lfs diff=lfs merge=lfs -text
+platforms filter=lfs diff=lfs merge=lfs -text
+Qt5Widgets.dll filter=lfs diff=lfs merge=lfs -text
+TIGL.dll filter=lfs diff=lfs merge=lfs -text
+TIGLViewer.exe filter=lfs diff=lfs merge=lfs -text
