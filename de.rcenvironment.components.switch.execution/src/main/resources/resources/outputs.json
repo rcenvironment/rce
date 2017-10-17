@@ -1,0 +1,35 @@
+{ 
+	"staticOutputs": [
+        {
+            "name": "True",
+            "dataTypes": [
+                "Float",
+				"Integer",
+				"Boolean",
+				"ShortText",
+				"Vector",
+				"Matrix",
+				"SmallTable",
+				"FileReference",
+				"DirectoryReference"
+            ],
+            "defaultDataType": "Float"
+        },
+        {
+        	"name": "False",
+        	"dataTypes": [
+        		"Float",
+				"Integer",
+				"Boolean",
+				"ShortText",
+				"Vector",
+				"Matrix",
+				"SmallTable",
+				"FileReference",
+				"DirectoryReference"
+			],
+			"defaultDataType": "Float"
+		}
+    ]
+
+}

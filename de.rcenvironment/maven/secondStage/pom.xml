@@ -1,0 +1,47 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.maven.secondStage</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../parent/module</relativePath>
+	</parent>
+
+	<properties>
+		<!-- default value: run a full product build -->
+		<rce.maven.buildVariant>completeProduct</rce.maven.buildVariant>
+
+		<!-- adjust relative paths inherited from parent POM -->
+		<projects-root>../../..</projects-root>
+		<maven-folder>..</maven-folder>
+		<modules-root>${maven-folder}/modules</modules-root>
+	</properties>
+
+	<modules>
+		<module>${modules-root}/globalData.reset</module>
+		<module>${maven-folder}/buildScopes/${rce.maven.buildScope}</module>
+		<!-- artificial module to ensure a stable output path for the report -->
+		<module>${modules-root}/jqassistant.report</module>
+	</modules>
+
+	<profiles>
+		<profile>
+			<id>generateCoverageReportIfEnabled</id>
+			<activation>
+				<property>
+					<name>rce.maven.generateCoverageReport</name>
+				</property>
+			</activation>
+			<modules>
+				<module>${modules-root}/coverage.report</module>
+			</modules>
+		</profile>
+	</profiles>
+
+</project>

@@ -1,0 +1,24 @@
+{
+  "templateName" : "Remote Tool Access",
+  "postScript" : "RCE.write_output('output', 'out')",
+  "inputs" : [ {
+    "endpointFileName" : "",
+    "endpointDataType" : "DirectoryReference",
+    "endpointName" : "input",
+    "endpointUsage" : "required"
+  }, {
+    "endpointFileName" : "",
+    "endpointDataType" : "ShortText",
+    "endpointName" : "parameters",
+    "endpointUsage" : "required"
+  } ],
+  "outputs" : [ {
+    "endpointFileName" : "",
+    "endpointDataType" : "DirectoryReference",
+    "endpointName" : "output",
+    "endpointUsage" : "-"
+  } ],
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "commandScriptWindows" : "mkdir out\r\necho Written to standard output: \"${in:parameters}\"\r\necho \"${in:parameters}\" >out\\params.txt\r\necho Written to output file: \"${in:parameters}\"\r\n",
+  "commandScriptLinux" : "mkdir out\necho \"Written to standard output: ${in:parameters}\"\necho \"${in:parameters}\" >out/params.txt\necho \"Written to output file: ${in:parameters}\"\n"
+}

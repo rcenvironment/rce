@@ -1,0 +1,78 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="common_classes">
+	<title>Common Classes and Interfaces</title>
+	<para>This section lists classes and interfaces that every RCE
+		developer should be familiar with.
+	</para>
+	<para>Note that at this point, this list is probably incomplete. If you
+		come across a class you wish you had known earlier, please let us
+		know.
+	</para>
+	<sect2>
+		<title>General</title>
+		<para></para>
+		<variablelist>
+			<varlistentry>
+				<term>ResolvableNodeId, InstanceNodeId, InstanceNodeSessionId, LogicalNodeId,
+					LogicalNodeSessionId (former: NodeIdentifier)</term>
+				<listitem>
+					<para>Explanation for NodeIdentifier: This interface represents the "identity" of a node, and
+						is used whenever nodes are specified in API calls. In general, these node
+						identifiers (or "node ids") are stored and reused by nodes, so they are
+						persistent unless the node's operator deletes its settings folder. From a
+						developer's perspective, the inner format of these ids is usually not
+						relevant.</para>
+					<para>TODO: Replace with explanation referring to current node identifier
+						approach</para>
+					<para>Package: de.rcenvironment.core.communication.common</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</sect2>
+	<sect2>
+		<title>Components and Workflows</title>
+		<para></para>
+		<variablelist>
+			<varlistentry>
+				<term>TypedDatum</term>
+				<listitem>
+					<para>Represents a chunk of data that is passed between the components of a workflow. This is
+						the central abstraction of all data passing, so you will encounter it when
+						you start writing or modifying workflow components.</para>
+					<para>Package: de.rcenvironment.core.component.datamodel (Note: may be moved in
+						5.0.0) </para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</sect2>
+	<sect2>
+		<title>Utilities</title>
+		<para></para>
+		<variablelist>
+			<varlistentry>
+				<term>ThreadPool/SharedThreadPool</term>
+				<listitem>
+					<para>This is a central thread pool that should be used for all asynchronous operations (except
+						for the SWT GUI thread itself, and GUI-embedded "background tasks"). Always
+						use this instead of creating Thread or Executor/ExecutorService
+						instances.</para>
+					<para>(TODO add code example(s), explain @TaskDescription, ...)</para>
+					<para>Package: de.rcenvironment.core.utils.common.concurrent</para>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>TempFileUtils</term>
+				<listitem>
+					<para>This utility class should be used whenever a temporary file or directory should be
+						created. Its main benefit is that it allows for managed cleanup of leftover
+						temporary files/directories (Note: This is not yet implemented!). Additional
+						benefits are convenience functions (like generating a temporary file with a
+						given filename or name pattern), central handling of cleanup issues (like
+						undeletable files), and making sure that all temporary files are created in
+						a consistent location.</para>
+					<para>Package: de.rcenvironment.commons (Note: will be moved in 5.0.0) </para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+	</sect2>
+</sect1>

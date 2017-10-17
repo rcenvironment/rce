@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="de.rcenvironment.core.gui.utils.common.CopyFullpathCommand"
+            name="Copy Full Path">
+      </command>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="de.rcenvironment.core.gui.utils.common.CopyFullpathHandler"
+            commandId="de.rcenvironment.core.gui.utils.common.CopyFullpathCommand">
+            
+            <activeWhen>
+			   	<with variable="activeMenuSelection">
+			   		<count value="1"/>
+				</with>
+			</activeWhen>
+            
+      </handler>
+   </extension>
+   
+   <extension point="org.eclipse.ui.menus">
+			<menuContribution
+             locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=group.edit">
+            		<command
+			           commandId="de.rcenvironment.core.gui.utils.common.CopyFullpathCommand"
+			           id="de.rcenvironment.core.gui.utils.common.menus.CopyFullpathCommand"
+			         mnemonic="S">
+			         
+				         <visibleWhen
+	       					checkEnabled="false">
+	   						<with variable="activeMenuSelection">
+	   							<count value="+"/>
+	   						</with>
+						</visibleWhen>
+			        </command>       
+            </menuContribution>
+   </extension>
+
+</plugin>

@@ -1,0 +1,56 @@
+ACTIVE JOBS--------------------------
+JOBID     JOBNAME    USERNAME      STATE   CORE  REMAINING  STARTTIME
+================================================================================
+4604      Opti-Kette user_1       Running 4      19:27:56  Mon Nov 18 10:17:45 
+4607      Opti-Kette user_1       Running 4      19:29:46  Mon Nov 18 10:19:35 
+4699      RUR-3srefo user2        Running 1      21:06:51  Mon Nov 18 11:56:40 
+5279      PIANO_FRPM user_3       Running 3      42:38:09  Tue Nov 19 09:27:58 
+5964      numex      user4        Running 9      63:11:17  Wed Nov 20 06:01:06 
+5965      numex      user4        Running 1      63:11:17  Wed Nov 20 06:01:06 
+7448      INROS-eu-f user_5       Running 1     -73:47:53  Thu Nov 21 12:01:56 
+9185      Opti-Kette user_1       Running 4      114:24:20 Fri Nov 22 09:14:09 
+9201      QLOGIN     user6        Running 1     -45:24:14  Fri Nov 22 09:25:35 
+9934      Script     user_7       Running 1      23:17:36  Fri Nov 22 14:07:25 
+10379     RUR-3srefo user2        Running 1      124:58:36 Fri Nov 22 19:48:25 
+10109     ariane     user8        Running 32     04:25:32  Fri Nov 22 20:15:21 
+10381     RUR-3srefo user2        Running 1      134:42:38 Sat Nov 23 05:32:27 
+10382     RUR-3srefo user2        Running 1      134:42:38 Sat Nov 23 05:32:27 
+10922     Z08IC00P   user_9       Running 30     15:26:40  Sat Nov 23 06:16:29 
+11169     E4d_aak003 user10       Running 9      22:01:38  Sat Nov 23 12:51:27 
+11170     E4d_aak003 user10       Running 1      22:01:44  Sat Nov 23 12:51:33 
+11312     r4phi60    user_11      Running 6      25:44:40  Sat Nov 23 16:34:29 
+11314     r4phi65    user_11      Running 6      25:45:41  Sat Nov 23 16:35:30 
+11348     Z08IC00B   user12       Running 30     26:50:19  Sat Nov 23 17:40:08 
+10617     BFS_ModCD2 user_13      Running 4      36:03:48  Sun Nov 24 02:54:37 
+11625     staging_ns user14       Running 6      06:52:10  Sun Nov 24 13:41:59 
+11627     staging_ns user14       Running 12     07:06:04  Sun Nov 24 13:55:53 
+11628     INROS-eu-m user_5       Running 1      00:21:27  Sun Nov 24 14:11:16 
+11632     INROS-eu-f user_5       Running 1      00:56:11  Sun Nov 24 14:46:00 
+
+    66 active jobs :  363 of  560 hosts ( 64.82 %)
+
+WAITING JOBS------------------------
+JOBID     JOBNAME    USERNAME      STATE   CORE  WCLIMIT    QUEUETIME
+================================================================================
+4157      TH.Auto    user_15       Waiting 12     48:00:00  Sun Nov 17 12:55:28 
+8470      WKBSDo7A6  user16        Waiting 1      80:00:00  Thu Nov 21 17:02:37 
+984       S28.0F33.6 user_17       Waiting 6      168:00:00 Fri Nov 15 13:55:54 
+986       S22.0F20.0 user_17       Waiting 6      168:00:00 Fri Nov 15 13:57:13 
+5284      S19.0F32.0 user_17       Waiting 6      168:00:00 Tue Nov 19 09:37:56 
+9464      St-2S-eu   user14        Waiting 4      168:00:00 Fri Nov 22 10:45:42 
+7273      Z08IC00B   user_9        Waiting 30     48:00:00  Thu Nov 21 10:29:53 
+
+WAITING JOBS WITH JOB DEPENDENCIES---
+JOBID     JOBNAME    USERNAME      STATE   CORE  WCLIMIT    QUEUETIME
+================================================================================
+10618     BFS_ModCD2 user_13       DepWait 4      47:59:00  Fri Nov 22 19:15:14 
+
+UNSCHEDULED JOBS---------------------
+JOBID     JOBNAME    USERNAME      STATE   CORE  WCLIMIT    QUEUETIME
+================================================================================
+79217     GOAHEAD_Re user_15       Unsched 20     48:00:00  Thu Mar  6 12:12:55 
+79247     test       user10        Unsched 16     01:00:00  Thu Mar  6 12:56:40 
+79234     C1_kwsg_4  user18        Unsched 1      08:00:00  Thu Mar  6 12:32:58 
+79226     lm.v2.p2   user_19       Unsched 3      05:00:00  Thu Mar  6 12:17:18 
+
+Total jobs: 78    Active Jobs: 66    Waiting Jobs: 7     Dep/Unsched Jobs: 5    

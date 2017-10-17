@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Script Execution Python Fragment Bundle
+Bundle-SymbolicName: de.rcenvironment.components.script.execution.python.fragment
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Bundle-Vendor: DLR
+Fragment-Host: de.rcenvironment.components.script.execution
+RCE-ComponentExtension-Configuration: /resources/configuration_python.json

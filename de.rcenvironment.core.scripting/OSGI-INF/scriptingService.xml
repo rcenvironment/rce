@@ -1,0 +1,6 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Scripting Servivce">
+	<implementation class="de.rcenvironment.core.scripting.internal.ScriptingServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.scripting.ScriptingService" /> 
+	</service>
+</scr:component>

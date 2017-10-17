@@ -1,0 +1,32 @@
+{
+    "configuration": [
+        {
+            "key": "host"
+        },
+        {
+            "key": "port",
+            "defaultValue": "7"
+        },
+        {
+            "key": "authUser",
+            "defaultValue": "${user}"
+        },
+        {
+            "key": "authPhrase",
+            "defaultValue": "${*.phrase}"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "user",
+            "guiName": "SSH username",
+            "guiPosition": "1"
+        },
+        {
+            "key": "phrase",
+            "guiName": "SSH password",
+            "guiPosition": "2",
+            "decode": "true"
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="LiveNetworkIdResolutionService">
+
+	<implementation class="de.rcenvironment.core.communication.internal.LiveNetworkIdResolutionServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService" />
+	</service>
+
+</scr:component>

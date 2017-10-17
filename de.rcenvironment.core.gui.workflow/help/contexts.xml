@@ -1,0 +1,18 @@
+<contexts>
+	<context id="connectionEditorContext" title="Connection Editor Help">
+		<description>The Connection Editor is used to define the data flow between components by connecting their inputs and outputs.</description>
+     	<topic href="help/generated/html/usageConnectionEditor.xhtml" label="Connection Editor Usage"></topic>
+	</context>
+	<context id="workflowLabelContext" title="Workflow Label Help">
+		<description>Workflow labels are used to add further information to a workflow.</description>
+     	<topic href="help/generated/html/usageWorkflowLabel.xhtml" label="Workflow Label Usage"></topic>
+	</context>
+	<context id="workflowEditorContext" title="Workflow Editor Help">
+		<description>The Workflow Editor is used to build and configure workflows.</description>
+     	<topic href="help/generated/html/usageWorkflowEditor.xhtml" label="Workflow Editor Usage"></topic>
+	</context>
+		<context id="runtimeWorkflowEditorContext" title="Runtime Workflow Editor Help">
+		<description>The Runtime Workflow Editor is used to observe and monitor the progress of the workflow execution.</description>
+     	<topic href="help/generated/html/usageRuntimeWorkflowEditor.xhtml" label="Runtime Workflow Editor Usage"></topic>
+	</context>
+</contexts>

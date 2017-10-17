@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" configuration-policy="optional" immediate="true" name="RemoteAccessService" activate="activate">
+
+	<implementation class="de.rcenvironment.core.remoteaccess.server.internal.RemoteAccessServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.remoteaccess.server.internal.RemoteAccessService"/>
+	</service>
+		
+	<reference
+		name="WorkflowExecutionService"
+		interface="de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService"
+		bind="bindWorkflowExecutionService"
+	/>
+	
+	<reference 
+		name="DistributedComponentKnowledgeService" 
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" 
+		bind="bindDistributedComponentKnowledgeService" 
+	/>
+
+	<reference 
+		name="LocalSystemMonitoringAggregationService" 
+		interface="de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService" 
+		bind="bindLocalSystemMonitoringAggregationService" 
+	/>
+
+	<reference 
+		name="EmbeddedSshServerControl" 
+		interface="de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl" 
+		bind="bindEmbeddedSshServerControl" 
+	/>
+	
+	<reference 
+		name="ConfigurationService" 
+		interface="de.rcenvironment.core.configuration.ConfigurationService" 
+		bind="bindConfigurationService" 
+	/>
+ <reference bind="bindPlatformService" cardinality="1..1" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService" policy="dynamic"/>
+
+	
+</scr:component>

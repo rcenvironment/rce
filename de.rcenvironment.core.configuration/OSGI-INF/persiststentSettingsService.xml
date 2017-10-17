@@ -1,0 +1,15 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
+	activate="activate" name="Persistent Settings Service">
+	<implementation
+		class="de.rcenvironment.core.configuration.internal.PersistentSettingsServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.configuration.PersistentSettingsService" />
+	</service>
+	<reference bind="bindConfigurationService"
+		cardinality="1..1"
+		interface="de.rcenvironment.core.configuration.ConfigurationService"
+		name="Configuration Service"
+		policy="dynamic"
+	/>
+
+</scr:component>

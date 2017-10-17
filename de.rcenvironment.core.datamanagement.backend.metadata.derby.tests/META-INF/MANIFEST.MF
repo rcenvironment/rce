@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Data Management Derby Backend Tests
+Bundle-SymbolicName: de.rcenvironment.core.datamanagement.backend.metadata.derby.tests
+Bundle-Version: 8.1.0.qualifier
+Fragment-Host: de.rcenvironment.core.datamanagement.backend.metadata.derby
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Require-Bundle: de.rcenvironment.core.utils.testing
+Import-Package: de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.communication.testutils,
+ de.rcenvironment.core.configuration.testutils,
+ de.rcenvironment.core.datamanagement,
+ de.rcenvironment.core.datamanagement.commons,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.testutils,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.utils.common.legacy
+Bundle-Vendor: DLR & Fraunhofer SCAI

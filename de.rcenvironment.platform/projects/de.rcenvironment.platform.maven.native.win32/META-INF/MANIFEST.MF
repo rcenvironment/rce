@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Platform - Maven Native Code Libraries - Win32
+Bundle-SymbolicName: de.rcenvironment.platform.maven.native.win32;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Vendor: DLR
+Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) (osgi.arch=x86_64) )
+Bundle-ClassPath: lib/jacob-1.17.jar
+Bundle-NativeCode: 
+ native/jacob-1.17-x64.dll;osname=WindowsXP;osname=Windows2003;osname=WindowsVista;
+ osname=Windows2008;osname=WindowsServer2008;osname=WindowsServer2008R2;
+ osname=WindowsServer2012;osname=Windows 2012;osname=Windows Server 2012;osname=Win2012;
+ osname=WindowsServer2012R2;osname=Windows 2012 R2;osname=Windows Server 2012 R2;osname=Win2012R2;
+ osname=Windows7;
+ osname=Windows8;osname=Windows 8;osname=Windows 8.1;osname=Win8; 
+ osname=Windows10;osname=Windows 10;osname=Win10;processor=x86_64
+Export-Package: com.jacob.activeX;version="1.17.0",
+ com.jacob.com;version="1.17.0"
+Eclipse-BundleShape: dir

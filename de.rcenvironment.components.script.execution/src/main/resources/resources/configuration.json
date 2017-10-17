@@ -1,0 +1,20 @@
+{
+    "configuration": [
+        {
+            "key": "script",
+            "defaultValue": "import sys\n\nsys.stderr.write('Script was not configured')\nsys.stderr.flush()"
+        },
+        {
+            "key": "usageOfScript",
+            "defaultValue": "NEW"
+        },
+        {
+            "key": "scriptLanguage",
+            "defaultValue": "Python"
+        },
+        {
+            "key": "storeComponentHistoryData",
+            "defaultValue": "false"
+        }
+    ]
+}

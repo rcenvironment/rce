@@ -1,0 +1,5 @@
+{
+  "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
+  "workflowVersion" : "4",
+  "labels" : "[{\"identifier\":\"5f3d8754-e8e4-4b40-a194-1a57f3ffc9dd\",\"headerText\":\"\",\"text\":\"A label with umlauts: öäüÖÄÜß\",\"location\":\"647:123\",\"size\":\"100:50\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"7\",\"zIndex\":\"0\"}]"
+}

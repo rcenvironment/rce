@@ -1,0 +1,6 @@
+# the directory containing the rce-remote executable; note that backslashes must be escaped as "\\".
+remoteaccess.standalone.location=###
+
+testserver.ip=127.0.0.1
+testserver.hostname=localhost
+testserver.port=31055

@@ -1,0 +1,71 @@
+{
+    "methodName":"Dakota Surrogate-Based Local",
+    "methodCode":"surrogate_based_local",
+    "optimizerPackage":"dakota",
+    "followingMethods":"2",
+    "specificSettings":{
+        "approx_method_pointer":{
+            "doNotShow":"true",
+            "dataType":"String",
+            "DefaultValue":"method2",
+            "Value":""
+        },
+        "dace_list":{
+            "doNotShow":"true",
+            "doNotWrite":"true",
+            "dataType":"String",
+            "DefaultValue":"Dakota Latin Hypercube Sampling",
+            "Value":""
+        },
+        "approx_method_list":{
+            "doNotShow":"true",
+            "doNotWrite":"true",
+            "dataType":"String",
+            "DefaultValue":"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations),Dakota Quasi-Newton method",
+            "Value":""
+        }
+    },
+    "responsesSettings":{
+        "gradients":{
+            "GuiName":"Use gradients",
+            "GuiOrder":"1",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"no_gradients,numerical_gradients",
+            "DefaultValue":"no_gradients",
+            "Value":"",
+            "Validation":"",
+            "noKeyword":"true"
+        },
+        "interval_type":{
+            "GuiName":"Gradient interval type",
+            "GuiOrder":"2",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"forward,central",
+            "DefaultValue":"forward",
+            "Value":"",
+            "Validation":""
+        },
+        "fd_gradient_step_size":{
+            "GuiName":"Gradient stepsize",
+            "GuiOrder":"3",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1.0E-4",
+            "Value":"",
+            "Validation":">0"
+        },
+        "hessians":{
+            "GuiName":"Use hessians",
+            "GuiOrder":"4",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"no_hessians",
+            "DefaultValue":"no_hessians",
+            "Value":"",
+            "Validation":"",
+            "noKeyword":"true"
+        }
+    }
+}

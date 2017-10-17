@@ -1,0 +1,33 @@
+{
+    "configuration": [
+        {
+            "key": "OWWritePath",
+            "defaultValue": "${targetRootFolder}"
+        },
+        {
+        	"key": "SelectedRoot",
+        	"defaultValue": "" 
+        },
+        {
+        	"key": "SelectRootOnWorkflowStart",
+        	"defaultValue": "true"
+        },
+        {
+        	"key": "outputLocations",
+        	"defaultValue": "{}"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "targetRootFolder",
+            "guiName": "Target root",
+            "guiPosition": "1",
+            "dataType": "dir"
+        }
+    ],
+    "activationFilter": {
+        "SelectRootOnWorkflowStart": [
+            "true"
+        ]
+    }
+}

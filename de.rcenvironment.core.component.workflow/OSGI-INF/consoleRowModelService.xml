@@ -1,0 +1,28 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="Console Row Model Service">
+	
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.ConsoleRowModelServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService"/>
+	</service>
+	
+	<reference name="ConsoleRowLogService"
+		interface="de.rcenvironment.core.component.workflow.execution.api.ConsoleRowLogService"
+		cardinality="1..1"
+		bind="bindConsoleRowLogService"
+	/>
+
+	<reference
+ 		name="Communication Service"
+ 		interface="de.rcenvironment.core.communication.api.CommunicationService"
+ 		cardinality="1..1"
+ 		bind="bindCommunicationService"
+ 	/>
+
+	<reference
+		bind="bindWorkflowHostService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.management.WorkflowHostService"
+ 		name="Workflow Host Service"
+ 		policy="dynamic"
+ 	/>	
+</scr:component>

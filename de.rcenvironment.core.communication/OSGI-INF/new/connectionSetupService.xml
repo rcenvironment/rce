@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Connection Setup Service">
+
+	<implementation class="de.rcenvironment.core.communication.connection.impl.ConnectionSetupServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.connection.api.ConnectionSetupService" />
+		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider" />
+	</service>
+
+	<reference bind="addConnectionSetupListener" cardinality="0..n"
+		interface="de.rcenvironment.core.communication.connection.api.ConnectionSetupListener" name="ConnectionSetupListeners" policy="dynamic"
+		unbind="removeConnectionSetupListener" />
+
+	<reference bind="bindMessageChannelService" interface="de.rcenvironment.core.communication.channel.MessageChannelService" name="MessageChannelService" />
+
+</scr:component>

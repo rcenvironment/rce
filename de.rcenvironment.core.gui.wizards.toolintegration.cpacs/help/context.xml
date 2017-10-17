@@ -1,0 +1,6 @@
+<contexts>
+	<context id="integration_cpacs" title="CPACS page">
+		<description>CPACS Tool Properties.</description>
+		<topic href="help/generated/html/cpacsPage.xhtml" label="CPACS Usage"/>
+	</context>
+</contexts>

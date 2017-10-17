@@ -1,0 +1,32 @@
+{
+    "methodName":"Dakota NOMAD (Mesh Adaptive Direct Search Algorithm)",
+    "methodCode":"mesh_adaptive_search",
+    "optimizerPackage":"dakota",
+    "followingMethods":"0",
+    "specificSettings":{
+        "function_precision":{
+            "GuiName":"Maximum precision of responses",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1E-5",
+            "Value":"",
+            "Validation":">0"
+        },
+        "seed":{
+            "GuiName":"Seed",
+            "dataType":"Int",
+            "SWTWidget":"Text",
+            "DefaultValue":"1",
+            "Value":"",
+            "Validation":">0"
+        },
+        "variable_neighborhood_search":{
+            "GuiName":"Neighborhood search",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"0.5",
+            "Value":"",
+            "Validation":""
+        }
+    }
+}

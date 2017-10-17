@@ -1,0 +1,78 @@
+{
+  "identifier" : "d5f25f3e-d748-47d8-92f9-46acb0e449e9",
+  "workflowVersion" : "4",
+  "name" : "Matrix_succeed_2016-09-22_17:19:31_77",
+  "nodes" : [ {
+    "identifier" : "021f17c1-8236-4e63-a274-41801de822ba",
+    "name" : "Script",
+    "location" : "174:101",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "int1 = 10000000000000\r\nint2 = 1200000\r\nmyLong = RCE.read_input(\"myLong\")\r\n\r\nprint type(int1)\r\nprint type(int2)\r\nprint type(myLong)\r\n\r\nm1 = [[1,2,7,int1,5,myLong],[1,2,3,int1,5,6]]\r\nm2 = [[1,2,int2,5,5,6],[1,21,3,int2,5,6]]\r\n\r\nRCE.write_output(\"matrix1\", m1)\r\nRCE.write_output(\"matrix2\", m2)",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7745295a-4bb4-4372-a0c0-5ed07ed986bc",
+      "name" : "myLong",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "d1f687bc-7c37-47e6-894e-04a742cb40a7",
+      "name" : "matrix1",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Matrix"
+    }, {
+      "identifier" : "a963de78-91e7-4f33-b999-cc58d6c3fe56",
+      "name" : "matrix2",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Matrix"
+    } ]
+  }, {
+    "identifier" : "4f631b91-3093-43f8-ba05-7d5cd94b02e7",
+    "name" : "Script (1)",
+    "location" : "27:101",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "myLong = 100000000000000000\r\nRCE.write_output(\"myLong\", myLong)\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "3ebac40c-069a-4bb0-94f0-c94328b7b247",
+      "name" : "myLong",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Integer"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "4f631b91-3093-43f8-ba05-7d5cd94b02e7",
+    "output" : "3ebac40c-069a-4bb0-94f0-c94328b7b247",
+    "target" : "021f17c1-8236-4e63-a274-41801de822ba",
+    "input" : "7745295a-4bb4-4372-a0c0-5ed07ed986bc"
+  } ],
+  "labels" : "[{\"identifier\":\"f26abd14-fe85-4968-b64e-b006c8a7ee95\",\"text\":\"Jython fails for values > MAX_INT (signed 32bit)\\r\\nPython fails for values > MAX_LONG (signed 64bit)\",\"location\":\"27:22\",\"size\":\"314:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

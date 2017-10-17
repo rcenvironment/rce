@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Script Component Common Bundle
+Bundle-SymbolicName: de.rcenvironment.components.script.common
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: de.rcenvironment.components.script.common,
+ de.rcenvironment.components.script.common.registry
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.scripting,
+ org.apache.commons.logging;provider=paxlogging,
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13"
+Service-Component: OSGI-INF/*.xml 
+Bundle-Vendor: DLR
+RCE-Component: true

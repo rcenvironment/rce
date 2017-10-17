@@ -1,0 +1,26 @@
+{
+	"enabled" : true,
+	"host": "127.0.0.2",
+	"port" : 31007,
+	"accounts" : {
+		"admin" : {
+			"password" : "changeme!_adm",
+			"role" : "developer",
+			"enabled" : false
+		},
+		"developer" : {
+			"password" : "changeme!_dev",
+			"role" : "developer",
+			"enabled" : false
+		},
+		"user" : {
+			"password" : "changeme!_user",
+			"role" : "local_admin",
+			"enabled" : false
+		},
+		"default" : {
+			"password" : "default",
+			"role" : "default"
+		}
+	}
+}

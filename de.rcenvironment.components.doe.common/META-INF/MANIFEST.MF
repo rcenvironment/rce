@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components DOE Common
+Bundle-SymbolicName: de.rcenvironment.components.doe.common
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Vendor: DLR
+Export-Package: de.rcenvironment.components.doe.common
+Import-Package: de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.utils.common,
+ org.apache.commons.csv;version="1.1.0",
+ org.apache.commons.logging;version="1.1.1",
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13"

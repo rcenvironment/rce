@@ -1,0 +1,106 @@
+{
+    "methodName":"Dakota Single Objective Genetic Algorithm",
+    "methodCode":"soga",
+    "optimizerPackage":"dakota",
+    "followingMethods":"0",
+    "specificSettings":{
+        "fitness_type":{
+            "GuiName":"Fitness type",
+            "GuiOrder":"1",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"merit_function",
+            "DefaultValue":"merit_function",
+            "Value":"",
+            "Validation":""
+        },
+        "seed":{
+            "GuiName":"Random seed",
+            "GuiOrder":"2",
+            "dataType":"Int",
+            "SWTWidget":"Text",
+            "DefaultValue":"",
+            "Value":"",
+            "Validation":""
+        },
+        "population_size":{
+            "GuiName":"Number of population members",
+            "GuiOrder":"3",
+            "dataType":"Int",
+            "SWTWidget":"Text",
+            "DefaultValue":"50",
+            "Value":"",
+            "Validation":">=0"
+        },
+        "initialization_type":{
+            "GuiName":"Initialization type",
+            "GuiOrder":"4",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"simple_random,unique_random",
+            "DefaultValue":"unique_random",
+            "Value":"",
+            "Validation":""
+        },
+        "mutation_type":{
+            "GuiName":"Mutation type",
+            "GuiOrder":"5",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"bit_random,replace_uniform,bit_random,offset_normal,offset_cauchy,offset_uniform",
+            "DefaultValue":"replace_uniform",
+            "Value":"",
+            "Validation":""
+        },
+        "mutation_rate":{
+            "GuiName":"Mutation rate",
+            "GuiOrder":"6",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"0.08",
+            "Value":"",
+            "Validation":""
+        },
+        "replacement_type":{
+            "GuiName":"Replacement type",
+            "GuiOrder":"7",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"favor_feasible,roulette_wheel,unique_roulette_wheel,elitist",
+            "DefaultValue":"elitist",
+            "Value":"",
+            "Validation":""
+        },
+        "crossover_type":{
+            "GuiName":"Crossover type",
+            "GuiOrder":"8",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"multi_point_binary,multi_point_parameterized_binary,multi_point_real",
+            "DefaultValue":"multi_point_real",
+            "Value":"",
+            "Validation":"",
+            "NoLinebreak":"true"
+        },
+        "crossover_type_value":{
+            "GuiName":"Crossover type value",
+            "GuiOrder":"9",
+            "dataType":"Int",
+            "SWTWidget":"Text",
+            "DefaultValue":"50",
+            "Value":"",
+            "Validation":"",
+            "NoKeyword":"true"
+        },
+        "crossover_rate":{
+            "GuiName":"Crossover rate",
+            "GuiOrder":"10",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"0.8",
+            "Value":"",
+            "Validation":""
+        }
+        
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Workflow Execution Storage Bridge">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionStorageBridge"/>
+ 		
+ 	<reference name="Meta Data Service"
+		interface="de.rcenvironment.core.datamanagement.backend.MetaDataBackendService"
+		cardinality="1..1"
+		bind="bindMetaDataService"
+		policy="dynamic"/>
+	
+	<reference name="DataManagementService"
+		interface="de.rcenvironment.core.datamanagement.DataManagementService"
+		cardinality="1..1"
+		bind="bindDataManagementService"
+		policy="dynamic"/>
+		
+ 	<reference name="TypedDatumService"
+ 		interface="de.rcenvironment.core.datamodel.api.TypedDatumService" 
+ 		cardinality="1..1"
+ 		bind="bindTypedDatumService"
+ 		policy="dynamic"/>
+		
+</scr:component>

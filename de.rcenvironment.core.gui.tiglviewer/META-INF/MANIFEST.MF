@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: DLR
+Bundle-Name: RCE Core GUI TiGL Viewer
+Bundle-SymbolicName: de.rcenvironment.core.gui.tiglviewer;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-Activator: de.rcenvironment.core.gui.tiglviewer.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: org.apache.commons.logging;version="1.1.1"

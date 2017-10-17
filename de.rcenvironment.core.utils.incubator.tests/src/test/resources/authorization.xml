@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<authorization xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="privileges.xsd">
+
+  <subjects>
+    <subject id="CN=Thijs Metsch,OU=SC,O=DLR e.V.,L=COLOGNE,ST=NRW,C=DE">
+      <description>Thijs Metsch</description>
+    </subject>
+
+    <subject id="CN=Heinrich Wendel,OU=SC,O=DLR,L=Cologne,ST=NRW,C=DE">
+      <description>Heinrich Wendel</description>
+      <role>de\.dlr\.sc</role>
+      <role>org\.cmt-net</role>
+    </subject>
+    
+    <subject id="CN=Doreen Seider,OU=SC,O=DLR,L=Cologne,ST=NRW,C=DE">
+      <description>Doreen Seider</description>
+      <role>de\.dlr\.sc</role>
+      <role>org\.cmt-net</role>
+    </subject>
+    
+    <subject id="CN=Bea Hornef,OU=SCAI,O=Fraunhofer,L=Sankt-Augustin,ST=NRW,C=DE">
+      <description>Bea Hornef</description>
+      <role>de\.fraunhofer\.scai</role>
+    </subject>
+        
+    <subject id="CN=Juergen Klein,OU=People,OU=SCAI,O=Fraunhofer,C=DE">
+      <role>de\.fraunhofer\.scai</role>
+      <role>org.cmt-net</role>
+    </subject>
+    
+    <subject id="CN=Jens Muuss,OU=People,OU=SCAI,O=Fraunhofer,C=DE">
+      <description>Jens Muuss</description>
+      <role>de\.fraunhofer\.scai</role>
+    </subject>
+    
+    <subject id="CN=Frank Kautz,OU=SC,O=DLR,L=Cologne,ST=NRW,C=DE">
+      <description>Frank Kautz</description>
+    </subject>
+            
+    <subject id="CN=Jens Ruehmkorf,OU=SC,O=DLR,L=Cologne,ST=NRW,C=DE">
+      <description>Jens Rühmkorf</description>
+      <role>de\.dlr\.sc</role>
+    </subject>
+        
+    <subject id="CN=Eric Esins,OU=IT,O=Center of Maritime Technologies,L=Hamburg,ST=Hamburg,C=DE">
+      <role>org\.cmt-net</role>
+    </subject>
+    
+    <subject id="CN=Rainer Tester,OU=SC,O=DLR,L=Cologne,ST=NRW,C=DE">
+      <description>Rainer Tester</description>
+      <role>de\.dlr\.sc</role>
+      <role>de\.fraunhofer.*</role>
+      <role>org\.cmt-net</role>
+    </subject>
+    
+  </subjects>
+  
+  <roles>
+  
+    <role id="de.dlr.sc">
+      <description>SC Geeks</description>
+      <permission>de\.rcenvironment\.rce.*:.*</permission>
+      <permission>de\.rcenvironment\.foo:bla</permission>
+      <permission>de\.rcenvironment\.foo:.*</permission>
+      <permission>de\.rcenvironment\.foo:wuff</permission>
+      <permission>de\.rcenvironment\.ship:.*</permission>
+    </role>
+    
+    <role id="de.fraunhofer.scai">
+      <permission>de\.rcenvironment\.rce.*:*</permission>
+      <permission>de\.rcenvironment\.foo:bla</permission>
+    </role>
+    <role id="de.fraunhofer.iao">
+      <permission>de\.rcenvironment\.foo:bla</permission>
+    </role>
+    <role id="org.cmt-net">
+      <permission>de\.rcenvironment\.ship:enter</permission>
+    </role>
+
+  </roles>
+  
+  <permissions>
+    
+    <permission id="de.rcenvironment.foo:bla">
+        <description>Do bla</description>
+    </permission>
+
+    <permission id="de.rcenvironment.foo:blubb">
+        <description>Do blubb</description>
+    </permission>
+
+    <permission id="de.rcenvironment.foo:wuff">
+    </permission>
+
+    <permission id="de.rcenvironment.rce:rock">
+        <description>Lets rock</description>
+    </permission>
+
+    <permission id="de.rcenvironment.rce:peng">
+    </permission>
+
+    <permission id="de.rcenvironment.ship:enter">
+    </permission>
+
+    <permission id="de.rcenvironment.ship:board">
+        <description>Board</description>
+    </permission>
+
+    <permission id="de.rcenvironment.ship:landing">
+        <description>Landing</description>
+    </permission>
+
+  </permissions>
+
+</authorization>

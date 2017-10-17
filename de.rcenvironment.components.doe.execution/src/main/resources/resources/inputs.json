@@ -1,0 +1,100 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "default",
+            "character": "sameLoop",
+            "group" : "default",
+            "dataTypes": [
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "inputExecutionConstraintOptions": [
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint": "Required"
+        },
+        {
+            "identifier": "startTable",
+            "character": "outerLoop",
+            "group" : "startValues",
+            "inputHandlingOptions": [
+                "Single",
+                "Constant"
+            ],
+            "dataTypes": [
+                "Matrix"
+            ],
+            "defaultDataType": "Matrix",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required"
+        },
+        {
+            "identifier": "toForward",
+            "group" : "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
+            ],
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required"
+        },
+        {
+            "identifier": "startToForward",
+            "character": "outerLoop",
+            "group" : "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
+            ],
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single",
+                "Constant"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
+        }
+    ],
+    "dynamicInputGroups": [
+        {
+            "name": "default",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "startValues",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "innerLoop",
+            "type": "Or"
+        }
+    ]
+}

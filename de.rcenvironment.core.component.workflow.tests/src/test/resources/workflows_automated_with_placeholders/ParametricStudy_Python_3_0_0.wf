@@ -1,0 +1,41 @@
+{
+  "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
+  "workflowVersion" : "1",
+  "name" : "ParametricStudy_Python_2013-06-11_10:53:57",
+  "nodes" : [ {
+    "identifier" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "name" : "Parametric Study",
+    "location" : "186:129",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.parametricstudy.ParametricStudyComponent_Parametric Study",
+      "version" : ""
+    },
+    "configuration" : [ "FromValue:java.lang.Double:0.0", "StepSize:java.lang.Double:0.5", "ToValue:java.lang.Double:21.0" ],
+    "addInput" : [ "param:java.lang.Double" ]
+  }, {
+    "identifier" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "name" : "Add",
+    "location" : "335:129",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
+      "version" : "3.0"
+    },
+    "configuration" : [ "pythonExecutionPath:java.lang.String:${pythonExecutionPath}", "usageOfScript:java.lang.String:NEW", "usage of script:java.lang.String:NEW", "debug:java.lang.Boolean:false", "script:java.lang.String:print 'Design variable\\: ' + str(RCE.read_input('design_variable'))\r\nRCE.write_output('result', RCE.read_input('design_variable') * 2)", "scriptLanguage:java.lang.String:Python" ],
+    "addInput" : [ "design_variable:java.lang.Double" ],
+    "addOutput" : [ "result:java.lang.Double" ],
+    "inputMetaData" : {
+      "design_variable" : [ "usage:java.lang.String:required" ]
+    }
+  } ],
+  "connections" : [ {
+    "source" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "output" : "DesignVariable",
+    "target" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "input" : "design_variable"
+  }, {
+    "source" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "output" : "result",
+    "target" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "input" : "param"
+  } ]
+}

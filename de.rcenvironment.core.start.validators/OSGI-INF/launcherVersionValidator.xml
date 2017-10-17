@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Launcher Version Validator">
+   <implementation class="de.rcenvironment.core.start.validators.internal.LauncherVersionValidator"/>
+   <service>
+   		<provide interface="de.rcenvironment.core.start.common.validation.spi.InstanceValidator"/>
+   </service>
+</scr:component>

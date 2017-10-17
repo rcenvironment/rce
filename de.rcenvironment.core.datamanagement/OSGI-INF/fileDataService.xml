@@ -1,0 +1,19 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="File Data Service">
+	<implementation class="de.rcenvironment.core.datamanagement.internal.FileDataServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.datamanagement.FileDataService" /> 
+	</service>
+	<reference bind="bindCommunicationService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.api.CommunicationService"
+ 		name="Communication Service"
+ 		policy="dynamic"
+ 	/>
+ 	<reference bind="bindPlatformService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.api.PlatformService"
+ 		name="Platform Service"
+ 		policy="dynamic"
+ 	/>
+
+</scr:component>

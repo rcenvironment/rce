@@ -1,0 +1,50 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Context-Type: org.eclipse.rcptt.ctx.ecl
+Element-Name: ClearWorkflowDataBrowser
+Element-Type: context
+Element-Version: 2.0
+Id: _jUInAD0REeaeH4-rLFMbKA
+Runtime-Version: 2.0.2.201511100828
+Save-Time: 6/28/16 11:20 AM
+
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa
+Content-Type: text/plain
+Entry-Name: .description
+
+Opens wfdb if not already open
+Refreshes wfdb
+If entries are present -> select all and delete
+Otherwise do nothing
+
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa--
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998
+Content-Type: text/ecl
+Entry-Name: .ecl.context
+
+try -command {
+	get-view "Workflow Data Browser" | get-button "Refresh all\tF5" | click
+} -catch {
+	get-menu "Window/Show View/Other..." | click
+	with [get-window "Show View"] {
+		get-tree | select "RCE/Workflow Data Browser"
+		get-button OK | click
+	}
+	get-view "Workflow Data Browser" | get-button "Refresh all\tF5" | click
+}
+
+with [get-view "Workflow Data Browser"] {
+	click
+	with [get-tree] {
+		key-type "M1+a"
+		key-type Del
+	}
+}
+
+try -command {
+	// in case of non-empty workflow data browser the dialog appears
+	get-window "Delete workflow run node(s)" | get-button OK | click
+} -catch {
+	// in case of empty workflow data browser there is nothing to delete, so no dialog appears
+}
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998--

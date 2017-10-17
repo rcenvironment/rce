@@ -1,0 +1,159 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="releasing_and_versioning">
+	<title>Release and Versioning Process</title>
+	<sect2>
+		<title>Overview: The Release and Versioning Process</title>
+		<para>Creating an RCE release and preparing for the next one is a process
+			that can be split into four distinct steps (or phases):
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>Trunk preparations - actions that take place in the development
+					trunk before the release branch is split off.
+				</para>
+			</listitem>
+			<listitem>
+				<para>Release candidate building and testing - creation of the release
+					branch, building RCs on the CI server, and applying fixes if necessary.
+				</para>
+			</listitem>
+			<listitem>
+				<para>Final release - creating and publishing the final release build, SCM
+					tagging, posting announcements etc.
+				</para>
+			</listitem>
+			<listitem>
+				<para>Post-release actions - preparing the trunk for the next release.
+				</para>
+			</listitem>
+		</itemizedlist>
+	</sect2>
+	<sect2>
+		<title>Step 1: Trunk preparations</title>
+		<para>TODO migrate/add content</para>
+	</sect2>
+	<sect2>
+		<title>Step 2: Release candidate building and testing</title>
+		<para>TODO migrate/add content</para>
+	</sect2>
+	<sect2>
+		<title>Step 3: Publishing the final release</title>
+		<para>TODO migrate/add content</para>
+	</sect2>
+	<sect2>
+		<title>Step 4: Post-release actions</title>
+		<sect3>
+			<title>Upgrading Version Numbers (and Verification)</title>
+			<para> By convention, the version numbers of all plugins and features are increased in the trunk
+				immediately <emphasis>after</emphasis> a release has been performed. This way, every
+				snapshot build is associated with the upcoming release. For example, all snapshot
+				builds after the 8.1.0 release should be named named "8.2.0.xxx_SNAPSHOT".</para>
+			<para> The version upgrade process of RCE Core is mostly automated: <itemizedlist>
+					<listitem>
+						<para> Open a shell or command window in
+							"/de.rcenvironment.core/maven/utils/" and run the appropriate
+							"upgrade-core" script for your platform (.bat on Windows, .sh on Linux).
+							Usage: <cmdsynopsis>
+								<command> upgrade-core</command>
+								<arg choice="req">
+									<replaceable>old core version</replaceable>
+								</arg>
+								<arg choice="req">
+									<replaceable>new core version</replaceable>
+								</arg>
+							</cmdsynopsis></para>
+						<para> Example: <code>upgrade-core 8.0.0 8.1.0</code>
+						</para>
+						<note>
+							<para>Due to major structural changes in 8.1.0, the version upgrade
+								script tagged as part of the 8.1.0 release may not be updated to
+								perform the version upgrade to 8.2.0 yet; adapting this script will
+								be one of the first actions after the release.</para>
+						</note>
+					</listitem>
+					<listitem>
+						<para> Build the platform repository and the full product locally to verify that the build
+							setup is consistent; see the "getting started" section on how to do
+							this.</para>
+					</listitem>
+					<listitem>
+						<para>Create a Mantis issue "release x.y.z" for the new version if it does
+							not exist yet (usually, it won't). </para>
+					</listitem>
+					<listitem>
+						<para>Commit the changes under this issue. </para>
+					</listitem>
+					<listitem>
+						<para> Verify the CI/Jenkins build<itemizedlist>
+								<listitem>
+									<para>(Option 1) TODO update this section for 8.1.0+</para>
+								</listitem>
+							</itemizedlist><itemizedlist>
+								<listitem>
+									<para>(Option 2) Keep an eye on the standard periodic builds
+										(nightly, "onCommit", ..) and see if they complete normally.
+										IMPORTANT: This is ONLY appropriate if you are
+										around/available for handling possible problems! </para>
+								</listitem>
+							</itemizedlist></para>
+					</listitem>
+				</itemizedlist></para>
+		</sect3>
+	</sect2>
+	<sect2>
+		<title>Creating a maintenance/hotfix release</title>
+		<para> When creating a release that is not based on the current development trunk, the release
+			process is slightly different. Such "maintenance" or "hotfix" releases must
+				<emphasis>always</emphasis> be derived from a stable release. </para>
+		<para>
+			To create a new release based on a previously-released version:
+			<itemizedlist>
+				<listitem>
+					<para>Create a release branch (similar to a normal release) by copying
+						the SVN release tag folder.
+					</para>
+				</listitem>
+				<listitem>
+					<para>Check out this release branch to your local machine.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						As in step 4 of the standard process, upgrade the local version numbers,
+						create a Mantis issue for the release and commit the version changes to
+						it. Note the change in ordering: in a standard release, version numbers
+						are upgraded in the trunk
+						<emphasis>after</emphasis>
+						the release; in a maintenance/hotfix release, they are upgraded
+						<emphasis>before</emphasis>
+						the release, inside the release branch.
+					</para>
+				</listitem>
+				<listitem>
+					<para>Apply and commit the fixes or changes you want in the release; if
+						you want to include specific trunk changes, consider transfering them by
+						using diff patches.
+					</para>
+				</listitem>
+				<listitem>
+					<para>Perform standard step 2 (RC building and testing).
+					</para>
+				</listitem>
+				<listitem>
+					<para>When everything is tested, perform standard step 3 (final release).
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						If changes were made in the release branch that should also be in the
+						trunk, merge them back
+						<emphasis>selectively</emphasis>
+						. Unlike a normal release, you cannot simply merge all branch changes
+						back to trunk; take special care not to mix up version numbers when
+						merging.
+					</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect2>
+</sect1>

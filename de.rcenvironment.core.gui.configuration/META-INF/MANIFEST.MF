@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core GUI Configuration
+Bundle-SymbolicName: de.rcenvironment.core.gui.configuration;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-Activator: de.rcenvironment.core.gui.configuration.Activator
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.help,
+ org.eclipse.gef,
+ org.eclipse.core.resources,
+ de.rcenvironment.core.component
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: DLR
+Import-Package: de.rcenvironment.core.configuration,
+ de.rcenvironment.core.gui.resources.api,
+ de.rcenvironment.core.gui.utils.common,
+ de.rcenvironment.core.start.gui,
+ de.rcenvironment.core.utils.incubator,
+ org.apache.commons.lang3;version="3.1.0",
+ org.apache.commons.lang3.text;version="3.1.0",
+ org.apache.commons.logging;version="1.1.1"

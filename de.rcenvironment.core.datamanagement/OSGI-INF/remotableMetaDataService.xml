@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Remotable Meta Data Service">
+	<implementation class="de.rcenvironment.core.datamanagement.internal.RemotableMetaDataServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.datamanagement.RemotableMetaDataService" /> 
+	</service>
+	
+    <reference bind="bindMetaDataBackendService" 
+    	cardinality="1..1"
+    	interface="de.rcenvironment.core.datamanagement.backend.MetaDataBackendService"
+    	name="Meta Data Backend Service"
+    	policy="static"/>
+</scr:component>

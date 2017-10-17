@@ -1,0 +1,11 @@
+{
+    "configuration": [
+        {
+            "key": "xmlContent"
+        },
+		{
+			"key": "storeComponentHistoryData",
+			"defaultValue": "false"
+		}
+    ]
+}

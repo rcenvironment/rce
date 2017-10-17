@@ -1,0 +1,131 @@
+{
+  "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
+  "workflowVersion" : "3",
+  "nodes" : [ {
+    "identifier" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "name" : "Parametric Study",
+    "location" : "264:161",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.1",
+      "name" : "Parametric Study"
+    },
+    "configuration" : {
+      "StepSize" : "1.0",
+      "ToValue" : "1000.0",
+      "FromValue" : "1.0"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "7a220839-9e81-4727-bc0c-d989b7d28d0b",
+      "name" : "Design Variable",
+      "epIdentifier" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "1.0",
+        "StepSize" : "1.0",
+        "ToValue" : "1000.0"
+      }
+    } ]
+  }, {
+    "identifier" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "name" : "Python 1",
+    "location" : "508:170",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "remotePathOfExisting script" : "",
+      "script" : "import sys\r\nimport tempfile\r\nimport os\r\n\r\nfilename = tempfile.gettempdir() + os.sep + 'result1.tmp'\r\n\r\nif RCE.read_input('inc') != 1.0:\r\n\tfile = open(filename, 'r')\r\n\tlastinc = file.read()\r\n\tfile.close()\r\n\tif float(lastinc) + 1.0 != RCE.read_input('inc'):\r\n\t\tsys.stderr.write('Racing failed!')\r\n\t\tsys.exit(1)\r\n\t\t\r\nfile = open(filename, 'w')\r\nfile.write(str(RCE.read_input('inc')))\r\nfile.close()",
+      "usageOfScript" : "NEW",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7a2cc011-b14c-4b59-a6b0-8da1c4320658",
+      "name" : "inc",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "331a3adc-6624-47ee-b153-93d4194a2056",
+    "name" : "Python 2",
+    "location" : "524:49",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "remotePathOfExisting script" : "",
+      "script" : "import sys\r\nimport tempfile\r\nimport os\r\n\r\nfilename = tempfile.gettempdir() + os.sep + 'result2.tmp'\r\n\r\nif RCE.read_input('inc') != 1.0:\r\n\tfile = open(filename, 'r')\r\n\tlastinc = file.read()\r\n\tfile.close()\r\n\tif float(lastinc) + 1.0 != RCE.read_input('inc'):\r\n\t\tsys.stderr.write('Racing failed!')\r\n\t\tsys.exit(1)\r\n\t\t\r\nfile = open(filename, 'w')\r\nfile.write(str(RCE.read_input('inc')))\r\nfile.close()",
+      "usageOfScript" : "NEW",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "a82afa75-dbf7-4889-a2c2-27e45077a443",
+      "name" : "inc",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "37d7be65-38e1-44f5-85ed-77166f534f4d",
+    "name" : "Python 3",
+    "location" : "547:262",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "remotePathOfExisting script" : "",
+      "script" : "import sys\r\nimport tempfile\r\nimport os\r\n\r\nfilename = tempfile.gettempdir() + os.sep + 'result3.tmp'\r\n\r\nif RCE.read_input('inc') != 1.0:\r\n\tfile = open(filename, 'r')\r\n\tlastinc = file.read()\r\n\tfile.close()\r\n\tif float(lastinc) + 1.0 != RCE.read_input('inc'):\r\n\t\tsys.stderr.write('Racing failed!')\r\n\t\tsys.exit(1)\r\n\t\t\r\nfile = open(filename, 'w')\r\nfile.write(str(RCE.read_input('inc')))\r\nfile.close()",
+      "usageOfScript" : "NEW",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "4330beb5-d24c-4506-a2eb-7090f1f47c21",
+      "name" : "inc",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "output" : "7a220839-9e81-4727-bc0c-d989b7d28d0b",
+    "target" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "input" : "7a2cc011-b14c-4b59-a6b0-8da1c4320658"
+  }, {
+    "source" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "output" : "7a220839-9e81-4727-bc0c-d989b7d28d0b",
+    "target" : "37d7be65-38e1-44f5-85ed-77166f534f4d",
+    "input" : "4330beb5-d24c-4506-a2eb-7090f1f47c21"
+  }, {
+    "source" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "output" : "7a220839-9e81-4727-bc0c-d989b7d28d0b",
+    "target" : "331a3adc-6624-47ee-b153-93d4194a2056",
+    "input" : "a82afa75-dbf7-4889-a2c2-27e45077a443"
+  } ]
+}

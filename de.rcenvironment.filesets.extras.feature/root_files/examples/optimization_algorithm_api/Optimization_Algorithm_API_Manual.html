@@ -1,0 +1,146 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<div class="sect1" title="Optimization Algorithm API"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="optimization_algorithm_api"></a>Optimization Algorithm API</h2></div></div></div>
+    
+    <div class="sect2" title="Basic Concepts"><div class="titlepage"><div><div><h3 class="title"><a name="d5e1487"></a>Basic Concepts</h3></div></div></div>
+        
+        <p>The RCE Optimization Algorithm API gives the user the possibility to integrate 
+            own optimization algorithms into RCE and use them in the common Optimizer Component. The
+            API is based on Python, so the user's algorithm must be callable from phyton, e.g.
+            through a system call. </p>
+    </div>
+    <div class="sect2" title="How to integrate an algorithm into RCE"><div class="titlepage"><div><div><h3 class="title"><a name="d5e1490"></a>How to integrate an algorithm into RCE</h3></div></div></div>
+        
+        <p>The location the API searches for algorithms is in the profile folder of RCE. The base
+            path is:</p>
+        <p><code class="code">&lt;profile&gt;/integration/optimizer/</code></p>
+        <p>In this path, every subfolder has a certain structure to be recognized as optimizer
+            integration. Two folders must exist, having the names "<span class="italic">gui_properties_configuration</span>" and "<span class="italic">source</span>". For all this, an example integration is available in the
+                "<span class="italic">examples</span>" folder of the RCE installation. Copy
+            it to your profile and you can use the example in RCE.</p>
+        <div class="sect3" title="GUI Properties Definition"><div class="titlepage"><div><div><h4 class="title"><a name="d5e1499"></a>GUI Properties Definition</h4></div></div></div>
+            
+            <p>The "<span class="italic">gui_properties_configuration</span>" folder
+                defines the elements of the algorithm to be shown in the Optimizer Component GUI. At
+                first, there has to be a file named "<span class="italic">algorithms.json</span>". In this file, RCE looks up what algorithms should
+                be defined. The structure of this file must always be:</p>
+            <p>
+                </p><pre class="programlisting">{
+    "Name of algorithm":"name of json file for algorithm"
+}</pre><p>
+            </p>
+            <p>For example: </p>
+            <p>
+                </p><pre class="programlisting">{
+	"Name of method1" : "method1",
+	"Name of method2" : "method2"
+}</pre><p>
+            </p>
+            <p>where "<span class="italic">method1.json</span>" and "<span class="italic">method2.json</span>" exist in the same directory. </p>
+            <p>The method files also have to be in a certain format which looks like this:</p>
+            <p>
+                </p><pre class="programlisting">{
+    "methodName":"Name of method",
+    "optimizerPackage":"generic",
+    "specificSettings":{
+        "propertyName":{
+            "GuiName":"Name shown in optimizer GUI",
+            "dataType": ["Int" | "Real" | "String" ],
+            "SWTWidget": ["Text" | "Combo" ],
+            "DefaultValue": "",
+            "Value":"",
+            "Validation":""
+        }
+    }
+}</pre><p>
+            </p>
+            <p>The "<span class="italic">optimizerPackage</span>" must always have the
+                value "<span class="italic">generic</span>", the "<span class="italic">methodName</span>" must have the same value as the method it defines. With
+                the "<span class="italic">specificSettings</span>", all configurable data for
+                the integrated method can be shown in the RCE GUI. Every property must have the
+                following fields:</p>
+            <p><span class="bold"><strong>GuiName</strong></span>: The text that it shown in the properites
+                dialog of the optimizer.</p>
+            <p><span class="bold"><strong>dataType</strong></span>: Represents what type of data the
+                current property is. Valid values are: </p>
+            <p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+                        <p><span class="bold"><strong>Int</strong></span>: An integer number </p>
+                    </li><li class="listitem">
+                        <p><span class="bold"><strong>Real</strong></span>: A float number </p>
+                    </li><li class="listitem">
+                        <p><span class="bold"><strong>String</strong></span>: A text</p>
+                    </li></ul></div><p>
+            </p>
+            <p><span class="bold"><strong>SWTWidget</strong></span>:  This value defines what kind of
+                selection element is used for the property. Valid values are:</p>
+            <p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+                        <p><span class="bold"><strong>Text</strong></span>: A text box where the user can
+                            enter any string</p>
+                    </li><li class="listitem">
+                        <p><span class="bold"><strong>Combo</strong></span>: A dropdown menu with pre
+                            defined values. When using the Combo, you have to define the values to
+                            be shown, using:</p>
+                        <p>
+                            </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem">
+                                    <p><span class="bold"><strong>Choices</strong></span>: A comma
+                                        seperated list of the values, e.g. "Option 1, Option
+                                        2"</p>
+                                </li></ul></div><p>
+                        </p>
+                    </li></ul></div><p>
+            </p>
+            <p><span class="bold"><strong>DefaultValue</strong></span>: This is the value that is chosen
+                if the user does not manually enter a value for the property. For Combos, this must
+                be one of the "Choices"</p>
+            <p><span class="bold"><strong>Value</strong></span>: This always must be an empty string
+                ("")</p>
+            <p><span class="bold"><strong>Validation</strong></span>: If you have an Int or Real data type,
+                you can add a validation for that. Valid values are:</p>
+            <p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">
+                        <p><span class="bold"><strong>&gt; , &gt;=, &lt;, &lt;=</strong></span>: Followed by a
+                            number, e.g. "&gt;=0"</p>
+                    </li><li class="listitem">
+                        <p><span class="bold"><strong>required , optional</strong></span>: Defines if a
+                            value must be entered or if it can be blank.</p>
+                    </li><li class="listitem">
+                        <p><span class="bold"><strong>""</strong> (empty string)</span>: If no validation is
+                            required.</p>
+                    </li></ul></div><p>
+            </p>
+            <p>The options defined here should represent all configurable properties of the method. </p>
+            <p>These are all things that have to be done in the "<span class="italic">gui_properties_configuration</span>" folder. </p>
+        </div>
+        <div class="sect3" title="Source Folder"><div class="titlepage"><div><div><h4 class="title"><a name="d5e1570"></a>Source Folder</h4></div></div></div>
+            
+            <p>The other folder that has to be there is the "<span class="italic">source</span>" folder. In this, two files are mandatory, which will be
+                the entry point for the Optimizer Component. One file must be named "python_path", which only contains one single line that points to the executable of a python installation. The other file must be named "<span class="italic">generic_optimizer.py</span>". This script must call your own
+                optimizer method somehow. In this script, you are able to use the Optimizer Algorithm API. The
+                API contains three modules that can be imported like this:</p>
+            <p>
+                </p><pre class="programlisting">from RCE_Optimizer_API import configuration
+from RCE_Optimizer_API import evaluation
+from RCE_Optimizer_API import result</pre><p>
+            </p>
+            <p>An API example is in the example integration. What the modules do:</p>
+            <p><span class="bold"><strong>configuration</strong></span>: This module contains all
+                information that is needed to configure the optimization method. You can get the
+                design variables names and counts and the objective names and weigths. You can also access the property values configured by the user in the GUI.</p>
+            <p><span class="bold"><strong>evaluation</strong></span>: With this module you can start an
+                evaluation run in RCE and get back the result of it. You can also tell RCE the
+                optimal design set number in the end to finish the optimizer.</p>
+            <p><span class="bold"><strong>result</strong></span>: This is the result you get from the
+                evaluation. It contains objective and constraint values, their gradients and the
+                failed inputs from RCE.</p>
+            <p>If an evaluation is done, it generates a new result object. This will be lost on
+                the next evaluation, if not stored somewhere else before. </p>
+        </div>
+    </div>
+</div> 
+</div>
+
+	
+	
+</div></body></html>

@@ -1,0 +1,92 @@
+{
+  "alwaysRun" : true,
+  "commandScriptLinux" : "echo Generating tool output\r\ncp toolOutput.xml ToolOutput/toolOutput.xml\r\n\r\necho Generating a return directory\r\nmkdir ReturnDirectory\r\n\r\necho Generating content for the return directory\r\necho You should find this file in the return directory of the Simple CPACS Tool. > ReturnDirectory/return.txt",
+  "commandScriptWindows" : "echo Generating tool output\r\ncopy toolOutput.xml ToolOutput\\toolOutput.xml\r\n\r\necho Generating a return directory\r\nmkdir ReturnDirectory\r\n\r\necho Generating content for the return directory\r\necho You should find this file in the return directory of the Simple CPACS Tool. > ReturnDirectory\\return.txt",
+  "copyToolBehavior" : "once",
+  "cpacsInitialEndpointName" : "CPACSInitial",
+  "cpacsOutgoingEndpointName" : "CPACSOut",
+  "cpacsResultFilename" : "cpacsResult.xml",
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "dynamicInputs" : [ {
+    "endpointIdentifier" : "default",
+    "endpointDataTypes" : [ "Boolean", "ShortText", "Integer", "Float" ],
+    "endpointDefaultDataType" : "Float",
+    "inputinputHandlingOptions" : [ "Consuming", "Immutable" ],
+    "defaultInputHandling" : "Consuming",
+    "inputinputExecutionConstraintOptions" : [ "Required", "RequiredIfConnected" ],
+    "defaultInputExecutionConstraint" : "Required",
+    "endpointMetaData" : {
+      "variable.xpath" : {
+        "guiName" : "XPath",
+        "guiPosition" : "0",
+        "guiGroup" : "XML values",
+        "visibility" : "shown",
+        "defaultValue" : "",
+        "validation" : "required"
+      }
+    }
+  } ],
+  "dynamicOutputs" : [ {
+    "endpointIdentifier" : "default",
+    "endpointDataTypes" : [ "Boolean", "ShortText", "Integer", "Float" ],
+    "endpointDefaultDataType" : "Float",
+    "endpointMetaData" : {
+      "variable.xpath" : {
+        "guiName" : "XPath",
+        "guiPosition" : "0",
+        "guiGroup" : "XML values",
+        "visibility" : "shown",
+        "defaultValue" : "",
+        "validation" : "required"
+      }
+    }
+  } ],
+  "enableCommandScriptWindows" : true,
+  "groupName" : "CPACS",
+  "hasToolSpecificInput" : true,
+  "inputs" : [ {
+    "endpointFolder" : "Input folder",
+    "endpointFileName" : "CPACSInitial.xml",
+    "endpointDataType" : "FileReference",
+    "endpointName" : "CPACSInitial",
+    "endpointUsage" : "required"
+  } ],
+  "integrationType" : "CPACS",
+  "isActive" : true,
+  "launchSettings" : [ {
+    "host" : "RCE",
+    "rootWorkingDirectory" : "",
+    "toolDirectory" : "SimpleCPACSTool",
+    "version" : "1"
+  } ],
+  "mappingInputFilename" : "mappingInput.xml",
+  "mappingOutputFilename" : "mappingOutput.xml",
+  "outputs" : [ {
+    "endpointFolder" : "",
+    "endpointFileName" : "",
+    "endpointDataType" : "FileReference",
+    "endpointName" : "CPACSOut",
+    "endpointUsage" : "-"
+  }, {
+    "endpointDataType" : "DirectoryReference",
+    "endpointName" : "ReturnDirectory",
+    "endpointUsage" : "-"
+  } ],
+  "postScript" : "${out:ReturnDirectory} = \"${dir:tool}/ReturnDirectory\"",
+  "preScript" : "",
+  "setToolDirAsWorkingDir" : true,
+  "templateName" : "CPACS Tool with return directory",
+  "toolDescription" : "",
+  "toolIconPath" : "",
+  "toolInputFileName" : "ToolInput/toolInput.xml",
+  "toolIntegratorE-Mail" : "",
+  "toolIntegratorName" : "",
+  "toolName" : "Simple CPACS Tool",
+  "toolOutputFilename" : "ToolOutput/toolOutput.xml",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "toolspecificInputdataFilename" : "ToolSpecificInputData.xml",
+  "toolspecificMappingFilename" : "ToolSpecificMapping.xml",
+  "uploadIcon" : true
+}

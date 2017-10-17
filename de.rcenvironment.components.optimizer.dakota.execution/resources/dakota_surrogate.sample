@@ -1,0 +1,76 @@
+environment,
+tabular_graphics_data
+method_pointer = 'method1'
+
+method,	
+	id_method = 'method1'
+	model_pointer = 'model1'
+	%%METHOD_CODE%%
+	%%METHOD_PROPERTIES%%
+	
+	
+method,
+	id_method = 'method2'
+	%%METHOD_2_CODE%%
+    %%METHOD_2_PROPERTIES%%
+	
+method,
+	id_method = 'method3'
+	model_pointer = 'model3'
+	%%METHOD_3_CODE%%
+   	%%METHOD_3_PROPERTIES%%
+
+variables, 
+   continuous_design = %%CONTINUOUS_DESIGN_COUNT%%
+   cdv_initial_point   	%%CDV_INITIAL_POINT%%
+   cdv_lower_bounds	%%CDV_LOWER_BOUNDS%%
+   cdv_upper_bounds	%%CDV_UPPER_BOUNDS%%
+   cdv_descriptor	%%CDV_NAMES%%
+   
+   discrete_design_range = %%DISCRETE_DESIGN_COUNT%%
+   ddv_initial_point   	%%DDV_INITIAL_POINT%%
+   ddv_lower_bounds	%%DDV_LOWER_BOUNDS%%
+   ddv_upper_bounds	%%DDV_UPPER_BOUNDS%%
+   ddv_descriptor	%%DDV_NAMES%%   
+   
+interface, 
+	system
+	id_interface = 'interface1'
+  	analysis_driver = %%DRIVER_FOR_OS%%
+	parameters_file = 'params.in'
+   	results_file    = 'results.out'
+   	work_directory directory_tag  named '%%WORKDIR%%'
+   	file_save
+  	directory_save
+
+model,
+	id_model = 'model1'
+	responses_pointer = 'responses1'
+	surrogate global
+		dace_method_pointer = 'method2'
+		reuse_samples none
+		polynomial quadratic
+
+model,
+	id_model = 'model3'
+	single
+	interface_pointer = 'interface1'
+	responses_pointer = 'responses2'
+
+responses,  
+	id_responses = 'responses1'
+	num_objective_functions = %%OBJECTIVE_FUNCTIONS_COUNT%% 
+	multi_objective_weights = %%OBJECTIVES_WEIGHT%% 
+	num_nonlinear_inequality_constraints = %%CONSTRAINT_COUNT%% 
+	nonlinear_inequality_upper_bounds = %%CONSTRAINT_LOWER%% 
+	nonlinear_inequality_lower_bounds = %%CONSTRAINT_UPPER%% 
+	%%GRADIENT_SECTION%%
+
+responses,  
+	id_responses = 'responses2'  
+	num_objective_functions = %%OBJECTIVE_FUNCTIONS_COUNT%% 
+	multi_objective_weights = %%OBJECTIVES_WEIGHT%% 
+	num_nonlinear_inequality_constraints = %%CONSTRAINT_COUNT%% 
+	nonlinear_inequality_upper_bounds = %%CONSTRAINT_LOWER%% 
+	nonlinear_inequality_lower_bounds = %%CONSTRAINT_UPPER%% 
+	%%GRADIENT_2_SECTION%%

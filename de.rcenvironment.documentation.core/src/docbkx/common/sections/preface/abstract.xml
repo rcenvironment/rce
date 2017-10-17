@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1 id="abstract">
+    <title>Abstract</title>
+    <para>
+        RCE (Remote Component Environment) is an open source software to help engineers, scientists and others to create, manage and execute complex calculation and simulation workflows.
+        A workflow in RCE consists of components, which are connected between each other. A component can be a simulation tool, a tool for data access, or a user-defined script.
+        Connections define which data flows from one component to another. There are predefined components with common functionalities, like an optimizer or a cluster component.
+        Moreover, users can integrate their own tools. RCE instances can be connected between each other. Components can be executed locally or on remote instances of RCE (if the component is installed accordingly). 
+        Having this at hand, use-cases for complex distributed applications can be solved with RCE.
+    </para>
+</sect1>

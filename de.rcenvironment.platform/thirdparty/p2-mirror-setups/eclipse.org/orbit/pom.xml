@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This Maven setup mirrors the installation units (IUs) used by RCE from 
+	the eclipse.org Orbit p2 repository. Call "mvn clean package" in this directory 
+	to start mirroring. Note that incremental mirroring is supported in case 
+	new IUs or platforms need to be added. - R. Mischke, Oct 2015 -->
+
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>eclipse-orbit-p2-mirror</artifactId>
+
+	<parent>
+		<groupId>de.rcenvironment.thirdparty</groupId>
+		<artifactId>p2-mirror-parent</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../parent.pom</relativePath>
+	</parent>
+
+	<properties>
+		<!-- retention policy of release R20140114142710: "infinite" -->
+		<mirror.sourceUrl>http://download.eclipse.org/tools/orbit/downloads/drops/R20140114142710/repository/</mirror.sourceUrl>
+		<mirror.outputDir>${project.basedir}/../../../p2/eclipse.org/orbit</mirror.outputDir>
+	</properties>
+
+	<build>
+		<!-- Note: The target directory is intentionally not cleaned on every run 
+			as mirroring puts non-trivial load on the remote server. In case you need 
+			to start from scratch, delete the mirror folder manually. - misc_ro -->
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho.extras</groupId>
+				<artifactId>tycho-p2-extras-plugin</artifactId>
+				<configuration>
+					<ius>
+						<iu>
+							<id>org.apache.commons.io</id>
+							<version>2.0.1.v201105210651</version>
+						</iu>
+						<iu>
+							<id>org.junit</id>
+							<version>4.8.2.v4_8_2_v20130308-0413</version>
+						</iu>
+						<iu>
+							<id>org.hamcrest.core</id>
+							<version>1.3.0.v201303031735</version>
+						</iu>
+						<iu>
+							<id>org.swtchart</id>
+							<version>0.7.0.v201201201914</version>
+						</iu>
+					</ius>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

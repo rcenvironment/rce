@@ -1,0 +1,187 @@
+= "RCE Core" and distribution release guideline =
+
+This file describes the release and versioning process for the "RCE Core" repository.
+
+Note that in 2.5.x, the "standard" and "example" component groups are built as part of 
+the core repository, and are therefore upgraded and released along with it. This will 
+probably change in a future release.
+
+
+== Creating and tagging a release ==
+
+This section describes how to create a release from the current development trunk.
+The end result is a self-contained p2 repository in
+"/de.rcenvironment.repositories.rce.core/target/repository". It contains both the 
+generated plugins and features, as well as all required plugins and features pulled 
+in from the "RCE Platform" p2 repository used for the build. As of RCE 2.5.x, the 
+"fileset" features used by distributions are also contained in this repository.
+
+Note that this guide assumes you have access to the DLR Nexus at repo.sc.dlr.de and
+the p2 repository server updates.sc.dlr.de.  
+
+=== Preparations and Verification ===
+
+ * Make sure that you are working with a clean checkout of 
+   "https://svn.sistec.dlr.de/svn/rce/new/rce/trunk". It is recommended to create 
+   a fresh checkout, or having a workspace that is only used for release preparations.
+
+ * Make sure that all parent POMs references in the build scope point to a release 
+   version (no "-SNAPSHOT" suffix). You can verify this in Eclipse by performing a 
+   full-text file search for "-SNAPSHOT" in *.xml and *.pom files; it should come up 
+   empty. Also check the log output of all build attempts. If a snapshot version 
+   is used, a line like this will appear, as snapshot versions are retrieved from the 
+   Maven repository on every build:
+   
+   "Downloading: http://repo.sc.dlr.de/nexus/content/repositories/rce-public-2.5/de/
+   rcenvironment/de.rcenvironment.common.parent.osgi/2.5.1-SNAPSHOT/maven-metadata.xml"
+
+   If a POM parent points to a snapshot version, and you know that there is an 
+   appropriate stable version, change it as necessary (described below). If you are
+   unsure what version is correct, ask the parent POM maintainer (R. Mischke).
+   
+ * Run a local test product build using the Eclipse launch configuration
+   "RCE - test core repository release (using configured platform release)"
+   in the "/de.rcenvironment.repositories.rce.core/eclipse/" folder. This uses the
+   same Maven configuration as a release candidate (RC) build on Jenkins.
+   
+   * If version errors occur, the distribution is probably not updated the the new 
+     core version yet. Check the section "Upgrading a distribution build" below.
+   
+ * If this build is successful, run a test product build using the launch configuration
+   "RCE - standard edition - test release build (using local core build)"
+   in the "/de.rcenvironment.repositories.rce.main/eclipse/" folder. This uses the
+   same Maven configuration as a release builds on Jenkins.
+   
+ * Start the generated product; note that you should probably copy or move it from 
+   its output folder ("target/repository/products/...") to a folder with a shorter 
+   path length first (see Mantis #7459).
+   
+ * Open "Help > About RCE > Installation Details", expand all sub-trees and verify that 
+   all RCE version numbers (platform/core/product) are correct. Also verify the release 
+   type suffixes: The platform features should have release versions (no "SNAPSHOT"
+   or "RC" suffix); the core and product features should all have a "RC" (release 
+   candidate) suffix.
+   
+ After these verifications (and of course, committing all related changes), the RCE core
+ trunk is ready for release branching.
+   
+=== Release branching and CI release candidate ===
+
+ * Create the release SVN tag from trunk; see existing tags for naming conventions.
+ 
+ * Build and deploy the release with the "RCE_Tycho_Versioned_Release_Platform_Repo_USDD" 
+   Jenkins job:
+  * add the new SVN tag path as a "FULL_SVN_TAG" option (on top of the list)
+  * run the job with this option   
+
+ * (to be continued)
+
+== Upgrading the version numbers == 
+
+By convention, the version numbers of all plugins and features are increased in the 
+trunk immediately *after* a release has been performed. This way, every snapshot build 
+is associated with the upcoming release (e.g., snapshot builds after 2.5.0 RELEASE are 
+numbered 2.5.1 SNAPSHOT).
+
+The version upgrade process of RCE Core is mostly automated:
+
+ * Open a shell or command window in "/de.rcenvironment.core/maven/utils/" and run the 
+   appropriate "upgrade-core" script for your platform (.bat on Windows, .sh on Linux).
+   
+   Usage: "upgrade-core <old core version> <new core version>"
+   Example: "upgrade-core 2.5.0 2.5.1"  
+
+ * Build the core repository locally to verify that the build setup is consistent:
+ 
+   * (Option 1) To build from Eclipse, use the launch files in 
+     "/de.rcenvironment.repositories.rce.core/eclipse". The best way to ensure proper
+     configuration of the local code base is the "RCE - test core repository release 
+     (using configured platform release).launch" configuration, as it uses the same
+     setup as the CI build on Jenkins.
+     
+   * (Option 2) To build with plain Maven, open a shell in "/de.rcenvironment.
+     repositories.rce.core/" and run the command "mvn clean package 
+     -Drce.maven.platformRepositoryUrlRoot=
+     http://updates.sc.dlr.de/eclipse/rce/platform/releases/" (no whitespace after
+     the "=" sign).
+
+   Note that both options will only work if you have network access to the 
+   "updates.sc.dlr.de" host that provides RCE Platform releases. If this is not the 
+   case, build a local RCE Platform repository and use the "RCE - build core 
+   repository (using local platform repository).launch" configuration from eclipse.
+   
+ * Create a Mantis issue "release x.y.z" for the new version if it does not exist yet
+   (usually, it won't).
+   
+ * Commit the changes under this issue.  
+
+ * Verify the CI/Jenkins build:
+ 
+   * (Option 1) Manually trigger a snapshot build using the Jenkins job  
+     "RCE_Tycho_Trunk_Snapshot_RCE_CoreRepo_USDD" and check that it completes normally.
+   
+   * (Option 2) Keep an eye on the standard periodic builds (nightly, "onCommit", ..) 
+     and see if they complete normally. IMPORTANT: This is ONLY appropriate if you are 
+     around/available for handling possible problems!
+
+
+== Upgrading to a new version of "RCE Platform" ==
+
+ * If the platform repository version has changed, run the "upgrade-platform-reference"  
+   script in the same directory.
+   
+   Usage: "upgrade-platform-reference <old platform version> <new platform version>"
+   Example: "upgrade-platform-reference 2.5.0 2.5.3"
+   
+ * Follow the commit/verify process as described in the "version number upgrade" 
+   section above.
+
+
+== Upgrading to a another version of "RCE Common Parent" ==
+
+ * Replace the parent POM version in "/de.rcenvironment.core/maven/coreParent.pom", for
+   example from 
+
+    <parent>
+        <groupId>de.rcenvironment</groupId>
+        <artifactId>de.rcenvironment.common.parent.osgi</artifactId>
+        <version>2.5.0</version>
+    </parent>
+
+   to 
+   
+    <parent>
+        <groupId>de.rcenvironment</groupId>
+        <artifactId>de.rcenvironment.common.parent.osgi</artifactId>
+        <version>2.5.1-SNAPHOT</version>
+    </parent>
+    
+   If you are unsure what version to use, ask the parent POM maintainer (R. Mischke).
+    
+ * Follow the commit/verify process as described in the "version number upgrade" 
+   section above.
+
+
+== Upgrading a distribution build ==
+
+ * If necessary, adapt the "RCE Common" parent POM in 
+   "/de.rcenvironment.repositories.<distribution>/maven/productParent.pom".
+   
+ * Change the POM versions in ".../pom.xml" and ".../maven/repository/pom.xml".
+
+ * Change the "internal.coreRepository.urlVersionSuffix" property in 
+   ".../pom.xml" and ".../maven/productParent.pom" 
+   to the new core version.
+   
+   (TODO 3.0.0: try to reduce this to one location)
+   
+ * Change the <product .. version="x.y.z"> number in 
+   ".../maven/repository/rce_default.product". 
+
+ * Change all feature and fileset versions in ".../
+   maven/repository/category.xml" to the new core version. 
+
+== Version History ==
+
+2013-04-xx, R. Mischke: created for 2.5.x
+

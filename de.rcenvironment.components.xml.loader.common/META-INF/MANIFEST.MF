@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE XML Loader Component Common
+Bundle-SymbolicName: de.rcenvironment.components.xml.loader.common
+Bundle-Version: 8.1.0.qualifier
+Export-Package: de.rcenvironment.components.xml.loader.common;version="6.0.0"
+RCE-Component: false
+Bundle-ClassPath: .
+Bundle-Vendor: DLR
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.history,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.utils.common,
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13"

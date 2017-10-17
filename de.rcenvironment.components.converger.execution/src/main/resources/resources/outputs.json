@@ -1,0 +1,99 @@
+{
+    "staticOutputs": [
+        {
+            "name": "Converged",
+            "character": "outerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Converged absolute",
+            "character": "outerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Converged relative",
+            "character": "outerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Done",
+            "character": "outerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "identifier": "valueToConverge",
+            "character": "sameLoop",
+            "dataTypes": [
+                "Float",
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "readOnly": "true"
+        },
+        {
+            "identifier": "finalToConverge",
+            "character": "outerLoop",
+            "dataTypes": [
+                "Float",
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "readOnly": "true"
+        },
+        {
+            "identifier": "auxiliaryValue",
+            "character": "sameLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "readOnly": "true"
+        },
+        {
+            "identifier":"toForward",
+            "character": "sameLoop",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
+        },
+        {
+            "identifier":"finalToForward",
+            "character": "outerLoop",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
+        }
+    ]
+}

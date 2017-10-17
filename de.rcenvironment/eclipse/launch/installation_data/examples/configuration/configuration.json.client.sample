@@ -1,0 +1,17 @@
+{
+	"general" : {
+		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName} with profile \"${profileName}\""
+	},
+	"network" : {
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 20001,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	}
+}

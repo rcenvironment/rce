@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Toolaccess GUI Bundle
+Bundle-SymbolicName: de.rcenvironment.core.gui.remoteaccess;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.sshremoteaccess,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.gui.workflow.editor.validator,
+ org.apache.commons.io;version="2.4.0",
+ org.eclipse.osgi.util;version="1.1.0",
+ org.eclipse.ui.views.properties.tabbed
+Require-Bundle: org.eclipse.ui;bundle-version="3.7.0"

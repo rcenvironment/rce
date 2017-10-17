@@ -1,0 +1,490 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="command_line">
+	<title>Commands</title>
+	<para>This section introduces the list of commands available for the command line and the
+		interactive shell. </para>
+	<sect2>
+		<title>Command Line Parameters</title>
+		<para>General syntax </para>
+		<programlisting>&gt;  rce --[RCE arguments] -[RCP arguments] -[VM arguments]</programlisting>
+		<para>
+			<table frame="all">
+				<title>Command line arguments for RCE</title>
+				<tgroup cols="3">
+					<colspec colname="Argument" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<colspec colname="Description" colnum="3" colwidth="4.88*"/>
+					<thead>
+						<row>
+							<entry>Argument</entry>
+							<entry align="left">Type</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>profile "&lt;profile id or path>"</entry>
+							<entry>RCE</entry>
+							<entry>Sets a custom profile folder to use. If only an id (any valid
+								directory name) is given, the profile directory "&lt;user
+									home>/.rce/<replaceable>id</replaceable>" is used.
+								Alternatively, a full filesystem path can be specified.</entry>
+						</row>
+						<row>
+							<entry>profile</entry>
+							<entry>RCE</entry>
+							<entry>If the profile argument is specified without a profile id or path, RCE launches the
+								Profile Selection UI, which allows to select a profile folder for
+								the startup as described in <xref linkend="profile_selection_ui"
+								/>.</entry>
+						</row>
+						<row>
+							<entry>batch "&lt;command string>"</entry>
+							<entry>RCE</entry>
+							<entry>Behaves like the "exec" command, but also implies the "--headless" option and always
+								shuts down RCE after execution.</entry>
+						</row>
+						<row>
+							<entry>headless</entry>
+							<entry align="center">RCE</entry>
+							<entry>Starts RCE in a headless modus without GUI. It will remain in the
+								OSGi console and waits for user input. </entry>
+						</row>
+						<row>
+							<entry>exec "&lt;command string>"</entry>
+							<entry align="center">RCE</entry>
+							<entry>
+								<para>Executes one or more shell commands defined by &lt;command string>. For the list of
+									available commands, refer to the command shell
+									documentation<!--TODO add link-->. This argument is usually used
+									together with --headless to run RCE in batch mode. Multiple
+									commands can be chained within &lt;command string> by separating
+									them with " ; " (note the spaces); each command is completed
+									before the next is started.</para>
+								<para>You can use the "<code>stop</code>" command at the end of the
+									command sequence to shut down RCE after the other commands have
+									been executed. However, any error during execution of these
+									commands will cancel the sequence, and prevent the
+										"<code>stop</code>" command from being executed. To ensure
+									shut down at the end of the command sequence, use the
+										<code>--batch</code> option instead of
+									"<code>--exec</code>". </para>
+								<para>As an example, <code>rce --headless --exec "wf run example.wf ; stop"</code> will
+									execute the "example.wf" workflow in headless mode and then shut
+									down RCE. However, if the workflow fails to start, RCE will keep
+									running, as the "<code>stop</code>" command is never executed.
+									To attempt execution of the workflow file, but then always shut
+									down regardless of the outcome,  use <code>rce --batch "wf run
+										example.wf"</code> instead.</para>
+							</entry>
+						</row>
+						<row>
+							<entry>configure</entry>
+							<entry align="center">RCE</entry>
+							<entry>Starts the RCE Configuration UI (<xref linkend="configuration_ui"/>) which can be used
+								to configure SSH accounts with passphrases or to configure e-mail
+								support for the RCE instance.</entry>
+						</row>
+						<row>
+							<entry>data @noDefault </entry>
+							<entry align="center">RCP</entry>
+							<entry>Set the default workspace location to empty</entry>
+						</row>
+						<row>
+							<entry>consoleLog </entry>
+							<entry>RCP</entry>
+							<entry>Logs everything for log files on the console as well.</entry>
+						</row>
+						<row>
+							<entry>console</entry>
+							<entry>RCP</entry>
+							<entry>Runs RCE with an additional OSGi console window, which allows you
+								to execute RCE shell commands. See the Command Shell
+								documentation<!--TODO add link--> for more information.</entry>
+						</row>
+						<row>
+							<entry><emphasis>Deprecated: </emphasis>console &lt;port></entry>
+							<entry>RCP</entry>
+							<entry>Specify the port that will be used to listen for telnet
+								connections. (<emphasis>NOTE: </emphasis>this access is insecure;
+								configure SSH access instead)</entry>
+						</row>
+						<row>
+							<entry>clean </entry>
+							<entry>RCP</entry>
+							<entry>Cleans before startup</entry>
+						</row>
+						<row>
+							<entry>vmargs</entry>
+							<entry>VM</entry>
+							<entry>Standard JVM arguments</entry>
+						</row>
+						<row>
+							<entry>Dde.rcenvironment.rce.<?linebreak?>configuration.dir=<?linebreak?>&lt;insert-config-path></entry>
+							<entry>VM</entry>
+							<entry>Sets the configuration directory</entry>
+						</row>
+						<row>
+							<entry>Drce.network.<?linebreak?>overrideNodeId =&lt;some-id></entry>
+							<entry align="center">VM</entry>
+							<entry><para>Sets the local node id, overriding any stored value. This
+									is mostly used for automated
+								testing.</para>Example:<?linebreak?>
+										"-Drce.network.overrideNodeId=<?linebreak?>a96db8fa762d59f2d2782f3e5e9662d4"</entry>
+						</row>
+						<row>
+							<entry>Dcommunication.<?linebreak?>uploadBlockSize=<?linebreak?>&lt;block
+								size in bytes></entry>
+							<entry>VM</entry>
+							<entry>
+								<para>Sets the block size to use when uploading data to a remote
+									node. This is useful for very slow connections (less than about
+									10 kb/s) to avoid timeouts. The default value is 262144 (256
+									kb).</para>
+								<para>Example:<?linebreak?> "-Dcommunication.uploadBlockSize=131072"
+									- sets the upload block size to 128kb (half the normal
+									size)</para>
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	</sect2>
+	<sect2 id="profile_selection_ui">
+		<title>Profile Selection UI</title>
+		<para>During startup of the instance, the Profile Selection UI allows to select a profile folder
+			which should be used for the current run of RCE. Furthermore it allows to specify a
+			default profile for future runs. You can access the Profile Selection UI by executing
+			RCE from the command line with the option "rce --profile".</para>
+		<figure>
+			<title>Profile Selection UI</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/profileSelectionUI.png" contentwidth="420"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		
+		<para>If the first option "Select a profile and start RCE" is chosen, a list of available profiles is presented. On selection of one of these profiles, RCE is started using this profile.</para>
+		
+		<para>If the second option "Select the default profile for future runs" is chosen, a list of
+			available profiles is presented. On selection of one of these profiles, RCE will not be
+			started using this profile, but instead the selected profile will be marked as the
+			default profile for future runs. This selection can be temporarily overwritten again by
+			using the '-profile "&lt;profile id or path>"' option. The default profile setting will
+			be stored for the current user and the current installation location of RCE. Different
+			users on the same machine can therefore configure different default profiles.
+			Furthermore, different installations of RCE can have different default profiles
+			configured.</para>
+		
+		<note>
+			<para>The Profile Selection UI will only display profiles if they have been started once with RCE 7.0 or newer.</para>
+		</note>
+		
+	</sect2>
+	<sect2>
+		<title>Command Shell</title>
+		<para>RCE provides an integrated shell (sometimes referred to as "console") for executing
+			commands. It can be accessed in three different ways:<itemizedlist>
+				<listitem>
+					<para>Start RCE with the "-console" command-line option, or add "-console" to
+						the rce.ini file before starting; this will open an OSGi console window. Due
+						to the nature of an OSGi console, all RCE commands must be prefixed with
+						"rce". For example, type "rce help" to show the available commands.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis>Deprecated: </emphasis>Start RCE with the "-console &lt;port>"
+						command-line option; this will accept telnet OSGi console sessions on that
+						port. As with the "-console" option, RCE commands must be prefixed with
+						"rce" (for example, type "rce help").</para>
+					<para>Note that this option is <emphasis>insecure</emphasis>, as there is no
+						authentication nor encryption, so it should only be used in fully trusted
+						networks. Whenever possible, use the SSH console (see below) instead
+						.</para>
+				</listitem>
+				<listitem>
+					<para>Configure SSH access. To do so, refer to Section Configuration Parameters. After RCE has
+						started, you can access the shell on the configured port with a standard SSH
+						client. On Windows systems, the "putty" software works well as a
+						client.</para>
+					<para>As this option creates a pure RCE shell (as opposed to the OSGi consoles
+						created above), you can enter RCE commands without a prefix - for example,
+						just type "help" to list the available commands. Note that to avoid
+						confusion, adding a "rce" prefix still works, but it is not
+						necessary.</para>
+				</listitem>
+			</itemizedlist></para>
+		<para>The following table lists some shell commands; more documentation coming soon.</para>
+		<para>
+			<table frame="all">
+				<title>Shell Commands</title>
+				<tgroup cols="2">
+					<colspec colname="c1" colnum="1" colwidth="1*"/>
+					<colspec colname="c2" colnum="2" colwidth="3.15*"/>
+					<thead>
+						<row>
+							<entry>Argument</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>help</entry>
+							<entry>Lists all available commands.</entry>
+						</row>
+						<row>
+							<entry>components</entry>
+							<entry>Short form of "components list".</entry>
+						</row>
+						<row>
+							<entry>components list</entry>
+							<entry>Lists components published by reachable RCE nodes.</entry>
+						</row>
+						<row>
+							<entry>cn </entry>
+							<entry>Short form of "cn list".</entry>
+						</row>
+						<row>
+							<entry>cn add &lt;target> ["&lt;description>"]</entry>
+							<entry>Adds a new network connection. (Example: cn add
+								activemq-tcp:rceserver.example.com:20001 "Our RCE Server")</entry>
+						</row>
+						<row>
+							<entry>cn list</entry>
+							<entry>Lists all network connections, including ids and connection
+								states.</entry>
+						</row>
+						<row>
+							<entry>cn start &lt;id></entry>
+							<entry>Starts/Connects a READY or DISCONNECTED connection (use "cn list"
+								to get the id).</entry>
+						</row>
+						<row>
+							<entry>cn stop &lt;id></entry>
+							<entry>Stops/Disconnects an ESTABLISHED connection (use "cn list" to get
+								the id).</entry>
+						</row>
+						<row>
+							<entry>mail &lt;recipient> &lt;subject> &lt;body></entry>
+							<entry>
+								<para>Sends an email to the specified recipient.</para>
+							</entry>
+						</row>
+						<row>
+							<entry>net</entry>
+							<entry>
+								<para>Short form of "net info".</para>
+							</entry>
+						</row>
+						<row>
+							<entry>net filter</entry>
+							<entry>Shows the status of the IP whitelist filter.</entry>
+						</row>
+						<row>
+							<entry>net filter reload</entry>
+							<entry>Reloads the IP whitelist configuration.</entry>
+						</row>
+						<row>
+							<entry>net info</entry>
+							<entry>Lists all reachable RCE nodes.</entry>
+						</row>
+						<row>
+							<entry>restart </entry>
+							<entry>Restarts RCE.</entry>
+						</row>
+						<row>
+							<entry>shutdown</entry>
+							<entry>Shuts down the local RCE instance.</entry>
+						</row>
+						<row>
+							<entry>stop</entry>
+							<entry>Shuts down the local RCE instance (alias of "shutdown").</entry>
+						</row>
+						<row>
+							<entry>version</entry>
+							<entry>Shows version information.</entry>
+						</row>
+						<row>
+							<entry>wf</entry>
+							<entry>Short form of "wf list"</entry>
+						</row>
+						<row>
+							<entry>wf list</entry>
+							<entry>Lists all current workflows, their states and execution
+								ids.</entry>
+						</row>
+						<row>
+							<entry>wf details &lt;workflow execution id></entry>
+							<entry>Shows details about one workflow.</entry>
+						</row>
+						<row>
+							<entry>wf cancel &lt;workflow execution id></entry>
+							<entry>Cancels a running or paused workflow.</entry>
+						</row>
+						<row>
+							<entry>wf delete &lt;workflow execution id></entry>
+							<entry>Deletes a finished, cancelled or failed workflow from the data management and disposes it.</entry>
+						</row>
+						<row>
+							<entry>wf pause &lt;workflow execution id></entry>
+							<entry>Pause a running workflow.</entry>
+						</row>
+						<row>
+							<entry>wf resume &lt;workflow execution id></entry>
+							<entry>Resume a paused workflow.</entry>
+						</row>
+						<row>
+							<entry>wf run [--delete &lt;onfinished|always|never>] [--compact-output] [-p &lt;placeholder
+								value file>] &lt;workflow file></entry>
+							<entry>
+								<para>Executes the given workflow file and waits until it has
+									completed. Workflow file paths containing spaces must be
+									enclosed in double quotes ("...").</para>
+								<para>The "--delete" option defines the deletion behavior after workflow completion.
+									Deleting a workflow deletes all files in the data management of
+									it and releases certain resources that may or may not be used
+									after it has finished, for example data to be visualized in
+									component's runtime views. The default of this setting is
+									"onfinished": The workflow is deleted if it terminates in state
+									"Finished" (which means normal completion without errors),
+									otherwise it is left unchanged for inspection.</para>
+								<para>The "--compact-output" option reduces this command's output as
+									much as possible, which is intended to simplify scripted calls
+									of this command. The first line printed will either be the
+									workflow's assigned id if the start was successful, or a text
+									starting with <code>"Error "</code> if the workflow could not be
+									started. If (and only if) the start was successful, a second
+									line will be printed once the workflow has terminated. The
+									pattern of this second line is "<code>&lt;workflow id>:
+										&lt;final state></code>".</para>
+								<para>The "-p" option can be used to define a placeholder value file
+									(see below).</para>
+							</entry>
+						</row>
+						<row>
+							<entry>wf verify [--delete &lt;onfinished|always|never>] [--pr
+								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
+								value file>] --basedir &lt;directory> &lt;workflow file>
+								[&lt;workflow file> ...]</entry>
+							<entry>Runs several workflows and creates a summary of which ones failed
+								and succeeded.<para>The "--pr" option defines how often the workflow
+									is started in parallel. The "--sr" options defines how often the
+									workflow is started in serial. E.g. "--pr 5 --sr 3" starts the
+									workflow three times with five in parallel. If "*" is used with
+									the "--basedir" option or multiple workflow filenames are
+									passed, "--pr" and "--sr" are applied for each of the
+									workflows.</para><para>For the "--delete" and "-p" options
+									refer to "wf run" above.</para><para>The "--basedir
+									&lt;directory>" parameter specifies the directory containing the
+									workflow files. File paths containing spaces must be enclosed in
+									double quotes ("...").</para><para>The second parameter defines
+									the workflow's filenames. Using "*" as workflow file runs all
+									non-backup workflows in the basedir. Workflow file paths
+									containing spaces must be enclosed in double quotes
+									("...").</para></entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	
+	<sect3 id="placeholder_files">
+		<title>Configuration Placeholder Value Files</title>
+	<para>Some workflow components use placeholders for configuration
+		values. The values for the placeholders are defined at workflow start.
+		When executing workflows from the command line (e.g. in headless or
+		batch mode), the placeholder's values must be defined in a file, which
+		will be passed to the command with the -p option. Placeholder value
+		files have following format:</para>
+		<para><code>{ </code></para>
+		<para><code> &lt;component id>/&lt;component version> : {</code></para>
+		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
+		<para><code>  }</code></para>
+		<para><code> &lt;component id>/&lt;component version>/&lt;component instance name> :
+				{</code></para>
+		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
+		<para><code>  }</code></para>
+		<para><code>}</code></para>
+		<para>
+			<note>
+				<para>Every id and every value must be in enclosed in double quotes ("...").</para>
+			</note>
+		</para>
+		<para>The <code>component id</code> is the id string of a component (e.g.
+				de.rcenvironment.script), the <code>component version</code> is the version of the
+				component that is used in the workflow (e.g. 3.4).</para>
+		<para> There are two ways of defining values for configuration placeholders: per component type and
+				per component instance. When defined per component type, the id and version must be
+				specified (e.g. "de.rcenvironment.script/3.4"). When defined per component instance
+				the component id, component version, and the name of the component in the workflow
+				must be specified (e.g. "de.rcenvironment.script/3.4/MyScript"). In both cases, the
+					<code>configuration placeholder id</code>, which is the name of the
+				configuration placeholder, and the actual <code>configuration value</code> must be
+				specified.</para>
+		<para>Component instance values override component type values.</para>
+		<para>
+			<note>
+				<para>It is possible to mix component type and component instance values.</para>
+			</note>
+		</para>
+		<para>Below is an example placeholder value file, which defines one placeholder value (component type) for the
+				script component, one placeholer value (component type) for the input provider component and
+				a placeholder value (component instance) for a specified input provider component of the workflow:</para>
+		<para><code>{</code></para>
+		<para><code> "de.rcenvironment.script/3.4": {</code></para>
+		<para><code>     "pythonExecutionPath": "C:/Python/python.exe"</code></para>
+		<para><code>     },</code></para>
+		<para><code> "de.rcenvironment.inputprovider/3.2": {</code></para>
+		<para><code> "inputFile": "C:/input/globalInputFile.txt"</code></para>
+		<para><code>},</code></para>
+		<para><code> "de.rcenvironment.inputprovider/3.2/Provider 1" : {</code></para>
+		<para><code>           "inputFile": "C:/input/Provider1.txt"</code></para>
+		<para><code> }</code>
+		</para>
+		<para><code>}</code></para>
+		
+		<para>The following table lists components and their configuration placeholders.</para>
+		<para>
+			<table frame="all">
+				<title>Components and their configuration placeholders</title>
+				<tgroup cols="3">
+					<colspec colname="Component" colnum="1" colwidth="1.3*"/>
+					<colspec colname="Id_and_version" colnum="2" colwidth="3.4*"/>
+					<colspec colname="Placeholders" colnum="3" colwidth="4.58*"/>
+					<thead>
+						<row>
+							<entry>Component</entry>
+							<entry>Component id and version</entry>
+							<entry>Configuration placeholders</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>Cluster</entry>
+							<entry>de.rcenvironment.cluster/3.2</entry>
+							<entry><para>authuser - user name</para><para>authphrase - password (base64 encoded)</para></entry>
+						</row>
+						<row>
+							<entry>Input Provider</entry>
+							<entry>de.rcenvironment.inputprovider/3.2</entry>
+							<entry><para>&lt;output name> - value of output</para></entry>
+						</row>
+						<row>
+							<entry>Output Writer</entry>
+							<entry>de.rcenvironment.outputwriter/2.0</entry>
+							<entry>targetRootFolder - path to target root folder</entry>
+						</row>
+						<row>
+							<entry>Script</entry>
+							<entry>de.rcenvironment.script/3.4</entry>
+							<entry>pythonExecutionPath - path to the Python executable (only required if Python is set as
+									script language)</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	</sect3>
+	</sect2>
+</sect1>

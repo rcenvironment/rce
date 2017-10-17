@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+	<extension
+         point="org.eclipse.ui.views">           
+      <view
+            name="Command Console"
+            icon="resources/images/command.gif"
+            category="de.rcenvironment.core"
+            class="de.rcenvironment.core.gui.command.CommandConsoleViewer"
+            id="de.rcenvironment.core.gui.command.CommandConsoleViewer">
+      </view>   
+   </extension>   
+</plugin>

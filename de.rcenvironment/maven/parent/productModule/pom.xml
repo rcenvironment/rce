@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.maven.parent.productModule</artifactId>
+	<name>RCE Main Repository and Products Parent</name>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.defaultRepository</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/defaultRepository</relativePath>
+	</parent>
+
+	<properties>
+		<!-- note: these paths are relative to each module's location, ie one directory 
+			level below this POM - misc_ro -->
+		<projects-root>../../../..</projects-root>
+	</properties>
+
+	<build>
+		<directory>${projects-root}/de.rcenvironment/target/${project.artifactId}</directory>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<!-- This platform setting is not strictly necessary, as it is also inherited 
+					from the parent POM. It is declared here again so that developers can comment 
+					out irrelevant platforms when building locally. - R. Mischke, Feb 2012 -->
+				<configuration>
+					<environments>
+						<!-- starting with RCE 8.1.0, we only support 64 bit builds -->
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86_64</arch>
+						</environment>
+					</environments>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

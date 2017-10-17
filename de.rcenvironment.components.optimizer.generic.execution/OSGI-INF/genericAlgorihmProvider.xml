@@ -1,0 +1,6 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Generic Algorithm Provider">
+	<implementation class="de.rcenvironment.components.optimizer.generic.execution.GenericAlgorithmFactory"/>
+	<service>
+		<provide interface="de.rcenvironment.components.optimizer.execution.algorithms.registry.OptimizerAlgorithmExecutorFactory"/>
+	</service>
+</scr:component>

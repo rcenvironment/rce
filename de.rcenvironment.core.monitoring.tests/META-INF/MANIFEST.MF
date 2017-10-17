@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Monitoring Tests
+Bundle-Vendor: DLR
+Bundle-SymbolicName: de.rcenvironment.core.monitoring.tests
+Bundle-Version: 8.1.0.qualifier
+Fragment-Host: de.rcenvironment.core.monitoring;bundle-version="7.0.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: de.rcenvironment.core.communication.testutils,
+ org.apache.commons.exec;version="1.1.0"
+Require-Bundle: de.rcenvironment.core.utils.testing
+Bundle-ActivationPolicy: lazy

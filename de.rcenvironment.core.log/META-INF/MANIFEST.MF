@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-Name: RCE Core Log
+Bundle-SymbolicName: de.rcenvironment.core.log;singleton:=true
+Bundle-Vendor: DLR & Fraunhofer SCAI
+Bundle-Version: 8.1.0.qualifier
+Bundle-ClassPath: .
+Bundle-ManifestVersion: 2
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Import-Package: de.rcenvironment.core.communication.api,
+ de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.communication.spi,
+ de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.configuration,
+ de.rcenvironment.core.toolkitbridge.transitional,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.rpc,
+ de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.toolkit.modules.concurrency.api,
+ org.apache.commons.io;version="2.0.1",
+ org.apache.commons.logging;version="1.1.1",
+ org.osgi.framework,
+ org.osgi.service.component;version="1.1.0",
+ org.osgi.service.log
+Export-Package: de.rcenvironment.core.log
+Service-Component: OSGI-INF/*xml

@@ -1,0 +1,66 @@
+{ 
+	"staticInputs": [
+        {
+            "name": "Job inputs",
+            "group":"all",
+            "dataTypes": [
+                "DirectoryReference"
+            ],
+            "defaultDataType": "DirectoryReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        },
+		{
+            "name": "Shared job input",
+            "group":"all",
+            "dataTypes": [
+                "DirectoryReference"
+            ],
+            "defaultDataType": "DirectoryReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"RequiredIfConnected"
+        },
+		{
+            "name": "Job count",
+            "group":"all",
+            "dataTypes": [
+                "Integer"
+            ],
+            "defaultDataType": "Integer",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"RequiredIfConnected"
+        }
+    ],
+    "staticInputGroups":[
+        {
+            "name":"all",
+            "type":"Or"
+        }
+    ]
+}

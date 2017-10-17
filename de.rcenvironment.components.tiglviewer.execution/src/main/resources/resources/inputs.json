@@ -1,0 +1,22 @@
+{
+    "staticInputs": [
+        {
+            "name": "TiGL Viewer File",
+            "dataTypes": [
+                "FileReference"
+            ],
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions":[
+                "Constant",
+                "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+    ]
+}

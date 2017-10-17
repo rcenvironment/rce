@@ -1,0 +1,34 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Excel Component Execution
+Bundle-SymbolicName: de.rcenvironment.components.excel.execution
+Bundle-Version: 8.1.0.qualifier
+Import-Package: de.rcenvironment.components.excel.common,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.datamanagement.history,
+ de.rcenvironment.core.component.datamanagement.stateful,
+ de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.component.model.api,
+ de.rcenvironment.core.component.model.configuration.api,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.component.update.api,
+ de.rcenvironment.core.component.update.spi,
+ de.rcenvironment.core.component.validation.api,
+ de.rcenvironment.core.component.validation.spi,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.notification,
+ de.rcenvironment.core.utils.common,
+ org.apache.commons.io,
+ org.apache.commons.logging;version="1.1.1",
+ org.codehaus.jackson;version="1.9.13",
+ org.eclipse.osgi.util;version="1.1.0"
+Service-Component: OSGI-INF/*.xml
+RCE-Component: true
+Bundle-ClassPath: .
+Bundle-Vendor: DLR
+Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) )
+Export-Package: de.rcenvironment.components.excel.execution

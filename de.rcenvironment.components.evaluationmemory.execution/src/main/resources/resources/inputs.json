@@ -1,0 +1,61 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "to_evaluate",
+            "character": "outerLoop",
+            "group":"to_evaluate",
+            "dataTypes": [
+                "Float",
+                "Integer",
+                "Boolean"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        },
+        {
+            "identifier": "evaluation_results",
+            "character": "sameLoop",
+            "group":"evaluation_results",
+            "dataTypes": [
+                "Float",
+                "Integer",
+                "Boolean"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+     ],
+     "dynamicInputGroups":[
+        {
+            "name":"to_evaluate",
+            "type":"And",
+            "group":"root"
+        },
+        {
+            "name":"evaluation_results",
+            "type":"And",
+            "group":"root"
+        },
+        {
+            "name":"root",
+            "type": "Or"
+        }
+    ]
+}

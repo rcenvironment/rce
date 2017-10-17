@@ -1,0 +1,20 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Context-Type: org.eclipse.rcptt.ctx.ecl
+Element-Name: CreateWorkflowCalledMyWorkflow
+Element-Type: context
+Element-Version: 2.0
+Id: _sSEj4Dx4EeaeH4-rLFMbKA
+Runtime-Version: 2.0.2.201511100828
+Save-Time: 6/27/16 5:06 PM
+
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998
+Content-Type: text/ecl
+Entry-Name: .ecl.context
+
+get-button -index 6 | click
+with [get-window -index 0] {
+    get-editbox -index 0 | type-text MyWorkflow
+    get-button Finish | click
+}
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998--

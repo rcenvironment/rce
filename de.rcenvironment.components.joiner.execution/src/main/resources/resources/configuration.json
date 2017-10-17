@@ -1,0 +1,12 @@
+{
+    "configuration": [
+        {
+            "key": "inputCount",
+            "defaultValue": "2"
+        },
+        {
+            "key": "datatype",
+            "defaultValue": "Float"
+        }
+    ]
+}

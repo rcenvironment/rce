@@ -1,0 +1,18 @@
+Verification key: %s
+
+
+____Additional_Information____
+
+Tool: %s
+Run: %s
+Working directory: %s
+Workflow: %s
+
+_______________________________________________________________________
+
+
+How to verify tool results?
+
+1) Start an RCE instance with a graphical user interface. (Your tool must be available, i.e. it must appear in the palette of the workflow editor.)
+2) In the menu bar at the top, go to Run -> Verify tool results...
+3) A dialog appears that guides you through the verification process.

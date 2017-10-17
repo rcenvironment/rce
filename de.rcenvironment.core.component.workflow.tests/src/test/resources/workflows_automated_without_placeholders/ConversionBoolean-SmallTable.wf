@@ -1,0 +1,460 @@
+{
+  "identifier" : "5b53e2cf-cf97-47c7-bab9-9ad71b537efb",
+  "workflowVersion" : "4",
+  "name" : "ConversionBoolean-SmallTable_2016-05-30_14:53:41_23",
+  "nodes" : [ {
+    "identifier" : "15e1dd8d-d102-4a05-b046-5dadd1992d58",
+    "name" : "Copy (2) of Joiner",
+    "location" : "240:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Vector",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7138b3a9-62b8-440d-8cb8-08f01975344b",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Vector"
+    }, {
+      "identifier" : "5d29103d-a43c-4195-addc-b45728ddbe03",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Vector"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "59f20873-75da-4f01-afde-3d90aa950cfd",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  }, {
+    "identifier" : "95d8d77c-747c-4fad-82b0-a63d05d07a99",
+    "name" : "Copy (3) of Joiner",
+    "location" : "340:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Matrix",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "ed42232d-c7be-45ae-bdf4-cf7a2173d2e3",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Matrix"
+    }, {
+      "identifier" : "a7949f6a-af6e-44e8-8e1c-70e13cc8197a",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Matrix"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "5e5f5fd7-c0cd-4d88-a038-0b8a2ccbe359",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Matrix"
+    } ]
+  }, {
+    "identifier" : "b468a688-4f6f-4e7b-afef-0b98c89e5b5a",
+    "name" : "Copy of Joiner",
+    "location" : "140:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "8f9754a7-f053-4485-8c00-4086de1cf95c",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "bc513699-957a-4e6a-a8c4-b6eed384c81e",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "67bbc7b2-069e-40cd-b66e-1796051f957c",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "c5817209-653c-4c14-be47-4c371949bc88",
+    "name" : "Input Provider",
+    "location" : "40:40",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "db7636a1-eb0a-48cd-8ce5-a832f091cca6",
+      "name" : "bool",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "startValue" : "true"
+      }
+    } ]
+  }, {
+    "identifier" : "251f8dac-945b-4c72-ba41-df5c44c0015d",
+    "name" : "Joiner",
+    "location" : "40:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Integer",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e8c965e5-c055-4051-8c29-ae659df0b56e",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Integer"
+    }, {
+      "identifier" : "c0be4be8-540f-41f9-bc7d-a630d89a649e",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Integer"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "74a0ee3b-eaf0-4800-94f0-9da1a850b98c",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "489ad58b-317b-470f-8088-63ec01f5f270",
+    "name" : "Joiner (1)",
+    "location" : "440:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "SmallTable",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f8bc9289-63f1-4d9a-b8a1-1b72816a411c",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "SmallTable"
+    }, {
+      "identifier" : "f200f897-5a4b-4fcd-9af6-78b31a7dcec9",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "SmallTable"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "cddd5132-5464-4415-aa12-eb1d4111c087",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "ad7cc00c-cf00-4a55-b88b-8504e9c01ca2",
+    "name" : "ReadFloat",
+    "location" : "120:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"float\"\nprint RCE.read_input(\"smallTable\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c61a9057-0fd8-4b0d-9105-ac4becc3b55e",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "52777770-df02-4022-8ef4-e9ef154c5038",
+    "name" : "ReadInt",
+    "location" : "20:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"integer\"\nprint RCE.read_input(\"smallTable\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "b5d12223-c994-4805-a41b-4b3eed762d9e",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "65eb32ba-b6ec-4d2f-8203-6412438901db",
+    "name" : "ReadMatrix",
+    "location" : "320:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"matrix\"\nprint RCE.read_input(\"smallTable\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "73f63a09-92db-47fc-a8d9-0c1d3816695d",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "1ecc7c0e-3282-4232-884a-1bc971fec3a2",
+    "name" : "ReadSmallTable",
+    "location" : "420:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"smallTable\"\nprint RCE.read_input(\"smallTable\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "9a539abd-0d98-4913-b3e2-56b966c9b749",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "0169df6f-425f-416a-8070-bff62506efae",
+    "name" : "ReadVector",
+    "location" : "220:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"vector\"\nprint RCE.read_input(\"smallTable\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "6f459e01-b9dc-4542-af88-10a50e246ee3",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "name" : "WriteBoolean",
+    "location" : "160:20",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print \"boolean\"\nprint RCE.read_input(\"smallTable\")\n\nRCE.write_output(\"bool\", False)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "aa8d2a2a-85f4-427e-b56b-8bf02f14c295",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+      "name" : "bool",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "15e1dd8d-d102-4a05-b046-5dadd1992d58",
+    "output" : "59f20873-75da-4f01-afde-3d90aa950cfd",
+    "target" : "95d8d77c-747c-4fad-82b0-a63d05d07a99",
+    "input" : "ed42232d-c7be-45ae-bdf4-cf7a2173d2e3"
+  }, {
+    "source" : "15e1dd8d-d102-4a05-b046-5dadd1992d58",
+    "output" : "59f20873-75da-4f01-afde-3d90aa950cfd",
+    "target" : "0169df6f-425f-416a-8070-bff62506efae",
+    "input" : "6f459e01-b9dc-4542-af88-10a50e246ee3"
+  }, {
+    "source" : "95d8d77c-747c-4fad-82b0-a63d05d07a99",
+    "output" : "5e5f5fd7-c0cd-4d88-a038-0b8a2ccbe359",
+    "target" : "489ad58b-317b-470f-8088-63ec01f5f270",
+    "input" : "f8bc9289-63f1-4d9a-b8a1-1b72816a411c"
+  }, {
+    "source" : "95d8d77c-747c-4fad-82b0-a63d05d07a99",
+    "output" : "5e5f5fd7-c0cd-4d88-a038-0b8a2ccbe359",
+    "target" : "65eb32ba-b6ec-4d2f-8203-6412438901db",
+    "input" : "73f63a09-92db-47fc-a8d9-0c1d3816695d"
+  }, {
+    "source" : "b468a688-4f6f-4e7b-afef-0b98c89e5b5a",
+    "output" : "67bbc7b2-069e-40cd-b66e-1796051f957c",
+    "target" : "15e1dd8d-d102-4a05-b046-5dadd1992d58",
+    "input" : "7138b3a9-62b8-440d-8cb8-08f01975344b"
+  }, {
+    "source" : "b468a688-4f6f-4e7b-afef-0b98c89e5b5a",
+    "output" : "67bbc7b2-069e-40cd-b66e-1796051f957c",
+    "target" : "ad7cc00c-cf00-4a55-b88b-8504e9c01ca2",
+    "input" : "c61a9057-0fd8-4b0d-9105-ac4becc3b55e"
+  }, {
+    "source" : "c5817209-653c-4c14-be47-4c371949bc88",
+    "output" : "db7636a1-eb0a-48cd-8ce5-a832f091cca6",
+    "target" : "251f8dac-945b-4c72-ba41-df5c44c0015d",
+    "input" : "e8c965e5-c055-4051-8c29-ae659df0b56e"
+  }, {
+    "source" : "c5817209-653c-4c14-be47-4c371949bc88",
+    "output" : "db7636a1-eb0a-48cd-8ce5-a832f091cca6",
+    "target" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "input" : "aa8d2a2a-85f4-427e-b56b-8bf02f14c295"
+  }, {
+    "source" : "251f8dac-945b-4c72-ba41-df5c44c0015d",
+    "output" : "74a0ee3b-eaf0-4800-94f0-9da1a850b98c",
+    "target" : "b468a688-4f6f-4e7b-afef-0b98c89e5b5a",
+    "input" : "8f9754a7-f053-4485-8c00-4086de1cf95c"
+  }, {
+    "source" : "251f8dac-945b-4c72-ba41-df5c44c0015d",
+    "output" : "74a0ee3b-eaf0-4800-94f0-9da1a850b98c",
+    "target" : "52777770-df02-4022-8ef4-e9ef154c5038",
+    "input" : "b5d12223-c994-4805-a41b-4b3eed762d9e"
+  }, {
+    "source" : "489ad58b-317b-470f-8088-63ec01f5f270",
+    "output" : "cddd5132-5464-4415-aa12-eb1d4111c087",
+    "target" : "1ecc7c0e-3282-4232-884a-1bc971fec3a2",
+    "input" : "9a539abd-0d98-4913-b3e2-56b966c9b749"
+  }, {
+    "source" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "output" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+    "target" : "15e1dd8d-d102-4a05-b046-5dadd1992d58",
+    "input" : "5d29103d-a43c-4195-addc-b45728ddbe03"
+  }, {
+    "source" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "output" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+    "target" : "95d8d77c-747c-4fad-82b0-a63d05d07a99",
+    "input" : "a7949f6a-af6e-44e8-8e1c-70e13cc8197a"
+  }, {
+    "source" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "output" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+    "target" : "b468a688-4f6f-4e7b-afef-0b98c89e5b5a",
+    "input" : "bc513699-957a-4e6a-a8c4-b6eed384c81e"
+  }, {
+    "source" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "output" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+    "target" : "251f8dac-945b-4c72-ba41-df5c44c0015d",
+    "input" : "c0be4be8-540f-41f9-bc7d-a630d89a649e"
+  }, {
+    "source" : "e605ca4f-fa90-4c24-ac64-91601a5a2157",
+    "output" : "3c8bf4d6-1f2b-48a3-8d46-5dca869a3fee",
+    "target" : "489ad58b-317b-470f-8088-63ec01f5f270",
+    "input" : "f200f897-5a4b-4fcd-9af6-78b31a7dcec9"
+  } ]
+}

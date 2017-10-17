@@ -1,0 +1,22 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" deactivate="deactivateIntegrationService" immediate="true" name="Tool Integration Service"> 
+   <implementation class="de.rcenvironment.core.component.integration.internal.ToolIntegrationServiceImpl"/> 
+   	<service>
+		<provide interface="de.rcenvironment.core.component.integration.ToolIntegrationService"/>
+	</service>
+ 	
+	<reference name="Component Registry"
+		interface="de.rcenvironment.core.component.registration.api.ComponentRegistry"
+		bind="bindComponentRegistry"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+	
+		
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		bind="bindPlatformService"
+		unbind="unbindPlatformService"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+</scr:component>

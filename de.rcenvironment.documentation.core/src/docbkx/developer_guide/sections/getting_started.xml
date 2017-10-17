@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1>
+    <title>Getting Started with RCE development</title>
+    <para>This section covers setting up a development environment for running, modifying and
+        extending RCE on your local machine.</para>
+    <sect2>
+        <title>Preparing Eclipse</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>Make sure you have a <ulink
+                            url="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
+                            >Java Development Kit</ulink>, Version 8, installed on your system. <note>
+                            <para>If you are installing a JDK on a centrally administered computer
+                                that already has Java installed, it is usually a good idea to
+                                    <emphasis>uncheck</emphasis> the "Install public JRE" option
+                                during installation.</para>
+                        </note></para>
+                </listitem>
+                <listitem>
+                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Kepler SR1
+                        (4.3.1)" or higher from <ulink url="https://www.eclipse.org/downloads/"
+                            >https://www.eclipse.org/downloads/</ulink>. <note>
+                            <para>This guide refers to the Kepler SR1 release and may not match all
+                                future versions of Eclipse.</para>
+                        </note></para>
+                </listitem>
+                <listitem>
+                    <para>Set or verify your JDK path in the eclipse.ini file; see <ulink
+                            url="http://wiki.eclipse.org/Eclipse.ini"
+                            >http://wiki.eclipse.org/Eclipse.ini</ulink> for details. </para>
+                </listitem>
+                <listitem>
+                    <para>Install these plugins (for example using "Help > Eclipse Marketplace"): </para>
+                    <itemizedlist>
+                        <listitem>
+                            <para><ulink url="http://subclipse.tigris.org/">Subclipse</ulink> - a
+                                SVN client to check out code from the central repository, and commit
+                                your changes. If you prefer, you can also use another SVN client
+                                like <ulink
+                                    url="http://www.polarion.com/products/svn/subversive.php"
+                                    >Subversive</ulink>. Note that when using Subclipse, you may
+                                have to switch to the "SvnKit" SVN interface in the "Team > SVN"
+                                preferences; this is normal.</para>
+                        </listitem>
+                        <listitem>
+                            <para><ulink
+                                    url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/"
+                                    >Workspace Mechanic</ulink> - used to apply common workspace
+                                settings. Not strictly required, but convenient.</para>
+                        </listitem>
+                        <listitem>
+                            <para><ulink url="http://eclipse-cs.sourceforge.net/">Checkstyle-CS
+                                </ulink> - Eclipse integration for Checkstyle( version 6.14 is
+                                recommended, see note in "Configuring CheckStyle" ). Not required
+                                for local development, but mandatory before committing changes into
+                                the central code base.</para>
+                        </listitem>
+                    </itemizedlist>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </sect2>
+    <sect2>
+        <title>Checking out and building RCE</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>Disable "Project > Build Automatically" in the main menu to speed up the
+                        next steps.</para>
+                </listitem>
+                <listitem>
+                    <para>Open the "SVN Repositories" view (Window > Show View > Other > SVN).
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>Add <code>https://svn.sistec.dlr.de/svn/rce/new/rce/trunk</code> as a new
+                        SVN repository location.</para>
+                </listitem>
+                <listitem>
+                    <para>Expand the location entry and select all projects (the entries starting
+                        with "de.rcenvironment") inside of it. </para>
+                </listitem>
+                <listitem>
+                    <para>Right-click the selected projects, select "Checkout" and confirm if
+                        necessary. You should now see a long list of projects in the "Package
+                        Explorer" on the left.<note>
+                            <para>If the checkout was performed correctly, there should be a small
+                                "M" (for "Maven") on most projects' icons, and also a small "J" (for
+                                "Java") on most of them.</para>
+                        </note></para>
+                </listitem>
+                <listitem>
+                    <para>Set the Eclipse target platform. To get started quickly, use a precompiled
+                        target platform: </para>
+                    <para>
+                        <itemizedlist>
+                            <listitem>
+                                <para>In the Project Explorer, navigate to the
+                                        <code>de.rcenvironment/eclipse/tp</code> folder.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Open the
+                                        <code>remote/default_release_or_snapshot.all.target</code>
+                                    file by double-clicking it.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Select the "Locations" list entry starting with
+                                        "<code>https://software.dlr.de/</code>" and click "Update".
+                                    After a while, the text below the entry should change to "RCE
+                                    Combined Platform Feature &lt;version tag>".</para>
+                            </listitem>
+                            <listitem>
+                                <para>Click "set as target platform" in the top right corner. You
+                                    can close the .target file after this.</para>
+                            </listitem>
+                        </itemizedlist>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>Enable "Project > Build Automatically". Eclipse will start building all
+                        projects against the new target platform (which basically provides libraries
+                        and other artifacts). </para>
+                </listitem>
+                <listitem>
+                    <para>At this point, most projects will have a red error marker. To fix this,
+                        open the "Problems" view ("Window > Show View > Problems"). You should see a
+                        lot of "Plugin execution not covered by lifecycle configuration" entries.
+                        Right-click one of them, select "Quick Fix" from the context menu, select
+                        "Discover new m2e connectors" and click "Finish". Eclipse should present one
+                        or more installation options with "Tycho" in their name. Confirm their
+                        installation and restart eclipse.<note>
+                            <para>You only need to do this once per Eclipse installation.</para>
+                        </note></para>
+                </listitem>
+                <listitem>
+                    <para>After this, all RCE bundles should compile without errors, and you are
+                        ready to start developing. If this is not the case, try running "Project >
+                        Clean > Clean all projects" from the main menu.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </sect2>
+    <sect2>
+        <title>Running RCE from Eclipse</title>
+        <para>Before proceeding to the more detailled settings, try running RCE from Eclipse to
+            verify your setup.</para>
+        <itemizedlist>
+            <listitem>
+                <para>There are several pre-defined launch configurations for RCE. To find them,
+                    navigate to <code>de.rcenvironment/eclipse/launch</code> in the "Project
+                    Explorer" on the left.</para>
+            </listitem>
+            <listitem>
+                <para>A good starting point is the "default" configuration. Expand the "default"
+                    sub-folder, right-click the "rce.default.launch" file and choose "Run As >
+                    rce.default.launch" from the context menu.</para>
+            </listitem>
+            <listitem>
+                <para>RCE should now start and prompt for an RCE workspace location. Confirm the
+                    default value or choose another empty folder.</para>
+            </listitem>
+        </itemizedlist>
+    </sect2>
+    <sect2>
+        <title>Configuring Workspace Mechanic (optional)</title>
+        <para><ulink url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/">Workspace
+                Mechanic</ulink> is an Eclipse plugin that automates common settings in local
+            workspaces. For RCE, the most important settings are the Java code formatting rules and
+            templates. Other settings are provided for convenience, like disabling the console
+            output limit, or showing line numbers in the editor.</para>
+        <para>Configuring Workspace Mechanic consists of copying a set of "rule" files to a location
+            where the plugin can find them. There are two options for this:<itemizedlist>
+                <listitem>
+                    <para>If you want to apply the rules to all Eclipse installations on your
+                        machine, use the <code>.eclipse/mechanic</code> subfolder in your home
+                        directory; by default, this is <code os="windows"
+                                >C:\Users\<replaceable>&lt;user
+                            id></replaceable>\.eclipse\mechanic</code><code os="linux"
+                                >/home/<replaceable>&lt;user
+                            id></replaceable>/.eclipse/mechanic</code>.</para>
+                </listitem>
+                <listitem>
+                    <para>To apply the rules to a single Eclipse installation only, use <code
+                            os="windows"><replaceable>&lt;eclipse installation
+                            folder></replaceable>\configuration\com.google.eclipse.mechanic\mechanic</code><code
+                            language="" os="linux"><replaceable>&lt;eclipse installation
+                                folder></replaceable>/configuration/com.google.eclipse.mechanic/mechanic</code>.
+                    </para>
+                </listitem>
+            </itemizedlist>Using your system's file browser, navigate to the folder of your choice.
+            Using any SVN tool, check out
+                <code>https://svn.sistec.dlr.de/svn/rce/new/meta/eclipse/mechanic</code> into a
+            sub-folder called "<code>checkout</code>" within it. (Note that the actual name of the
+            sub-folder is not relevant; adapt if you like.) This sub-folder now contains common
+            rules on its top level, and optional or experimental rules in sub-folders. Copy all
+            common rules to the parent folder (the one you started in), and add any optional rules
+            that you want to apply as well. (TODO add and describe batch/shell files for this.)<note>
+                <para>These rule files will most likely be integrated into the main project at some
+                    point, making this extra checkout step unnecessary. Please note that these rule
+                    files are currently not available as part of the <ulink
+                        url="https://github.com/rcenvironment/rce">GitHub source code mirror</ulink>
+                    or the released source zip files either.</para>
+            </note></para>
+        <para>The next time you open a workspace, Workspace Mechanic should pick up these rule files
+            and show a notice asking if it should apply them. See the plugin's <ulink
+                url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/">web
+                site</ulink> for further information.</para>
+    </sect2>
+    <sect2>
+        <title>Configuring CheckStyle (optional)</title>
+        <para>If you only plan to try out or modify RCE locally, you can safely skip this section.
+            If you plan to commit your changes to the central code base, however, you need these
+            settings to get your code accepted into the repository. Code that does not match the
+            coding guidelines will be refused on commit. The Checkstyle-CS plugin simplifies
+            development by highlighting violations that need to be fixed.</para>
+        <para>To configure Checkstyle-CS for RCE:</para>
+        <itemizedlist>
+            <listitem>
+                <para>Open the Checkstyle preferences (Window > Preferences > Checkstyle). </para>
+            </listitem>
+            <listitem>
+                <para>Click "New" on the right side. Enter "RCE" as the name of the configuration.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Choose "Project relative configuration", click "Browse" and choose
+                        <code>de.rcenvironment/checkstyle/checks.xml</code>. </para>
+            </listitem>
+            <listitem>
+                <para>Click "Ok" in the main dialog. The list of configurations should now have
+                    three entries; select "RCE" and click "Set as Default" on the right side.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Close the preferences with "Ok" and confirm the rebuild. </para>
+            </listitem>
+        </itemizedlist>
+        <para>
+        <note>
+            <para>We are currently using version 6.14 of CheckStyle. If you are using a newer version, you might see additional error markers.</para>
+        </note>
+        </para>
+    </sect2>
+    <sect2>
+        <title>Building a standalone RCE version from Eclipse</title>
+        <para>You can also build a standalone version of  RCE from Eclipse using Maven.</para>
+        <itemizedlist>
+            <listitem>
+                <para>There are several pre-defined build configurations for RCE. To find them,
+                    navigate to <code>de.rcenvironment/eclipse/build</code> in the "Project
+                    Explorer" on the left.</para>
+            </listitem>
+            <listitem>
+                <para>To run a .launch file, right-click on it and choose the single entry in the
+                    "Run As" submenu of the context menu that appears.</para>
+            </listitem>
+            <listitem>
+                <para>Building a standalone RCE installation (which is called a "product" in Eclipse
+                    RCP terms) generally consists of two steps: Providing a so-called "platform
+                    repository", and then building the actual product on top of it. There are two
+                    possible approaches for this:<itemizedlist>
+                        <listitem>
+                            <para>The proper way to build completely from source is to compile a
+                                local platform repository. This is simply done by navigaring to the
+                                    "<code>de.rcenvironment.platform/eclipse</code> folder (from the
+                                root of your workspace) and executing the single .launch file that
+                                is located there. On the first run, the build process may download
+                                quite a few resources from Maven Central; subsequent runs should be
+                                fairly quick. Once the build has finished (there should be a
+                                "SUCCESS" message near the bottom of the console output), you can
+                                build the main product using the .launch files in the "<code>using
+                                    local repository builds</code>" sub-folder of the previously
+                                mentioned location.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Using the .launch files in the "<code>using default remote
+                                    repository builds</code>" sub-folder, it is possible to avoid
+                                building your own platform repository, and fetch a pre-built one
+                                from the main repository servers (currently hosted at DLR) instead.
+                                One reason for this can be be to ensure that you are building
+                                against the exact same platform repository as some previous RCE
+                                release.</para>
+                        </listitem>
+                    </itemizedlist></para>
+                <para>In both cases, running the "<code>RCE - build default product (snapshot, using
+                        &lt;...>)</code> .launch file is the best way to produce a standard local
+                    product build. The other .launch files are intended for more specific use
+                    cases.</para>
+            </listitem>
+            <listitem>
+                <para>The main product build takes several minutes to complete. Once it has
+                    finished, you will find the .zip files containing the final product in the
+                    folder
+                        <code>de.rcenvironment/target/de.rcenvironment.modules.repository.mainProduct/products</code>
+                    (You may have to refresh the de.rcenvironment project in the Project Explorer to
+                    see it.)</para>
+            </listitem>
+        </itemizedlist>
+        <note>
+            <para>TODO: document building from the command line</para>
+        </note>
+    </sect2>
+</sect1>

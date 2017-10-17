@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Switch Common
+Bundle-SymbolicName: de.rcenvironment.components.switch.common
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Vendor: DLR
+Export-Package: de.rcenvironment.components.switchcmp.common
+Import-Package: 
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.component.workflow.model.spi,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.scripting,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.core.utils.scripting,
+ org.apache.commons.lang3;version="3.1.0",
+ org.apache.commons.lang3.math;version="3.1.0",
+ org.apache.commons.logging;version="1.1.1",
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13"

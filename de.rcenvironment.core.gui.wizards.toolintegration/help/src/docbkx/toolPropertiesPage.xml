@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Tool Properties</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>Define properties for the tool, which can be used as parameters later in all scripts
+            and can be configured when a workflow is set up.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>Properties are a means to let the user of the integrated tool configure some
+            attributes when creating a workflow. For example, if your tool is able to run with
+            multiple cores, you can define a key “numCores” and later add it as placeholder in your
+            command execution script or pre/post execution script (e.g. “tool.exe
+            ${prop:numCores}”). This key will then be shown in the properties tab in the workflow
+            editor and the value for it can be defined there.</para>
+        <para>Properties have a display name that makes them more readable for others. Also, a
+            default value can be defined, to provide some useful presettings.</para>
+        <para>It is not mandatory to define properties.</para>
+        <para>Since RCE 8.0 it is possible to define properties as placeholders. With this option,
+            which is activated in the properties view of the tool component, the user can define
+            that the value for the selected property is not defined while editing the workflow, but
+            at workflow start. </para>
+    </sect1>
+    <sect1>
+        <title>Groups</title>
+        <para>With groups you can categorize the properties and group properties for the same
+            context. It is also possible to create a file for each group at runtime, which contains
+            the keys and the respective values. These files will be located in the “Config” folder
+            in a temporary directory with the name that you can also define here.</para>
+    </sect1>
+</chapter>

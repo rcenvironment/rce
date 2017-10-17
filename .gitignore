@@ -1,0 +1,20 @@
+target/
+.settings/
+.svn/
+sys$command
+/.sonar/
+*/help/generated/
+/de.rcenvironment.platform/projects/**/lib/maven/*.jar
+/de.rcenvironment.platform/thirdparty/p2-mirrored
+/de.rcenvironment/eclipse/launch/profiles/common/
+/de.rcenvironment/eclipse/launch/profiles/*/internal/
+/de.rcenvironment/eclipse/launch/profiles/*/integration/
+/de.rcenvironment/eclipse/launch/profiles/*/storage/
+/de.rcenvironment/eclipse/launch/profiles/*/output/
+/de.rcenvironment/eclipse/launch/profiles/*/workspace/
+/de.rcenvironment/eclipse/launch/profiles/*/*.log
+/de.rcenvironment/eclipse/launch/profiles/*/*.lock
+# temporary fix for generated folder; see Mantis #11136
+/de.rcenvironment/maven/initial/workspace
+# TODO check: still needed?
+/de.rcenvironment.core.scripting.tests/cachedir

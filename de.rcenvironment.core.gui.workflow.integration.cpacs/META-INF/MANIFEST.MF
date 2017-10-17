@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core GUI CPACS Workflow Integration
+Bundle-SymbolicName: de.rcenvironment.core.gui.workflow.integration.cpacs;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.datamanagement.history,
+ de.rcenvironment.core.component.integration,
+ de.rcenvironment.core.component.integration.cpacs,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.gui.workflow.editor.validator,
+ de.rcenvironment.core.gui.workflow.integration,
+ de.rcenvironment.core.gui.xpathchooser,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.incubator,
+ org.eclipse.jface.viewers,
+ org.eclipse.swt.graphics,
+ org.eclipse.ui,
+ org.eclipse.ui.views.properties.tabbed
+Bundle-Vendor: DLR
+Bundle-ActivationPolicy: lazy

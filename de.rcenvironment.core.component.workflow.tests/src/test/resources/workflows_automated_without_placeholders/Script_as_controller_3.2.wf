@@ -1,0 +1,133 @@
+{
+  "identifier" : "7e2e30c3-832d-4443-9f26-c4f09a82b90c",
+  "workflowVersion" : "4",
+  "name" : "Script_as_controller_2013-08-21_12:32:09",
+  "nodes" : [ {
+    "identifier" : "54ae0236-1b36-4e05-b797-3627225eb4a3",
+    "name" : "Input Provider",
+    "location" : "254:18",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.inputprovider.execution.InputProviderComponent_Input Provider",
+      "version" : "3.2"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "d5ffdeb1-ad3e-4420-9ad9-34e1aca271b6",
+      "name" : "0",
+      "epIdentifier" : "default",
+      "datatype" : "Integer",
+      "metadata" : {
+        "startValue" : "0"
+      }
+    } ]
+  }, {
+    "identifier" : "8554dd90-6230-4800-9b93-3384b3a003c6",
+    "name" : "Print",
+    "location" : "393:269",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "script" : "print RCE.read_input(\"x\")\r\nRCE.write_output(\"y\", RCE.read_input(\"x\"))",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d4c3a5ca-92b4-44fb-900b-be2a2f6e71c9",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "442b319a-ae02-414a-a84f-7a213caa10a3",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "7e78ca30-22ee-49aa-8a3b-8fce28c227d9",
+    "name" : "Increase",
+    "location" : "532:133",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "script" : "if (RCE.read_input(\"x\") == 5):\r\n    print \"Finishing by closing output after input \" + str(RCE.read_input(\"x\"))\r\n    RCE.close_output(\"y\")\r\nelse: RCE.write_output(\"y\", RCE.read_input(\"x\") + 1)",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "84b09c9d-20b3-461e-bbd3-75c9c0e31b03",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "953d0321-0455-4352-b2a7-36217f73b03b",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "e6278492-f352-4d5a-b854-511d28c3f70e",
+    "name" : "Joiner",
+    "location" : "254:133",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.merger.execution.MergerComponent_Merger",
+      "version" : "3.3"
+    },
+    "configuration" : {
+      "inputCount" : "2",
+      "datatype" : "Integer"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "04d1cbce-41a0-47dd-ba48-b382be7a7927",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Integer"
+    }, {
+      "identifier" : "7c2f1933-df01-4eab-918c-2a01a354812e",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Integer"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "3948191e-789e-497a-bcd6-54804c7dec89",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Integer"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "54ae0236-1b36-4e05-b797-3627225eb4a3",
+    "output" : "d5ffdeb1-ad3e-4420-9ad9-34e1aca271b6",
+    "target" : "e6278492-f352-4d5a-b854-511d28c3f70e",
+    "input" : "04d1cbce-41a0-47dd-ba48-b382be7a7927"
+  }, {
+    "source" : "e6278492-f352-4d5a-b854-511d28c3f70e",
+    "output" : "3948191e-789e-497a-bcd6-54804c7dec89",
+    "target" : "8554dd90-6230-4800-9b93-3384b3a003c6",
+    "input" : "d4c3a5ca-92b4-44fb-900b-be2a2f6e71c9"
+  }, {
+    "source" : "7e78ca30-22ee-49aa-8a3b-8fce28c227d9",
+    "output" : "953d0321-0455-4352-b2a7-36217f73b03b",
+    "target" : "e6278492-f352-4d5a-b854-511d28c3f70e",
+    "input" : "7c2f1933-df01-4eab-918c-2a01a354812e"
+  }, {
+    "source" : "8554dd90-6230-4800-9b93-3384b3a003c6",
+    "output" : "442b319a-ae02-414a-a84f-7a213caa10a3",
+    "target" : "7e78ca30-22ee-49aa-8a3b-8fce28c227d9",
+    "input" : "84b09c9d-20b3-461e-bbd3-75c9c0e31b03"
+  } ]
+}

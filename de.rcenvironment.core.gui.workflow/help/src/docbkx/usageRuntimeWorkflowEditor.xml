@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Runtime Workflow Editor</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The Runtime Workflow Editor is used to observe and monitor the progress of the workflow execution. 
+        To distinquish it from the Workflow Editor you will find the Runtime Workflow Editor with a grey background and per default without a tool palette on the righthand side.</para>
+    </sect1>
+    <sect1>
+        <title>Available Information</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Workflow state</emphasis>: In the title of the editor the current execution state of the workflow is shown. </para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Component state</emphasis>: In the top left of a component the current execution state of the component is shown. </para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Number of component/loop runs</emphasis>: In the top right corner of the component the number of runs is shown.
+                    A single number shows the number of runs of a component. If there are two numbers divided by a slash it shows the number of loops, too.
+                    For instance, 9/4 means that the outer loop of the component ran 9 times and that the inner loop ran 4 times on the last iteration.
+                    Note that you will find further the runs per iteration and the overall runs if you hover the icon.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Tool run imitation mode</emphasis>: If a component runs in tool imitation mode it is shown in blue.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Disabled components</emphasis>: Note that disabled components are not shown in the Runtime Workflow Editor.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para/>
+    </sect1>
+</chapter>

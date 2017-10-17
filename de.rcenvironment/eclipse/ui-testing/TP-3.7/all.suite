@@ -1,0 +1,54 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Element-Name: all
+Element-Type: testsuite
+Element-Version: 2.0
+Id: _XT5c4IJUEeWCIMxjsXPyOg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 11/5/15 3:30 PM
+
+------=_testcase-items-62c497da-4241-31f4-811a-6b453a3ecff8
+Content-Type: text/testcase
+Entry-Name: testcase-items
+
+_7YiGcGaBEeWE-JfpwaFXMg	// kind: 'test' name: '_BrowseTheWorkflowDataBrowser_Example' path: 'Testcases/Views/_BrowseTheWorkflowDataBrowser_Example.test'
+_7WamkGaBEeWE-JfpwaFXMg	// kind: 'test' name: '_CheckConnectionNumbersAreCorrectlyDisplayed' path: 'Testcases/EndpointsAndConnections/_CheckConnectionNumbersAreCorrectlyDisplayed.test'
+_7YoNEGaBEeWE-JfpwaFXMg	// kind: 'test' name: '_ExampleWorkflowsWithoutPlaceholdersCanBeExecuted' path: 'Testcases/WizardsAndDialogs/_ExampleWorkflowsWithoutPlaceholdersCanBeExecuted.test'
+_7W_OUGaBEeWE-JfpwaFXMg	// kind: 'test' name: '_ExampleWorkflowWithPlaceholder_Script_with_all_API_methods' path: 'Testcases/WizardsAndDialogs/_ExampleWorkflowWithPlaceholder_Script_with_all_API_methods.test'
+_OBN9AGtdEeW6Pd5E4Whelw	// kind: 'test' name: 'AdditionalViewsJustOpened' path: 'Testcases/Views/AdditionalViewsJustOpened.test'
+_7XwDUGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'AllPropertyTabsForAllComponents' path: 'Testcases/WorkflowEditor/AllPropertyTabsForAllComponents.test'
+_7YV5MGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'AutoConnect_AllTypesAtOnceWorking' path: 'Testcases/EndpointsAndConnections/AutoConnect_AllTypesAtOnceWorking.test'
+_7Ycm4GaBEeWE-JfpwaFXMg	// kind: 'test' name: 'AutoConnect_OneFloat' path: 'Testcases/EndpointsAndConnections/AutoConnect_OneFloat.test'
+_7XVMkGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'AutoConnect_SeveralFloat_OtherNames' path: 'Testcases/EndpointsAndConnections/AutoConnect_SeveralFloat_OtherNames.test'
+_7YEMYGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'AutoConnect_SeveralFloat_SimpleNames' path: 'Testcases/EndpointsAndConnections/AutoConnect_SeveralFloat_SimpleNames.test'
+_l9hvsGteEeW6Pd5E4Whelw	// kind: 'test' name: 'BasicCopyPasteDeleteStuff' path: 'Testcases/WorkflowEditor/BasicCopyPasteDeleteStuff.test'
+_7YuTsGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'CheckVersionNumber' path: 'Testcases/WizardsAndDialogs/CheckVersionNumber.test'
+_7WgGIGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'CreateASimpleBendpoint' path: 'Testcases/EndpointsAndConnections/CreateASimpleBendpoint.test'
+_7XoukGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'CreateASimpleConnection' path: 'Testcases/EndpointsAndConnections/CreateASimpleConnection.test'
+_CxkR4GtWEeW6Pd5E4Whelw	// kind: 'test' name: 'EditConnectedEndpoints' path: 'Testcases/EndpointsAndConnections/EditConnectedEndpoints.test'
+_7XdvcGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'F1HelpAvailable_All_Except_DOE_SQL' path: 'Testcases/WorkflowEditor/F1HelpAvailable_All_Except_DOE_SQL.test'
+_7X9esGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'F1HelpAvailable_SQL' path: 'Testcases/WorkflowEditor/F1HelpAvailable_SQL.test'
+_7WoB8GaBEeWE-JfpwaFXMg	// kind: 'test' name: 'InputProviderWithFilesAtWfStart' path: 'Testcases/ComponentGroups/DataFlow/InputProviderWithFilesAtWfStart.test'
+_7W5HsGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'InputProviderWithFilesFromFilesystem' path: 'Testcases/ComponentGroups/DataFlow/InputProviderWithFilesFromFilesystem.test'
+_7YKTAGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'InputProviderWithFilesFromProject' path: 'Testcases/ComponentGroups/DataFlow/InputProviderWithFilesFromProject.test'
+_7Xj2EGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'Integrate-Edit-Delete-Tool' path: 'Testcases/WizardsAndDialogs/ToolIntegration/Integrate-Edit-Delete-Tool.test'
+_7WT44GaBEeWE-JfpwaFXMg	// kind: 'test' name: 'IntegrateAMinimalCommonTool' path: 'Testcases/WizardsAndDialogs/ToolIntegration/IntegrateAMinimalCommonTool.test'
+_7YylIGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'IntegratedImageViewer' path: 'Testcases/Misc/IntegratedImageViewer.test'
+_7XI_UGaBEeWE-JfpwaFXMg	// kind: 'test' name: 'ManyEndpoints' path: 'Testcases/EndpointsAndConnections/ManyEndpoints.test'
+_jWVAwGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Edit' path: 'Testcases/ToolbarAndMenubar/Menu-Edit.test'
+_jWnUoGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Fiile' path: 'Testcases/ToolbarAndMenubar/Menu-Fiile.test'
+_jW5ogGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Help' path: 'Testcases/ToolbarAndMenubar/Menu-Help.test'
+_jXKuQGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Run' path: 'Testcases/ToolbarAndMenubar/Menu-Run.test'
+_jXcbEGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Search' path: 'Testcases/ToolbarAndMenubar/Menu-Search.test'
+_jXrroGtaEeW6Pd5E4Whelw	// kind: 'test' name: 'Menu-Window' path: 'Testcases/ToolbarAndMenubar/Menu-Window.test'
+_25UicGteEeW6Pd5E4Whelw	// kind: 'test' name: 'MoreCopyPasteDeleteStuff' path: 'Testcases/WorkflowEditor/MoreCopyPasteDeleteStuff.test'
+_hSzb0G5lEeW6Pd5E4Whelw	// kind: 'test' name: 'MovingComponents' path: 'Testcases/EndpointsAndConnections/MovingComponents.test'
+_7XOe4GaBEeWE-JfpwaFXMg	// kind: 'test' name: 'ProfileConfigCanBeOpened' path: 'Testcases/ToolbarAndMenubar/ProfileConfigCanBeOpened.test'
+_klWK4GtVEeW6Pd5E4Whelw	// kind: 'test' name: 'RenameNotConnectedEndpoints_Input' path: 'Testcases/EndpointsAndConnections/RenameNotConnectedEndpoints_Input.test'
+_kln3sGtVEeW6Pd5E4Whelw	// kind: 'test' name: 'RenameNotConnectedEndpoints_Output' path: 'Testcases/EndpointsAndConnections/RenameNotConnectedEndpoints_Output.test'
+_OBb_cGtdEeW6Pd5E4Whelw	// kind: 'test' name: 'StandardViewsJustOpened' path: 'Testcases/Views/StandardViewsJustOpened.test'
+_5eMaUGtbEeW6Pd5E4Whelw	// kind: 'test' name: 'ToolbarItems' path: 'Testcases/ToolbarAndMenubar/ToolbarItems.test'
+_Wi0VMGteEeW6Pd5E4Whelw	// kind: 'test' name: 'UseNewProjectWorkflowWizard' path: 'Testcases/WizardsAndDialogs/UseNewProjectWorkflowWizard.test'
+_s6mJIGtWEeW6Pd5E4Whelw	// kind: 'test' name: 'WildlyAddEditAndRemoveEndpoints' path: 'Testcases/EndpointsAndConnections/WildlyAddEditAndRemoveEndpoints.test'
+
+------=_testcase-items-62c497da-4241-31f4-811a-6b453a3ecff8--

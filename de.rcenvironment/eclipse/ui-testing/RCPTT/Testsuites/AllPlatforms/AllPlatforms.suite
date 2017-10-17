@@ -1,0 +1,22 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Element-Name: AllPlatforms
+Element-Type: testsuite
+Element-Version: 2.0
+Id: _5t1hEJuREeadSNrqTD40Fg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 11/29/16 12:07 PM
+
+------=_testcase-items-62c497da-4241-31f4-811a-6b453a3ecff8
+Content-Type: text/testcase
+Entry-Name: testcase-items
+
+_oQum0DLfEea2pv8uVxqPiQ	// kind: 'test' name: 'Check RCE Version' path: '../../Testcases/AllPlatforms/Misc/Check RCE Version.test'
+_lqOTkLMQEea9-IVwaLVU3A	// kind: 'test' name: 'ExecuteExampleWorkflow' path: '../../Testcases/AllPlatforms/Misc/ExecuteExampleWorkflow.test'
+_7uFAwJqwEeadSNrqTD40Fg	// kind: 'test' name: 'IntegratedImageViewerCanBeOpened' path: '../../Testcases/AllPlatforms/Misc/IntegratedImageViewerCanBeOpened.test'
+_Cl6tMJqvEeadSNrqTD40Fg	// kind: 'test' name: 'ProfileConfigCanBeOpened' path: '../../Testcases/AllPlatforms/Misc/ProfileConfigCanBeOpened.test'
+_5-UzAJqzEeadSNrqTD40Fg	// kind: 'test' name: 'ConfigureComponent' path: '../../Testcases/AllPlatforms/WorkflowEditor/ConfigureComponent.test'
+_wq1yQLMZEea3QLlSwdMehg	// kind: 'test' name: 'ConnectTwoComponents' path: '../../Testcases/AllPlatforms/WorkflowEditor/ConnectTwoComponents.test'
+_yiMFoJuEEeadSNrqTD40Fg	// kind: 'test' name: 'CopyPasteUndoRedo' path: '../../Testcases/AllPlatforms/WorkflowEditor/CopyPasteUndoRedo.test'
+
+------=_testcase-items-62c497da-4241-31f4-811a-6b453a3ecff8--

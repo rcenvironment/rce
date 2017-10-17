@@ -1,0 +1,97 @@
+instructions.configure=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/eclipsec.exe);\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/launcher.exe);\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/launcher);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.setFrameworkDependentProperty(propName:org.eclipse.update.reconcile,propValue:false);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-clean);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:--launcher.XXMaxPermSize);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-nl);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:en);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-data @noDefault);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.7);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xms512m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1024m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1280m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx2048m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:MaxPermSize=256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-clean);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:--launcher.XXMaxPermSize);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:256m);\
+    org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-nl);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:en);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.7);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xms512m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:MaxPermSize=256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);
+	
+requires.1.namespace=org.eclipse.equinox.p2.iu
+requires.1.name=de.rcenvironment.products.rce.default.maxheap.2gb
+requires.1.filter=(!(&(osgi.os=win32) (osgi.arch=x86)))
+requires.1.range=[$version$,$version$]
+requires.1.greedy=true
+
+requires.2.namespace=org.eclipse.equinox.p2.iu
+requires.2.name=de.rcenvironment.products.rce.default.maxheap.1gb
+requires.2.filter=(&(osgi.os=win32) (osgi.arch=x86))
+requires.2.range=[$version$,$version$]
+requires.2.greedy=true
+
+requires.3.namespace=org.eclipse.equinox.p2.iu
+requires.3.name=de.rcenvironment.products.rce.default.browser.mozilla
+requires.3.filter=(osgi.os=linux)
+requires.3.range=[$version$,$version$]
+requires.3.greedy=true
+
+units.1.id=de.rcenvironment.products.rce.default.maxheap.2gb
+units.1.version=$version$
+units.1.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.1.provides.1.name=de.rcenvironment.products.rce.default.maxheap.2gb
+units.1.provides.1.version=$version$
+units.1.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx2048m);
+
+units.2.id=de.rcenvironment.products.rce.default.maxheap.1gb
+units.2.version=$version$
+units.2.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.2.provides.1.name=de.rcenvironment.products.rce.default.maxheap.1gb
+units.2.provides.1.version=$version$
+units.2.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx1280m);
+
+units.3.id=de.rcenvironment.products.rce.default.browser.mozilla
+units.3.version=$version$
+units.3.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.3.provides.1.name=de.rcenvironment.products.rce.default.browser.mozilla
+units.3.provides.1.version=$version$
+units.3.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);
+
+# We are rewriting the metadata of the launcher here exactly like they were before adding our custom launcher, except that we do not list the
+# touchpoints that were responsible for adding the startup parameter, as we are doing this in our own launcher now.
+units.4.id=toolingorg.eclipse.equinox.launcher
+units.4.version=1.2.0.v20110502
+units.4.hostRequirements.0.namespace=osgi.bundle
+units.4.hostRequirements.0.name=org.eclipse.equinox.launcher
+units.4.hostRequirements.0.range=1.2.0.v20110502
+units.4.hostRequirements.1.namespace=org.eclipse.equinox.p2.eclipse.type
+units.4.hostRequirements.1.name=bundle
+units.4.hostRequirements.1.range=[1.0.0,2.0.0)
+units.4.hostRequirements.1.greedy=false
+units.4.properties.0.name=org.eclipse.equinox.p2.type.fragment
+units.4.properties.0.value=true
+units.4.provides.0.namespace=org.eclipse.equinox.p2.iu
+units.4.provides.0.name=toolingorg.eclipse.equinox.launcher
+units.4.provides.0.version=1.2.0.v20110502
+units.4.provides.1.namespace=org.eclipse.equinox.p2.flavor
+units.4.provides.1.name=tooling
+units.4.provides.1.version=1.0.0
+units.4.requires.0.namespace=osgi.bundle
+units.4.requires.0.name=org.eclipse.equinox.launcher
+units.4.requires.0.version=1.2.0.v20110502
+units.4.requires.1.namespace=org.eclipse.equinox.p2.eclipse.type
+units.4.requires.1.name=bundle
+units.4.requires.1.version=[1.0.0,2.0.0)

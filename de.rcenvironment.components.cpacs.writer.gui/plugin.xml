@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>  
+   
+   <!-- Hide from Windows->Show View -->
+	<extension point="org.eclipse.ui.activities">  
+	  <activity id="de.rcenvironment.components.cpacs.writer.gui.activity.suppress.runtime" name="Suppress runtime view">
+	  </activity>
+	  <activityPatternBinding
+	     activityId="de.rcenvironment.components.cpacs.writer.gui.activity.suppress.runtime"
+	     isEqualityPattern="true"
+	     pattern="de.rcenvironment.components.cpacs.writer.gui/de.rcenvironment.components.cpacs.writer.gui.runtime.CpacsGeomView">
+	  </activityPatternBinding>
+	 </extension>
+	 
+   <!-- Extension for classes allocated to tabs -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+          
+         <propertySection
+               tab="workflow.editor.tab.writer.CpacsWriterSection"
+               enablesFor="1"
+               class="de.rcenvironment.components.cpacs.writer.gui.properties.CpacsWriterSection"
+               id="workflow.editor.tab.destination.Properties.Section"
+               filter="de.rcenvironment.components.cpacs.writer.gui.properties.CpacsWriterComponentFilter">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.writer.XPathChooser"
+               enablesFor="1"
+               class="de.rcenvironment.components.cpacs.writer.gui.properties.CPACSWriterInputsOutputsSection"
+               id="workflow.editor.tab.destination.XPathChooserDialog"
+               filter="de.rcenvironment.components.cpacs.writer.gui.properties.CpacsWriterComponentFilter">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+               enablesFor="1"
+               filter="de.rcenvironment.components.cpacs.writer.gui.properties.CpacsWriterComponentFilter"
+               id="workflow.editor.tab.HistoryData.Section"
+               tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+      </propertySections>
+   </extension>
+   
+   
+   <!-- Extension for own tabs in component properties -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab label="Target"
+               category="default"
+               id="workflow.editor.tab.writer.CpacsWriterSection">
+         </propertyTab>
+        
+         <!-- The Input&Output Tab -->
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.writer.CpacsWriterSection"
+               id="workflow.editor.tab.writer.XPathChooser">
+         </propertyTab>
+         <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="Workflow Data"
+               afterTab="workflow.editor.tab.writer.XPathChooser">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   
+   <extension point="org.eclipse.ui.views">
+        <view category="de.rcenvironment.core"
+            allowMultiple="true"
+            name="CPACS Writer"
+            icon="platform:/plugin/de.rcenvironment.components.cpacs.writer.common/resources/cpacsWriter16.png"
+            class="de.rcenvironment.components.cpacs.writer.gui.runtime.CpacsGeomView"
+            id="de.rcenvironment.components.cpacs.writer.gui.runtime.CpacsGeomView"
+            restorable="false">
+        </view>
+
+    </extension>
+    
+    <!-- CPACS Geometry View -->
+    <extension point="de.rcenvironment.core.gui.workflow.monitoring">
+        <monitor
+            component="de.rcenvironment.cpacswriter"
+            view="de.rcenvironment.components.cpacs.writer.gui.runtime.CpacsGeomView"
+            default="true">
+        </monitor>
+    </extension>
+       
+    <!-- Data management browser subtree builder-->
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.cpacs.writer.gui.CpacsWriterHistoryDataItemSubtreeBuilder"/>
+   </extension>
+    
+       <!-- Dynamic Help -->
+    <extension point="org.eclipse.help.contexts">
+        <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+    </extension>
+    
+    <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
+    
+</plugin>

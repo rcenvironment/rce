@@ -1,0 +1,22 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="false" name="Benchmark Service">
+	<implementation class="de.rcenvironment.core.communication.management.internal.BenchmarkServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.management.BenchmarkService"/>
+		<provide interface="de.rcenvironment.core.communication.management.RemoteBenchmarkService"/>
+	</service>
+	<reference
+		bind="bindCommunicationService"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		name="Communication Service"
+	/>
+	<reference
+		bind="bindLiveNetworkIdResolutionService"
+		interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService"
+		name="LiveNetworkIdResolutionService"
+	/>
+	<reference
+		bind="bindPlatformService"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		name="Platform Service"
+	/>
+</scr:component>

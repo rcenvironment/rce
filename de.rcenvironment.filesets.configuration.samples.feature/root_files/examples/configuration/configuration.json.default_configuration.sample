@@ -1,0 +1,17 @@
+{
+	"general" : {
+		"instanceName" : "Default instance started by \"${systemUser}\" on ${hostName}"
+	},
+	"network" : {
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 20001,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	}
+}

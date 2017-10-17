@@ -1,0 +1,31 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Input Provider">
+
+	<implementation class="de.rcenvironment.components.inputprovider.execution.InputProviderComponent"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String">
+		de.rcenvironment.inputprovider
+		de.rcenvironment.components.inputprovider.execution.InputProviderComponent_Input Provider
+	</property>
+	
+	<property name="rce.component.name" type="String" value="Input Provider"/>
+	
+	<property name="rce.component.group" type="String" value="Data Flow"/>
+	
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.inputprovider.execution.InputProviderComponent"/>
+
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.inputprovider.common" />
+	<property name="rce.component.icon-16" type="String" value="inputprovider16.png"/>
+	<property name="rce.component.icon-24" type="String" value="inputprovider24.png"/>
+  	<property name="rce.component.icon-32" type="String" value="inputprovider32.png"/>
+  	<property name="rce.component.version" type="String" value="3.2"/>
+  	 
+    <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+    <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+    <property name="rce.component.size" type="String" value="small"/>
+    <property name="rce.component.color" type="String" value="yellow"/>
+    <property name="rce.component.shape" type="String" value="square"/>
+
+</scr:component> 

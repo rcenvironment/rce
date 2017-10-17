@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Toolkit-OSGi Bridge
+Bundle-SymbolicName: de.rcenvironment.core.toolkitbridge;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-Activator: de.rcenvironment.core.toolkitbridge.internal.Activator
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: 
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.toolkit.core.api,
+ de.rcenvironment.toolkit.core.setup,
+ de.rcenvironment.toolkit.modules.concurrency.api,
+ de.rcenvironment.toolkit.modules.concurrency.setup,
+ de.rcenvironment.toolkit.modules.introspection.setup,
+ de.rcenvironment.toolkit.modules.objectbindings.setup,
+ de.rcenvironment.toolkit.modules.statistics.api,
+ de.rcenvironment.toolkit.modules.statistics.setup,
+ org.apache.commons.logging;version="1.1.1",
+ org.osgi.framework
+Export-Package: de.rcenvironment.core.toolkitbridge.api,
+ de.rcenvironment.core.toolkitbridge.transitional

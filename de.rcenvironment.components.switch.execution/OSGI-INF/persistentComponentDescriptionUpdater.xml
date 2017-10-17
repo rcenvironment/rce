@@ -1,0 +1,9 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Switch Persistent Component Description Updater">
+
+	<implementation class="de.rcenvironment.components.switchcmp.execution.SwitchPersistentComponentDescriptionUpdater"/>
+	
+	<service>
+		<provide interface="de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater"/>
+	</service>
+	
+</scr:component>

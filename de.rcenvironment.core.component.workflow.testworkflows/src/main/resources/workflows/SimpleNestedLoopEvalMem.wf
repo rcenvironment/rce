@@ -1,0 +1,362 @@
+{
+  "identifier" : "adcd3a6e-edc6-436f-b0b9-f463a6835872",
+  "workflowVersion" : "5",
+  "name" : "SimpleDoubleNestedLoop_2016-08-19_15:46:03_04",
+  "nodes" : [ {
+    "identifier" : "4bd91b21-b280-4a35-8f3e-4d1f4345928d",
+    "name" : "Add2",
+    "location" : "444:164",
+    "zIndex" : "4",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print 'Design variable: ' + str( RCE.read_input(\"design_variable\"))\r\nRCE.write_output(\"result\", RCE.read_input(\"design_variable\") * 2)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\"))",
+      "scriptLanguage" : "Jython",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "8429966a-747b-453a-a431-115923b104c8",
+      "name" : "design_variable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "407d7141-fd15-4bf9-80c8-74cbe98e509b",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "0752befb-2b7c-4090-8b94-7cc3393d593f",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "6079485f-2d00-4111-ad37-a12586abd8a9",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "name" : "Design of Experiments Inner",
+    "location" : "263:164",
+    "zIndex" : "2",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "4",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "behaviourFailedRun" : "Skip sample and continue",
+      "endSample" : "0",
+      "isNestedLoop_5e0ed1cd" : "true",
+      "method" : "Full factorial design",
+      "runNumber" : "2",
+      "seedNumber" : "0",
+      "startSample" : "0",
+      "table" : ""
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "45385c10-e131-4e9e-9263-db6f7b42c1dc",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "33acb0ba-fb74-4082-ad69-7db309be8095",
+      "name" : "fw_start",
+      "epIdentifier" : "startToForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "4235ed66-1ff5-4425-be5c-6a50b4af0a30",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "7f32d855-0417-44d0-9910-69fc8718a5ae",
+      "name" : "Done",
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "8be9fbdb-a77e-4585-bb4b-60e512a3f08c",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "203fb23d-c07f-4870-820a-91ba0ed7e7ad",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    }, {
+      "identifier" : "3641a39a-6dca-42c7-bbf6-81601654ab0f",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    } ]
+  }, {
+    "identifier" : "188e5f52-b16d-461e-b2ab-15cec32546e5",
+    "name" : "Design of Experiments Outer",
+    "location" : "86:52",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "4",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "behaviourFailedRun" : "Skip sample and continue",
+      "endSample" : "0",
+      "method" : "Full factorial design",
+      "runNumber" : "2",
+      "seedNumber" : "0",
+      "startSample" : "0",
+      "table" : ""
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d89ca818-2c8d-4098-b278-271567df0d09",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "9673c62a-b435-4b19-9497-4187824a247b",
+      "name" : "Done",
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "1715f2a4-726e-4d52-a894-629c9918fc12",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    }, {
+      "identifier" : "5cd2892f-dbb8-4218-911f-8a505d0d6742",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    } ]
+  }, {
+    "identifier" : "dbbdcc7d-ce5d-4203-89d3-b870bb0d9057",
+    "name" : "Nothing2",
+    "location" : "86:164",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output('f', 1.0)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "false",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "5be26fbb-8c77-48c6-a806-090ff9f0c4df",
+      "name" : "d",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "dfd5a65f-37fb-461a-8415-920c704e3195",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "name" : "em-3",
+    "location" : "375:184",
+    "zIndex" : "3",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.evaluationmemory",
+      "version" : "2",
+      "name" : "Evaluation Memory"
+    },
+    "configuration" : {
+      "mem_file" : "",
+      "mem_file_wf_start" : "${memory_file}",
+      "select_at_wf_start" : "true",
+      "storeComponentHistoryData" : "true",
+      "store_failures" : "false"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "66dd301a-5b08-470e-a354-a857be5391b6",
+      "name" : "fw_1",
+      "epIdentifier" : "to_evaluate",
+      "group" : "to_evaluate",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "642a417d-aeeb-4035-982d-9f3176aa24e8",
+      "name" : "fw_2",
+      "epIdentifier" : "evaluation_results",
+      "group" : "evaluation_results",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "b99c04ff-f86e-4385-a9af-c5d43ba9a678",
+      "name" : "x_1",
+      "epIdentifier" : "to_evaluate",
+      "group" : "to_evaluate",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "715484a3-ab47-4f4e-9ae1-072d6e92f40c",
+      "name" : "x_2",
+      "epIdentifier" : "evaluation_results",
+      "group" : "evaluation_results",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "bff9ea19-c9da-4901-b4a8-3ed5f499939c",
+      "name" : "fw_1",
+      "epIdentifier" : "to_evaluate",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "a7868b58-2294-4d9e-832a-47fab16a4a79",
+      "name" : "fw_2",
+      "epIdentifier" : "evaluation_results",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "581a8a74-856c-49cd-b89a-b9a21d91ce46",
+      "name" : "x_1",
+      "epIdentifier" : "to_evaluate",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "8c81a295-ecf5-4b45-a983-317164f63e76",
+      "name" : "x_2",
+      "epIdentifier" : "evaluation_results",
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "4bd91b21-b280-4a35-8f3e-4d1f4345928d",
+    "output" : "0752befb-2b7c-4090-8b94-7cc3393d593f",
+    "target" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "input" : "642a417d-aeeb-4035-982d-9f3176aa24e8"
+  }, {
+    "source" : "4bd91b21-b280-4a35-8f3e-4d1f4345928d",
+    "output" : "6079485f-2d00-4111-ad37-a12586abd8a9",
+    "target" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "input" : "715484a3-ab47-4f4e-9ae1-072d6e92f40c"
+  }, {
+    "source" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "output" : "7f32d855-0417-44d0-9910-69fc8718a5ae",
+    "target" : "dbbdcc7d-ce5d-4203-89d3-b870bb0d9057",
+    "input" : "5be26fbb-8c77-48c6-a806-090ff9f0c4df"
+  }, {
+    "source" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "output" : "8be9fbdb-a77e-4585-bb4b-60e512a3f08c",
+    "target" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "input" : "66dd301a-5b08-470e-a354-a857be5391b6"
+  }, {
+    "source" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "output" : "203fb23d-c07f-4870-820a-91ba0ed7e7ad",
+    "target" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "input" : "b99c04ff-f86e-4385-a9af-c5d43ba9a678"
+  }, {
+    "source" : "188e5f52-b16d-461e-b2ab-15cec32546e5",
+    "output" : "1715f2a4-726e-4d52-a894-629c9918fc12",
+    "target" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "input" : "33acb0ba-fb74-4082-ad69-7db309be8095"
+  }, {
+    "source" : "dbbdcc7d-ce5d-4203-89d3-b870bb0d9057",
+    "output" : "dfd5a65f-37fb-461a-8415-920c704e3195",
+    "target" : "188e5f52-b16d-461e-b2ab-15cec32546e5",
+    "input" : "d89ca818-2c8d-4098-b278-271567df0d09"
+  }, {
+    "source" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "output" : "bff9ea19-c9da-4901-b4a8-3ed5f499939c",
+    "target" : "4bd91b21-b280-4a35-8f3e-4d1f4345928d",
+    "input" : "407d7141-fd15-4bf9-80c8-74cbe98e509b"
+  }, {
+    "source" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "output" : "a7868b58-2294-4d9e-832a-47fab16a4a79",
+    "target" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "input" : "45385c10-e131-4e9e-9263-db6f7b42c1dc"
+  }, {
+    "source" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "output" : "581a8a74-856c-49cd-b89a-b9a21d91ce46",
+    "target" : "4bd91b21-b280-4a35-8f3e-4d1f4345928d",
+    "input" : "8429966a-747b-453a-a431-115923b104c8"
+  }, {
+    "source" : "e8fcb5c9-5f9e-4f3f-b594-f0d3d5c9cf2d",
+    "output" : "8c81a295-ecf5-4b45-a983-317164f63e76",
+    "target" : "6f0507fa-e221-4fd5-87a9-232b9ae93638",
+    "input" : "4235ed66-1ff5-4425-be5c-6a50b4af0a30"
+  } ]
+}

@@ -1,0 +1,29 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Service Proxy Factory">
+	<implementation class="de.rcenvironment.core.communication.rpc.internal.ServiceProxyFactoryImpl" />
+ 	<service>
+    	<provide interface="de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory"/>
+	</service>
+	<reference bind="bindPlatformService"
+ 		interface="de.rcenvironment.core.communication.api.PlatformService"
+ 		name="Information Service"
+ 	/>
+	<reference
+		bind="bindLiveNetworkIdResolutionService"
+		interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService"
+		name="LiveNetworkIdResolutionService"
+	/>
+ 	<reference name="Callback Proxy Service"
+		bind="bindCallbackProxyService"
+ 		interface="de.rcenvironment.core.communication.rpc.api.CallbackProxyService"
+ 	/>
+	<reference
+ 		name="Callback Service"
+ 		interface="de.rcenvironment.core.communication.rpc.api.CallbackService"
+ 		bind="bindCallbackService"
+ 	/>
+	<reference
+ 		name="Remote Service Call Service"
+ 		interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"
+ 		bind="bindRemoteServiceCallService"
+ 	/>
+</scr:component>

@@ -1,0 +1,6 @@
+<contexts>
+	<context id="outputwriter" title="Output Writer Component Help">
+		<description>The Output Writer saves files or directories to the local file system.</description>
+     	<topic href="help/generated/html/usage.xhtml" label="Output Writer Component Usage"></topic>
+	</context>
+</contexts>

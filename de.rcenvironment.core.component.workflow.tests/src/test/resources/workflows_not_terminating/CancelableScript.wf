@@ -1,0 +1,24 @@
+{
+  "identifier" : "edbba856-d122-42b7-9135-0143813c8e57",
+  "workflowVersion" : "4",
+  "name" : "CancelableScript_2016-05-30_14:38:26_08",
+  "nodes" : [ {
+    "identifier" : "080222e4-0025-4c4e-84ec-4ae543e35282",
+    "name" : "Cancel me",
+    "location" : "200:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "import time\nimport signal\n\ndef killhandle(signum, frame):\n  print(\"received SIGTERM\")\n\nprint(\"installing signal handler\")\nsignal.signal(signal.SIGTERM, killhandle)\n\nprint(\"waiting...\")\nwhile True:\n  time.sleep(1)",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    }
+  } ],
+  "labels" : "[{\"identifier\":\"c274340b-d90c-4dbf-9236-035da609c569\",\"text\":\"Cancel workflow -> Respective native process vanishes\\r\\nKill related native process -> Workflow fails\",\"location\":\"20:20\",\"size\":\"441:81\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:128:255\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"12\"}]"
+}

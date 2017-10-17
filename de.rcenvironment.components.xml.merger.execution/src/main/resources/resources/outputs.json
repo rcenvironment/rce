@@ -1,0 +1,35 @@
+{
+    "dynamicOutputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "variable.xpath": {
+                    "guiName": "XPath",
+                    "guiPosition": "0",
+                    "guiGroup": "XML values",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required",
+					"persistent" : "true"
+                }
+            }
+        }
+    ],
+	"staticOutputs": [
+        {
+            "name": "XML",
+            "dataTypes": [
+                "FileReference"
+            ],
+            "defaultDataType": "FileReference",
+            "metaData": {}
+        }
+    ]
+}

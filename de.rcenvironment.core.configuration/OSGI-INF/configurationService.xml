@@ -1,0 +1,20 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
+	activate="activate" name="Configuration Service">
+	
+	<implementation
+		class="de.rcenvironment.core.configuration.internal.ConfigurationServiceImpl" />
+		
+	<service>
+		<provide interface="de.rcenvironment.core.configuration.ConfigurationService" />
+	</service>
+	
+	<reference bind="addErrorListener" cardinality="0..n"
+		interface="de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener"
+		name="ConfigurationServiceMessageEventListener" policy="dynamic"
+		unbind="removeErrorListener" />
+		
+	<reference bind="bindDiscoveryBootstrapService" cardinality="1..1"
+		interface="de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService"
+		name="DiscoveryBootstrapService" policy="static" />
+		
+</scr:component>

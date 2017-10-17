@@ -1,0 +1,15 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Execution Permits Service">
+	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionPermitsServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionPermitsService"/>
+		<provide interface="de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener"/>
+	</service>
+	
+	<reference name="Distributed Component Knowledge Service"
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"
+		cardinality="1..1"
+		bind="bindDistributedComponentKnowledgeService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

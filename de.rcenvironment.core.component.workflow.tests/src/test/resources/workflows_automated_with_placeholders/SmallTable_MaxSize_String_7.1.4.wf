@@ -1,0 +1,65 @@
+{
+  "identifier" : "ef76e719-d075-4edf-a0c4-0f0180eac4ef",
+  "workflowVersion" : "4",
+  "name" : "SmallTable_succeed_2016-10-12_10:16:13_23",
+  "nodes" : [ {
+    "identifier" : "1852eab2-cae6-48a6-b78d-94ef62edaa43",
+    "name" : "Receiver",
+    "location" : "171:109",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = RCE.read_input(\"in\")\r\ncontent = \"this is a string of 140 chars - texttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttext\"\r\n\r\nif smallTable[0][0] == content:\r\n  print \"succeed\"\r\nelse:\r\n  RCE.fail(\"This did not work\")  \r\n\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "33c030ca-ced1-4938-8197-15674499e3ae",
+      "name" : "in",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "35cb435b-e6dd-4d92-9533-d68abca6a28c",
+    "name" : "Sender",
+    "location" : "46:109",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 1000\r\nrows = 100\r\ncontent = \"this is a string of 140 chars - texttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttext\"\r\n\r\nsmallTable = [[content]*cols for i in range(rows)]\r\n\r\nRCE.write_output(\"smallTable\", smallTable)\r\n\r\nprint content\r\nprint smallTable",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "35cb435b-e6dd-4d92-9533-d68abca6a28c",
+    "output" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+    "target" : "1852eab2-cae6-48a6-b78d-94ef62edaa43",
+    "input" : "33c030ca-ced1-4938-8197-15674499e3ae"
+  } ],
+  "labels" : "[{\"identifier\":\"588e5ab1-bceb-484e-b1ac-d6ce49609e44\",\"text\":\"Smalltable with 100.000 entries.\\r\\nEntries are strings of 140 chars.\",\"location\":\"46:24\",\"size\":\"196:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

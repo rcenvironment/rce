@@ -1,0 +1,247 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:          rce daemon
+# Required-Start:    $all
+# Required-Stop:     $all	
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: RCE Daemon
+# Description:       RCE Daemon
+### END INIT INFO
+############################################################
+
+# the system user to run the RCE instance as; note that this user must
+# be created before running the daemon script
+USER=rce-daemon
+
+# absolute path to the directory containing the RCE installation 
+RCE_ROOT_PATH=/usr/share/rce
+
+# absolute path to the rce executable
+RCE_BINARY=$RCE_ROOT_PATH/rce
+
+# preparation for future multi-daemon setups
+INSTANCE_ID=default
+
+# name of the RCE daemon; must only contain characters that are valid 
+# parts of a filename
+DAEMON_NAME="rce-$INSTANCE_ID-daemon"
+
+############################################################
+
+# time to wait for a shutdown response
+wait_for_termination=20
+
+# arguments
+start_arguments='--headless --launcher.suppressErrors -nosplash'
+stop_arguments='--shutdown --launcher.suppressErrors -nosplash'
+
+# pid file
+pidfile="/var/run/${DAEMON_NAME}.pid"
+
+# check RCE_BINARY
+! [ -x $RCE_BINARY ] && echo "$RCE_BINARY not found" && exit 1
+
+# identify and check daemon user home directory
+DAEMON_USER_HOME=`eval echo ~$USER`
+FIRST_CHAR_OF_RESULT=${DAEMON_USER_HOME:0:1}
+if [[ "$FIRST_CHAR_OF_RESULT" == '~' ]]; then echo "No home directory found for daemon user $USER - did you create it?"; exit 1; fi
+
+eval_cmd() {
+  local rc=$1
+  if [ $rc -eq 0 ]; then
+    echo '[  OK  ]'
+  else
+    echo '[FAILED]'
+  fi
+  return $rc
+}
+
+# executes the given arguments as command with user privileges
+executeAsUser() {
+  case `cat /proc/version` in
+	*Debian* | *Ubuntu*) 
+		sudo -u $USER $@
+		;;
+	*Red\ Hat* | *SUSE*)
+		su --session-command '$@' $USER
+		;;
+  esac
+}
+
+start() {
+  # see if running
+  local pid=$(pidof $RCE_BINARY)
+  local process_count=$(ps aux |grep -v grep |grep -c -e "$RCE_BINARY $start_arguments")
+  local blanc_count=$((40 - ${#DAEMON_NAME}))
+  if [ $process_count -ne 0 ]; then
+    echo "$DAEMON_NAME (pid $pid) is already running"
+    return 0
+  fi
+  
+  LOG_FILE="$DAEMON_USER_HOME/${INSTANCE_ID}-daemon-start.log"
+  PROFILE_DIR="$DAEMON_USER_HOME/.rce/$INSTANCE_ID"
+  DEFAULT_TEMP_DIR="/tmp/rce-temp-$USER"
+  printf "Starting RCE daemon (log file $LOG_FILE, RCE profile $PROFILE_DIR)"
+
+  # make sure RCE executable is executable by all users, including the daemon user
+  chmod a+x $RCE_BINARY
+  
+  # make sure the daemon profile, startup log file and default temp directory are not readable by non-group users,
+  # as they may contain sensitive data
+  executeAsUser mkdir -p "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
+  chown --quiet $USER:$USER "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
+
+  if [ -e $LOG_FILE ]; then
+    chown --quiet $USER:$USER $LOG_FILE
+  else
+    executeAsUser touch $LOG_FILE
+  fi
+
+  chmod --quiet o-rwx "$PROFILE_DIR" "$DEFAULT_TEMP_DIR" "$LOG_FILE"
+
+
+  # start RCE
+  case `cat /proc/version` in
+	*Debian* | *Ubuntu*)
+		# output redirection is performed with root privileges
+		sudo -u $USER $RCE_BINARY $start_arguments &>$LOG_FILE &	
+		;;
+	*Red\ Hat* | *SUSE*)
+		su --session-command "$RCE_BINARY $start_arguments &>$LOG_FILE" $USER &
+		;;
+  esac
+
+  # repeat some security settings after startup
+  chmod --quiet o-rwx $LOG_FILE 
+
+  # save pid to file
+  echo $! > $pidfile
+
+  sleep 5
+  # check again if running
+  pidof $RCE_BINARY >/dev/null 2>&1
+  printf "%-${blanc_count}s" ''
+  eval_cmd $?
+}
+
+killrce() {
+  # see if running
+  local pid=$(pidof $RCE_BINARY)
+  if [ -z "$pid" ]; then
+    echo "$DAEMON_NAME not running"
+    return 0
+  fi
+
+  # get the process group id
+  local pgid=$(ps -o pgid= $pid | grep -o '[0-9]*')
+
+  echo "Do you really want to kill $DAEMON_NAME and its associated processes?"
+  select yn in "Yes" "No"; do
+    case $yn in
+      # kill all processes with the given process group id
+      Yes ) kill -- -$pgid; break;;
+      No ) exit;;
+    esac
+  done
+}
+
+stop() {
+  # see if running
+  local pid=$(pidof $RCE_BINARY)
+  local process_count=$(ps aux |grep -v grep |grep -c -e "$RCE_BINARY $start_arguments")
+  local blanc_count=$((40 - ${#DAEMON_NAME}))
+  if [ -z "$pid" ]; then
+    echo "$DAEMON_NAME not running"
+    return 0
+  fi
+  
+  LOG_FILE="$DAEMON_USER_HOME/${INSTANCE_ID}-daemon-stop.log"
+  PROFILE_DIR="$DAEMON_USER_HOME/.rce/$INSTANCE_ID"
+  printf "Stopping RCE daemon (log file $LOG_FILE, RCE profile $PROFILE_DIR)"
+  
+  if [ -e $LOG_FILE ]; then
+    chown --quiet $USER:$USER $LOG_FILE
+  else
+    executeAsUser touch $LOG_FILE
+  fi
+  chmod --quiet o-rwx $LOG_FILE
+
+  # stop RCE
+  rm -f $pidfile
+  case `cat /proc/version` in
+	*Debian* | *Ubuntu*) 
+		sudo -u $USER $RCE_BINARY $stop_arguments &>$LOG_FILE &
+		;;
+	*Red\ Hat* | *SUSE*)
+		su --session-command "$RCE_BINARY $stop_arguments &>$LOG_FILE" $USER &
+		;;
+  esac
+  
+  # repeat some security settings after shutdown
+  chmod --quiet o-rwx $LOG_FILE 
+  
+  # check if RCE is stopped
+
+  COUNTER=0
+  while [ $process_count -ne 0 ]
+  do
+    if [ $COUNTER -gt $wait_for_termination ]; then
+      shutdown_failed="true"
+      break
+    fi
+    let COUNTER=COUNTER+1
+
+    printf "."
+    process_count=$(ps aux |grep -v grep |grep -c -e "$RCE_BINARY $start_arguments")
+    blanc_count=$((blanc_count - 1))
+    sleep 1
+  done
+  if [ $blanc_count -gt 0 ]; then
+    printf "%-${blanc_count}s" ''
+  fi
+
+  res=$?
+  if [ $shutdown_failed ]; then
+    eval_cmd 1
+    echo "Unable to stop the rce-daemon. You can kill it manually using: $1 kill"
+  else
+    eval_cmd $res
+  fi
+}
+
+status() {
+  # see if running
+  local pid=$(pidof $RCE_BINARY)
+
+  if [ -n "$pid" ]; then
+    echo "$DAEMON_NAME (pid $pid) is running"
+  else
+    echo "$DAEMON_NAME is stopped"
+  fi
+}
+
+case $1 in
+  start)
+    start
+    ;;
+  stop)
+    stop $0
+    ;;
+  status)
+    status
+    ;;
+  restart)
+    stop
+    sleep 3
+    start
+    ;;
+  kill)
+    killrce
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status|restart|kill}"
+    exit 1
+esac
+
+exit $?

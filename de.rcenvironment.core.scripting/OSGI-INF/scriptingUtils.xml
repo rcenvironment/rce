@@ -1,0 +1,18 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Scripting Utils">
+<implementation class="de.rcenvironment.core.scripting.ScriptingUtils"/> 
+     <reference
+		name="Typed Datum Service"
+		interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+		cardinality="1..1"
+		bind="bindTypedDatumService"
+		unbind="unbindTypedDatumService"
+		policy="dynamic"
+	/>
+	    <reference
+        name="Component Data Management Service"
+        interface="de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService"
+        cardinality="1..1"
+        bind="bindComponentDataManagementService"
+        policy="dynamic"
+    />
+</scr:component>

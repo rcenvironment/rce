@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Encrypter Component GUI (Example Component)
+Bundle-SymbolicName: de.rcenvironment.components.examples.encrypter.gui;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Localization: plugin
+Import-Package: de.rcenvironment.components.examples.encrypter.common,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
+ de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.gui.workflow.editor.validator,
+ org.eclipse.osgi.util;version="1.1.0"
+Require-Bundle: org.eclipse.ui.views.properties.tabbed,
+ org.eclipse.core.runtime,
+ org.eclipse.gef
+Export-Package: de.rcenvironment.components.examples.encrypter.gui
+Bundle-Vendor: DLR
+RCE-Component: true

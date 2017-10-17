@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+	 
+   <!-- Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               tab="workflow.editor.tab.doe.General"
+               class="de.rcenvironment.components.doe.gui.properties.DOESection"
+               id="workflow.editor.tab.Properties.Section.DOEScript"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.doe.InputsOutputs"
+               class="de.rcenvironment.components.doe.gui.properties.DOEEndpointPropertySection"
+               id="workflow.editor.tab.Properties.Section.InputsOutputs"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.parametricstudy.NestedLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
+               id="workflow.editor.tab.Properties.Section.NestedLoop"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.doe.FaultTolerantLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.FaultTolerantLoopSection"
+               id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+    <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         
+      </propertySections>
+   </extension>
+   
+   <!-- Register Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         
+         <propertyTab 
+         	   label="%general"
+               category="default"
+                afterTab="workflow.editor.tab.doe.InputsOutputs"
+               id="workflow.editor.tab.doe.General">
+         </propertyTab>
+         <propertyTab
+               label="%inpoutput"
+               category="default"
+               id="workflow.editor.tab.doe.InputsOutputs">
+         </propertyTab>
+          <propertyTab
+               label="Nested Loop"
+               category="default"
+               afterTab="workflow.editor.tab.doe.InputsOutputs"
+               id="workflow.editor.tab.parametricstudy.NestedLoop">
+         </propertyTab>
+         <propertyTab
+               label="Fault Tolerance"
+               category="default"
+               afterTab="workflow.editor.tab.parametricstudy.NestedLoop"
+               id="workflow.editor.tab.doe.FaultTolerantLoop">
+         </propertyTab>
+           <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="Workflow Data"
+               afterTab="workflow.editor.tab.doe.FaultTolerantLoop">
+         </propertyTab>
+     </propertyTabs>
+   </extension>
+
+   <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment.doe" />
+   </extension>
+   
+    <extension point="org.eclipse.help.toc">
+  		<toc file="help/toc.xml"/>
+ 	</extension>
+   
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.doe.gui.dm.DOEHistoryDataItemSubtreeBuilder"/>
+   </extension> 
+</plugin>

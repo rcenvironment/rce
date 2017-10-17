@@ -1,0 +1,35 @@
+{
+    "dynamicOutputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "variable.xpath": {
+                    "guiName": "XPath",
+                    "guiPosition": "0",
+                    "guiGroup": "CPACS Values",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required",
+					"persistent" : "true"
+                }
+            }
+        }
+    ],
+	"staticOutputs": [
+        {
+            "name": "CPACS",
+            "dataTypes": [
+                "FileReference"
+            ],
+            "defaultDataType": "FileReference",
+            "metaData": {}
+        }
+    ]
+}

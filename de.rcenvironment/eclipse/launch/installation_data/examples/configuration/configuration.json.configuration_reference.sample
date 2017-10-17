@@ -1,0 +1,136 @@
+{
+	"general" : {
+		"comment" : "This is a reference file demonstrating all available settings; it is not intended for out-of-the-box usage",
+		"instanceName" : "Reference example started by \"${systemUser}\" on ${hostName} with profile \"${profileName}\"",
+		"isWorkflowHost" : true,
+		"isRelay" : true,
+		"tempDirectory" : "/tmp/custom-temp-directory/${systemUser}",
+		"enableDeprecatedInputTab" : false
+	},
+	"backgroundMonitoring": {
+		"enabledIds": "basic_system_data",
+		"intervalSeconds": 15
+	},
+	"network" : {
+		"requestTimeoutMsec": 40000,
+		"forwardingTimeoutMsec": 35000,
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 20001,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		},
+		"serverPorts" : {
+			"examplePort1" : {
+				"ip" : "0.0.0.0",
+				"port" : 20005
+			}
+		},
+		"ipFilter" : {
+			"enabled" : true,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	},
+	"sshRemoteAccess" : {
+		"sshConnections" : {
+			"exampleSSHConnection" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo"
+			},
+			"exampleSSHConnectionWithKeyfileAuthentication" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file"
+			},
+			"exampleSSHConnectionWithKeyfileAuthenticationWithoutPassphrase" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file",
+				"noPassphrase" : true
+			}
+		}
+	},
+	"publishing" : {
+		"components" : [
+			"de.rcenvironment.cluster",
+			"de.rcenvironment.converger",
+			"de.rcenvironment.joiner",
+			"de.rcenvironment.optimizer",
+			"de.rcenvironment.parametricstudy",
+			"de.rcenvironment.xmlmerger"
+		]
+	},
+	"componentSettings": {
+		"de.rcenvironment.cluster": {
+			"maxChannels": 8
+		}
+	},
+	"sshServer" : {
+		"enabled" : true,
+		"ip" : "127.0.0.1",
+		"port" : 31005,
+		"idleTimeoutSeconds" : 10,
+		"accounts" : {
+			"ra_demo" : {
+				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
+				"role" : "remote_access_user", //Allowed commands: ra|sysmon
+				"enabled" : false
+			},
+			"ra_admin_with_public_key" : {
+				"publicKey" : "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAs/ozsKK3OpYdKKnKWMoOCaTLD6nkOqUsVi4m1l0Y/TD3fQgB4W1RKhmi6gL73hyqSLFRdldBikTvghRuuoTBJeS+Q70Rf2NMLK4VdVogjXj3W6eKOxhwoGbbnQCX0SpyD7uPs+tZ2toKbzK5ip1pM0MHu1uwRZY2D2u+v49i8jFaG83GYgZzUEf5LBWnEg1mEsOilGBxuUoFCLhXVjlu8lIVAFRQyT/FiV+5JQbsf61AEJeGa/pVuXtDDgMRRgq4LHTY0+kH8hkilI+XDm7BV8DeKaZ+boCKk+VikZagL8UtSwdJywEr8dvgv9606j6itbdiPsw9vZFx1twgJI6lRw== imported-openssh-key",
+				"role" : "remote_access_admin",  //Allowed commands: ra|ra-admin|sysmon|components
+				"enabled" : false
+			},
+			"wf_observer" : {
+				// hashed form of the "changeme!_user" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$SQ1f3ApE3sp5eDqEqO8S9uGmk04JsSYnj3GK.6RNf5E6WBElUcTIe",
+				"role" : "workflow_observer", //Allowed commands: components|net info|sysmon|wf list|wf details
+				"enabled" : false
+			},
+			"wf_admin" : {
+				// hashed form of the "changeme!_user" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$SQ1f3ApE3sp5eDqEqO8S9uGmk04JsSYnj3GK.6RNf5E6WBElUcTIe",
+				"role" : "workflow_admin", //Allowed commands: components|net info|sysmon|wf
+				"enabled" : false
+			},
+			"admin" : {
+				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
+				"role" : "local_admin", //Allowed commands: cn|components|mail|net|restart|shutdown|stop|stats|tasks
+				"enabled" : false
+			},
+			"im_admin" : {
+				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
+				"role" : "instance_management_admin", //Allowed commands: im|net info
+				"enabled" : false
+			},
+			"im_delegate" : {
+				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
+				"role" : "instance_management_delegate_user", //Allowed commands: cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin
+				"enabled" : false
+			},
+			"developer" : {
+				// hashed form of the "changeme!_dev" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$AS2w2BiUDhFgvFdmFpTr3.RiBnsGQQl8u4pqD/UsOUOyYgr0RqlwS",
+				"role" : "developer",  //Allowed commands: all
+				"enabled" : false
+			}
+		}
+	}
+}

@@ -1,0 +1,19 @@
+{
+    "staticOutputs": [
+        {
+            "name": "Joined",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+				"DirectoryReference",
+                "SmallTable",
+                "Vector",
+                "Matrix"
+            ],
+            "defaultDataType": "Float"
+        }
+    ]
+}

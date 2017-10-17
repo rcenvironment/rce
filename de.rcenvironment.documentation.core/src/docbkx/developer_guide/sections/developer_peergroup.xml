@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1>
+    <title>Intended audience</title>
+    <para>This document is intended for developers who want to extend RCE according to their needs
+        and/or contribute to the progress of RCE.</para>
+</sect1>

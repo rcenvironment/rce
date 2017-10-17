@@ -1,0 +1,2374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zeroGuiIn>
+    <component>
+        <name>Engine</name>
+        <disciplines>
+            <discipline>
+                <name>Inertia</name>
+                <parameters>
+                    <parameter>
+                        <name>massIY</name>
+                        <description>
+							the mass moment of inertia in Y 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>massIX</name>
+                        <description>
+							the mass moment of inertia in X 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>massIZ</name>
+                        <description>
+							the mass moment of inertia in Z 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Geometry</name>
+                <parameters>
+                    <parameter>
+                        <name>yEngine</name>
+                        <description>
+							spanwise location of the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xEngine</name>
+                        <description>
+							x-wise location of the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wetArea</name>
+                        <description>
+							wetted area of the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lEngine</name>
+                        <description>
+							length of the engine  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>dEngine</name>
+                        <description>
+							diameter of the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Propulsion</name>
+                <parameters>
+                    <parameter>
+                        <name>thrustTWDat</name>
+                        <description>
+							Scaling factor for TWDat derived from current thrust00 in CPACS and
+							current thrustTO from VAMPzero 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaCompr</name>
+                        <description>
+							Compressor efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaTransm</name>
+                        <description>
+							Transmission efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>thrustCR</name>
+                        <description>
+							cruise thrust  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mDotEngine</name>
+                        <description>
+							mass flow rate through the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaTurb</name>
+                        <description>
+							Turbine efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sfcCR</name>
+                        <description>
+							SFC for cruise Condition  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaTherm</name>
+                        <description>
+							Thermal efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>thrustTO</name>
+                        <description>
+							takeoff thrust 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>nEngine</name>
+                        <description>
+							Number of Engines 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>TET</name>
+                        <description>
+							Turbine Entry Temperature
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaFan</name>
+                        <description>
+							Fan efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>bypassRatio</name>
+                        <description>
+							bypass ratio for the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>etaProp</name>
+                        <description>
+							Propulsive efficiency 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>OPR</name>
+                        <description>
+							Overall Pressure Ratio 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sfcLOI</name>
+                        <description>
+							SFC for Loiter Condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mEngine</name>
+                        <description>
+							Engine Mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							posCoG from the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>formFactor</name>
+                        <description>
+							form factor for the engine 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							reynoldsnumber relative to the engine length 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0c</name>
+                        <description>
+							Calculates the zero lift drag coefficient component-wise 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfLAM</name>
+                        <description>
+							laminar friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfTURB</name>
+                        <description>
+							turbulent friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Atmosphere</name>
+        <disciplines>
+            <discipline>
+                <name>Fl1500</name>
+                <parameters>
+                    <parameter>
+                        <name>sigmaFL1500</name>
+                        <description>
+							sigma at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aFL1500</name>
+                        <description>
+							speed of sound at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>rhoFL1500</name>
+                        <description>
+							density 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>TASFL1500</name>
+                        <description>
+							true airspeed at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>MaFL1500</name>
+                        <description>
+							machNumber at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>qFL1500</name>
+                        <description>
+							q at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>nyFL1500</name>
+                        <description>
+							ny at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>EASFL1500</name>
+                        <description>
+							equivalent airspeed at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>hFL1500</name>
+                        <description>
+							height at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>TFL1500</name>
+                        <description>
+							temperature at TFL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>myFL1500</name>
+                        <description>
+							my at FL1500 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Airport</name>
+                <parameters>
+                    <parameter>
+                        <name>TAP</name>
+                        <description>
+							temperature at airport level 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>rhoAP</name>
+                        <description>
+							density at airport height 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aAP</name>
+                        <description>
+							speed of sound on airport level 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sigmaAP</name>
+                        <description>
+							sigma at Airport height 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>hAP</name>
+                        <description>
+							height at the airport 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cruise</name>
+                <parameters>
+                    <parameter>
+                        <name>nyCR</name>
+                        <description>
+							ny at cruise condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>TASCR</name>
+                        <description>
+							true airspeed at cruise condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>EASCR</name>
+                        <description>
+							equivalent airspeed at cruise 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>qCR</name>
+                        <description>
+							Staudruck 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>rhoCR</name>
+                        <description>
+							density 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>TCR</name>
+                        <description>
+							temperature at cruise condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aCR</name>
+                        <description>
+							speed of sound at cruise level 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>myCR</name>
+                        <description>
+							my at Cruise Condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>MaCR</name>
+                        <description>
+							machnumber at cruise condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>hCR</name>
+                        <description>
+							height at cruise 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sigmaCR</name>
+                        <description>
+							sigma at cruise condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Htpairfoil</name>
+        <disciplines>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>clMAX</name>
+                        <description>
+							the airfoils maximum lift coefficient  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aType</name>
+                        <description>
+							The Airfoil Type 0. for symmetric, 1. for cambered
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tc</name>
+                        <description>
+							Thickness to Chord Ratio 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number at this airfoil 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>ctm</name>
+                        <description>
+							chord position of maximum thickness between 0. and 1. 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Vtpairfoil</name>
+        <disciplines>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>clMAX</name>
+                        <description>
+							the airfoils maximum lift coefficient  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aType</name>
+                        <description>
+							The Airfoil Type 0. for symmetric, 1. for cambered
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tc</name>
+                        <description>
+							Thickness to Chord Ratio 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number at this airfoil 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>ctm</name>
+                        <description>
+							chord position of maximum thickness between 0. and 1. 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Wingtipairfoil</name>
+        <disciplines>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>clMAX</name>
+                        <description>
+							the airfoils maximum lift coefficient  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aType</name>
+                        <description>
+							The Airfoil Type 0. for symmetric, 1. for cambered
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tc</name>
+                        <description>
+							Thickness to Chord Ratio 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number at this airfoil 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>ctm</name>
+                        <description>
+							chord position of maximum thickness between 0. and 1. 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Landinggear</name>
+        <disciplines>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mLandingGear</name>
+                        <description>
+							mass of the Landing Gear 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Vtp</name>
+        <disciplines>
+            <discipline>
+                <name>Geometry</name>
+                <parameters>
+                    <parameter>
+                        <name>cMAC</name>
+                        <description>
+							mean aerodynamic chord of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>refArea</name>
+                        <description>
+							reference area for the vertical tail  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>taperRatio</name>
+                        <description>
+							taper ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xMAC</name>
+                        <description>
+							x location of the mean aerodynamic chord of the wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cTip</name>
+                        <description>
+							tip chord of the Wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiTE</name>
+                        <description>
+							trailing edge sweep angle  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>span</name>
+                        <description>
+							wing span 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cVT</name>
+                        <description>
+							vertical tail volume coefficent 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cRoot</name>
+                        <description>
+							root chord of the wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>expArea</name>
+                        <description>
+							exposed area of the vtp 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xRoot</name>
+                        <description>
+							position of the vertical tail 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wetArea</name>
+                        <description>
+							wetted area of a wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>dihedral</name>
+                        <description>
+							Wing Dihedral Angle 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lVT</name>
+                        <description>
+							lever for the vertical tail 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zRoot</name>
+                        <description>
+							zPosition at vtp Root
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>yMAC</name>
+                        <description>
+							wing mean aerodynamic chord's y location
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phi25</name>
+                        <description>
+							quarter chord sweep  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tcAVG</name>
+                        <description>
+							average thickness to chord ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiLE</name>
+                        <description>
+							leading edge sweep of a wing element 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aspectRatio</name>
+                        <description>
+							aspect ratio of a vtp 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>cLalpha</name>
+                        <description>
+							cL depending on alpha 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>formFactor</name>
+                        <description>
+							form factor for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLMAX</name>
+                        <description>
+							max cL for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0c</name>
+                        <description>
+							zero lift drag componentwise for the wing  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfLAM</name>
+                        <description>
+							laminar friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfTURB</name>
+                        <description>
+							turbulent friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mVtp</name>
+                        <description>
+							vertical tail mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							Calculates the coordinates of the vtp center of gravity location
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Aircraft</name>
+        <disciplines>
+            <discipline>
+                <name>Sizing</name>
+                <parameters>
+                    <parameter>
+                        <name>wsMAX</name>
+                        <description>
+							maximum Wing Loading 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>twCLIMB</name>
+                        <description>
+							Thrust to Weight ratio for ClimbSegments
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>twTO</name>
+                        <description>
+							Thrust to Weight ratio for takeoff
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wsTO</name>
+                        <description>
+							Wing Loading for Takeoff  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wsL</name>
+                        <description>
+							Wing Loading for Landing Condition 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>oIM</name>
+                        <description>
+							Operator Item Mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>oEM</name>
+                        <description>
+							max Operating Empty Weight 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mZFW</name>
+                        <description>
+							max zero Fuel Weight 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mTOM</name>
+                        <description>
+							The maximum Takeoff-Weight for an Aircraft 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mLM</name>
+                        <description>
+							The maximum Landing-Weight for an Aircraft 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posNP</name>
+                        <description>
+							Position of the Neutral Point relative to cMAC
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							Position of the Center of Gravity relative to cMAC
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>cDCR</name>
+                        <description>
+							Drag coefficient for cruise condiotion 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLCR</name>
+                        <description>
+							Cruise lift coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLMAX</name>
+                        <description>
+							Airplane clean CLmax  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>loDLOI</name>
+                        <description>
+							Lift-over-drag ratio for loiter 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>loDCLIMB</name>
+                        <description>
+							Lift over Drag ratio for ClimbSegments
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>loDTO</name>
+                        <description>
+							Lift-over-drag ratio for takeoff 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLL</name>
+                        <description>
+							Maximum Landing Lift Coefficent 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>loDCR</name>
+                        <description>
+							Lift over Drag Ratio for the Cruise Condition
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0</name>
+                        <description>
+							Zero-lift drag of the airplane 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLTO</name>
+                        <description>
+							Maximum Takeoff Lift Coefficent  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Performance</name>
+                <parameters>
+                    <parameter>
+                        <name>gammaCLIMB</name>
+                        <description>
+							gradient for ClimbSegments
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>timeCLIMB</name>
+                        <description>
+							time in climb segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>rangeType</name>
+                        <description>
+							RangeType: 0= shortRange, 1= mediumRange, 2= longRange, 3 = verylongRange
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>distDESCENT</name>
+                        <description>
+							distance in descent segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>desRange</name>
+                        <description>
+							The design range for the aircraft 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>distRES</name>
+                        <description>
+							distance in the reserver segment
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>altCR</name>
+                        <description>
+							Cruise Altitude 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>IASCLIMB</name>
+                        <description>
+							indicated airspeed at climb
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>IASDESCENT</name>
+                        <description>
+							indicated airspeed at descent
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sTOFL</name>
+                        <description>
+							TO Field Length 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>gammaDESCENT</name>
+                        <description>
+							gradient for descent segment
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>timeRES</name>
+                        <description>
+							Reserve time 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>distCLIMB</name>
+                        <description>
+							distance in climb segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>timeCR</name>
+                        <description>
+							time during cruise segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>distCR</name>
+                        <description>
+							distance during cruise segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>machCR</name>
+                        <description>
+							Cruise Mach Number 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>sLFL</name>
+                        <description>
+							Landing Field Length 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>timeDESCENT</name>
+                        <description>
+							time in descent segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Main</name>
+                <parameters>
+                    <parameter>
+                        <name>uID</name>
+                        <description>Default Doc</description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Inertia</name>
+                <parameters>
+                    <parameter>
+                        <name>massIY</name>
+                        <description>
+							The mass moment of inertia in Y 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>massIX</name>
+                        <description>
+							The mass moment of inertia in X 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>massIZ</name>
+                        <description>
+							The mass moment of inertia in Z 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Pylon</name>
+        <disciplines>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mPylon</name>
+                        <description>
+							description 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Fuselage</name>
+        <disciplines>
+            <discipline>
+                <name>Geometry</name>
+                <parameters>
+                    <parameter>
+                        <name>ltail</name>
+                        <description>
+							length of fuselage tail section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lfus</name>
+                        <description>
+							fuselage length  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lcabin</name>
+                        <description>
+							length of the cabin section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>dfus</name>
+                        <description>
+							fuselage diameter 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wetArea</name>
+                        <description>
+							wetted area of the fuselage 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>loverlay</name>
+                        <description>
+							overlay between cabin and tailcone. i.e. the distance from the beginning
+							of the tail cone to the rear pressure bulkhead 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lnose</name>
+                        <description>
+							length of the fuselage nose section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lcockpit</name>
+                        <description>
+							length of the cockpit section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>formFactor</name>
+                        <description>
+							form factor for the fuselage 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number relative to the fuselage length 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0c</name>
+                        <description>
+							zero lift drag componentwise for the fuselage 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfLAM</name>
+                        <description>
+							laminar friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfTURB</name>
+                        <description>
+							turbulent friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mFurn</name>
+                        <description>
+							furnishings mass    
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuselage</name>
+                        <description>
+							total fuselage Mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mStructure</name>
+                        <description>
+							fuselage structure mass from the area 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							fuselage center of gravity location 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cabin</name>
+                <parameters>
+                    <parameter>
+                        <name>nPaxR</name>
+                        <description>
+							number of pax abreast  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>nClasses</name>
+                        <description>
+							Number of Classes 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cargoDeck</name>
+                        <description>
+							layout for the cargoDeck  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>refLayout</name>
+                        <description>
+							defines the critical layout for the cabin design
+							is a steering factor for JoeFuMo 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>nRow</name>
+                        <description>
+							number of seat rows in the cabin 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>nAisle</name>
+                        <description>
+							number of aisles  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>refAbreast</name>
+                        <description>
+							reference number of pax abreast due to number of pax per row and aisles
+							needed for JoeFuMo 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Htp</name>
+        <disciplines>
+            <discipline>
+                <name>Geometry</name>
+                <parameters>
+                    <parameter>
+                        <name>cMAC</name>
+                        <description>
+							mean aerodynamic chord of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>refArea</name>
+                        <description>
+							description 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>taperRatio</name>
+                        <description>
+							taper ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xMAC</name>
+                        <description>
+							x location of the mean aerodynamic chord of the wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cTip</name>
+                        <description>
+							tip chord of the Wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiTE</name>
+                        <description>
+							trailing edge sweep angle  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>span</name>
+                        <description>
+							wing span 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cRoot</name>
+                        <description>
+							root chord of the wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>expArea</name>
+                        <description>
+							exposed area of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xRoot</name>
+                        <description>
+							Calculates the position of the horizontal tail 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wetArea</name>
+                        <description>
+							wetted area of a wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>dihedral</name>
+                        <description>
+							Wing Dihedral Angle 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zRoot</name>
+                        <description>
+							zPosition at htp Root
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>yMAC</name>
+                        <description>
+							wing mean aerodynamic chord's y location
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phi25</name>
+                        <description>
+							quarter chord sweep  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tcAVG</name>
+                        <description>
+							average thickness to chord ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiLE</name>
+                        <description>
+							leading edge sweep of a wing element 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>lHT</name>
+                        <description>
+							lever for the horizontal tail 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cHT</name>
+                        <description>
+							horizontal tail volume coefficent 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aspectRatio</name>
+                        <description>
+							aspect ratio of a htp 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>cLalpha</name>
+                        <description>
+							cL depending on alpha 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>formFactor</name>
+                        <description>
+							form factor for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLMAX</name>
+                        <description>
+							max cL for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0c</name>
+                        <description>
+							zero lift drag componentwise for the wing  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfLAM</name>
+                        <description>
+							laminar friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>detadalpha</name>
+                        <description>
+							Change in Eta due to Alpha 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfTURB</name>
+                        <description>
+							turbulent friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mHtp</name>
+                        <description>
+							mass of the horizontal tailplane
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							description 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Fuel</name>
+        <disciplines>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mFuelMAX</name>
+                        <description>
+							Maximum fuel mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFM</name>
+                        <description>
+							The mission FuelMass for an Aircraft 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuelRES</name>
+                        <description>
+							fuel mass for reserve segment
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuelDESCENT</name>
+                        <description>
+							fuel used in descent segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuelCR</name>
+                        <description>
+							fuel in cruise segment
+							#@todo: calc mFuelCR: write documentation 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuelTO</name>
+                        <description>
+							fuel mass for takeoff
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mFuelCLIMB</name>
+                        <description>
+							fuel used in climb segment 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Wing</name>
+        <disciplines>
+            <discipline>
+                <name>Cpacs</name>
+                <parameters>
+                    <parameter>
+                        <name>xTip</name>
+                        <description>
+							x position of the wings tip section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cKink</name>
+                        <description>
+							chord at Kink location 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>yFuselage</name>
+                        <description>
+							y Position of the wing station at Fuselage Intersection
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xFuselage</name>
+                        <description>
+							x Position of the wing station at Fuselage Intersection
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xKink</name>
+                        <description>
+							x position of the wings kink section 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zKink</name>
+                        <description>
+							z Position of the wing station at kink
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zTip</name>
+                        <description>
+							z Position of the wing station at tip
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zFuselage</name>
+                        <description>
+							z Coordinate of the Wing at Fuselage Intersection 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cFuselage</name>
+                        <description>
+							chord at Fuselage location 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>yKink</name>
+                        <description>
+							y Position of the wing station at kink
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Geometry</name>
+                <parameters>
+                    <parameter>
+                        <name>cMAC</name>
+                        <description>
+							mean aerodynamic chord of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>refArea</name>
+                        <description>
+							reference Area of the Wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>taperRatio</name>
+                        <description>
+							taper ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cTip</name>
+                        <description>
+							tip chord of the Wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiTE</name>
+                        <description>
+							trailing edge sweep angle  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>span</name>
+                        <description>
+							wing span 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cRoot</name>
+                        <description>
+							root chord of the wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>expArea</name>
+                        <description>
+							exposed area of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xRoot</name>
+                        <description>
+							pos is the x position of the root front position 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>wetArea</name>
+                        <description>
+							wetted area of a wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>dihedral</name>
+                        <description>
+							Wing Dihedral Angle 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>zRoot</name>
+                        <description>
+							zPosition at wing Root
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>xMAC</name>
+                        <description>
+							x location of the mean aerodynamic chord of the wing
+							@todo: cpacsImport xMAC: implement
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>yMAC</name>
+                        <description>
+							wing mean aerodynamic chord's y location
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phi25</name>
+                        <description>
+							quarter chord sweep 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tcAVG</name>
+                        <description>
+							average thickness to chord ratio of the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>phiLE</name>
+                        <description>
+							leading edge sweep of a wing element 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aspectRatio</name>
+                        <description>
+							aspect ratio of a wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mWing</name>
+                        <description>
+							mass for the Wing
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Cog</name>
+                <parameters>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							Wings Center of Gravity Location
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>cLalpha</name>
+                        <description>
+							cL depending on alpha 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>oswald</name>
+                        <description>
+							calculates the oswald factor for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>formFactor</name>
+                        <description>
+							form factor for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cLMAX</name>
+                        <description>
+							max cL for the wing 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cD0c</name>
+                        <description>
+							zero lift drag componentwise for the wing  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfLAM</name>
+                        <description>
+							laminar friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>cfTURB</name>
+                        <description>
+							turbulent friction coefficient 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Payload</name>
+        <disciplines>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mCargo</name>
+                        <description>
+							mass of additional cargo 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>posCoG</name>
+                        <description>
+							Position of the Center of Gravity relative to cMAC
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mPayload</name>
+                        <description>
+							Payload mass:Cargo and Passengers and Passenger Luggage 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>paxSeats</name>
+                        <description>
+							max number of available Seats SingleClass Layout 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mPax</name>
+                        <description>
+							mass of all Passengers
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>mSinglePax</name>
+                        <description>
+							mass of a single passenger and its baggage 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Wingrootairfoil</name>
+        <disciplines>
+            <discipline>
+                <name>Aerodynamic</name>
+                <parameters>
+                    <parameter>
+                        <name>clMAX</name>
+                        <description>
+							the airfoils maximum lift coefficient  
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>aType</name>
+                        <description>
+							The Airfoil Type 0. for symmetric, 1. for cambered
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>tc</name>
+                        <description>
+							Thickness to Chord Ratio 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>reynoldsNr</name>
+                        <description>
+							Reynolds number at this airfoil 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                    <parameter>
+                        <name>ctm</name>
+                        <description>
+							chord position of maximum thickness between 0. and 1. 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+    <component>
+        <name>Systems</name>
+        <disciplines>
+            <discipline>
+                <name>Mass</name>
+                <parameters>
+                    <parameter>
+                        <name>mSystems</name>
+                        <description>
+							system mass 
+                        </description>
+                        <value>0.0</value>
+                        <factor>1.0</factor>
+                    </parameter>
+                </parameters>
+            </discipline>
+        </disciplines>
+    </component>
+</zeroGuiIn>

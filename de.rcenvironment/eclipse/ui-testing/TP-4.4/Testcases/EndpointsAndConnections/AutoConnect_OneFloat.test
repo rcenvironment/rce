@@ -1,0 +1,106 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _7RlJ4GaBEeWE-JfpwaFXMg
+Element-Name: AutoConnect_OneFloat
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _7Ycm4GaBEeWE-JfpwaFXMg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 9/29/15 2:33 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+get-button "Create workflow (Ctrl+Shift+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123
+    get-button Finish | click
+}
+with [get-editor "123.wf"] {
+    with [get-palette | get-palette-entry Script] {
+        mouse-move 28 4 button1 -height 23 -width 125
+        mouse-press 28 4 button1 -height 23 -width 125
+        get-figure "0/0" | drag-start 12 1
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 1187 433 -detail move
+        drag-over 171 189 -detail copy
+        drag-exit
+        drag-accept 171 189 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 171 189 -detail copy
+    with [get-palette] {
+        drag-end -detail move
+        with [get-palette-entry Script] {
+            mouse-move 42 9 button1 -height 23 -width 125
+            mouse-press 42 9 button1 -height 23 -width 125
+            get-figure 0 | drag-start 42 9
+        }
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 1190 430 -detail move
+        drag-over 487 194 -detail copy
+        drag-exit
+        drag-accept 487 194 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 487 194 -detail copy
+    get-palette | drag-end -detail move
+}
+
+
+
+with [get-editor "123.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart | get-edit-part 
+    -text Script] {
+    mouse-move 30 40 button1 -height 75 -width 75
+    mouse-press 30 40 button1 -height 75 -width 75
+    mouse-release 30 40 button1 524288 -height 75 -width 75
+}
+with [get-view Properties] {
+    get-property-tab "Inputs/Outputs" | click
+    get-section Outputs | get-button Add | click
+}
+with [get-window "Add Output"] {
+    get-editbox -after [get-label "Name:"] | set-text 123
+    get-button OK | click
+}
+with [get-editor "123.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart | get-edit-part 
+    -text "Script (1)"] {
+    mouse-move 30 40 button1 -height 75 -width 75
+    mouse-press 30 40 button1 -height 75 -width 75
+    mouse-release 30 40 button1 524288 -height 75 -width 75
+}
+get-view Properties | get-section Inputs | get-button Add | click
+with [get-window "Add Input"] {
+    get-editbox -after [get-label "Name:"] | set-text xyz
+    get-button OK | click
+}
+with [get-editor "123.wf" | get-diagram -index 1] {
+    mouse-move 231 242 button1 -height 648 -width 1202
+    mouse-press 231 242 button1 -height 648 -width 1202
+    mouse-release 231 242 button1 524288 -height 648 -width 1202
+    key-type "M3+d"
+    with [get-edit-part -className WorkflowPart] {
+        with [get-edit-part -text Script] {
+            mouse-move 32 32 button1 -height 75 -width 75
+            mouse-press 32 32 button1 -height 75 -width 75
+            mouse-release 32 32 button1 524288 -height 75 -width 75
+        }
+        with [get-edit-part -text "Script (1)"] {
+            mouse-move 54 39 button1 -height 75 -width 75
+            mouse-press 54 39 button1 -height 75 -width 75
+            mouse-release 54 39 button1 524288 -height 75 -width 75
+        }
+    }
+}
+with [get-window "Connection Editor" 
+    | get-label "Note: One or more connections have been drawn automatically. Click OK to apply."] {
+    get-property caption | equals "Note: One or more connections have been drawn automatically. Click OK to apply." 
+        | verify-true
+    get-property "isVisible()" | equals true | verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

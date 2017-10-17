@@ -1,0 +1,9 @@
+The workflows require following placeholders:
+
+ - de.rcenvironment.script: pythonExecutionPath -> absolute path to Python installation
+ - de.rcenvironment.inputprovider: inputFile -> absolute path to any kind of file
+ - de.rcenvironment.outputwriter: OutputWriterWritePath (Directory) -> absolute or relative path to any directory
+ - de.rcenvironment.database: authUser -> a valid user name for the database
+ - de.rcenvironment.database: authPhrase -> the respective user password for the database
+ 
+ see placeholders_template.json

@@ -1,0 +1,79 @@
+{
+  "identifier" : "f2956cfb-4c28-41c1-b3ef-9efb8a89bc79",
+  "workflowVersion" : "4",
+  "name" : "Vector_failure_2_2016-10-12_09:55:07_11",
+  "nodes" : [ {
+    "identifier" : "c9705860-1aed-417b-b283-1401c298597c",
+    "name" : "Boolean",
+    "location" : "158:119",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 15\r\n\r\ncontent = True\r\n\r\nvectorn = [content]*cols\r\n\r\nRCE.write_output(\"vector\", vectorn)\r\n\r\nprint content\r\nprint vectorn",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "bdc05253-b71e-4bc2-a820-bfe4c28e5327",
+      "name" : "vector",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  }, {
+    "identifier" : "8d12b8e2-f0fc-40d1-91ac-83314ce67c58",
+    "name" : "Large Int",
+    "location" : "265:119",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 15\r\n\r\ncontent = 1000000000000\r\n\r\nvectorn = [content]*cols\r\n\r\nRCE.write_output(\"vector\", vectorn)\r\n\r\nprint content\r\nprint vectorn",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "ba6fcfa1-66a2-4639-9713-02c679d397a4",
+      "name" : "vector",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  }, {
+    "identifier" : "0bc57fa6-2eea-4573-a4cd-0b6c42116a3b",
+    "name" : "Text",
+    "location" : "51:119",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 15\r\n\r\ncontent = \"text\"\r\n\r\nvectorn = [content]*cols\r\n\r\nRCE.write_output(\"vector\", vectorn)\r\n\r\nprint content\r\nprint vectorn",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "c5f88373-7d95-496d-b521-945dc50a5126",
+      "name" : "vector",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  } ],
+  "labels" : "[{\"identifier\":\"b358e281-0468-483b-aeb0-6d6fe0638ff3\",\"text\":\"Fails for content of type Boolean and String.\\r\\nFails for content of type Integer > MAX_INT (32bit signed)\",\"location\":\"20:31\",\"size\":\"337:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

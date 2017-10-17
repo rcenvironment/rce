@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>VAMPzero Initializer Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The VAMPzero initializer provides a tool to create an input data set for the conceptual
+            aircraft design tool VAMPzero via a user-friendly graphical interface. The output
+            consists of a CPACS file that can be forwarded to a copy of VAMPzero.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>The basic idea is that RCE in combination with the Common Parametric Aircraft
+            Configuration Schema (CPACS) and the conceptual aircraft design code VAMPzero enable new
+            users to easily start their aircraft design. Hence, it is important to provide means to
+            easily manipulate the input settings of VAMPzero without being forced to interact with
+            the CPACS file directly. In consequence, the VAMPzero Initializer fulfils this task, as
+            it can create new or manipulate existing input data sets for VAMPzero. The output of
+            the VAMPzero Initializer is a CPACS file that contains the &lt;toolspecific> input for
+            VAMPzero. Hence, an identical file can be created manually. In a subsequent step the
+            file needs to be forwarded to an instance of VAMPzero to perform the conceptual aircraft
+            design.</para>
+        <para>All input values of VAMPzero are available. Nevertheless, there is no check whether
+            the input setting is actually reasonable or not. For further information on VAMPzero and
+            its parameters please visit: <ulink url="https://software.dlr.de/p/vampzero/home/"
+                >https://software.dlr.de/p/vampzero/home/</ulink></para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>On the "Initialization" tab in the properties view you may edit or define new
+            parameters to the aircraft. Each parameter, e.g., reference Area, is adjacent to a
+            component, e.g., wing, and a discipline, e.g., geometry. Hence, first the component and
+            the discipline must be selected to obtain a list of possible inputs. If you want to
+            remove a parameter from an input set you may use the revert button.</para>
+        <para>You may either enter a value or a factor. A value overwrites VAMPzero's initial value.
+            A factor is simply multiplicated to the VAMPzero calculation method, much like a normal
+            technology factor.</para>
+        <para>Via the load configuration button it is possible to load a pre-defined set of input
+            values.</para>
+        <para>To finalize the input data set you must press the "Create CPACS" button. The output of
+            the VAMPzero Initializer component may then be connected via the draw connection tool to
+            another instance of VAMPzero.</para>
+    </sect1>
+</chapter>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->  
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+          <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.PropertiesSection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.toolproperties"
+               tab="workflow.editor.tab.integrated.properties">
+         </propertySection>
+          <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.TempDirectorySection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.tooltempdir"
+               tab="workflow.editor.tab.integrated.tempdir">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsIntegrationEndpointPropertySection"
+               enablesFor="1"
+               id="workflow.editor.tab.Properties.Section.CPACSInputsOutputs"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               tab="workflow.editor.tab.integrated.InputsOutputs">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.ToolInformationSection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.toolinformation"
+               tab="workflow.editor.tab.integrated.toolinformation">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.PreScriptSection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.toolprescript"
+               tab="workflow.editor.tab.integrated.toolprescript">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.CommandReadOnlySection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.toolcommandscripts"
+               tab="workflow.editor.tab.integrated.toolcommandscripts">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.core.gui.workflow.integration.PostScriptSection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               id="workflow.editor.tab.Properties.Section.toolpostscript"
+               tab="workflow.editor.tab.integrated.toolpostscript">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.integration.ToolMockModeSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+		       id="workflow.editor.tab.Properties.Section.deactivation"
+		       tab="workflow.editor.tab.integrated.deactivation">
+         </propertySection>
+  	</propertySections>        
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+        <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.properties"
+               label="%properties">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.tempdir"
+                afterTab="workflow.editor.tab.integrated.properties"
+               label="%tempDir">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.InputsOutputs"
+               afterTab="workflow.editor.tab.integrated.tempdir"
+               label="%InputOutput">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.HistoryData"
+               label="Workflow Data"
+               afterTab="workflow.editor.tab.integrated.InputsOutputs">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.deactivation"
+               label="Imitation Mode"
+               afterTab="workflow.editor.tab.HistoryData">
+         </propertyTab>
+           <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.toolinformation"
+               label="%toolInfo"
+               afterTab="workflow.editor.tab.HistoryData">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.toolprescript"
+               label="%toolPrescript"
+               afterTab="workflow.editor.tab.integrated.toolinformation">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.toolcommandscripts"
+               label="%toolCommandScripts"
+               afterTab="workflow.editor.tab.integrated.toolprescript">
+         </propertyTab>
+        <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.toolpostscript"
+               label="%toolPostscript"
+               afterTab="workflow.editor.tab.integrated.toolcommandscripts">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsIntegrationHistoryDataItemSubtreeBuilder"/>
+   </extension> 
+   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator 
+      		class="de.rcenvironment.core.gui.workflow.editor.validator.DefaultWorkflowNodeValidator"
+            filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter">
+      </validator>
+   </extension>
+</plugin>

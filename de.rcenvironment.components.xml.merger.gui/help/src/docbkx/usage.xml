@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>XML Merger Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The XML Merger component merges the XML content of two inputs on the basis of
+            user-defined rules. These rules can be described in the XML or the XLST format and can
+            either be sent to the component as an input file or can be configured in the component's
+            properties view.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>The basic functionality of the XML Merger component is to merge two XML data sets into
+            one as follows: There is a 'main'-XML data set (input channel "XML"). The complete XSLT
+            mapping will be described regarding this XML dataset. All integrating parts of another
+            XML data set (input channel "XML to integrate") will be described with a
+            'document'-reference in XSLT mapping.</para>
+        <para>As XSLT is a standard technology in the field of information technology it is referred
+            to corresponding literature available. As a technical background, the approach used is
+            based on Saxon processor. In the mapping file (see example) a XSLT-constant
+            INTEGRATING_INPUT refers to the XML to integrate data channel.</para>
+        <para>Example: XSLT
+            mapping:<programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsi">
+
+    &lt;xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
+
+    &lt;!--Define Variable for integrated CPACS-->
+    &lt;xsl:variable name="cpacsIntegratedDoc" select="'INTEGRATING_INPUT'"/>
+
+    &lt;!--Copy complete Source to Result -->
+    &lt;xsl:template match="@* | node()">
+        &lt;xsl:copy>
+            &lt;xsl:apply-templates select="@* | node()"/>
+        &lt;/xsl:copy>
+    &lt;/xsl:template>
+    &lt;xsl:template match="/cpacs/aircraft/configuration/trajectories/global">
+        &lt;global>
+            &lt;ReferenceTrajectoryUID>
+                &lt;xsl:value-of select="document($cpacsIntegratedDoc)/cpacs/aircraft/configuration/trajectories/global/ReferenceTrajectoryUID"/>
+            &lt;/ReferenceTrajectoryUID>
+            &lt;xsl:copy-of select="document($cpacsIntegratedDoc)/cpacs/aircraft/configuration/trajectories/global/ReferenceTrajectory"/>
+            &lt;xsl:copy-of select="/cpacs/aircraft/configuration/trajectories/global/*"/>
+        &lt;/global>
+    &lt;/xsl:template>
+&lt;/xsl:stylesheet></programlisting></para>
+        <para>Instead of using XSLT, the mapping rules can also be described in XML. </para>
+        <para>Example: XML
+            mapping:<programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
+
+&lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+	&lt;map:mapping>
+	    &lt;map:source>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:source>
+	    &lt;map:target>/toolInput/data/var1&lt;/map:target>
+	&lt;/map:mapping>
+	&lt;map:mapping mode="delete">
+           &lt;map:source>/toolOutput/data/result1&lt;/map:source>
+           &lt;map:target>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:target>
+       &lt;/map:mapping>
+	
+&lt;/map:mappings>
+</programlisting></para>
+        <para>
+            RCE automatically determines which format is used based on the filename endings, so the 
+            mapping file name must end with ".xslt" or ".xml", respectively. 
+        </para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>On the “Mapping” tab you can choose whether you want to send the mapping file to the
+            XML Merger component via an input (in this case, the component has an input "Mapping
+            file", to which the file has to be sent during the workflow) or if you want to load a
+            mapping file into the component. In the second case, the content of the mapping file
+            will be stored within the workflow, which will lead to a larger workflow file. Editing
+            the mapping content allows you to edit and store the corresponding content in the
+            workflow (the originally loaded file itself will not be changed).</para>
+        <para>You can define the scheduling of the static input channels on the tab
+            “Inputs/Outputs”. You are also able to add dynamic input or output channels here. Thus
+            it is possible to map single values into the XML dataset via XPATH declaration.
+            Moreover, you can select single values in order to write them in an output
+            channel.</para>
+    </sect1>
+</chapter>

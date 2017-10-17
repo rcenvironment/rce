@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Optimizer Dakota Common Bundle
+Bundle-SymbolicName: de.rcenvironment.components.optimizer.dakota.common
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Fragment-Host: de.rcenvironment.components.optimizer.common
+Bundle-Vendor: DLR

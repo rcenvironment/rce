@@ -1,0 +1,38 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _wTZJsDblEeaeH4-rLFMbKA,_CkEGoDx2EeaeH4-rLFMbKA
+Element-Name: ProfileConfigCanBeOpened
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _Cl6tMJqvEeadSNrqTD40Fg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 10/25/16 2:50 PM
+Testcase-Type: ecl
+
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa
+Content-Type: text/plain
+Entry-Name: .description
+
+Open Profile Config:
+- is called configuration.json
+- is a styled text
+- is enabled
+- is NOT readonly
+- is not empty
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa--
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+// precondition
+get-button "Open Configuration File" | click
+// verification
+get-tab-folder | get-property activePage | equals "configuration.json" | verify-true
+with [get-editor "configuration.json" | get-text-viewer] {
+    get-property className | equals "org.eclipse.swt.custom.StyledText" | verify-true
+    get-property enablement | equals true | verify-true
+    get-property readOnly | equals false | verify-true
+    get-property "getContent().getCharCount()" -raw | gt 0 | verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

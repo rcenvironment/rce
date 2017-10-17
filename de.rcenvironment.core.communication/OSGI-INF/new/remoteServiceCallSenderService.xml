@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Remote Service Call Sender Service">
+	<implementation class="de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallSenderServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"/>
+	</service>
+	<reference 
+		bind="bindMessageRoutingService" 
+		cardinality="1..1" 
+		interface="de.rcenvironment.core.communication.routing.MessageRoutingService" 
+		name="Network Routing Service" 
+		policy="dynamic"/>
+</scr:component>

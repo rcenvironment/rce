@@ -1,0 +1,69 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"default",
+            "group":"write",
+            "dataTypes":[
+                "FileReference",
+                "DirectoryReference",
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData": {
+                "filename": {
+                    "guiName": "Target file/directory",
+                    "guiPosition": "0",
+                    "guiGroup": "Options",
+                    "visibility": "shown",
+                    "dataType": "Text",
+                    "defaultValue": "",
+                    "validation": "required",
+                    "endpointDataTypes":[
+                        "FileReference",
+                        "DirectoryReference"
+                    ]
+                },
+                 "folderForSaving": {
+                    "guiName": "Target folder",
+                    "guiPosition": "1",
+                    "guiGroup": "Options",
+                    "visibility": "shown",
+                    "dataType": "Text",
+                    "defaultValue": "",
+                    "validation": "required",
+                     "endpointDataTypes":[
+                        "FileReference",
+                        "DirectoryReference"
+                    ]
+                }
+            }
+        }
+    ],
+    "staticInputGroups":[
+        {
+            "name":"write",
+            "type": "Or"
+        }
+    ],
+    "dynamicInputGroups":[
+        {
+            "identifier":"dynamicAndGroup",
+            "type": "And",
+            "group": "write"
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Data Management Derby Backend
+Bundle-SymbolicName: de.rcenvironment.core.datamanagement.backend.metadata.derby;singleton:=true
+Bundle-Version: 8.1.0.qualifier
+Bundle-Vendor: DLR & Fraunhofer SCAI
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Require-Bundle: org.eclipse.core.runtime
+Import-Package: de.rcenvironment.core.authentication,
+ de.rcenvironment.core.communication.api,
+ de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.configuration,
+ de.rcenvironment.core.datamanagement,
+ de.rcenvironment.core.datamanagement.backend,
+ de.rcenvironment.core.datamanagement.commons,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.toolkitbridge.transitional,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.rpc,
+ de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.modules.concurrency.api,
+ org.apache.commons.dbcp.datasources;version="1.4.0",
+ org.apache.commons.logging;version="1.1.1",
+ org.apache.derby.jdbc;version="10.11.1",
+ org.codehaus.jackson.map;version="1.9.13"
+Bundle-ActivationPolicy: lazy
+Service-Component: OSGI-INF/*.xml

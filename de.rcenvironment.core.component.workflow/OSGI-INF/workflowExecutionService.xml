@@ -1,0 +1,63 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" immediate="true" name="Workflow Execution Service">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService"/>
+	</service>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Component Execution Controller Service"
+		interface="de.rcenvironment.core.component.execution.api.ComponentExecutionControllerService"
+		cardinality="1..1"
+		bind="bindComponentExecutionControllerService"
+		policy="dynamic"
+	/>
+		
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Persistent WorkflowDescription Update Service"
+		interface="de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService"
+		cardinality="1..1"
+		bind="bindPersistentWorkflowDescriptionUpdateService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Workflow Execution Controller Service"
+		interface="de.rcenvironment.core.component.workflow.execution.api.RemotableWorkflowExecutionControllerService"
+		cardinality="1..1"
+		bind="bindWorkflowExecutionControllerService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Workflow Host Service"
+		bind="bindWorkflowHostService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.management.WorkflowHostService"
+ 		policy="dynamic"
+ 	/>
+ 	
+ 	<reference name="Distributed Notification Service"
+		interface="de.rcenvironment.core.notification.DistributedNotificationService"
+		cardinality="1..1"
+		bind="bindNotificationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Distributed Component Knowledge Service"
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"
+		bind="bindDistributedComponentKnowledgeService"
+		cardinality="1..1"
+		policy="dynamic"
+		/>
+	
+</scr:component>

@@ -1,0 +1,22 @@
+{
+    "configuration": [
+        {
+            "key": "workDir",
+            "defaultValue": "${dir}"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "dir",
+            "guiName": "Working Directory",
+            "guiPosition": "1",
+            "dataType": "dir"
+        }
+    ],
+    "activationFilter": {
+        "host": [
+            "localhost",
+            "myHost"
+        ]
+    }
+}

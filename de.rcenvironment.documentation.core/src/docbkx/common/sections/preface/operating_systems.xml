@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1 id="operating_systems">
+    <title>Compatible Operating Systems</title>
+    <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
+            <listitem>
+                <para>CentOS 7</para>
+            </listitem>
+            <listitem>
+                <para>Debian 8</para>
+            </listitem>
+            <listitem>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 12 SP2</para>
+            </listitem>
+            <listitem>
+                <para>Windows 7</para>
+            </listitem>
+            <listitem>
+                <para>Windows 10</para>
+            </listitem>
+            <listitem>
+                <para>Windows Server 2012 R2</para>
+            </listitem>
+        </itemizedlist>It is also confirmed to run (but not as thoroughly tested) on<itemizedlist>
+            <listitem>
+                <para>Mint 18</para>
+            </listitem>
+            <listitem>
+                <para>Red Hat Enterprise Linux 6</para>
+            </listitem>
+            <listitem>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 11 SP2</para>
+            </listitem>
+            <listitem>
+                <para>Ubuntu 16.04 LTS</para>
+            </listitem>
+            <listitem>
+                <para>openSUSE Leap 42.1</para>
+            </listitem>
+            <listitem>
+                <para>Windows 8.1</para>
+            </listitem>
+        </itemizedlist></para>
+    <sect2>
+        <title>Support of 32 Bit Operating Systems</title>
+        <para>Starting with release 8.0.0, RCE is only shipped for 64 bit systems. If you still
+            require 32 bit packages, you can continue to use the previous RCE version, but you will
+            not receive any new features or updates.</para>
+    </sect2>
+    <sect2>
+        <title>Known Issues</title>
+        <sect3>
+            <title>KDE on Red Hat Enterprise Linux 7</title>
+        <para>On Red Hat Enterprise Linux 7 with KDE 4, RCE (like any other Eclipse-based
+            application) can cause a segmentation fault at startup. If you encounter such an issue,
+            you can try choosing a different GTK2 theme:</para>
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>Open the <emphasis role="bold">System Settings </emphasis>application
+                        (systemsettings).</para>
+                </listitem>
+                <listitem>
+                    <para>Go to <emphasis role="bold">Application Appearence</emphasis></para>
+                </listitem>
+                <listitem>
+                    <para>Open <emphasis role="bold">GTK</emphasis> page</para>
+                </listitem>
+                <listitem>
+                    <para>Switch the GTK2 theme to "Raleigh" or "Adwaita" and click on <emphasis
+                            role="bold">Apply</emphasis></para>
+                </listitem>
+            </orderedlist>
+        </para>
+        </sect3>
+        <sect3>
+         <title>KDE with Oxygen</title>
+        <para>On Unix Systems using KDE as desktop environment and Oxygen as theme it can happen that RCE crashes when certain GUI elements are shown.
+            It is a known issue in the theme Oxygen and happens on other Eclipse-based applications as well. If you encounter such an issue, 
+            please choose a different theme like "Raleigh" or "Adwaita".</para>
+            
+        </sect3>
+        <sect3>
+        <title>Jython scripts are executed sequentially</title>
+        <para>The Script component can use Jython for the evaluation of scripts and the pre- and
+                postprocessing of integrated tools always uses Jython. Due to a known bug in the
+                Jython implementation it is not possible to execute several Jython instances in
+                parallel. Therefore, the execution will be done sequentially. If several Script
+                components should be executed in parallel, Python should be used  instead. </para>
+        </sect3>
+        <sect3>
+        <title>32-bit Java is not supported</title>
+        <para>Running RCE with a 32-bit Java Runtime Environment doesn't work. On some operating
+                systems an error dialog will be displayed in this case, on some other systems
+                nothing will happen at all. Therefore, always make sure a 64-bit Java Runtime
+                Environment is used to run RCE.</para>
+        </sect3>
+    </sect2>
+</sect1>

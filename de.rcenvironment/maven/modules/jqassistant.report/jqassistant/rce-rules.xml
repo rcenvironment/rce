@@ -1,0 +1,169 @@
+<jqa:jqassistant-rules xmlns:jqa="http://www.buschmais.com/jqassistant/core/analysis/rules/schema/v1.0">
+
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:TestClassNamesMustEndWithTestOrTests">
+		<description>Verifies that test classes' names end with "Test" or "Tests".</description>
+		<cypher><![CDATA[
+			MATCH
+				(testClass:Type:Class)-[:DECLARES]->(testMethod:Method),
+				(testMethod:Method)-[:ANNOTATED_BY]->(testAnnotation)-[:OF_TYPE]->(annotationType:Type)
+			WHERE
+				annotationType.fqn = "org.junit.Test"
+				AND NOT testClass.fqn =~ ".*Test(s)?"
+			RETURN DISTINCT
+				testClass.fqn
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:TestClassesShouldBeInATestBundle">
+		<description>Verifies that all test classes are location in test bundles.</description>
+		<cypher><![CDATA[
+			MATCH
+				(artifact:Artifact)-[:CONTAINS]->(testClass:Type:Class),
+				(testClass:Type:Class)-[:DECLARES]->(testMethod:Method),
+				(testMethod:Method)-[:ANNOTATED_BY]->(testAnnotation)-[:OF_TYPE]->(annotationType:Type)
+			WHERE
+				annotationType.fqn = "org.junit.Test"
+				AND NOT artifact.name =~ ".*\\.tests"
+			RETURN DISTINCT
+				testClass.fqn, artifact.name
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:PackageNamesShouldStartWithTheBundleName">
+		<description>Verifies that all package names within a bundle start with the bundle's name. 
+			Test bundles and "toolkit.modules.common" are excluded (for now).</description>
+		<cypher><![CDATA[
+			MATCH
+				(artifact:Artifact)-[:CONTAINS]->(t:Type),
+				(package:Package)-[:CONTAINS]->(t)
+			WHERE
+				NOT artifact.name =~ ".*\\.tests"
+				AND
+				NOT artifact.name = "de.rcenvironment.toolkit.modules.common"
+				AND
+				NOT package.fqn =~ (artifact.name + ".*")
+			RETURN DISTINCT
+				artifact, package
+			ORDER BY
+				artifact.fqn, package.fqn
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-23 -->
+	<!-- last modified: misc_ro, 2014-04-23 -->
+	<constraint id="rce:OnlyTheThreadPoolShouldCallThreadConstructors">
+		<description>Verifies that no classes except the shared thread pool create Threads manually, or declare Thread factories. 
+			To allow implementing shutdown hooks (which must extend Thread), class names ending in "...ShutdownHook" are excluded.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:Type)-[:DECLARES]->(method:Method)-[:INVOKES]->(cnstr:Constructor)<-[:DECLARES]-(target:Type)
+			WHERE
+				target.fqn = "java.lang.Thread"
+				AND caller.fqn =~ "de\\.rcenvironment\\..*"
+				AND NOT caller.fqn =~ "de.rcenvironment.toolkit.modules.concurrency.internal.AsyncTaskServiceImpl.*"
+				AND NOT caller.name =~ ".*ShutdownHook"
+			RETURN
+				caller.fqn + "#" + method.name + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-23 -->
+	<!-- last modified: misc_ro, 2014-04-23 -->
+	<constraint id="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors">
+		<description>Verifies that no classes except the shared thread pool and test classes create or use Executor instances.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:Type)-[:DECLARES]->(callerMethod:Method)-[:INVOKES]->
+				(targetMethod:Method)<-[:DECLARES]-(target:Type)
+			WHERE
+				(target.fqn = "java.util.concurrent.ExecutorService" 
+				OR target.fqn = "java.util.concurrent.Executors")
+				AND caller.fqn =~ "de\\.rcenvironment\\..*"
+				AND NOT caller.fqn =~ "de.rcenvironment.toolkit.modules.concurrency.internal.AsyncTaskServiceImpl.*"
+				AND NOT caller.name =~ ".*Test"
+			RETURN DISTINCT
+				caller.fqn + "#" + callerMethod.name + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2015-07-31 -->
+	<!-- last modified: misc_ro, 2015-07-31 -->
+	<constraint id="rce:DoNotCallStringFormatDirectly">
+		<description>Verifies that no code (except StringUtils itself, plus the earliest bootstrap code) calls 
+			java.lang.String.format() directly. All existing calls should be changed to our StringUtils.format()
+			method; this prevents unusable log output due to format string errors.</description>
+		<cypher><![CDATA[
+			MATCH
+				(callerClass:Type)-[:DECLARES]->(callerMethod:Method)-[:INVOKES]->
+				(formatMethod:Method)<-[:DECLARES]-(stringClass:Type)
+			WHERE
+				stringClass.fqn = "java.lang.String"
+				AND formatMethod.signature =~ "java.lang.String format\\(.*"
+				AND callerClass.fqn <> "de.rcenvironment.core.utils.common.StringUtils"
+				AND callerClass.fqn <> "de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration"
+				AND callerClass.fqn <> "de.rcenvironment.toolkit.utils.internal.StringUtils"
+			RETURN
+				callerClass.fqn + "#" + callerMethod.name + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2015-07-31 -->
+	<!-- last modified: misc_ro, 2015-07-31 -->
+	<constraint id="rce:NoCallsFromNonGuiCodeToGuiClasses">
+		<description>Verifies that no classes outside of *.gui.* or *.textui.* packages call methods in *.gui.*, *.ui.*, *.swt.* or *.jface.* packages.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:Type)-[:DECLARES]->(callerMethod:Method)-[:INVOKES]->
+				(targetMethod:Method)<-[:DECLARES]-(target:Type)
+			WHERE
+				target.fqn =~ ".*\\.(gui|ui|swt|jface)\\..*" 
+				AND NOT (caller.fqn =~ ".*\\.(gui|textui)\\..*")
+			RETURN DISTINCT
+				caller.fqn + "#" + callerMethod.name + "()" as Calling_Method,
+				target.fqn as Target
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+<!-- added: seid_do, 2015-08-12 -->
+	<!-- last modified: seid_do, 2015-08-12 -->
+	<constraint id="rce:NoSimpleServicesExist">
+	<description>Verifies that no simple services (classes with name 'Simple..Service') exist. Simple services are a
+		deprecated approach to hide the OSGi API from certain client code like GUI Code. (Approaches to be used instead:
+		RegistryAccess for GUI code and OSGi-DS for non-GUI code)
+	</description>
+		<cypher><![CDATA[
+			MATCH
+				(simpleServiceClass:Type:Class)
+			WHERE
+				simpleServiceClass.fqn =~ ".*\\.Simple.*Service"
+			RETURN DISTINCT
+				simpleServiceClass.fqn
+		]]></cypher>
+	</constraint>
+	
+ 	<group id="rce-default">
+ 		<includeConstraint refId="rce:TestClassNamesMustEndWithTestOrTests" />
+ 		<includeConstraint refId="rce:TestClassesShouldBeInATestBundle" />
+ 		<includeConstraint refId="rce:PackageNamesShouldStartWithTheBundleName" />
+ 		<includeConstraint refId="rce:OnlyTheThreadPoolShouldCallThreadConstructors" />
+ 		<includeConstraint refId="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors" />
+		<includeConstraint refId="rce:DoNotCallStringFormatDirectly" />
+		<includeConstraint refId="rce:NoCallsFromNonGuiCodeToGuiClasses" />
+		<includeConstraint refId="rce:NoSimpleServicesExist" />
+ 	</group>
+
+</jqa:jqassistant-rules>

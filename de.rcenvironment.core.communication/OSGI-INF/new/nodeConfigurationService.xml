@@ -1,0 +1,21 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Node Configuration Service">
+	<implementation class="de.rcenvironment.core.communication.configuration.internal.NodeConfigurationServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.configuration.NodeConfigurationService"/>
+	</service>
+	<reference
+ 		name="Configuration Service"
+ 		interface="de.rcenvironment.core.configuration.ConfigurationService"
+ 		bind="bindConfigurationService"
+ 	/>
+	<reference
+		name="Persistent Settings Service"
+		interface="de.rcenvironment.core.configuration.PersistentSettingsService"
+		bind="bindPersistentSettingsService"
+	/>
+	<reference
+		name="NodeIdentifierService" 
+		interface="de.rcenvironment.core.communication.api.NodeIdentifierService" 
+		bind="bindNodeIdentifierService" 
+	/>
+</scr:component>

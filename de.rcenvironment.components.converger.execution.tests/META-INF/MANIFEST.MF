@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Converger Execution Tests
+Bundle-SymbolicName: de.rcenvironment.components.converger.execution.tests
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Fragment-Host: de.rcenvironment.components.converger.execution
+Require-Bundle: de.rcenvironment.core.utils.testing
+Import-Package: de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.component.model.testutils,
+ de.rcenvironment.core.component.testutils,
+ de.rcenvironment.core.datamodel.testutils,
+ de.rcenvironment.core.utils.common
+Bundle-Vendor: DLR

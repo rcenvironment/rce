@@ -1,0 +1,374 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="tool_integration">
+    <title>Integration of External Tools</title>
+    <sect2>
+        <title>Basic Concepts</title>
+        <para>The Tool Integration concept of RCE is used to integrate external tools for
+            calculations, simulations and so on into RCE and use them in a workflow as a component.
+            The tools must fulfill these requirements:</para>
+        <itemizedlist>
+            <listitem>
+                <para>The external tool must be callable via command line</para>
+            </listitem>
+            <listitem>
+                <para>It must have a non-interactive mode which is called via command line</para>
+            </listitem>
+            <listitem>
+                <para>Input for the tool must be provided through command line arguments or
+                    files</para>
+            </listitem>
+        </itemizedlist>
+        <para>If these requirements are fulfilled, a configuration file can be created that is used
+            for the integration. </para>
+        <para>If you use RCE with a graphical user interface this can be done with the help of an
+            wizard which guides you through the settings. This wizard can be found in the menu
+                <emphasis role="italic">File -> Integrate Tool...</emphasis>. Required fields are
+            marked with an asterisk (*). When the wizard is finished and everything is correct, the
+            integrated tool will automatically show up in the Workflow Editor palette.</para>
+        <para>
+            <note>
+                <para>The wizard has a dynamic help, which is shown by clicking on the question mark
+                    on the bottom left or by pressing F1. It will guide you through every page of
+                    the wizard.</para>
+            </note>
+        </para>
+    </sect2>
+    <sect2>
+        <title>Directory Structure for Integrated Tools</title>
+        <para>When executing an integrated tool, a certain directory structure is created in the
+            chosen working directory. This structure depends on the options you have chosen in the
+            integration wizard. The two options that matter are "Use a new working directory each
+            run" and "Tool copying behavior".</para>
+        <para><inlinegraphic fileref="images/Folderstructure.png" width="400px"/></para>
+        <para><emphasis role="bold">Root Working Directory</emphasis>: This is the directory you
+            choose in the "Tool Integration Wizard" as "Working Directory" on the "Launch Settings"
+            page.</para>
+        <para><emphasis role="bold">Config Directory</emphasis>: In this directory, the
+            configuration file that may be created by the tool integration will be created by
+            default. The configuration files can be created from the properties that are defined for
+            the tool on the "Tool Properties" page.</para>
+        <para><emphasis role="bold">Input Directory</emphasis>: All inputs of type "File" and
+            "Directory" will be copied here. They will have a subdirectory that is named exactly as
+            the input's name (e.g. the input "x" of type "File" will be put into "Input
+            Directory/x/filename").</para>
+        <para><emphasis role="bold">Output Directory</emphasis>: All outputs of type "File" and
+            "Directory" can be written into this directory. After that, you can use the placeholder
+            for this directory to assign these outputs to RCE outputs in the post execution script.
+            To write the output directory into an output "x" of type "Directory" the following line
+            in the post execution script would be required: ${out:x} = "${dir:output}"</para>
+        <para><emphasis role="bold">Tool Directory</emphasis>: This is the directory, where the
+            actual tool is located. If the tool should not be copied, it will be exactly the same
+            directory that you choose, otherwise it will be the same as the chosen directory but
+            copied to the working directory.</para>
+        <para><emphasis role="bold">Working Directory</emphasis>: A working directory is always the
+            location, where all the other directories will be created. If the option "Use a new
+            working directory on each run" is disabled, this will always be the same as the "Root
+            Working Directory". Otherwise, a new directory is created each run (the name will be the
+            run number) and is the working directory for the run.</para>
+    </sect2>
+    <sect2>
+        <title>Copying of Integrated Tools</title>
+        <para>When a component is created in the integration wizard, a configuration file is
+            created.</para>
+        <para>All configuration files from the tool integration are stored in the directory</para>
+        <para><code>&lt;profile folder>/integration/tools/</code></para>
+        <para>In this directory, there is a separation between different kinds of integration
+            realized through one subdirectory for each. The <code>common</code> folder is always
+            existent.</para>
+        <para>In these subdirectory, the integrated tools are stored, again separated through a
+            subdirectory for each. The name of the directory equals the name of integration of the
+            tool. </para>
+        <para>If an integrated tool should be copied to another RCE instance or another machine, the
+            directory of the tool must be copied, containing a <code>configuration.json</code> and
+            some optional files. It must be put in the equivalent integration type directory of the
+            target RCE instance. After that, RCE automatically reads the new folder and if
+            everything is valid, the tool will be integrated right away.</para>
+        <para>
+            <note>
+                <para>If you want to delete a tool folder that contains some documentation, this can
+                    cause an error. If you have this problem, delete the documentation folder at
+                    first (it must be empty), afterwards you can delete the tool folder.</para>
+            </note>
+        </para>
+        <sect3>
+            <title>Publishing a Component on a Server Instance in Headless Mode</title>
+            <para>An integrated tool on a server is not neccessarily visible for other users in the
+                same network. Publishing means to make it available for all others, but they are not
+                allowed to change the tool's integration. If a component should be published, the
+                    <code>published.conf</code> file in the integration kind subdirectory must be
+                edited. In this file, the tool's directory name (or absolute path) must be written
+                in a single line. After saving the file, RCE reads the file automatically and the
+                component will be published in the network.</para>
+            <para>
+                <note>
+                    <para>Using a graphical editor to edit the <code>published.conf</code> or a tool
+                        configuration file <emphasis role="bold">might</emphasis> not work as
+                        expected. It it possible, that the tool or the publishing status is not
+                        updated when saving the tool. This problem did not occur with headless
+                        editors.</para>
+                    <para os="linux">For example the emacs graphical editor does not work for
+                        editing the files, but vi does.</para>
+                </note>
+            </para>
+        </sect3>
+        <sect3>
+            <title>Tool Execution Return Codes</title>
+            <para>The tools are executed by using a command line call on the operating system via
+                the "Execution Script". When the tool finished executing (with or without error),
+                its exit code is handed back to the execution script and can be analyzed in this
+                script. If in the script nothing else is done, the exit code is handed back to RCE.
+                When there is an exit code that is not "0", RCE assumes that the tool crashed and
+                thus lets the component crash without executing the "Post Script". Using the option
+                "Exit codes other than 0 is not an error" can prevent the component to crash
+                immediately. With this option enabled, the post script wil be executed in any way
+                and the exit code from the tool execution can be read by using the placeholder from "Additional
+                Properties". In this case, the post script can run any post processing and either
+                not fail the component, so the workflow runs as normal, or let the compoennt crash
+                after some debugging information was written using the Script API
+                "RCE.fail("reason")".</para>
+            <para/>
+        </sect3>
+    </sect2>
+    <sect2>
+        <title>Integration of CPACS Tools</title>
+        <sect3>
+            <title>Additional concepts of CPACS Tool Integration</title>
+            <para>Extending the common Tool Integration concept, the CPACS Tool Integration has some
+                additional features.<itemizedlist>
+                    <listitem>
+                        <para>Parameter Input Mapping (optional): Substitutes single values in the
+                            incoming CPACS content, based on an XPath configured at workflow design
+                            time as a dynamic input of the component</para>
+                    </listitem>
+                    <listitem>
+                        <para>Input Mapping: Generates the tool input XML file as a subset of the
+                            incoming CPACS file XML structure, specified by a mapping file </para>
+                    </listitem>
+                    <listitem>
+                        <para>Tool Specific Input Mapping (optional): Adds tool specific data to the
+                            tool input file, based on a mapping file and a data XML file</para>
+                    </listitem>
+                    <listitem>
+                        <para>Output Mapping: Merges the content of the tool output XML file into
+                            the origin incoming CPACS file, based on a mapping file</para>
+                    </listitem>
+                    <listitem>
+                        <para>Parameter Output Mapping (optional): Generates output values as single
+                            values of the CPACS result file, based on an XPath configured at
+                            workflow design time as a dynamic output of the component</para>
+                    </listitem>
+                    <listitem>
+                        <para>Execution option to only run on changed input: If enabled, the
+                            integrated tool will only run on changed input. Therefore the content of
+                            the generated tool input file is compared to the last runs content.
+                            Additionally the data of the static input channels are compared to the
+                            previous ones.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>All the features listed above can be configured in the tool integration wizard on
+                the dedicated <emphasis role="italic">CPACS Tool Properties</emphasis> page.</para>
+            <para>The mappings can be specified by XML or XSLT as shown in the following examples.
+                RCE differentiates between these methods in accordance to the corresponding file
+                extension (.xml or .xsl).</para>
+            <para>Example for an input or tools pecific XML mapping :</para>
+            <para>
+                <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+    &lt;map:mapping>
+        &lt;map:source>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:source>
+        &lt;map:target>/toolInput/data/var1&lt;/map:target>
+    &lt;/map:mapping>
+
+&lt;/map:mappings></programlisting>
+            </para>
+            <para>And input or tool specific XSLT mapping:</para>
+            <para>
+                <programlisting>&lt;?xml version="1.0" encoding="utf-8"?>
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cpacs_schema.xsd">
+ &lt;xsl:output method="xml" media-type="text/xml" />
+ &lt;xsl:template match="/">
+  &lt;toolInput>
+   &lt;data>
+    &lt;var1>
+     &lt;xsl:value-of select="/cpacs/vehicles/aircraft/model/reference/area" />
+    &lt;/var1>
+   &lt;/data>
+  &lt;/toolInput>
+ &lt;/xsl:template>
+&lt;/xsl:stylesheet></programlisting>
+            </para>
+            <para>Example of an output XML mapping:</para>
+            <para>
+                <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+    &lt;map:mapping mode="delete">
+        &lt;map:source>/toolOutput/data/result1&lt;/map:source>
+        &lt;map:target>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:target>
+    &lt;/map:mapping>
+
+&lt;/map:mappings></programlisting>
+            </para>
+            <para>And output XSLT mapping:</para>
+            <para>
+                <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" exclude-result-prefixes="xsi">
+  &lt;xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
+  &lt;!--Define Variable for toolOutput.xml-->
+  &lt;xsl:variable name="toolOutputFile" select="'./ToolOutput/toolOutput.xml'"/>
+  &lt;!--Copy complete Source (e.g. CPACSInitial.xml) to Result (e.g. CPACSResult.xml)-->
+  &lt;xsl:template match="@* | node()">
+    &lt;xsl:copy>
+      &lt;xsl:apply-templates select="@* | node()"/>
+    &lt;/xsl:copy>
+  &lt;/xsl:template>
+  &lt;!--Modify a value of an existing node-->
+    &lt;xsl:template match="/cpacs/vehicles/aircraft/model/reference/area">
+    &lt;area>  
+    &lt;xsl:value-of select="document($toolOutputFile)/toolOutput/data/result1"/>
+    &lt;/area>
+    &lt;/xsl:template>
+&lt;/xsl:stylesheet></programlisting>
+            </para>
+            <para>Please ensure to use the proper namespace for map
+                (xmlns:map="http://www.rcenvironment.de/2015/mapping") in XML mapping files.</para>
+            <para>The figure below illustrates how the additional features are used in the run
+                process of an user-integrated CPACS tool.</para>
+            <figure>
+                <title>Run process of an user-integrated CPACS Tool</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/ug_CPACS_ToolRunProcess.png"
+                        contentwidth="390"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+        </sect3>
+        <sect3>
+            <title>Integrate a CPACS Tool into a Client Instance</title>
+        
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>Start RCE as Client</para>
+                </listitem>
+                <listitem>
+                    <para>Open the <emphasis role="italic">Tool Integration Wizard</emphasis> by
+                            clicking the <emphasis role="italic">Integrate Tool...</emphasis> in the
+                                <emphasis role="italic">File</emphasis> menu.<note>
+                                <para>You will always find further help by clicking the <emphasis
+                                        role="italic">?</emphasis> on the bottom left corner on each
+                                    page of the wizard or by pressing <emphasis role="italic"
+                                        >F1</emphasis>.</para>
+                            </note>
+                        </para>
+                </listitem>
+                <listitem>
+                    <para>Choose the option <emphasis role="italic">Create a new tool configuration
+                                from a template</emphasis>. <note>
+                                <para>The CPACS templates delivered with RCE are designed to match
+                                    the conventions of the old CPACS tool wrapper (respectively
+                                    ModelCenter tool wrapper). Most of the properties are
+                                    preconfigured and do not need to be changed.</para>
+                            </note></para>
+                </listitem>
+                <listitem>
+                    <para>Select one of the <emphasis role="italic">CPACS</emphasis> templates.
+                            <?linebreak?>Click <emphasis role="italic">Next</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para>Fill in the <emphasis role="italic">Tool Description</emphasis> page.
+                            <?linebreak?>Click <emphasis role="italic">Next</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para>On the <emphasis role="italic">Inputs and Outputs</emphasis> page you will
+                            find preconfigured static in- and outputs, that will match the old tool
+                            wrapper conventions. If your tool needs additional in- or outputs, feel
+                            free to configure.<?linebreak?>Click <emphasis role="italic">Next</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para>Skip the page<emphasis role="italic"> Tool Properties</emphasis> by
+                            clicking <emphasis role="italic">Next</emphasis> since it is not
+                            relevant for tools that match the conventions of the old CPACS tool
+                            wrapper.</para>
+                </listitem>
+                <listitem>
+                    <para>Add a launch setting for the tool by clicking the <emphasis role="italic">Add</emphasis> button on the <emphasis role="italic">Launch
+                                Settings</emphasis> page. Configure the path of the CPACS tool and
+                            fill in a version, click <emphasis role="italic">OK</emphasis>. If you
+                            would like to allow users of your tool to choose that the temp directory
+                            won’t be deleted at all after workflow execution, check the property
+                                <emphasis role="italic">Never delete working
+                                directory(ies)</emphasis>. Not to delete the working directory can
+                            be very useful for users for debugging purposes, at least if they have
+                            access to the server’s file system. But this option can result in disc
+                            space issues as the amount required grows continuously with each
+                            workflow execution. It is recommended to check that option during
+                            integrating the tool and uncheck it before publishing the tool. If you
+                            like to publish your tool to the entire network right after the
+                            integration, check <emphasis role="italic">Publish component after
+                                integration</emphasis>. Note that you can publish your tool at any
+                            later point in time.<?linebreak?> Click <emphasis role="italic">Next</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para>The <emphasis role="italic">CPACS Tool Properties</emphasis> are
+                            preconfigured to match the folder structure defined for the old CPACS
+                            tool wrapper. In most cases you do not have to change this
+                            configuration. If you are using XSLT mapping, please select the
+                            corresponding mapping files. If your tool does not work with static tool
+                            specific input, please deselect this property. <?linebreak?>Click
+                                <emphasis role="italic">Next</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para>In the <emphasis role="italic">Execution command(s)</emphasis> tab on the
+                                <emphasis role="italic">Execution</emphasis> page, you need to
+                            define your execution command itself as well as optional pre and post
+                            commands. Commands will be processed sequentially line by line. An
+                            example for a typical Windows command including pre and post commands
+                            will look like the following:</para>
+                    <para>
+                        <programlisting>rem pre-command
+pre.bat
+
+rem tool-execution
+YourTool.exe ToolInput/toolInput.xml ToolOutput/toolOutput.xml
+
+rem post-command
+post.bat</programlisting>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>Click <emphasis role="italic">Save and activate</emphasis> and your tool
+                            will appear immediately in the palette and is be ready to use.</para>
+                </listitem>
+                <listitem>
+                    <para>If not already done, do not forget to publish your tool after testing it
+                            locally. Therefore, edit your tool configuration by clicking <emphasis role="italic">Edit Tool</emphasis> in the <emphasis role="italic">File</emphasis> menu, navigate to the page <emphasis role="italic">Launch Configuration</emphasis> and check the property <emphasis role="italic">Publish component after integration</emphasis>. Click
+                                <emphasis role="italic">Save and activate</emphasis>. To check if
+                            your tool is successfully published to the RCE network open the tab
+                                <emphasis role="italic">Network View</emphasis> at the bottom and
+                            checkout <emphasis role="italic">Published Components</emphasis> after
+                            expanding the entry of your RCE instance.</para>
+                </listitem>
+            </orderedlist>
+        </para>
+        </sect3>
+        <sect3>
+            <title>Integrate a CPACS Tool into a Server Instance in Headless Mode</title>
+            <para>The way to integrate a CPACS tool on a server running RCE in headless mode is as
+                follows: Perform the steps to integrate a CPACS tool on a client instance and make
+                sure that the path of the CPACS tool configured on the <emphasis role="italic">Launch Settings</emphasis> page (step 8) matches the absolute tool path on your
+                server system. Afterwards, you will find the configuration files inside your rce
+                profile folder at the following location:</para>
+            <para><code>/integration/tools/cpacs/[YourToolName]</code></para>
+            <para>Copy the folder <code>[YourToolName]</code> to the same location inside the
+                profile folder running with your headless server instance. Edit the file
+                    <code>published.conf</code> in the cpacs directory by adding your tool's
+                directory name as a single line. If the server instance is already running, your
+                tool will be available immediately after saving the file (cf. section "Publishing a
+                component in headless mode").</para>
+        </sect3>
+    </sect2>
+    
+</sect1>

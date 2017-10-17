@@ -1,0 +1,16 @@
+{
+	"general" : {
+		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName}"
+	},
+	"sshRemoteAccess" : {
+		"sshConnections" : {
+			"exampleSSHConnection" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo"
+				//The passphrase is not stored here, it has to be entered when connecting.
+			}
+		}
+	}
+}

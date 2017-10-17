@@ -1,0 +1,15 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Workflow Execution Controller Callback Service">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionControllerCallbackServiceImpl"/>
+
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallbackService"/>
+	</service>
+	
+	<reference name="Local Execution Controller Utils Service"
+		interface="de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService"
+		cardinality="1..1"
+		bind="bindLocalExecutionControllerUtilsService"
+		policy="dynamic"
+	/>
+		
+</scr:component>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+    <!-- Extension for classes allocated to tabs -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+		  
+          <!-- File selection dialog -->
+          <propertySection
+               tab="workflow.editor.tab.loader.FileDialog"
+               enablesFor="1"
+               class="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentSection"
+               id="workflow.editor.tab.loader.properties.FileDialog.Section"
+               filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter" />
+         
+         <!-- XPathChooserView -->
+         <propertySection
+               tab="workflow.editor.tab.loader.XPathChooser"
+               enablesFor="1"
+               class="de.rcenvironment.components.xml.loader.gui.properties.XMLLoaderInputsOutputsSection"
+               id="workflow.editor.tab.loader.XPathChooser.Section"
+               filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         </propertySections>
+    </extension>
+   
+   
+    <!-- Extension for own tabs in component properties -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+        <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            <propertyTab
+                label="File"
+                category="default"
+                id="workflow.editor.tab.loader.FileDialog" />
+           
+    		 <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.loader.FileDialog"
+               id="workflow.editor.tab.loader.XPathChooser" />
+               
+               <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="Workflow Data"
+               afterTab="workflow.editor.tab.loader.XPathChooser">
+         </propertyTab>
+        </propertyTabs>
+    </extension>
+    
+    
+    <!-- Dynamic Help -->
+    <extension point="org.eclipse.help.contexts">
+        <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+    </extension>
+    
+    <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
+    
+    <!-- Data management browser subtree builder-->
+    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderHistoryDataItemSubtreeBuilder"/>
+   </extension>   
+   
+</plugin>

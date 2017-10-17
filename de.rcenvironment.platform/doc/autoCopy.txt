@@ -1,0 +1,9 @@
+The "lib/maven/autoCopy.flag" files in several projects trigger the automatic
+copying of all Maven dependency JARs into the lib/maven folder of that project.
+This mechanism is intended for for embedding JARs into OSGi bundles without 
+putting them under source control (where common binaries don't belong).
+
+Note that the "lib/maven" target folder location is hard-coded in a parent 
+POM; placing this file in any other location will have no effect.
+
+- R. Mischke, October 2014

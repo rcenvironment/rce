@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="15.2">
+    <meta>
+        <filters directoryPatterns="" filePatterns="" positiveFilePatterns="" showHiddenFiles="false"/>
+        <options>
+            <serialized version="15.2" xml:space="preserve">
+                <map>
+                    <entry>
+                        <String>enable.project.master.files.support</String>
+                        <Boolean>true</Boolean>
+                    </entry>
+                </map>
+            </serialized>
+        </options>
+    </meta>
+    <projectTree name="rce_documentation.xpr">
+        <folder path="developer_guide/"/>
+        <folder path="user_guide/"/>
+        <folder path="common/"/>
+        <file name="developer_guide.xml"/>
+        <file name="user_guide.xml"/>
+    </projectTree>
+</project>

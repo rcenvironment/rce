@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <!-- Preference page -->
+	<extension point="org.eclipse.ui.preferencePages">
+ 		<page id="de.rcenvironment.core" name="RCE"
+    		class="de.rcenvironment.core.start.gui.internal.PreferencePage">
+   		</page>
+	</extension>
+
+	<!-- RCE perspective -->
+	<extension point="org.eclipse.ui.perspectives">
+		<perspective class="de.rcenvironment.core.start.gui.Perspective"
+			icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/logo16.png" 
+			id="de.rcenvironment.core" 
+			name="RCE">
+		</perspective>
+	</extension> 
+	
+	<!--  View categories -->
+	<extension point="org.eclipse.ui.views">
+    	<category id="de.rcenvironment.core" name="RCE"/>
+	</extension>
+	
+	<!--  Category in New Wizard -->   
+    <extension point="org.eclipse.ui.newWizards"> 
+        <category id="de.rcenvironment.core" name="RCE"/> 
+    </extension>
+    <!-- Key bindings -->
+    <extension
+         point="org.eclipse.ui.bindings">
+	<scheme
+		id="de.rcenvironment.core.start.gui.binding"
+		name="RCEnvironment binding scheme"
+		parentId="org.eclipse.ui.defaultAcceleratorConfiguration">
+	</scheme>
+	<key
+		commandId="org.eclipse.ui.edit.copy"
+		sequence="M1+C"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+	<key
+		commandId="org.eclipse.ui.edit.cut"
+		sequence="M1+X"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+	<key
+		commandId="org.eclipse.ui.edit.paste"
+		sequence="M1+V"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+		
+	<key
+		commandId="org.eclipse.gef.zoom_in"
+		sequence="M1++"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+		
+	<key
+		commandId="org.eclipse.gef.zoom_out"
+		sequence="M1+-"
+		schemeId="de.rcenvironment.core.start.gui.binding" />
+	</extension>
+	   
+	  <!-- Splash handler -->
+    <extension point="org.eclipse.ui.splashHandlers">
+       <splashHandler
+            class="de.rcenvironment.core.start.gui.internal.SplashHandler"
+            id="de.rcenvironment.core.start.SplashHandler">
+       </splashHandler>
+       <splashHandlerProductBinding
+            productId="de.rcenvironment.core.start.product"
+            splashId="de.rcenvironment.core.start.SplashHandler">
+       </splashHandlerProductBinding>
+    </extension>
+	
+</plugin>

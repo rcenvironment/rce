@@ -1,0 +1,76 @@
+{
+  "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
+  "workflowVersion" : "4",
+  "name" : "ParametricStudy_Script_2013-08-21_12:45:40",
+  "nodes" : [ {
+    "identifier" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "name" : "Parametric Study",
+    "location" : "186:129",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.parametricstudy.ParametricStudyComponent_Parametric Study",
+      "version" : "3.3"
+    },
+    "configuration" : {
+      "FromValue" : "0.0",
+      "StepSize" : "0.5",
+      "ToValue" : "21.0"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f9ffec36-b1fc-4132-b35d-b59549c294cf",
+      "name" : "param",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "529959a7-9191-4619-ad03-58a541e54d08",
+      "name" : "Design variable",
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "0.0",
+        "StepSize" : "0.5",
+        "ToValue" : "21.0"
+      }
+    } ]
+  }, {
+    "identifier" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "name" : "Add",
+    "location" : "335:129",
+    "component" : {
+      "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "script" : "print 'Design variable: ' + str( RCE.read_input(\"design_variable\"))\r\nRCE.write_output(\"result\", RCE.read_input(\"design_variable\") * 2)",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "400debf1-d71f-4e02-a416-e4debbe25594",
+      "name" : "design_variable",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "4b5366c7-aeda-42d9-a102-156a0f0a6d9b",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "output" : "529959a7-9191-4619-ad03-58a541e54d08",
+    "target" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "input" : "400debf1-d71f-4e02-a416-e4debbe25594"
+  }, {
+    "source" : "86881b19-105c-4e48-85a5-8ee0ee7197be",
+    "output" : "4b5366c7-aeda-42d9-a102-156a0f0a6d9b",
+    "target" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
+    "input" : "f9ffec36-b1fc-4132-b35d-b59549c294cf"
+  } ]
+}

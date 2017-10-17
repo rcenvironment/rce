@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Connection and Workflow Editor Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The Connection Editor is used to define the data flow between components by connecting their inputs and outputs.</para>
+    </sect1>
+    <sect1>
+        <title>Connections and Connection Editor</title>
+        <para>Connections determine the data flow between workflow components. They are depicted by
+            arrows. If two components are connected, there is always only a single arrow shown which can contain several
+            connections. The arrowhead indicates the direction of the data flow. If data flows in both directions the arrow has two arrowheads. If data
+            flows from an output of a component to an input of the same component this is called a
+            self connection. Such connections are depicted by an arrow from top to bottom around the component.
+            A connection can be inspected by double clicking on the arrow.</para>
+        <para>There are two ways to <emphasis role="bold">draw a connection:</emphasis></para>
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>The component palette contains a "Draw Connection" entry. Select it. Now click
+                        first on the source and then on the target component in the Workflow Editor (Please note that drag and drop does not work here).
+                        In the appearing dialog choose the inputs/outputs to connect. First click on
+                        the output ("Source") and then on the input ("Target") to create a connection. 
+                    </para>
+                    <para>Alt + D is the shortcut to switch to the connection drawing tool, ALT + S
+                        or ESC is the shortcut to switch to the selection tool.</para>
+                </listitem>
+                <listitem>
+                    <para>In the Workflow Editor's context menu or in the toolbar select "Open
+                        Connection Editor" to open the Connection Editor. Here you can filter the
+                        entries and draw connections.</para>
+                    <para>Alt + C is the shortcut to open the Connection Editor.</para>
+                </listitem>
+            </orderedlist>
+        </para>
+        <para><emphasis role="bold">Auto connect:</emphasis> When you use "Draw connection (ALT+D)"
+            inputs and outputs are automatically connected when at least one of these condition is satisfied:</para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>There is just one input and one output <emphasis role="bold"
+                            >and</emphasis> the data types are equal, independent from their
+                        names.</para>
+                </listitem>
+                <listitem>
+                    <para>The inputs' and outputs' names and data types are equal.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>To benefit from the auto connect feature, it is therefore useful to name inputs and outputs equally if they are planned to be
+            connected.</para>
+        <para><emphasis role="bold">Additional visual information:</emphasis></para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>Required but not connected inputs are depicted by a red asterisk in the
+                        data type icon. That means you cannot execute the workflow successfully if
+                        there are red asterisks left.</para>
+                </listitem>
+                <listitem>
+                    <para>Already connected inputs are depicted by a small black arrow in the data
+                        type icon. That means you cannot draw another connection to an input marked
+                        like that.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </sect1>
+</chapter>

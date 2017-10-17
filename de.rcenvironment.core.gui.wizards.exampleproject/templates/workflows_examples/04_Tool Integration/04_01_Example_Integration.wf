@@ -1,0 +1,108 @@
+{
+  "identifier" : "1937ec7d-14db-496d-891e-5f156623bdcc",
+  "workflowVersion" : "5",
+  "nodes" : [ {
+    "identifier" : "bfc126bb-0144-4895-9210-ba161f8c8d61",
+    "name" : "Example",
+    "location" : "262:267",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.integration.common.Example",
+      "version" : "0.0",
+      "name" : "Example"
+    },
+    "configuration" : {
+      "chosenDeleteTempDirBehavior" : "deleteWorkingDirectoriesAfterWorkflowExecution",
+      "storeComponentHistoryData" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "037be484-e240-48a6-9ef7-44979c1fbbc3",
+      "name" : "x",
+      "group" : "null",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "f4d9dc99-6436-4478-b42c-65742791ae3b",
+      "name" : "x_square",
+      "group" : "null",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "10716ee5-3734-413c-a272-e7acc103af5b",
+    "name" : "Input Provider",
+    "location" : "156:286",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "e7077b0c-7d6f-4a53-b3d8-0977b099de3d",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "2"
+      }
+    } ]
+  }, {
+    "identifier" : "3f03143a-c896-41d9-bda2-86c9a6f342d4",
+    "name" : "Result Printer",
+    "location" : "262:385",
+    "zIndex" : "2",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print(\"Result: \" +str(RCE.read_input(\"x\")) + \"^2 = \" + str(RCE.read_input(\"result\")))",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "da7618e8-96db-4623-a182-61fe4058462a",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "4511ea30-9c0f-4cd5-80a1-9fede2134173",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "bfc126bb-0144-4895-9210-ba161f8c8d61",
+    "output" : "f4d9dc99-6436-4478-b42c-65742791ae3b",
+    "target" : "3f03143a-c896-41d9-bda2-86c9a6f342d4",
+    "input" : "da7618e8-96db-4623-a182-61fe4058462a"
+  }, {
+    "source" : "10716ee5-3734-413c-a272-e7acc103af5b",
+    "output" : "e7077b0c-7d6f-4a53-b3d8-0977b099de3d",
+    "target" : "bfc126bb-0144-4895-9210-ba161f8c8d61",
+    "input" : "037be484-e240-48a6-9ef7-44979c1fbbc3"
+  }, {
+    "source" : "10716ee5-3734-413c-a272-e7acc103af5b",
+    "output" : "e7077b0c-7d6f-4a53-b3d8-0977b099de3d",
+    "target" : "3f03143a-c896-41d9-bda2-86c9a6f342d4",
+    "input" : "4511ea30-9c0f-4cd5-80a1-9fede2134173"
+  } ],
+  "labels" : "[{\"identifier\":\"10d6ea1d-ab3e-4472-8dc5-1e3a671cda71\",\"headerText\":\"\",\"text\":\"Example workflow: 'Tool Integration'\\r\\nObjective: Introducing workflow components that represent integrated tools\\r\\n\\r\\nThis example contains a workflow component that is an integrated tool. If the \\\"Example\\\" workflow component below is a red square, you probably did not check the \\\"Integrate example tool\\\" box when you created the \\\"Workflow Example Project\\\". Tools are integrated with the help of a dialog that you can open by clicking on the \\\"Integrate Tool\\\" button in the tool bar above. After you have successfully integrated your tool, it will appear in the palette and can be used just like any other workflow component. (See User Guide for more details on tool integration.)\\r\\n\",\"location\":\"56:19\",\"size\":\"488:211\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+}

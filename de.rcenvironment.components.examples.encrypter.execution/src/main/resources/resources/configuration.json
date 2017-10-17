@@ -1,0 +1,21 @@
+{
+    "configuration":[
+        {
+            "key":"enryptionAlgorithm",
+            "defaultValue":"AES"
+        },
+        {
+            "key":"enryptionPassphrase",
+            "defaultValue":"${*.enryptionPassphrase}"
+        }
+    ],
+    "placeholders":[
+        {
+            "key":"enryptionPassphrase",
+            "guiName":"Encryption password",
+            "guiPosition":"1",
+            "decode":"true",
+            "dataType" : "text"
+        }
+    ]
+}

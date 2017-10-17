@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="69">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="de.vonloesch.pdf4eclipse.feature.group" version="1.1.0"/>
+<unit id="nu.psnet.quickimage.feature.group" version="1.0.3.2"/>
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="8.1.0.0201706091330_SNAPSHOT"/>
+<repository location="https://software.dlr.de/updates/rce/8.x/repositories/platform/snapshots/trunk"/>
+</location>
+</locations>
+</target>

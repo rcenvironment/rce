@@ -1,0 +1,23 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Context-Type: org.eclipse.rcptt.ctx.ecl
+Element-Name: ClearWorkflowList
+Element-Type: context
+Element-Version: 2.0
+Id: _veu6kLMQEea9-IVwaLVU3A
+Runtime-Version: 2.0.2.201511100828
+Save-Time: 11/25/16 2:34 PM
+
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998
+Content-Type: text/ecl
+Entry-Name: .ecl.context
+
+with [get-view "Workflow List"] {
+    click
+    with [get-table] {
+        key-type "M1+a"
+        key-type Del
+    }
+}
+
+------=_.ecl.context-718f04b4-ed39-33e3-af62-0995e4561998--

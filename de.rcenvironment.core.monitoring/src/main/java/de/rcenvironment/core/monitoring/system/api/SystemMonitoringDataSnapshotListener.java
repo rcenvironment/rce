@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2006-2016 DLR, Germany
+ * 
+ * All rights reserved
+ * 
+ * http://www.rcenvironment.de/
+ */
+
+package de.rcenvironment.core.monitoring.system.api;
+
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
+
+/**
+ * Callback interface for {@link FullSystemAndProcessDataSnapshot} updates, typically received from remote instances.
+ * 
+ * @author David Scholz
+ * @author Robert Mischke (improved JavaDoc)
+ */
+public interface SystemMonitoringDataSnapshotListener {
+
+    /**
+     * Called when a new {@link FullSystemAndProcessDataSnapshot} has been received from the local or a remote node.
+     * 
+     * @param model a snapshot model of collected system information
+     */
+    void onMonitoringDataChanged(final FullSystemAndProcessDataSnapshot model);
+
+}

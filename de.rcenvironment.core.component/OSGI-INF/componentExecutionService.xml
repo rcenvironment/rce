@@ -1,0 +1,28 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Distributed Component Execution Controller Service">
+	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.api.ComponentExecutionService"/>
+	</service>
+	
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Component Execution Controller Service"
+		interface="de.rcenvironment.core.component.execution.api.ComponentExecutionControllerService"
+		cardinality="1..1"
+		bind="bindComponentExecutionControllerService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

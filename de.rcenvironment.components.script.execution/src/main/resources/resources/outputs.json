@@ -1,0 +1,19 @@
+{
+    "dynamicOutputs":[
+        {
+            "identifier":"default",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector",
+                "Matrix"
+            ],
+            "defaultDataType":"Float"
+        }
+    ]
+}

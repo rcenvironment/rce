@@ -1,0 +1,6 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="System Monitoring Low-Level Data Service">
+	<implementation class="de.rcenvironment.core.monitoring.system.internal.SystemMonitoringDataServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService"/>
+	</service>
+</scr:component>

@@ -1,0 +1,42 @@
+{
+  "identifier" : "493d807a-e203-48ec-bcab-de8f678d8bdf",
+  "nodes" : [ {
+    "identifier" : "3aab0b00-d176-41aa-bf71-faddc51c5916",
+    "name" : "Simple Wrapper",
+    "location" : "342:222",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.simplewrapper.SimpleWrapperComponent_Simple Wrapper"
+    },
+    "configuration" : [],
+    "addInput" : [ "TR:java.lang.Double" ],
+    "addOutput" : [ "oswald:java.lang.Double", "cD:java.lang.Double" ]
+  }, {
+    "identifier" : "906ee645-3289-4565-be5c-33aedfe8a065",
+    "name" : "Optimizer",
+    "location" : "202:221",
+    "platform" : "493d807ae20348ecbcabde8f678d8bdf",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.optimizer.OptimizerComponent_Optimizer"
+    },
+    "configuration" : [ "qn_grad_tolerance:java.lang.String:0.0001", "constTolerance:java.lang.String:9.999999999999999E-6", "qn_step_to_bound:java.lang.String:0.99995", "eaFitnessType:java.lang.String:linear_rank", "eaPopulation:java.lang.String:25", "eaNewSol:java.lang.String:50", "eaMutRange:java.lang.String:1", "algorithm:java.lang.String:HOPSPACK Asynch Pattern Search", "eaReplacementType:java.lang.String:elitist", "appsMerit:java.lang.String:merit1", "tolerance:java.lang.String:9.999999999999999E-6", "qn_search_method:java.lang.String:gradient_based_line_search", "appsTresDelta:java.lang.String:0.01", "qn_merit_function:java.lang.String:argaez_tapia", "appsInitDelta:java.lang.String:1.0 ", "eaCrossRate:java.lang.String:0.8", "eaMutRate:java.lang.String:1.0", "qn_centering:java.lang.String:0.2", "funceval:java.lang.String:1000", "eaReplacementTypeValue:java.lang.String:1", "iterations:java.lang.String:100", "eaMutScale:java.lang.String:0.1", "eaCrossType:java.lang.String:two_point", "appsConstPenalty:java.lang.String:1 ", "qn_maxStep:java.lang.String:1000", "appsSmooth:java.lang.String:0", "eaMutType:java.lang.String:offset_normal", "eaInitType:java.lang.String:unique_random", "appsContr:java.lang.String:0.5", "qn_cent_path:java.lang.String:argaez_tapia" ],
+    "addInput" : [ "oswald:java.lang.Double" ],
+    "addOutput" : [ "TR:java.lang.Double" ],
+    "inputMetaData" : {
+      "oswald" : [ "solve:java.lang.Double:0.0", "startValue:java.lang.Double:NaN", "upper:java.lang.Double:NaN", "weight:java.lang.Double:1.0", "lower:java.lang.Double:NaN", "type:java.lang.Integer:0", "goal:java.lang.Integer:1" ]
+    },
+    "outputMetaData" : {
+      "TR" : [ "solve:java.lang.Double:1.7976931348623157E308", "startValue:java.lang.Double:0.05", "upper:java.lang.Double:1.0", "weight:java.lang.Double:NaN", "lower:java.lang.Double:0.05", "type:java.lang.Integer:1", "goal:java.lang.Integer:2147483647" ]
+    }
+  } ],
+  "connections" : [ {
+    "source" : "906ee645-3289-4565-be5c-33aedfe8a065",
+    "output" : "TR",
+    "target" : "3aab0b00-d176-41aa-bf71-faddc51c5916",
+    "input" : "TR"
+  }, {
+    "source" : "3aab0b00-d176-41aa-bf71-faddc51c5916",
+    "output" : "oswald",
+    "target" : "906ee645-3289-4565-be5c-33aedfe8a065",
+    "input" : "oswald"
+  } ]
+}

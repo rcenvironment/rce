@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Design of Experiments Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The Design of Experiment component sends values (floating-point numbers) to other components. The values
+            are either generated on the base of a design method or are provided by a custom design
+            table. The values can be used to sample a solution within a bounded space. They are
+            independent to each other.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>First, outputs must be defined. Each output is of type float and has a lower and an
+            upper bound. The definition of inputs is optional. If inputs are defined, the DOE
+            component maps one set of output values to one set of input values. I.e., output values
+            are sent as soon as input values (corresponding to previously sent output values) are
+            received. Queuing of input values as not allowed. If no inputs are defined, the output
+            values are sent all at once at workflow start.</para>
+        <para>Second, the design method must be selected. You can choose between four
+            methods:</para>
+        <itemizedlist>
+                <listitem><para><ulink url="http://en.wikipedia.org/wiki/Factorial_experiment">Full
+                    factorial design</ulink></para> </listitem>
+                    <listitem> <para><ulink url="http://en.wikipedia.org/wiki/Latin_hypercube_sampling">Latin
+                        hypercube design</ulink></para> </listitem>
+                        <listitem><para><ulink url="http://en.wikipedia.org/wiki/Monte_Carlo_method">Monte Carlo
+                            design</ulink></para> </listitem>
+                <listitem><para>Custom design</para> </listitem>
+        </itemizedlist>
+        <para>The first three methods generate the output values on the base of established design
+            methods (see links above). For two of them, the values are random. You can choose a seed
+            in order to reuse the same values later. The number of samples can be defined with the
+            option "Number of levels"/"Desired runs" and can be communicated to other components
+            using the "Number of samples" output, which is sent out on the first iteration of the
+            DOE component.</para>
+        <para>The last method allows to define a custom design table. The table at the bottom is
+            editable and values can be entered. The table can be saved as a csv file and can be
+            re-loaded later on. It is also possible to define a custom sample range by modifying the
+            "Start at sample #" and "End at sample #" option.</para>
+        <para>For help concerning nested and fault-tolerant loop settings, see the general section "Workflows" in the user guide.</para>
+    </sect1>
+</chapter>

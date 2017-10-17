@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Discovery Bootstrap Service">
+	<implementation class="de.rcenvironment.core.configuration.discovery.internal.DiscoveryBootstrapServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService"/>
+	</service>
+	<reference bind="bindDiscoveryServerManagementService" cardinality="1..1" 
+		interface="de.rcenvironment.core.configuration.discovery.server.DiscoveryServerManagementService"
+		name="DiscoveryServerManagementService" policy="static"/>
+	<reference bind="bindDiscoveryClientService" cardinality="1..1"
+		interface="de.rcenvironment.core.configuration.discovery.client.DiscoveryClientService"
+		name="DiscoveryClientService" policy="static"/> 
+</scr:component>

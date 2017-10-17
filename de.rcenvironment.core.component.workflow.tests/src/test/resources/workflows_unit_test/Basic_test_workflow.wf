@@ -1,0 +1,113 @@
+{
+  "identifier" : "aebf6bb8-ad05-4b2e-a698-a6705f6dc0cf",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "361ff68d-04c7-4ef1-a1b7-aba1292b339d",
+    "name" : "Combiner",
+    "location" : "571:265",
+    "active" : "true",
+    "platform" : "147e1344f8b14ce9825534dccc0279de",
+    "component" : {
+      "identifier" : "de.rcenvironment.outputwriter",
+      "version" : "2.0",
+      "name" : "Output Writer"
+    },
+    "configuration" : {
+      "OWWritePath" : "${targetRootFolder}",
+      "SelectRootOnWorkflowStart" : "true",
+      "SelectedRoot" : "",
+      "outputLocations" : "{\"outputs\":[{\"identifier\":\"fcbbe1be-1fc2-45fc-9718-0c64d76c7bf8\",\"filename\":\"combined.txt\",\"folderForSaving\":\"[root]\",\"header\":\"Test file\",\"formatString\":\"[text_inp] -> [float_inp]\",\"handleExistingFile\":\"APPEND\",\"inputs\":[\"float_inp\",\"text_inp\"]}]}",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "04d3b115-26f4-4742-9cd1-4700e700382a",
+      "name" : "float_inp",
+      "epIdentifier" : "default",
+      "group" : "fcbbe1be-1fc2-45fc-9718-0c64d76c7bf8",
+      "datatype" : "Float",
+      "metadata" : {
+        "filename" : "-",
+        "folderForSaving" : "[root]",
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    }, {
+      "identifier" : "d4d41dc2-5586-423a-9f2e-cc0bd7f00d24",
+      "name" : "text_inp",
+      "epIdentifier" : "default",
+      "group" : "fcbbe1be-1fc2-45fc-9718-0c64d76c7bf8",
+      "datatype" : "ShortText",
+      "metadata" : {
+        "filename" : "-",
+        "folderForSaving" : "[root]",
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicInputGroups" : [ {
+      "name" : "fcbbe1be-1fc2-45fc-9718-0c64d76c7bf8",
+      "epIdentifier" : "dynamicAndGroup"
+    } ]
+  }, {
+    "identifier" : "fbfcc614-b0e9-4a97-81db-26dd40964e15",
+    "name" : "Floater",
+    "location" : "314:157",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "f1ca302e-fae6-45f9-8d20-96bab4d18d63",
+      "name" : "float_outp",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "7.2"
+      }
+    } ]
+  }, {
+    "identifier" : "c5aa840d-68a8-456f-943b-569a1875933d",
+    "name" : "Texter",
+    "location" : "295:246",
+    "active" : "false",
+    "platform" : "5f323616fcc4440d852074f737a9f297",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output('output_2', 'text')",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "e292472a-2b5e-4007-ab6c-2d2bd784d6f6",
+      "name" : "text_outp",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "ShortText"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "fbfcc614-b0e9-4a97-81db-26dd40964e15",
+    "output" : "f1ca302e-fae6-45f9-8d20-96bab4d18d63",
+    "target" : "361ff68d-04c7-4ef1-a1b7-aba1292b339d",
+    "input" : "04d3b115-26f4-4742-9cd1-4700e700382a"
+  }, {
+    "source" : "c5aa840d-68a8-456f-943b-569a1875933d",
+    "output" : "e292472a-2b5e-4007-ab6c-2d2bd784d6f6",
+    "target" : "361ff68d-04c7-4ef1-a1b7-aba1292b339d",
+    "input" : "d4d41dc2-5586-423a-9f2e-cc0bd7f00d24"
+  } ],
+  "bendpoints" : "[{\"source\":\"fbfcc614-b0e9-4a97-81db-26dd40964e15\",\"target\":\"361ff68d-04c7-4ef1-a1b7-aba1292b339d\",\"coordinates\":\"590:177\"}]",
+  "labels" : "[{\"identifier\":\"2a16256d-4b49-421b-8bb0-9244008a7592\",\"text\":\"Workflow that covers a broad range of possible content in a workflow file.\",\"location\":\"50:25\",\"size\":\"665:68\",\"alpha\":\"127\",\"colorText\":\"128:128:128\",\"colorBackground\":\"253:216:2\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"11\"}]"
+}

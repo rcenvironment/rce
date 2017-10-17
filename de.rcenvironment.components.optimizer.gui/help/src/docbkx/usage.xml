@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Optimizer Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The Optimizer component allows the optimization of design variables in a workflow.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>The Optimizer component uses a black-box optimization software library. By starting
+            the component, an input file for the selected optimization algorithm is created and the
+            software will be started in the background. Different optimization packages can be
+            installed.</para>
+        <para>One package that is delivered with RCE on Windows x64 and Linux x64 machines is
+            Dakota. Dakota was tested on the following distributions: Windows 7, Suse Linux 11 SP 2,
+            CentOS 7 and Debian 7. In addition, Dakota was already run on Suse Linux 12 and Debian
+            8.</para>
+        <para>For more information about the Dakota Package see the <ulink url="https://dakota.sandia.gov/">Dakota Project
+                page</ulink>.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>To use the optimizer component you need to do the following steps:</para>
+        <itemizedlist>
+            <listitem>
+                    <para>In the algorithm tab you can choose an optimization algorithm that fits
+                        your problem. There are several algorithms from the Dakota package
+                        available.</para>
+                    <para><inlinegraphic fileref="../../images/image001.png"/></para>
+                    <para>There are properties for each algorithm. For editing, click on the
+                    'Algorithm Properties' button. The appearing dialog shows the properties of the
+                    chosen algorithm. The properties differ from algorithm to algorithm. For more
+                    information about the properties see the documentation of the package.</para>
+                    <para>If you have an operating system, on which the default Dakota does not
+                    work, you have the option to choose a custom Dakota binary by checking the box
+                    'Use custom dakota binary'. You will be asked for the Dakota executable path at
+                    workflow start. This can be either a downloaded version from the dakota website
+                    or a self compiled binary with the source code from the Dakota website. For more
+                    information about compiling Dakota see: <ulink
+                        url="https://software.sandia.gov/trac/dakota/wiki/Developer"
+                        >https://software.sandia.gov/trac/dakota/wiki/Developer</ulink></para>
+            </listitem>
+            <listitem>
+                    <para>The next step is to define the inputs and outputs for the component. There
+                        are three types of data you can configure.</para>
+                    <para>
+                        <orderedlist>
+                            <listitem>
+                                <para>The objective function variables are the one to be optimized.
+                                    For each variable you can specify if it should be minimized, be
+                                    maximized or be searched for a specific value (solve for). If
+                                    you have more than one objective function, you can define their
+                                    weight in the optimization process. If there is only one
+                                    objective function, the weight will be ignored. Note that some
+                                    algorithms support single- and multi-objective
+                                    optimization.</para>
+                                <para>If you have defined some design variables, you also can choose
+                                    if the objective function you create has gradients or not. If
+                                    you select this, new inputs will appear in the connection
+                                    editor, which are intended for the values from the gradients.
+                                    Note that for every design variable you have, a new input for
+                                    the objective function exists.</para>
+                            </listitem>
+                            <listitem>
+                                <para>The constraint variables are used to bound particular
+                                    variables to a region or value. If a solution is found but it
+                                    causes a constraint variable to be out of bounds, the solution
+                                    is not valid. Again, the constraints can have gradients.</para>
+                            </listitem>
+                            <listitem>
+                                <para>The design variables are the values that are modified by the
+                                    algorithm to find an optimal solution. For each variable you
+                                    have to define a startvalue which will be the initial value for
+                                    the optimization algorithm. You also have to define the lower
+                                    and upper bound for each variable.</para>
+                            </listitem>
+                        </orderedlist>
+                    </para>
+                    <para>All data have to be either a float or a vector data type.</para>
+                    <para>There are three more tables for endpoints. They are just read-only and can
+                        not be modified. They are created automatically when configuring the
+                        Optimizer.</para>
+                    <para>
+                        <orderedlist>
+                            <listitem>
+                                <para>The 'Start value inputs' table shows which design variables
+                                need start values before running. Start values can be the starting
+                                value for this design variable, if the option 'Has start value' in
+                                the design variable dialog is not chosen.</para>
+                                <para>Other possible start values are the lower and upper bounds of
+                                a design variable, if the option 'Has unified bounds' is not
+                                selected.</para>
+                            </listitem>
+                            <listitem>
+                                <para>In the 'Optimal design variables outputs' table, the outputs
+                                for the values of the optimized point are shown.</para>
+                            </listitem>
+                            <listitem>
+                                <para>The 'Gradients' table shows which objective functions should
+                                have gradient inputs as well. This is chosen in the dialog for the
+                                objective functions ('Has gradient').</para>
+                            </listitem>
+                        </orderedlist>
+                    </para>
+            </listitem>
+        </itemizedlist>
+        <para>After these steps the optimizer component is ready to start. In a running workflow,
+            you are able to see the output from the Dakota optimizer in the Workflow console.</para>
+        <para>By double clicking the Optimizer component in the runtime view of the workflow, you
+            will get the values the optimizer produces and the possibility to export these values to
+            an Excel file. You are also able to plot a graph with the given results in the diagram
+            tab. </para>
+        <para><inlinegraphic fileref="../../images/image005.png"/></para>
+        <para>For help concerning nested and fault-tolerant loop settings, see the section
+            'Usage/Workflows' in the user guide.</para>
+    </sect1>
+</chapter>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"  name="Optimizer Result Service">
+    <implementation class="de.rcenvironment.components.optimizer.common.OptimizerResultServiceImpl"/>
+    <service>
+       <provide interface="de.rcenvironment.components.optimizer.common.OptimizerResultService"/>
+    </service>
+    <reference bind="bindNotificationService" cardinality="1..1" interface="de.rcenvironment.core.notification.NotificationService" name="NotificationService" policy="static"/>
+    <reference bind="bindDistributedNotificationService" cardinality="1..1" interface="de.rcenvironment.core.notification.DistributedNotificationService" name="DistributedNotificationService" policy="static"/>
+</scr:component>

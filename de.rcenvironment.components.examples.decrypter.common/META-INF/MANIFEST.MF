@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Decrypter Component Common (Example Component)
+Bundle-SymbolicName: de.rcenvironment.components.examples.decrypter.common
+Bundle-Version: 8.1.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: de.rcenvironment.components.examples.decrypter.common
+Import-Package: de.rcenvironment.core.component.api

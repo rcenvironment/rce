@@ -1,0 +1,31 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" activate="activate" name="Node Properties Service">
+
+	<implementation class="de.rcenvironment.core.communication.nodeproperties.internal.NodePropertiesServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.nodeproperties.NodePropertiesService"/>
+	</service>
+	
+	<reference
+		name="NodeConfigurationService" 
+		interface="de.rcenvironment.core.communication.configuration.NodeConfigurationService" 
+		cardinality="1..1" 
+		bind="bindNodeConfigurationService" 
+		policy="dynamic"
+	/>
+	
+	<reference
+		name="MessageChannelService" 
+		interface="de.rcenvironment.core.communication.channel.MessageChannelService" 
+		cardinality="1..1" 
+		bind="bindMessageChannelService" 
+		policy="dynamic"/>
+		
+	<reference
+		name="Raw Node Properties Change Listeners" 
+		interface="de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener" 
+		cardinality="0..n" 
+		bind="addRawNodePropertiesChangeListener"
+		unbind="removeRawNodePropertiesChangeListener" 
+		policy="dynamic"/>
+		
+</scr:component>

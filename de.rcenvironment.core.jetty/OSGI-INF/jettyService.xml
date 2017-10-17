@@ -1,0 +1,6 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Jetty Service">
+	<implementation class="de.rcenvironment.core.jetty.internal.JettyServiceImpl" /> 
+	<service>
+	   <provide interface="de.rcenvironment.core.jetty.JettyService"/>
+	</service>
+</scr:component>

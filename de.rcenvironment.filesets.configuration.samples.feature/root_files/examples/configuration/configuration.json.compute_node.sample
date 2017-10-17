@@ -1,0 +1,28 @@
+{
+	"general" : {
+		"instanceName" : "Example compute node started by \"${systemUser}\" on ${hostName}",
+		"isWorkflowHost": true
+	},
+	"network" : {
+		"connections" : {
+			"relayUplink" : {
+				"host" : "127.0.0.1",
+				"port" : 21000,
+				"connectOnStartup": true,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	},
+	"publishing" : {
+		"components" : [
+			"de.rcenvironment.cluster",
+			"de.rcenvironment.converger",
+			"de.rcenvironment.joiner",
+			"de.rcenvironment.optimizer",
+			"de.rcenvironment.parametricstudy",
+			"de.rcenvironment.xmlmerger"
+		]
+	}
+}

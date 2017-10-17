@@ -1,0 +1,121 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.core.parent</artifactId>
+	<name>RCE Core Parent</name>
+	<!-- as this parent POM is not deployed anywhere, it can keep its version 
+		across releases -->
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.defaultBundle</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../de.rcenvironment/maven/parent/defaultBundle</relativePath>
+	</parent>
+
+	<profiles>
+
+		<profile>
+			<id>collectJQADataIfEnabled</id>
+			<activation>
+				<property>
+					<name>rce.maven.collectJQAData</name>
+				</property>
+			</activation>
+			<properties>
+				<!-- Note: As of jQAssistant 1.2.0, relative paths do not seem to result 
+					in a stable location, even when setting "useExecutionRootAsProjectRoot" to 
+					"true". To work around this, the store location is specified relative to 
+					an existing global and absolute path here. - misc_ro, 2017-03-30 -->
+				<rce.internal.jqassistant.storePath>${rce.maven.preprocessor.projectRoot}/target/jqassistant/datastore</rce.internal.jqassistant.storePath>
+				<rce.internal.jqassistant.rulesPath>${rce.maven.preprocessor.projectRoot}/de.rcenvironment/maven/modules/jqassistant.report/jqassistant</rce.internal.jqassistant.rulesPath>
+				<rce.internal.jqassistant.xmlReportFile>${rce.maven.preprocessor.projectRoot}/target/jqassistant/report.xml</rce.internal.jqassistant.xmlReportFile>
+				<rce.internal.jqassistant.htmlReportPath>${rce.maven.preprocessor.projectRoot}/de.rcenvironment/target/reports/jqassistant</rce.internal.jqassistant.htmlReportPath>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.buschmais.jqassistant</groupId>
+						<artifactId>jqassistant-maven-plugin</artifactId>
+						<version>1.2.0</version>
+						<dependencies>
+							<dependency>
+								<groupId>com.buschmais.jqassistant.plugin</groupId>
+								<artifactId>java</artifactId>
+								<version>1.2</version>
+							</dependency>
+							<dependency>
+								<groupId>com.buschmais.jqassistant.plugin</groupId>
+								<artifactId>osgi</artifactId>
+								<version>1.2</version>
+							</dependency>
+							<dependency>
+								<groupId>com.buschmais.jqassistant.plugin</groupId>
+								<artifactId>tycho</artifactId>
+								<version>1.2</version>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<!-- A workaround for an apparent bug in jQAssistant-1.2.0; see https://github.com/buschmais/jqassistant/issues/390 
+								and http://stackoverflow.com/questions/42647718 - misc_ro, 2017-03-22 -->
+							<useExecutionRootAsProjectRoot>true</useExecutionRootAsProjectRoot>
+						</configuration>
+						<executions>
+							<execution>
+								<id>jqassistant-scan</id>
+								<goals>
+									<goal>scan</goal>
+								</goals>
+								<configuration>
+									<storeDirectory>${rce.internal.jqassistant.storePath}</storeDirectory>
+								</configuration>
+							</execution>
+							<execution>
+								<id>jqa-analyze</id>
+								<goals>
+									<!-- Setting this in the parent POM may seem counter-intuitive, 
+										but the jQA plugin's approach is that this only actually executes on the 
+										last module of a multi-module build scope. - misc_ro -->
+									<goal>analyze</goal>
+								</goals>
+								<configuration>
+									<storeDirectory>${rce.internal.jqassistant.storePath}</storeDirectory>
+									<rulesDirectory>${rce.internal.jqassistant.rulesPath}</rulesDirectory>
+									<xmlReportFile>${rce.internal.jqassistant.xmlReportFile}</xmlReportFile>
+									<concepts>
+										<concept>osgi-bundle:Activator</concept>
+										<concept>osgi-bundle:Bundle</concept>
+										<concept>osgi-bundle:ExportPackage</concept>
+									</concepts>
+									<groups>
+										<group>rce-default</group>
+									</groups>
+									<failOnConstraintViolations>false</failOnConstraintViolations>
+								</configuration>
+							</execution>
+							<execution>
+								<id>jqa-report</id>
+								<goals>
+									<!-- see comment for the "analyze" step -->
+									<goal>report</goal>
+								</goals>
+								<!-- enforce execution after "analyze", which is bound to "post-integration-test" -->
+								<phase>verify</phase>
+								<configuration>
+									<xmlReportFile>${rce.internal.jqassistant.xmlReportFile}</xmlReportFile>
+									<outputDirectory>${rce.internal.jqassistant.htmlReportPath}</outputDirectory>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+
+		</profile>
+
+	</profiles>
+
+</project>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Plugin for System Monitoring Commands">
+
+	<implementation class="de.rcenvironment.core.monitoring.system.api.SystemMonitoringCommandPlugin"/>
+	<service>
+		<provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+	</service>
+	
+	<reference
+		name="LocalSystemMonitoringAggregationService"
+		interface="de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService"
+		bind="bindLocalSystemMonitoringAggregationService"
+	/>
+	<reference
+		name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		bind="bindCommunicationService"
+	/>
+	<reference
+		name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		bind="bindPlatformService"
+	/>
+
+</scr:component>

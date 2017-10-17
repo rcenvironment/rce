@@ -1,0 +1,129 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "valueToConverge",
+            "character": "sameLoop",
+            "group": "valuesToConverge",
+            "dataTypes": [
+                "Float", 
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "metaData": {
+                "hasStartValue": {
+                    "guiName": "Has start value",
+                    "guiPosition": "0",
+                    "visibility": "userConfigurable",
+                    "defaultValue": "false",
+                    "dataType": "bool"
+                },
+                "startValue": {
+                    "guiName": "Start value",
+                    "guiPosition": "1",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasStartValue": [
+                            "true"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "identifier": "startToConverge",
+            "character": "outerLoop",
+            "group": "startValues",
+            "dataTypes": [
+                "Float", 
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions": [
+                "Single",
+                "Constant"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
+        },
+        {
+            "identifier": "toForward",
+            "character": "sameLoop",
+            "group": "valuesToConverge",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
+            ],
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required"
+        },
+        {
+            "identifier": "startToForward",
+            "character": "outerLoop",
+            "group": "startValues",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
+            ],
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single",
+                "Constant"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
+        }
+    ],
+    "dynamicInputGroups": [
+        {
+            "name": "valuesToConverge",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "startValues",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "innerLoop",
+            "type": "Or"
+        }
+    ]
+}

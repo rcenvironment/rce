@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extensions>
+	<tocOrder>
+		<toc id="/de.rcenvironment.core.gui.help.win32/help/generated/user_guide_toc.xml" category="RCE Win32"/>
+		<toc id="/de.rcenvironment.core.gui.help.linux/help/generated/user_guide_toc.xml" category="RCE Linux"/>
+		<toc id="/de.rcenvironment.core.gui.help/help/components_toc.xml" category="RCE"/>
+		<toc id="/de.rcenvironment.core.gui.help/help/workflow_editor_toc.xml" category="RCE"/>
+		<toc id="/de.rcenvironment.core.gui.help/help/tool_integration_toc.xml" category="RCE"/>
+		<toc id="/de.rcenvironment.core.gui.help.win32/help/generated/developer_guide_toc.xml" category="RCE Win32"/>
+		<toc id="/de.rcenvironment.core.gui.help.linux/help/generated/developer_guide_toc.xml" category="RCE Linux"/>
+		<index id="/de.rcenvironment.core.gui.help/help/index.xml"/>
+	</tocOrder>
+	<hidden>
+		<toc id="/org.eclipse.platform.doc.user/toc.xml"/>
+		<toc id="/de.vonloesch.pdf4eclipse.help/toc.xml"/>
+	</hidden>
+</extensions>

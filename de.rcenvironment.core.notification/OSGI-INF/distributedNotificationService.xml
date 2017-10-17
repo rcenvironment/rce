@@ -1,0 +1,20 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Distributed Notification Servivce">
+	<implementation class="de.rcenvironment.core.notification.internal.DistributedNotificationServiceImpl" />
+	<service>
+    	<provide interface="de.rcenvironment.core.notification.DistributedNotificationService" />
+	</service>
+	<reference name="Notification Service"
+ 		interface="de.rcenvironment.core.notification.NotificationService"
+ 		cardinality="1..1"
+ 		bind="bindNotificationService"
+ 		policy="dynamic"
+ 	/>
+ 	<reference
+		name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"/>
+  <reference bind="bindPlatformService" cardinality="1..1" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService" policy="dynamic"/>
+</scr:component>
+  	  

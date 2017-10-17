@@ -1,0 +1,24 @@
+{
+    "configuration": [
+        {
+            "key": "xlFilename"
+        },
+        {
+            "key": "preMacro"
+        },
+        {
+            "key": "runMacro"
+        },
+        {
+            "key": "postMacro"
+        },
+        {
+            "key": "Driver",
+            "defaultValue": "false"
+        },
+        {
+            "key": "storeComponentHistoryData",
+            "defaultValue": "false"
+        }
+    ]
+}

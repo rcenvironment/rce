@@ -1,0 +1,139 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.core.combined</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<!-- core headless -->
+		<module>${projects-root}/de.rcenvironment.core.launcher</module>
+		<module>${projects-root}/de.rcenvironment.core.authentication</module>
+		<module>${projects-root}/de.rcenvironment.core.authentication.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.authorization</module>
+		<module>${projects-root}/de.rcenvironment.core.authorization.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.authorization.xml</module>
+		<module>${projects-root}/de.rcenvironment.core.authorization.xml.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.command</module>
+		<module>${projects-root}/de.rcenvironment.core.command.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.communication</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.file.service</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.file.service.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component</module>
+		<module>${projects-root}/de.rcenvironment.core.component.datamanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.component.executor</module>
+		<module>${projects-root}/de.rcenvironment.core.component.executor.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.integration</module>
+		<module>${projects-root}/de.rcenvironment.core.component.integration.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess</module>
+		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
+		<module>${projects-root}/de.rcenvironment.core.component.workflow.testworkflows</module>
+		<module>${projects-root}/de.rcenvironment.core.component.workflow.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.wrapper</module>
+		<module>${projects-root}/de.rcenvironment.core.component.xml</module>
+		<module>${projects-root}/de.rcenvironment.core.component.xml.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.discovery</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.discovery.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.logging</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.configuration.ui</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.metadata.derby</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.metadata.derby.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.data.efs</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement.backend.data.efs.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.datamanagement.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.datamodel</module>
+		<module>${projects-root}/de.rcenvironment.core.datamodel.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.embedded.ssh</module>
+		<module>${projects-root}/de.rcenvironment.core.embedded.ssh.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.eventlog</module>
+		<module>${projects-root}/de.rcenvironment.core.instancemanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.instancemanagement.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.jetty</module>
+		<module>${projects-root}/de.rcenvironment.core.jetty.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.launcher.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.log</module>
+		<module>${projects-root}/de.rcenvironment.core.log.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.login</module>
+		<module>${projects-root}/de.rcenvironment.core.login.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.encryption</module>
+		<module>${projects-root}/de.rcenvironment.core.mail</module>
+		<module>${projects-root}/de.rcenvironment.core.mail.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.monitoring</module>
+		<module>${projects-root}/de.rcenvironment.core.monitoring.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.notification</module>
+		<module>${projects-root}/de.rcenvironment.core.notification.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.remoteaccess</module>
+		<module>${projects-root}/de.rcenvironment.core.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.shutdown</module>
+		<module>${projects-root}/de.rcenvironment.core.start</module>
+		<module>${projects-root}/de.rcenvironment.core.start.common</module>
+		<module>${projects-root}/de.rcenvironment.core.start.common.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.start.headless</module>
+		<module>${projects-root}/de.rcenvironment.core.scripting.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.start.validators</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.cluster</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.cluster.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.common</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.common.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.executor</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.executor.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.incubator</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.incubator.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.ssh</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.ssh.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.testing</module>
+		<module>${projects-root}/de.rcenvironment.core.feature</module>
+		
+		<!-- toolkit and the core-toolkit integration bridge -->
+		<module>${projects-root}/de.rcenvironment.core.toolkitbridge</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.core</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common.tests</module>
+
+		<!-- core gui -->
+		<module>${projects-root}/de.rcenvironment.core.gui.cluster</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.command</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.communication</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.datamanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.remoteaccess</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.utils.common</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.utils.incubator</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.wizards.exampleproject</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.wizards.toolintegration</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow.executor</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.xpathchooser</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.feature</module>
+		<module>${projects-root}/de.rcenvironment.core.start.gui</module>
+
+		<!-- core combined feature -->
+		<module>${projects-root}/de.rcenvironment.core.combined.feature</module>
+
+	</modules>
+
+</project>

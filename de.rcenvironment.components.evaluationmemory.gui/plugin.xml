@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            
+         <propertySection
+         		tab="workflow.editor.tab.evaluationmemory.File"
+         		class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryFileSection"
+         		id="workflow.editor.tab.Properties.Section.File"
+         		filter="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryComponentFilter"
+         		enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+               tab="workflow.editor.tab.evaluationmemory.Properties"
+               class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryEndpointPropertiesSection"
+               id="workflow.editor.tab.Properties.Section.Inputs"
+               filter="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         
+  	</propertySections>
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+      
+      	 <propertyTab
+         		label="Evaluation Memory"
+         		category="default"
+         		id="workflow.editor.tab.evaluationmemory.File">
+         </propertyTab>
+         
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               id="workflow.editor.tab.evaluationmemory.Properties"
+               afterTab="workflow.editor.tab.evaluationmemory.File">
+         </propertyTab>
+         
+         <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="Workflow Data">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   
+   
+   <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryHistoryDataItemSubtreeBuilder"/>
+   </extension> 
+   
+    <extension point="org.eclipse.help.toc">
+  		<toc file="help/toc.xml"/>
+ 	</extension>
+  
+ </plugin>
+ 

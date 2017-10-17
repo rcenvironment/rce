@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Utils Executor
+Bundle-SymbolicName: de.rcenvironment.core.utils.executor
+Bundle-Version: 8.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: com.sun.jna;version="4.2.2",
+ de.rcenvironment.core.toolkitbridge.transitional,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.core.utils.common.textstream.receivers,
+ de.rcenvironment.core.utils.common.validation,
+ de.rcenvironment.toolkit.modules.concurrency.api,
+ org.apache.commons.exec;version="1.1.0",
+ org.apache.commons.io;version="2.0.0",
+ org.apache.commons.logging;version="1.1.1"
+Export-Package: de.rcenvironment.core.utils.executor,
+ de.rcenvironment.core.utils.executor.context,
+ de.rcenvironment.core.utils.executor.context.impl,
+ de.rcenvironment.core.utils.executor.context.spi,
+ de.rcenvironment.core.utils.executor.fileinfo,
+ de.rcenvironment.core.utils.executor.testutils
+Bundle-Vendor: DLR

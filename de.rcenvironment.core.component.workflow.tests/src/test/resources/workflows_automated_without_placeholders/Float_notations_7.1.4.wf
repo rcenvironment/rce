@@ -1,0 +1,65 @@
+{
+  "identifier" : "42c36aad-a725-46cc-b87b-e3e05a6e4756",
+  "workflowVersion" : "4",
+  "name" : "Float_2016-09-20_08:50:02_05",
+  "nodes" : [ {
+    "identifier" : "84da090b-bd05-4347-bdb0-73e8be11b9fe",
+    "name" : "Checker",
+    "location" : "161:100",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "myLong = long(120000000000000000000000)\r\nmyLongScientific = 1.2e+23\r\n# Jython transforms to scientific notation\r\nmyInt = int(120000)\r\nmySmallFloat = 12.4\r\nmyFloatString = 123.456\r\n#if this would be a String it would fail\r\n\r\nvalidValues = [myLong, myLongScientific, myInt, mySmallFloat, myFloatString]\r\n\r\nval = RCE.read_input(\"double\")\r\n\r\nprint type(val)\r\nprint type(myFloatString)\r\n\r\nif val in validValues:\r\n  print \"correct\"\r\nelse:\r\n  print \"failure\"\r\n  RCE.fail(val)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "6987b298-62b5-405a-9279-2234b80be6cf",
+      "name" : "double",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "81064bc6-9d1c-479c-8da3-0aa465478b88",
+    "name" : "Sender",
+    "location" : "41:100",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "myLong = long(120000000000000000000000)\r\nmyInt = int(120000)\r\nmySmallFloat = 12.4\r\nmyFloatString = \"123.456\"\r\n\r\nprint type(myLong)\r\nprint type(myInt)\r\nprint type(mySmallFloat)\r\nprint type(myFloatString)\r\n\r\nRCE.write_output(\"double\", myLong)\r\nRCE.write_output(\"double\", myInt)\r\nRCE.write_output(\"double\", mySmallFloat)\r\nRCE.write_output(\"double\", float(myFloatString))",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "48fa3960-0c42-408f-8f5c-af14a5c0b703",
+      "name" : "double",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "81064bc6-9d1c-479c-8da3-0aa465478b88",
+    "output" : "48fa3960-0c42-408f-8f5c-af14a5c0b703",
+    "target" : "84da090b-bd05-4347-bdb0-73e8be11b9fe",
+    "input" : "6987b298-62b5-405a-9279-2234b80be6cf"
+  } ],
+  "labels" : "[{\"identifier\":\"607264a5-0405-41d9-85da-fb64d0ce498c\",\"text\":\"Send floats in different notations\",\"location\":\"41:17\",\"size\":\"201:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

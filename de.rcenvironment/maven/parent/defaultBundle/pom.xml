@@ -1,0 +1,172 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.maven.parent.defaultBundle</artifactId>
+	<name>RCE Core Parent</name>
+	<!-- as this parent POM is not deployed anywhere, it can keep its version 
+		across releases -->
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
+		<version>8.1.0-SNAPSHOT</version>
+		<relativePath >../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
+	</parent>
+
+	<properties>
+		<!-- the default parent folder of all projects; note that this path is 
+			relative to the POM that references this parent POM, not relative to the 
+			parent POM itself - misc_ro -->
+		<projects-root>..</projects-root>
+
+		<!-- the location of the shared Jacoco coverage data file. each module 
+			appends its data to this file to create an aggregated coverage report -->
+		<internal.jacoco.datadir>${projects-root}/target/coverage-data</internal.jacoco.datadir>
+		<internal.jacoco.datafile>${internal.jacoco.datadir}/jacoco.exec</internal.jacoco.datafile>
+
+		<!-- by default, ignore all test failures -->
+		<maven.test.failure.ignore>true</maven.test.failure.ignore>
+	</properties>
+
+	<profiles>
+		<profile>
+			<id>generateHelpFromDocbook</id>
+			<activation>
+				<file>
+					<exists>${basedir}/help/src/docbkx</exists>
+				</file>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-clean-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>clean-generated-help-files</id>
+								<goals>
+									<goal>clean</goal>
+								</goals>
+								<phase>clean</phase>
+								<configuration>
+									<filesets>
+										<fileset>
+											<directory>${basedir}/help/generated</directory>
+											<followSymlinks>false</followSymlinks>
+										</fileset>
+									</filesets>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>com.agilejava.docbkx</groupId>
+						<artifactId>docbkx-maven-plugin</artifactId>
+						<version>2.0.14</version>
+						<dependencies>
+							<dependency>
+								<groupId>org.docbook</groupId>
+								<artifactId>docbook-xml</artifactId>
+								<version>4.4</version>
+								<scope>runtime</scope>
+							</dependency>
+						</dependencies>
+						<executions>
+							<execution>
+								<id>generate-docbook-eclipse</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>generate-xhtml</goal>
+								</goals>
+								<configuration>
+									<postProcess>
+										<!-- ensure directory exists -->
+										<mkdir dir="help/generated/html" />
+									</postProcess>
+									<sourceDirectory>${basedir}/help/src/docbkx</sourceDirectory>
+									<targetDirectory>${basedir}/help/generated/html</targetDirectory>
+									<xhtmlCustomization>${basedir}/../de.rcenvironment.core.gui.help/resources/docbkx/stylesheets/docbkx_rce_xhtml.xsl</xhtmlCustomization>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>collectCoverageDataIfEnabled</id>
+			<activation>
+				<property>
+					<name>rce.maven.generateCoverageReport</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>0.7.9</version>
+						<executions>
+							<execution>
+								<id>prepare-agent</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+								<configuration>
+									<destFile>${internal.jacoco.datafile}</destFile>
+									<append>true</append>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<!-- TODO add "clean" step -->
+						<version>2.4.3</version>
+						<executions>
+							<execution>
+								<id>copy-source-files-to-combined-location</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${projects-root}/target/combined-source-files</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.build.sourceDirectory}</directory>
+										</resource>
+										<resource>
+											<directory>${project.build.testSourceDirectory}</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-class-files-to-jacoco-input</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${projects-root}/target/combined-class-files</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.build.directory}/classes</directory>
+											<includes>
+												<include>**/*.class</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+</project>

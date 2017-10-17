@@ -1,0 +1,21 @@
+{
+     "de.rcenvironment.script/3.4": {
+          "pythonExecutionPath": "%s"
+     },
+	 "de.rcenvironment.inputprovider/3.2": {
+          "inputFile": "%s",
+          "inputDir": "%s"
+     },
+	 "de.rcenvironment.outputwriter/2.0": {
+          "targetRootFolder": "%s"
+     },
+	 "de.rcenvironment.evaluationmemory/2/em-1": {
+          "memory_file": "%s"
+     },
+	 "de.rcenvironment.evaluationmemory/2/em-2": {
+          "memory_file": "%s"
+     },
+	 "de.rcenvironment.evaluationmemory/2/em-3": {
+          "memory_file": "%s"
+     }
+}

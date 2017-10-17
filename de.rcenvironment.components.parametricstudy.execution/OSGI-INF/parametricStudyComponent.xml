@@ -1,0 +1,32 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Parametric Study">
+
+	<implementation class="de.rcenvironment.components.parametricstudy.execution.ParametricStudyComponent"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String">
+		de.rcenvironment.parametricstudy
+		de.rcenvironment.rce.components.parametricstudy.ParametricStudyComponent_Parametric Study
+	</property>
+	
+	<property name="rce.component.name" type="String" value="Parametric Study"/>
+	
+	<property name="rce.component.version" type="String" value="4"/>
+	
+	<property name="rce.component.group" type="String" value="Evaluation"/>
+	
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.parametricstudy.execution.ParametricStudyComponent"/>
+	
+	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.parametricstudy.common" />
+	<property name="rce.component.icon-16" type="String" value="parametric_study16.png"/>
+    <property name="rce.component.icon-32" type="String" value="parametric_study32.png"/>
+    
+    <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
+    <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+    <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+    
+    <property name="rce.component.isDriverComponent" type="String" value="true"/>
+
+</scr:component> 

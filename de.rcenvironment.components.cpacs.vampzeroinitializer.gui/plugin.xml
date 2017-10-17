@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+    <!-- Extension for classes allocated to tabs -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+          
+          <propertySection
+               tab="workflow.editor.tab.initialization.VampZeroInitializer"
+               class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerSection"
+               id="workflow.editor.tab.initialization.properties.VampZeroInitializerSection"
+               filter="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerComponentFilter" />
+         
+         <!-- XPathChooserView -->
+         <propertySection
+               tab="workflow.editor.tab.initialization.XPathChooser"
+               class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerInputsOutputsSection"
+               id="workflow.editor.tab.initialization.XPathChooserSection"
+               filter="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerComponentFilter">
+         </propertySection>
+                         
+         </propertySections>
+    </extension>
+   
+   
+    <!-- Extension for own tabs in component properties -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+        <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            <!-- The main GUI -->
+            <propertyTab
+                label="Initialization"
+                category="default"
+                id="workflow.editor.tab.initialization.VampZeroInitializer" />
+            <!-- The Input&Output Tab -->
+    		 <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.initialization.VampZeroInitializer"
+               id="workflow.editor.tab.initialization.XPathChooser" />
+        </propertyTabs>
+    </extension>
+        
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerHistoryDataItemSubtreeBuilder"/>
+   </extension>
+    
+    <!-- Dynamic Help -->
+    <extension point="org.eclipse.help.contexts">
+        <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+    </extension>
+    
+    <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
+   
+</plugin>

@@ -1,0 +1,32 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Workflow State Machine">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowStateMachine"/>
+
+	<reference name="Distributed Notification Service"
+		interface="de.rcenvironment.core.notification.DistributedNotificationService"
+		cardinality="1..1"
+		bind="bindDistributedNotificationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Component Execution Service"
+		interface="de.rcenvironment.core.component.execution.api.ComponentExecutionService"
+		cardinality="1..1"
+		bind="bindComponentExecutionService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Workflow Execution Stats Service"
+		interface="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionStatsService"
+		bind="bindWorkflowExecutionStatsService"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+		
+</scr:component>

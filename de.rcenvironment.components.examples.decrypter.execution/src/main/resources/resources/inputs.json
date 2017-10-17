@@ -1,0 +1,11 @@
+{
+    "staticInputs":[
+        {
+            "name":"Encrypted File",
+            "dataTypes":[
+                "FileReference"
+            ],
+            "defaultDataType":"FileReference"
+        }
+    ]
+}

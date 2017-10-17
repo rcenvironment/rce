@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"> 
+  
+  <xsd:element name="authorization">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="subjects"/>
+        <xsd:element ref="roles"/>
+        <xsd:element ref="permissions"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="subjects">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="subject" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="roles">
+    <xsd:complexType>
+      <xsd:sequence>
+      <xsd:element ref="role" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="permissions">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="permission" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="subject">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+        <xsd:element name="role" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+      <xsd:attribute ref="id" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="role">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+        <xsd:element name="permission" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+      <xsd:attribute ref="id" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="permission">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+      </xsd:sequence>
+      <xsd:attribute ref="id" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+    
+  <xsd:attribute name="id" type="xsd:string"/>
+    
+</xsd:schema>

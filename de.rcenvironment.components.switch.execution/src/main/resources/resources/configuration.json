@@ -1,0 +1,24 @@
+{ 
+	"configuration": [
+        {
+            "key":"conditionKey",
+            "defaultValue": ""
+        },
+        {
+        	"key":"scriptErrorMessage",
+        	"defaultValue": ""
+        },
+        {
+            "key":"neverCloseOutputs",
+            "defaultValue": "true"
+        },
+        {
+            "key":"closeOutputsOnTrue",
+            "defaultValue": "false"
+        },
+        {
+            "key":"closeOutputsOnFalse",
+            "defaultValue": "false"
+        }
+    ] 
+}

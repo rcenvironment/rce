@@ -1,0 +1,77 @@
+{
+  "identifier" : "b4e9cc93-7f10-4ee0-8a0e-3137d2eb1235",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "4c06206b-7fc6-4575-9218-b30a46644dee",
+    "name" : "Print",
+    "location" : "200:157",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"out\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7b1c0e50-7a5f-426a-a4de-f36da7cea886",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "7e8ffb35-dc51-4f78-b0a2-1903ed5d26e7",
+    "name" : "Select",
+    "location" : "60:157",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "Select 2",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT CAST(ID AS DECIMAL(25)) FROM City WHERE Name = 'Klaten';\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"out\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "b545ad95-f861-42f8-89a5-21e1a9ed212d",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "4c4d7905-c41f-4b08-9abe-278563161b71",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "7e8ffb35-dc51-4f78-b0a2-1903ed5d26e7",
+    "output" : "4c4d7905-c41f-4b08-9abe-278563161b71",
+    "target" : "4c06206b-7fc6-4575-9218-b30a46644dee",
+    "input" : "7b1c0e50-7a5f-426a-a4de-f36da7cea886"
+  } ],
+  "labels" : "[{\"identifier\":\"2e9ce75a-1b8b-4444-b2b2-d1a2dace65cd\",\"text\":\"Select small table\",\"location\":\"40:120\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"891a42d2-1179-4d72-8727-6330daeb4059\",\"text\":\"Note:\\r\\nThis workflow will fail.\\r\\nCheck if there is an appropriate error message.\",\"location\":\"20:20\",\"size\":\"341:81\",\"alpha\":\"127\",\"colorText\":\"255:0:0\",\"colorBackground\":\"128:255:128\",\"alignmentType\":\"CENTER\",\"border\":\"true\",\"textSize\":\"12\"}]"
+}

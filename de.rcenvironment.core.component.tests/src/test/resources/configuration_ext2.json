@@ -1,0 +1,13 @@
+{
+    "configuration": [
+        {
+            "key": "format",
+            "defaultValue": "html",
+            "activationFilter": {
+		        "port": [
+		            "8"
+		        ]
+		    }
+        }
+    ]
+}

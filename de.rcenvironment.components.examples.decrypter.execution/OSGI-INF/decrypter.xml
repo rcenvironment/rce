@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Decrypter Component">
+
+   	<implementation class="de.rcenvironment.components.examples.decrypter.execution.DecrypterComponent"/>
+
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String" value="de.rcenvironment.decrypter"/>
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.examples.decrypter.execution.DecrypterComponent"/>
+	<property name="rce.component.version" type="String" value="3.0"/>
+
+	<property name="rce.component.name" type="String" value="Decrypter"/>
+	<property name="rce.component.group" type="String" value="_Examples"/>
+	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.examples.decrypter.common" />
+	<property name="rce.component.icon-16" type="String" value="decrypter16.png"/>
+  	<property name="rce.component.icon-32" type="String" value="decrypter32.png"/>
+  	
+  	<property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
+	<property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+	
+	<property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+    
+</scr:component>

@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Platform Service">
+	<implementation class="de.rcenvironment.core.communication.internal.PlatformServiceImpl" />
+	<service>
+    	<provide interface="de.rcenvironment.core.communication.api.PlatformService"/>
+	</service>
+    <reference 
+    	bind="bindNodeConfigurationService" 
+    	cardinality="1..1" 
+    	interface="de.rcenvironment.core.communication.configuration.NodeConfigurationService" 
+    	name="Node Configuration Service" 
+    	policy="dynamic"/>
+</scr:component>

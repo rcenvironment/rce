@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="DOE Component">
+
+   	<implementation class="de.rcenvironment.components.doe.execution.DOEComponent"/>
+
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String" value="de.rcenvironment.doe.v2"/>
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.doe.execution.DOEComponent"/>
+	<property name="rce.component.version" type="String" value="4.1"/>
+
+	<property name="rce.component.name" type="String" value="Design of Experiments"/>
+	<property name="rce.component.group" type="String" value="Evaluation"/>
+	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.doe.common" />
+	<property name="rce.component.icon-16" type="String" value="doe_16.png"/>
+  	<property name="rce.component.icon-32" type="String" value="doe_32.png"/>
+  	
+  	<property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
+	<property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+	
+	<property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+	
+  	<property name="rce.component.isDriverComponent" type="String" value="true"/>
+    <property name="rce.component.validator.identifier" type="String" value="DOEValidator_1.0"/>
+</scr:component>

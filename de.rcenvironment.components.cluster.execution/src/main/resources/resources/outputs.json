@@ -1,0 +1,11 @@
+{ "dynamicOutputs": [
+		{
+            "name": "Job outputs",
+            "dataTypes": [
+                "DirectoryReference"
+            ],
+            "defaultDataType": "DirectoryReference"
+        }
+		
+	]
+}
