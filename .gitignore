@@ -5,7 +5,6 @@ sys$command
 /.sonar/
 */help/generated/
 /de.rcenvironment.platform/projects/**/lib/maven/*.jar
-/de.rcenvironment.platform/thirdparty/p2-mirrored
 /de.rcenvironment/eclipse/launch/profiles/common/
 /de.rcenvironment/eclipse/launch/profiles/*/internal/
 /de.rcenvironment/eclipse/launch/profiles/*/integration/
