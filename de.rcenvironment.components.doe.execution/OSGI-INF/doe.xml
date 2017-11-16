@@ -24,5 +24,7 @@
 	<property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
 	
   	<property name="rce.component.isDriverComponent" type="String" value="true"/>
+  	<property name="rce.component.loopDriverSupportsDiscard" type="String" value="true"/>
+  	
     <property name="rce.component.validator.identifier" type="String" value="DOEValidator_1.0"/>
 </scr:component>

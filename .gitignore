@@ -14,7 +14,9 @@ sys$command
 /de.rcenvironment/eclipse/launch/profiles/*/workspace/
 /de.rcenvironment/eclipse/launch/profiles/*/*.log
 /de.rcenvironment/eclipse/launch/profiles/*/*.lock
-# temporary fix for generated folder; see Mantis #11136
+/de.rcenvironment.core.gui.help.*/doc.zip
+# temporary fix for generated folders; see Mantis #11136
 /de.rcenvironment/maven/initial/workspace
+/de.rcenvironment/workspace
 # TODO check: still needed?
 /de.rcenvironment.core.scripting.tests/cachedir

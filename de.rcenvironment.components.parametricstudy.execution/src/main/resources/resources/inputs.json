@@ -94,7 +94,7 @@
     	{
     		"name": "paramericStudyParameters",
     		"type": "And",
-    		"group": "orGroup"
+    		"group": "andGroup"
     	},
         {
             "name": "parameters",
@@ -104,11 +104,16 @@
         {
             "name": "startValues",
             "type": "And",
-            "group": "orGroup"
+            "group": "andGroup"
         },
         {
             "name": "orGroup",
             "type": "Or"
+        },
+        {
+            "name": "andGroup",
+            "type": "And",
+             "group": "orGroup"
         }
     ]
 }

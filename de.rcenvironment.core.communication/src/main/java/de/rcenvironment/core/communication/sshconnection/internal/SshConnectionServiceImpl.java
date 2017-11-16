@@ -343,7 +343,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             ISecurePreferences node = prefs.node(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
             passphrase = node.get(connectionId, null);
         } catch (IOException | StorageException e) {
-            log.error("Could not retreive password: " + e);
+            log.error("Could not retrieve password: " + e);
             return null;
         }
         return passphrase;

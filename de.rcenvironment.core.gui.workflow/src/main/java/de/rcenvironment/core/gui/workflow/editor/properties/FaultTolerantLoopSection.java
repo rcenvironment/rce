@@ -65,7 +65,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
 
     private Button discardAndContinueRadioButtonCmpFlr;
 
-    private boolean canHandleNaVValues;
+    private boolean loopDriverSupportsDiscard;
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -173,7 +173,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
             getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV));
         LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfFailureCmpFlr = LoopBehaviorInCaseOfFailure.fromString(
             getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE));
-        canHandleNaVValues = workflowNode.getComponentDescription().getComponentInterface().getCanHandleNotAValueDataTypes();
+        loopDriverSupportsDiscard = workflowNode.getComponentDescription().getComponentInterface().getLoopDriverSupportsDiscard();
 
         failRadioButtonNAV.setSelection(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.Fail));
         failRadioButtonCmpFlr.setSelection(loopBehaviorInCaseOfFailureCmpFlr.equals(LoopBehaviorInCaseOfFailure.Fail));
@@ -183,14 +183,14 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
             || loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndFail))
             && Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)));
 
-        discardAndContinueRadioButtonNAV.setEnabled(canHandleNaVValues);
-        discardAndContinueRadioButtonCmpFlr.setEnabled(canHandleNaVValues);
-        rerunAndDiscardRadioButtonNAV.setEnabled(canHandleNaVValues);
-        rerunTimesAndDiscardTextNAV.setEnabled(canHandleNaVValues);
-        rerunTimesAndDiscardLabelNAV.setEnabled(canHandleNaVValues);
-        failLoopIfAnyRunFailedCheckboxNAV.setEnabled(canHandleNaVValues
+        discardAndContinueRadioButtonNAV.setEnabled(loopDriverSupportsDiscard);
+        discardAndContinueRadioButtonCmpFlr.setEnabled(loopDriverSupportsDiscard);
+        rerunAndDiscardRadioButtonNAV.setEnabled(loopDriverSupportsDiscard);
+        rerunTimesAndDiscardTextNAV.setEnabled(loopDriverSupportsDiscard);
+        rerunTimesAndDiscardLabelNAV.setEnabled(loopDriverSupportsDiscard);
+        failLoopIfAnyRunFailedCheckboxNAV.setEnabled(loopDriverSupportsDiscard
             && !Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)));
-        if (canHandleNaVValues) {
+        if (loopDriverSupportsDiscard) {
             discardAndContinueRadioButtonNAV.setSelection(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.Discard));
             discardAndContinueRadioButtonCmpFlr.setSelection(loopBehaviorInCaseOfFailureCmpFlr.equals(LoopBehaviorInCaseOfFailure.Discard));
             rerunAndDiscardRadioButtonNAV.setSelection(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndDiscard));

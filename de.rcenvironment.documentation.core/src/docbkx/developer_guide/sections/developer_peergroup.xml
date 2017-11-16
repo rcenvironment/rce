@@ -3,6 +3,6 @@
                          "http://docbook.org/xml/4.4/docbookx.dtd">
 <sect1>
     <title>Intended audience</title>
-    <para>This document is intended for developers who want to extend RCE according to their needs
-        and/or contribute to the progress of RCE.</para>
+    <para>This document is intended for developers who would like to extend RCE according to their
+        needs and/or contribute to RCE's development.</para>
 </sect1>

@@ -7,7 +7,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>8.1.0-SNAPSHOT</version>
+	<version>8.1.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -45,6 +45,7 @@
 								<phase>generate-resources</phase>
 								<configuration>
 									<srcDir>src/docbkx/diagrams/svg</srcDir>
+									<srcIncludes>*.svg</srcIncludes>
 									<destDir>target/docbkx/diagrams/img-gen</destDir>
 								</configuration>
 							</execution>
@@ -91,9 +92,9 @@
 									<target>
 										<script language="javascript">
 								<![CDATA[
-									root = project.getProperty('unqualifiedVersion').replace('qualifier', '');
+									root = project.getProperty('unqualifiedVersion');
 									qualifier = project.getProperty('buildQualifier');
-									project.setProperty('antGenerated.buildId', 'Build ' + root + qualifier);
+									project.setProperty('antGenerated.buildId', 'Build ' + root + '.' + qualifier);
 								]]>
 										</script>
 										<echo>Generated build id: "${antGenerated.buildId}"</echo>

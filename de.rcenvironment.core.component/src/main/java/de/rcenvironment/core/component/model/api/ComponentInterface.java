@@ -140,6 +140,13 @@ public interface ComponentInterface {
      *         {@link DataType} {@link NotAValueTD}, otherwise <code>false</code>
      */
     boolean getCanHandleNotAValueDataTypes();
+    
+    /**
+     * This method is only allowed to return true, if the {@link ComponentInterface} specifies a loop driver.
+     * 
+     * @return <code>true</code> if the loop driver supports the discard inner loop runs, otherwise <code>false</code>
+     */
+    boolean getLoopDriverSupportsDiscard();
 
     /**
      * @return <code>true</code> if {@link TypedDatum}s of {@link DataType} {@link NotAValueTD} must

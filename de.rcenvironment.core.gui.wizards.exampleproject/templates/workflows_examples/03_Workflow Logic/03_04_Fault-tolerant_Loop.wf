@@ -253,7 +253,7 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "if RCE.get_execution_count() == 3:\r\n  RCE.fail(\"Example failure\")\r\nif (type(RCE.read_input(\"simulation_start_value\")) is float):\r\n  value = float(RCE.read_input(\"simulation_start_value\"))\r\n  import math\r\n  RCE.write_output(\"simulation_result\", math.sin(value)**2)\r\nelse: \r\n  RCE.write_not_a_value_output(\"simulation_result\")\r\n",
+      "script" : "if RCE.get_execution_count() == 3:\r\n  RCE.fail(\"Example failure\")\r\nelif (type(RCE.read_input(\"simulation_start_value\")) is float):\r\n  value = float(RCE.read_input(\"simulation_start_value\"))\r\n  import math\r\n  RCE.write_output(\"simulation_result\", math.sin(value)**2)\r\nelse: \r\n  RCE.write_not_a_value_output(\"simulation_result\")\r\n",
       "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"

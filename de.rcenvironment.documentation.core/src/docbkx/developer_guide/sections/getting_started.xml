@@ -20,31 +20,34 @@
                         </note></para>
                 </listitem>
                 <listitem>
-                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Kepler SR1
-                        (4.3.1)" or higher from <ulink url="https://www.eclipse.org/downloads/"
-                            >https://www.eclipse.org/downloads/</ulink>. <note>
-                            <para>This guide refers to the Kepler SR1 release and may not match all
-                                future versions of Eclipse.</para>
-                        </note></para>
+                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Mars.2
+                        (4.5.2)" or later from <ulink url="https://www.eclipse.org/downloads/"
+                            >https://www.eclipse.org/downloads/</ulink>. Using the latest Eclipse
+                        release instead is usually fine; however, there may be slight differences
+                        between this guide and that version's UI.</para>
                 </listitem>
                 <listitem>
-                    <para>Set or verify your JDK path in the eclipse.ini file; see <ulink
+                    <para>Adapt your eclipse.ini file (see <ulink
                             url="http://wiki.eclipse.org/Eclipse.ini"
-                            >http://wiki.eclipse.org/Eclipse.ini</ulink> for details. </para>
+                            >http://wiki.eclipse.org/Eclipse.ini</ulink> for details):<itemizedlist>
+                            <listitem>
+                                <para>Set the proper path to your JDK installation (the
+                                        <code>-vm</code> parameter; e.g. <code>&lt;your
+                                        path>/jdk8/bin</code> immediately below the <code>-vm</code>
+                                    line).</para>
+                            </listitem>
+                            <listitem>
+                                <para>Change the maximum heap size to at least 2 GiB (adapt the
+                                        <code>-Xmx</code> line somewhere below <code>-vmargs</code>,
+                                    e.g. to <code>-Xmx2048m</code>, or add it if it does not exist
+                                    yet)</para>
+                            </listitem>
+                        </itemizedlist></para>
                 </listitem>
                 <listitem>
-                    <para>Install these plugins (for example using "Help > Eclipse Marketplace"): </para>
+                    <para>Optionally, install these plugins (for example using "Help > Eclipse
+                        Marketplace"): </para>
                     <itemizedlist>
-                        <listitem>
-                            <para><ulink url="http://subclipse.tigris.org/">Subclipse</ulink> - a
-                                SVN client to check out code from the central repository, and commit
-                                your changes. If you prefer, you can also use another SVN client
-                                like <ulink
-                                    url="http://www.polarion.com/products/svn/subversive.php"
-                                    >Subversive</ulink>. Note that when using Subclipse, you may
-                                have to switch to the "SvnKit" SVN interface in the "Team > SVN"
-                                preferences; this is normal.</para>
-                        </listitem>
                         <listitem>
                             <para><ulink
                                     url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/"
@@ -53,10 +56,10 @@
                         </listitem>
                         <listitem>
                             <para><ulink url="http://eclipse-cs.sourceforge.net/">Checkstyle-CS
-                                </ulink> - Eclipse integration for Checkstyle( version 6.14 is
-                                recommended, see note in "Configuring CheckStyle" ). Not required
-                                for local development, but mandatory before committing changes into
-                                the central code base.</para>
+                                </ulink> - Eclipse integration for Checkstyle (version 6.19 or
+                                above; see the note in section "Configuring CheckStyle" ). Not
+                                required for local development, but mandatory before committing
+                                changes into the central code base.</para>
                         </listitem>
                     </itemizedlist>
                 </listitem>
@@ -64,65 +67,167 @@
         </para>
     </sect2>
     <sect2>
-        <title>Checking out and building RCE</title>
+        <title>Importing and building RCE</title>
         <para>
             <itemizedlist>
+                <listitem>
+                    <para>If you already have other projects in your Eclipse workspace, it is
+                        recommended to create a new workspace for RCE. There are some necessary
+                        global settings that may interfere with the other projects (e.g. the
+                        so-called "target platform").</para>
+                </listitem>
                 <listitem>
                     <para>Disable "Project > Build Automatically" in the main menu to speed up the
                         next steps.</para>
                 </listitem>
                 <listitem>
-                    <para>Open the "SVN Repositories" view (Window > Show View > Other > SVN).
+                    <para>There are currently three ways to properly import the complete RCE source
+                        code: from the SVN repository, from provided zip files, or from GitHub. At
+                        the moment, only the SVN approach provides access to the current development
+                        tree; for the time being, the zip files and the GitHub repository are only
+                        updated on release.</para>
+                </listitem>
+                <listitem>
+                    <para>Option 1 - Importing from the RCE SVN repository, if you have access to it
+                        (as the repository is currently hosted internally at DLR):</para>
+                    <para>
+                        <itemizedlist>
+                            <listitem>
+                                <para>Install <ulink url="http://subclipse.tigris.org/"
+                                        >Subclipse</ulink> (or alternatively <ulink
+                                        url="http://www.polarion.com/products/svn/subversive.php"
+                                        >Subversive</ulink>) if you don't already have an Eclipse
+                                    SVN plugin installed. Note that when using Subclipse, you may
+                                    have to switch to the "SvnKit" SVN interface in the "Team > SVN"
+                                    preferences; this is normal.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Open the "SVN Repositories" view (Window > Show View > Other >
+                                    SVN). </para>
+                            </listitem>
+                            <listitem>
+                                <para>Add
+                                        <code>https://svn.sistec.dlr.de/svn/rce/new/rce/trunk</code>
+                                    as a new SVN repository location.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Expand the location entry and select all projects (the entries
+                                    starting with "de.rcenvironment") inside of it. </para>
+                            </listitem>
+                            <listitem>
+                                <para>Right-click the selected projects, select "Checkout" and
+                                    confirm if necessary. You should now see a long list of projects
+                                    in the "Package Explorer" on the left.<note>
+                                        <para>If the checkout was performed correctly, there should
+                                            be a small "M" (for "Maven") on most projects' icons,
+                                            and also a small "J" (for "Java") on most of
+                                            them.</para>
+                                    </note></para>
+                            </listitem>
+                        </itemizedlist>
                     </para>
                 </listitem>
                 <listitem>
-                    <para>Add <code>https://svn.sistec.dlr.de/svn/rce/new/rce/trunk</code> as a new
-                        SVN repository location.</para>
+                    <para>Option 2 - Importing from the zip files provided with each release:<itemizedlist>
+                            <listitem>
+                                <para>Browse to the "source" sub-folder of a release's download
+                                    location, for example
+                                        <uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/8.1.0/source/</uri>
+                                    for the 8.1.0 release. Download both zip files, "source" and
+                                    "additions"; the latter contains binary artifacts like the
+                                    Dakota and TiGLViewer executables.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Extract both archives into the <emphasis>same</emphasis>
+                                    target directory. You should see a list of more than 200
+                                    sub-folders, all except one beginning with
+                                    "de.rcenvironment".</para>
+                            </listitem>
+                            <listitem>
+                                <para>In Eclipse, select "File > Import > General > Existing
+                                    Projects into Workspace" and choose the directory that you
+                                    unpacked the archives into. You should see a long list of
+                                    projects, once again, all except one beginning with
+                                    "de.rcenvironment". Select all projects confirm the import.<note>
+                                        <para>Make sure not to change the "Search for nested
+                                            projects" option in the import dialog; it must
+                                                <emphasis>not</emphasis> be selected/checked.</para>
+                                    </note></para>
+                            </listitem>
+                        </itemizedlist></para>
                 </listitem>
                 <listitem>
-                    <para>Expand the location entry and select all projects (the entries starting
-                        with "de.rcenvironment") inside of it. </para>
+                    <para>Option 3 - Importing from GitHub:</para>
+                    <itemizedlist>
+                        <listitem>
+                            <para>For successfully importing the RCE project, you need a Git client
+                                with LFS support.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Clone <code>https://github.com/rcenvironment/rce</code> into a
+                                directory of your choice</para>
+                        </listitem>
+                        <listitem>
+                            <para>Check out the <code>master</code> branch; by default, this points
+                                to the source code of the latest release.</para>
+                        </listitem>
+                        <listitem>
+                            <para>In Eclipse, select "File > Import > General > Existing Projects
+                                into Workspace" and choose the directory that you unpacked the
+                                archives into. You should see a long list of projects, once again,
+                                all except one beginning with "de.rcenvironment". Select all
+                                projects confirm the import.<note>
+                                    <para>Make sure not to change the "Search for nested projects"
+                                        option in the import dialog; it must
+                                            <emphasis>not</emphasis> be selected/checked.</para>
+                                </note></para>
+                        </listitem>
+                    </itemizedlist>
                 </listitem>
                 <listitem>
-                    <para>Right-click the selected projects, select "Checkout" and confirm if
-                        necessary. You should now see a long list of projects in the "Package
-                        Explorer" on the left.<note>
-                            <para>If the checkout was performed correctly, there should be a small
-                                "M" (for "Maven") on most projects' icons, and also a small "J" (for
-                                "Java") on most of them.</para>
-                        </note></para>
-                </listitem>
-                <listitem>
-                    <para>Set the Eclipse target platform. To get started quickly, use a precompiled
-                        target platform: </para>
+                    <para>After you have successfully imported the RCE projects using one of the
+                        above methods, the next step is to set the RCE target platform in your
+                        workspace. A target platform provides external artifacts like the Eclipse
+                        RCP framework and various libraries. To get started with RCE development,
+                        the easiest way is to use a precompiled target platform. For convenience,
+                        there is a Eclipse .target file inside the code base that always points at
+                        an appropriate precompiled target platform release. Follow these steps to
+                        apply it:</para>
                     <para>
                         <itemizedlist>
                             <listitem>
                                 <para>In the Project Explorer, navigate to the
-                                        <code>de.rcenvironment/eclipse/tp</code> folder.</para>
+                                        <code>de.rcenvironment/eclipse/tp/remote</code>
+                                    folder.</para>
                             </listitem>
                             <listitem>
-                                <para>Open the
-                                        <code>remote/default_release_or_snapshot.all.target</code>
-                                    file by double-clicking it.</para>
+                                <para>Open the <code>default_release_or_snapshot.target</code> file
+                                    by double-clicking it.</para>
                             </listitem>
                             <listitem>
                                 <para>Select the "Locations" list entry starting with
                                         "<code>https://software.dlr.de/</code>" and click "Update".
-                                    After a while, the text below the entry should change to "RCE
-                                    Combined Platform Feature &lt;version tag>".</para>
+                                    After a while, the list entry's description should end with
+                                    something similar to "242 plugins available" (the exact number
+                                    may vary). Save the file if necessary.</para>
                             </listitem>
                             <listitem>
-                                <para>Click "set as target platform" in the top right corner. You
+                                <para>Click "Set as target platform" in the top right corner. You
                                     can close the .target file after this.</para>
                             </listitem>
                         </itemizedlist>
                     </para>
                 </listitem>
                 <listitem>
+                    <para>It is currently necessary to set the global compiler compliance level to
+                        1.7. To apply this, select "Window > Preferences" from the menu, and
+                        navigate to the "Java > Compiler" tab. (This step will become unnecessary in
+                        the upcoming 9.0.0 release.)</para>
+                </listitem>
+                <listitem>
                     <para>Enable "Project > Build Automatically". Eclipse will start building all
-                        projects against the new target platform (which basically provides libraries
-                        and other artifacts). </para>
+                        projects against the new target platform, which provides all required
+                        libraries and OSGi bundles.</para>
                 </listitem>
                 <listitem>
                     <para>At this point, most projects will have a red error marker. To fix this,
@@ -240,13 +345,17 @@
         </itemizedlist>
         <para>
         <note>
-            <para>We are currently using version 6.14 of CheckStyle. If you are using a newer version, you might see additional error markers.</para>
+            <para>We are currently using version 6.19 of the Eclipse CheckStyle plugin within the
+                    development team. Using a newer version (e.g. 8.0) works as well, but you may
+                    see error markers for constructs that do not actually violate the RCE code
+                    guidelines. We will most likely adapt/migrate the CheckStyle settings in the
+                    near future.</para>
         </note>
         </para>
     </sect2>
     <sect2>
         <title>Building a standalone RCE version from Eclipse</title>
-        <para>You can also build a standalone version of  RCE from Eclipse using Maven.</para>
+        <para>You can also build a standalone version of RCE from Eclipse using Maven.</para>
         <itemizedlist>
             <listitem>
                 <para>There are several pre-defined build configurations for RCE. To find them,
@@ -263,29 +372,34 @@
                     repository", and then building the actual product on top of it. There are two
                     possible approaches for this:<itemizedlist>
                         <listitem>
-                            <para>The proper way to build completely from source is to compile a
-                                local platform repository. This is simply done by navigaring to the
-                                    "<code>de.rcenvironment.platform/eclipse</code> folder (from the
-                                root of your workspace) and executing the single .launch file that
-                                is located there. On the first run, the build process may download
-                                quite a few resources from Maven Central; subsequent runs should be
-                                fairly quick. Once the build has finished (there should be a
-                                "SUCCESS" message near the bottom of the console output), you can
-                                build the main product using the .launch files in the "<code>using
-                                    local repository builds</code>" sub-folder of the previously
-                                mentioned location.</para>
-                        </listitem>
-                        <listitem>
                             <para>Using the .launch files in the "<code>using default remote
                                     repository builds</code>" sub-folder, it is possible to avoid
                                 building your own platform repository, and fetch a pre-built one
                                 from the main repository servers (currently hosted at DLR) instead.
                                 One reason for this can be be to ensure that you are building
-                                against the exact same platform repository as some previous RCE
-                                release.</para>
+                                against the exact same platform repository as a certain RCE release.
+                                Another reason is to simplify your local development setup if you
+                                have no reason to customize the target platform setup (e.g. by
+                                adding libraries).</para>
+                        </listitem>
+                        <listitem>
+                            <para>The most flexible way to build RCE from source is to compile a
+                                local platform repository yourself. This is simply done by
+                                navigaring to the "<code>de.rcenvironment.platform/eclipse</code>
+                                folder (from the root of your workspace) and executing the single
+                                .launch file that is located there. On the first run, the build
+                                process may download quite a few resources from Maven Central;
+                                subsequent runs should be fairly quick. Once the build has finished
+                                (there should be a "SUCCESS" message near the bottom of the console
+                                output), you can build the main product using the .launch files in
+                                the "<code>using local repository builds</code>" sub-folder of the
+                                previously mentioned location.</para>
                         </listitem>
                     </itemizedlist></para>
-                <para>In both cases, running the "<code>RCE - build default product (snapshot, using
+            </listitem>
+            <listitem>
+                <para>Regardless of whether you use a pre-build platform repository or compile one
+                    locally, running the "<code>RCE - build default product (snapshot, using
                         &lt;...>)</code> .launch file is the best way to produce a standard local
                     product build. The other .launch files are intended for more specific use
                     cases.</para>
@@ -299,8 +413,19 @@
                     see it.)</para>
             </listitem>
         </itemizedlist>
-        <note>
-            <para>TODO: document building from the command line</para>
-        </note>
+    </sect2>
+    <sect2>
+        <title>Building from the command line</title>
+        <para>Building RCE completely from the command line is somewhat complicated as it is a
+            multi-step process in which later steps must reference the output artifacts of previous
+            steps. To simplify this, the command-line build will be further encapsulated by
+            front-end scripts, which will then be documented here. In the meantime, please use the
+            steps described above to trigger the build process from Eclipse.</para>
+        <para>Note that both the Eclipse-based and the command-line build trigger the same Maven
+            steps in the background. Because of this, the build triggered from Eclipse produces the
+            exact same artifacts as a command-line build (which is used in Continuous Integration
+            and for releases).<note>
+                <para>TODO document the new command-line build when ready</para>
+            </note></para>
     </sect2>
 </sect1>

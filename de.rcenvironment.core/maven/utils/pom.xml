@@ -46,8 +46,8 @@
 										</replace>
 										
 										<!-- POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}.qualifier"
-											value="${rce.core.version.new}.qualifier">
+										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
+											value="${rce.core.version.new}-SNAPSHOT">
 											<include name="de.rcenvironment.core.*/pom.xml" />
 											<include name="de.rcenvironment/maven/modules/repository.mainProduct/pom.xml" />
 										</replace>
@@ -81,8 +81,8 @@
 											token="Version: ${rce.core.version.old}" value="Version: ${rce.core.version.new}" />
 
 										<!-- file set POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}.qualifier"
-											value="${rce.core.version.new}.qualifier">
+										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
+											value="${rce.core.version.new}-SNAPSHOT">
 											<include name="de.rcenvironment.filesets.*/pom.xml" />
 										</replace>
 										<!-- file set feature.xml versions -->
@@ -104,8 +104,8 @@
 											</fileset>
 										</replaceregexp>
 										<!-- documentation POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}.qualifier"
-											value="${rce.core.version.new}.qualifier">
+										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
+											value="${rce.core.version.new}-SNAPSHOT">
 											<include name="de.rcenvironment.documentation.*/pom.xml" />
 										</replace>
 										<!-- documentation feature.xml versions -->
@@ -128,8 +128,8 @@
 										</replaceregexp>
 
 										<!-- TODO temporary for 2.5.x: component and component feature POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}.qualifier"
-											value="${rce.core.version.new}.qualifier">
+										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
+											value="${rce.core.version.new}-SNAPSHOT">
 											<include name="de.rcenvironment.components.*/pom.xml" />
 											<include name="de.rcenvironment.componentgroups.*/pom.xml" />
 										</replace>

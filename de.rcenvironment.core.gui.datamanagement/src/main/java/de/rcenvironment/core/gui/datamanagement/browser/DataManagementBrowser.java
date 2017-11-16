@@ -564,7 +564,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     filename = browserNode.getTitle();
                 }
                 filename = filename.replaceAll(
-                    "[^-\\s\\(\\)._a-zA-Z0-9]", "_");
+                    "[^-\\s\\(\\)._a-zA-Z0-9]", "_").trim();
                 final File nodeFile = findUniqueFilename(directory,
                     filename);
                 if (!browserNode.areChildrenKnown()) {

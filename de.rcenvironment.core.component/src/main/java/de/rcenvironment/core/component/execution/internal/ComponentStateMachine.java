@@ -71,10 +71,9 @@ import de.rcenvironment.toolkit.utils.common.IdGenerator;
  * @author Doreen Seider
  * @author Robert Mischke (tweaked error handling)
  * 
- * Note: The component state transition graph created with the definition of the valid state transition seems to have some flaws. I
- * wouldn't trust it to be rock-solid. Nevertheless, it works right now and I wouldn't touch it except the workflow engine I gets a
- * re-design instead of replacing it with a workflow engine II.
- * --seid_do
+ *         Note: The component state transition graph created with the definition of the valid state transition seems to have some flaws. I
+ *         wouldn't trust it to be rock-solid. Nevertheless, it works right now and I wouldn't touch it except the workflow engine I gets a
+ *         re-design instead of replacing it with a workflow engine II. --seid_do
  * 
  */
 public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<ComponentState, ComponentStateMachineEvent> {
@@ -484,7 +483,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private void completeVerificationAsync(boolean outputsApproved) {
         ComponentExecutionType compExeType = ComponentExecutor.ComponentExecutionType.CompleteVerification;
         if (outputsApproved) {
-            compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_APPROVED);            
+            compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_APPROVED);
         } else {
             compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_REJECTED);
         }
@@ -1186,6 +1185,10 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                     compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
                         .getComponentRevision().getComponentInterface();
                 Map<String, EndpointDatum> endpointDatums = compExeRelatedInstances.compExeScheduler.fetchEndpointDatums();
+
+                // In an earlier version of this code it was assumed that all loop driver can handle NotAValue data types. Now, we
+                // distinguish between receiving NotAValue datums at an outer or an inner loop. If a loop driver receives a NotAValue datum
+                // at an outer loop input, this capability needs to be defined the same as done for regular components.
                 if (compInterface.getCanHandleNotAValueDataTypes()
                     || (compInterface.getIsLoopDriver() && wasNotAValueReceivedOnlyAtSameLoopInput(endpointDatums))) {
                     requestProcessingInputDatums(endpointDatums);
@@ -1237,7 +1240,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             }
             return true;
         }
-        
+
         private void forwardInternalTD(InternalTDImpl internalTD) {
             Queue<WorkflowGraphHop> hopsToTraverse = internalTD.getHopsToTraverse();
             WorkflowGraphHop currentHop = hopsToTraverse.poll();
@@ -1259,7 +1262,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         private void forwardNotAValueData(EndpointDatum nAVEndpointDatum) {
             ComponentInterface compInterface =
                 compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
-                .getComponentRevision().getComponentInterface();
+                    .getComponentRevision().getComponentInterface();
             for (EndpointDescription output : compExeRelatedInstances.compExeCtx.getComponentDescription()
                 .getOutputDescriptionsManager().getEndpointDescriptions()) {
                 if (!compInterface.getIsLoopDriver()

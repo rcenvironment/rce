@@ -414,7 +414,7 @@ public final class DMBrowserNode {
     private void writeTempFileForFileContent(String filename, String text) {
         File tempFile = null;
         try {
-            tempFile = createTempFileForFileContent(filename);
+            tempFile = createTempFileForFileContent(filename.trim());
             if (!tempFile.exists()) {
                 FileUtils.write(tempFile, text);
             }

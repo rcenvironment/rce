@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.sql.connectors.mysql.feature</artifactId>
 	<name>RCE File Sets - MySQL JDBC Connector</name>
-	<version>8.1.0-SNAPSHOT</version>
+	<version>8.1.1-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>
