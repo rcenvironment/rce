@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server Tests
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh.tests
-Bundle-Version: 8.1.0.qualifier
+Bundle-Version: 8.1.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Require-Bundle: de.rcenvironment.core.utils.testing

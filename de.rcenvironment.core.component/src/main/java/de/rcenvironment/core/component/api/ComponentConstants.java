@@ -93,10 +93,15 @@ public final class ComponentConstants {
     public static final String COMPONENT_ICON_BUNDLE_NAME_KEY = "rce.component.icon.bundlename";
 
     /**
-     * Key for component's indefinite data type behevior.
+     * Key for component's indefinite data type behavior.
      */
     public static final String COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES = "rce.component.canHandleNotAValueDataTypes";
 
+    /**
+     * Key that specifies if a loop driver supports discard of inner loop runs.
+     */
+    public static final String LOOP_DRIVER_SUPPORTS_DISCARD = "rce.component.loopDriverSupportsDiscard";
+    
     /**
      * Key for component's color.
      */

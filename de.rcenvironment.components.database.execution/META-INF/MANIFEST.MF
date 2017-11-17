@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Database Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.database.execution
-Bundle-Version: 8.1.0.qualifier
+Bundle-Version: 8.1.1.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.rcenvironment.components.database.common,

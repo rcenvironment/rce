@@ -32,14 +32,14 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  * @author Sascha Zur
  * 
- * Note: {@link AbstractLoopComponent} and {@link AbstractNestedLoopComponent} should be merged as there is no difference between
- * them anymore: Every loop component is also nested-loop-capable and I don't expect it to change in the future. Having those two
- * classes brings in a complexity that is very hard to handle right now.
+ *         Note: {@link AbstractLoopComponent} and {@link AbstractNestedLoopComponent} should be merged as there is no difference between
+ *         them anymore: Every loop component is also nested-loop-capable and I don't expect it to change in the future. Having those two
+ *         classes brings in a complexity that is very hard to handle right now.
  * 
- * All of the loop behavior including reset of nested loops, handling fault-tolerance (at least most of it), etc. is done on component
- * level. I would suggest to move it to the workflow engine level. One required step in that direction might be to introduce different
- * kind of components: loops components, integrated tools, "simple" ones, etc. so that the engine is able to treat them differently.
- * --seid_do
+ *         All of the loop behavior including reset of nested loops, handling fault-tolerance (at least most of it), etc. is done on
+ *         component level. I would suggest to move it to the workflow engine level. One required step in that direction might be to
+ *         introduce different kind of components: loops components, integrated tools, "simple" ones, etc. so that the engine is able to
+ *         treat them differently. --seid_do
  */
 public abstract class AbstractLoopComponent extends DefaultComponent {
 
@@ -60,7 +60,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     protected LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfNAV;
 
     protected ComponentException compExceptionToThrow = null;
-    
+
     protected boolean loopFailed = false;
 
     private boolean anyRunFailedNAV = false;
@@ -201,20 +201,21 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
 
     private boolean discardLoopRun() throws ComponentException {
         boolean handled;
-        String inputName1 = guardAgainstNaVValueAtForwardingInputs(componentContext.getInputsWithDatum());
-        if (inputName1 != null) {
-            NotAValueTD readInput = (NotAValueTD) componentContext.readInput(inputName1);
+        String inputName = guardAgainstNaVValueAtForwardingInputs(componentContext.getInputsWithDatum());
+        if (inputName != null) {
+            NotAValueTD readInput = (NotAValueTD) componentContext.readInput(inputName);
+            // TODO only the error message differs, but the same code is called -> only set the error message in the case blocks
             switch (readInput.getCause()) {
             case InvalidInputs:
                 handled = handleFailure(new ComponentException(StringUtils.format("Received value of type 'Not a value' at input"
                     + " '%s' that is not allowed to be forwarded; most likely reason: sent by a component of a fault-tolerant loop",
-                    inputName1)));
+                    inputName)));
                 break;
             case Failure:
             default:
                 handled = handleFailure(new ComponentException(
                     StringUtils.format("Failure in fault-tolerant loop but loop run cannot be discarded as no reasonable"
-                        + " value to forward exists for '%s' now", inputName1)));
+                        + " value to forward exists for '%s' now", inputName)));
                 break;
             }
         } else {
@@ -222,6 +223,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
                 + "-> discard evaluation loop run (as defined by behavior declaration in configuration tab 'Fault Tolerance')");
             handled = false;
         }
+        // TODO this method return always false -> get rid of the handled variable
         return handled;
     }
 
@@ -261,6 +263,9 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         }
     }
 
+    /**
+     * @return Always false.
+     */
     private boolean handleFailure(ComponentException e) throws ComponentException {
         if (isNestedLoop()) {
             loopFailed = true;
@@ -278,7 +283,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     private boolean isFinallyFail() {
         return Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV));
     }
-    
+
     protected boolean isNestedLoop() {
         return Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
     }
@@ -293,6 +298,12 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         }
     }
 
+    /**
+     * This method checks if a NotAValue data type was received on any of the forwarding inputs.
+     * 
+     * @return null, if no NotAValue data was received on any forwarding input, otherwise the name of the input that received the NotAValue
+     *         type.
+     */
     private String guardAgainstNaVValueAtForwardingInputs(Set<String> inputsWithDatum) throws ComponentException {
         for (String inputName : inputsWithDatum) {
             if (componentContext.getDynamicInputIdentifier(inputName).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
@@ -305,6 +316,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         return null;
     }
 
+    // reset is always called if the inner loop finished one iteration. The inner loop is then reseted for the next iteration.
     @Override
     public void reset() throws ComponentException {
         if (loopFailed) {
@@ -312,10 +324,17 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
             loopFailed = false;
             ComponentException tempE = compExceptionToThrow;
             compExceptionToThrow = null;
-            if (isFailLoopOnly()) {
+
+            boolean failureCausedByCompFailure = hasNaVInputValuesCausedByComponentFailure(componentContext.getInputsWithDatum());
+            // In an earlier version this if clause was independent of the failure cause. However, since a component failure indicates
+            // a more severe problem, like a logical error in the workflow, only NaV:InvalidInputs failures should be forwardable to the
+            // outer loop.
+            if (isFailLoopOnly() && !failureCausedByCompFailure) {
                 componentLog.componentInfo(tempE.getMessage()
                     + "-> forward to outer loop (as defined by behavior declaration in configuration tab 'Fault Tolerance')");
-                writeNAVValueToOuterLoop();                
+
+                // writes NaV:InvalidInputs to all outputs, this effectively forwards the failure to the outer loop
+                writeNAVValueToOuterLoop();
             } else {
                 throw tempE;
             }
@@ -354,7 +373,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     protected boolean hasForwardingStartInputs() {
         Set<String> inputs = componentContext.getInputs();
         for (String input : inputs) {
-            if (componentContext.isDynamicInput(input) 
+            if (componentContext.isDynamicInput(input)
                 && componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD)) {
                 return true;
             }

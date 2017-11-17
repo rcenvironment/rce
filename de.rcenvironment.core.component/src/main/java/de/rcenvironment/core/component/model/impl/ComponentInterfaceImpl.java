@@ -82,6 +82,8 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
     private boolean isDeprecated = false;
 
     private boolean canHandleNotAValueDataTypes = false;
+    
+    private boolean loopDriverSupportsDiscard = false;
 
     private boolean isLoopDriver = false;
 
@@ -296,6 +298,15 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
 
     public void setCanHandleNotAValueDataTypes(boolean canHandleNotAValueDataTypes) {
         this.canHandleNotAValueDataTypes = canHandleNotAValueDataTypes;
+    }
+    
+    @Override
+    public boolean getLoopDriverSupportsDiscard() {
+        return loopDriverSupportsDiscard;
+    }
+    
+    public void setLoopDriverSupportsDiscard(boolean loopDriverSupportsDiscard) {
+        this.loopDriverSupportsDiscard = loopDriverSupportsDiscard;
     }
 
     @Override

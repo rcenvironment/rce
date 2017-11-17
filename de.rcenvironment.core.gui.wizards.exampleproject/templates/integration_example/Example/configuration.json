@@ -35,7 +35,7 @@
     "endpointDataType" : "Float",
     "endpointName" : "x_square"
   } ],
-  "postScript" : "print \"Prost script, calculating x^2\"\r\nRCE.write_output(\"x_square\", RCE.read_input(\"x\")**2)",
+  "postScript" : "print \"Post script, calculating x^2\"\r\nRCE.write_output(\"x_square\", RCE.read_input(\"x\")**2)",
   "preScript" : "print \"This is an example pre script\"",
   "toolDescription" : "This tool is just for demonstrating tool integration in the Workflow Examples Project.",
   "toolIconPath" : "",

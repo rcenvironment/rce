@@ -12,6 +12,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -51,17 +52,17 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
         this.parentComposite = parent;
 
         TabbedPropertySheetWidgetFactory toolkit = aTabbedPropertySheetPage.getWidgetFactory();
-        Composite content = new LayoutComposite(parent);
+        Composite content = new LayoutComposite(parent, SWT.NONE);
 
         endpointsComposite = toolkit.createFlatFormComposite(content);
         GridLayout layout = new GridLayout(columns, true);
         endpointsComposite.setLayout(layout);
 
         GridData layoutData;
+        layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
 
         for (EndpointSelectionPane pane : panes) {
             pane.createControl(endpointsComposite, pane.paneTitle, toolkit);
-            layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
             pane.getControl().setLayoutData(layoutData);
         }
     }

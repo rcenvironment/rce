@@ -38,9 +38,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 @LazyDisposal
 public class ParametricStudyComponent extends AbstractNestedLoopComponent {
-    
+
     private static final String TRUE = "true";
-    
+
     private static final String GET_STUDYPARAMETERS_STRING = "Not-a-value at '%s' Input.";
 
     private static final int MINUS_ONE = -1;
@@ -62,9 +62,9 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
     private boolean fitStepSizeToBounds = true;
 
     private int stepCount = 1;
-    
+
     private boolean isDone;
-    
+
     private volatile boolean canceled = false;
 
     private static StudyStructure createStructure(final ComponentContext compExeCtx) {
@@ -112,7 +112,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             setComponentDone(false);
         }
     }
-    
+
     @Override
     public void processInputsNestedComponentSpecific() throws ComponentException {
         if (stepCount == 1) { // this is only the case if any of the study parameters is set via an Input
@@ -123,14 +123,14 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                 runFullStudyAtOnce();
             }
         }
-        
+
         if (componentContext.isOutputClosed(ParametricStudyComponentConstants.OUTPUT_NAME_DV)) {
             throw new ComponentException(StringUtils.format("Too many values received. "
                 + "Expect exactly one value per input per design variable sent. "
                 + "%s design variables(s) sent and %s value(s) received", steps, steps + 1));
         }
         // send input parameters to study service for monitoring purposes
-        final Map<String, Serializable> values = new HashMap<String, Serializable>();
+        final Map<String, Serializable> values = new HashMap<>();
         // input parameters are response to previous iteration
         if (fitStepSizeToBounds) {
             values.put(ParametricStudyComponentConstants.OUTPUT_NAME_DV, getLastDesignVariableFittingStepSizeToBounds());
@@ -156,10 +156,10 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             }
         }
         study.add(new StudyDataset(values));
-        
+
         setComponentDone(allDesignVariablesSent());
     }
-    
+
     @Override
     protected void sendValuesNestedComponentSpecific() {
         if (fitStepSizeToBounds) {
@@ -168,7 +168,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             sendDesignVariableToOutput(calculateDesignVariableNotFittingStepSizeToBounds());
         }
     }
-    
+
     @Override
     public void onStartInterrupted(ThreadHandler executingThreadHandler) {
         canceled = true;
@@ -227,8 +227,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             ParametricStudyComponentConstants.OUTPUT_NAME_DV, value));
         stepCount++;
     }
-    
-    
+
     private double calculateInitialDesignVariable() {
         if (fitStepSizeToBounds) {
             return calculateInitialDesignVariableFittingStepSizeToBounds();
@@ -236,7 +235,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             return calculateInitialDesignVariableNotFittingStepSizeToBounds();
         }
     }
-    
+
     private double calculateInitialDesignVariableFittingStepSizeToBounds() {
         designVariable = from;
         return designVariable;
@@ -251,23 +250,23 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             return designVariable;
         }
     }
-    
+
     private double getLastDesignVariableFittingStepSizeToBounds() {
         return designVariable;
     }
-    
+
     private double calculateInitialDesignVariableNotFittingStepSizeToBounds() {
         return from;
     }
-    
+
     private double calculateDesignVariableNotFittingStepSizeToBounds() {
         return from + (stepCount - 1) * stepSize;
     }
-    
+
     private double getLastDesignVariableNotFittingStepSizeToBounds() {
         return from + (stepCount - 1) * stepSize;
     }
-    
+
     private boolean allDesignVariablesSent() {
         if (fitStepSizeToBounds) {
             if (stepCount <= steps) {
@@ -280,32 +279,31 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
         }
         return true;
     }
-    
+
     private void setComponentDone(boolean done) {
         isDone = done;
     }
-    
-    
+
     private boolean hasStudyParameterInputs() {
         for (String inputName : componentContext.getInputs()) {
             if (componentContext.getDynamicInputIdentifier(inputName)
-                .equals(ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS)){
+                .equals(ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS)) {
                 return true;
             }
         }
         return false;
     }
-    
+
     private boolean hasEvaluationResultFromLoopInput() {
         for (String inputName : componentContext.getInputs()) {
             if (componentContext.getDynamicInputIdentifier(inputName)
-                .equals(ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER)){
+                .equals(ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER)) {
                 return true;
             }
         }
         return false;
     }
-    
+
     private void setStudyParameters() throws ComponentException {
         try {
             if (componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
@@ -317,10 +315,10 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                     throw new ComponentException(StringUtils.format(GET_STUDYPARAMETERS_STRING,
                         ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE));
                 case Integer:
-                    value = (double) ((IntegerTD) input).getIntValue();
+                    value = ((IntegerTD) input).getIntValue();
                     break;
                 case Float:
-                    value =  (double) ((FloatTD) input).getFloatValue();
+                    value = ((FloatTD) input).getFloatValue();
                     break;
                 default:
                     value = 0;
@@ -339,10 +337,10 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                     throw new ComponentException(StringUtils.format(GET_STUDYPARAMETERS_STRING,
                         ParametricStudyComponentConstants.INPUT_NAME_TO_VALUE));
                 case Integer:
-                    value = (double) ((IntegerTD) input).getIntValue();
+                    value = ((IntegerTD) input).getIntValue();
                     break;
                 case Float:
-                    value =  (double) ((FloatTD) input).getFloatValue();
+                    value = ((FloatTD) input).getFloatValue();
                     break;
                 default:
                     value = 0;
@@ -361,10 +359,10 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                     throw new ComponentException(StringUtils.format(GET_STUDYPARAMETERS_STRING,
                         ParametricStudyComponentConstants.INPUT_NAME_STEPSIZE_VALUE));
                 case Integer:
-                    value = (double) ((IntegerTD) input).getIntValue();
+                    value = ((IntegerTD) input).getIntValue();
                     break;
                 case Float:
-                    value =  (double) ((FloatTD) input).getFloatValue();
+                    value = ((FloatTD) input).getFloatValue();
                     break;
                 default:
                     value = 0;
@@ -374,34 +372,34 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                 stepSize = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
                     ParametricStudyComponentConstants.OUTPUT_METATDATA_STEPSIZE));
             }
-            
+
         } catch (NoSuchElementException e) {
-            throw new ComponentException("Expected Input not connected.", e.getCause());
+            throw new ComponentException("Expected Input not connected: " + e.getMessage(), e.getCause());
         }
     }
-    
+
     private void checkStepSize() throws ComponentException {
         if (stepSize <= 0) {
             throw new ComponentException(StringUtils.format("Invalid step size: %f , must be > 0", stepSize));
         }
-        
+
         if (from > to) {
             stepSize = stepSize * MINUS_ONE;
         }
     }
-    
+
     private void initilizeStudy() throws ComponentException {
         study = parametricStudyService.createPublisher(
             componentContext.getExecutionIdentifier(),
             componentContext.getInstanceName(),
             createStructure(componentContext));
 
-        double stepsDouble = ((Double) Math.floor((to - from) / stepSize)) + 1; // including first AND last
-        if (stepsDouble >= Long.MAX_VALUE){
+        double stepsDouble = (Math.floor((to - from) / stepSize)) + 1; // including first AND last
+        if (stepsDouble >= Long.MAX_VALUE) {
             throw new ComponentException("The number of values produced by the Component exceeds the numerical limits.");
         }
         steps = (long) stepsDouble;
-        
+
         componentLog.componentInfo(StringUtils.format("Sampling from %s to %s with step size %s -> %d value(s)",
             from, to, stepSize, steps));
 
@@ -416,7 +414,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                     ParametricStudyComponentConstants.OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS));
         }
     }
-    
+
     private boolean designVariableIsInBounds(double designVariableToTest) {
         if (stepSize < 0) {
             return designVariableToTest <= from && designVariableToTest >= to;
@@ -424,6 +422,5 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             return designVariableToTest >= from && designVariableToTest <= to;
         }
     }
-    
-    
+
 }

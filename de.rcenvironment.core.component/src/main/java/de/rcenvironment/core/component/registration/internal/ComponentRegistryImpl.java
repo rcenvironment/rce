@@ -507,6 +507,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         componentInterface.setShape(getComponentShape(componentReference));
         componentInterface.setCanHandleNotAValueDataTypes(getCanHandleNotAValueDataTypes(componentReference));
         componentInterface.setIsLoopDriver(getIsResetSink(componentReference));
+        componentInterface.setLoopDriverSupportsDiscard(getLoopDriverSupportsDiscard(componentReference));
 
         try {
             componentInterface
@@ -569,6 +570,11 @@ public class ComponentRegistryImpl implements ComponentRegistry {
     private boolean getCanHandleNotAValueDataTypes(ServiceReference<?> componentReference) {
         return Boolean.valueOf(
                 (String) componentReference.getProperty(ComponentConstants.COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES));
+    }
+    
+    private boolean getLoopDriverSupportsDiscard(ServiceReference<?> componentReference) {
+        return Boolean.valueOf(
+            (String) componentReference.getProperty(ComponentConstants.LOOP_DRIVER_SUPPORTS_DISCARD));
     }
 
     private boolean getIsResetSink(ServiceReference<?> componentReference) {

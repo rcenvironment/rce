@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.tiglviewer.gui</artifactId>
 	<name>TiGL Viewer GUI Bundle</name>
-	<version>8.1.0-SNAPSHOT</version>
+	<version>8.1.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -339,6 +339,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                                 list.setMinSize(list.computeSize(SWT.DEFAULT, SWT.DEFAULT, true));
                                 list.layout();
 
+                                rootComposite.pack();
+                                rootComposite.setBounds(rootComposite.getParent().getBounds());
                                 refreshAction.setEnabled(!workflowTerminated);
                             }
                         }

@@ -323,7 +323,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     @Override
     protected boolean needToRun(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
-        if (isAlwaysRun()) {
+        if (isAlwaysRun() || isMockMode()) {
             return true;
         }
         try {

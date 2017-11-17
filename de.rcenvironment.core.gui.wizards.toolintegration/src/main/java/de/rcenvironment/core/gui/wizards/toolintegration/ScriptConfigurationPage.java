@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.DialogPage;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
@@ -44,7 +45,6 @@ import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWiza
  * @author Sascha Zur
  */
 public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
-
 
     /** Constant. */
     public static final int INPUT_COMBO = 0;
@@ -279,7 +279,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
         winEnabledButton.setSelection(windowsEnabled);
         linuxEnabledButton.setSelection(linuxEnabled);
-        
+
         textFields[0].setEditable(linuxEnabled);
         textFields[0].setEnabled(linuxEnabled);
         textFields[textFields.length - 1].setEditable(windowsEnabled);
@@ -427,7 +427,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         scriptAreaData.heightHint = TEXTFIELD_HEIGHT;
         scriptArea.setLayoutData(scriptAreaData);
         scriptArea.addModifyListener(new TextAreaModifyListener(propertyKey));
-        
+
         textFields[buttonIndex] = scriptArea;
         if (buttonIndex == 0) {
             addScriptSelectButtonListener();
@@ -509,20 +509,27 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     private void validateIsMockScriptConfiguration() {
-        if (mockModeCheckBox.getSelection() && textFields[3].getText().isEmpty() && !mockToolOutputFilenameText.isVisible()) {
-            setMessage("Tool run imitation mode is supported but no tool run imitation script is configured.", DialogPage.ERROR);
-            setPageComplete(false);
-        } else if (mockModeCheckBox.getSelection() && mockToolOutputFilenameText.isVisible()
-            && mockToolOutputFilenameText.getText().isEmpty()) {
-            setMessage("Tool run imitation mode is supported but no dummy tool output filename is configured.", DialogPage.ERROR);
-            setPageComplete(false);
+        if (ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE
+            .equals(configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE))
+            || configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE) == null) {
+            if (mockModeCheckBox.getSelection() && textFields[3].getText().isEmpty() && !mockToolOutputFilenameText.isVisible()) {
+                setMessage("Tool run imitation mode is supported but no tool run imitation script is configured.", IMessageProvider.ERROR);
+                setPageComplete(false);
+            } else if (mockModeCheckBox.getSelection() && mockToolOutputFilenameText.isVisible()
+                && mockToolOutputFilenameText.getText().isEmpty()) {
+                setMessage("Tool run imitation mode is supported but no dummy tool output filename is configured.", IMessageProvider.ERROR);
+                setPageComplete(false);
+            } else {
+                setMessage(null, IMessageProvider.NONE);
+                setPageComplete(true);
+            }
         } else {
-            setMessage(null, DialogPage.NONE);
+            setMessage(null, IMessageProvider.NONE);
             setPageComplete(true);
         }
     }
 
-    private void createInsertFields(int buttonIndex, Composite client, 
+    private void createInsertFields(int buttonIndex, Composite client,
         final LineNumberStyledText scriptAreaWin, final LineNumberStyledText scriptArea) {
         Composite buttonComposite = new Composite(client, SWT.NONE);
         buttonComposite.setLayout(new GridLayout(2, false));
@@ -628,7 +635,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
 
     }
-    
+
     private void addScriptSelectButtonListener() {
         winEnabledButton.addSelectionListener(new SelectionListener() {
 
@@ -693,12 +700,12 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         @Override
         public void modifyText(ModifyEvent arg0) {
             Object obj = arg0.getSource();
-            if (obj instanceof Text){
+            if (obj instanceof Text) {
                 configurationMap.put(key, ((Text) obj).getText());
-            } else if (obj instanceof LineNumberStyledText){
+            } else if (obj instanceof LineNumberStyledText) {
                 configurationMap.put(key, ((LineNumberStyledText) obj).getText());
             }
-            
+
             updatePageComplete();
         }
     }

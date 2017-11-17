@@ -253,7 +253,7 @@ public class OutputWriterComponent extends DefaultComponent {
             // Check for invalid filename
             List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
             if (forbiddenFilenames.contains(filename) || filename.contains("/") || filename.contains("\\")) {
-                throw new ComponentException(StringUtils.format("Failed to write file of input '%s' beacuse '%s' "
+                throw new ComponentException(StringUtils.format("Failed to write file of input '%s' because '%s' "
                     + "is a forbidden filename", inputName, filename));
             }
             incFileOrDir = new File(path);
