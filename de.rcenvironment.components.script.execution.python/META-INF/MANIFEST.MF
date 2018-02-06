@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.python
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.0.qualifier
 Export-Package: de.rcenvironment.components.script.execution.python
 Service-Component: OSGI-INF/*.xml
 Bundle-ClassPath: .

@@ -9,13 +9,14 @@
 package de.rcenvironment.core.component.execution.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,10 +33,11 @@ import junit.framework.Assert;
  * 
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Tobias Brieden
  */
 public class WorkflowGraphTest {
 
-    private static final String ZERO = "0";
+    private static final String DUMMY = "dummy";
 
     private static final String INPUT_PREFIX = "inp_";
 
@@ -130,71 +132,48 @@ public class WorkflowGraphTest {
     @Test
     public void testWorkflowGraphReset() {
         WorkflowGraph graph = null;
-        Map<String, Set<Deque<WorkflowGraphHop>>> hops = null;
-        Map<String, List<Integer>> hopsCount = new HashMap<>();
-        List<Integer> counts = new LinkedList<>();
-        try {
-            graph = createCircleWorkflowGraph();
-            hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
-            hopsCount = new HashMap<>();
-            counts = new LinkedList<>();
-            counts.add(new Integer(4));
-            hopsCount.put(OUTPUT_PREFIX + ZERO, counts);
+        Set<Deque<WorkflowGraphHop>> hops = null;
 
-            Deque<String> expectedHops = new LinkedList<>();
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
-            assertWorkflowGraphHops(expectedHops, hops.get(OUTPUT0).iterator().next());
-            checkResultCorrect(hops, 1, new int[] { 1 }, hopsCount);
+        graph = createCircleWorkflowGraph();
+        hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        Deque<String> expectedHops = new LinkedList<>();
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+        assertWorkflowGraphHops(expectedHops, hops.iterator().next());
 
-            graph = createCircleWorkflowGraphWithInnerLoopBack();
-            hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
-            hopsCount = new HashMap<>();
-            counts = new LinkedList<>();
-            counts.add(new Integer(4));
-            hopsCount.put(OUTPUT_PREFIX + ZERO, counts);
-            expectedHops = new LinkedList<>();
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
-            expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
-                INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
-            assertWorkflowGraphHops(expectedHops, hops.get(OUTPUT0).iterator().next());
+        graph = createCircleWorkflowGraphWithInnerLoopBack();
+        hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        expectedHops = new LinkedList<>();
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+        assertWorkflowGraphHops(expectedHops, hops.iterator().next());
+        assertEquals(hops.size(), 1);
 
-            checkResultCorrect(hops, 1, new int[] { 1 }, hopsCount);
+        graph = createTwoSinksWorkflowGraph();
+        hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        assertEquals(hops.size(), 0);
 
-            graph = createTwoSinksWorkflowGraph();
-            hops =
-                graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
-            hopsCount = new HashMap<>();
-            counts = new LinkedList<>();
-            hopsCount.put(OUTPUT_PREFIX + ZERO, counts);
-
-            // no hops so no assertion
-
-            checkResultCorrect(hops, 1, new int[] { 0 }, hopsCount);
-
-            graph = createTwoSinksWithInnerLoopWorkflowGraph();
-            hops =
-                graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
-            hopsCount = new HashMap<>();
-            counts = new LinkedList<>();
-            counts.add(new Integer(2));
-            hopsCount.put(OUTPUT_PREFIX + ZERO, counts);
-            hopsCount.put(OUTPUT_PREFIX + "1", new LinkedList<Integer>());
-            checkResultCorrect(hops, 2, new int[] { 1, 0 }, hopsCount);
-        } catch (ComponentExecutionException e) {
-            Assert.fail("Unexpected exception: " + e.getMessage());
-        }
+        graph = createTwoSinksWithInnerLoopWorkflowGraph();
+        hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        assertEquals(hops.size(), 1);
+        expectedHops = new LinkedList<>();
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
+            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
+        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
+            INPUT1, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+        assertWorkflowGraphHops(expectedHops, hops.iterator().next());
     }
 
     /**
@@ -321,6 +300,7 @@ public class WorkflowGraphTest {
     }
 
     /**
+     * Creates a cyclic graph.
      * 
      * @return A circle of nodes connected to a sink, so the circle should be reset.
      */
@@ -368,6 +348,7 @@ public class WorkflowGraphTest {
     }
 
     /**
+     * Creates a cyclic graph.
      * 
      * @return A circle of nodes connected to a sink, so the circle should be resetted.
      */
@@ -419,49 +400,9 @@ public class WorkflowGraphTest {
     }
 
     /**
-     * Checks whether the given result is correct.
-     * 
-     * @param hops calculated result
-     * @param hopsSize size of the map's keys (should be number of outputs of starting node.
-     * @param outputDequeSize number of Dequeues per output (array field 0 = 'output0', 1 = 'output1', ..)
-     * @param hopsCounts map of counts for hops for every output.
-     */
-    private static void checkResultCorrect(Map<String, Set<Deque<WorkflowGraphHop>>> hops, int hopsSize, int[] outputDequeSize,
-        Map<String, List<Integer>> hopsCounts) {
-        Assert.assertEquals(hopsSize, hops.size());
-        for (int i = 0; i < outputDequeSize.length; i++) {
-            Assert.assertEquals(outputDequeSize[i], hops.get(OUTPUT_PREFIX + i).size());
-        }
-        for (String hopsName : hops.keySet()) {
-            List<Integer> hopsCount = hopsCounts.get(hopsName);
-            for (Deque<WorkflowGraphHop> hopDeque : hops.get(hopsName)) {
-                if (hopsCount.contains(new Integer(hopDeque.size()))) {
-                    hopsCount.remove(new Integer(hopDeque.size()));
-                } else {
-                    Assert.fail("Expected result for " + hopsName + " does not contain hops count " + hopDeque.size());
-                }
-
-                String startIdentifier = hopDeque.peek().getHopExecutionIdentifier();
-                String currentTargetIdentifier = hopDeque.poll().getTargetExecutionIdentifier();
-                while (hopDeque.size() > 1) {
-                    WorkflowGraphHop hop = hopDeque.poll();
-                    Assert.assertEquals(currentTargetIdentifier, hop.getHopExecutionIdentifier());
-                    currentTargetIdentifier = hop.getTargetExecutionIdentifier();
-                }
-                WorkflowGraphHop lastHop = hopDeque.poll();
-                Assert.assertEquals(currentTargetIdentifier, lastHop.getHopExecutionIdentifier());
-                Assert.assertEquals(startIdentifier, lastHop.getTargetExecutionIdentifier());
-            }
-            if (!hopsCount.isEmpty()) {
-                Assert.fail(hopsName + " did not have all result hops.");
-            }
-        }
-    }
-
-    /**
      * Tests the reset behavior for a loop that has sub-loops. A sub-loop is created if a component like the evaluation memory component is
      * used. Such a component has inputs and outputs of type 'outer loop' and 'same loop', but it doesn't control the loop.
-     * 
+     *
      * @throws ComponentExecutionException on unexpected error
      */
     @Test
@@ -495,38 +436,64 @@ public class WorkflowGraphTest {
         generateAndPutEdgeKeys(edges, edgesSet);
 
         WorkflowGraph graph = new WorkflowGraph(nodes, edges);
-        Map<String, Set<Deque<WorkflowGraphHop>>> allHops =
-            graph.getHopsToTraverseWhenResetting(nestedDriverNode.getExecutionIdentifier());
-        assertEquals(1, allHops.size());
+        Set<Deque<WorkflowGraphHop>> hops = graph.getHopsToTraverseWhenResetting(nestedDriverNode.getExecutionIdentifier());
+        assertEquals(2, hops.size());
 
-        Set<Deque<WorkflowGraphHop>> hopDequesForOnlyOutput = allHops.get(OUTPUT0);
-        assertEquals(1, hopDequesForOnlyOutput.size());
+        Iterator<Deque<WorkflowGraphHop>> iterator = hops.iterator();
+        Deque<WorkflowGraphHop> actualHops1 = iterator.next();
+        Deque<WorkflowGraphHop> actualHops2 = iterator.next();
 
-        Deque<WorkflowGraphHop> actualHops = hopDequesForOnlyOutput.iterator().next();
-        assertEquals(4, actualHops.size());
-        Deque<String> expectedHops = new LinkedList<>();
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nestedDriverNode.getExecutionIdentifier(),
+        // the order of the hops queues is not fixed
+        if (actualHops1.size() == 2 && actualHops2.size() == 3) {
+            // since this is not the expected order, switch the queues for the following validation
+            Deque<WorkflowGraphHop> tmp = actualHops1;
+            actualHops1 = actualHops2;
+            actualHops2 = tmp;
+        } else if (actualHops1.size() != 3 || actualHops2.size() != 2) {
+            fail();
+        }
+
+        assertEquals(3, actualHops1.size());
+        Deque<String> expectedHops1 = new LinkedList<>();
+        expectedHops1.add(StringUtils.escapeAndConcat(OUTPUT0, nestedDriverNode.getExecutionIdentifier(),
             INPUT0, evalMemNode.getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT1, evalMemNode.getExecutionIdentifier(),
+        expectedHops1.add(StringUtils.escapeAndConcat(OUTPUT1, evalMemNode.getExecutionIdentifier(),
             INPUT0, node.getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, node.getExecutionIdentifier(),
-            INPUT1, evalMemNode.getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, evalMemNode.getExecutionIdentifier(),
-            INPUT0, nestedDriverNode.getExecutionIdentifier()));
-        assertWorkflowGraphHops(expectedHops, actualHops);
+        expectedHops1.add(StringUtils.escapeAndConcat(DUMMY, node.getExecutionIdentifier(),
+            DUMMY, DUMMY));
+        assertWorkflowGraphHops(expectedHops1, actualHops1);
 
+        assertEquals(2, actualHops2.size());
+        Deque<String> expectedHops2 = new LinkedList<>();
+        expectedHops2.add(StringUtils.escapeAndConcat(OUTPUT0, nestedDriverNode.getExecutionIdentifier(),
+            INPUT0, evalMemNode.getExecutionIdentifier()));
+        expectedHops2.add(StringUtils.escapeAndConcat(OUTPUT0, evalMemNode.getExecutionIdentifier(),
+            INPUT0, nestedDriverNode.getExecutionIdentifier()));
+        assertWorkflowGraphHops(expectedHops2, actualHops2);
     }
 
+    /**
+     * Checks if two queues represent the same WorkflowGraphHops.
+     */
     private void assertWorkflowGraphHops(Deque<String> expectedHops, Deque<WorkflowGraphHop> actualHops) {
         assertEquals(expectedHops.size(), actualHops.size());
         Iterator<WorkflowGraphHop> hopsIterator = actualHops.iterator();
         while (hopsIterator.hasNext()) {
             WorkflowGraphHop hop = hopsIterator.next();
             String[] hopParts = StringUtils.splitAndUnescape(expectedHops.poll());
-            assertEquals(hopParts[0], hop.getHopOuputName());
             assertEquals(hopParts[1], hop.getHopExecutionIdentifier());
-            assertEquals(hopParts[2], hop.getTargetInputName());
-            assertEquals(hopParts[3], hop.getTargetExecutionIdentifier());
+
+            // if the hop sequence is not circular, the last hop will point to a dummy node
+            if (hopParts[0].equals(DUMMY) && hopParts[2].equals(DUMMY) && hopParts[3].equals(DUMMY)) {
+                assertTrue(hop.getHopOuputName().startsWith(DUMMY));
+                assertTrue(hop.getTargetInputName().startsWith(DUMMY));
+                assertTrue(hop.getTargetExecutionIdentifier().startsWith(DUMMY));
+            } else {
+                assertEquals(hopParts[0], hop.getHopOuputName());
+                assertEquals(hopParts[2], hop.getTargetInputName());
+                assertEquals(hopParts[3], hop.getTargetExecutionIdentifier());
+            }
+
         }
     }
 

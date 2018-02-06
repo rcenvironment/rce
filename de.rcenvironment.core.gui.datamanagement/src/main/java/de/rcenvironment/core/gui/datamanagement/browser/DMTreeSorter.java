@@ -72,28 +72,43 @@ public class DMTreeSorter extends ViewerSorter{
      * @return sortable state of the node
      */
     public boolean isSortable(DMBrowserNode node, int type) {
-        boolean sortable = false;
         final DMBrowserNodeType nodeType = node.getType();
-        if (nodeType.equals(DMBrowserNodeType.Workflow)) {
-            sortable = true;
-        } else if (nodeType.equals(DMBrowserNodeType.Timeline) || nodeType.equals(DMBrowserNodeType.Component)) {
-            if (type == SORT_BY_TIMESTAMP || type == SORT_BY_TIMESTAMP_DESC) {
-                sortable = true;
-            }
-        } else if (nodeType.equals(DMBrowserNodeType.Components)) {
-            if (type == SORT_BY_NAME_ASC || type == SORT_BY_NAME_DESC) {
-                sortable = true;
-            }
-        } else if (nodeType.equals(DMBrowserNodeType.HistoryObject) && node.getParent().getType().equals(DMBrowserNodeType.Components)) {
-            if (type == SORT_BY_TIMESTAMP || type == SORT_BY_TIMESTAMP_DESC) {
-                sortable = true;
-            }
-        } else if (nodeType.equals(DMBrowserNodeType.ComponentHostInformation)) {
-            if (type == SORT_BY_NAME_ASC || type == SORT_BY_NAME_DESC) {
-                sortable = true;
-            }
+        if (node.isLeafNode()) {
+            return false;
         }
-        return sortable;
+        switch (type) {
+        case SORT_BY_TIMESTAMP:
+        case SORT_BY_TIMESTAMP_DESC:
+            switch (nodeType) {
+            case HistoryObject:
+                return node.getParent().getType().equals(DMBrowserNodeType.Components);
+            case Component:
+            case Workflow:
+            case Timeline:
+                return true;
+            default:
+                break;
+            }
+            return false;
+        case SORT_BY_NAME_ASC:
+        case SORT_BY_NAME_DESC:
+            switch (nodeType) {
+            case Component:
+            case Workflow:
+            case Components:
+            case Timeline:
+            case ComponentHostInformation:
+            case Input:
+            case Output:
+                return true;
+            default:
+                break;
+            }
+            return false;
+        default:
+            return false;
+        }
+
     }
 
 

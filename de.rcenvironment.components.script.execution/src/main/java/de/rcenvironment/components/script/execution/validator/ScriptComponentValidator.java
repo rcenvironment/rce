@@ -164,8 +164,8 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     private void executeAndValidate(final String pythonInstallation, final PythonVersionRegexValidator validator) {
         final LocalApacheCommandLineExecutor executor;
 
-        TextStreamWatcher stdOutTextStreamWatcher;
-        TextStreamWatcher stdErrTextStreamWatcher;
+        final TextStreamWatcher stdOutTextStreamWatcher;
+        final TextStreamWatcher stdErrTextStreamWatcher;
         String command = "\"" + pythonInstallation + "\"" + " --version";
 
         try {
@@ -173,7 +173,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
             executor = createCommandLineExecutor(new File("/"));
             executor.start(command);
             stdOutTextStreamWatcher = new TextStreamWatcher(executor.getStdout(),
-                ConcurrencyUtils.getAsyncTaskService(), new CapturingTextOutReceiver("") {
+                ConcurrencyUtils.getAsyncTaskService(), new CapturingTextOutReceiver() {
 
                     @Override
                     public synchronized void addOutput(String line) {
@@ -184,7 +184,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                 });
             stdErrTextStreamWatcher =
                 new TextStreamWatcher(executor.getStderr(), ConcurrencyUtils.getAsyncTaskService(),
-                    new CapturingTextOutReceiver("") {
+                    new CapturingTextOutReceiver() {
 
                         @Override
                         public synchronized void addOutput(String line) {
@@ -205,6 +205,8 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                 public void run() {
                     try {
                         executor.waitForTermination();
+                        stdOutTextStreamWatcher.waitForTermination();
+                        stdErrTextStreamWatcher.waitForTermination();
                     } catch (IOException e) {
                         logger.error(PYTHON_VALIDATION_ERROR, e);
                     } catch (InterruptedException e) {

@@ -16,18 +16,40 @@ package de.rcenvironment.core.utils.common;
 public abstract class ComparatorUtils {
 
     /**
-     * A constant for returning a positive integer in {@link Comparator#compare(Object, Object)}.
-     * Usually needed to satisfy Checkstyle.
+     * A constant for returning a positive integer in {@link Comparator#compare(Object, Object)}. Usually needed to satisfy Checkstyle.
      */
     public static final int POSITIVE_INT = 1;
 
     /**
-     * A constant for returning a negative integer in {@link Comparator#compare(Object, Object)}.
-     * Usually needed to satisfy Checkstyle.
+     * A constant for returning a negative integer in {@link Comparator#compare(Object, Object)}. Usually needed to satisfy Checkstyle.
      */
     public static final int NEGATIVE_INT = -1;
 
     private ComparatorUtils() {}
+
+    /**
+     * Tests whether two float numbers differ by at most "delta".
+     * 
+     * @param a value 1
+     * @param b value 2
+     * @param delta the maximum delta
+     * @return true if abs(a-b) < delta
+     */
+    public static boolean floatEqualWithinDelta(float a, float b, float delta) {
+        return Math.abs(a - b) < delta;
+    }
+
+    /**
+     * Tests whether two double numbers differ by at most "delta".
+     * 
+     * @param a value 1
+     * @param b value 2
+     * @param delta the maximum delta
+     * @return true if abs(a-b) < delta
+     */
+    public static boolean doubleEqualWithinDelta(double a, double b, double delta) {
+        return Math.abs(a - b) < delta;
+    }
 
     /**
      * Implements {@link Comparator#compare(Object, Object)} for integers.

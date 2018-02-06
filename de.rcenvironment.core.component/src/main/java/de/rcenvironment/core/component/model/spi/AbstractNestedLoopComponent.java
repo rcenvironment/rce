@@ -9,38 +9,30 @@
 package de.rcenvironment.core.component.model.spi;
 
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
 
 /**
- * The {@link AbstractNestedLoopComponent} is an abstract class that must be used for components
- * that should be able to run in a nested loop. It defines the lifecycle for a nested component for
- * being used as inner or as oter loop component. If the scheduling from the
+ * The {@link AbstractNestedLoopComponent} is an abstract class that must be used for components that should be able to run in a nested
+ * loop. It defines the lifecycle for a nested component for being used as inner or as oter loop component. If the scheduling from the
  * {@link DefaultComponent} should be used, the "callDefaultScheduling" method can be used.
  * 
- * Note that this class redefines the life cycle of the {@link DefaultComponent}. The standard life
- * cycle methods like runStep are overwritten and made final, because they must not be overwritten
- * by the sub class. To implement the component's individual logic, there are custom abstract
- * methods of all lifecycle methods.
+ * Note that this class redefines the life cycle of the {@link DefaultComponent}. The standard life cycle methods like runStep are
+ * overwritten and made final, because they must not be overwritten by the sub class. To implement the component's individual logic, there
+ * are custom abstract methods of all lifecycle methods.
  * 
  * If this class is used for a component, there are some more things that must be used:
  * <ul>
- * <li>
- * In the component's GUI, the {@link NestedLoopSection} must be added</li>
- * <li>
- * The component must have a {@link BooleanTD} output, which is used in this class for telling inner
- * loops, if the outer loop is finished. This output's name is what the getLoopFinishedEnpointName()
- * method must return.</li>
- * <li>
- * The component must define the input "Outer loop done" as boolean, which will be created by the
- * {@link NestedLoopSection}</li>
+ * <li>In the component's GUI, the {@link NestedLoopSection} must be added</li>
+ * <li>The component must have a {@link BooleanTD} output, which is used in this class for telling inner loops, if the outer loop is
+ * finished. This output's name is what the getLoopFinishedEnpointName() method must return.</li>
+ * <li>The component must define the input "Outer loop done" as boolean, which will be created by the {@link NestedLoopSection}</li>
  * </ul>
  * 
  * @author Sascha Zur
  * @author Doreen Seider
  * 
- * Note: See note in {@link AbstractLoopComponent}. --seid_do
+ *         Note: See note in {@link AbstractLoopComponent}. --seid_do
  */
 public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent {
 
@@ -55,7 +47,7 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
 
     @Override
     public void processInputsComponentSpecific() throws ComponentException {
-        
+
         if (loopFailed) {
             isReset = true;
             sendReset();
@@ -75,17 +67,17 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
         startNestedComponentSpecific();
         isReset = false;
     }
-    
+
     @Override
     protected boolean isDone() {
         return isDoneNestedComponentSpecific() || (!isNestedLoop() && isFinallyDone());
     }
-    
+
     @Override
     protected boolean isFinallyDone() {
         return isFinallyDone;
     }
-    
+
     @Override
     protected boolean isReset() {
         return isReset;
@@ -99,11 +91,11 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
             outerLoopIsFinished();
         }
     }
-    
+
     private void outerLoopIsFinished() throws ComponentException {
         finishLoop(true);
     }
-    
+
     @Override
     protected void finishLoopComponentSpecific(boolean outerLoopFinished) throws ComponentException {
         finishLoop(outerLoopFinished);
@@ -123,8 +115,8 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
     }
 
     /**
-     * Method is called after the {@link AbstractNestedLoopComponent} has initialized all it needs.
-     * It replaces the original runInitial() Method.
+     * Method is called after the {@link AbstractNestedLoopComponent} has initialized all it needs. It replaces the original runInitial()
+     * Method.
      * 
      * @return true, if component is not finished.
      * @throws ComponentException
@@ -155,7 +147,7 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
      * @return whether the components logic is finished (no more runSteps) or not.
      */
     protected abstract boolean isDoneNestedComponentSpecific();
-    
+
     /**
      * If needed, the component should send e.g. optimized values at this point.
      * 
@@ -167,16 +159,11 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
      * Send {@link InternalTD} to all self loop outputs.
      */
     protected void sendReset() {
-        for (String output : componentContext.getOutputs()) {
-            if (componentContext.getOutputCharacter(output).equals(EndpointCharacter.SAME_LOOP)) {
-                componentContext.resetOutput(output);
-            }
-        }
+        componentContext.resetOutputs();
     }
 
     /**
-     * This method consumes a start value from an input. Receiving new values should be individual
-     * for every component.
+     * This method consumes a start value from an input. Receiving new values should be individual for every component.
      */
     protected abstract void sendValuesNestedComponentSpecific();
 

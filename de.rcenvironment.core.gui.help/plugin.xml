@@ -6,6 +6,7 @@
       <toc file="help/components_toc.xml" primary="true"/>
       <toc file="help/workflow_editor_toc.xml" primary="true"/>
       <toc file="help/tool_integration_toc.xml" primary="true"/>
+      <toc file="help/extensions_toc.xml" primary="true"/>
    </extension>
    
 </plugin>

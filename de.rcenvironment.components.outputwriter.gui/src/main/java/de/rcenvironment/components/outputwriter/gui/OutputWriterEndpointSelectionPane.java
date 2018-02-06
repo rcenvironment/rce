@@ -8,6 +8,7 @@
 
 package de.rcenvironment.components.outputwriter.gui;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,10 +18,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 
+import de.rcenvironment.components.outputwriter.common.OutputLocation;
+import de.rcenvironment.components.outputwriter.common.OutputLocationList;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -31,6 +38,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -40,11 +48,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
-    // The OutputLocationPane for this OutputWriter. Needed because outputLocations have to be updated for changes in the input list.
-    private OutputLocationPane outputLocationPane;
-
+    protected ObjectMapper jsonMapper;
+    
     public OutputWriterEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, Executor executor) {
         super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
+
+        jsonMapper = JsonUtils.getDefaultObjectMapper();
+        jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 
     @Override
@@ -61,7 +71,6 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(), new HashMap<String, String>(), paths);
 
         onAddClicked(dialog);
-        outputLocationPane.refresh();
     }
 
     @Override
@@ -82,7 +91,6 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(), newMetaData, paths);
 
         onEditClicked(name, dialog, newMetaData);
-        outputLocationPane.refresh();
     }
 
     @Override
@@ -109,8 +117,8 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void editEndpoint(EndpointDescription oldDesc, String newName, DataType newType, Map<String, String> newMetaData) {
-
-        String outputName = outputLocationPane.outputNameForInputName(oldDesc.getName());
+        
+        String outputName = outputNameForInputName(oldDesc.getName());
         if (editConfirmed(oldDesc, newName, newType, outputName)) {
             super.editEndpoint(oldDesc, newName, newType, newMetaData);
 
@@ -119,9 +127,9 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        String outputName = outputLocationPane.outputIdForInputName(oldDescription.getName());
+        String outputName = outputIdForInputName(oldDescription.getName());
         WorkflowNodeCommand command =
-            new OutputWriterEditDynamicInputCommand(endpointType, oldDescription, newDescription, outputName, this, outputLocationPane);
+            new OutputWriterEditDynamicInputCommand(endpointType, oldDescription, newDescription, outputName, this);
         execute(command);
     }
 
@@ -154,16 +162,16 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         Set<String> outputLocationIds = new HashSet<String>();
         Set<String> outputLocationNames = new HashSet<String>();
         for (String inputName : names) {
-            if (outputLocationPane.outputIdForInputName(inputName) != null) {
-                outputLocationIds.add(outputLocationPane.outputIdForInputName(inputName));
-                outputLocationNames.add(outputLocationPane.outputNameForInputName(inputName));
+            if (outputIdForInputName(inputName) != null) {
+                outputLocationIds.add(outputIdForInputName(inputName));
+                outputLocationNames.add(outputNameForInputName(inputName));
             }
         }
         if (deleteConfirmed(outputLocationNames)) {
 
             final WorkflowNodeCommand command =
                 new OutputWriterRemoveDynamicInputCommand(endpointType, dynEndpointIdToManage, names,
-                    new ArrayList<String>(outputLocationIds), this, outputLocationPane);
+                    new ArrayList<String>(outputLocationIds), this);
             execute(command);
 
         }
@@ -194,11 +202,60 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         return result;
     }
 
-    protected OutputLocationPane getOutputLocationPane() {
-        return outputLocationPane;
-    }
+    
+    /**
+     * 
+     * @param inputName Name of input
+     * @return ID of outputLocation, if inputName is connected to one, null otherwise
+     */
+    protected String outputIdForInputName(String inputName) {
+        String jsonString = configuration.getConfigurationDescription()
+            .getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
+        if (jsonString == null) {
+            jsonString = "";
+        }
+        try {
+            OutputLocationList list =
+                jsonMapper.readValue(jsonString, OutputLocationList.class);
 
-    protected void setOutputLocationPane(OutputLocationPane outputLocationPane) {
-        this.outputLocationPane = outputLocationPane;
+            for (OutputLocation ol : list.getOutputLocations()) {
+                if (ol.getInputs().contains(inputName)) {
+                    return ol.getGroupId();
+                }
+            }
+
+        } catch (IOException e) {
+            LogFactory.getLog(getClass()).debug("Error when reading JSON: " + e.getMessage());
+        }
+        return null;
     }
+    
+    /**
+     * 
+     * @param inputName Name of input
+     * @return Name of outputLocation, if inputName is connected to one, null otherwise
+     */
+    protected String outputNameForInputName(String inputName) {
+        String jsonString = configuration.getConfigurationDescription()
+            .getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
+        if (jsonString == null) {
+            jsonString = "";
+        }
+        try {
+            OutputLocationList list =
+                jsonMapper.readValue(jsonString, OutputLocationList.class);
+
+            for (OutputLocation ol : list.getOutputLocations()) {
+                if (ol.getInputs().contains(inputName)) {
+                    return ol.getFilename();
+                }
+            }
+
+        } catch (IOException e) {
+            LogFactory.getLog(getClass()).debug("Error when reading JSON: " + e.getMessage());
+        }
+        return null;
+    }
+    
+    
 }

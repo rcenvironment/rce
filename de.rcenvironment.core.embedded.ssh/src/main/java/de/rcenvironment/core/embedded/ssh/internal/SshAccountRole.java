@@ -30,12 +30,12 @@ public final class SshAccountRole {
     public SshAccountRole(String roleName) {
         this.roleName = roleName;
         this.allowedCommandPatterns = new ArrayList<String>();
-        
-        //Set allowed command patterns for role name
-        switch(roleName) {
+
+        // Set allowed command patterns for role name
+        switch (roleName) {
         case SshConstants.ROLE_NAME_REMOTE_ACCESS_USER:
         case SshConstants.ROLE_NAME_REMOTE_ACCESS_USER_ALIAS:
-            allowedCommandPatterns.add("ra .*");
+            allowedCommandPatterns.add("ra .*"); // Note: the space is important for security - do not remove it!
             allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
             break;
         case SshConstants.ROLE_NAME_REMOTE_ACCESS_ADMIN:
@@ -93,7 +93,9 @@ public final class SshAccountRole {
             this.roleName = SshConstants.ROLE_NAME_DEFAULT;
             LogFactory.getLog(getClass()).warn("Tried to create a role with a name that is not allowed: " + roleName);
         }
-        
+
+        // allow any user to execute the "dummy" command (e.g. for testing connectivity from scripts)
+        allowedCommandPatterns.add("dummy");
     }
 
     public String getRoleName() {

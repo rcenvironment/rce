@@ -132,7 +132,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
     private static final double RESULT_EPS = 1e-9;
 
-    private static File dakotaExecutablePath = null;
+    private File dakotaExecutablePath = null;
 
     private Map<String, TypedDatum> outputValues;
 
@@ -192,9 +192,9 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         dakotaExecutablePath = new File(dakotaExecutablePath, "dakota");
                     }
                     dakotaExecutablePath.setExecutable(true);
-                } catch (ConfigurationException e1) {
+                } catch (ConfigurationException e) {
                     // TODO check: avoid "log and re-throw" here by adding information to the thrown exception instead? 
-                    LOGGER.error("Exception getting dakota executable path: " + e1.toString());
+                    LOGGER.error("Exception getting dakota executable path: " + e.toString());
                     throw new ComponentException("Could not find dakota binaries.");
                 }
             }

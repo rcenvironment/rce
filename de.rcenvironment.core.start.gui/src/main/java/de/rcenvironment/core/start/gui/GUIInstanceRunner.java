@@ -14,6 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
@@ -35,8 +36,10 @@ import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
 import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
 
 /**
@@ -55,12 +58,17 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
     private static final boolean ALLOW_WORKSPACE_CHOOSER_SUPPRESSION = true;
 
+    private static final int GUI_STARTUP_READINESS_POLLING_INTERVAL_MSEC = 250;
+
     /**
      * System property for launching Sleak to detect SWT resource leaks.
      */
     private static final String DRCE_DEBUG_SLEAK = "rce.debug.sleak";
 
     private static boolean tryWorkspaceChoosingAgain = false;
+
+    // prevents processing of shutdown signals before the UI framework is ready, which results in various errors
+    private final CountDownLatch readyForShutdownSignalsLatch = new CountDownLatch(1);
 
     /**
      * Runs the RCE instance in non-headless (GUI) mode.
@@ -92,7 +100,7 @@ public final class GUIInstanceRunner extends InstanceRunner {
         }
 
         // initialize the GUI
-        Display display = PlatformUI.createDisplay();
+        final Display display = PlatformUI.createDisplay();
 
         if (startSleak) {
             // this needs to be executed after the display has been created
@@ -110,6 +118,24 @@ public final class GUIInstanceRunner extends InstanceRunner {
                 // If this flag is true, a non-valid workspace was chosen, show the workspace chooser again until a valid workspace is
                 // selected or "cancel" is clicked.
             } while (tryWorkspaceChoosingAgain);
+
+            // periodically check the PlatformUI.getWorkbench().isStarting() flag and only allow shutdown signals once it is "false"
+            final Runnable enqueueGUIStartupCompletionCheck = new Runnable() {
+
+                @Override
+                public void run() {
+                    final boolean starting = PlatformUI.getWorkbench().isStarting();
+                    if (!starting) {
+                        // the application is now as ready as possible for processing shutdown signals, so unblock them
+                        readyForShutdownSignalsLatch.countDown();
+                    } else {
+                        // enqueue this Runnable again
+                        display.timerExec(GUI_STARTUP_READINESS_POLLING_INTERVAL_MSEC, this);
+                    }
+                }
+            };
+
+            display.timerExec(GUI_STARTUP_READINESS_POLLING_INTERVAL_MSEC, enqueueGUIStartupCompletionCheck);
 
             int platformUIExitCode = PlatformUI.createAndRunWorkbench(display, new ApplicationWorkbenchAdvisor());
             if (platformUIExitCode == PlatformUI.RETURN_RESTART) {
@@ -150,28 +176,50 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
     @Override
     public void triggerShutdown() {
-        Display.getDefault().asyncExec(new Runnable() {
-
-            @Override
-            public void run() {
-                if (!PlatformUI.isWorkbenchRunning()) {
-                    return;
-                }
-                PlatformUI.getWorkbench().close();
-            }
-        });
+        triggerAsyncShutdownOrRestart(false);
     }
 
     @Override
     public void triggerRestart() {
-        Display.getDefault().asyncExec(new Runnable() {
+        triggerAsyncShutdownOrRestart(true);
+    }
+
+    private void triggerAsyncShutdownOrRestart(final boolean performRestart) {
+        // spawn a new async task to avoid blocking the caller while waiting for the latch -- misc_ro
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
+            @TaskDescription("Process shutdown trigger (GUI mode)")
             public void run() {
-                if (!PlatformUI.isWorkbenchRunning()) {
+                final boolean logWaitingPeriod = readyForShutdownSignalsLatch.getCount() != 0;
+                if (logWaitingPeriod) {
+                    log.debug("Shutdown triggered during early GUI startup; waiting for completion signal");
+                }
+                try {
+                    // no timeout needed, as there is a timeout guard for the whole shutdown process already
+                    readyForShutdownSignalsLatch.await();
+                } catch (InterruptedException e) {
+                    log.warn("Interrupted while waiting for shutdown readiness (restart flag=" + performRestart + ")");
                     return;
                 }
-                PlatformUI.getWorkbench().restart();
+                if (logWaitingPeriod) {
+                    log.debug("Received signal that early GUI startup has completed; proceeding with shutdown/restart request");
+                }
+                Display.getDefault().asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        if (!PlatformUI.isWorkbenchRunning()) {
+                            return;
+                        }
+                        log.debug("Triggering shutdown/restart of GUI platform");
+                        if (performRestart) {
+                            PlatformUI.getWorkbench().restart();
+                        } else {
+                            PlatformUI.getWorkbench().close();
+                        }
+                    }
+                });
             }
         });
     }
@@ -191,13 +239,19 @@ public final class GUIInstanceRunner extends InstanceRunner {
         String lastWorkspaceLocation = workspaceSettings.getLastLocation();
         String recentWorkspacesData = workspaceSettings.getRecentLocationData();
 
-        String defaultWorkdirPath;
-        if (lastWorkspaceLocation != null) {
-            defaultWorkdirPath = new File(lastWorkspaceLocation).getAbsolutePath();
-        } else {
+        // this flag is called "standard" here as "default" is ambiguous (see below)
+        // standard workspace = the "workspace" sub-folder of the profile directory
+        final boolean useStandardWorkspace = CommandLineArguments.isUseDefaultWorkspaceRequested();
+
+        // default workspace = either the last used (stored) workspace or the "standard" workspace, depending on situation
+        final String defaultWorkdirPath;
+        if (useStandardWorkspace || lastWorkspaceLocation == null) {
             defaultWorkdirPath = new File(profileDirectory, "workspace").getAbsolutePath();
+        } else {
+            defaultWorkdirPath = new File(lastWorkspaceLocation).getAbsolutePath();
         }
-        String[] oldRecentWorkspaces;
+
+        final String[] oldRecentWorkspaces;
         if (recentWorkspacesData != null) {
             oldRecentWorkspaces = StringUtils.splitAndUnescape(recentWorkspacesData);
         } else {
@@ -206,13 +260,12 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
         ChooseWorkspaceData cwd = new ChooseWorkspaceData(defaultWorkdirPath);
         cwd.setRecentWorkspaces(oldRecentWorkspaces);
-        ChooseWorkspaceDialog wd = new ChooseWorkspaceDialog(null, cwd, !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION, true);
-        int cwdReturnCode = 0 - 1;
 
         // NOTE: review the "last location" storage strategy before re-enabling suppression (if
         // desired in the future)
-        if (!workspaceSettings.getDontAskAgainSetting() || !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION) {
-            cwdReturnCode = wd.open();
+        if (!useStandardWorkspace && !workspaceSettings.getDontAskAgainSetting() || !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION) {
+            ChooseWorkspaceDialog wd = new ChooseWorkspaceDialog(null, cwd, !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION, true);
+            int cwdReturnCode = wd.open();
             if (cwdReturnCode == Dialog.CANCEL) {
                 return false;
             }
@@ -221,11 +274,12 @@ public final class GUIInstanceRunner extends InstanceRunner {
                 workspaceSettings.setDontAskAgainSetting(true);
             }
         }
+
         final String currentWorkspace;
-        if (cwd.getSelection() != null) {
-            currentWorkspace = new File(cwd.getSelection()).getAbsolutePath();
-        } else {
+        if (useStandardWorkspace || cwd.getSelection() == null) {
             currentWorkspace = defaultWorkdirPath;
+        } else {
+            currentWorkspace = new File(cwd.getSelection()).getAbsolutePath();
         }
 
         // add to head of recent workspaces list, eliminating duplicates

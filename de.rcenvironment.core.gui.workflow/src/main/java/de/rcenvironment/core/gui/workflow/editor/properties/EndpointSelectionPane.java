@@ -194,6 +194,7 @@ public class EndpointSelectionPane implements Refreshable {
         icon = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_RCE_ICON_16);
     }
 
+
     private static int getButtons(boolean readOnly) {
         int buttons = ALL_READ_ONLY;
         if (!readOnly) {
@@ -354,6 +355,7 @@ public class EndpointSelectionPane implements Refreshable {
         }
         updateTable();
     }
+
 
     protected ComponentInstanceProperties getConfiguration() {
         return configuration;
@@ -614,7 +616,7 @@ public class EndpointSelectionPane implements Refreshable {
         }
         if (buttonAdd != null) {
             buttonAdd.setEnabled(addible);
-            itemAdd.setEnabled(addible && buttonAdd.isVisible());
+            itemAdd.setEnabled(addible);
         }
         if (buttonEdit != null) {
             buttonEdit.setEnabled(editable);
@@ -622,7 +624,7 @@ public class EndpointSelectionPane implements Refreshable {
         }
         if (buttonRemove != null) {
             buttonRemove.setEnabled(removable);
-            itemRemove.setEnabled(removable && buttonRemove.isVisible());
+            itemRemove.setEnabled(removable);
         }
     }
 

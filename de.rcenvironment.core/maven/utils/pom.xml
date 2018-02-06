@@ -49,145 +49,49 @@
 										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
 											value="${rce.core.version.new}-SNAPSHOT">
 											<include name="de.rcenvironment.core.*/pom.xml" />
-											<include name="de.rcenvironment/maven/modules/repository.mainProduct/pom.xml" />
+											<include name="de.rcenvironment/maven/**/pom.xml" />
+											<include name="de.rcenvironment.components.*/pom.xml" />
+											<include name="de.rcenvironment.componentgroups.*/pom.xml" />
+											<include name="de.rcenvironment.filesets.*/pom.xml" />
+											<include name="de.rcenvironment.documentation.*/pom.xml" />
+											<include name="de.rcenvironment.common.parent/**/pom.xml" />
+											<include name="de.rcenvironment.binaries.*/pom.xml" />
+											<include name="de.rcenvironment.extensions.testscriptrunner/**/pom.xml" />
 										</replace>
+										
 										<!-- MANIFEST.MF versions -->
 										<replace dir="${rce.core.rootpath}"
 											token="Bundle-Version: ${rce.core.version.old}.qualifier"
 											value="Bundle-Version: ${rce.core.version.new}.qualifier">
 											<include name="de.rcenvironment.core.*/META-INF/MANIFEST.MF" />
-										</replace>
+											<include name="de.rcenvironment.components.*/META-INF/MANIFEST.MF" />
+											<include name="de.rcenvironment.binaries.*/META-INF/MANIFEST.MF" />
+										</replace>			
+																	
 										<!-- feature.xml versions -->
 										<replaceregexp
 											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
 											replace="\1${rce.core.version.new}\2" flags="gs">
 											<fileset dir="${rce.core.rootpath}">
 												<include name="de.rcenvironment.core.*feature/feature.xml" />
+												<include name="de.rcenvironment.filesets.*.feature/feature.xml" />
+												<include name="de.rcenvironment.documentation.*.feature/feature.xml" />
+												<include name="de.rcenvironment.componentgroups.*.feature/feature.xml" />
+												<include name="de.rcenvironment.binaries.*.feature/feature.xml" />
 											</fileset>
 										</replaceregexp>
+										
 										<!-- feature versions in repository definition (category.xml) -->
 										<replaceregexp
-											match="features/de.rcenvironment.core(\.[\w\.]+)?.feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment.core(\.[\w\.]+)?.feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
-											replace="features/de.rcenvironment.core\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment.core\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
+											match="features/de.rcenvironment(\.[\w\.]+)?.feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment(\.[\w\.]+)?.feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
+											replace="features/de.rcenvironment\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
 											flags="g">
 											<fileset dir="${rce.core.rootpath}">
 												<include
 													name="de.rcenvironment/maven/modules/repository.intermediate/category.xml" />
 											</fileset>
 										</replaceregexp>
-										<!-- "about" dialog version info (gui.branding.default) -->
-										<replace
-											file="${rce.core.rootpath}/de.rcenvironment.core.gui.branding.default/plugin.properties"
-											token="Version: ${rce.core.version.old}" value="Version: ${rce.core.version.new}" />
-
-										<!-- file set POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
-											value="${rce.core.version.new}-SNAPSHOT">
-											<include name="de.rcenvironment.filesets.*/pom.xml" />
-										</replace>
-										<!-- file set feature.xml versions -->
-										<replaceregexp
-											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
-											replace="\1${rce.core.version.new}\2" flags="gs">
-											<fileset dir="${rce.core.rootpath}">
-												<include name="de.rcenvironment.filesets.*.feature/feature.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- file set versions in repository definition (category.xml) -->
-										<replaceregexp
-											match="features/de.rcenvironment.filesets.([\w\.]+).feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment.filesets.([\w\.]+).feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
-											replace="features/de.rcenvironment.filesets.\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment.filesets.\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
-											flags="g">
-											<fileset dir="${rce.core.rootpath}">
-												<include
-													name="de.rcenvironment.repositories.rce.core/maven/repository/category.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- documentation POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
-											value="${rce.core.version.new}-SNAPSHOT">
-											<include name="de.rcenvironment.documentation.*/pom.xml" />
-										</replace>
-										<!-- documentation feature.xml versions -->
-										<replaceregexp
-											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
-											replace="\1${rce.core.version.new}\2" flags="gs">
-											<fileset dir="${rce.core.rootpath}">
-												<include name="de.rcenvironment.documentation.*.feature/feature.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- documentation versions in repository definition (category.xml) -->
-										<replaceregexp
-											match="features/de.rcenvironment.documentation.([\w\.]+).feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment.documentation.([\w\.]+).feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
-											replace="features/de.rcenvironment.documentation.\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment.documentation.\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
-											flags="g">
-											<fileset dir="${rce.core.rootpath}">
-												<include
-													name="de.rcenvironment/maven/modules/repository.intermediate/category.xml" />
-											</fileset>
-										</replaceregexp>
-
-										<!-- TODO temporary for 2.5.x: component and component feature POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
-											value="${rce.core.version.new}-SNAPSHOT">
-											<include name="de.rcenvironment.components.*/pom.xml" />
-											<include name="de.rcenvironment.componentgroups.*/pom.xml" />
-										</replace>
-										<!-- TODO temporary for 2.5.x: component MANIFEST.MF versions -->
-										<replace dir="${rce.core.rootpath}"
-											token="Bundle-Version: ${rce.core.version.old}.qualifier"
-											value="Bundle-Version: ${rce.core.version.new}.qualifier">
-											<include name="de.rcenvironment.components.*/META-INF/MANIFEST.MF" />
-										</replace>
-										<!-- TODO temporary for 2.5.x: component feature.xml versions -->
-										<replaceregexp
-											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
-											replace="\1${rce.core.version.new}\2" flags="gs">
-											<fileset dir="${rce.core.rootpath}">
-												<include name="de.rcenvironment.componentgroups.*.feature/feature.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- TODO temporary for 2.5.x: component feature versions in repository definition (category.xml) -->
-										<replaceregexp
-											match="features/de.rcenvironment.componentgroups.([\w\.]+).feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment.componentgroups.([\w\.]+).feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
-											replace="features/de.rcenvironment.componentgroups.\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment.componentgroups.\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
-											flags="g">
-											<fileset dir="${rce.core.rootpath}">
-												<include
-													name="de.rcenvironment/maven/modules/repository.intermediate/category.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- TODO temporary until cpacs and transport bundles are renamed: cpacs and transport feature POM versions -->
-										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}.qualifier"
-											value="${rce.core.version.new}.qualifier">
-											<include name="de.rcenvironment.cpacs.*/pom.xml" />
-											<include name="de.rcenvironment.transport.*/pom.xml" />
-										</replace>
-										<!-- TODO temporary until cpacs and transport bundles are renamed: cpacs and transport MANIFEST.MF versions -->
-										<replace dir="${rce.core.rootpath}"
-											token="Bundle-Version: ${rce.core.version.old}.qualifier"
-											value="Bundle-Version: ${rce.core.version.new}.qualifier">
-											<include name="de.rcenvironment.cpacs.*/META-INF/MANIFEST.MF" />
-											<include name="de.rcenvironment.transport.*/META-INF/MANIFEST.MF" />
-										</replace>
-										<!-- TODO temporary until cpacs and transport bundles are renamed: cpacs feature.xml versions -->
-										<replaceregexp
-											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
-											replace="\1${rce.core.version.new}\2" flags="gs">
-											<fileset dir="${rce.core.rootpath}">
-												<include name="de.rcenvironment.cpacs.*.feature/feature.xml" />
-											</fileset>
-										</replaceregexp>
-										<!-- TODO temporary until cpacs bundles are renamed: cpacs feature versions in repository definition (category.xml) -->
-										<replaceregexp
-											match="features/de.rcenvironment.cpacs.([\w\.]+).feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment.cpacs.([\w\.]+).feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
-											replace="features/de.rcenvironment.cpacs.\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment.cpacs.\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
-											flags="g">
-											<fileset dir="${rce.core.rootpath}">
-												<include
-													name="de.rcenvironment/maven/modules/repository.intermediate/category.xml" />
-											</fileset>
-										</replaceregexp>
+										
 									</tasks>
 								</configuration>
 								<goals>

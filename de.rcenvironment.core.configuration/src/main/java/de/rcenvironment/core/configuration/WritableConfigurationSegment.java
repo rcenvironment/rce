@@ -35,7 +35,6 @@ public interface WritableConfigurationSegment extends ConfigurationSegment {
     void setBoolean(String key, boolean value) throws ConfigurationException;
 
     /**
-     * 
      * Adds or replaces an integer field.
      * 
      * @param key the field name.
@@ -43,7 +42,16 @@ public interface WritableConfigurationSegment extends ConfigurationSegment {
      * @throws ConfigurationException if editing the configuration failed.
      */
     void setInteger(String key, Integer value) throws ConfigurationException;
-    
+
+    /**
+     * Adds or replaces a float number field.
+     * 
+     * @param key the field name.
+     * @param value the new value.
+     * @throws ConfigurationException if editing the configuration failed.
+     */
+    void setFloat(String key, Float value) throws ConfigurationException;
+
     /**
      * 
      * Adds or replaces a long field.

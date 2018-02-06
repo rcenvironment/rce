@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.licensing.self.epl.feature"
       label="RCE File Sets - EPL Self-Licensing Information"
-      version="8.1.1.qualifier"
+      version="8.2.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

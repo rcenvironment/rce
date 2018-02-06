@@ -64,6 +64,9 @@ public class WorkflowGraphEdge implements Serializable {
         return outputEndpointCharacter;
     }
 
+    /**
+     * @return The {@link EndpointCharacter} of the target's input.
+     */
     public EndpointCharacter getInputCharacter() {
         return inputEndpointCharacter;
     }

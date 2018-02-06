@@ -81,6 +81,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     /** Identifier used to find the this view within the workbench. */
     public static final String ID = "de.rcenvironment.gui.TimeTable";
 
+    private static final int SCROLLBAR_MAXIMUM = 10000;
+
     private static final Map<String, Image> COMPONENT_ICON_CACHE = new HashMap<>();
 
     private Composite rootComposite = null;
@@ -94,8 +96,6 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     private TimelineComponentRow[] rows = new TimelineComponentRow[0];
 
     private Slider scrollBar = null;
-
-    private final int scrollBarMaximum = 10000;
 
     private Action refreshAction = null;
 
@@ -267,8 +267,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         // right:
         scrollBar = new Slider(sashMiddle, SWT.HORIZONTAL);
 
-        scrollBar.setMaximum(scrollBarMaximum); // maximum
-        scrollBar.setPageIncrement(scrollBarMaximum);
+        scrollBar.setMaximum(SCROLLBAR_MAXIMUM); // maximum
+        scrollBar.setPageIncrement(SCROLLBAR_MAXIMUM);
         scrollBar.setIncrement(10); // jump on press left or right
         scrollBar.setThumb(scrollBar.getMaximum());
         // SWT Slider does not always disable slider if value == maximum value
@@ -321,15 +321,21 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                         @Override
                         public void run() {
                             if (!parentComposite.isDisposed()) {
-                                
+                                boolean isZoomed = currentZoomValue != defaultMaximumZoomValue;
+                                // Cache viewport by visible start and end time
+                                Date visibleEndTime = null;
+                                Date visibleStartTime = null;
+                                if (isZoomed && navigation != null) {
+                                    visibleEndTime = navigation.getVisibleEndTime();
+                                    visibleStartTime = navigation.getVisibleStartTime();
+                                }
                                 if (updateContent(timelineAsString) && !actualContentSet) { // replace placeholder content with actual
                                                                                             // content
                                     refreshLabel.setParent(new Shell());
                                     refreshLabel.dispose();
                                     rootComposite.setParent(parentComposite);
                                     rootComposite.getShell().layout(true, true);
-                                    zoomInAction.setEnabled(true);
-                                    zoomOutAction.setEnabled(true);
+                                    enableZoomActions();
                                     filterAction.setEnabled(true);
                                     actualContentSet = true;
                                 }
@@ -338,9 +344,12 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                                 // update the scrollbars (needed if new components were contributing to the timeline)
                                 list.setMinSize(list.computeSize(SWT.DEFAULT, SWT.DEFAULT, true));
                                 list.layout();
-
                                 rootComposite.pack();
                                 rootComposite.setBounds(rootComposite.getParent().getBounds());
+                                // Restore viewport if timeline is zoomed in
+                                if (isZoomed && visibleStartTime != null && visibleEndTime != null) {
+                                    setVisibleArea(visibleStartTime, visibleEndTime);
+                                }
                                 refreshAction.setEnabled(!workflowTerminated);
                             }
                         }
@@ -648,7 +657,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 } else if (minZoom < 0) {
                     setZoom(defaultMinimumZoomValue);
                 }
-
+                enableZoomActions();
             }
         };
         zoomInAction.setImageDescriptor(ImageDescriptor
@@ -667,6 +676,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 } else if (minZoom > 0 && minZoom < maxZoom) {
                     setZoom(currentZoomValue + minZoom);
                 }
+                enableZoomActions();
             }
         };
         zoomOutAction.setImageDescriptor(ImageDescriptor
@@ -704,14 +714,19 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         filterAction.setEnabled(false);
     }
 
+    protected void enableZoomActions() {
+        zoomOutAction.setEnabled(currentZoomValue != defaultMaximumZoomValue);
+        zoomInAction.setEnabled(currentZoomValue != 0);
+    }
+
     private void contributeToActionBars() {
         IActionBars bars = getViewSite().getActionBars();
         IToolBarManager manager = bars.getToolBarManager();
 
         manager.add(refreshAction);
         manager.add(new Separator());
-        manager.add(zoomOutAction);
         manager.add(zoomInAction);
+        manager.add(zoomOutAction);
         manager.add(new Separator());
         manager.add(filterAction);
         manager.add(new Separator());
@@ -735,9 +750,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             if (installation.getInstallationId().startsWith(identifier)) {
                 if (!COMPONENT_ICON_CACHE.containsKey(installation.getInstallationId())) {
                     byte[] icon = installation.getComponentRevision().getComponentInterface().getIcon16();
-                    Image image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
-                        new ByteArrayInputStream(icon))).createImage();
-                    COMPONENT_ICON_CACHE.put(installation.getInstallationId(), image);
+                    if (icon != null) {
+                        Image image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
+                            new ByteArrayInputStream(icon))).createImage();
+                        COMPONENT_ICON_CACHE.put(installation.getInstallationId(), image);
+                    } else {
+                        COMPONENT_ICON_CACHE.put(installation.getInstallationId(),
+                            ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_16));
+                    }
                 }
                 return COMPONENT_ICON_CACHE.get(installation.getInstallationId());
             }
@@ -905,6 +925,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             this.scrollBar.getMaximum(), wfStartDate, wfEndDate)
             - scrollBar.getMinimum();
         this.scrollBar.setSelection(beginSelection);
+        enableZoomActions();
     }
 
 }

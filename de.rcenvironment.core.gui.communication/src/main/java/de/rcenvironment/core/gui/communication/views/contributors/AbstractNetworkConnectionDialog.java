@@ -74,6 +74,10 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
     private static final int CHECKBOX_LABEL_WIDTH = 300;
 
+    private static Text portTextField;
+
+    private static PasteListeningText hostTextField;
+
     protected String connectionName = "";
 
     protected String networkContactPointID = "";
@@ -87,7 +91,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
     protected String settingsText = "";
 
     private boolean connectImmediately = true;
-
+    
     private NetworkContactPoint parsedNetworkContactPoint;
 
     private final Log log = LogFactory.getLog(getClass());
@@ -95,10 +99,6 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
     private Button useDefaultNameButton;
 
     private Button useDefaultSettings;
-
-    private Text portTextField;
-
-    private PasteListeningText hostTextField;
 
     private Text nameText;
 
@@ -205,8 +205,10 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
                 nameText.setEnabled(!useDefaultNameButton.getSelection());
                 nameText.setText("");
                 if (useDefaultNameButton.getSelection()) {
-                    if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
+                    if (!hostTextField.getText().isEmpty() 
+                        && !portTextField.getText().isEmpty()) {
+                        nameText.setText(hostTextField.getText() 
+                            + COLON + portTextField.getText());
                     }
                 }
                 updateOkButtonActivation();
@@ -218,6 +220,8 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
                 widgetDefaultSelected(e);
             }
         });
+        
+
 
         buildSettingsField();
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
@@ -235,10 +239,12 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         persistHint.setLayoutData(hintGridData);
 
         nameText.addModifyListener(new ModifyListener() {
-
+            
+            @SuppressWarnings("unused")
             @Override
             public void modifyText(ModifyEvent e) {
                 connectionName = nameText.getText();
+              
             }
         });
         connectImmediately = immediateConnectButton.getSelection();
@@ -258,36 +264,35 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         return container;
     }
 
+   
+    
+    
+    
     @Override
     public void modifyText(ModifyEvent e) {
         host = hostTextField.getText();
         port = portTextField.getText();
         if (useDefaultNameButton.getSelection()) {
-            if (!hostTextField.getText().isEmpty() && !portTextField.getText().isEmpty()) {
-                nameText.setText(hostTextField.getText() + COLON + portTextField.getText());
+            if (!hostTextField.getText().isEmpty() 
+                && !portTextField.getText().isEmpty()) {
+                nameText.setText(hostTextField.getText()
+                    + COLON + portTextField.getText());
             } else {
                 nameText.setText("");
             }
         }
         updateOkButtonActivation();
     }
-
+    
+    /**
+    *
+    * Paste host and port.
+    * @param text String
+    *
+    **/
     @Override
     public void paste(String text) {
-        if (!text.contains(COLON)) {
-            return;
-        }
-        String integer = hostTextField.getText().substring(hostTextField.getText().lastIndexOf(COLON) + 1);
-        if (integer.length() > 5) {
-            return;
-        }
-
-        if (!isValidPort(integer)) {
-            return;
-        }
-
-        portTextField.setText(integer);
-        hostTextField.setText(hostTextField.getText().substring(0, hostTextField.getText().length() - integer.length() - 1));
+        CustomPasteHandler.paste(text, hostTextField, portTextField);
     }
 
     @Override
@@ -295,23 +300,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         String currentText = ((Text) e.widget).getText();
         String portID = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
 
-        e.doit = isValidPort(portID);
-    }
-
-    private boolean isValidPort(String p) {
-        final int maxPort = 65535;
-        try {
-            int portNum = Integer.valueOf(p);
-            if (portNum <= 0 || portNum > maxPort) {
-                return false;
-            }
-
-        } catch (NumberFormatException ex) {
-            if (!p.equals("")) {
-                return false;
-            }
-        }
-        return true;
+        e.doit = CustomPasteHandler.isValidPort(portID);
     }
 
     private void buildSettingsField() {
@@ -450,6 +439,8 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         }
 
     }
+    
+    
 
     private String removeEmptySpaces(String string) {
         String temp = string.replaceAll("\\s", "");

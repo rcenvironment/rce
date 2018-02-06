@@ -53,8 +53,8 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     private AutoCreationMap<String, List<TypedDatum>> capturedOutputValues;
 
     private List<String> capturedOutputClosings;
-
-    private List<String> capturedOutputResets;
+    
+    private boolean resetOutputsCalled;
 
     private final TypedDatumService typedDatumService;
 
@@ -199,8 +199,8 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     @Override
-    public void resetOutput(String outputName) {
-        capturedOutputResets.add(outputName);
+    public void resetOutputs() {
+        resetOutputsCalled = true;
     }
 
     @Override
@@ -377,12 +377,10 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Returns a list of all output names, which were reset. If no output was reset, an empty list is returned.
-     * 
-     * @return a list of the captured outputs, which were reset; may be empty, but not <code>null</code>
+     * @return Returns <code>true</code> if a reset was send out of the component's outputs.
      */
-    public List<String> getCapturedOutputResets() {
-        return capturedOutputResets;
+    public boolean isResetOutputsCalled() {
+        return resetOutputsCalled;
     }
 
     /**
@@ -410,7 +408,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
      * Clears all captured output resets; automatically called by {@link ComponentTestWrapper}.
      */
     protected void resetOutputResets() {
-        capturedOutputResets = new ArrayList<>();
+        resetOutputsCalled = false;
     }
 
     /**

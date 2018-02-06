@@ -51,6 +51,14 @@ public class TypedDatumToOutputWriter {
         writeTypedDatumToCertainConnectedOutputs(outputName, datumToSend, null, null, outputDmId);
     }
     
+    /**
+     * Send the datumToSend to the output but only to the recipient which matches the given inputCompExeId and the given inputName.  
+     * 
+     * @param outputName
+     * @param datumToSend
+     * @param inputCompExeId
+     * @param inputName
+     */
     protected void writeTypedDatumToOutputConsideringOnlyCertainInputs(String outputName, TypedDatum datumToSend, String inputCompExeId,
         String inputName) {
         writeTypedDatumToCertainConnectedOutputs(outputName, datumToSend, inputCompExeId, inputName, null);
@@ -58,8 +66,11 @@ public class TypedDatumToOutputWriter {
 
     private void writeTypedDatumToCertainConnectedOutputs(String outputName, TypedDatum datumToSend, String inputCompExeId,
         String inputName, Long outputDmId) {
+        // map from each output of the component to a list of all connected recipients
         Map<String, List<EndpointDatumRecipient>> endpointDatumRecipients = compExeCtx.getEndpointDatumRecipients();
         if (endpointDatumRecipients.containsKey(outputName)) {
+            // if the output is connected ...
+            
             for (EndpointDatumRecipient epRecipient : endpointDatumRecipients.get(outputName)) {
                 if (considerRecipient(epRecipient, inputCompExeId, inputName)) {
                     EndpointDatumImpl endpointDatum = new EndpointDatumImpl();

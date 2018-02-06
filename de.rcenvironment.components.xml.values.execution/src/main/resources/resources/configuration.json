@@ -1,0 +1,8 @@
+{
+    "configuration": [
+		{
+            "key": "storeComponentHistoryData",
+            "defaultValue": "true"
+        }
+    ]
+}

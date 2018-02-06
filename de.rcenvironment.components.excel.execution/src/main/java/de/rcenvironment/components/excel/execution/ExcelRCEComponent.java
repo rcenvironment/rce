@@ -92,7 +92,7 @@ public abstract class ExcelRCEComponent extends DefaultComponent {
     
     @Override
     public void dispose() {
-        if (componentContext != null) {
+        if (componentContext != null && notificationService != null) {
             // clears notification buffer
             notificationService.removePublisher(componentContext.getExecutionIdentifier() 
                 + ExcelComponentConstants.NOTIFICATION_SUFFIX);            

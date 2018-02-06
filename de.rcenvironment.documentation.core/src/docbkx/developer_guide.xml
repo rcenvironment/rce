@@ -48,7 +48,10 @@
 		<title>Quality Assurance and Testing</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/automated_gui_testing.xml" />
+		<xi:include href="developer_guide/sections/test_script_runner.xml"
+			xmlns:xi="http://www.w3.org/2001/XInclude"/>
 	</chapter>
+	
 
 	<chapter>
 		<title>Licensing and Copyright</title>

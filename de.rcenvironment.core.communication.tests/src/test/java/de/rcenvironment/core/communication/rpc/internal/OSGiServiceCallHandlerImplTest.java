@@ -19,8 +19,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -41,6 +39,7 @@ import de.rcenvironment.core.communication.spi.CallbackObject;
 import de.rcenvironment.core.communication.testutils.CommunicationTestHelper;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link ServiceCallHandlerServiceImpl} with an OSGi service resolver.
@@ -80,7 +79,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         EasyMock.expect(senderMock.send(REQUEST)).andReturn(RESULT).anyTimes();
         EasyMock.replay(senderMock);
 
-        ServiceReference factoryRefMock = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?> factoryRefMock = EasyMock.createNiceMock(ServiceReference.class);
 
         ServiceCallSenderFactory factoryMock = EasyMock.createNiceMock(ServiceCallSenderFactory.class);
         EasyMock.expect(factoryMock.createServiceCallSender(SERVICE_CONTACT))
@@ -89,7 +88,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
             .andReturn(new ServiceCallSenderDummy()).anyTimes();
         EasyMock.replay(factoryMock);
 
-        ServiceReference testServiceRef = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?> testServiceRef = EasyMock.createNiceMock(ServiceReference.class);
 
         MethodCallTestInterface testmethods = new MethodCallTestInterfaceImpl();
 
@@ -102,8 +101,10 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         EasyMock.expect(contextMock.getServiceReferences(REQUEST.getServiceName(), null))
             .andReturn(new ServiceReference[] { testServiceRef }).anyTimes();
 
-        EasyMock.expect(contextMock.getService(factoryRefMock)).andReturn(factoryMock).anyTimes();
-        EasyMock.expect(contextMock.getService(testServiceRef)).andReturn(testmethods).anyTimes();
+        contextMock.getService(factoryRefMock);
+        EasyMock.expectLastCall().andReturn(factoryMock).anyTimes();
+        contextMock.getService(testServiceRef);
+        EasyMock.expectLastCall().andReturn(testmethods).anyTimes();
         EasyMock.replay(contextMock);
 
         callHandler = new ServiceCallHandlerServiceImpl();

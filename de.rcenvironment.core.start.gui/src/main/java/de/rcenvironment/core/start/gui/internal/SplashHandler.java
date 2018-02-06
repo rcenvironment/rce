@@ -48,9 +48,9 @@ public class SplashHandler extends BasicSplashHandler {
 
     private static final int WHITE = 255;
 
-    private static final int XCOORD = 230;
+    private static final int XCOORD = 246;
 
-    private static final int YCOORD = 225;
+    private static final int YCOORD = 224;
 
     private static String releasename;
 

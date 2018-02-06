@@ -19,19 +19,19 @@ import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualNe
  */
 public class VirtualTransportTestConfiguration extends TestConfigurationImpl {
 
-    private static final int TRAFFIC_WAIT_TIME = 500;
+    private static final int DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC = 1000;
 
-    private static final int SILENCE_WAIT_TIME = 250;
+    private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIME_MSEC = 1000;
 
-    private static final int SILENCE_WAIT_TIMEOUT = 10000;
+    private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIMEOUT_MSEC = 25000;
 
     public VirtualTransportTestConfiguration(boolean useDuplexTransport) {
         setContactPointGenerator(new VirtualNetworkContactPointGenerator("virtualhost"));
         MessageChannelIdFactory connectionIdFactory = new DefaultMessageChannelIdFactoryImpl();
         setTransportProvider(new VirtualNetworkTransportProvider(useDuplexTransport, connectionIdFactory));
-        setDefaultTrafficWaitTimeout(TRAFFIC_WAIT_TIME);
-        setDefaultNetworkSilenceWait(SILENCE_WAIT_TIME);
-        setDefaultNetworkSilenceWaitTimeout(SILENCE_WAIT_TIMEOUT);
+        setDefaultTrafficWaitTimeout(DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC);
+        setDefaultNetworkSilenceWait(DEFAULT_NETWORK_SILENCE_WAIT_TIME_MSEC);
+        setDefaultNetworkSilenceWaitTimeout(DEFAULT_NETWORK_SILENCE_WAIT_TIMEOUT_MSEC);
     }
 
 }

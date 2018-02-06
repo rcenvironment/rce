@@ -137,7 +137,7 @@ public class BuiltInCommandPlugin implements CommandPlugin {
             if (outputFilename == null) {
                 throw CommandException.syntaxError("Missing filename after -o parameter", context);
             }
-            final CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver("");
+            final CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver();
             CommandContext wrappedContext =
                 new CommandContext(context.consumeRemainingTokens(), outputReceiver, context.getInvokerInformation());
             commandInvoker.execute(wrappedContext);

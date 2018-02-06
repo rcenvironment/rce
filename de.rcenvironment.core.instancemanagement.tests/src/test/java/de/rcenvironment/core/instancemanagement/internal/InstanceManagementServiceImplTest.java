@@ -11,6 +11,7 @@ package de.rcenvironment.core.instancemanagement.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -19,10 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -35,8 +33,9 @@ import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.internal.ConfigurationStore;
 import de.rcenvironment.core.configuration.internal.ConfigurationStoreImpl;
-import de.rcenvironment.core.instancemanagement.InstanceManagementService.ConfigurationFlag;
+import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
 import de.rcenvironment.core.instancemanagement.internal.ConfigurationSegmentFactory.SegmentBuilder;
+import de.rcenvironment.core.utils.common.ComparatorUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutReceiver;
@@ -46,6 +45,7 @@ import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutRec
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
  */
 public class InstanceManagementServiceImplTest {
 
@@ -73,7 +73,7 @@ public class InstanceManagementServiceImplTest {
 
     private ConfigurationStore configStore;
 
-    private ConfigurationChangeSequence sequence = new ConfigurationChangeSequence();
+    private InstanceConfigurationOperationSequence sequence;
 
     private TempFileService tempFileService;
 
@@ -91,6 +91,7 @@ public class InstanceManagementServiceImplTest {
         File tempDir = tempFileService.createManagedTempDir();
         testFile = tempFileService.createTempFileWithFixedFilename("configuration.json");
         imService = new InstanceManagementServiceImpl();
+        sequence = imService.newConfigurationOperationSequence();
         userOutputReceiver = new LoggingTextOutReceiver("");
         copyResourceToFile(CONFIG_PATH, testFile);
         configStore = new ConfigurationStoreImpl(testFile);
@@ -239,17 +240,44 @@ public class InstanceManagementServiceImplTest {
 
     /**
      * 
-     * Test if setting the instance name works correctly.
+     * Test if resetting the config works correctly.
      * 
-     * @throws IOException on failure.
+     * @throws InstanceConfigurationException on failure.
+     * @throws IOException on I/O specific failures.
      */
     @Test
-    public void testSettingInstanceName() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_NAME, String.class, "Bruno"));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testConfigureOperationReset() throws InstanceConfigurationException, IOException {
+        // First write something to the config
+        final String testName = "Bruno";
+        sequence.setName(testName);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
+        sequence = imService.newConfigurationOperationSequence();
+        sequence.resetConfiguration();
+        // Now reset config
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getString(segmentBuilder.general().instanceName().getConfigurationKey()), "Bruno");
+        assertNull(segment.getString(segmentBuilder.general().instanceName().getConfigurationKey()));
+    }
+
+    /**
+     * 
+     * Test if setting the instance name works correctly.
+     * 
+     * @throws InstanceConfigurationException on failure.
+     * @throws IOException on I/O specific failures.
+     */
+    @Test
+    public void testConfigureOperationSetInstanceName() throws InstanceConfigurationException, IOException {
+        final String testName = "Bruno";
+        sequence.setName(testName);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
+        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
+        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
+        assertEquals(segment.getString(segmentBuilder.general().instanceName().getConfigurationKey()), testName);
     }
 
     /**
@@ -257,14 +285,17 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the instance comment works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingInstanceComment() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_COMMENT, String.class, "Java ist nice"));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testConfigureOperationSetInstanceComment() throws InstanceConfigurationException, IOException {
+        final String testComment = "some comment";
+        sequence.setComment(testComment);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getString(segmentBuilder.general().comment().getConfigurationKey()), "Java ist nice");
+        assertEquals(segment.getString(segmentBuilder.general().comment().getConfigurationKey()), testComment);
     }
 
     /**
@@ -272,14 +303,17 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the workflow host flag works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingWorkflowHost() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_WORKFLOWHOST, Boolean.class, true));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testConfigureOperationSetWorkflowHost() throws InstanceConfigurationException, IOException {
+        final boolean testValue = true;
+        sequence.setWorkflowHostFlag(testValue);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getBoolean(segmentBuilder.general().isWorkflowHost().getConfigurationKey()), true);
+        assertEquals(segment.getBoolean(segmentBuilder.general().isWorkflowHost().getConfigurationKey()), testValue);
     }
 
     /**
@@ -287,11 +321,13 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the relay flag works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingRelayFlag() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_RELAY, Boolean.class, true));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testConfigureOperationSetRelayFlag() throws InstanceConfigurationException, IOException {
+        sequence.setRelayFlag(true);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
         assertEquals(segment.getBoolean(segmentBuilder.general().isRelay().getConfigurationKey()), true);
@@ -302,30 +338,17 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the temp directory works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingTempDir() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.TEMP_DIR, String.class, "Rachel"));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
-        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
-        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getString(segmentBuilder.general().tempDirectory().getConfigurationKey()), "Rachel");
-    }
+    public void testConfigureOperationSetTempDir() throws InstanceConfigurationException, IOException {
+        final String testPath = "Rachel";
+        sequence.setTempDirPath(testPath);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
 
-    /**
-     * 
-     * Test if setting the deprecated input tab works corretly.
-     * 
-     * @throws IOException on failure.
-     */
-    @Test
-    public void testSettingEnabledDepInTab() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_DEP_INPUT_TAB,
-            Boolean.class, true));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getBoolean(segmentBuilder.general().enableDeprecatedInputTab().getConfigurationKey()), true);
+        assertEquals(segment.getString(segmentBuilder.general().tempDirectory().getConfigurationKey()), testPath);
     }
 
     /**
@@ -333,13 +356,14 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the background monitoring works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testEnableBackgroundMonitoring() throws IOException {
-        Map<String, Integer> map = new HashMap<String, Integer>();
-        map.put("Donna", 2);
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_BACKGROUND_MONITORING, Object.class, map));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testEnableBackgroundMonitoring() throws InstanceConfigurationException, IOException {
+        String id = "Donna";
+        int interval = 2;
+        sequence.setBackgroundMonitoring(id, interval);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.backgroundMonitoring().getPath());
         assertEquals(segment.getString(segmentBuilder.backgroundMonitoring().enableIds().getConfigurationKey()), "Donna");
@@ -351,13 +375,13 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the request timeout works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingRequestTimeout() throws IOException {
+    public void testSettingRequestTimeout() throws InstanceConfigurationException, IOException {
         final long niceValue = 42;
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REQUEST_TIMEOUT,
-            Long.class, niceValue));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        sequence.setRequestTimeout(niceValue);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().getPath());
         assertTrue(segment.getLong(segmentBuilder.network().requestTimeoutMsec().getConfigurationKey()) == niceValue);
@@ -368,13 +392,13 @@ public class InstanceManagementServiceImplTest {
      * Test if setting the forwarding timeout works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingForwardingTimeout() throws IOException {
+    public void testSettingForwardingTimeout() throws InstanceConfigurationException, IOException {
         final long niceValue = 42;
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.FORWARDING_TIMEOUT,
-            Long.class, niceValue));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        sequence.setForwardingTimeout(niceValue);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().getPath());
         assertTrue(segment.getLong(segmentBuilder.network().forwardingTimeoutMsec().getConfigurationKey()) == niceValue);
@@ -382,28 +406,30 @@ public class InstanceManagementServiceImplTest {
 
     /**
      * 
-     * Test if adding a new connection correctly.
+     * Test if adding a new connection and removing a connection works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testAddingConnection() throws IOException {
+    public void testConfigureOperationsAddAndRemoveConnection() throws InstanceConfigurationException, IOException {
         final String name = "Mike";
         final String host = "Ross";
         final int port = 42;
         final boolean connectOnStartup = false;
-        final long autoRetrylInitDelay = 42;
-        final long autoRetryMax = 42;
-        final int multi = 42;
+        final int autoRetrylInitDelay = 42;
+        final int autoRetryMax = 42;
+        final float multiplier = 2.7f;
+        sequence.addNetworkConnection(name, host, port, connectOnStartup, autoRetrylInitDelay, autoRetryMax, multiplier);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
 
-        ConfigurationConnection connection =
-            new ConfigurationConnection(name, host, port, connectOnStartup, autoRetrylInitDelay, autoRetryMax, multi);
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_CONNECTION, ConfigurationConnection.class, connection));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        final double maxDoubleDelta = 0.0001;
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().connections().getOrCreateConnection(name).getPath());
-        assertTrue(segment.getInteger(segmentBuilder.network().connections().getOrCreateConnection(name).autoRetryDelayMultiplier()
-            .getConfigurationKey()) == multi);
+        assertTrue(ComparatorUtils.doubleEqualWithinDelta(
+            segment.getDouble(segmentBuilder.network().connections().getOrCreateConnection(name).autoRetryDelayMultiplier()
+                .getConfigurationKey()),
+            multiplier, maxDoubleDelta));
         assertTrue(segment.getLong(segmentBuilder.network().connections().getOrCreateConnection(name).autoRetryInitialDelay()
             .getConfigurationKey()) == autoRetrylInitDelay);
         assertTrue(segment.getLong(segmentBuilder.network().connections().getOrCreateConnection(name).autoRetryMaximumDelay()
@@ -415,6 +441,15 @@ public class InstanceManagementServiceImplTest {
             .getConfigurationKey()) == port);
         assertEquals(segment.getString(segmentBuilder.network().connections().getOrCreateConnection(name).host()
             .getConfigurationKey()), host);
+        
+        
+        //Remove the connection
+        sequence = imService.newConfigurationOperationSequence();
+        sequence.removeConnection(name);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        root = configStore.getSnapshotOfRootSegment();
+        segment = root.getSubSegment(segmentBuilder.network().connections().getOrCreateConnection(name).getPath());
+        assertFalse(segment.isPresentInCurrentConfiguration());
     }
 
     /**
@@ -422,152 +457,174 @@ public class InstanceManagementServiceImplTest {
      * Test if adding a new server port works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testAddingServerPort() throws IOException {
-        final int testPort = 42;
-        List<String> objList = new LinkedList<>();
+    public void testConfigureOperationAddServerPort() throws InstanceConfigurationException, IOException {
         String name = "sillyPort";
         String ip = "niceIP";
-        String port = Integer.toString(testPort);
-        objList.add(name);
-        objList.add(ip);
-        objList.add(port);
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_SERVER_PORT, Object.class, objList));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        final int port = 42;
+        sequence.addServerPort(name, ip, port);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().ports().getOrCreateServerPort(name).getPath());
         assertEquals(segment.getString(segmentBuilder.network().ports().getOrCreateServerPort(name).ip().getConfigurationKey()), ip);
-        assertEquals(Integer.valueOf(testPort),
+        assertEquals(Integer.valueOf(port),
             segment.getInteger(segmentBuilder.network().ports().getOrCreateServerPort(name).port().getConfigurationKey()));
     }
 
     /**
      * 
-     * Test if setting the ip filter works correctly.
-     * 
-     * @throws IOException on failure.
-     */
-    @Test
-    public void testSettingIpFilter() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_DEP_INPUT_TAB, Boolean.class, true));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
-        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
-        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.general().getPath());
-        assertEquals(segment.getBoolean(segmentBuilder.general().enableDeprecatedInputTab().getConfigurationKey()), true);
-    }
-
-    /**
-     * 
-     * Test if adding an allowed ip works correctly.
+     * Test if adding and removing an allowed ip works correctly.
      * 
      * @throws IOException on failure.
      * @throws ConfigurationException on config failure.
      */
     @Test
-    public void testAddingAllowedIP() throws IOException, ConfigurationException {
+    public void testConfigureOperationsAddAndRemoveAllowedIP() throws IOException, ConfigurationException {
+        //Add an allowed IP
         String ip = "Jessica";
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_ALLOWED_IP, String.class, ip));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        sequence.addAllowedInboundIP(ip);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().ipFilter().getPath());
         assertTrue(segment.getStringArray(segmentBuilder.network().ipFilter().allowedIps().getConfigurationKey()).contains(ip));
+   
+        //Remove the allowed IP
+        sequence = imService.newConfigurationOperationSequence();
+        sequence.removeAllowedInboundIP(ip);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        root = configStore.getSnapshotOfRootSegment();
+        segment = root.getSubSegment(segmentBuilder.network().ipFilter().getPath());
+        assertFalse(segment.getStringArray(segmentBuilder.network().ipFilter().allowedIps().getConfigurationKey()).contains(ip));
     }
+
 
     /**
      * 
-     * Test if adding new ssh connection works correctly.
+     * Test if adding and removing an ssh connection works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testAddingSshConnection() throws IOException {
+    public void testConfigureOperationAddSshConnection() throws InstanceConfigurationException, IOException {
+        
+        //Add SSH connection
         final String name = "niceConnection";
         final String displayName = "nice";
         final String host = "bestHost";
         final int port = 42;
         final String loginName = "nicerLoginName";
 
-        ConfigurationSshConnection connection = new ConfigurationSshConnection(name, displayName, host, port, loginName);
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_SSH_CONNECTION, ConfigurationSshConnection.class, connection));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        sequence.addSshConnection(name, displayName, host, port, loginName);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment =
             root.getSubSegment(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).getPath());
 
         assertEquals(
             segment.getString(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).displayName()
-                .getConfigurationKey()), displayName);
+                .getConfigurationKey()),
+            displayName);
         assertEquals(segment.getString(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).host()
             .getConfigurationKey()), host);
         assertEquals(
             segment.getString(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).loginName()
-                .getConfigurationKey()), loginName);
+                .getConfigurationKey()),
+            loginName);
         assertTrue(segment.getInteger(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).port()
             .getConfigurationKey()) == port);
+        
+        //Remove the connection again
+        sequence = imService.newConfigurationOperationSequence();
+        sequence.removeSshConnection(name);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        root = configStore.getSnapshotOfRootSegment();
+        segment =
+            root.getSubSegment(segmentBuilder.sshRemoteAccess().sshConnections().getOrCreateSshConnection(name).getPath());
+        assertFalse(segment.isPresentInCurrentConfiguration());
     }
+    
 
     /**
      * 
-     * Test if adding new published component correctly.
+     * Test if publishing and unpublishing a component works correctly.
      * 
      * @throws IOException on failure.
      * @throws ConfigurationException on config failure.
      */
     @Test
-    public void testAddingPublishedComponent() throws IOException, ConfigurationException {
+    public void testConfigureOperationsAddAndRemovePublishedComponent() throws IOException, ConfigurationException {
+        //Publish component
         String component = "heftigeKomponente";
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.PUBLISH_COMPONENT, String.class, component));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        sequence.publishComponent(component);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.publishing().getPath());
         assertTrue(segment.getStringArray(segmentBuilder.publishing().components().getConfigurationKey()).contains(component));
+   
+        //Unpublish it again
+        sequence = imService.newConfigurationOperationSequence();
+        sequence.unpublishComponent(component);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+        root = configStore.getSnapshotOfRootSegment();
+        segment = root.getSubSegment(segmentBuilder.publishing().getPath());
+        assertFalse(segment.getStringArray(segmentBuilder.publishing().components().getConfigurationKey()).contains(component));
     }
 
     /**
-     * 
-     * Test if setting the ssh server works correctly.
+     * Test if setting up the SSH server works correctly.
      * 
      * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
      */
     @Test
-    public void testSettingSshServer() throws IOException {
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_SSH_SERVER, Boolean.class, true));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+    public void testConfigureOperationEnableSshServer() throws InstanceConfigurationException, IOException {
+        final String ip = "1.2.3.4";
+        final int port = 22222;
+        sequence.enableSshServer(ip, port);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
         ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
         ConfigurationSegment segment = root.getSubSegment(segmentBuilder.sshServer().getPath());
         assertEquals(segment.getBoolean(segmentBuilder.sshServer().enabled().getConfigurationKey()), true);
-    }
-
-    /**
-     * 
-     * Test if setting the ssh server ip works correctly.
-     * 
-     * @throws IOException on failure.
-     */
-    @Test
-    public void testSettingSshServerIP() throws IOException {
-        String ip = "Harvey";
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_SSH_SERVER_IP, String.class, ip));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
-        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
-        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.sshServer().getPath());
         assertEquals(segment.getString(segmentBuilder.sshServer().ip().getConfigurationKey()), ip);
-    }
-
-    /**
-     * 
-     * Test if setting the ssh server port works correctly.
-     * 
-     * @throws IOException on failure.
-     */
-    @Test
-    public void testSettingSshServerPort() throws IOException {
-        final int port = 42;
-        sequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_SSH_SERVER_PORT, Integer.class, port));
-        imService.configureInstance(testFile.getParentFile().getName(), sequence, userOutputReceiver);
-        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
-        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.sshServer().getPath());
         assertTrue(segment.getInteger(segmentBuilder.sshServer().port().getConfigurationKey()) == port);
     }
+
+    /**
+     * Test if disabling the SSH server works correctly.
+     * 
+     * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
+     */
+    @Test
+    public void testConfigureOperationDisableSshServer() throws InstanceConfigurationException, IOException {
+        sequence.disableSshServer();
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
+        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
+        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.sshServer().getPath());
+        assertEquals(segment.getBoolean(segmentBuilder.sshServer().enabled().getConfigurationKey()), false);
+    }
+
+    /**
+     * 
+     * Test if setting the ip filter flag works correctly.
+     * 
+     * @throws IOException on failure.
+     * @throws InstanceConfigurationException .
+     */
+    @Test
+    public void testConfigureOperationSetIpFilterFlag() throws InstanceConfigurationException, IOException {
+        sequence.setIpFilterEnabled(true);
+        imService.applyInstanceConfigurationOperations(testFile.getParentFile().getName(), sequence, userOutputReceiver);
+
+        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
+        ConfigurationSegment segment = root.getSubSegment(segmentBuilder.network().ipFilter().getPath());
+        assertEquals(segment.getBoolean(segmentBuilder.network().ipFilter().enabled().getConfigurationKey()), true);
+    }
+
 }

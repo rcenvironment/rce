@@ -8,6 +8,7 @@
 
 package de.rcenvironment.components.joiner.gui;
 
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.components.joiner.common.JoinerComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.EndpointHandlingHelper;
@@ -41,9 +43,7 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
     private static final int MINIMUM_SIZE_CONTROLS = 70;
 
-    private static final int CONFIG_COMBO_WIDTH = 95;
-
-    private static final int COMPOSITES_HEIGHT = 274;
+    private static final int MINIMUM_INPUT_COUNT = 2;
 
     private static final int MAXIMUM_INPUT_COUNT = 100;
 
@@ -55,11 +55,9 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
     private final EndpointSelectionPane inputPane;
 
-    private Section section;
-
-    private Composite configurationComposite;
-
     private final EndpointSelectionPane outputPane;
+
+    private boolean disableSectionRefresh = false;
 
     public JoinerInputSection() {
         inputPane = new EndpointSelectionPane(Messages.inputs, EndpointType.INPUT, null,
@@ -72,22 +70,22 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
     }
 
     @Override
-    public void createControls(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        super.createControls(parent, aTabbedPropertySheetPage);
+    public void createCompositeContent(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
+        super.createCompositeContent(parent, aTabbedPropertySheetPage);
 
-        section = aTabbedPropertySheetPage.getWidgetFactory().createSection(endpointsComposite, Section.TITLE_BAR);
+        Section section = aTabbedPropertySheetPage.getWidgetFactory().createSection(endpointsComposite, Section.TITLE_BAR);
         section.setText(Messages.joinerConfig);
         GridData sectionData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
         sectionData.horizontalSpan = 2;
         section.setLayoutData(sectionData);
-        configurationComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(section);
+        Composite configurationComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(section);
 
         configurationComposite.setLayout(new GridLayout(2, false));
         GridData cCompData = new GridData();
         cCompData.horizontalSpan = 2;
         configurationComposite.setLayoutData(cCompData);
-        Label inputTypeLabel = new Label(configurationComposite, SWT.NONE);
-        inputTypeLabel.setText(Messages.inputType);
+        Label dataTypeLabel = new Label(configurationComposite, SWT.NONE);
+        dataTypeLabel.setText(Messages.inputType);
 
         dataTypeCombo = new Combo(configurationComposite, SWT.READ_ONLY);
         dataTypeCombo.setData(CONTROL_PROPERTY_KEY, JoinerComponentConstants.DATATYPE);
@@ -100,10 +98,7 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         inputCountLabel.setText(Messages.inputCount);
         inputCountSpinner = new Spinner(configurationComposite, SWT.BORDER);
         inputCountSpinner.setData(CONTROL_PROPERTY_KEY, JoinerComponentConstants.INPUT_COUNT);
-        gridData = new GridData(GridData.GRAB_HORIZONTAL);
-        gridData.widthHint = MINIMUM_SIZE_CONTROLS;
-        inputCountSpinner.setLayoutData(gridData);
-        inputCountSpinner.setMinimum(1);
+        inputCountSpinner.setMinimum(MINIMUM_INPUT_COUNT);
         inputCountSpinner.setMaximum(MAXIMUM_INPUT_COUNT);
         inputCountSpinner.addSelectionListener(new InputCountChangedListener());
         section.moveAbove(inputPane.getControl());
@@ -122,6 +117,12 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         }
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals(EndpointDescriptionsManager.PROPERTY_ENDPOINT) && !disableSectionRefresh) {
+            refreshSection();
+        }
+    }
 
     /**
      * Edits endpoint's data types.
@@ -143,7 +144,10 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
             if (EndpointHandlingHelper.editEndpointDataType(EndpointType.INPUT, oldInput, newDataType)
                 && EndpointHandlingHelper.editEndpointDataType(EndpointType.OUTPUT, oldOutput, newDataType)) {
+                disableSectionRefresh = true;
                 execute(new JoinerEditDynamicEndpointCommand(newDataType));
+                disableSectionRefresh = false;
+                refreshSection();
             }
         }
 
@@ -165,7 +169,10 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         public void widgetSelected(SelectionEvent event) {
             int newCount = inputCountSpinner.getSelection();
             if (newCount != getInputs().size()) {
+                disableSectionRefresh = true;
                 execute(new JoinerAddOrRemoveDynamicEndpointsCommand(newCount));
+                disableSectionRefresh = false;
+                refreshSection();
             }
         }
 

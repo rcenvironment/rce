@@ -31,6 +31,7 @@ import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListener;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
+import de.rcenvironment.core.communication.sshconnection.impl.SshConnectionSetupImpl;
 import de.rcenvironment.core.configuration.SecurePreferencesFactory;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;

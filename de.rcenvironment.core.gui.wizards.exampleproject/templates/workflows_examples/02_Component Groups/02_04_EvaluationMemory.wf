@@ -84,7 +84,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "x1 = RCE.read_input(\"x1\")\nx2 = RCE.read_input(\"x2\")\nx3 = RCE.read_input(\"x3\")\n\nx1s, x2s, x3s = [0.7, -0.5, 0.3]\n\ny = 10.0 * (x1 - x1s)**2 + 1.0 * (x2 - x2s)**4 + 0.1 * (x3 - x3s)**6\nprint(\"Evaluation:  x1=%.8f  x2=%.8f  x3=%.8f  y=%.8f\" % (x1, x2, x3, y))\n\nRCE.write_output(\"y\", y)\n",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },

@@ -56,6 +56,8 @@ import de.rcenvironment.core.utils.common.xml.impl.XMLSupportServiceImpl;
  */
 public class XMLMergerIntegrationTest {
 
+    private static final String DYN_INPUT_ID = "dyn_input_id";
+
     private static final String XML_MAPPING_DIDN_T_PRODUCE_THE_EXPECTED_RESULT = "XML Mapping didn't produce the expected result.";
 
     private static final String DYN_INPUT_NAME = "dyn_input";
@@ -103,6 +105,8 @@ public class XMLMergerIntegrationTest {
     private File expectedResultXml;
     
     private File expectedResultForDynInput;
+
+    private File expectedResultForNonExistentXPath;
     
     private XMLSupportService xmlSupport;
 
@@ -226,6 +230,7 @@ public class XMLMergerIntegrationTest {
         expectedResult = new File("src/test/resources/expectedResult.xml");
         expectedResultXml = new File("src/test/resources/expectedResult2.xml");
         expectedResultForDynInput = new File("src/test/resources/expectedResultForDynInput.xml");
+        expectedResultForNonExistentXPath = new File("src/test/resources/expectedResultForNonExistentXPath.xml");
 
         context.addService(ComponentDataManagementService.class, componentDataManagementServiceMock);
         context.addSimulatedInput(ENDPOINT_NAME_XML, ENDPOINT_NAME_XML, DataType.FileReference, false, null);
@@ -483,7 +488,7 @@ public class XMLMergerIntegrationTest {
 
         Map<String, String> metadata = new HashMap<>();
         metadata.put(VARIABLE_XPATH, "/cpacs/vehicles/aircraft/model[@uID='0.0']");
-        context.addSimulatedInput(DYN_INPUT_NAME, "dyn_input_id", DataType.Float, true, metadata);
+        context.addSimulatedInput(DYN_INPUT_NAME, DYN_INPUT_ID, DataType.Float, true, metadata);
 
         component.start();
 
@@ -557,8 +562,8 @@ public class XMLMergerIntegrationTest {
         context.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, mapping);
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(VARIABLE_XPATH, "/cpacs/vehicles/aircraft/wrongXpath");
-        context.addSimulatedInput(DYN_INPUT_NAME, "dyn_input_id", DataType.Float, true, metadata);
+        metadata.put(VARIABLE_XPATH, "/cpacs/vehicles/aircraft/invalid´´Xpath");
+        context.addSimulatedInput(DYN_INPUT_NAME, DYN_INPUT_ID, DataType.Float, true, metadata);
 
         component.start();
 
@@ -582,6 +587,47 @@ public class XMLMergerIntegrationTest {
      * @throws Exception e
      */
     @Test
+    public void testXMLMappingWithDynamicInputNonExistentXPath() throws Exception {
+
+        // Read Mapping file to String
+        String mapping = FileUtils.readFileToString(mappingRules);
+
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_XSLT);
+        context.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, mapping);
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(VARIABLE_XPATH, "/cpacs/vehicles/aircraft/newNode");
+        context.addSimulatedInput(DYN_INPUT_NAME, DYN_INPUT_ID, DataType.Float, true, metadata);
+
+        component.start();
+
+        context.setInputValue(ENDPOINT_NAME_XML,
+            typedDatumFactory.createFileReference(originCPACS.getAbsolutePath(), originCPACS.getName()));
+        context.setInputValue(ENDPOINT_NAME_XML_TO_INTEGRATE,
+            typedDatumFactory.createFileReference(xmlToIntegrate.getAbsolutePath(), xmlToIntegrate.getName()));
+
+        context.setInputValue(DYN_INPUT_NAME, typedDatumFactory.createFloat(4));
+
+        component.processInputs();
+        File resultFile = new File(((FileReferenceTD) context.getCapturedOutput(ENDPOINT_NAME_XML).get(0)).getFileReference());
+
+        Document resultDoc = xmlSupport.readXMLFromFile(resultFile);
+        Document expectedDoc = xmlSupport.readXMLFromFile(expectedResultForNonExistentXPath);
+        expectedDoc.normalizeDocument();
+        resultDoc.normalizeDocument();
+        assertTrue(XML_MAPPING_DIDN_T_PRODUCE_THE_EXPECTED_RESULT,
+            xmlSupport.writeXMLToString(resultDoc).equals(xmlSupport.writeXMLToString(expectedDoc)));
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+
+    }
+
+    /**
+     * Test with dynamic input.
+     * 
+     * @throws Exception e
+     */
+    @Test
     public void testXMLMappingWithDynamicOutputInvalidXpath() throws Exception {
 
         // Read Mapping file to String
@@ -591,7 +637,7 @@ public class XMLMergerIntegrationTest {
         context.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, mapping);
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(VARIABLE_XPATH, "/cpacs/header/wrongXpath");
+        metadata.put(VARIABLE_XPATH, "/cpacs/header/invalidXpath");
         final String dynOutputName = "dyn_output";
         context.addSimulatedOutput(dynOutputName, "dyn_output_id", DataType.Float, true, metadata);
 

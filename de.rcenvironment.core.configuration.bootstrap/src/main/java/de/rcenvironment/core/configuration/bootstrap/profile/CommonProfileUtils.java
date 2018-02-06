@@ -41,11 +41,11 @@ public final class CommonProfileUtils {
 
     private static final int COMMON_PROFILE_VERSION = 1;
 
-    private static final int MILLIS_BETWEEN_LOCKING_ATTEMPTS = 10;
+    private static final int MILLIS_BETWEEN_LOCKING_ATTEMPTS = 500;
 
     private static final String SAVED_DEFAULT_PROFILE_ERROR_TEMPLATE = "Unable to read the default profile path from %s.";
 
-    private static final int MAX_LOCKING_ATTEMPTS = 10;
+    private static final int MAX_LOCKING_ATTEMPTS = 20;
 
     private static CommonProfileUtils instance;
 

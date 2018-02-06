@@ -23,6 +23,18 @@ public final class OutputWriterComponentConstants {
     /** Identifier of Output Writer component. */
     public static final String COMPONENT_ID = ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "outputwriter";
 
+    /** Workspace placeholder prefix. */
+    public static final String WORKSPACE_PREFIX = "${";
+
+    /** Workspace placeholder suffix. */
+    public static final String WORKSPACE_SUFFIX = "}";
+
+    /** placeholder for the current workspace. */
+    public static final String CURRENT_WORKSPACE = "dir:workspace";
+
+    /** placeholder for the current workspace. */
+    public static final String PH_WORKSPACE = WORKSPACE_PREFIX + CURRENT_WORKSPACE + WORKSPACE_SUFFIX;
+
     /** placeholder prefix. */
     public static final String PH_PREFIX = "[";
 
@@ -43,13 +55,13 @@ public final class OutputWriterComponentConstants {
 
     /** Execution count. */
     public static final String EXECUTION_COUNT = "Execution count";
-    
+
     /** placeholder execution count. */
     public static final String PH_EXECUTION_COUNT = PH_PREFIX + EXECUTION_COUNT + PH_SUFFIX;
-    
+
     /** filename. */
     public static final String FILE_NAME = "Original filename";
-    
+
     /** placeholder filename. */
     public static final String PH_FILE_NAME = PH_PREFIX + FILE_NAME + PH_SUFFIX;
 
@@ -76,7 +88,7 @@ public final class OutputWriterComponentConstants {
 
     /** All Placeholders. */
     public static final String[] WORDLIST = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME,
-        PH_EXECUTION_COUNT , PH_FILE_NAME};
+        PH_EXECUTION_COUNT, PH_FILE_NAME };
 
     /** All Placeholders for sub folders. */
     public static final String[] WORDLIST_SUBFOLDER = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_WF_START_TS,

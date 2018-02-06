@@ -133,8 +133,16 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
             try {
                 // execute the script, written by the user.
                 scriptEngine.eval(body);
-            } catch (IOError | ScriptException e) {
+            } catch (IOError e) {
                 throw new ComponentException("Failed to execute script", e);
+            } catch (ScriptException e) {
+                if (e.getCause() != null) {
+                    // expected case
+                    throw new ComponentException("Script execution error: " + e.getMessage() + "\n" + e.getCause().toString());
+                } else {
+                    // fallback in unexpected cause == null case
+                    throw new ComponentException("Script execution error: " + e.getMessage());
+                }
             }
             try {
                 // this script defines the outputChannel, so that all outputs sent with

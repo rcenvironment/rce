@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="InstanceManagementStepDefinitions">
+	 
+	<implementation
+		class="de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceManagementStepDefinitions" />
+
+	<reference name="InstanceManagementService"
+		interface="de.rcenvironment.core.instancemanagement.InstanceManagementService"
+		bind="bindInstanceManagementService" />
+
+</scr:component>

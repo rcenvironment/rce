@@ -42,7 +42,7 @@ public class EvaluationMemoryHistoryDataItemSubtreeBuilder implements ComponentH
 
     static {
         String bundleName = "de.rcenvironment.components.evaluationmemory.common";
-        String iconName = "evaluation_memory_16.png";
+        String iconName = "evaluationMemory16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

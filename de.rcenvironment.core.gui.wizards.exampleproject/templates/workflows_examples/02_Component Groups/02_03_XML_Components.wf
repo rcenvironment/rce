@@ -1,11 +1,12 @@
 {
-  "identifier" : "2610a723-29fb-45a7-b68c-1232949946bd",
+  "identifier" : "2430bc41-4647-4d80-8b68-063cfc1f5d37",
   "workflowVersion" : "5",
+  "name" : "02_03_XML_Components_2018-01-15_08:36:07_03",
   "nodes" : [ {
-    "identifier" : "ede2f6d0-21f7-467b-b211-16e8847262ae",
-    "name" : "Input Provider XML_1",
-    "location" : "323:313",
-    "zIndex" : "0",
+    "identifier" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
+    "name" : "Input Provider",
+    "location" : "20:180",
+    "zIndex" : "3",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.inputprovider",
@@ -13,46 +14,46 @@
       "name" : "Input Provider"
     },
     "configuration" : {
-      "MappingFile" : "${MappingFile}",
-      "MappingFile_datatype_799ef365" : "file",
-      "XMLFile_1" : "${XMLFile_1}",
-      "XMLFile_1_datatype_799ef365" : "file",
-      "XMLFile_2" : "${XMLFile_2}",
-      "XMLFile_2_datatype_799ef365" : "file"
+      "storeComponentHistoryData" : "true"
     },
     "dynamicOutputs" : [ {
-      "identifier" : "f240bd5b-d34d-412c-95c9-6becba24e2d9",
-      "name" : "MappingFile",
+      "identifier" : "c807c95d-107f-41be-9dbb-9d259858193a",
+      "name" : "CPACS",
       "epIdentifier" : "default",
       "datatype" : "FileReference",
       "metadata" : {
-        "fileSourceType" : "atWorkflowStart",
-        "startValue" : "${MappingRules}"
+        "startValue" : "Workflow Examples Project/02_Component Groups/CPACS.xml"
       }
     }, {
-      "identifier" : "0b8fe408-34d8-4e64-bc5e-ea957f50267b",
-      "name" : "XMLFile_1",
+      "identifier" : "3044d35b-8db5-4dae-a623-ca8bedd42b0c",
+      "name" : "FileToIntegrate",
       "epIdentifier" : "default",
       "datatype" : "FileReference",
       "metadata" : {
-        "fileSourceType" : "atWorkflowStart",
-        "startValue" : "-"
+        "startValue" : "Workflow Examples Project/02_Component Groups/XMLMerger_Integrate.xml"
       }
     }, {
-      "identifier" : "42407623-3f43-4710-bca1-4c56ee40d44f",
-      "name" : "XMLFile_2",
+      "identifier" : "728634bc-d030-4792-9bb4-6f6fd1cde49a",
+      "name" : "MappingRules",
       "epIdentifier" : "default",
       "datatype" : "FileReference",
       "metadata" : {
-        "fileSourceType" : "atWorkflowStart",
-        "startValue" : "${XMLFile_2}"
+        "startValue" : "Workflow Examples Project/02_Component Groups/MappingRules.xsl"
+      }
+    }, {
+      "identifier" : "f219793f-9620-449e-a9b2-0477623d8bf8",
+      "name" : "NewVersionNumber",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "2.0"
       }
     } ]
   }, {
-    "identifier" : "01732c60-224f-431c-b755-f77585fe258b",
+    "identifier" : "dbc0ca7b-255b-4e47-be4f-0e96d99d1016",
     "name" : "Output Writer",
-    "location" : "631:314",
-    "zIndex" : "1",
+    "location" : "20:320",
+    "zIndex" : "0",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.outputwriter",
@@ -63,42 +64,42 @@
       "OWWritePath" : "${targetRootFolder}",
       "SelectRootOnWorkflowStart" : "true",
       "SelectedRoot" : "",
-      "outputLocations" : "{\"outputs\":[{\"identifier\":\"cc3d3ff5-5df1-4b34-a0ed-e749d49ec4e1\",\"filename\":\"ValueFromXML.txt\",\"folderForSaving\":\"[root]\",\"header\":\"\",\"formatString\":\"Value extracted from XML: [valueFromXML]\",\"handleExistingFile\":\"APPEND\",\"inputs\":[\"valueFromXML\"]}]}",
+      "outputLocations" : "{\"outputs\":[{\"identifier\":\"6922bfa4-d7f3-4305-9447-c3f988467815\",\"filename\":\"[Component name].txt\",\"folderForSaving\":\"[root]\",\"header\":\"\",\"formatString\":\"New version number: [VersionNumber]\",\"handleExistingFile\":\"APPEND\",\"inputs\":[\"VersionNumber\"]}]}",
       "storeComponentHistoryData" : "true"
     },
     "dynamicInputs" : [ {
-      "identifier" : "f6552a4b-bc4b-4b38-af4d-ed7e5eaa4cc8",
-      "name" : "MergedXML",
+      "identifier" : "467c598d-e8f0-4287-a8f5-73fbf36c2548",
+      "name" : "VersionNumber",
       "epIdentifier" : "default",
-      "group" : "write",
-      "datatype" : "FileReference",
-      "metadata" : {
-        "filename" : "MergedXML.xml",
-        "folderForSaving" : "[root]",
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Queue"
-      }
-    }, {
-      "identifier" : "f5d93725-6a79-40c9-a377-0086eb766ce2",
-      "name" : "valueFromXML",
-      "epIdentifier" : "default",
-      "group" : "cc3d3ff5-5df1-4b34-a0ed-e749d49ec4e1",
-      "datatype" : "ShortText",
+      "group" : "6922bfa4-d7f3-4305-9447-c3f988467815",
+      "datatype" : "Float",
       "metadata" : {
         "filename" : "-",
         "folderForSaving" : "-",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Queue"
       }
+    }, {
+      "identifier" : "3c74a9c9-7774-4673-af55-e96efe43043c",
+      "name" : "XmlFile",
+      "epIdentifier" : "default",
+      "group" : "write",
+      "datatype" : "FileReference",
+      "metadata" : {
+        "filename" : "XmlFileFromXmlValues.xml",
+        "folderForSaving" : "[root]",
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
     } ],
     "dynamicInputGroups" : [ {
-      "name" : "cc3d3ff5-5df1-4b34-a0ed-e749d49ec4e1",
+      "name" : "6922bfa4-d7f3-4305-9447-c3f988467815",
       "epIdentifier" : "dynamicAndGroup"
     } ]
   }, {
-    "identifier" : "b707d4e9-d642-4080-9f9e-a2038da06672",
+    "identifier" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
     "name" : "XML Merger",
-    "location" : "491:313",
+    "location" : "140:180",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -108,73 +109,109 @@
     },
     "configuration" : {
       "mappingFileDeployment" : "input",
-      "mappingType" : "XSLT",
-      "storeComponentHistoryData" : "true"
+      "storeComponentHistoryData" : "true",
+      "xmlContent" : ""
     },
     "staticInputs" : [ {
-      "identifier" : "5d4b1f09-e23b-4930-ae4b-56c8e30c5413",
+      "identifier" : "f1733cdf-c55f-4c28-96ee-183c47c4c5a0",
       "name" : "XML",
-      "datatype" : "FileReference",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Constant"
-      }
+      "datatype" : "FileReference"
     }, {
-      "identifier" : "e058fac8-4036-4cff-91f4-4c5735cdc841",
+      "identifier" : "4f853a05-336a-4ac7-9f24-7c224cec7d32",
       "name" : "XML to integrate",
-      "datatype" : "FileReference",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Constant"
-      }
+      "datatype" : "FileReference"
     } ],
     "dynamicInputs" : [ {
-      "identifier" : "a8446816-0d9b-4fd0-8876-62527e54e4c1",
+      "identifier" : "3f67fafa-578b-42cc-b934-694598b356f7",
       "name" : "Mapping file",
       "epIdentifier" : "mappingFile",
-      "group" : "null",
       "datatype" : "FileReference"
     } ],
     "staticOutputs" : [ {
-      "identifier" : "dd2668af-1b6e-415f-a028-ef939b03aed7",
+      "identifier" : "78ded4fc-50b5-4760-8cfd-334c4426efb0",
+      "name" : "XML",
+      "datatype" : "FileReference"
+    } ]
+  }, {
+    "identifier" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
+    "name" : "XML Values",
+    "location" : "140:320",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.xmlvalues",
+      "version" : "1.0",
+      "name" : "XML Values"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "fddd202e-6c9c-48ca-91f7-74297a4bfe40",
+      "name" : "XML",
+      "datatype" : "FileReference"
+    } ],
+    "dynamicInputs" : [ {
+      "identifier" : "01acb841-f4da-497b-b5f1-24acd2cb6d43",
+      "name" : "NewVersionNumber",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue",
+        "variable.xpath" : "/cpacs/header/version"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "f69cd874-3171-4331-9972-8803003e2422",
       "name" : "XML",
       "datatype" : "FileReference"
     } ],
     "dynamicOutputs" : [ {
-      "identifier" : "67205b28-5ebd-480f-b555-6079fe298e4a",
-      "name" : "valueFromXML",
+      "identifier" : "7963f228-a05c-4379-81cf-2097e9258cda",
+      "name" : "VersionNumber",
       "epIdentifier" : "default",
-      "datatype" : "ShortText",
+      "datatype" : "Float",
       "metadata" : {
         "variable.xpath" : "/cpacs/header/version"
       }
     } ]
   } ],
   "connections" : [ {
-    "source" : "ede2f6d0-21f7-467b-b211-16e8847262ae",
-    "output" : "f240bd5b-d34d-412c-95c9-6becba24e2d9",
-    "target" : "b707d4e9-d642-4080-9f9e-a2038da06672",
-    "input" : "a8446816-0d9b-4fd0-8876-62527e54e4c1"
+    "source" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
+    "output" : "c807c95d-107f-41be-9dbb-9d259858193a",
+    "target" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
+    "input" : "f1733cdf-c55f-4c28-96ee-183c47c4c5a0"
   }, {
-    "source" : "ede2f6d0-21f7-467b-b211-16e8847262ae",
-    "output" : "0b8fe408-34d8-4e64-bc5e-ea957f50267b",
-    "target" : "b707d4e9-d642-4080-9f9e-a2038da06672",
-    "input" : "5d4b1f09-e23b-4930-ae4b-56c8e30c5413"
+    "source" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
+    "output" : "3044d35b-8db5-4dae-a623-ca8bedd42b0c",
+    "target" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
+    "input" : "4f853a05-336a-4ac7-9f24-7c224cec7d32"
   }, {
-    "source" : "ede2f6d0-21f7-467b-b211-16e8847262ae",
-    "output" : "42407623-3f43-4710-bca1-4c56ee40d44f",
-    "target" : "b707d4e9-d642-4080-9f9e-a2038da06672",
-    "input" : "e058fac8-4036-4cff-91f4-4c5735cdc841"
+    "source" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
+    "output" : "728634bc-d030-4792-9bb4-6f6fd1cde49a",
+    "target" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
+    "input" : "3f67fafa-578b-42cc-b934-694598b356f7"
   }, {
-    "source" : "b707d4e9-d642-4080-9f9e-a2038da06672",
-    "output" : "dd2668af-1b6e-415f-a028-ef939b03aed7",
-    "target" : "01732c60-224f-431c-b755-f77585fe258b",
-    "input" : "f6552a4b-bc4b-4b38-af4d-ed7e5eaa4cc8"
+    "source" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
+    "output" : "f219793f-9620-449e-a9b2-0477623d8bf8",
+    "target" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
+    "input" : "01acb841-f4da-497b-b5f1-24acd2cb6d43"
   }, {
-    "source" : "b707d4e9-d642-4080-9f9e-a2038da06672",
-    "output" : "67205b28-5ebd-480f-b555-6079fe298e4a",
-    "target" : "01732c60-224f-431c-b755-f77585fe258b",
-    "input" : "f5d93725-6a79-40c9-a377-0086eb766ce2"
+    "source" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
+    "output" : "78ded4fc-50b5-4760-8cfd-334c4426efb0",
+    "target" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
+    "input" : "fddd202e-6c9c-48ca-91f7-74297a4bfe40"
+  }, {
+    "source" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
+    "output" : "7963f228-a05c-4379-81cf-2097e9258cda",
+    "target" : "dbc0ca7b-255b-4e47-be4f-0e96d99d1016",
+    "input" : "467c598d-e8f0-4287-a8f5-73fbf36c2548"
+  }, {
+    "source" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
+    "output" : "f69cd874-3171-4331-9972-8803003e2422",
+    "target" : "dbc0ca7b-255b-4e47-be4f-0e96d99d1016",
+    "input" : "3c74a9c9-7774-4673-af55-e96efe43043c"
   } ],
-  "labels" : "[{\"identifier\":\"3357d6f2-4e8c-4dc4-a748-38894cc736aa\",\"headerText\":\"\",\"text\":\"Example workflow: 'XML Merger'\\r\\nObjective: Introducing the XML components\\r\\n\\r\\nXML is a file format that is often used for exchanging data between different tools. The XML merger component is used to integrate the contents of one XML file (input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this integration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). Furthermore, in XML components like the XML Merger you can add dynamic inputs and outputs of simple data types, which allow you to change entries in the XML file or to extract certain entries from the XML file. In this example workflow, the value for the entry \\\"/cpacs/header/version\\\" is extracted and sent to the next workflow component.\\r\\n\",\"location\":\"30:13\",\"size\":\"544:212\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"},{\"identifier\":\"758ccaaf-a67d-4e64-861b-4ee5499e5ba0\",\"headerText\":\"\",\"text\":\"Please select the following files from the Workflow Examples Project at workflow start:\\r\\n\\r\\nXMLFile_1 --> CPACS.xml\\r\\nXMLFile_2 --> XMLMerger_Integrate.xml\\r\\nMappingFile --> MappingRules.xsl\\r\\n\",\"location\":\"30:261\",\"size\":\"264:154\",\"alpha\":\"102\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"true\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
+  "labels" : "[{\"identifier\":\"1429f260-f54c-4fd4-a598-8b2909815321\",\"headerText\":\"\",\"text\":\"Example workflow: 'XML Components'\\r\\nObjective: Introducing the XML components\\r\\n\\r\\nXML is a file format that is often used for exchanging data between different tools.\",\"location\":\"20:20\",\"size\":\"741:101\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTERLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"},{\"identifier\":\"4528469c-12f3-4002-a122-ee0597066ec8\",\"headerText\":\"\",\"text\":\"The XML Values component's purpose is to change or extract certain entries of an XML file. Although other XML components can do so aswell, the XML Values component is the most simple way. In this case the new version number has been extracted from the XML file (XPath: \\\"/cpacs/header/version\\\").\\r\\nNote: The version number is changed and extracted after the files were merged.\",\"location\":\"201:280\",\"size\":\"560:121\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"2\"},{\"identifier\":\"61ea23a4-3f82-4f26-bf0b-6ce515b8a5a9\",\"headerText\":\"\",\"text\":\"The XML merger component is used to integrate the contents of one XML file (input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this integration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). \\r\\nIn this example, the content of the XPath \\\"/cpacs/header\\\" from the file \\\"CPACS.xml\\\" is replaced by the same XPath from the file \\\"XMLMerger_Integrate.xml\\\".\",\"location\":\"201:140\",\"size\":\"560:121\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"1\"},{\"identifier\":\"b9ab6f74-0184-4e99-80c7-d54ac3a4f479\",\"headerText\":\"\",\"text\":\"In order to better understand how every component affects the XML file, run the workflow and go to the Workflow Data Browser View. Choose this workflowrun and go to the section Timeline. All components are listed and their in- and output values are shown.\",\"location\":\"20:420\",\"size\":\"741:81\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"3\"}]"
 }

@@ -205,6 +205,12 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         validateNodeExistsAndIsAnObjectNode();
         ((ObjectNode) segmentRootNode).put(key, value);
     }
+    
+    @Override
+    public void setFloat(String key, Float value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        ((ObjectNode) segmentRootNode).put(key, value);
+    }
 
     @Override
     public void setLong(String key, Long value) throws ConfigurationException {

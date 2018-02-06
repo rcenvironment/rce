@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.0.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,
@@ -24,6 +24,7 @@ Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.spi,
  de.rcenvironment.core.communication.sshconnection,
  de.rcenvironment.core.communication.sshconnection.api,
+ de.rcenvironment.core.communication.sshconnection.impl,
  de.rcenvironment.core.communication.testutils,
  de.rcenvironment.core.communication.transport.spi,
  de.rcenvironment.core.communication.transport.virtual.testutils,

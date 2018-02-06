@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+	<title>XPathChooser Usage</title>
+	<sect1>
+		<title>Synopsis</title>
+		<para>Some components are able to extract or read content of an Xml-File and use it in the workflow. The XPathChooser 
+		provides help to choose, which item shall be used. </para>
+	</sect1>
+	<sect1>
+		<title>Usage</title>
+		<para>Using the XPathChooser, it is possible to select content of an Xml-File. A tree, symbolizing the Xml-File, 
+		is shown in the table. By selecting an element, the label below is updated and displays the current path. The last two
+		columns are used to choose attributes. The attribute name can be selected via the column “UID Name”. In the column 
+		“Values”, the proper value can be selected. Use a double-click on an element to expand or fold the tree.
+		The chosen XPath will be written in the text field of the window, in which the XPathChooser has been opened originally.
+		Using this text field, new paths can be created. Add a slash and the name of the node that shall be created to the existing
+		path. The new path will be added during the workflow run. 
+			<note>New XPaths can only be generated within the inputs tab. Using the outputs tab will cause an error.</note>
+ 		</para>
+	</sect1>
+</chapter>

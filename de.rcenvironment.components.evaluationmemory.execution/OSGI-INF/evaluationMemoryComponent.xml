@@ -21,8 +21,8 @@
 <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
 
 <property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.evaluationmemory.common" />
-<property name="rce.component.icon-16" type="String" value="evaluation_memory_16.png"/>
-<property name="rce.component.icon-24" type="String" value="evaluation_memory_24.png"/>
+<property name="rce.component.icon-16" type="String" value="evaluationMemory16.png"/>
+<property name="rce.component.icon-24" type="String" value="evaluationMemory24.png"/>
 
 <property name="rce.component.size" type="String" value="small"/>
 <property name="rce.component.shape" type="String" value="square"/>

@@ -30,7 +30,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
- * Implementation of {@link ComponentHistoryDataItemSubtreeBuilder} for the XML Merger component.
+ * Implementation of {@link ComponentHistoryDataItemSubtreeBuilder} for the XML Loader component.
  * 
  * @author Jan Flink
  * @author Sascha Zur
@@ -41,7 +41,7 @@ public class XmlLoaderHistoryDataItemSubtreeBuilder implements ComponentHistoryD
 
     static {
         String bundleName = "de.rcenvironment.components.xml.loader.common";
-        String iconName = "loader16.png";
+        String iconName = "xmlLoader16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

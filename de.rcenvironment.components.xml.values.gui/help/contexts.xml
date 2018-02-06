@@ -1,0 +1,6 @@
+<contexts>
+	<context id="xmlvalues" title="XML Values Component Help">
+		<description>The XML Values Component is capable of reading and writing values within a XML-File.</description>
+     	<topic href="help/generated/html/usage.xhtml" label="XML Values Component Usage"></topic>
+	</context>
+</contexts>

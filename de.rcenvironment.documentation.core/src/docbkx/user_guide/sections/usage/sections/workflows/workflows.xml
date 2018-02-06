@@ -45,7 +45,7 @@
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">XML:</emphasis>XML Loader, XML Merger</para>
+					<emphasis role="italic">XML:</emphasis>XML Loader, XML Merger, XML Values</para>
 				</listitem>
 				<listitem>
 					<para>
@@ -58,6 +58,17 @@
 			and select "Open Help" or press "F1". A help view opens on the right-hand side. Moreover
 			there is an entry "Help Contents" in the "Help" menu where you can navigate to the
 			component help you require.</para>
+		<para>The XML and CPACS components are able to read or extract data from an Xml-file via dynamic in- or outputs. 
+		The XPathChooser is a feature that provides help selecting the item, which shall be read or extracted. Add an in- or output
+		and press the "XPath choosing..." button to open a window , where you can select the Xml-file, which contains the item that 
+		shall be selected. After choosing the file, the XPathChooser opens containing a tree, symbolizing the Xml-File. By 
+		selecting an element, the text below is updated and displays the current path. The last two columns are used to choose 
+		attributes. The attribute name can be selected via the column “Attributes”. In the column “Values”, the proper value can 
+		be selected. Use a double-click on an element to expand or fold the tree. The chosen XPath will be written in the text 
+		field of the window, in which the XPathChooser has been opened originally. Using this text field, new paths can be 
+		created. Add a slash and the name of the node that shall be created to the existing	path. The new path will be added 
+		during the workflow run. </para>
+		<para>New XPaths can only be generated within the inputs tab. Using the outputs tab will cause an error.</para>
 	</sect2>
 	<sect2>
 		<title>Coupling Workflow Components</title>

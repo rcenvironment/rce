@@ -15,7 +15,7 @@ import org.eclipse.swt.widgets.Shell;
  *
  * @author Brigitte Boden
  */
-public class EditSshConnectionDialog extends AbstractSshConnectionDialog {
+public class EditSshConnectionDialog extends AbstractSshConnectionDialog  {
 
     private static final String DIALOG_TITLE = "Edit SSH Connection";
 

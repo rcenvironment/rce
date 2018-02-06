@@ -20,8 +20,8 @@
 	
 	
 	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.parametricstudy.common" />
-	<property name="rce.component.icon-16" type="String" value="parametric_study16.png"/>
-    <property name="rce.component.icon-32" type="String" value="parametric_study32.png"/>
+	<property name="rce.component.icon-16" type="String" value="parametricStudy16.png"/>
+    <property name="rce.component.icon-32" type="String" value="parametricStudy32.png"/>
     
     <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
     <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>

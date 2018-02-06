@@ -1,0 +1,412 @@
+{
+  "identifier" : "91918082-cba1-4e9f-8b8a-73e1a8fd78e6",
+  "workflowVersion" : "5",
+  "name" : "ExampleDatabaseStatements_2018-01-23_13:15:35_48",
+  "nodes" : [ {
+    "identifier" : "4c35f56c-73ad-49fb-b957-9ee9a7951a59",
+    "name" : "Copy of Copy (2) of Copy of Database",
+    "location" : "340:300",
+    "zIndex" : "9",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "gruen",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT * FROM CountryLanguage WHERE CountryCode = 'POL';\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"output\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "07802f0f-c222-4940-bb8b-20b8da9e1aaa",
+      "name" : "Start",
+      "epIdentifier" : "default",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    }, {
+      "identifier" : "74e1e61a-844a-4f7e-ab78-3420c098c6b6",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "a16043f9-0a00-488b-9e57-dddca533c83d",
+      "name" : "Success",
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "8d4969dc-4614-4857-8a8a-d5b857d4ea0f",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "name" : "Copy of Copy of Copy of Database",
+    "location" : "340:120",
+    "zIndex" : "5",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "gruen",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"UPDATE CountryLanguage SET Language = 'Klingonisch' WHERE CountryCode = 'POL' AND Language = 'Spanish';\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "1cef8aa9-d93d-44fb-88f1-555fb84ba448",
+      "name" : "Start",
+      "epIdentifier" : "default",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "dfc4d324-fdaa-4d46-9043-b39511362745",
+      "name" : "Success",
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "daf1fa84-d951-4bd2-b9d2-f1d9787f1490",
+    "name" : "Copy of Copy of Database",
+    "location" : "641:120",
+    "zIndex" : "4",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "gruen",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"DELETE FROM CountryLanguage WHERE CountryCode = 'POL' AND Language = 'Klingonisch' ;\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "2c5698e1-7978-479d-b88c-ae1e685bf754",
+      "name" : "Start",
+      "epIdentifier" : "default",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "8fcedd44-2149-43ba-986e-4835a10feedd",
+      "name" : "Success",
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "fe9a5db9-f8cd-4e9d-bc83-c5c040aa03f3",
+    "name" : "Copy of Copy of Script (1)",
+    "location" : "480:120",
+    "zIndex" : "3",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\nRCE.write_output(\"Finished\", True)",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "13da7ec6-be4d-4594-8329-6a20df777d71",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "0da9670e-7c02-4d65-ac87-5b42567be619",
+      "name" : "Finished",
+      "epIdentifier" : "default",
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "b2473e9d-4429-49b3-a73a-c9a59f5ff967",
+    "name" : "Copy of Database",
+    "location" : "40:300",
+    "zIndex" : "2",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "gruen",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT * FROM CountryLanguage\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"outiiii\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "738b2e23-8573-4a84-a89d-8b746ba92406",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "018ee4cb-1aa5-42c0-acfe-cbd04a32a35c",
+      "name" : "Success",
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "4e22dafe-31e3-440d-ad1f-6c0287799cd5",
+      "name" : "outiiii",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "4aa41945-055d-41da-bd8f-10f121f5d039",
+    "name" : "Copy of Script (1)",
+    "location" : "780:120",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "19f9f92e-4e39-497c-b63d-8dc56c2b33d6",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "04826c32-28eb-48b7-8657-fb17785a9c61",
+    "name" : "Database",
+    "location" : "180:120",
+    "zIndex" : "7",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "gruen",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"INSERT INTO CountryLanguage (CountryCode, Language, IsOfficial, Percentage) VALUES  ${in:myTable};\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "28b39357-117f-4560-80c5-73f7a379900a",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "ebf50fc4-f720-4040-a984-98914abb0ed5",
+      "name" : "Success",
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "6d37317d-734f-4abb-87ea-4ea4f9d8aa69",
+    "name" : "Script",
+    "location" : "40:120",
+    "zIndex" : "6",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = [[\"POL\", \"Spanish\", \"T\", 23.187]]\r\nRCE.write_output(\"table\", smallTable)\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "false",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "35103326-0e07-4b64-9c8f-480b42524bd5",
+      "name" : "table",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "e001d43d-f182-42dd-a846-3781e86fb3cd",
+    "name" : "Script (1)",
+    "location" : "180:300",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "51c24a86-8e58-4439-8cda-e483470705ad",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "da99de6a-dcd9-4f97-b4e3-d7c210309ffe",
+    "name" : "Script (2)",
+    "location" : "480:300",
+    "zIndex" : "8",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "table = RCE.read_input(\"batelle\")",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "03c46175-6d4d-49f4-8adf-e9b878c087ef",
+      "name" : "batelle",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "4c35f56c-73ad-49fb-b957-9ee9a7951a59",
+    "output" : "8d4969dc-4614-4857-8a8a-d5b857d4ea0f",
+    "target" : "da99de6a-dcd9-4f97-b4e3-d7c210309ffe",
+    "input" : "03c46175-6d4d-49f4-8adf-e9b878c087ef"
+  }, {
+    "source" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "output" : "dfc4d324-fdaa-4d46-9043-b39511362745",
+    "target" : "4c35f56c-73ad-49fb-b957-9ee9a7951a59",
+    "input" : "07802f0f-c222-4940-bb8b-20b8da9e1aaa"
+  }, {
+    "source" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "output" : "dfc4d324-fdaa-4d46-9043-b39511362745",
+    "target" : "fe9a5db9-f8cd-4e9d-bc83-c5c040aa03f3",
+    "input" : "13da7ec6-be4d-4594-8329-6a20df777d71"
+  }, {
+    "source" : "daf1fa84-d951-4bd2-b9d2-f1d9787f1490",
+    "output" : "8fcedd44-2149-43ba-986e-4835a10feedd",
+    "target" : "4aa41945-055d-41da-bd8f-10f121f5d039",
+    "input" : "19f9f92e-4e39-497c-b63d-8dc56c2b33d6"
+  }, {
+    "source" : "fe9a5db9-f8cd-4e9d-bc83-c5c040aa03f3",
+    "output" : "0da9670e-7c02-4d65-ac87-5b42567be619",
+    "target" : "daf1fa84-d951-4bd2-b9d2-f1d9787f1490",
+    "input" : "2c5698e1-7978-479d-b88c-ae1e685bf754"
+  }, {
+    "source" : "b2473e9d-4429-49b3-a73a-c9a59f5ff967",
+    "output" : "4e22dafe-31e3-440d-ad1f-6c0287799cd5",
+    "target" : "e001d43d-f182-42dd-a846-3781e86fb3cd",
+    "input" : "51c24a86-8e58-4439-8cda-e483470705ad"
+  }, {
+    "source" : "04826c32-28eb-48b7-8657-fb17785a9c61",
+    "output" : "ebf50fc4-f720-4040-a984-98914abb0ed5",
+    "target" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "input" : "1cef8aa9-d93d-44fb-88f1-555fb84ba448"
+  }, {
+    "source" : "6d37317d-734f-4abb-87ea-4ea4f9d8aa69",
+    "output" : "35103326-0e07-4b64-9c8f-480b42524bd5",
+    "target" : "04826c32-28eb-48b7-8657-fb17785a9c61",
+    "input" : "28b39357-117f-4560-80c5-73f7a379900a"
+  } ],
+  "labels" : "[{\"identifier\":\"3f19e0a6-16df-43a9-9c57-9b57b7e7e44f\",\"headerText\":\"\",\"text\":\"Select small table\",\"location\":\"320:260\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPCENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"89b89a36-15dd-40f2-836c-eba1edb22a1f\",\"headerText\":\"\",\"text\":\"Please configure a (local) database to have a structure that matches the given example statements.\",\"location\":\"20:20\",\"size\":\"861:41\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"11\",\"zIndex\":\"1\"},{\"identifier\":\"b1cba0bc-f6be-4f07-9ee9-2f3d9df0b4ea\",\"headerText\":\"\",\"text\":\"Delete\",\"location\":\"620:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPCENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"e15cf6a8-b0ca-44e4-8aa0-0c6da41cde07\",\"headerText\":\"\",\"text\":\"Update\",\"location\":\"320:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPCENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"3\"},{\"identifier\":\"f81f582d-04e5-44cb-bb3d-b37dfa3ad2fa\",\"headerText\":\"\",\"text\":\"Select small table\",\"location\":\"20:260\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPCENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"4\"},{\"identifier\":\"ffad17bc-bb6a-493e-9c05-1398cf0d7491\",\"headerText\":\"\",\"text\":\"Insert small table\",\"location\":\"20:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPCENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"5\"}]"
+}

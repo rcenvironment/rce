@@ -16,9 +16,6 @@
 	
 	
 	<xsl:template match="/cpacs/header">
-		<header>
-			<xsl:copy-of select="/cpacs/header/*"/> <!--Copy existing-->
-		</header>
 		<xsl:copy-of select="document($integratingFile)/cpacs/header"/> <!--Copy from integrating file-->
   	</xsl:template>
   	

@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
@@ -121,6 +122,8 @@ public final class HeadlessWorkflowExecutionVerification
             } else {
                 wfFileRootDir = parentFile.getParentFile().getAbsolutePath();
             }
+            // was originally written to console output; moved to log, as it should usually be irrelevant
+            LogFactory.getLog(getClass()).debug("Using workflow verification root dir " + wfFileRootDir);
         }
         for (File wfFile : wfFiles) {
             wfsWithExecutionDurationSec.put(wfFile, new ArrayList<Long>());
@@ -305,19 +308,7 @@ public final class HeadlessWorkflowExecutionVerification
     public synchronized String getVerificationReport() {
         StringBuilder builder = new StringBuilder();
 
-        String result;
-        if (isVerified()) {
-            result = "SUCCEEDED";
-        } else {
-            result = "FAILED";
-        }
-        builder.append("Workflow verification results\n");
-
-        builder.append(StringUtils.format(
-            "- Verification %s [%d workflow files, parallel: %d, sequential: %d]\n",
-            result, wfFilesSubmitted.size(), parallelRuns, sequentialRuns));
-
-        builder.append("Details\n");
+        builder.append("Workflow Statistics\n");
 
         builder.append(StringUtils.format("- Finished (as expected): %d/%d,"
             + " Failed (as expected): %d/%d, Canceled: %d/0, Error: %d/0, Unexpected final state: %d/0 [Total: %d/%d]\n",
@@ -353,7 +344,17 @@ public final class HeadlessWorkflowExecutionVerification
         int totaltime = (int) ((endTime.getTime() - startTime.getTime()) / THOUSAND);
         builder.append(StringUtils.format("- Total: %s sec\n", totaltime));
         
-        builder.append(StringUtils.format("(Workflow folder: %s)", wfFileRootDir));
+        String result;
+        if (isVerified()) {
+            result = "SUCCEEDED";
+        } else {
+            result = "FAILED";
+        }
+        builder.append("Summary Result\n");
+
+        builder.append(StringUtils.format(
+            "- Verification %s [%d workflow files, parallel: %d, sequential: %d]\n",
+            result, wfFilesSubmitted.size(), parallelRuns, sequentialRuns));
 
         return builder.toString();
     }

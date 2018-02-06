@@ -282,8 +282,17 @@
     </sect2>
     <sect2>
         <title>Configuring Workspace Mechanic (optional)</title>
-        <para><ulink url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/">Workspace
-                Mechanic</ulink> is an Eclipse plugin that automates common settings in local
+        <note>
+            <para>The Workspace Mechanic project in its original form is not being maintained
+                anymore, and the original project site is gone. However, it has been forked and is
+                being continued by a new maintainer at <ulink
+                    url="https://github.com/alfsch/workspacemechanic/">this location</ulink>. While
+                this is not an "official" successor, it seems to be the de-facto location of this
+                project now.</para>
+        </note>
+        <para>Workspace Mechanic (which can be installed via Eclipse Marketplace from <ulink
+                url="https://marketplace.eclipse.org/content/workspace-mechanic">this
+                location</ulink>) is an Eclipse plugin that automates common settings in local
             workspaces. For RCE, the most important settings are the Java code formatting rules and
             templates. Other settings are provided for convenience, like disabling the console
             output limit, or showing line numbers in the editor.</para>
@@ -318,19 +327,20 @@
                     point, making this extra checkout step unnecessary. Please note that these rule
                     files are currently not available as part of the <ulink
                         url="https://github.com/rcenvironment/rce">GitHub source code mirror</ulink>
-                    or the released source zip files either.</para>
+                    or the released source zip files either, which makes them inaccessible unless
+                    you have access to the internal SVN server.</para>
             </note></para>
         <para>The next time you open a workspace, Workspace Mechanic should pick up these rule files
             and show a notice asking if it should apply them. See the plugin's <ulink
-                url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/">web
-                site</ulink> for further information.</para>
+                url="https://github.com/alfsch/workspacemechanic/">web site</ulink> for further
+            information.</para>
     </sect2>
     <sect2>
-        <title>Configuring CheckStyle (optional)</title>
+        <title>Configuring Code Formatting and CheckStyle Rules (optional)</title>
         <para>If you only plan to try out or modify RCE locally, you can safely skip this section.
             If you plan to commit your changes to the central code base, however, you need these
             settings to get your code accepted into the repository. Code that does not match the
-            coding guidelines will be refused on commit. The Checkstyle-CS plugin simplifies
+            style guidelines will be refused on commit. The Checkstyle-CS plugin simplifies
             development by highlighting violations that need to be fixed.</para>
         <para>To configure Checkstyle-CS for RCE:</para>
         <itemizedlist>
@@ -359,9 +369,33 @@
             <para>We are currently using version 6.19 of the Eclipse CheckStyle plugin within the
                     development team. Using a newer version (e.g. 8.0) works as well, but you may
                     see error markers for constructs that do not actually violate the RCE code
-                    guidelines. We will most likely adapt/migrate the CheckStyle settings in the
-                    near future.</para>
+                    guidelines. Versions > 8.0 do not work with current code guidelines. We will
+                    most likely adapt/migrate the CheckStyle settings in the near future.</para>
         </note>
+        </para>
+        <para> To configure the Eclipse source code formatter:<itemizedlist>
+                <listitem>
+                    <para>Open the code formatter preferences (Window > Preferences > Java > Code
+                        Style > Formatter). </para>
+                </listitem>
+                <listitem>
+                    <para>Click "Import", browse to your <code>de.rcenvironment/eclipse/</code>
+                        checkout folder and choose the "<code>eclipse-formatter.xml</code>"
+                        file.</para>
+                </listitem>
+                <listitem>
+                    <para>You should now see "RCE" as the "Active Profile".</para>
+                </listitem>
+                <listitem>
+                    <para>Click "Apply and Close" to activate the settings. </para>
+                </listitem>
+            </itemizedlist>
+            <note>
+                <para>There are rare cases where these code formatter settings lead to source files
+                    that are not being accepted by our CheckStyle rules. These inconsistencies are
+                    being collected and tracked in issue #0005898, and will be fixed/addressed in a
+                    future update.</para>
+            </note>
         </para>
     </sect2>
     <sect2>

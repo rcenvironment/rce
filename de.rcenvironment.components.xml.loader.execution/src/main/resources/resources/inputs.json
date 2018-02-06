@@ -14,7 +14,7 @@
                 "Constant",
                 "Queue"
             ],
-            "defaultInputHandling":"Constant",
+            "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
                 "Required",
                 "RequiredIfConnected",

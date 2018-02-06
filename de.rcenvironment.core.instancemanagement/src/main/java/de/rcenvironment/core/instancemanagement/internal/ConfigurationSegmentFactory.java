@@ -133,9 +133,11 @@ public final class ConfigurationSegmentFactory {
     }
 
     /**
-     * 
      * According to the builder-pattern and a fluent interface mechanism (builds {@link ConfigurationStringSegment}). Getting the correct
      * implementation of {@link Segment} is done by the visitor pattern.
+     * 
+     * TODO in my opinion, this approach is overly complicated; it seems that much of this could be replaced with simple constants. this
+     * should be reviewed before extending it for new use cases -- misc_ro, Aug 2017
      *
      * @author David Scholz
      */

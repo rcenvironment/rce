@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.execution.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -136,12 +137,11 @@ public class ComponentContextBridge {
         return Collections.unmodifiableMap(endpointDatumsForExecution);
     }
 
-    private void validateIfNestedLoopComponent(String outputName) {
+    private void validateIfNestedLoopComponent() {
         if (!compExeRelatedInstances.isNestedLoopDriver) {
             throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format(
-                "Received reset datum at output '%s' for a non nested loop component. "
-                    + "Reset datums are only allowed to send by nested loop components.",
-                outputName));
+                "Received reset datum for a non nested loop component. "
+                    + "Reset datums are only allowed to send by nested loop components."));
         }
     }
 
@@ -266,28 +266,54 @@ public class ComponentContextBridge {
 
     /**
      * Resets an output with given name.
-     * 
-     * @param outputName name of output
      */
-    public void resetOutput(String outputName) {
-        validateIfNestedLoopComponent(outputName);
-        writeResetOutputData(outputName);
+    public void resetOutputs() {
+        validateIfNestedLoopComponent();
+        writeResetOutputData();
     }
 
-    private void writeResetOutputData(String outputName) {
-        try {
-            for (Queue<WorkflowGraphHop> hops : compExeRelatedInstances.compExeCtx.getWorkflowGraph()
-                .getHopsToTraverseWhenResetting(compExeRelatedInstances.compExeCtx.getExecutionIdentifier())
-                .get(outputName)) {
-                WorkflowGraphHop firstHop = hops.poll();
-                InternalTDImpl resetDatum = new InternalTDImpl(InternalTDImpl.InternalTDType.NestedLoopReset, hops);
+    /**
+     * Calculates for a sequence of {@link WorkflowGraphHop}s, if they form a circle.
+     */
+    private boolean circular(Queue<WorkflowGraphHop> hops) {
+
+        WorkflowGraphHop firstElement = hops.peek();
+        WorkflowGraphHop lastElement = null;
+
+        for (WorkflowGraphHop hop : hops) {
+            lastElement = hop;
+        }
+
+        if (lastElement == null) {
+            return false;
+        }
+
+        return firstElement.getHopExecutionIdentifier().equals(lastElement.getTargetExecutionIdentifier());
+    }
+
+    /**
+     * This method should only be called, if the given output has the SAME LOOP characteristic.
+     */
+    private void writeResetOutputData() {
+
+        Set<Deque<WorkflowGraphHop>> hopsSet = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
+            .getHopsToTraverseWhenResetting(compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
+
+        for (Queue<WorkflowGraphHop> hops : hopsSet) {
+            boolean circular = circular(hops);
+
+            WorkflowGraphHop firstHop = hops.poll();
+            InternalTDImpl resetDatum = new InternalTDImpl(InternalTDImpl.InternalTDType.NestedLoopReset, hops);
+
+            // only the circular reset signal should be added here, as this triggers the reset of the loop driver itself when it arrives
+            // again at the loop driver
+            if (circular) {
                 compExeRelatedInstances.compExeScheduler.addResetDataIdSent(resetDatum.getIdentifier());
-                compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(outputName, resetDatum,
-                    firstHop.getTargetExecutionIdentifier(), firstHop.getTargetInputName());
             }
-        } catch (ComponentExecutionException e) {
-            throw new RuntimeException("Failed to reset the loop. Double-check your loop. Data between loops must "
-                + "only be exchanged via evaluation driver components via appropriate inputs and outputs (self, outer, inner)", e);
+
+            compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(
+                firstHop.getHopOuputName(), resetDatum,
+                firstHop.getTargetExecutionIdentifier(), firstHop.getTargetInputName());
         }
     }
 

@@ -124,7 +124,7 @@ public class CommandExecutionServiceImpl implements CommandExecutionService {
 
     @Override
     public String getHelpText(boolean addCommonPrefix, boolean showDevCommands) {
-        CapturingTextOutReceiver capturingReceiver = new CapturingTextOutReceiver("");
+        CapturingTextOutReceiver capturingReceiver = new CapturingTextOutReceiver();
         printHelpText(addCommonPrefix, showDevCommands, capturingReceiver);
         return capturingReceiver.getBufferedOutput();
     }

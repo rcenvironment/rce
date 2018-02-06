@@ -272,12 +272,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private void onWorkflowFileUpdated(File wfFile, boolean silentUpdate, String backupFilename,
         WorkflowDescriptionLoaderCallback callback) {
         if (silentUpdate) {
-            String message = StringUtils.format("'%s' is updated (silent) (full path: %s)", wfFile.getName(), wfFile.getAbsolutePath());
+            String message = StringUtils.format("'%s' was updated (silently) (full path: %s)", wfFile.getName(), wfFile.getAbsolutePath());
             LOG.debug(message);
             callback.onSilentWorkflowFileUpdated(message);
         } else {
             String message =
-                StringUtils.format("'%s' is updated (non-silent); backup file generated: %s (full path: %s)", wfFile.getName(),
+                StringUtils.format("'%s' was updated (non-silently); backup file generated: %s (full path: %s)", wfFile.getName(),
                     backupFilename, wfFile.getAbsolutePath());
             LOG.debug(message);
             callback.onNonSilentWorkflowFileUpdated(message, backupFilename);

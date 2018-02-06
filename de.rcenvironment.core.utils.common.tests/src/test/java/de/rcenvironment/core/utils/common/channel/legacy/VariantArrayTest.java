@@ -195,6 +195,8 @@ public class VariantArrayTest {
         final int x20 = 20;
         final int x100000 = 100000;
 
+        final int allowedTestDuration = 2000; // 2 sec
+
         final long msStart = System.currentTimeMillis();
         final VariantArray a = new VariantArray("abc", new int[] { x1000, 20, 5 }); // 1e6 cells
         for (int i = 10; i < x1000 - 10; i++) {
@@ -214,7 +216,6 @@ public class VariantArrayTest {
         final long msDuration = System.currentTimeMillis() - msStart;
 
         // check for reasonable speed
-        final int allowedTestDuration = x1000; // 1 sec
         assertTrue("Test duration of " + msDuration + " msec exceeded time limit of " + allowedTestDuration + " msec",
             msDuration <= allowedTestDuration);
     }

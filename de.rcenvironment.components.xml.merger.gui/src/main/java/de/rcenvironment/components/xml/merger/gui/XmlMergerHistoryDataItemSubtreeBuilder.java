@@ -41,7 +41,7 @@ public class XmlMergerHistoryDataItemSubtreeBuilder implements ComponentHistoryD
 
     static {
         String bundleName = "de.rcenvironment.components.xml.merger.common";
-        String iconName = "merger16.png";
+        String iconName = "xmlMerger16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

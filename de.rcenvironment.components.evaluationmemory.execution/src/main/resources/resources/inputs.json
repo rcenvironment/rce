@@ -14,7 +14,7 @@
 	            "Single",
                 "Queue"
             ],
-            "defaultInputHandling":"Single",
+            "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
                 "Required",
                 "RequiredIfConnected"

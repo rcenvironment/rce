@@ -4,15 +4,6 @@
     <title>Compatible Operating Systems</title>
     <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
             <listitem>
-                <para>CentOS 7</para>
-            </listitem>
-            <listitem>
-                <para>Debian 8</para>
-            </listitem>
-            <listitem>
-                <para>SUSE Linux Enterprise Desktop ("SLED") 12 SP2</para>
-            </listitem>
-            <listitem>
                 <para>Windows 7</para>
             </listitem>
             <listitem>
@@ -21,24 +12,14 @@
             <listitem>
                 <para>Windows Server 2012 R2</para>
             </listitem>
-        </itemizedlist>It is also confirmed to run (but not as thoroughly tested) on<itemizedlist>
             <listitem>
-                <para>Mint 18</para>
-            </listitem>
-            <listitem>
-                <para>Red Hat Enterprise Linux 6</para>
-            </listitem>
-            <listitem>
-                <para>SUSE Linux Enterprise Desktop ("SLED") 11 SP2</para>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 12 SP2</para>
             </listitem>
             <listitem>
                 <para>Ubuntu 16.04 LTS</para>
             </listitem>
             <listitem>
-                <para>openSUSE Leap 42.1</para>
-            </listitem>
-            <listitem>
-                <para>Windows 8.1</para>
+                <para>Red Hat Enterprise Linux 6</para>
             </listitem>
         </itemizedlist></para>
     <sect2>

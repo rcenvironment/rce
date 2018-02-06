@@ -506,22 +506,23 @@ public class DistributedFileDataServiceImplTest {
         // catalog backend
         String catalogFilterString = OPEN_BRACKET + MetaDataBackendService.PROVIDER + EQUALS_SIGN
             + catalogBackendProvider + CLOSE_BRACKET;
-        ServiceReference catalogServiceRef = EasyMock.createNiceMock(ServiceReference.class);
-        ServiceReference[] catalogServiceRefs = { catalogServiceRef };
+        ServiceReference<?> catalogServiceRef = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?>[] catalogServiceRefs = { catalogServiceRef };
         try {
             EasyMock.expect(bundleContext.getServiceReferences(MetaDataBackendService.class.getName(), catalogFilterString))
                 .andReturn(catalogServiceRefs).anyTimes();
         } catch (InvalidSyntaxException e) {
             throw new RuntimeException(e);
         }
-        EasyMock.expect(bundleContext.getService(catalogServiceRef)).andReturn(catalogBackend).anyTimes();
+        bundleContext.getService(catalogServiceRef);
+        EasyMock.expectLastCall().andReturn(catalogBackend).anyTimes();
 
         // data backend
         String dataFilterStringForScheme = OPEN_BRACKET + DataBackend.PROVIDER + EQUALS_SIGN + fileBackendProvider + CLOSE_BRACKET;
         String dataFilterStringForProvider = OPEN_BRACKET + DataBackend.PROVIDER + EQUALS_SIGN + xmlBackendProvider + CLOSE_BRACKET;
         String dataSchemefilterString = OPEN_BRACKET + DataBackend.SCHEME + EQUALS_SIGN + dataScheme + CLOSE_BRACKET;
-        ServiceReference dataServiceRef = EasyMock.createNiceMock(ServiceReference.class);
-        ServiceReference[] dataServiceRefs = { dataServiceRef };
+        ServiceReference<?> dataServiceRef = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?>[] dataServiceRefs = { dataServiceRef };
         try {
             EasyMock.expect(bundleContext.getServiceReferences(DataBackend.class.getName(), dataFilterStringForProvider))
                 .andReturn(dataServiceRefs).anyTimes();
@@ -532,7 +533,8 @@ public class DistributedFileDataServiceImplTest {
         } catch (InvalidSyntaxException e) {
             throw new RuntimeException(e);
         }
-        EasyMock.expect(bundleContext.getService((ServiceReference) dataServiceRef)).andReturn(dataBackend).anyTimes();
+        bundleContext.getService(dataServiceRef);
+        EasyMock.expectLastCall().andReturn(dataBackend).anyTimes();
 
         // for failures
         EasyMock.expect(bundleContext.getServiceReference((String) null)).andReturn(null).anyTimes();

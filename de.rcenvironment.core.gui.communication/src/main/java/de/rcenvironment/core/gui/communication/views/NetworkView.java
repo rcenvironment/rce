@@ -333,7 +333,7 @@ public class NetworkView extends ViewPart {
 
             }
         });
-        
+
         viewer.getTree().addKeyListener(new KeyListener() {
 
             @Override
@@ -341,14 +341,12 @@ public class NetworkView extends ViewPart {
                 if (arg0.keyCode == SWT.CR) {
                     expandSelectedNode();
                 }
-                
+
             }
 
             @Override
-            public void keyReleased(KeyEvent arg0) {
-                // TODO Auto-generated method stub
-            }
-            
+            public void keyReleased(KeyEvent arg0) {}
+
         });
 
         hookContextMenu();
@@ -431,7 +429,9 @@ public class NetworkView extends ViewPart {
 
             @Override
             public void selectionChanged(SelectionChangedEvent event) {
-
+                if (viewer.getControl().isDisposed()) {
+                    return;
+                }
                 Object node = getSelectedTreeNode();
                 if (node != null) {
                     updatePossibleActionsForSelection(node);
@@ -456,12 +456,12 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         model.networkGraph = networkGraph;
                         model.updateGraphWithProperties();
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         // update the tree, but no need to update existing labels
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
                         viewer.setExpandedTreePaths(expandedTreePaths);
@@ -478,13 +478,12 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
-                        model.nodeProperties.putAll(updatedPropertyMaps); // inner maps are
-                                                                          // immutable
+                        model.nodeProperties.putAll(updatedPropertyMaps); // inner maps are immutable
                         model.updateGraphWithProperties();
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
                         viewer.setExpandedTreePaths(expandedTreePaths);
                     }
@@ -499,11 +498,11 @@ public class NetworkView extends ViewPart {
 
                     @Override
                     public void run() {
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         model.componentKnowledge = newKnowledge;
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
+                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
                         viewer.setExpandedTreePaths(expandedTreePaths);
                     }
@@ -649,7 +648,7 @@ public class NetworkView extends ViewPart {
         getSite().registerContextMenu(menuManager, viewer);
         getSite().setSelectionProvider(viewer);
     }
-    
+
     /**
      * Actually expands if tree node is not expanded, collapses otherwise.
      *

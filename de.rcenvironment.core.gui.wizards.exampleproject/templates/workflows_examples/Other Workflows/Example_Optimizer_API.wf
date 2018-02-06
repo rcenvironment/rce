@@ -15,7 +15,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "import random\r\nRCE.write_output(\"x\", random.random()/2.0)\r\nRCE.write_output(\"v\", [random.random()/2.0 , random.random()/2.0])\r\nRCE.write_output(\"v2\", [random.random()/2.0 , random.random()/2.0])\r\n",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },

@@ -21,8 +21,8 @@
     <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
     <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/> 
 	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.tiglviewer.execution" />
-	<property name="rce.component.icon-16" type="String" value="tigl_16.png"/>
-    <property name="rce.component.icon-32" type="String" value="tigl_32.png"/>
+	<property name="rce.component.icon-16" type="String" value="tigl16.png"/>
+    <property name="rce.component.icon-32" type="String" value="tigl32.png"/>
     <property name="rce.component.version" type="String" value="3.0"/>
 	
 </scr:component>

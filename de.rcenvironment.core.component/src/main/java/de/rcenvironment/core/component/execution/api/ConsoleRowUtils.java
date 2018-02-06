@@ -18,6 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
+import de.rcenvironment.core.utils.common.FileUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -28,15 +29,12 @@ import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
  * @author Doreen Seider
  * @author Robert Mischke
  * 
- * Note: The console row handling evolved over time and that can be seen in the code. Functionality related to console rows are kind
- * of patched together.
- * Functionalities are:
- * - sending console rows to the workflow controller
- * - fetching console rows by the GUI (workflow console view), waiting for them at the time the component terminates as they might be
- * delayed due to batching them when sending
- * - storing them in the data management bundle together in a file per component run
+ *         Note: The console row handling evolved over time and that can be seen in the code. Functionality related to console rows are kind
+ *         of patched together. Functionalities are: - sending console rows to the workflow controller - fetching console rows by the GUI
+ *         (workflow console view), waiting for them at the time the component terminates as they might be delayed due to batching them when
+ *         sending - storing them in the data management bundle together in a file per component run
  * 
- * --seid_do
+ *         --seid_do
  * 
  */
 public final class ConsoleRowUtils {
@@ -57,7 +55,7 @@ public final class ConsoleRowUtils {
      * @param append optional flag only considered if logFile not null. Append lines to file if true; otherwise overwrite file
      * @return the created {@link TextStreamWatcher} for calling the waitForTermination method
      */
-    public static TextStreamWatcher logToWorkflowConsole(final ComponentLog componentLog, final InputStream inputStream,
+    public static TextStreamWatcher logToWorkflowConsole(final ComponentLog componentLog, InputStream inputStream,
         final Type consoleType, final File logFile, boolean append) {
 
         /**
@@ -78,6 +76,7 @@ public final class ConsoleRowUtils {
                     break;
                 case TOOL_ERROR:
                     componentLog.toolStderr(line);
+                    LOGGER.warn(line);
                     break;
                 default:
                     throw new IllegalArgumentException("Console row type not supported: " + consoleType);
@@ -92,15 +91,16 @@ public final class ConsoleRowUtils {
 
         }
 
-        TextStreamWatcher watcher = TextStreamWatcherFactory.create(inputStream, new WorkflowConsoleOutputReceiver());
-
         if (logFile != null) {
             try {
-                watcher.enableLogFile(logFile, append);
+                inputStream = FileUtils.setUpStreamDuplicationToOutputFile(inputStream, logFile, true, append);
             } catch (IOException e) {
                 LOGGER.error("setting up log file failed: " + logFile.getAbsolutePath(), e);
             }
         }
+
+        TextStreamWatcher watcher = TextStreamWatcherFactory.create(inputStream, new WorkflowConsoleOutputReceiver());
+
         watcher.start();
         return watcher;
     }

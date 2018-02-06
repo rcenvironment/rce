@@ -29,19 +29,18 @@ import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
  */
 public class OsgiServiceRegistryAccess implements ServiceRegistryPublisherAccess {
 
+    private static final CounterCategory SERVICE_REGISTRATION_COUNTER =
+        StaticToolkitHolder.getService(StatisticsTrackerService.class).getCounterCategory(
+            "Additional Service registrations via OsgiServiceRegistryAccess API", StatisticsFilterLevel.DEVELOPMENT);
+
     private final BundleContext bundleContext;
 
     private final List<ServiceRegistration<?>> serviceRegistrations = new ArrayList<ServiceRegistration<?>>();
 
     private final List<ServiceReference<?>> serviceReferences = new ArrayList<ServiceReference<?>>();
 
-    private final CounterCategory counterCategory;
-
     public OsgiServiceRegistryAccess(BundleContext bundleContext) {
         this.bundleContext = bundleContext;
-        counterCategory =
-            StaticToolkitHolder.getService(StatisticsTrackerService.class).getCounterCategory(
-                "Additional Service registrations via OsgiServiceRegistryAccess API", StatisticsFilterLevel.DEVELOPMENT);
     }
 
     @Override
@@ -71,7 +70,7 @@ public class OsgiServiceRegistryAccess implements ServiceRegistryPublisherAccess
         synchronized (serviceRegistrations) {
             serviceRegistrations.add(bundleContext.registerService(clazz.getName(), implementation, null));
         }
-        counterCategory.count(clazz.getName());
+        SERVICE_REGISTRATION_COUNTER.count(clazz.getName());
     }
 
     @Override

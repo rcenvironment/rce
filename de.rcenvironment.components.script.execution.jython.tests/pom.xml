@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.script.execution.jython.tests</artifactId>
 	<name>RCE Script Execution Jython Bundle Tests</name>
-	<version>8.1.1-SNAPSHOT</version>
+	<version>8.2.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

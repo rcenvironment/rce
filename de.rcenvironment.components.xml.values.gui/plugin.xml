@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+    <!-- Extension for classes allocated to tabs -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+      
+			<!-- XMLValuesPropertySection -->
+         <propertySection
+               tab="workflow.editor.tab.values.XPathChooser"
+               class="de.rcenvironment.components.xml.values.gui.XMLValuesEndpointPropertySection"
+               id="workflow.editor.tab.values.XPathChooser.Section"
+               filter="de.rcenvironment.components.xml.values.gui.XmlValuesComponentFilter">
+         </propertySection>
+         
+      </propertySections>
+
+    </extension>
+   
+   
+    <!-- Extension for own tabs in component properties -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+        <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            				
+				<!-- The Input&Output Tab -->
+    		<propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.values.FileDialog"
+               id="workflow.editor.tab.values.XPathChooser" />
+        </propertyTabs>
+    </extension>
+
+    <!-- Data management browser subtree builder-->
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.xml.values.gui.XmlValuesHistoryDataItemSubtreeBuilder"/>
+   </extension>
+
+       <!-- Dynamic Help -->
+    <extension point="org.eclipse.help.contexts">
+        <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+    </extension>
+    
+    <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
+    
+</plugin>

@@ -32,11 +32,11 @@ public interface EndpointXMLService {
      * @param dynamicInputs The inputs to merge into the XML file
      * @param componentContext The component context
      * @throws DataTypeException thrown when data cannot cast to nodetext
-     * @throws ComponentException thrown if xpath refers to no node
-     * throws {@link NullPointerException} if xmlFile or componentContext is <code>null</code>
+     * @throws ComponentException thrown if xpath refers to no node throws {@link NullPointerException} if xmlFile or componentContext is
+     *         <code>null</code>
      */
-    void updateXMLWithInputs(final File xmlFile, final Map<String, TypedDatum> dynamicInputs,
-        final ComponentContext componentContext) throws DataTypeException, ComponentException;
+    void updateXMLWithInputs(File xmlFile, Map<String, TypedDatum> dynamicInputs,
+        ComponentContext componentContext) throws DataTypeException, ComponentException;
     
     
     /**
@@ -48,7 +48,13 @@ public interface EndpointXMLService {
      * @throws ComponentException if xpath is not evaluable
      * throws {@link NullPointerException} if xmlFile or componentContext is <code>null</code>
      */
-    void updateOutputsFromXML(final File xmlFile, 
-        final ComponentContext componentContext) throws DataTypeException, ComponentException; 
+    void updateOutputsFromXML(File xmlFile,
+        ComponentContext componentContext) throws DataTypeException, ComponentException;
+    
+    /**
+     * 
+     * @return Recently used XPath. This is used for error detection.
+     */
+    String getRecentXpath();
 
 }

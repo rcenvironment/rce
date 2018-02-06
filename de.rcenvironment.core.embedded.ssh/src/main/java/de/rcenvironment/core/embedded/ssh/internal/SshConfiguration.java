@@ -32,7 +32,7 @@ public class SshConfiguration {
 
     protected static final String DEFAULT_HOST = "127.0.0.1"; // conservative default: bind to localhost, not 0.0.0.0
 
-    protected static final Integer DEFAULT_IDLE_TIMEOUT_SECONDS = 10; // TODO (p3) review default timeout
+    protected static final Integer DEFAULT_IDLE_TIMEOUT_SECONDS = 10 * 60; // 10 minutes
 
     private static final String CONFIG_PROPERTY_IDLE_TIMEOUT_SECONDS = "idleTimeoutSeconds";
 

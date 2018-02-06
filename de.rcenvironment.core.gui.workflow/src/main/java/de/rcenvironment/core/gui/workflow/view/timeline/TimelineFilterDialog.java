@@ -355,6 +355,9 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener,
         public String getText(Object element) {
             if (element instanceof TimelineFilterTreeNode) {
                 TimelineFilterTreeNode current = (TimelineFilterTreeNode) element;
+                if (current.getDisplayName() == null) {
+                    return "<unknown>";
+                }
                 return current.getDisplayName();
             }
             return null;
@@ -426,7 +429,7 @@ public class TimelineFilterDialog extends Dialog implements ICheckStateListener,
             if (arg2 instanceof TimelineFilterTreeNode) {
                 TimelineFilterTreeNode item = ((TimelineFilterTreeNode) arg2);
                 
-                if (item.getDisplayName().toLowerCase().toString().contains(filterString.toLowerCase())) {
+                if (item.getDisplayName() != null && item.getDisplayName().toLowerCase().toString().contains(filterString.toLowerCase())) {
                     return true;
                 }
                 if (item.getParent() != null){

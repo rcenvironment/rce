@@ -78,6 +78,7 @@ import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.core.utils.common.textstream.receivers.PrefixingTextOutForwarder;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 
 /**
@@ -292,7 +293,7 @@ public class WfCommandPlugin implements CommandPlugin {
         } catch (FileNotFoundException e) {
             throw CommandException.executionError(e.getMessage(), cmdCtx);
         }
-        if (preValidateWorkflow(cmdCtx, wfFile)) {
+        if (preValidateWorkflow(cmdCtx, wfFile, true)) { // true = always print pre-verification output
             try {
                 // TODO specify log directory?
                 HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
@@ -325,7 +326,7 @@ public class WfCommandPlugin implements CommandPlugin {
      * @param wfFile workflow to validate
      * @return <code>true</code> if workflow is valid, otherwise <code>false</code>
      */
-    private boolean preValidateWorkflow(CommandContext context, File wfFile) {
+    private boolean preValidateWorkflow(CommandContext context, File wfFile, boolean printNonErrorProgressMessages) {
         TextOutputReceiver outputReceiver = context.getOutputReceiver();
         WorkflowDescription workflowDescription;
         int retries = 0;
@@ -351,20 +352,24 @@ public class WfCommandPlugin implements CommandPlugin {
                 retries = waitForWorkflowValidationRetry(retries);
                 continue;
             } else {
-                outputReceiver.addOutput(
-                    StringUtils.format("Validating target instances of '%s'... (full path: %s", wfFile.getName(),
-                        wfFile.getAbsolutePath()));
+                if (printNonErrorProgressMessages){
+                    outputReceiver.addOutput(
+                        StringUtils.format("Validating target instances of '%s'... (full path: %s)", wfFile.getName(),
+                            wfFile.getAbsolutePath()));
+                }
                 WorkflowDescriptionValidationResult validationResult =
                     workflowExecutionService.validateWorkflowDescription(workflowDescription);
                 if (validationResult.isSucceeded()) {
-                    outputReceiver
-                        .addOutput(StringUtils.format("Target instance(s) of '%s' valid (full path: %s", wfFile.getName(),
-                            wfFile.getAbsolutePath()));
+                    if (printNonErrorProgressMessages) {
+                        outputReceiver.addOutput(
+                            StringUtils.format("Target instance(s) of '%s' validated successfully (full path: %s)", wfFile.getName(),
+                                wfFile.getAbsolutePath()));
+                    }
                     break;
                 } else {
                     if (retries >= MAXIMUM_WORKFLOW_PARSE_RETRIES) {
-                        log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
-                            MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
+                        log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the "
+                            + "target instances of workflow file '%s'", MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
                         outputReceiver.addOutput(StringUtils.format("Some target instance(s) of '%s' unknown: %s (full path: %s)",
                             wfFile.getName(), validationResult.toString(), wfFile.getAbsolutePath()));
                         return false;
@@ -1081,13 +1086,14 @@ public class WfCommandPlugin implements CommandPlugin {
             Set<HeadlessWorkflowExecutionContext> headlessWfExeContexts = new HashSet<>();
             for (int i = 0; i < parallelRuns; i++) {
                 for (final File wfFile : wfFiles) {
-                    if (preValidateWorkflow(context, wfFile)) {
+                    if (preValidateWorkflow(context, wfFile, false)) { // false = do not print pre-verification output
                         try {
                             // TODO specify log directory?
                             HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
                                 new HeadlessWorkflowExecutionContextBuilder(wfFile, setupLogDirectoryForWfFile(wfFile));
                             exeContextBuilder.setPlaceholdersFile(placeholdersFile);
-                            exeContextBuilder.setTextOutputReceiver(context.getOutputReceiver());
+                            exeContextBuilder
+                                .setTextOutputReceiver(new PrefixingTextOutForwarder("[workflow execution] ", context.getOutputReceiver()));
                             exeContextBuilder.setDisposalBehavior(dispose);
                             exeContextBuilder.setDeletionBehavior(delete);
                             headlessWfExeContexts.add(exeContextBuilder.build());

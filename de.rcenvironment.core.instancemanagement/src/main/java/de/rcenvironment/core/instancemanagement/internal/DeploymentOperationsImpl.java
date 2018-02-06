@@ -58,15 +58,22 @@ public class DeploymentOperationsImpl {
     public void downloadFile(final String url, final File targetFile, boolean allowOverwrite, boolean showProgress) throws IOException {
         // - MUST detect the case if the URL is invalid or does not exist (e.g., do not just return an empty file)
         // - SHOULD try to detect incomplete downloads (disk full etc), if possible
-        String targetPath = targetFile.getAbsolutePath();
-        if (!allowOverwrite && targetFile.exists()) {
-            throw new IOException("Target file " + targetPath + " does already exist");
+        final String targetPath = targetFile.getAbsolutePath();
+        if (targetFile.exists()) {
+            if (!allowOverwrite) {
+                throw new IOException("Target file " + targetPath + " does already exist");
+            } else {
+                if (!targetFile.delete()) {
+                    throw new IOException("Failed to delete existing download file " + targetPath);
+                }
+            }
         }
-        log.debug("Starting download of " + url + " to " + targetPath);
+        final File tempDownloadFile = new File(targetFile.getParentFile(), targetFile.getName() + ".tmp");
+        log.debug(StringUtils.format("Starting download of %s to %s", url, tempDownloadFile.getAbsolutePath()));
 
         final long sizeOfRequestedFile = getFileSize(new URL(url));
 
-        if (sizeOfRequestedFile > targetFile.getParentFile().getUsableSpace()) {
+        if (sizeOfRequestedFile > tempDownloadFile.getParentFile().getUsableSpace()) {
             throw new IOException("Download failed, not enough diskspace.");
         }
 
@@ -81,9 +88,17 @@ public class DeploymentOperationsImpl {
                 @Override
                 @TaskDescription("Instance Management: Print download progress to console")
                 public void run() {
-                    while (downloadRunning && targetFile.length() < sizeOfRequestedFile) {
-                        userOutputReceiver.addOutput("Downloaded " + targetFile.length() / BYTE_TO_MEGABYTE_FACTOR
-                            + " MB of " + sizeOfRequestedFile / BYTE_TO_MEGABYTE_FACTOR + " MB");
+                    final long totalProgressValue = sizeOfRequestedFile / BYTE_TO_MEGABYTE_FACTOR;
+                    long lastProgressValue = 0; // intended side effect: do not print "0 MB done" progress
+
+                    while (downloadRunning && tempDownloadFile.length() < sizeOfRequestedFile) {
+                        final long roundedProgressValue = tempDownloadFile.length() / BYTE_TO_MEGABYTE_FACTOR;
+                        // do not print the same progress value over and over in case of a slow download
+                        if (roundedProgressValue != lastProgressValue) {
+                            userOutputReceiver.addOutput("Downloaded " + roundedProgressValue
+                                + " MB of " + totalProgressValue + " MB");
+                            lastProgressValue = roundedProgressValue;
+                        }
                         try {
                             Thread.sleep(CONSOLE_SHOW_PROGRESS_INTERVAL);
                         } catch (InterruptedException e) {
@@ -97,7 +112,12 @@ public class DeploymentOperationsImpl {
         }
 
         try {
-            FileUtils.copyURLToFile(new URL(url), targetFile);
+            FileUtils.copyURLToFile(new URL(url), tempDownloadFile);
+            if (!tempDownloadFile.renameTo(targetFile)) {
+                throw new IOException(
+                    "Failed to move the completed download file " + tempDownloadFile.getAbsolutePath() + " to " + targetPath);
+            }
+
         } finally {
             downloadRunning = false;
         }
@@ -201,7 +221,9 @@ public class DeploymentOperationsImpl {
                     + ". Most likely it is used by another program.");
             }
         } else {
-            throw new IOException("Installation directory seems to be no valid RCE installation");
+            throw new IOException(
+                "The existing installation directory " + installationDir.getAbsolutePath()
+                    + " does not look like a valid RCE installation; aborting delete operation");
         }
     }
 

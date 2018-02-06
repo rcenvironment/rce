@@ -89,6 +89,9 @@ public class ComponentExecutionScheduler {
 
     private final AtomicBoolean loopResetRequested = new AtomicBoolean(false);
 
+    /**
+     * Set of reset signals that were send from the associated component.
+     */
     private final Set<String> resetDataIdsSent = Collections.synchronizedSet(new HashSet<String>());
 
     private final AtomicBoolean loopReset = new AtomicBoolean(false);
@@ -460,20 +463,27 @@ public class ComponentExecutionScheduler {
             }
             break;
         case NestedLoopReset:
+            // if this component is a loop and send out a bunch of reset signals -> handle the received reset signal
             if (loopResetRequested.get()) {
                 if (!internalDatum.getHopsToTraverse().isEmpty()) { // not final component
                     LogFactory.getLog(getClass()).warn("Internal error: Initiated reset, received own reset datum, but component"
                         + " is not the final recipient, there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
                 }
+                // remove a sent reset signal from the set of all reset signals if it arrived again from its cyclic path
                 if (!resetDataIdsSent.remove(internalDatum.getIdentifier())) {
                     throw new ComponentExecutionException(StringUtils.format(
                         "Internal error: Received unexpected (wrong identifier) input at '%s' of type '%s'",
                         endpointDatum.getInputName(), endpointDatum.getValue().getDataType().getDisplayName()));
                 }
+                // if all reset signals are received again, the loop itself can be reseted
                 if (resetDataIdsSent.isEmpty()) {
                     loopReset.set(true);
                 }
             } else {
+                // otherwise, if this component is not a loop that requested a reset, just reset the this component
+
+                // This sanity check prevents us from fixing the problem that dead end components within a loop are not reseted. To work
+                // around the sanity check, we add a dummy hop to the queue.
                 if (internalDatum.getHopsToTraverse().isEmpty()) { // sanity check
                     throw new ComponentExecutionException("Internal error: Received reset datum and component is the final recipient,"
                         + " but no loop reset was requested");
@@ -532,6 +542,9 @@ public class ComponentExecutionScheduler {
         idsNotAValueDatumsSent.add(identifier);
     }
 
+    /**
+     * Needs to be called if a cyclic reset signal is sent on its way.
+     */
     protected void addResetDataIdSent(String identifier) {
         resetDataIdsSent.add(identifier);
         loopResetRequested.set(true);

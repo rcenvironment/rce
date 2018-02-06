@@ -84,5 +84,7 @@
             it is possible to map single values into the XML dataset via XPATH declaration.
             Moreover, you can select single values in order to write them in an output
             channel.</para>
+            <note>Search for the XPathChooser help in the User Guide (3. Usage -> 2. Workflows -> 2.3 Workflow components) 
+            to garner further information about the usage of XPaths.</note>
     </sect1>
 </chapter>

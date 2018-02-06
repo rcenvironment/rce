@@ -40,7 +40,7 @@ public class DOEHistoryDataItemSubtreeBuilder implements ComponentHistoryDataIte
 
     static {
         String bundleName = "de.rcenvironment.components.doe.common";
-        String iconName = "doe_16.png";
+        String iconName = "doe16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

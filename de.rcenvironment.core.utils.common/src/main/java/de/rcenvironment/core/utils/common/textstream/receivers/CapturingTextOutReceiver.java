@@ -11,26 +11,46 @@ package de.rcenvironment.core.utils.common.textstream.receivers;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
- * A simple implementation of {@link TextOutputReceiver} that captures all content in a text buffer.
- * Individual lines are concatenated with "\n".
+ * A simple implementation of {@link TextOutputReceiver} that captures all content in a text buffer. Individual lines are terminated with
+ * "\n" by default; this can be customized.
  * 
  * @author Robert Mischke
  */
 public class CapturingTextOutReceiver implements TextOutputReceiver {
+
+    private static final int INITIAL_BUFFER_SIZE = 1024; // arbitrary
 
     private StringBuilder buffer;
 
     /**
      * The text to append if the stream finished normally.
      */
-    private String endOfStreamMarker;
+    private String endOfStreamSuffix;
+
+    private String lineTerminator;
 
     /**
-     * @param endOfStreamMarker the text to append when the stream finished normally
+     * Default constructor: sets up a receiver with no prefix or suffix, and "\n" as the line separator.
      */
-    public CapturingTextOutReceiver(String endOfStreamMarker) {
-        this.endOfStreamMarker = endOfStreamMarker;
-        buffer = new StringBuilder();
+    public CapturingTextOutReceiver() {
+        this(null, "\n", null);
+    }
+
+    /**
+     * Constructor that allows setting custom values for prefix, line terminator, and suffix.
+     * 
+     * @param prefix the string to append before the received text lines; may be null to disable
+     * @param lineTerminator the string to terminate each line (including the last) with
+     * @param endOfStreamSuffix the string to append if (and only if) the end of the stream was reached normally; may be null to disable
+     */
+    public CapturingTextOutReceiver(String prefix, String lineTerminator, String endOfStreamSuffix) {
+        this.lineTerminator = lineTerminator;
+        this.endOfStreamSuffix = endOfStreamSuffix;
+
+        buffer = new StringBuilder(INITIAL_BUFFER_SIZE);
+        if (prefix != null) {
+            buffer.append(prefix);
+        }
     }
 
     @Override
@@ -40,19 +60,22 @@ public class CapturingTextOutReceiver implements TextOutputReceiver {
 
     @Override
     public synchronized void onFinished() {
-        buffer.append(endOfStreamMarker);
+        if (endOfStreamSuffix != null) {
+            buffer.append(endOfStreamSuffix);
+        }
     }
 
     @Override
     public synchronized void onFatalError(Exception e) {
-        buffer.append("Exception:\n");
+        buffer.append("Exception:");
+        buffer.append(lineTerminator);
         buffer.append(e.toString());
     }
 
     @Override
     public synchronized void addOutput(String line) {
         buffer.append(line);
-        buffer.append('\n');
+        buffer.append(lineTerminator);
     }
 
     public synchronized String getBufferedOutput() {

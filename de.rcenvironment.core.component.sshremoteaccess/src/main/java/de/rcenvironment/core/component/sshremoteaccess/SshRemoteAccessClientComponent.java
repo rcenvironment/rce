@@ -122,6 +122,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
                         datamanagementService.copyDirectoryReferenceTDToLocalDirectory(componentContext,
                             (DirectoryReferenceTD) componentContext.readInput(inputName),
                             inputDir);
+                        inputDir = inputDir.listFiles()[0]; 
                     } else if (inputName.equals(SshRemoteAccessConstants.INPUT_NAME_SHORT_TEXT)
                         && componentContext.getInputDataType(inputName).equals(DataType.ShortText)) {
                         inputShortText = ((ShortTextTD) componentContext.readInput(inputName)).toString();
@@ -225,28 +226,25 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         } catch (IOException | JSchException e1) {
             throw new ComponentException("Downloading outputput directory via SCP failed", e1);
         }
-
+        
         try {
             rceExecutor.start(StringUtils.format("ra dispose %s", sessionToken));
         } catch (IOException e1) {
             throw new ComponentException("Disposing SCP context failed.", e1);
         }
 
-        if (outputDir.listFiles().length == 1) {
-            File origOutputDir = outputDir.listFiles()[0]; // The "output" directory contains the directory with its original name
+        // Write the component output
+        TypedDatum output;
+        try {
+            output = datamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, outputDir, outputDir.getName());
+            componentContext.writeOutput(SshRemoteAccessConstants.OUTPUT_NAME, output);
+        } catch (IOException e) {
+            throw new ComponentException("Output directory reference could not be created. ", e);
+        } finally {
             try {
-                TypedDatum output =
-                    datamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, origOutputDir,
-                        origOutputDir.getName());
-                componentContext.writeOutput(SshRemoteAccessConstants.OUTPUT_NAME, output);
+                tempFileService.disposeManagedTempDirOrFile(tempRootDir);
             } catch (IOException e) {
-                throw new ComponentException("Output directory reference could not be created. ", e);
-            } finally {
-                try {
-                    tempFileService.disposeManagedTempDirOrFile(tempRootDir);
-                } catch (IOException e) {
-                    LOG.warn("Could not dispose managed temp dir " + tempRootDir);
-                }
+                LOG.warn("Could not dispose managed temp dir " + tempRootDir);
             }
         }
 

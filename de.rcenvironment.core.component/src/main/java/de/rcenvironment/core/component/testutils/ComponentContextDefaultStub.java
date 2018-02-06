@@ -149,7 +149,7 @@ public class ComponentContextDefaultStub implements ComponentContext {
     }
 
     @Override
-    public void resetOutput(String outputName) {}
+    public void resetOutputs() {}
 
     @Override
     public void closeOutput(String outputName) {
