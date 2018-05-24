@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -101,6 +102,9 @@ public class UnpackedFilesDirectoryResolver {
     }
 
     private File resolvePath(String lookupId, Bundle bundleCandidate) throws ConfigurationException {
+
+        final Log log = LogFactory.getLog(getClass());
+
         final String expectedLocationStringPrefix = "reference:file:";
 
         final String locationString = bundleCandidate.getLocation();
@@ -133,7 +137,7 @@ public class UnpackedFilesDirectoryResolver {
 
         if (!resolvedPath.isDirectory()) {
             throw new ConfigurationException(StringUtils.format(
-                "Resolved fileset id '%s' to bundle '%s', but the resulting path '%s' does not point to an existing directory", lookupId,
+                "Resolved file set id '%s' to bundle '%s', but the resulting path '%s' does not point to an existing directory", lookupId,
                 symbolicName, resolvedPath));
         }
 
@@ -142,12 +146,15 @@ public class UnpackedFilesDirectoryResolver {
             final File presenceCheckTestFile = new File(resolvedPath, presenceCheckTestFilePath);
             if (!presenceCheckTestFile.isFile() || !presenceCheckTestFile.canRead()) {
                 throw new ConfigurationException(StringUtils.format(
-                    "Resolved fileset id '%s' to path '%s', but the configured test file '%s' does not exist or cannot be read", lookupId,
+                    "Resolved file set id '%s' to path '%s', but the configured test file '%s' does not exist or cannot be read", lookupId,
                     resolvedPath, presenceCheckTestFile.getAbsolutePath()));
             }
         } else {
-            LogFactory.getLog(getClass()).warn("No presence check file configured for unpacked file set " + lookupId + "; skipping check");
+            log.warn("No presence check file configured for unpacked file set " + lookupId + "; skipping check");
         }
+
+        log.debug(StringUtils.format(
+            "Resolved file set id '%s' to path '%s' in bundle '%s'", lookupId, resolvedPath, symbolicName));
 
         return resolvedPath;
     }
@@ -164,14 +171,15 @@ public class UnpackedFilesDirectoryResolver {
             if (filesetId.equals(bundleIdCandidate)) {
                 if (bundleCandidate != null) {
                     throw new ConfigurationException(
-                        "More than one resolved bundle declares fileset id " + filesetId + "; check for proper platform (e.g. OS) filters");
+                        "More than one resolved bundle declares file set id " + filesetId
+                            + "; check for proper platform (e.g. OS) filters");
                 }
                 bundleCandidate = bundle;
             }
         }
         if (bundleCandidate == null) {
             throw new ConfigurationException(
-                "No resolved bundle declaring fileset id " + filesetId + " found");
+                "No resolved bundle declaring file set id " + filesetId + " found");
         }
         return bundleCandidate;
     }

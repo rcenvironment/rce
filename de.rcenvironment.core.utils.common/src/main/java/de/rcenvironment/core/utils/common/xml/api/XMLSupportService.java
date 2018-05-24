@@ -33,7 +33,7 @@ public interface XMLSupportService {
      * @return The DOM document of the XML file.
      * @throws XMLException Thrown if an error in handling the XML file occured.
      */
-    Document readXMLFromFile(final File file) throws XMLException;
+    Document readXMLFromFile(File file) throws XMLException;
     
     /**
      * Reads an XML stream and return the DOM tree of it.
@@ -42,7 +42,7 @@ public interface XMLSupportService {
      * @return The DOM document of the XML file.
      * @throws XMLException Thrown if an error in handling the XML file occured.
      */
-    Document readXMLFromStream(final InputStream stream) throws XMLException;
+    Document readXMLFromStream(InputStream stream) throws XMLException;
     
     /**
      * Parses XML stored in a String and returns the DOM tree of it.
@@ -51,7 +51,7 @@ public interface XMLSupportService {
      * @return The DOM document or null if any exception was caught
      * @throws XMLException Thrown if an error in handling the XML file occured.
      */
-    Document readXMLFromString(final String aString) throws XMLException;
+    Document readXMLFromString(String aString) throws XMLException;
     
     /**
      * Creates a whole element tree described by a given XPath expression.
@@ -61,7 +61,7 @@ public interface XMLSupportService {
      * @return Returns the last child node (leaf node) of the created element tree or null if PathStr is empty.
      * @throws XMLException 
      */
-    Node createElementTree(final Document doc, final String xPathStr) throws XMLException;
+    Node createElementTree(Document doc, String xPathStr) throws XMLException;
     
     /**
      * Creates an XML element from an element string.
@@ -78,7 +78,7 @@ public interface XMLSupportService {
      * @return Returns the created element with all its attributes and subelements.
      * @throws XMLException 
      */
-    Element createElement(final Document doc, final String elementString) throws XMLException;
+    Element createElement(Document doc, String elementString) throws XMLException;
     
     /**
      * Creates an empty DOM document.
@@ -95,7 +95,7 @@ public interface XMLSupportService {
      * @param xPathStr The XPath expression describing the path of the element.
      * @throws XMLException 
      */
-    void deleteElement(final Document doc, final String xPathStr) throws XMLException;
+    void deleteElement(Document doc, String xPathStr) throws XMLException;
     
     /**
      * Replaces the text element of a node.
@@ -103,9 +103,10 @@ public interface XMLSupportService {
      * @param doc The DOM document which contains the element.
      * @param xPathStr The XPath expression describing the path of the element.
      * @param newValue The new value that should replace the old value at the xpath position.
-     * @throws XMLException 
+     * @param generateIfNotExist True if a non-existing element should be generated.
+     * @throws XMLException The XMLException thrown if an error occurs.
      */
-    void replaceNodeText(final Document doc, final String xPathStr, final String newValue) throws XMLException;
+    void replaceNodeText(Document doc, String xPathStr, String newValue, Boolean generateIfNotExist) throws XMLException;
     
     /**
      * Outputs a DOM document as an XML file.
@@ -114,7 +115,7 @@ public interface XMLSupportService {
      * @param file Output XML file to be created.
      * @throws XMLException 
      */
-    void writeXMLtoFile(final Document doc, final File file) throws XMLException;
+    void writeXMLtoFile(Document doc, File file) throws XMLException;
     
     /**
      * Outputs a DOM document as XML into a String.
@@ -123,7 +124,7 @@ public interface XMLSupportService {
      * @return The return string
      * @throws XMLException 
      */
-    String writeXMLToString(final Document doc) throws XMLException;
+    String writeXMLToString(Document doc) throws XMLException;
     
     /**
      * Outputs a DOM element and all of its subelements as pretty print XML into a string.
@@ -132,7 +133,7 @@ public interface XMLSupportService {
      * @return Returns the XML string of an element and its subelements.
      * @throws XMLException 
      */
-    String writeXMLToString(final Element sourceElement) throws XMLException;
+    String writeXMLToString(Element sourceElement) throws XMLException;
     
     /**
      * This method returns the element-text of the element mentioned by the parameter.
@@ -142,6 +143,6 @@ public interface XMLSupportService {
      * @return Returns the element-text of the element mentioned by the parameter. 
      * @throws XMLException 
      */
-    String getElementText(final Document doc, final String xpathStatement) throws XMLException;
+    String getElementText(Document doc, String xpathStatement) throws XMLException;
     
 }

@@ -1,7 +1,6 @@
 {
   "identifier" : "6ebded14-b5bd-4bd7-84b4-eae17ab38f45",
   "workflowVersion" : "5",
-  "name" : "MDO_CO_Sellar_2016-11-30_08:41:49_05",
   "nodes" : [ {
     "identifier" : "0f408ce8-44fa-4f30-8ff5-74749133b1a1",
     "name" : "Discipline 1",
@@ -16,7 +15,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "x_1 = RCE.read_input(\"x1\")\r\nz_1 = RCE.read_input(\"z1\")\r\nz_2 = RCE.read_input(\"z2\")\r\ny_2 = RCE.read_input(\"y2\")\r\n\r\nresult = z_1**2 + x_1 + z_2 - 0.2 * y_2\r\nRCE.write_output(\"y1\", result)\r\nprint(result)",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },
@@ -81,7 +80,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "x1_glob = RCE.read_input(\"x1_glob\")\r\nz1_glob = RCE.read_input(\"z1_glob\")\r\nz2_glob = RCE.read_input(\"z2_glob\")\r\ny1c_glob = RCE.read_input(\"y1c_glob\")\r\ny2c_glob = RCE.read_input(\"y2c_glob\")\r\n\r\nx1_loc = RCE.read_input(\"x1_loc\")\r\nz1_loc = RCE.read_input(\"z1_loc\")\r\nz2_loc = RCE.read_input(\"z2_loc\")\r\ny1_loc = RCE.read_input(\"y1_loc\")\r\ny2c_loc = RCE.read_input(\"y2c_loc\")\r\n\r\nf_d1 = (x1_glob - x1_loc)**2 + (z1_glob - z1_loc)**2 + (z2_glob-z2_loc)**2 + (y2c_glob-y2c_loc)**2 + (y1c_glob - y1_loc)**2\r\nRCE.write_output(\"f_d1\",f_d1)\r\nRCE.write_output(\"x1_glob\",x1_glob)\r\nRCE.write_output(\"y1c_glob\",y1c_glob)\r\nRCE.write_output(\"y2c_glob\",y2c_glob)\r\nRCE.write_output(\"z1_glob\",z1_glob)\r\nRCE.write_output(\"z2_glob\",z2_glob)\r\n",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },
@@ -226,7 +225,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "x_1 = RCE.read_input(\"x1\")\r\nz_1 = RCE.read_input(\"z1\")\r\nz_2 = RCE.read_input(\"z2\")\r\ny_2 = RCE.read_input(\"y2\")\r\n\r\nresult = z_1**2 + x_1 + z_2 - 0.2 * y_2\r\nRCE.write_output(\"y1\", result)\r\nprint(result)",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },
@@ -291,7 +290,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "z_1 = RCE.read_input(\"z1\")\r\nz_2 = RCE.read_input(\"z2\")\r\ny_1 = RCE.read_input(\"y1\")\r\nimport math\r\nresult = math.sqrt(math.fabs(y_1)) + z_1 + z_2\r\nRCE.write_output(\"y2\", result)\r\nprint(result)",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },
@@ -467,7 +466,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "z_1 = RCE.read_input(\"z1\")\r\nz_2 = RCE.read_input(\"z2\")\r\ny_1 = RCE.read_input(\"y1\")\r\nimport math\r\nresult = math.sqrt(math.fabs(y_1)) + z_1 + z_2\r\nRCE.write_output(\"y2\", result)\r\nprint(result)",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },
@@ -1236,7 +1235,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "x1_glob = RCE.read_input(\"x1_glob\")\r\nz1_glob = RCE.read_input(\"z1_glob\")\r\nz2_glob = RCE.read_input(\"z2_glob\")\r\ny1c_glob = RCE.read_input(\"y1c_glob\")\r\ny2c_glob = RCE.read_input(\"y2c_glob\")\r\n\r\nx1_d1 = RCE.read_input(\"x1_d1\")\r\nz1_d1 = RCE.read_input(\"z1_d1\")\r\nz2_d1 = RCE.read_input(\"z2_d1\")\r\ny2c_d1 = RCE.read_input(\"y2c_d1\")\r\ny1_d1 = RCE.read_input(\"y1_d1\")\r\n\r\nz1_d2 = RCE.read_input(\"z1_d2\")\r\nz2_d2 = RCE.read_input(\"z2_d2\")\r\ny1c_d2 = RCE.read_input(\"y1c_d2\")\r\ny2_d2 = RCE.read_input(\"y2_d2\")\r\n\r\nimport math\r\n\r\nresult = x1_glob**2 + z2_glob + y1_d1 + math.exp(-y2_d2)\r\nconst1 = (x1_glob - x1_d1)**2 + (z1_glob - z1_d1)**2 + (z2_glob-z2_d1)**2 + (y2c_glob-y2c_d1)**2 + (y1c_glob - y1_d1)**2\r\nconst2 = (z1_glob - z1_d2)**2 + (z2_glob-z2_d2)**2 + (y1c_glob-y1c_d2)**2 + (y2c_glob - y2_d2)**2\r\n\r\nRCE.write_output(\"f\", result)\r\n\r\nRCE.write_output(\"coup1\", const1)\r\nRCE.write_output(\"coup2\", const2)\r\n\r\n",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "false",
       "usageOfScript" : "NEW"
     },

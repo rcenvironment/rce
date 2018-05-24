@@ -178,9 +178,9 @@ public class PlaceholderPage extends WizardPage {
         componentPlaceholderTree = new Tree(placeholderInformationGroup, SWT.MULTI);
 
         componentPlaceholderTree.setLayoutData(gridData);
-        componentPlaceholderTree.setHeaderVisible(false);
+        componentPlaceholderTree.setHeaderVisible(true);
         componentPlaceholderTree.setLinesVisible(true);
-
+        
         // resize the row height using a MeasureItem listener
         componentPlaceholderTree.addListener(SWT.MeasureItem, new Listener() {
 
@@ -298,6 +298,7 @@ public class PlaceholderPage extends WizardPage {
         TreeColumn column4 = new TreeColumn(componentPlaceholderTree, SWT.CENTER);
         column4.setText("");
         column4.setWidth(HUNDRED);
+
         placeholderValidators = new HashMap<>();
 
         Set<String> componentTypesWithPlaceholder = placeholderHelper.getIdentifiersOfPlaceholderContainingComponents();

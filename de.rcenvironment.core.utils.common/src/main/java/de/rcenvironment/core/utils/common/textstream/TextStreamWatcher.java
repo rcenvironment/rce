@@ -9,17 +9,16 @@
 package de.rcenvironment.core.utils.common.textstream;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.TeeInputStream;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
@@ -30,33 +29,15 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * an instance must be provided via the constructor. If available in the project scope, consider using
  * de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory for convenience.
  * 
- * TODO consider reworking this class to a plain {@link Runnable} to avoid this dependency, which would also allow using this class with a
- * plain Java {@link Executor}.
- * 
- * TODO add more specific unit tests? currently covered indirectly by executor tests
- * 
  * @author Robert Mischke
  */
 public class TextStreamWatcher {
 
-    private final TextOutputReceiver[] receivers;
-
-    private InputStream inputStream;
-
-    private BufferedReader bufferedReader;
-
-    /**
-     * An optional file where the input stream is mirrored to.
-     */
-    private File logFile;
-
-    private volatile Future<?> watcherTaskFuture;
-
-    private volatile boolean streamClosed = false;
-
-    private volatile FileOutputStream logFileStream;
-
     private final AsyncTaskService asyncTaskService;
+
+    private final List<WatcherRunnable> watcherRunnables = new ArrayList<>(4);
+
+    private List<Future<?>> watcherTaskFutures; // list created on start; also serves as "started" marker
 
     /**
      * The actual {@link Runnable} that performs the output capture. Uses the outer class fields for delegation.
@@ -64,6 +45,30 @@ public class TextStreamWatcher {
      * @author Robert Mischke
      */
     private final class WatcherRunnable implements Runnable {
+
+        private BufferedReader bufferedReader;
+
+        private final TextOutputReceiver[] receivers;
+
+        // private volatile boolean terminated = false;
+
+        /**
+         * Constructs a new {@link Runnable} to watch the given {@link InputStream}, and forward each line to all receivers.
+         * 
+         * @param inputStream the stream to watch
+         * @param receivers the receivers of line output and life cycle events
+         */
+        private WatcherRunnable(InputStream inputStream, TextOutputReceiver... receivers) {
+
+            // guard against null parameters
+            Objects.requireNonNull(inputStream, "The input stream to be read from cannot be null");
+            for (TextOutputReceiver r : receivers) {
+                Objects.requireNonNull(r, "Received a 'null' receiver argument");
+            }
+
+            this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            this.receivers = receivers;
+        }
 
         @Override
         @TaskDescription("Text stream watching/reading")
@@ -93,106 +98,100 @@ public class TextStreamWatcher {
             }
 
             IOUtils.closeQuietly(bufferedReader);
-            streamClosed = true;
+            // terminated = true;
         }
     }
 
     /**
-     * Creates an instance (which is not started automatically; see {@link #start()}).
+     * Creates an instance (which is not started automatically; see {@link #start()}). Typically, stream mappings are added before starting
+     * it.
+     * 
+     * @param asyncTaskService the {@link AsyncTaskService} instance to submit tasks to
+     */
+    public TextStreamWatcher(AsyncTaskService asyncTaskService) {
+        this.asyncTaskService = asyncTaskService;
+    }
+
+    /**
+     * Backwards compatibility / convenience constructor; constructs an instance with a predefined stream mapping.
+     *
+     * TODO change order of parameters
      * 
      * @param input the {@link InputStream} to read from
+     * @param asyncTaskService the {@link AsyncTaskService} instance to submit tasks to
      * @param receivers the {@link TextOutputReceiver} to send the generated events to
      */
     public TextStreamWatcher(InputStream input, AsyncTaskService asyncTaskService, TextOutputReceiver... receivers) {
-        this.receivers = receivers;
-        this.inputStream = input;
         this.asyncTaskService = asyncTaskService;
-
-        // guard against "null" listeners
-        for (TextOutputReceiver r : receivers) {
-            if (r == null) {
-                throw new IllegalArgumentException("A 'null' receiver was passed as an argument");
-            }
-        }
+        registerStream(input, receivers);
     }
 
     /**
-     * Defines that the raw output should be mirrored to the given file. The target file will be created, lines appended or overwritten if
-     * it already exists. This method is meant to be called no more than once; repeated calls will cause a {@link IllegalStateException}.
+     * Registers an {@link InputStream} and the {@link TextOutputReceiver}s that this stream's lines should be sent to.
      * 
-     * @param file the target file to write to
-     * @param append append lines to file if true; otherwise overwrite file if already exists
+     * @param inputStream the stream to read from
+     * @param receivers the receivers to send text lines and life cycle events to
      * 
-     * @throws IOException on I/O errors while setting up the log file
+     * @return the "self" instance for call chaining
      */
-    public void enableLogFile(File file, boolean append) throws IOException {
-        if (watcherTaskFuture != null) {
-            throw new IllegalStateException("Already started");
-        }
-        // sanity check
-        if (logFile != null) {
-            throw new IllegalStateException("Log file was already defined");
-        }
-        logFile = file;
-        logFileStream = new FileOutputStream(logFile, append);
-        // true = auto close stream
-        inputStream = new TeeInputStream(inputStream, logFileStream, true);
-    }
-
-    /**
-     * Returns the file set by {@link #enableLogFile(File)}, or null if none was set.
-     * 
-     * @return the defined log file
-     */
-    public File getLogFile() {
-        return logFile;
+    public synchronized TextStreamWatcher registerStream(InputStream inputStream, TextOutputReceiver... receivers) {
+        watcherRunnables.add(new WatcherRunnable(inputStream, receivers));
+        return this;
     }
 
     /**
      * Starts the watcher thread.
      * 
-     * @return the "self" instance for convenient chaining
+     * @return the "self" instance for call chaining
      */
-    public TextStreamWatcher start() {
-        this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        watcherTaskFuture = asyncTaskService.submit(new WatcherRunnable());
+    public synchronized TextStreamWatcher start() {
+        if (wasStarted()) {
+            throw new IllegalStateException("Watcher task was already started");
+        }
+        watcherTaskFutures = new ArrayList<Future<?>>(watcherRunnables.size());
+        for (WatcherRunnable watcherRunnable : watcherRunnables) {
+            watcherTaskFutures.add(this.asyncTaskService.submit(watcherRunnable));
+        }
         return this;
     }
 
     /**
      * Blocks until the stream watcher thread has terminated.
-     * 
      */
     public void waitForTermination() {
+
+        final List<Future<?>> watcherTaskFuturesCopy; // immutable copy to release the synchronization lock to allow for cancel() calls
+        synchronized (this) {
+            if (!wasStarted()) {
+                throw new IllegalStateException("Watcher task was not started yet");
+            }
+            watcherTaskFuturesCopy = new ArrayList<>(watcherTaskFutures);
+        }
         try {
-            watcherTaskFuture.get();
+            for (Future<?> watcherTaskFuture : watcherTaskFuturesCopy) {
+                watcherTaskFuture.get();
+            }
         } catch (InterruptedException e) {
             LogFactory.getLog(getClass()).debug("Interrupted while waiting for stream watcher task to finish");
         } catch (ExecutionException e) {
             LogFactory.getLog(getClass()).warn("Exception while waiting for stream watcher task to finish", e);
-        }
-
-        if (logFileStream != null) {
-            IOUtils.closeQuietly(logFileStream);
         }
     }
 
     /**
      * Interrupts the stream watcher thread.
      */
-    public void cancel() {
-        if (watcherTaskFuture == null) {
+    public synchronized void cancel() {
+        if (!wasStarted()) {
             throw new IllegalStateException("Watcher task was not started yet");
         }
-        watcherTaskFuture.cancel(true);
+        for (Future<?> watcherTaskFuture : watcherTaskFutures) {
+            watcherTaskFuture.cancel(true);
+        }
     }
 
-    /**
-     * Returns whether the watched output stream has ended, either by reaching EOF or because an exception has occurred.
-     * 
-     * @return true if the watched stream has ended
-     */
-    public boolean isStreamClosed() {
-        return streamClosed;
+    private boolean wasStarted() {
+        return watcherTaskFutures != null;
     }
+
 }

@@ -42,7 +42,7 @@ public class DatabaseHistoryDataItemSubtreeBuilder extends DefaultHistoryDataIte
 
     static {
         String bundleName = "de.rcenvironment.components.database.common";
-        String iconName = "database_16.png";
+        String iconName = "database16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

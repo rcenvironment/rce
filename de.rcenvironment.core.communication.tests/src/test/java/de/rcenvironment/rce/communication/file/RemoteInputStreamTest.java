@@ -43,7 +43,7 @@ public class RemoteInputStreamTest {
      */
     @Before
     public void setUp() throws Exception {
-        ServiceReference ref = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?> ref = EasyMock.createNiceMock(ServiceReference.class);
 
         RemoteFileConnectionFactory factoryMock = EasyMock.createNiceMock(RemoteFileConnectionFactory.class);
         EasyMock.expect(factoryMock.createRemoteFileConnection(new URI(URI))).andReturn(new DummyRemoteFileConnection());
@@ -54,7 +54,8 @@ public class RemoteInputStreamTest {
         EasyMock.expect(contextMock.getAllServiceReferences(EasyMock.eq(RemoteFileConnectionFactory.class.getName()),
             EasyMock.eq((String) null)))
             .andReturn(new ServiceReference[] { ref }).anyTimes();
-        EasyMock.expect(contextMock.getService(ref)).andReturn(factoryMock).anyTimes();
+        contextMock.getService(ref);
+        EasyMock.expectLastCall().andReturn(factoryMock).anyTimes();
         EasyMock.replay(contextMock);
 
         new RemoteFileConnectionSupport().activate(contextMock);

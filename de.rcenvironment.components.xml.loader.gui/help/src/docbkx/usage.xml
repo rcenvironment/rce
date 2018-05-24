@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
-                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
 <chapter>
     <title>XML Loader Component Usage</title>
     <sect1>
@@ -18,12 +18,16 @@
         <sect2>
             <title>Writing values into an XML file</title>
         <para>To map single values into the XML dataset you have to add one input channel per value
-            to be mapped. If you require more complex or conditional mappings or transformations please refer to the XML Merger component. In the "Add Input" dialog click "XPath choosing... " and  navigate to an
+            to be mapped. If you require more complex or conditional mappings or transformations please refer 
+            to the XML Merger component. In the "Add Input" dialog click "XPath choosing... " and  navigate to an
             XML file with the same structure as the one you referenced in the 'File' tab, preferably
             the same file. In the appearing "XPath Variables Dialog" window navigate along the tree
-            to the node you desire to change and drag it to the "Variables" section below. When the
-            component is executed the value being received on this input channel will be written to
-            the XPath location defined here. The resulting XML file with the inserted values is written to the output "XML". You can check the original and the outgoing XML files in the workflow data browser.</para>
+            to the node you desire to change and select it. 
+            <note>Search for the XPathChooser help in the User Guide (3. Usage -> 2. Workflows -> 2.3 Workflow components) 
+            to garner further information about the usage of XPaths.</note>
+            When the component is executed the value being received on this input channel will be written to
+            the XPath location defined here. The resulting XML file with the inserted values is written to the output "XML". 
+            You can check the original and the outgoing XML files in the workflow data browser.</para>
         </sect2>
         <sect2>
             <title>Reading values from an XML file</title>
@@ -31,7 +35,8 @@
             To read single values from an XML file add a dynamic output. In the "Add Output" dialog click "XPath choosing... " and  navigate to an
             XML file with the same structure as the one you referenced in the 'File' tab, preferably
             the same file. In the appearing "XPath Variables Dialog" window navigate along the tree
-            to the node you desire to read and drag it to the "Variables" section below. When the component is executed the content of the node that the XPath points to is written into the output channel.
+            to the node you desire to read and select it. When the component is executed the content of the 
+            node that the XPath points to is written into the output channel.
         </para>
         </sect2>
     </sect1>

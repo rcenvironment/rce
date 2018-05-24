@@ -285,6 +285,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                 tableFileReference =
                     componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
                         tableFile, "DOETable.csv");
+                historyDataItem.setTableFileReference(tableFileReference.getFileReference());
             } catch (IOException e) {
                 String errorMessage = "Failed to create DOE table file";
                 componentLog.componentError(StringUtils.format(PLACEHOLDER_STRING, errorMessage, e.getMessage()));
@@ -298,8 +299,6 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                     }
                 }
             }
-
-            historyDataItem.setTableFileReference(tableFileReference.getFileReference());
         }
     }
 

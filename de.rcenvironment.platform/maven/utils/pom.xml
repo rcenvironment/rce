@@ -1,0 +1,101 @@
+<!-- Copyright (C) 2017 DLR, Germany -->
+<!-- All rights reserved -->
+<!-- http://www.rcenvironment.de/ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>de.rcenvironment</groupId>
+	<artifactId>de.rcenvironment.platform.maven.utils</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<!-- A POM for updating version numbers in the platform projects-->
+
+	<properties>
+		<rce.core.rootpath>../../..</rce.core.rootpath>
+	</properties>
+
+	<profiles>
+		<profile>
+			<id>upgrade-version</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>process-sources</phase>
+								<configuration>
+									<tasks>
+										<fail message="rce.core.version.old must be defined"
+											unless="rce.core.version.old" />
+										<fail message="rce.core.version.new must be defined"
+											unless="rce.core.version.new" />
+
+										<!-- POM versions -->
+										<replace dir="${rce.core.rootpath}" token="${rce.core.version.old}-SNAPSHOT"
+											value="${rce.core.version.new}-SNAPSHOT">
+											<include name="de.rcenvironment.platform/**/pom.xml" />
+										</replace>
+										
+										<!-- MANIFEST.MF versions -->
+										<replace dir="${rce.core.rootpath}"
+											token="Bundle-Version: ${rce.core.version.old}.qualifier"
+											value="Bundle-Version: ${rce.core.version.new}.qualifier">
+											<include name="de.rcenvironment.platform/**/META-INF/MANIFEST.MF" />
+										</replace>			
+																	
+										<!-- feature.xml versions -->
+										<replaceregexp
+											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;)"
+											replace="\1${rce.core.version.new}\2" flags="gs">
+											<fileset dir="${rce.core.rootpath}">
+												<include name="de.rcenvironment.platform/**/*.feature/feature.xml" />
+											</fileset>
+										</replaceregexp>
+										
+										<!-- feature versions in repository definition (category.xml) -->
+										<replaceregexp
+											match="features/de.rcenvironment(\.[\w\.]+)?.feature_${rce.core.version.old}.qualifier.jar&quot; id=&quot;de.rcenvironment(\.[\w\.]+)?.feature&quot; version=&quot;${rce.core.version.old}.qualifier&quot;"
+											replace="features/de.rcenvironment\1.feature_${rce.core.version.new}.qualifier.jar&quot; id=&quot;de.rcenvironment\2.feature&quot; version=&quot;${rce.core.version.new}.qualifier&quot;"
+											flags="g">
+											<fileset dir="${rce.core.rootpath}">
+												<include
+													name="de.rcenvironment.platform/projects/de.rcenvironment.platform.repository/category.xml" />
+											</fileset>
+										</replaceregexp>
+										
+									</tasks>
+								</configuration>
+								<goals>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+	<build>
+		<defaultGoal>process-sources</defaultGoal>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.3</version>
+					<dependencies>
+						<dependency>
+							<groupId>ant</groupId>
+							<artifactId>ant-nodeps</artifactId>
+							<version>1.6.5</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+</project>

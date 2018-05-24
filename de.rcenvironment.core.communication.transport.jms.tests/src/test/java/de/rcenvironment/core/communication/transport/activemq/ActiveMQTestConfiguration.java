@@ -19,17 +19,17 @@ import de.rcenvironment.core.communication.transport.spi.DefaultMessageChannelId
  */
 public class ActiveMQTestConfiguration extends TestConfigurationImpl {
 
-    private static final int DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC = 1250;
+    private static final int DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC = 1500;
 
-    private static final int DEFAULT_NETWORK_SILENCE_WAIT_MSEC = 1500;
+    private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIME_MSEC = 2000;
 
-    private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIMEOUT_MSEC = 30000;
+    private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIMEOUT_MSEC = 45000;
 
     public ActiveMQTestConfiguration() {
         setTransportProvider(new ActiveMQTransportProvider(new DefaultMessageChannelIdFactoryImpl()));
         setContactPointGenerator(new ActiveMQNetworkContactPointGenerator("localhost"));
         setDefaultTrafficWaitTimeout(DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC);
-        setDefaultNetworkSilenceWait(DEFAULT_NETWORK_SILENCE_WAIT_MSEC);
+        setDefaultNetworkSilenceWait(DEFAULT_NETWORK_SILENCE_WAIT_TIME_MSEC);
         setDefaultNetworkSilenceWaitTimeout(DEFAULT_NETWORK_SILENCE_WAIT_TIMEOUT_MSEC);
     }
 }

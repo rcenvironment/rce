@@ -9,7 +9,6 @@
 package de.rcenvironment.core.gui.xpathchooser;
 
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
@@ -33,6 +32,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * A dialog for defining and editing xpath as additional endpoints.
  * 
  * @author Markus Kunde
+ * @author Adrian Stock
+ * @author Jan Flink
  */
 public class XPathEditDialog extends EndpointEditDialog {
     
@@ -62,18 +63,16 @@ public class XPathEditDialog extends EndpointEditDialog {
     }
 
     private void createXPathDialog() {
-        final XPathChooserDialog dialog = new XPathChooserDialog(super.getShell(), null);
+        XPathChooserDialog dialog = new XPathChooserDialog(super.getShell(), null);
         if (dialog.getChooser() != null && dialog.open() == TitleAreaDialog.OK) {
-            final Set<VariableEntry> newVars = dialog.getSelectedVariables();
-            for (final VariableEntry entry : newVars) {
-                String xpath = entry.getXpath();
+            final VariableEntry newVar = dialog.getSelectedVariable();
+            String xpath = newVar.getXpath();
 
-                if (xpath != null && !xpath.isEmpty()) {
+            if (xpath != null && !xpath.isEmpty()) {
 
-                    Widget address = super.getWidget(CHANNEL_XPATH);
-                    if (address instanceof Text) {
-                        ((Text) address).setText(xpath);
-                    }
+                Widget address = super.getWidget(CHANNEL_XPATH);
+                if (address instanceof Text) {
+                    ((Text) address).setText(xpath);
                 }
             }
 

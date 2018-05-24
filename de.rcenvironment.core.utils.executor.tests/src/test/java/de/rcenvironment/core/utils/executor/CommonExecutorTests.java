@@ -158,8 +158,8 @@ abstract class CommonExecutorTests {
      */
     protected OutputHolder waitAndCaptureOutput(CommandLineExecutor executor) throws IOException, InterruptedException {
         // execute
-        final CapturingTextOutReceiver outReceiver = new CapturingTextOutReceiver("");
-        final CapturingTextOutReceiver errReceiver = new CapturingTextOutReceiver("");
+        final CapturingTextOutReceiver outReceiver = new CapturingTextOutReceiver();
+        final CapturingTextOutReceiver errReceiver = new CapturingTextOutReceiver();
         waitAndGatherOutput(executor, outReceiver, errReceiver);
         // wrap & return output
         return new OutputHolder(outReceiver.getBufferedOutput(), errReceiver.getBufferedOutput());

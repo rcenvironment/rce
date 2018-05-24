@@ -28,15 +28,18 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Helper class for reconfiguring the pax logging service.
  *
  * @author Tobias Brieden
+ * @author Robert Mischke
  */
 public final class LoggingReconfigurationHelper {
+
+    private static final String STAGE_TWO_LOG_APPENDER_CLASS = "de.rcenvironment.core.configuration.logging.EarlyLogInsertingAppender";
 
     private static final String ERROR_CONFIGURATION_ADMIN_SERVICE_IS_NOT_AVAILABLE =
         "Error while reconfiguring the logging: The Configuration Admin Service is not available.";
 
-    private static final String LOG4J_APPENDER_WARNINGS_LOG_FILE = "log4j.appender.WARNINGS_LOG.File";
+    private static final String PROPERTY_KEY_WARNINGS_LOG_DESTINATION = "log4j.appender.WARNINGS_LOG.File";
 
-    private static final String LOG4J_APPENDER_DEBUG_LOG_FILE = "log4j.appender.DEBUG_LOG.File";
+    private static final String PROPERTY_KEY_DEBUG_LOG_DESTINATION = "log4j.appender.DEBUG_LOG.File";
 
     private static final Log LOG = LogFactory.getLog(LoggingReconfigurationHelper.class);
 
@@ -79,11 +82,11 @@ public final class LoggingReconfigurationHelper {
 
             // use the ConfigurationAdmin to reconfigure the logging
             Configuration configuration = configurationAdmin.getConfiguration("org.ops4j.pax.logging");
-            Dictionary<String, String> properties = configuration.getProperties();
+            @SuppressWarnings("unchecked") Dictionary<String, String> properties = configuration.getProperties();
 
-            // determine the location of the startup logs
-            String startupDebugLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(LOG4J_APPENDER_DEBUG_LOG_FILE));
-            String startupWarningsLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(LOG4J_APPENDER_WARNINGS_LOG_FILE));
+            // determine the location of the startup/early logs for attempting to delete them
+            String earlyDebugLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_DEBUG_LOG_DESTINATION));
+            String earlyWarningsLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_WARNINGS_LOG_DESTINATION));
 
             // determine the location of the final logs
             String logfilesBasePath = basePath.getAbsolutePath();
@@ -91,16 +94,18 @@ public final class LoggingReconfigurationHelper {
             String finalWarningsLogLocation = StringUtils.format("%s/%swarnings.log", logfilesBasePath, logfilesPrefix);
 
             // reconfigure the logging to append to the renamed startup log files
-            properties.put("log4j.appender.DEBUG_LOG", "de.rcenvironment.core.configuration.logging.InsertOldLogAppender");
-            properties.put("log4j.appender.DEBUG_LOG.OldFile", startupDebugLogLocation);
-            properties.put(LOG4J_APPENDER_DEBUG_LOG_FILE, finalDebugLogLocation);
-            properties.put("log4j.appender.WARNINGS_LOG", "de.rcenvironment.core.configuration.logging.InsertOldLogAppender");
-            properties.put("log4j.appender.WARNINGS_LOG.OldFile", startupWarningsLogLocation);
-            properties.put(LOG4J_APPENDER_WARNINGS_LOG_FILE, finalWarningsLogLocation);
+            properties.put("log4j.appender.DEBUG_LOG", STAGE_TWO_LOG_APPENDER_CLASS);
+            properties.put("log4j.appender.DEBUG_LOG.EarlyLogFileLocation", earlyDebugLogLocation); // used to delete the "early" file
+            properties.put(PROPERTY_KEY_DEBUG_LOG_DESTINATION, finalDebugLogLocation);
+            properties.put("log4j.appender.WARNINGS_LOG", STAGE_TWO_LOG_APPENDER_CLASS);
+            properties.put("log4j.appender.WARNINGS_LOG.EarlyLogFileLocation", earlyWarningsLogLocation); // used to delete the "early" file
+            properties.put(PROPERTY_KEY_WARNINGS_LOG_DESTINATION, finalWarningsLogLocation);
             configuration.update(properties);
+
+            LOG.debug("Reconfigured the log system for writing to profile-specific log files");
         } catch (IOException e) {
             // If this exception is thrown the logging couln't be reconfigured. Therefore, the startup log is still used to log to.
-            LOG.error("Error while reconfiguring the logging.", e);
+            LOG.error("Error while switching from early log capture to profile-specific log files", e);
         }
     }
 }

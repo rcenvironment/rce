@@ -394,7 +394,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
                 @Override
                 public void onAsyncException(Exception e) {
-                    LogFactory.getLog(getClass()).warn("Asynchronous exception while subscribing to a new workflow");
+                    LogFactory.getLog(getClass()).warn("Asynchronous exception while subscribing to a new workflow: " + e.toString());
                 }
             });
 
@@ -563,13 +563,14 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                 @Override
                 public void onAsyncException(Exception e) {
                     final Log log = LogFactory.getLog(getClass());
-                    if (e.getCause() == null) {
+                    if (e.getCause() == null || e.getCause() instanceof RemoteOperationException) {
                         // log a compressed message; this includes RemoteOperationExceptions, which (by design) never have a "cause"
                         log.warn("Asynchronous exception during parallel subscriptions for newly created workflow notifications: "
                             + e.toString());
                     } else {
                         // on unexpected errors, log the full stacktrace
-                        log.warn("Asynchronous exception during parallel subscriptions for newly created workflow notifications", e);
+                        log.warn("Asynchronous exception during parallel subscriptions for newly created workflow notifications",
+                            e.getCause());
                     }
                 }
             });

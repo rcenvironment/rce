@@ -76,12 +76,20 @@ public abstract class AbstractJmsQueueConsumer implements Runnable {
                     }
                 }
             } finally {
-                if (session != null) {
-                    try {
-                        session.close();
-                    } catch (JMSException e1) {
-                        // TODO how to prevent these? (they should be harmless, though)
-                        log.debug("JMS exception while closing inbox consumer session on " + queueName + ": " + e1.toString());
+                // note: this synchronization is only safe as long as triggerShutdown() is not being critically
+                // being waited on, e.g. called from a separate thread pool task -- misc_ro
+                synchronized (this) {
+                    // session may be null if it was already closed in triggerShutdown()
+                    if (session != null) {
+                        try {
+                            session.close();
+                        } catch (JMSException e1) {
+                            // TODO how to prevent these? (they should be harmless, though)
+                            log.debug("JMS exception while closing inbox consumer session on " + queueName + ": " + e1.toString());
+                        }
+                        session = null;
+                    } else {
+                        log.debug("JMS queue consumer reached shutdown after its shutdown was triggered asynchronously");
                     }
                 }
             }
@@ -97,13 +105,16 @@ public abstract class AbstractJmsQueueConsumer implements Runnable {
      * @throws JMSException on internal JMS errors
      */
     public void triggerShutDown() throws JMSException {
-        // synchronize for session visibility
+        // synchronize for "session"
         synchronized (this) {
             if (session == null) {
-                log.warn("Queue consumer received shutdown command, but had no session yet");
+                // TODO potential error case: could this is processed before the run() method has initialized the session? -- misc_ro
+                log.debug("JMS queue consumer received shutdown command, but has no session; "
+                    + "it is either not initialized yet or was already shut down");
                 return;
             }
             session.close();
+            session = null;
         }
     }
 

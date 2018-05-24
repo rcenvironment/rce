@@ -109,7 +109,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
 
         EasyMock.reset(contextMock);
         EasyMock.expect(contextMock.getBundles()).andReturn(new Bundle[] {}).anyTimes();
-        ServiceReference ref = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?> ref = EasyMock.createNiceMock(ServiceReference.class);
         EasyMock.expect(contextMock.getAllServiceReferences(EasyMock.eq(RemoteFileConnectionFactory.class.getName()),
             EasyMock.eq(filter))).andReturn(new ServiceReference[] { ref }).anyTimes();
         EasyMock.expect(contextMock.getService(ref)).andReturn(null).anyTimes();

@@ -85,6 +85,8 @@ public class Application implements IApplication {
         InstanceRunner instanceRunner = Instance.getInstanceRunner();
         int runnerResult = instanceRunner.run();
 
+        log.debug("Main application shutdown complete, exit code: " + runnerResult);
+
         return runnerResult;
     }
 

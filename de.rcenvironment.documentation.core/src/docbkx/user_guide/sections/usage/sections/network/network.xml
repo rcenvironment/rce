@@ -27,7 +27,7 @@
 							monitoring...)</entry>
 						<entry>Encrypted traffic</entry>
 						<entry>Using login name and password or RSA key</entry>
-						<entry>Symmetrical</entry>
+						<entry><![CDATA[Sym-       metri-     cal]]></entry>
 					</row>
 				</thead>
 				<tbody>

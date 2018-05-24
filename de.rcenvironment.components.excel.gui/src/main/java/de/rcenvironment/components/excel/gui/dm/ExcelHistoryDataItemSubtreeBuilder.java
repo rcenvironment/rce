@@ -41,7 +41,7 @@ public class ExcelHistoryDataItemSubtreeBuilder implements ComponentHistoryDataI
 
     static {
         String bundleName = "de.rcenvironment.components.excel.common";
-        String iconName = "excel_16.png";
+        String iconName = "excel16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

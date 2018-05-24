@@ -42,6 +42,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.xml.XMLException;
 import de.rcenvironment.core.utils.common.xml.XMLNamespaceContext;
 import de.rcenvironment.core.utils.common.xml.XSLTErrorHandler;
@@ -51,11 +52,15 @@ import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
  * Default Implementation of the XML Support.
  *
  * @author Brigitte Boden
+ * @author Jan Flink (
  * @author Markus Litz, Markus Kunde, Arne Bachmann (some code adapted from old class XMLHelper)
  */
 public class XMLSupportServiceImpl implements XMLSupportService {
 
-    private static final String NO_NODE_FOUND_FOR_THE_XPATH_EXPRESSION = "No node found for the xpath expression ";
+    private static final String NO_NODE_FOUND_FOR_THE_XPATH_EXPRESSION = "No element found for the xpath expression: %s.";
+
+    private static final String GENERATE_NODE_FOR_THE_XPATH_EXPRESSION =
+        "Generated element for xpath expression '%s' as it was not existent.";
 
     private static final String ERROR_WHILE_PARSING_XML_FILE = "Error while parsing XML file: ";
 
@@ -70,6 +75,8 @@ public class XMLSupportServiceImpl implements XMLSupportService {
      * Quote character string used in XPath attributes.
      */
     private static final String QUOTE_CHAR = "\"";
+
+    private static final String SINGLE_QUOTE_CHAR = "'";
 
     /**
      * XML-Namespace delimiter character.
@@ -287,10 +294,10 @@ public class XMLSupportServiceImpl implements XMLSupportService {
                 if (attribute.length == 2) {
                     attrValue = attribute[1];
                 }
-                if (attrValue.startsWith(QUOTE_CHAR)) {
+                if (attrValue.startsWith(QUOTE_CHAR) || attrValue.startsWith(SINGLE_QUOTE_CHAR)) {
                     attrValue = attrValue.substring(1);
                 }
-                if (attrValue.endsWith(QUOTE_CHAR)) {
+                if (attrValue.endsWith(QUOTE_CHAR) || attrValue.endsWith(SINGLE_QUOTE_CHAR)) {
                     attrValue = attrValue.substring(0, attrValue.length() - 1);
                 }
 
@@ -374,23 +381,30 @@ public class XMLSupportServiceImpl implements XMLSupportService {
     }
 
     @Override
-    public void replaceNodeText(Document doc, String xPathStr, String newValue) throws XMLException {
+    public void replaceNodeText(Document doc, String xPathStr, String newValue, Boolean generateIfNotExist) throws XMLException {
         try {
             XPath xpath = xpathFactory.newXPath();
             xpath.setNamespaceContext(new XMLNamespaceContext(doc));
 
             final NodeList nodes = (NodeList) xpath.evaluate(xPathStr, doc, XPathConstants.NODESET);
             if (nodes.getLength() == 0) {
-                throw new XMLException(NO_NODE_FOUND_FOR_THE_XPATH_EXPRESSION + xPathStr);
+                if (generateIfNotExist) {
+                    log.debug(StringUtils.format(GENERATE_NODE_FOR_THE_XPATH_EXPRESSION, xPathStr));
+                    Node node = createElementTree(doc, xPathStr);
+                    node.setTextContent(newValue);
+                } else {
+                    throw new XMLException(StringUtils.format(NO_NODE_FOUND_FOR_THE_XPATH_EXPRESSION, xPathStr));
+                }
             } else {
                 for (int i = 0; i < nodes.getLength(); i++) {
                     final Node node = nodes.item(i);
+                    if (node.isSameNode(doc)) {
+                        throw new XMLException("It is not allowed to replace the documents root node.");
+                    }
                     node.setTextContent(newValue);
                 }
             }
-        } catch (XPathExpressionException e) {
-            throw new XMLException("Error while replacing node text: " + e.toString());
-        } catch (DOMException e) {
+        } catch (XPathExpressionException | DOMException e) {
             throw new XMLException("Error while replacing node text: " + e.toString());
         }
     }

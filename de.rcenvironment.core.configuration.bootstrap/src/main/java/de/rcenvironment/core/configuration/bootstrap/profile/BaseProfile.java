@@ -35,7 +35,10 @@ public class BaseProfile {
     /** The name of the file containing the profile version. */
     public static final String PROFILE_VERSION_FILE_NAME = "profile.version";
 
-    private static final String PROFILE_INTERNAL_DATA_SUBDIR = "internal";
+    /**
+     * The name of the internal data directory.
+     */
+    public static final String PROFILE_INTERNAL_DATA_SUBDIR = "internal";
 
     private static final String CONFIGURED_PROFILE_TEMPLATE = "The configured profile directory \"%s\"";
 

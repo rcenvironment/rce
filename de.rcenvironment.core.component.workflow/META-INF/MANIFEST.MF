@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
@@ -47,6 +47,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.toolkit.modules.concurrency.api,

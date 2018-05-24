@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components DOE Execution
 Bundle-SymbolicName: de.rcenvironment.components.doe.execution
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Service-Component: OSGI-INF/*.xml

@@ -160,8 +160,8 @@ public class ConvergerComponentTest {
             assertTrue(getCapturedOutputClosings().contains(name));
         }
 
-        public void testForResetOutput(String name) {
-            assertTrue(getCapturedOutputResets().contains(name));
+        public void testForResetOutputs() {
+            assertTrue(isResetOutputsCalled());
         }
     }
 
@@ -427,7 +427,7 @@ public class ConvergerComponentTest {
 
         expectProcessInputsWithConvergingOrDoneOnReset(X, X, 2.0);
 
-        context.testForResetOutput(X);
+        context.testForResetOutputs();
 
         component.reset();
 
@@ -452,7 +452,7 @@ public class ConvergerComponentTest {
         expectProcessInputsWithoutConverging(X, X, 1.0);
         expectProcessInputsWithConvergingOrDoneOnReset(X, X, 2.0);
 
-        context.testForResetOutput(X);
+        context.testForResetOutputs();
 
         component.reset();
 

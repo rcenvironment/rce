@@ -30,7 +30,7 @@ public class ParametricStudyHistoryDataItemSubtreeBuilder extends DefaultHistory
 
     static {
         String bundleName = "de.rcenvironment.components.parametricstudy.common";
-        String iconName = "parametric_study16.png";
+        String iconName = "parametricStudy16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

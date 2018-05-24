@@ -313,8 +313,8 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     @Override
-    public void resetOutput(String outputName) {
-        compExeCtxBridge.resetOutput(outputName);
+    public void resetOutputs() {
+        compExeCtxBridge.resetOutputs();
     }
 
     @Override

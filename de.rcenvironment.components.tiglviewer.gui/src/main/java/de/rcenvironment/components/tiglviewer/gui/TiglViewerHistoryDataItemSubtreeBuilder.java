@@ -29,7 +29,7 @@ public class TiglViewerHistoryDataItemSubtreeBuilder extends DefaultHistoryDataI
 
     static {
         String bundleName = "de.rcenvironment.components.tiglviewer.execution";
-        String iconName = "tigl_16.png";
+        String iconName = "tigl16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

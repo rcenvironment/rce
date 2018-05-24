@@ -35,8 +35,11 @@ import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
  * Default implementation of the EndpointXMLService.
  *
  * @author Brigitte Boden
+ * @author Jan Flink
  */
 public class EndpointXMLServiceImpl implements EndpointXMLService {
+
+    private String recentXpath = "";
 
     private XMLSupportService xmlSupport;
 
@@ -70,14 +73,14 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
             for (final Entry<String, TypedDatum> entry : dynamicInputs.entrySet()) {
                 final String xpath = componentContext.getInputMetaDataValue(entry.getKey(), XMLComponentConstants.CONFIG_KEY_XPATH);
                 final TypedDatum value = entry.getValue();
-    
+
                 String valueAsString = getValueAsString(value);
                 try {
-                    xmlSupport.replaceNodeText(doc, xpath, valueAsString);
-                    componentContext.getLog().componentInfo(StringUtils.format("Replaced value for '%s' with input value of '%s': %s",
+                    xmlSupport.replaceNodeText(doc, xpath, valueAsString, true);
+                    componentContext.getLog().componentInfo(StringUtils.format("Set value of '%s' to the input value of '%s': %s",
                         xpath, entry.getKey(), value.toString()));
                 } catch (XMLException e) {
-                    throw new ComponentException(StringUtils.format("Failed to replace value for '%s' with value of input '%s': %s",
+                    throw new ComponentException(StringUtils.format("Failed to set value of '%s' to the value of input '%s': %s. ",
                         xpath, entry.getKey(), value.toString()), e);
                 }
             }
@@ -114,11 +117,11 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
         }
         synchronized (XMLMapperConstants.GLOBAL_MAPPING_LOCK) {
             Document doc = null;
-    
+
             for (String outputName : componentContext.getOutputs()) {
                 if (componentContext.isDynamicOutput(outputName)) {
-    
-                    //If the XML file has not been read, read it now.
+
+                    // If the XML file has not been read, read it now.
                     if (doc == null) {
                         try {
                             doc = xmlSupport.readXMLFromFile(xmlFile);
@@ -127,7 +130,8 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
                         }
                     }
                     final String xpath = componentContext.getOutputMetaDataValue(outputName, XMLComponentConstants.CONFIG_KEY_XPATH);
-    
+                    recentXpath = xpath;
+
                     String valueAsString;
                     final String message = StringUtils.format("Failed to extract value for output '%s' that points to '%s'",
                         outputName, xpath);
@@ -175,5 +179,10 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
                 rawValue, componentContext.getOutputDataType(outputName).getDisplayName(), outputName));
         }
         return value;
+    }
+
+    @Override
+    public String getRecentXpath() {
+        return recentXpath;
     }
 }

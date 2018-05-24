@@ -11,6 +11,7 @@ package de.rcenvironment.core.configuration.internal;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -37,6 +38,8 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Doreen Seider
  */
 public class ConfigurationStoreImpl implements ConfigurationStore {
+
+    private static final AtomicInteger sharedBackupDisambiguationNumberSequence = new AtomicInteger(1);
 
     private File storageFile;
 
@@ -108,7 +111,8 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
 
         // only create single backup file per instance lifetime
         if (!backupFileCreated) {
-            File backupFile = new File(storageFile.getParentFile(), storageFile.getName() + "." + System.currentTimeMillis() + ".bak");
+            File backupFile = new File(storageFile.getParentFile(), storageFile.getName() + "." + System.currentTimeMillis() + "-"
+                + sharedBackupDisambiguationNumberSequence.getAndIncrement() + ".bak");
             log.debug("Creating backup of existing configuration file at " + backupFile);
             Files.move(storageFile.toPath(), backupFile.toPath());
             backupFileCreated = true;

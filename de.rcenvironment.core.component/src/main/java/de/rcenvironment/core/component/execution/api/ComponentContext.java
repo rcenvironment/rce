@@ -148,10 +148,8 @@ public interface ComponentContext extends ExecutionContext {
     /**
      * Resets output. A component must reset an output, if it controls an inner loop of a workflow to indicated that it is done. In other
      * case, it must not reset any output.
-     * 
-     * @param outputName name of output
      */
-    void resetOutput(String outputName);
+    void resetOutputs();
 
     /**
      * Closes output. A component must close an output, if it control the workflow to indicated that it is done. In other case it must not

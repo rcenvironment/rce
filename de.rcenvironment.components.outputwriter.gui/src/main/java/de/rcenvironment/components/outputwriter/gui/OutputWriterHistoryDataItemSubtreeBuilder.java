@@ -30,7 +30,7 @@ public class OutputWriterHistoryDataItemSubtreeBuilder extends DefaultHistoryDat
 
     static {
         String bundleName = "de.rcenvironment.components.outputwriter.common";
-        String iconName = "outputWriter_16.png";
+        String iconName = "outputWriter16.png";
         URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();

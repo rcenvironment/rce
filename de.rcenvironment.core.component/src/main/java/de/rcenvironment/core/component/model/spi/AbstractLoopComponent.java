@@ -128,7 +128,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         outputValuesSentInLastLoop.clear();
         rerunCount = 0;
         processInputsComponentSpecific();
-        if (!isReset()) {
+        if (!isReset()) { // TODO as isReset() always returns false, this condition is always true
             sendLoopDoneValuesIfDone();
             if (isFinallyDone()) {
                 componentContext.closeAllOutputs();

@@ -11,7 +11,8 @@
 			"endpointDefaultDataType": "Float",
 			"inputinputHandlingOptions":[
                 "Single",
-                "Constant"
+                "Constant",
+                "Queue"
             ],
             "defaultInputHandling":"Single",
             "inputinputExecutionConstraintOptions":[

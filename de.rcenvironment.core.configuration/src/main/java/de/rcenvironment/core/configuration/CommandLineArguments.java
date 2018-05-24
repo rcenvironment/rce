@@ -26,6 +26,11 @@ public final class CommandLineArguments {
     public static final String HEADLESS_MODE_TOKEN = "--headless";
 
     /**
+     * The token to suppress the workspace chooser in GUI mode and always use the default workspace instead.
+     */
+    public static final String USE_DEFAULT_WORKSPACE_TOKEN = "--use-default-workspace";
+
+    /**
      * The token for the "execute these commands" option.
      */
     public static final String EXEC_OPTION_TOKEN = "--exec";
@@ -52,6 +57,8 @@ public final class CommandLineArguments {
 
     private boolean headlessModeRequested;
 
+    private boolean useDefaultWorkspaceRequested;
+
     private boolean batchModeRequested;
 
     private boolean configurationShellRequested;
@@ -73,6 +80,8 @@ public final class CommandLineArguments {
             String option = args.getNext();
             if (option.equals(HEADLESS_MODE_TOKEN)) {
                 setHeadlessModeRequested(true);
+            } else if (option.equals(USE_DEFAULT_WORKSPACE_TOKEN)) {
+                setUseDefaultWorkspaceRequested(true);
             } else if (option.equals(CONFIGURATION_SHELL_TOKEN)) {
                 setConfigurationShellRequested(true);
             } else if (option.equals("--wf-run")) {
@@ -147,6 +156,10 @@ public final class CommandLineArguments {
         return getConfiguration().doNotStartNetworkRequested || getConfiguration().configurationShellRequested;
     }
 
+    public static boolean isUseDefaultWorkspaceRequested() {
+        return getConfiguration().useDefaultWorkspaceRequested;
+    }
+
     private static CommandLineArguments getConfiguration() {
         if (configuration == null) {
             throw new IllegalStateException("A configuration value was accessed before the configuration was parsed");
@@ -180,6 +193,10 @@ public final class CommandLineArguments {
 
     private void setHeadlessModeRequested(boolean value) {
         headlessModeRequested = value;
+    }
+
+    private void setUseDefaultWorkspaceRequested(boolean value) {
+        useDefaultWorkspaceRequested = value;
     }
 
     private void setConfigurationShellRequested(boolean value) {

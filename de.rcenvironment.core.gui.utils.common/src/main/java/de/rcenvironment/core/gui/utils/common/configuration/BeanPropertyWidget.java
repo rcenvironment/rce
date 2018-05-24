@@ -149,7 +149,9 @@ public class BeanPropertyWidget extends Composite {
                 @Override
                 public void run() {
                     editor.activate();
-                    control.setVisible(true);
+                    if (!control.isDisposed()) {
+                        control.setVisible(true);
+                    }
                 }
 
             };

@@ -53,7 +53,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
  */
 public class ParametricStudyComponentTest {
 
-    private static final int FIVE_HUNDRED_INT = 500;
+    private static final int CANCEL_TEST_TIMEOUT_MSEC = 1000;
     
     private static final int HUNDRED_THOUSAND_INT = 100000;
 
@@ -893,7 +893,7 @@ public class ParametricStudyComponentTest {
      * 
      * @throws ComponentException on unexpected error.
      */
-    @Test(timeout = FIVE_HUNDRED_INT)
+    @Test(timeout = CANCEL_TEST_TIMEOUT_MSEC)
     public void testCancelStart() throws ComponentException {
         Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, "100000", false, ONE, false, false);
         addSimulatedOutputs(metadata);
@@ -943,9 +943,7 @@ public class ParametricStudyComponentTest {
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
 
-        assertEquals(2, context.getCapturedOutputResets().size());
-        assertTrue(context.getCapturedOutputResets().contains(DESIGN_VARIABLE));
-        assertTrue(context.getCapturedOutputResets().contains(N));
+        assertTrue(context.isResetOutputsCalled());
         component.reset();
         assertEquals(0, context.getCapturedOutput(N).size());
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());

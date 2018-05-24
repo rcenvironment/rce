@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<chapter>
+	<title>XML Values Component Usage</title>
+	<sect1>
+		<title>Synopsis</title>
+		<para>The XML Values Component is capable of reading and writing
+			values within an XML file. These values are declared via dynamic in-
+			and outputs.</para>
+	</sect1>
+	<sect1>
+		<title>Usage</title>
+		<para>You can add dynamic inputs to map single values into the XML dataset. Using the XPath
+			declaration, the exact position for the value in the XML file can be chosen.
+			Non-existent elements within the XPath declaration will be generated. The output "XML"
+			contains the changed XML file. Furthermore, you can add additional outputs to select
+			single values from the XML dataset to write them to an output channel. <note>
+				<para>Search for the XPathChooser help in the User Guide (3. Usage -> 2. Workflows
+					-> 2.3 Workflow components) to gain further information about the usage of
+					XPaths.</para>
+			</note>
+		</para>
+	</sect1>
+</chapter>

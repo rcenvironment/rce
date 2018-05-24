@@ -223,7 +223,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
                     return ((TaskDescription) annotation).value();
                 }
             }
-            log.warn("Thread pool task " + taskClass.getName() + " should have a @TaskDescription");
+            final String taskClassName = taskClass.getName();
+            final boolean isAnonymousNestedTestClass = taskClassName.matches("^.*Test(s)?\\$(.*\\$)?\\d+$");
+            if (!isAnonymousNestedTestClass) {
+                log.warn("Thread pool task " + taskClassName + " should have a @TaskDescription");
+            }
             return "<" + taskClass.getName() + ">";
         }
 

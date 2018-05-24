@@ -85,7 +85,7 @@ public class OutputLocationWriter {
         // Check for invalid filename
         List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
         if (forbiddenFilenames.contains(basicName) || basicName.contains("/") || basicName.contains("\\")) {
-            throw new ComponentException(StringUtils.format("Failed to write file beacuse '%s' "
+            throw new ComponentException(StringUtils.format("Failed to write file because '%s' "
                 + "is a forbidden filename", basicName));
         }
         this.outputFile = fileToWrite;
@@ -106,7 +106,7 @@ public class OutputLocationWriter {
                 }
 
             } catch (IOException e) {
-                throw new ComponentException("Failed to create/initialized file used as target for simple data types: "
+                throw new ComponentException("Failed to create/initialize file used as target for simple data types: "
                     + outputFile.getAbsolutePath(), e);
             }
         }

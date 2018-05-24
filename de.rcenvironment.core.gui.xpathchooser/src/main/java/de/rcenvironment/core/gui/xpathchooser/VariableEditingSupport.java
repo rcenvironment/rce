@@ -8,8 +8,6 @@
 
 package de.rcenvironment.core.gui.xpathchooser;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
@@ -31,11 +29,6 @@ import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
  */
 public class VariableEditingSupport extends EditingSupport {
     
-    /**
-     * Central logger instance.
-     */
-    private static final Log LOGGER = LogFactory.getLog(VariableEditingSupport.class);
-
     /**
      * Allowed values for the type column.
      */
@@ -142,23 +135,6 @@ public class VariableEditingSupport extends EditingSupport {
     }
 
     @Override
-    protected void setValue(final Object element, final Object value) {
-        assert element instanceof VariableEntry;
-        assert value instanceof Integer;
-        assert column >= 1;
-        final VariableEntry variable = (VariableEntry) element;
-        if (column == 1) {
-            variable.setName((String) value);
-        } else if (column == 2) {
-            variable.setXpath((String) value);
-        } else if (column == 3) {
-            try {
-                variable.setType(VariableType.valueOf(VALUES[((Integer) value).intValue()]));
-            } catch (final IllegalArgumentException e) {
-                LOGGER.error(e);
-            }
-        }
-        helper.copyNewEntryIfNecessary(variable);
-    }
+    protected void setValue(final Object element, final Object value) {}
 
 }

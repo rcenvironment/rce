@@ -1,0 +1,65 @@
+{
+  "identifier" : "453f95ce-b08e-4733-b180-71f5c8ded454",
+  "workflowVersion" : "5",
+  "nodes" : [ {
+    "identifier" : "92c0bb5e-e04a-498e-87b6-ea7626855799",
+    "name" : "Script",
+    "location" : "40:140",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 1000\r\nrows = 100\r\ncontent = 2**63 - 1\r\n\r\nsmallTable = [[content]*cols for i in range(rows)]\r\n\r\nRCE.write_output(\"smallTable\", smallTable)\r\n\r\nprint content\r\nprint smallTable",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "b2ad7474-e477-4c9c-baad-2e16ea7a61b9",
+    "name" : "Script (1)",
+    "location" : "320:140",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = RCE.read_input(\"in\")\r\n\r\ncontent = 2**63 - 1\r\n\r\nif smallTable[0][0] == content:\r\n  print \"succeed\"\r\nelse:\r\n  print \"failure\"",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "33c030ca-ced1-4938-8197-15674499e3ae",
+      "name" : "in",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "92c0bb5e-e04a-498e-87b6-ea7626855799",
+    "output" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+    "target" : "b2ad7474-e477-4c9c-baad-2e16ea7a61b9",
+    "input" : "33c030ca-ced1-4938-8197-15674499e3ae"
+  } ],
+  "labels" : "[{\"identifier\":\"34e224e5-679e-4f62-993c-df43d9ee5795\",\"headerText\":\"\",\"text\":\"Biggest possible small table with the biggest possible number in it. This number must be smaller than 64 bits (when written in binary code). 2**63 is the smallest number with 64 bits, therefore 2**63-1 is the biggest possible number in a small table.\\r\\n\",\"location\":\"40:40\",\"size\":\"361:81\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+}

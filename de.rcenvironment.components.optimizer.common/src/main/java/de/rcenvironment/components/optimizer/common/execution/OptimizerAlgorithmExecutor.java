@@ -254,8 +254,10 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
             File consoleErrOutput = new File(workingDir, "consoleErrOutput.txt");
             TextStreamWatcher stdOutWatcher = ConsoleRowUtils.logToWorkflowConsole(compContext.getLog(), executor.getStdout(),
                 ConsoleRow.Type.TOOL_OUT, consoleStdOutput, false);
+            // note: as logging of TOOL_ERROR was expanded in 8.2.0, the Dakota StdErr output is logged as TOOL_OUT 
+            // for the time being to prevent warnings.log entries during normal operation
             TextStreamWatcher stdErrWatcher = ConsoleRowUtils.logToWorkflowConsole(compContext.getLog(), executor.getStderr(),
-                ConsoleRow.Type.TOOL_ERROR, consoleErrOutput, false);
+                ConsoleRow.Type.TOOL_OUT, consoleErrOutput, false);
             try {
                 int exitCode = executor.waitForTermination();
                 if (exitCode != 0) {

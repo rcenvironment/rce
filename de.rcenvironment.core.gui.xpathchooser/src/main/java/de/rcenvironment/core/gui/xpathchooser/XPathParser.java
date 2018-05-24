@@ -81,7 +81,6 @@ public final class XPathParser {
                 inString = !inString;
             }
         }
-
         return xpath;
     }
 

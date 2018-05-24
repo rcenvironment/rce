@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
-                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
 <chapter>
     <title>XML Merger Component Usage</title>
     <sect1>
@@ -84,5 +84,7 @@
             it is possible to map single values into the XML dataset via XPATH declaration.
             Moreover, you can select single values in order to write them in an output
             channel.</para>
+            <note>Search for the XPathChooser help in the User Guide (3. Usage -> 2. Workflows -> 2.3 Workflow components) 
+            to garner further information about the usage of XPaths.</note>
     </sect1>
 </chapter>

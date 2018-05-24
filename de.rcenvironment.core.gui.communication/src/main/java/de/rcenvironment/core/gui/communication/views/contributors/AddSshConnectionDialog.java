@@ -32,4 +32,5 @@ public class AddSshConnectionDialog extends AbstractSshConnectionDialog {
         super.configureShell(shell);
         shell.setText(DIALOG_TITLE);
     }
+   
 }

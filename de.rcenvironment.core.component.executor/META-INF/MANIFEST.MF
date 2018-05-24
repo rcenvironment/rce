@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component Executor
 Bundle-SymbolicName: de.rcenvironment.core.component.executor;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Export-Package: de.rcenvironment.core.component.executor
 Bundle-ManifestVersion: 2
 Service-Component: OSGI-INF/*.xml

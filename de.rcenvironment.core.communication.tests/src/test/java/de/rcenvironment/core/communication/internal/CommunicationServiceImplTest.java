@@ -195,7 +195,7 @@ public class CommunicationServiceImplTest {
     public void testGetServiceIfServiceRefArrayIsEmpty() throws IdentifierException {
 
         EasyMock.reset(contextMock);
-        ServiceReference[] referencesDummy = new ServiceReference[0];
+        ServiceReference<?>[] referencesDummy = new ServiceReference[0];
         try {
             EasyMock.expect(contextMock.getServiceReferences(iface.getName(),
                 ServiceUtils.constructFilter(serviceProperties))).andReturn(referencesDummy).anyTimes();
@@ -257,8 +257,9 @@ public class CommunicationServiceImplTest {
     public void testGetServiceIfServiceIsNull() throws IdentifierException {
 
         EasyMock.reset(contextMock);
-        ServiceReference referenceMock = EasyMock.createNiceMock(ServiceReference.class);
-        EasyMock.expect(contextMock.getServiceReference(iface.getName())).andReturn(referenceMock).anyTimes();
+        ServiceReference<?> referenceMock = EasyMock.createNiceMock(ServiceReference.class);
+        contextMock.getServiceReference(iface.getName());
+        EasyMock.expectLastCall().andReturn(referenceMock).anyTimes();
         EasyMock.replay(contextMock);
 
         Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);

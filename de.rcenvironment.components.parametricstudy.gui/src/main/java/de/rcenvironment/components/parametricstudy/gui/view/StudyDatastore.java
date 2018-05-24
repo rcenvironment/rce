@@ -113,6 +113,9 @@ public final class StudyDatastore extends Study {
     public static StudyDatastore connect(final String identifier, final ResolvableNodeId platform,
         ParametricStudyService parametricStudyService) {
         final StudyReceiver receiver = parametricStudyService.createReceiver(identifier, platform);
+        if (receiver == null) {
+            return null;
+        }
         final StudyDatastore datastore = new StudyDatastore(identifier,
                 receiver.getStudy().getTitle(), receiver.getStudy().getStructure());
         notificationSubscriber = new DatasetNotificationSubscriber(datastore);

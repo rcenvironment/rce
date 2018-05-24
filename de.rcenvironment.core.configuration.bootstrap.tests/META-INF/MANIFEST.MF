@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration Bootstrap Tests
 Bundle-SymbolicName: de.rcenvironment.core.configuration.bootstrap.tests
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Fragment-Host: de.rcenvironment.core.configuration.bootstrap
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

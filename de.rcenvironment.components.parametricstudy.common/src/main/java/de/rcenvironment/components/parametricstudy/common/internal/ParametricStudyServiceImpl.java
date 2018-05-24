@@ -61,7 +61,7 @@ public class ParametricStudyServiceImpl implements ParametricStudyService {
         try {
             notifications = distributedNotificationService
                     .getNotifications(notificationId, node).get(notificationId);
-            if (notifications.size() > 0) {
+            if (notifications != null && notifications.size() > 0) {
                 final Notification studyNotification = notifications
                     .get(notifications.size() - 1);
                 final Serializable[] notificationContent = (Serializable[]) studyNotification.getBody();

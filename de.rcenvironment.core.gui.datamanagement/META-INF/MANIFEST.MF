@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Datamanagement
 Bundle-SymbolicName: de.rcenvironment.core.gui.datamanagement;singleton:=true
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.authentication,
@@ -35,7 +35,10 @@ Import-Package: de.rcenvironment.core.authentication,
  org.eclipse.compare,
  org.eclipse.compare.structuremergeviewer,
  org.eclipse.core.filesystem,
- org.eclipse.ui.ide
+ org.eclipse.core.internal.resources,
+ org.eclipse.core.resources,
+ org.eclipse.ui.ide,
+ org.eclipse.ui.navigator.resources
 Export-Package: de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.datamanagement.commons
 Require-Bundle: org.eclipse.jface,

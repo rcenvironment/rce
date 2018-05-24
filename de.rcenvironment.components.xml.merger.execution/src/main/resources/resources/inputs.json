@@ -14,7 +14,7 @@
                 "Constant",
                 "Queue"
             ],
-            "defaultInputHandling":"Single",
+            "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
                 "Required",
                 "RequiredIfConnected"
@@ -66,7 +66,7 @@
                 "Constant",
                 "Queue"
             ],
-            "defaultInputHandling":"Single"
+            "defaultInputHandling":"Queue"
         },
 		{
 			"name": "XML to integrate",
@@ -79,7 +79,7 @@
                 "Constant",
 				"Queue"
             ],
-            "defaultInputHandling":"Single"
+            "defaultInputHandling":"Queue"
 		}
     ]
 }

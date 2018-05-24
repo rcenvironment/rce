@@ -30,7 +30,7 @@
 		<para>Configuration parameters are grouped within the configuration file. Below are lists of the
 			configuration parameters. There is one list per group.</para>
 		<table width="100%">
-			<title>general</title>
+			<title>General</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -110,7 +110,7 @@
 			</tgroup>
 		</table>
 		<table width="100%">
-			<title>backgroundMonitoring</title>
+			<title>BackgroundMonitoring</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -149,7 +149,7 @@
 				the standard RCE connections.</para>
 		</note>
 		<table frame="all" width="100%">
-			<title>network</title>
+			<title>Network</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -267,7 +267,7 @@
 			</tgroup>
 			</table>
 			<table width="100%">
-			<title>publishing</title>
+			<title>Publishing</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -380,7 +380,7 @@
 			</tgroup>
 		</table>
 		<table width="100%">
-			<title>componentSettings</title>
+			<title>ComponentSettings</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -396,12 +396,12 @@
 				</thead>
 				<tbody>
 					<row>
-						<entry>de.rcenvironment.cluster</entry>
+						<entry><![CDATA[de.rcenvironment.                cluster]]></entry>
 						<entry>Configuration of the cluster workflow component.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.cluster/maxChannels</entry>
+						<entry><![CDATA[de.rcenvironment.               cluster/maxChannels]]></entry>
 						<entry>Maximum number of channels, which are allowed to be opened in
 							parallel to the cluster server.</entry>
 						<entry>8</entry>

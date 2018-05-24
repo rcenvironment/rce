@@ -31,7 +31,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import de.rcenvironment.core.configuration.bootstrap.ui.TestTerminal.FlushListener;
 
 /**
- * A utiltiy class to write test for Lanterna UIs.
+ * A utility class to write test for Lanterna UIs.
  *
  * @author Tobias Brieden
  */
@@ -95,7 +95,7 @@ public class LanternaTest {
                     }
                 }
 
-                // TODO why do we need to make sure that at least on matcher was removed?
+                // TODO why do we need to make sure that at least one matcher was removed?
                 // This prevents the further execution if a sage has no assertions/matchers
                 if (/* removedAtLeastOneMatcher && */ currentMatchers.isEmpty()) {
                     log.debug("Cancelling the timer!: " + timerFuture);

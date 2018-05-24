@@ -255,6 +255,11 @@ public enum StandardImages implements ImageSource {
     COMMON_TEXT_16(fromLocalBundle("common_text_node.gif")),
 
     /**
+     * Common text nodes icon in workflow data browser.
+     */
+    COMMON_TEXT_NODES_16(fromLocalBundle("XPathChooser/common_text_nodes.gif")),
+
+    /**
      * Icon for TIGLViewer.
      */
     TIGL_ICON(fromLocalBundle("TIGLViewer.png")),
@@ -383,6 +388,11 @@ public enum StandardImages implements ImageSource {
      * Attribute icon.
      */
     ATTRIBUTE(fromLocalBundle("XPathChooser/attribute.gif")),
+
+    /**
+     * Attributes icon.
+     */
+    ATTRIBUTES(fromLocalBundle("XPathChooser/attributes.gif")),
 
     /**
      * Attribute icon.

@@ -9,6 +9,7 @@
 package de.rcenvironment.core.gui.xpathchooser.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
@@ -23,6 +24,7 @@ import java.util.Set;
  * @author Heinrich Wendel
  * @author Arne Bachmann
  * @author Markus Kunde
+ * @author Adrian Stock
  */
 public class XSDElement extends AbstractXSDValueHolder {
 
@@ -182,10 +184,10 @@ public class XSDElement extends AbstractXSDValueHolder {
         if (idValues.containsKey(idAttribute)) {
             final Set<String> values = new HashSet<String>();
             values.addAll(idValues.get(idAttribute));
-            if (idValue != null) {
-                values.add(idValue);
-            }
-            return values.toArray(EMPTY_STRING);
+            String[] returnValues = values.toArray(EMPTY_STRING);
+            Arrays.sort(returnValues);
+
+            return returnValues;
         }
         return new String[] { idValue };
     }
@@ -238,6 +240,23 @@ public class XSDElement extends AbstractXSDValueHolder {
             idValues.put(name, new HashSet<String>());
         }
         idValues.get(name).addAll(values);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof XSDElement)) {
+            return false;
+        }
+        if (o == this) {
+            return true;
+        }
+        XSDElement e = (XSDElement) o;
+        return getPath().equals(e.getPath());
+    }
+
+    @Override
+    public int hashCode() {
+        return getPath().hashCode();
     }
 
 }

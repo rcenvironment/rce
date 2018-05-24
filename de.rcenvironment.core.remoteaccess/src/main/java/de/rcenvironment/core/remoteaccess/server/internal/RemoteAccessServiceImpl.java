@@ -975,7 +975,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         logDir.mkdirs();
 
         // TODO review >5.0.0: remove this output capture, as it is only used for debug output? - misc_ro
-        CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver("");
+        CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver();
 
         // TODO specify log directory?
         HeadlessWorkflowExecutionContextBuilder exeContextBuilder;

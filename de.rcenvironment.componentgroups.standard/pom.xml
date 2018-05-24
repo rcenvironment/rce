@@ -95,7 +95,7 @@
 		<module>${modules-root}/de.rcenvironment.components.script.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.script.gui</module>
 
-		<!-- joiner component -->
+		<!-- switch component -->
 		<module>${modules-root}/de.rcenvironment.components.switch.common</module>
 		<module>${modules-root}/de.rcenvironment.components.switch.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.switch.execution.tests</module>
@@ -106,11 +106,16 @@
 		<module>${projects-root}/de.rcenvironment.components.xml.loader.execution</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.loader.gui</module>
 		
-		<!-- xml joiner component -->
+		<!-- xml merger component -->
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.common</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution.tests</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.gui</module>
+		
+		<!-- xml values component -->
+		<module>${projects-root}/de.rcenvironment.components.xml.values.common</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.values.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.values.gui</module>
 		
 		<!-- component group feature -->
 		<module>${modules-root}/de.rcenvironment.componentgroups.standard.feature</module>

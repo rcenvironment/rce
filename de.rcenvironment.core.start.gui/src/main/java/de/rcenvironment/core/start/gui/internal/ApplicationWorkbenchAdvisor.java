@@ -50,7 +50,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     private static ConfigurationService configService;
 
     private static String windowTitle = "%s (%s)";
-    
+
     public ApplicationWorkbenchAdvisor() {}
 
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
@@ -102,14 +102,14 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
                 ProjectExplorer view = null;
                 for (IWorkbenchWindow workbench : workbenchs) {
                     for (IWorkbenchPage page : workbench.getPages()) {
-                        view = (ProjectExplorer)
-                            page.findView("org.eclipse.ui.navigator.ProjectExplorer");
+                        view = (ProjectExplorer) page.findView("org.eclipse.ui.navigator.ProjectExplorer");
                         break;
                     }
                 }
 
                 if (view == null) {
-                    LOGGER.warn("Project Explorer could not be found at startup so its resources could not be refreshed automatically.");
+                    // TODO (p2) decide: this was a warning, but should it actually be one? reduced to DEBUG for now
+                    LOGGER.debug("Project Explorer could not be found at startup so its resources could not be refreshed automatically.");
                     return;
                 }
                 view.getCommonViewer().setInput(ResourcesPlugin.getWorkspace().getRoot());
@@ -132,10 +132,6 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
             }
         });
     }
-    
-    
-
-   
 
     @Override
     public boolean preShutdown() {

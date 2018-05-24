@@ -83,7 +83,7 @@ public class ServiceRemoteFileConnectionTest {
      * 
      * @author Doreen Seider
      */
-    private class DummyCommunicationService extends CommunicationServiceDefaultStub {
+    private static class DummyCommunicationService extends CommunicationServiceDefaultStub {
 
         @SuppressWarnings("unchecked")
         @Override
@@ -97,48 +97,48 @@ public class ServiceRemoteFileConnectionTest {
             return null;
         }
 
-        /**
-         * Mock {@link RemotableFileStreamAccessService} implementation.
-         * 
-         * @author Doreen Seider
-         * @author Robert Mischke (adapted for 7.0.0)
-         */
-        private class MockRemotableFileStreamAccessService implements RemotableFileStreamAccessService {
+    }
 
-            private final String testUUID = "snoopy";
+    /**
+     * Mock {@link RemotableFileStreamAccessService} implementation.
+     * 
+     * @author Doreen Seider
+     * @author Robert Mischke (adapted for 7.0.0)
+     */
+    private static class MockRemotableFileStreamAccessService implements RemotableFileStreamAccessService {
 
-            @Override
-            public void close(String uuid) throws IOException {}
+        private final String testUUID = "snoopy";
 
-            @Override
-            public String open(FileType type, String file) throws IOException {
-                return testUUID;
+        @Override
+        public void close(String uuid) throws IOException {}
+
+        @Override
+        public String open(FileType type, String file) throws IOException {
+            return testUUID;
+        }
+
+        @Override
+        public int read(String uuid) throws IOException {
+            if (uuid.equals(testUUID)) {
+                return 5;
             }
+            return 0;
+        }
 
-            @Override
-            public int read(String uuid) throws IOException {
-                if (uuid.equals(testUUID)) {
-                    return 5;
-                }
-                return 0;
+        @Override
+        public byte[] read(String uuid, Integer len) throws IOException {
+            if (uuid.equals(testUUID)) {
+                return new byte[len];
             }
+            return new byte[0];
+        }
 
-            @Override
-            public byte[] read(String uuid, Integer len) throws IOException {
-                if (uuid.equals(testUUID)) {
-                    return new byte[len];
-                }
-                return new byte[0];
+        @Override
+        public long skip(String uuid, Long n) throws IOException {
+            if (uuid.equals(testUUID)) {
+                return n;
             }
-
-            @Override
-            public long skip(String uuid, Long n) throws IOException {
-                if (uuid.equals(testUUID)) {
-                    return n;
-                }
-                return 0;
-            }
-
+            return 0;
         }
 
     }

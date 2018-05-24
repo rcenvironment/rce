@@ -178,8 +178,8 @@ public class IntegrationTestExecutorUtils {
     public ExecutionResult executeAndWait(String command) throws IOException, InterruptedException {
         LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(workingDir);
         executor.start(command);
-        CapturingTextOutReceiver stdoutCapture = new CapturingTextOutReceiver("");
-        CapturingTextOutReceiver stderrCapture = new CapturingTextOutReceiver("");
+        CapturingTextOutReceiver stdoutCapture = new CapturingTextOutReceiver();
+        CapturingTextOutReceiver stderrCapture = new CapturingTextOutReceiver();
         final TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(executor.getStdout(), stdoutCapture).start();
         final TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(executor.getStderr(), stderrCapture).start();
         int exitCode = executor.waitForTermination();

@@ -239,7 +239,7 @@ public class CpacsWriterComponent extends DefaultComponent {
 
     @Override
     public void dispose() {
-        if (componentContext != null) {
+        if (componentContext != null && notificationService != null) {
             notificationService.removePublisher(componentContext.getExecutionIdentifier()
                 + CpacsWriterComponentConstants.RUNTIME_CPACS_UUIDS);
         }

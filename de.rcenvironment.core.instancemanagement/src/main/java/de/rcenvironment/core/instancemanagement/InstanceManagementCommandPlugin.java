@@ -12,10 +12,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.jcraft.jsch.JSchException;
 
@@ -23,11 +24,8 @@ import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
-import de.rcenvironment.core.instancemanagement.InstanceManagementService.ConfigurationFlag;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService.InstallationPolicy;
-import de.rcenvironment.core.instancemanagement.internal.ConfigurationChangeEntry;
-import de.rcenvironment.core.instancemanagement.internal.ConfigurationChangeSequence;
-import de.rcenvironment.core.instancemanagement.internal.ConfigurationSshConnection;
+import de.rcenvironment.core.instancemanagement.internal.InstanceConfigurationException;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
@@ -36,36 +34,11 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
  */
 public class InstanceManagementCommandPlugin implements CommandPlugin {
 
-    private static final String SUBCOMMAND_ADD_CONNECTION = "--add-connection";
-
-    private static final String SUBCOMMAND_ADD_SERVER_PORT = "--add-server-port";
-
     private static final String ROOT_COMMAND = "im";
-
-    private static final String SUBCOMMAND_RESET = "--reset";
-
-    private static final String SUBCOMMAND_APPLY_TEMPLATE = "--apply-template";
-
-    private static final String SUBCOMMAND_SET_NAME = "--set-name";
-
-    private static final String SUBCOMMAND_SET_COMMENT = "--set-comment";
-
-    private static final String SUBCOMMAND_SET_RELAY_OPTION = "--set-relay-option";
-
-    private static final String SUBCOMMAND_SET_WORKFLOW_HOST_OPTION = "--set-workflow-host-option";
-
-    private static final String SUBCOMMAND_SET_TEMPDIR_PATH = "--set-tempdir-path";
-
-    private static final String SUBCOMMAND_ENABLE_IM_SSH_ACCESS = "--enable-im-ssh-access";
-
-    private static final String SUBCOMMAND_CONFIGURE_SSH_SERVER = "--configure-ssh-server";
-
-    private static final String SUBCOMMAND_DISABLE_SSH_SERVER = "--disable-ssh-server";
-
-    private static final String SUBCOMMAND_SET_IP_FILTER_ENABLED = "--set-ip-filter-enabled";
 
     private static final String ZERO_STRING = "0";
 
@@ -81,6 +54,15 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
     private static final String TIMEOUT = "--timeout";
 
+    private static final String OPTION_START_WITH_GUI = "--gui";
+
+    private static final Pattern IP_ADDRESS_PATTERN =
+
+        Pattern.compile("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+
     private static final String TIMEOUT_DESCRIPTION =
         "--timeout - specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s";
 
@@ -88,7 +70,148 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
     private ThreadLocal<CommandContext> currentContext = new ThreadLocal<>(); // to avoid lots of context passing, but still be thread-safe
 
-    protected void bindInstanceManagementService(InstanceManagementService newInstance) {
+    /**
+     * Encapsulates parsing of common command parameters. Note that this is just a collection of previously scattered and duplicated code;
+     * it could certainly be reworked to be more elegant.
+     *
+     * @author Robert Mischke (extracted/refactored from outer class; various authors)
+     */
+    private static final class ParameterParser {
+
+        private final CommandContext context;
+
+        private final String installationId;
+
+        private final long timeout;
+
+        private final boolean startWithGUI;
+
+        private final List<String> instanceIds;
+
+        /**
+         * Constructor.
+         * 
+         * @param context the {@link CommandContext}
+         * @param expectListOfInstanceIds whether a comma-separated list of instance ids (profiles) is expected
+         * @param expectInstallationId whether an installation id is expected; pass null to specify that an installation id is optional
+         * @throws CommandException on syntax errors
+         */
+        private ParameterParser(CommandContext context, boolean expectListOfInstanceIds, Boolean expectInstallationId)
+            throws CommandException {
+            this.context = context;
+            List<String> remainingTokens = context.consumeRemainingTokens();
+
+            timeout = determineTimeout(remainingTokens);
+            startWithGUI = determineStartWithGUI(remainingTokens);
+
+            if (expectInstallationId != Boolean.FALSE) {
+                // note: considering "optional" as "not required" here
+                installationId = determineInstallationId(remainingTokens, expectInstallationId == Boolean.TRUE);
+            } else {
+                installationId = null;
+            }
+
+            if (expectListOfInstanceIds) {
+                instanceIds = parseTokensToInstanceIdList(remainingTokens);
+            } else {
+                instanceIds = Collections.unmodifiableList(new ArrayList<String>());
+            }
+        }
+
+        public long getTimeout() throws CommandException {
+            return timeout;
+        }
+
+        public boolean getStartWithGUI() throws CommandException {
+            return startWithGUI;
+        }
+
+        public List<String> getInstanceIds() throws CommandException {
+            return instanceIds;
+        }
+
+        public String getInstallationId() {
+            return installationId;
+        }
+
+        private long determineTimeout(List<String> remainingTokens) throws CommandException {
+            long result = 0;
+            if (remainingTokens.contains(TIMEOUT)) {
+                int index = remainingTokens.indexOf(TIMEOUT);
+                remainingTokens.remove(index);
+                try {
+                    String t = remainingTokens.remove(index);
+                    if (org.apache.commons.lang3.StringUtils.isNumeric(t)) {
+                        result = Long.parseLong(t);
+                    } else {
+                        throw CommandException.executionError("No timeout specified", context);
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    throw CommandException.executionError("No timeout specified", context);
+                }
+            }
+
+            return result;
+        }
+
+        private boolean determineStartWithGUI(List<String> remainingTokens) {
+            int index = remainingTokens.indexOf(OPTION_START_WITH_GUI);
+            if (index >= 0) {
+                remainingTokens.remove(index);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private String determineInstallationId(List<String> remainingTokens, boolean required) throws CommandException {
+            if (!remainingTokens.isEmpty()) {
+                final String lastToken = remainingTokens.remove(remainingTokens.size() - 1); // done this way to work for all List types
+                if (lastToken.isEmpty()) { // sanity check
+                    throw CommandException.executionError("Installation ID can not be empty", context);
+                }
+                return lastToken;
+            } else {
+                if (required) {
+                    throw new IllegalStateException("No remaining token to use as installation id");
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        private List<String> parseTokensToInstanceIdList(List<String> remainingTokens) throws CommandException {
+            // TODO this could use a comment on the idea behind this...
+            List<String> instanceIdList = new LinkedList<>();
+            final String c = COMMA_STRING;
+            for (String token : remainingTokens) {
+                if (token.contains(c)) {
+                    if (token.length() == 1) {
+                        continue;
+                    }
+                    if (token.startsWith(c)) {
+                        instanceIdList.add(token.replaceFirst(COMMA_STRING, ""));
+                    } else {
+                        instanceIdList.addAll(Arrays.asList(token.split(c)));
+                    }
+                } else {
+                    instanceIdList.add(token);
+                }
+            }
+            if (instanceIdList.isEmpty()) {
+                throw CommandException.syntaxError("Expected at least one instance id", context);
+            }
+            return Collections.unmodifiableList(instanceIdList);
+        }
+
+    }
+
+    /**
+     * OSGi-DS bind method; made public for access from test code.
+     * 
+     * @param newInstance the new instance to set
+     */
+    public void bindInstanceManagementService(InstanceManagementService newInstance) {
         this.instanceManagementService = newInstance;
     }
 
@@ -98,99 +221,117 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         contributions
             .add(new CommandDescription(ROOT_COMMAND + " install",
-                "[--if-missing] [--force-download] [--force-reinstall] [--timeout] <url version id/part> <installation id>",
+                "[<--if-missing|--force-download|--force-reinstall>] <url version id/part> <installation id>",
                 true,
                 "downloads and installs a new RCE installation",
                 "--if-missing - download and install if and only if an installation with the same version is not present",
-                "--force-download - forces the download of the installation files even if they are present in the current cache",
+                "--force-download - forces the download and reinstallation of the installation files even if they are present in the "
+                + "current cache",
                 "--force-reinstall - forces reinstallation even if the same version is already installed",
                 TIMEOUT_DESCRIPTION));
 
         contributions
             .add(new CommandDescription(ROOT_COMMAND + " reinstall",
-                "[--force-download] [--force-reinstall] [--timeout] <url version id/part> <installation id>",
+                "[<--force-download|--force-reinstall>] <url version id/part> <installation id>",
                 true,
                 "stops all instances running the given installation id, downloads and installs the new RCE installation, and starts the "
                     + "instances again with the new installation",
-                "--force-download - forces the download of the installation files even if they are present in the current cache",
+                "--force-download - forces the download and reinstallation of the installation files even if they are present in the "
+                + "current cache",
                 "--force-reinstall - forces reinstallation even if the same version is already installed",
                 TIMEOUT_DESCRIPTION));
 
         contributions
-            .add(new CommandDescription(ROOT_COMMAND + " configure",
+            .add(new CommandDescription(
+                ROOT_COMMAND + " configure",
                 "<instance id(s)> <command> [<parameters>] [<command> [<parameters>]] [...]",
                 true,
                 "configures the configuration.json file of the specified RCE instance(s)",
 
                 "Available commands:",
-                SUBCOMMAND_RESET + " - resets the instance to an empty configuration",
-                SUBCOMMAND_APPLY_TEMPLATE + " <template id> - applies (i.e. copies) the given template as the new configuration",
+                InstanceManagementConstants.SUBCOMMAND_RESET + " - resets the instance to an empty configuration",
+                InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE
+                    + " <template id> - applies (i.e. copies) the given template as the new configuration",
 
-                SUBCOMMAND_SET_NAME + " <name> - sets the name of the instance",
-                SUBCOMMAND_SET_COMMENT + " <comment> - sets a general comment",
-                SUBCOMMAND_SET_WORKFLOW_HOST_OPTION + " [<true/false>] - sets or clears the workflow host flag",
-                SUBCOMMAND_SET_RELAY_OPTION + " [<true/false>] - sets or clears the relay flag",
-                SUBCOMMAND_SET_TEMPDIR_PATH + " <path> - sets the root path for RCE's temporary files directory",
+                InstanceManagementConstants.SUBCOMMAND_SET_NAME + " <name> - sets the name of the instance",
+                InstanceManagementConstants.SUBCOMMAND_SET_COMMENT + " <comment> - sets a general comment",
+                InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION + " [<true/false>] - sets or clears the workflow host flag",
+                InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION + " [<true/false>] - sets or clears the relay flag",
+                InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH
+                    + " <path> - sets the root path for RCE's temporary files directory",
 
-                SUBCOMMAND_ADD_SERVER_PORT + " <id> <ip> <port> - adds a new server port and sets the ip and port number to bind to",
+                InstanceManagementConstants.SUBCOMMAND_ADD_SERVER_PORT
+                    + " <id> <ip> <port> - adds a new server port and sets the ip and port number to bind to",
                 // TODO restore reconnect parameters
-                SUBCOMMAND_ADD_CONNECTION + " <id> <host> <port> <true/false> - adds new connection "
+                InstanceManagementConstants.SUBCOMMAND_ADD_CONNECTION + " <id> <host> <port> <true/false> - adds new connection "
                     + "to the given ip/hostname and port, and whether it should auto-connect",
 
-                SUBCOMMAND_SET_IP_FILTER_ENABLED + " [<true/false>] - enables or disables the ip filter; default: true",
-                SUBCOMMAND_ENABLE_IM_SSH_ACCESS + " <port> - enables and configures SSH forwarding of "
+                InstanceManagementConstants.SUBCOMMAND_REMOVE_CONNECTION + " <id> removes a connection",
+
+                InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION
+                    + " [<true/false>] - enables or disables the ip filter; default: true",
+                InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS + " <port> - enables and configures SSH forwarding of "
                     + "RCE console commands by the IM \"master\" instance",
 
-                SUBCOMMAND_CONFIGURE_SSH_SERVER + " <ip> <port> - enables the ssh server and sets the ip and port to bind to",
-                SUBCOMMAND_DISABLE_SSH_SERVER + " - disables the ssh server"
+                InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER
+                    + " <ip> <port> - enables the ssh server and sets the ip and port to bind to",
+                InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER + " - disables the ssh server",
 
-            // from here: new or reworked commands, but handling not adapted/implemented yet
+                InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT + " - sets the request timeout in msec",
 
-            ));
+                InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT + " - sets the forwrding timeout in msec",
 
-        // from here: not checked or migrated yet
+                InstanceManagementConstants.SUBCOMMAND_ADD_ALLOWED_INBOUND_IP + " <ip> - adds/allows an inbound IP address to the filter",
 
-        // "--set-request-timeout <timeout> - sets the request timeout in msec",
-        // "--set-forwarding-timeout <timeout> - sets the forwarding timeout in msec",
-        // + "<autoRetryInitialDelay> <autoRetryMaximumDelay> <atuoRetryDelayMultiplier> - adds new connection",
-        // "--remove-connection <name> - removes a connection",
-        // "--remove-server-port <name> - removes the desired server port",
-        // "--add-allowed-inbound-ip <ip> - adds/allows an inbound IP address to the filter",
-        // "--remove-allowed-inbound-ip <ip> - removes/disallows an inbound IP address from the filter",
-        // "--add-ssh-connection <name> <displayName> <host> <port> <loginName> - adds a new ssh connection",
-        // "--remove-ssh-connection <name> - removes a ssh connection",
-        // "--publish-component <name> - publishes a new component",
-        // "--unpublish-component <name> - unpublishes a component",
-        // "--set-ssh-server-ip <ip> - sets the ssh server ip adress",
-        // "--set-ssh-server-port <port> - sets the ssh server port"));
+                InstanceManagementConstants.SUBCOMMAND_REMOVE_ALLOWED_INBOUND_IP
+                    + " <ip> - removes/disallows an inbound IP address from the filter",
+
+                InstanceManagementConstants.SUBCOMMAND_ADD_SSH_CONNECTION
+                    + " <name> <displayName> <host> <port> <loginName> - adds a new ssh connection",
+
+                InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION
+                    + " <name> - removes a ssh connection",
+
+                InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT + " <name> - publishes a new component",
+
+                InstanceManagementConstants.SUBCOMMAND_UNPUBLISH_COMPONENT + " <name> - unpublishes a component",
+
+                InstanceManagementConstants.SUBCOMMAND_SET_BACKGROUND_MONITORING
+                    + " <id> <interval> - Enables background monitoring with the given interval (in seconds)"
+
+        ));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " start",
-            "[--timeout] <instance id1, instance id2, ...> <installation id>",
+            "[--timeout <value>] <instance id1, instance id2, ...> <installation id>",
             true,
-            "starts a list of new RCE instances with the desired instance IDs and the desired installation",
+            "starts a list of new RCE instances with the desired instance IDs and the desired installation; "
+                + "use \"" + InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID
+                + "\" to use the current \"master\" installation",
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " stop",
-            "[--timeout] <instance id1, instance id2, ...>",
+            "[--timeout <value>] <instance id1, instance id2, ...>",
             true,
             "stops a list of running RCE instances",
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " start all",
-            "[--timeout] <installation id>",
+            "[--timeout <value>] <installation id>",
             true,
-            "starts all available instances with the desired installation",
+            "starts all available instances with the desired installation; "
+                + "use \"" + InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID
+                + "\" to use the current \"master\" installation",
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " stop all",
-            "[--timeout] <installation id>",
+            "[--timeout <value>] [<installation id>]",
             true,
             "stops all running instances",
             "<installation id> - optional parameter if one want to stop all running instances of a specific installation",
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " restart",
-            " <instance id1, instance id2, ...> <installation id>",
+            "[--timeout <value>] <instance id1, instance id2, ...> <installation id>",
             true,
             "restarts a list of RCE instances with the given instance IDs and the given installation"));
 
@@ -200,7 +341,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             "disposes the specified instance meaning deletion of the profile directory"));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " list",
-            "[--instances] [--installations] [--templates]",
+            "[<instances|installations|templates>]",
             true,
             "lists information about instances, installations or templates"));
 
@@ -219,6 +360,12 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         if (subCommand == null) {
             throw CommandException.unknownCommand(context);
         }
+        if (!instanceManagementService.isInstanceManagementStarted()) {
+            throw CommandException.executionError(
+                "Cannot execute instance management command. " + instanceManagementService.getReasonInstanceManagementNotStarted(),
+                context);
+        }
+
         switch (subCommand) {
         case "install":
             performInstall(context);
@@ -261,6 +408,8 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         default:
             throw CommandException.syntaxError("Unknown sub-command", context);
         }
+
+        context.getOutputReceiver().addOutput("Done.");
     }
 
     private void performExecuteOn(CommandContext context) throws CommandException {
@@ -356,9 +505,17 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         }
     }
 
+    private boolean validateIpAddress(final String ip) {
+        Matcher matcher = IP_ADDRESS_PATTERN.matcher(ip);
+        return matcher.matches();
+    }
+
     private void performConfigure(CommandContext context) throws CommandException {
         currentContext.set(context); // TODO use for other commands as well?
         String instanceIds = context.consumeNextToken();
+        if (instanceIds == null) {
+            throw CommandException.syntaxError("Expected an instance id", context);
+        }
         if (instanceIds.contains(COMMA_STRING)) {
             throw CommandException.executionError("Configuring multiple instance ids at once is not implemented yet", context);
         }
@@ -373,7 +530,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 context);
         }
 
-        ConfigurationChangeSequence changeSequence = new ConfigurationChangeSequence();
+        final InstanceConfigurationOperationSequence changeSequence = instanceManagementService.newConfigurationOperationSequence();
         while (context.hasRemainingTokens()) {
             String commandToken = context.consumeNextToken();
             if (!isASubCommandToken(commandToken)) {
@@ -383,160 +540,151 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             while (isAParameterToken(context.peekNextToken())) {
                 parameters.add(context.consumeNextToken());
             }
-            handleSubCommand(changeSequence, commandToken, parameters);
+            parseConfigurationSubCommand(changeSequence, commandToken, parameters);
         }
 
         try {
-            instanceManagementService.configureInstance(instanceIds, changeSequence, context.getOutputReceiver());
-        } catch (IOException e) {
+            instanceManagementService.applyInstanceConfigurationOperations(instanceIds, changeSequence, context.getOutputReceiver());
+        } catch (InstanceConfigurationException | IOException e) {
             throw CommandException.executionError(e.toString(), context);
         }
     }
 
-    private void handleSubCommand(ConfigurationChangeSequence changeSequence, String token, List<String> parameters)
+    private void parseConfigurationSubCommand(InstanceConfigurationOperationSequence changeSequence, String token, List<String> parameters)
         throws CommandException {
         switch (token) {
-        case SUBCOMMAND_RESET:
+        case InstanceManagementConstants.SUBCOMMAND_RESET:
             assertParameterCount(parameters, 0, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.RESET_CONFIGURATION, Object.class,
-                null));
+            changeSequence.resetConfiguration();
             break;
-        case SUBCOMMAND_APPLY_TEMPLATE:
+        case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
             assertParameterCount(parameters, 1, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.APPLY_TEMPLATE, String.class,
-                parameters.get(0)));
+            final String templateName = parameters.get(0);
+            changeSequence.applyTemplate(templateName);
             break;
-        case SUBCOMMAND_SET_NAME:
+        case InstanceManagementConstants.SUBCOMMAND_SET_NAME:
             assertParameterCount(parameters, 1, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_NAME, String.class, parameters.get(0)));
+            final String name = parameters.get(0);
+            changeSequence.setName(name);
             break;
-        case SUBCOMMAND_SET_COMMENT:
+        case InstanceManagementConstants.SUBCOMMAND_SET_COMMENT:
             assertParameterCount(parameters, 1, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_COMMENT, String.class, parameters.get(0)));
+            final String comment = parameters.get(0);
+            changeSequence.setComment(comment);
             break;
-        case SUBCOMMAND_SET_RELAY_OPTION:
+        case InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION:
             assertParameterCount(parameters, 0, 1, token);
-            if (parseSingleBooleanParameter(parameters, true)) { // TODO merge derived configuration keys?
-                changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_RELAY, Boolean.class, true));
-            } else {
-                changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.DISABLE_RELAY, Boolean.class, false));
-            }
+            changeSequence.setRelayFlag(parseSingleBooleanParameter(parameters, false));
             break;
-        case SUBCOMMAND_SET_WORKFLOW_HOST_OPTION:
+        case InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION:
             assertParameterCount(parameters, 0, 1, token);
-            if (parseSingleBooleanParameter(parameters, true)) { // TODO merge derived configuration keys?
-                changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_WORKFLOWHOST, Boolean.class, true));
-            } else {
-                changeSequence
-                    .append(new ConfigurationChangeEntry(ConfigurationFlag.DISABLE_WORKFLOWHOST, Boolean.class, false));
-            }
+            // TODO merge derived configuration keys?
+            changeSequence.setWorkflowHostFlag(parseSingleBooleanParameter(parameters, false));
             break;
-        case SUBCOMMAND_SET_TEMPDIR_PATH:
+        case InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH:
             assertParameterCount(parameters, 1, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.TEMP_DIR, String.class, parameters.get(0)));
+            final String tempPath = parameters.get(0);
+            changeSequence.setTempDirPath(tempPath);
             break;
-        case SUBCOMMAND_ADD_SERVER_PORT:
+        case InstanceManagementConstants.SUBCOMMAND_ADD_SERVER_PORT:
             assertParameterCount(parameters, 3, token); // id, host, port
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_SERVER_PORT, Object.class, parameters));
+            String serverPortName = parameters.get(0);
+            String serverPortIp = parameters.get(1);
+            int serverPortNumber = Integer.parseInt(parameters.get(2));
+            changeSequence.addServerPort(serverPortName, serverPortIp, serverPortNumber);
             break;
-        case SUBCOMMAND_ADD_CONNECTION:
+        case InstanceManagementConstants.SUBCOMMAND_ADD_CONNECTION:
             assertParameterCount(parameters, 4, token); // id, host, port, autoconnect
-            parameters.add(ZERO_STRING); // TODO dummy values for now
-            parameters.add(ZERO_STRING);
-            parameters.add(ZERO_STRING);
-            addConnectionToConfig(parameters, changeSequence);
+            parameters.add("5"); // TODO dummy values for now; note that the initial delay cannot be less than 5 seconds (due to validation)
+            parameters.add("30");
+            parameters.add("1.5");
+            changeSequence.addNetworkConnectionFromStringParameters(parameters);
             break;
-        case SUBCOMMAND_CONFIGURE_SSH_SERVER:
-            assertParameterCount(parameters, 2, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_SSH_SERVER, Boolean.class,
-                true));
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_SSH_SERVER_IP, String.class,
-                parameters.get(0)));
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_SSH_SERVER_PORT, Integer.class,
-                Integer.parseInt(parameters.get(1))));
-            break;
-        case SUBCOMMAND_DISABLE_SSH_SERVER:
-            assertParameterCount(parameters, 0, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.DISABLE_SSH_SERVER, Boolean.class,
-                false));
-            break;
-        case SUBCOMMAND_SET_IP_FILTER_ENABLED:
-            assertParameterCount(parameters, 0, 1, token);
-            if (parseSingleBooleanParameter(parameters, true)) { // TODO merge derived configuration keys?
-                changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_IP_FILTER, Boolean.class, true));
-            } else {
-                changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.DISABLE_IP_FILTER, Boolean.class, false));
-            }
-            break;
-        case SUBCOMMAND_ENABLE_IM_SSH_ACCESS:
+        case InstanceManagementConstants.SUBCOMMAND_REMOVE_CONNECTION:
             assertParameterCount(parameters, 1, token);
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_IM_SSH_ACCESS, Integer.class,
-                Integer.parseInt(parameters.get(0))));
+            changeSequence.removeConnection(parameters.get(0));
             break;
-        // case SUBCOMMAND_:
-        // assertParameterCount(parameters, 1, token);
-        // break;
+        case InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER:
+            assertParameterCount(parameters, 2, token);
+
+            final String ipAddress = parameters.get(0);
+            if (!validateIpAddress(ipAddress)) {
+                throw CommandException.syntaxError(ipAddress + " is not a valid IP address.", currentContext.get());
+            }
+
+            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(1))) {
+                throw CommandException.syntaxError("The SSH port must be a numeric value.", currentContext.get());
+            }
+            final int sshServerPort = Integer.parseInt(parameters.get(1)); // note: may still fail with overflow
+
+            changeSequence.enableSshServer(ipAddress, sshServerPort);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER:
+            assertParameterCount(parameters, 0, token);
+            changeSequence.disableSshServer();
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION:
+            assertParameterCount(parameters, 0, 1, token);
+            final boolean ipFilterState = parseSingleBooleanParameter(parameters, true);
+            changeSequence.setIpFilterEnabled(ipFilterState);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS:
+            assertParameterCount(parameters, 1, token);
+            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(0))) {
+                throw CommandException.syntaxError("Unexpected parameter type. Port must be a numeric value.", currentContext.get());
+            }
+            final int accessPort = Integer.parseInt(parameters.get(0));
+            changeSequence.enableImSshAccess(accessPort);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT:
+            assertParameterCount(parameters, 1, token);
+            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(0))) {
+                throw CommandException.syntaxError("Unexpected parameter type. Timeout must be a numeric value.", currentContext.get());
+            }
+            long timeout = Long.parseLong(parameters.get(0));
+            changeSequence.setRequestTimeout(timeout);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT:
+            assertParameterCount(parameters, 1, token);
+            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(0))) {
+                throw CommandException.syntaxError("Unexpected parameter type. Timeout must be a numeric value.", currentContext.get());
+            }
+            long fTimeout = Long.parseLong(parameters.get(0));
+            changeSequence.setForwardingTimeout(fTimeout);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_ADD_ALLOWED_INBOUND_IP:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.addAllowedInboundIP(parameters.get(0));
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_REMOVE_ALLOWED_INBOUND_IP:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.removeAllowedInboundIP(parameters.get(0));
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_ADD_SSH_CONNECTION:
+            assertParameterCount(parameters, 5, token); // id, displayName, host, port, loginName
+            changeSequence.addSshConnectionFromStringParameters(parameters);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.removeSshConnection(parameters.get(0));
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.publishComponent(parameters.get(0));
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_UNPUBLISH_COMPONENT:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.unpublishComponent(parameters.get(0));
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_SET_BACKGROUND_MONITORING:
+            assertParameterCount(parameters, 2, token);
+            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(1))) {
+                throw CommandException.syntaxError("Unexpected parameter type. Interval must be a numeric value.", currentContext.get());
+            }
+            changeSequence.setBackgroundMonitoring(parameters.get(0), Integer.parseInt(parameters.get(1)));
+            break;
         default:
             throw CommandException.syntaxError("Unexpected configuration command " + token, currentContext.get());
-        }
-
-        // TODO unmigrated code below - for reference only
-        if (true) {
-            return;
-        }
-        int index = 0; // only to ensure compilation during migration
-        List<String> tokens = new ArrayList<>(); // only to ensure compilation during migration
-
-        if (token.equals("")) {
-            index = 1; // dummy entry
-        } else if (token.equals(ConfigurationFlag.ENABLE_DEP_INPUT_TAB.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ENABLE_DEP_INPUT_TAB, Boolean.class, true));
-        } else if (token.equals(ConfigurationFlag.DISABLE_DEP_INPUT_TAB.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.DISABLE_DEP_INPUT_TAB, Boolean.class,
-                false));
-        } else if (token.equals(ConfigurationFlag.REQUEST_TIMEOUT.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REQUEST_TIMEOUT, Long.class,
-                Long.parseLong(tokens.get(index + 1))));
-        } else if (token.equals(ConfigurationFlag.FORWARDING_TIMEOUT.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.FORWARDING_TIMEOUT, Long.class,
-                Long.parseLong(tokens.get(index + 1))));
-        } else if (token.equals(ConfigurationFlag.REMOVE_CONNECTION.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REMOVE_CONNECTION, String.class,
-                tokens.get(index + 1)));
-        } else if (token.equals(ConfigurationFlag.REMOVE_SERVER_PORT.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REMOVE_SERVER_PORT, String.class,
-                tokens.get(index + 1)));
-        } else if (token.equals(ConfigurationFlag.ADD_ALLOWED_IP.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_ALLOWED_IP, String.class,
-                parameters.get(0)));
-        } else if (token.equals(ConfigurationFlag.REMOVE_ALLOWED_IP.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REMOVE_ALLOWED_IP, String.class,
-                parameters.get(0)));
-        } else if (token.equals(ConfigurationFlag.ADD_SSH_CONNECTION.getFlag())) {
-            addSshConnectionToConfig(tokens, changeSequence, index);
-            for (int i = 5; i < 1; i--) {
-                tokens.remove(index + i);
-            }
-            index = 0;
-        } else if (token.equals(ConfigurationFlag.REMOVE_SSH_CONNECTION.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.REMOVE_SSH_CONNECTION, String.class,
-                parameters.get(0)));
-        } else if (token.equals(ConfigurationFlag.PUBLISH_COMPONENT.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.PUBLISH_COMPONENT, String.class,
-                parameters.get(0)));
-        } else if (token.equals(ConfigurationFlag.UNPUBLISH_COMPONENT.getFlag())) {
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.UNPUBLISH_COMPONENT, String.class,
-                parameters.get(0)));
-        } else if (token.equals(ConfigurationFlag.SET_BACKGROUND_MONITORING.getFlag())) {
-            Map<String, Integer> map = new HashMap<String, Integer>();
-            map.put(parameters.get(0), Integer.parseInt(parameters.get(1)));
-            changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.SET_BACKGROUND_MONITORING, Object.class,
-                map));
-            tokens.remove(index + 1);
-            tokens.remove(index + 2);
-            index = 0;
-        } else {
-            throw CommandException.syntaxError("Unexpected token: " + token, currentContext.get());
         }
     }
 
@@ -575,158 +723,37 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         return token != null && !token.startsWith("--");
     }
 
-    private void addSshConnectionToConfig(List<String> tokens, ConfigurationChangeSequence changeSequence, int index) {
-        ConfigurationSshConnection connection =
-            new ConfigurationSshConnection(tokens.get(index + 1), tokens.get(index + 2), tokens.get(index + 3),
-                Integer.parseInt(tokens
-                    .get(index + 4)),
-                tokens.get(index + 5));
-        changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_SSH_CONNECTION,
-            ConfigurationSshConnection.class, connection));
-    }
-
-    private void addConnectionToConfig(List<String> parameters, ConfigurationChangeSequence changeSequence) {
-        de.rcenvironment.core.instancemanagement.internal.ConfigurationConnection configConnection =
-            new de.rcenvironment.core.instancemanagement.internal.ConfigurationConnection(parameters.get(0),
-                parameters.get(1), Integer.parseInt(parameters.get(2)), Boolean.parseBoolean(parameters.get(3)),
-                Long.parseLong(parameters.get(4)), Long.parseLong(parameters.get(5)), Integer.parseInt(parameters.get(6)));
-        changeSequence.append(new ConfigurationChangeEntry(ConfigurationFlag.ADD_CONNECTION,
-            de.rcenvironment.core.instancemanagement.internal.ConfigurationConnection.class, configConnection));
-    }
-
-    private List<String> getInstanceIdList(List<String> tokens) {
-        List<String> instanceIdList = new LinkedList<>();
-        final String c = COMMA_STRING;
-        for (String token : tokens) {
-            if (token.contains(c)) {
-                if (token.length() == 1) {
-                    continue;
-                }
-                if (token.startsWith(c)) {
-                    instanceIdList.add(token.replaceFirst(COMMA_STRING, ""));
-                } else {
-                    instanceIdList.addAll(Arrays.asList(token.split(c)));
-                }
-            } else {
-                instanceIdList.add(token);
-            }
-        }
-        return instanceIdList;
-    }
-
     private void performStart(CommandContext context) throws CommandException {
-        List<String> instanceIdList = new LinkedList<>();
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        long timeout = getTimeoutIfSpecified(tokens, context);
-        boolean startWithGui = getStartWithGUIIfSpecified(tokens, context);
-        String installationId = ((LinkedList<String>) tokens).removeLast();
-        instanceIdList = getInstanceIdList(tokens);
-        if (instanceIdList.isEmpty() || installationId == null || context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        try {
-            instanceManagementService.startInstance(installationId, instanceIdList, context.getOutputReceiver(), timeout, startWithGui);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.toString(), context);
-        }
+        final ParameterParser parameters = new ParameterParser(context, true, true);
+        triggerStartOfInstances(parameters.getInstallationId(), parameters.getInstanceIds(), parameters.getTimeout(),
+            parameters.getStartWithGUI(), context);
     }
 
     private void performRestart(CommandContext context) throws CommandException {
-        List<String> instanceIdList = new LinkedList<>();
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        long timeout = getTimeoutIfSpecified(tokens, context);
-        boolean startWithGui = getStartWithGUIIfSpecified(tokens, context);
-        String installationId = ((LinkedList<String>) tokens).removeLast();
-        instanceIdList = getInstanceIdList(tokens);
-        if (instanceIdList.isEmpty() || installationId == null || context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        try {
-            instanceManagementService.stopInstance(new LinkedList<String>(instanceIdList), context.getOutputReceiver(), timeout);
-            instanceManagementService.startInstance(installationId, new LinkedList<String>(instanceIdList), context.getOutputReceiver(),
-                timeout, startWithGui);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.toString(), context);
-        }
+        final ParameterParser parameters = new ParameterParser(context, true, true);
+        triggerStopOfInstances(parameters.getInstanceIds(), parameters.getTimeout(), context);
+        triggerStartOfInstances(parameters.getInstallationId(), parameters.getInstanceIds(), parameters.getTimeout(),
+            parameters.getStartWithGUI(), context);
     }
 
     private void performStop(CommandContext context) throws CommandException {
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        List<String> instanceIdList = new LinkedList<>();
-        long timeout = getTimeoutIfSpecified(tokens, context);
-        instanceIdList = getInstanceIdList(tokens);
-        if (instanceIdList.isEmpty() || context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        try {
-            instanceManagementService.stopInstance(instanceIdList, context.getOutputReceiver(), timeout);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.toString(), context);
-        }
+        final ParameterParser parameters = new ParameterParser(context, true, false);
+        triggerStopOfInstances(parameters.getInstanceIds(), parameters.getTimeout(), context);
     }
 
     private void performStopAll(CommandContext context) throws CommandException {
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        long timeout = getTimeoutIfSpecified(tokens, context);
-        if (tokens.size() > 1) {
-            throw CommandException.wrongNumberOfParameters(context);
+        final ParameterParser parameters = new ParameterParser(context, false, null);
+        String installationId = parameters.getInstallationId(); // optional; may be null
+        if (installationId == null) {
+            installationId = ""; // TODO backwards compatibility; change service code to use null instead?
         }
-        String installationId = "";
-        if (!tokens.isEmpty()) {
-            installationId = ((LinkedList<String>) tokens).removeLast();
-        }
-
-        try {
-            instanceManagementService.stopAllInstances(installationId, context.getOutputReceiver(), timeout);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.toString(), context);
-        }
-    }
-
-    private long getTimeoutIfSpecified(final List<String> tokens, CommandContext context) throws CommandException {
-        long timeout = 0;
-        if (tokens.contains(TIMEOUT)) {
-            int index = tokens.indexOf(TIMEOUT);
-            tokens.remove(index);
-            try {
-                String t = tokens.remove(index);
-                if (org.apache.commons.lang3.StringUtils.isNumeric(t)) {
-                    timeout = Long.parseLong(t);
-                } else {
-                    throw CommandException.executionError("No timeout specified", context);
-                }
-            } catch (IndexOutOfBoundsException e) {
-                throw CommandException.executionError("No timeout specified", context);
-            }
-        }
-
-        return timeout;
-    }
-
-    private boolean getStartWithGUIIfSpecified(final List<String> tokens, CommandContext context) throws CommandException {
-        long timeout = 0;
-        if (tokens.contains("--gui")) {
-            int index = tokens.indexOf("--gui");
-            tokens.remove(index);
-            return true;
-        }
-
-        return false;
+        triggerStopOfAllInstances(installationId, parameters.getTimeout(), context);
     }
 
     private void performStartAll(CommandContext context) throws CommandException {
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        long timeout = getTimeoutIfSpecified(tokens, context);
-        if (tokens.isEmpty()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        String installationId = ((LinkedList<String>) tokens).removeLast();
-
-        try {
-            instanceManagementService.startAllInstances(installationId, context.getOutputReceiver(), timeout);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.toString(), context);
-        }
+        final ParameterParser parameters = new ParameterParser(context, false, true);
+        // TODO use GUI parameter?
+        triggerStartOfAllInstances(parameters.getInstallationId(), parameters.getTimeout(), context);
     }
 
     private void performList(CommandContext context) throws CommandException {
@@ -748,19 +775,14 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     }
 
     private void performDispose(CommandContext context) throws CommandException {
-        List<String> tokens = new LinkedList<>(context.consumeRemainingTokens());
-        List<String> instanceIds = getInstanceIdList(tokens);
-        if (instanceIds.isEmpty()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        for (String instanceId : instanceIds) {
+        final ParameterParser parameters = new ParameterParser(context, true, false);
+        for (String instanceId : parameters.getInstanceIds()) {
             try {
                 instanceManagementService.disposeInstance(instanceId, context.getOutputReceiver());
             } catch (IOException e) {
                 throw CommandException.executionError(e.toString(), context);
             }
             context.getOutputReceiver().addOutput("Instance with id: " + instanceId + " disposed");
-            context.getOutputReceiver().addOutput("Done.");
         }
     }
 
@@ -769,6 +791,42 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             throw CommandException.wrongNumberOfParameters(context);
         }
         instanceManagementService.showInstanceManagementInformation(context.getOutputReceiver());
+    }
+
+    private void triggerStartOfInstances(final String installationId, final List<String> instanceIdList, final long timeout,
+        final boolean startWithGui, CommandContext context) throws CommandException {
+        try {
+            instanceManagementService.startInstance(installationId, instanceIdList, context.getOutputReceiver(), timeout, startWithGui);
+        } catch (IOException e) {
+            throw CommandException.executionError(e.toString(), context);
+        }
+    }
+
+    // TODO add GUI parameter?
+    private void triggerStartOfAllInstances(final String installationId, final long timeout, CommandContext context)
+        throws CommandException {
+        try {
+            instanceManagementService.startAllInstances(installationId, context.getOutputReceiver(), timeout);
+        } catch (IOException e) {
+            throw CommandException.executionError(e.toString(), context);
+        }
+    }
+
+    private void triggerStopOfInstances(final List<String> instanceIdList, final long timeout, CommandContext context)
+        throws CommandException {
+        try {
+            instanceManagementService.stopInstance(instanceIdList, context.getOutputReceiver(), timeout);
+        } catch (IOException e) {
+            throw CommandException.executionError(e.toString(), context);
+        }
+    }
+
+    private void triggerStopOfAllInstances(String installationId, final long timeout, CommandContext context) throws CommandException {
+        try {
+            instanceManagementService.stopAllInstances(installationId, context.getOutputReceiver(), timeout);
+        } catch (IOException e) {
+            throw CommandException.executionError(e.toString(), context);
+        }
     }
 
 }

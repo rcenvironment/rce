@@ -22,6 +22,9 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -46,9 +49,12 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Hendrik Abbenhaus
  * @author Sascha Zur
  * @author Brigitte Boden
+ * @author Oliver Seebach
  * 
  */
 public class OutputWriterComponent extends DefaultComponent {
+
+    private static final String FRONTSLASH = "/";
 
     private static final String BACKSLASHES = "\\";
 
@@ -68,12 +74,65 @@ public class OutputWriterComponent extends DefaultComponent {
 
     private String wfStartTimeStamp;
 
-    private Map<String, OutputLocationWriter> inputNameToOutputLocationWriter = new HashMap<String, OutputLocationWriter>();
+    private boolean writesToRelativePath = false;
+
+    private Map<String, OutputLocationWriter> inputNameToOutputLocationWriter = new HashMap<>();
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
         componentLog = componentContext.getLog();
+    }
+
+    private void checkRelativePathForValidProject(String relativePath) throws ComponentException {
+        if (relativePath.split(FRONTSLASH).length < 2) {
+            throw new ComponentException(StringUtils.format("Cannot resolve root location '%s' "
+                + "because it contains no project.", relativePath));
+        } else {
+            String projectName = relativePath.split(FRONTSLASH)[1];
+            if (!ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).exists()) {
+                throw new ComponentException(StringUtils.format("Failed to resolve root location '%s' "
+                    + "because the given project '%s' could not be found.", relativePath, projectName));
+            }
+        }
+    }
+
+    private String adaptRootToAbsoluteRootIfProjectRelative(String rootToBeAdapted) throws ComponentException {
+
+        String absoluteRoot = rootToBeAdapted;
+
+        // if front and backslashes are mixed -> exception
+        if (rootToBeAdapted.contains(FRONTSLASH) && rootToBeAdapted.contains(BACKSLASHES)) {
+            throw new ComponentException(StringUtils.format(
+                "Given path to file or directory could not be resolved, as it contains front and backslash as well: %s", rootToBeAdapted));
+        }
+
+        File file = new File(rootToBeAdapted);
+        if (!file.isAbsolute()) {
+
+            if (rootToBeAdapted.startsWith(OutputWriterComponentConstants.PH_WORKSPACE + FRONTSLASH)) {
+
+                if (ResourcesPlugin.getWorkspace().getRoot().exists()) {
+
+                    checkRelativePathForValidProject(rootToBeAdapted);
+
+                    String workspacePath = ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString();
+                    absoluteRoot = rootToBeAdapted.replace(OutputWriterComponentConstants.PH_WORKSPACE, workspacePath);
+                } else {
+                    throw new ComponentException(StringUtils.format("Failed to resolve root location '%s' "
+                        + "because the workspace could not be determined. "
+                        + "Note that in headless mode relative paths are not supported.", rootToBeAdapted));
+                }
+            } else {
+                // // TODO 9.0.0: Remove this warning and make this fail,
+                // // as relative paths without the explicit workspace placeholder are no longer supported
+                componentLog.componentWarn(StringUtils.format("Note that from version 9.0 on relative paths have to start explicitly "
+                    + "with the prefix '%s'. Relative paths without this prefix are resolved relative to the "
+                    + "current working directory.", OutputWriterComponentConstants.PH_WORKSPACE));
+            }
+        }
+
+        return absoluteRoot;
     }
 
     @Override
@@ -89,7 +148,10 @@ public class OutputWriterComponent extends DefaultComponent {
         if (onwfstart) {
             this.root = componentContext.getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART_ROOT);
         } else {
-            this.root = componentContext.getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT);
+            this.root = adaptRootToAbsoluteRootIfProjectRelative(
+                componentContext.getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT));
+            File tempRootFile = new File(componentContext.getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT));
+            writesToRelativePath = !tempRootFile.isAbsolute();
         }
 
         // Parse list of outputLocations and initialize corresponding objects
@@ -114,9 +176,9 @@ public class OutputWriterComponent extends DefaultComponent {
                     String path = out.getFolderForSaving() + File.separator + out.getFilename();
                     path = path.substring(OutputWriterComponentConstants.ROOT_DISPLAY_NAME.length() + 1);
                     path = replacePlaceholder(path, "", null);
+
                     File fileToWrite = new File(root + File.separator + path);
                     writer.initializeFile(fileToWrite);
-
                 }
             } catch (IOException e) {
                 throw new ComponentException("Failed to parse (internal) configuration (JSON string)", e);
@@ -136,7 +198,7 @@ public class OutputWriterComponent extends DefaultComponent {
         if (input.getDataType().equals(DataType.DirectoryReference) || input.getDataType().equals(DataType.FileReference)) {
             processFileOrDirectory(inputName, input);
         } else if (inputNameToOutputLocationWriter.get(inputName) != null) {
-            Map<String, TypedDatum> inputMap = new HashMap<String, TypedDatum>();
+            Map<String, TypedDatum> inputMap = new HashMap<>();
             for (String name : componentContext.getInputsWithDatum()) {
                 inputMap.put(name, componentContext.readInput(name));
             }
@@ -145,6 +207,15 @@ public class OutputWriterComponent extends DefaultComponent {
             componentLog.componentWarn(StringUtils.format("Received value for input '%s' that is"
                 + " not associated with any target for simple data types", inputName));
         }
+        if (writesToRelativePath) {
+            try {
+                ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
+            } catch (CoreException e) {
+                componentLog.componentInfo("Failed to refresh the workspace automatically. "
+                    + "Files or directories written to the workspace might not be visible at the moment. "
+                    + "Please try to refresh the respective folder(s) manually via its context menu.");
+            }
+        }
 
     }
 
@@ -152,6 +223,7 @@ public class OutputWriterComponent extends DefaultComponent {
         String path = componentContext.getInputMetaDataValue(inputName, OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING)
             + File.separator
             + componentContext.getInputMetaDataValue(inputName, OutputWriterComponentConstants.CONFIG_KEY_FILENAME);
+
         path = path.substring(OutputWriterComponentConstants.ROOT_DISPLAY_NAME.length() + 1);
         String origFilename = null;
         if (input.getDataType().equals(DataType.DirectoryReference)) {
@@ -161,9 +233,11 @@ public class OutputWriterComponent extends DefaultComponent {
         }
 
         path = replacePlaceholder(path, inputName, origFilename);
+
         File fileToWrite = new File(root + File.separator + path);
+
         if (!fileToWrite.exists()) {
-            writeFile(input, root + File.separator + path, inputName);
+            writeFile(input, fileToWrite.getAbsolutePath(), inputName);
         } else {
             File possibleFile = autoRename(fileToWrite);
             writeFile(input, possibleFile.getAbsolutePath(), inputName);
@@ -203,11 +277,10 @@ public class OutputWriterComponent extends DefaultComponent {
      * 
      * @param pathinput contains a input
      * @param currentInputName contains a current input name
-     * @param filename TODO
+     * @param filename the filename
      * @return the input without placeholder
-     * @throws ComponentException when function was not able to replace all placeholders
      */
-    public String replacePlaceholder(String pathinput, String currentInputName, String filename) throws ComponentException {
+    public String replacePlaceholder(String pathinput, String currentInputName, String filename) {
         String output = pathinput;
         output =
             output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_WORKFLOWNAME), componentContext.getWorkflowInstanceName()
@@ -236,8 +309,9 @@ public class OutputWriterComponent extends DefaultComponent {
     }
 
     private String escapePlaceholder(String placeholder) {
-        placeholder = placeholder.replace(OutputWriterComponentConstants.PH_PREFIX, BACKSLASHES + OutputWriterComponentConstants.PH_PREFIX);
-        return placeholder.replace(OutputWriterComponentConstants.PH_SUFFIX, BACKSLASHES + OutputWriterComponentConstants.PH_SUFFIX);
+        return placeholder
+            .replace(OutputWriterComponentConstants.PH_PREFIX, BACKSLASHES + OutputWriterComponentConstants.PH_PREFIX)
+            .replace(OutputWriterComponentConstants.PH_SUFFIX, BACKSLASHES + OutputWriterComponentConstants.PH_SUFFIX);
     }
 
     private void writeFile(TypedDatum input, String path, String inputName) throws ComponentException {
@@ -264,7 +338,6 @@ public class OutputWriterComponent extends DefaultComponent {
                 throw new ComponentException(StringUtils.format("Failed to write file of input '%s' to %s",
                     inputName, incFileOrDir.getAbsolutePath()), e);
             }
-            componentLog.componentInfo(StringUtils.format("Wrote file of input '%s' to: %s", inputName, incFileOrDir.getAbsolutePath()));
             break;
         case DirectoryReference:
             incFileOrDir = new File(path);
@@ -288,8 +361,6 @@ public class OutputWriterComponent extends DefaultComponent {
                     LogFactory.getLog(getClass()).error("Failed to delete temporary directory", e);
                 }
             }
-            componentLog.componentInfo(StringUtils.format("Wrote directory of input '%s' to: %s",
-                inputName, incFileOrDir.getAbsolutePath()));
             break;
         default:
             break;

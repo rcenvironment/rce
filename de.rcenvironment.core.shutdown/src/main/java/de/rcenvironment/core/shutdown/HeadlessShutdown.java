@@ -48,7 +48,7 @@ public class HeadlessShutdown {
 
     private static final String HOST = "localhost";
 
-    private static final int REGULAR_SHUTDOWN_WAIT_TIME_MSEC = 20000; // in ms
+    private static final int REGULAR_SHUTDOWN_WAIT_TIME_MSEC = 60000; // may include waiting for GUI startup to complete first
 
     private static final int BUFFERSIZE = 200;
 

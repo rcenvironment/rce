@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.instancemanagement.internal;
 
 /**
@@ -15,7 +15,7 @@ package de.rcenvironment.core.instancemanagement.internal;
  * @author David Scholz
  */
 public class ConfigurationConnection {
-    
+
     private final String connectionName;
 
     private final String host;
@@ -28,10 +28,10 @@ public class ConfigurationConnection {
 
     private final long autoRetryMaximumDelay;
 
-    private final int autoRetryDelayMultiplier;
+    private final float autoRetryDelayMultiplier;
 
     public ConfigurationConnection(String connectionName, String host, int port, boolean connectOnStartup, long autoRetryInitialDelay,
-        long autoRetryMaximumDelay, int autoRetryDelayMultiplier) {
+        long autoRetryMaximumDelay, float autoRetryDelayMultiplier) {
         this.connectionName = connectionName;
         this.host = host;
         this.port = port;
@@ -65,7 +65,7 @@ public class ConfigurationConnection {
         return autoRetryMaximumDelay;
     }
 
-    public int getAutoRetryDelayMultiplier() {
+    public float getAutoRetryDelayMultiplier() {
         return autoRetryDelayMultiplier;
     }
 

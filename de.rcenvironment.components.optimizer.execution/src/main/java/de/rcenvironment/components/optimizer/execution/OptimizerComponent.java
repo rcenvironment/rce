@@ -626,7 +626,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                     for (int i = 0; i < ((VectorTD) componentContext.readInput(e)).getRowDimension(); i++) {
                         lowerBoundsStartValues.put(e.substring(0, e.indexOf(OptimizerComponentConstants.BOUNDS_STARTVALUE_LOWER_SIGNITURE))
                             + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                            ((VectorTD) componentContext.readInput(e)).getFloatTDOfElement(0).getFloatValue());
+                            ((VectorTD) componentContext.readInput(e)).getFloatTDOfElement(i).getFloatValue());
                     }
                 } else {
                     lowerBoundsStartValues.put(e.substring(0, e.indexOf(OptimizerComponentConstants.BOUNDS_STARTVALUE_LOWER_SIGNITURE)),
@@ -638,7 +638,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                     for (int i = 0; i < ((VectorTD) componentContext.readInput(e)).getRowDimension(); i++) {
                         upperBoundsStartValues.put(e.substring(0, e.indexOf(OptimizerComponentConstants.BOUNDS_STARTVALUE_UPPER_SIGNITURE))
                             + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                            ((VectorTD) componentContext.readInput(e)).getFloatTDOfElement(0).getFloatValue());
+                            ((VectorTD) componentContext.readInput(e)).getFloatTDOfElement(i).getFloatValue());
                     }
                 } else {
                     upperBoundsStartValues.put(e.substring(0, e.indexOf(OptimizerComponentConstants.BOUNDS_STARTVALUE_UPPER_SIGNITURE)),

@@ -80,7 +80,7 @@
    	<extension
          point="org.eclipse.ui.views">
       <view allowMultiple="true"
-            icon="platform:/plugin/de.rcenvironment.components.parametricstudy.common/resources/parametric_study16.png"
+            icon="platform:/plugin/de.rcenvironment.components.parametricstudy.common/resources/parametricStudy16.png"
             class="de.rcenvironment.components.parametricstudy.gui.view.ParametricStudyView"
             id="de.rcenvironment.components.parametricstudy.gui.view.ParametricStudyView"
             name="Parametric Study"

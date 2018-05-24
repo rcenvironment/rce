@@ -273,8 +273,8 @@ public class UnixFileInfoService extends AbstractFileService {
         executor.start(commandString);
         stdout = executor.getStdout();
         stderr = executor.getStderr();
-        final CapturingTextOutReceiver outReceiver = new CapturingTextOutReceiver("");
-        final CapturingTextOutReceiver errReceiver = new CapturingTextOutReceiver("");
+        final CapturingTextOutReceiver outReceiver = new CapturingTextOutReceiver();
+        final CapturingTextOutReceiver errReceiver = new CapturingTextOutReceiver();
         final TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdout, outReceiver);
         final TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderr, errReceiver);
         stdoutWatcher.start();

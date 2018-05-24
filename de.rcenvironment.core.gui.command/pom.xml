@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.command</artifactId>
 	<name>RCE Core GUI Command Bundle</name>
-	<version>8.1.1-SNAPSHOT</version>
+	<version>8.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

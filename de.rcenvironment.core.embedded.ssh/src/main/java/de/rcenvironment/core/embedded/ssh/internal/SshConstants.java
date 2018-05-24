@@ -15,6 +15,9 @@ package de.rcenvironment.core.embedded.ssh.internal;
  * @author Robert Mischke
  */
 public final class SshConstants {
+    
+    // TODO move at least some of these to the API package; for example, the names of the predefined SSH roles should be accessible from
+    // Instance Management code, instead of having disconnected constants there -- misc_ro
 
     // CONSOLE STRINGS AND CONFIGURATION VALUES - START
 

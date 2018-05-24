@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<sect1 xmlns="http://docbook.org/ns/docbook" 
+    xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+    <title>Integrated Test Script Runner</title>
+    <para>The integrated "Test Script Runner" (TSR) was created to automate test sequences on one or
+        more RCE standalone installations. These installations are automatically set up using an RCE
+        feature called "Instance Management" (IM), which is still under development, and therefore
+        not fully documented yet. However, the instructions below should be sufficient to configure
+        this feature as needed for the TSR.</para>
+    <sect2>
+        <title>Setup and Configuration</title>
+        <para>The most common way of using the TSR is simply running it from Eclipse. (It is also
+            intended to be installable into a standalone RCE product; however, this requires certain
+            APIs to be available in the standalone Eclipse, which makes this approach not feasible
+            yet.) Using it from Eclipse is fairly simple, as the project containing it
+                (<code>de.rcenvironment.supplemental.testscriptrunner</code>) is part of the
+            standard RCE checkout, and should therefore be present in your development workspace
+            already. You can verify this by starting RCE from Eclipse and executing the command
+                "<code>run-test</code>" in the RCE command console. If it prints usage information,
+            the extension is available as it should.</para>
+        <para>The only manual setup that is required is adding an Instance Management configuration
+            to the RCE instance launched from Eclipse. This configuration defines the root directory
+            where work files and directories will be stored, and the URLs that standalone RCE build
+            will be downloaded from. Locate the profile directory that is being launched and edit
+            its <code>configuration.json</code> file. In this file, add this configuration block on
+            the root JSON level, and adjust the settings as necessary:</para>
+        <para>
+            <literallayout><code>"instanceManagement": {
+  "dataRootDirectory": "<phrase os="windows">C:\\ExampleWorkdir\\rce-im</phrase><phrase os="linux">/exampleWorkdir/rce-im</phrase>",
+  "downloadSourceFolderUrlPattern":
+      "https://software.dlr.de/updates/rce/8.x/products/
+                                       standard/*/zip/",
+  "downloadFilenamePattern": "rce-*-standard-<phrase os="windows">win32.</phrase><phrase os="linux">linux.</phrase>x86_64.zip"
+}</code></literallayout>
+        </para>
+        <para>The asterisks in the URL patterns mark the locations where the specified "build id"
+            (see below) and the automatically determined qualified build number will be
+            inserted.</para>
+        <note>
+            <para>It is <emphasis>strongly</emphasis> recommended to use a short full filesystem
+                path as the <code>dataRootDirectory</code>, as RCE installations will be placed
+                inside of it, and long filesystem paths are known to cause problems with these. The
+                exact maximum lenght will be determined, documented, and maybe also automatically
+                checked in the future.</para>
+        </note>
+    </sect2>
+    <sect2>
+        <title>Usage</title>
+        <para>The TSR is invoked by a single console command (<code>run-test</code>), with an alias
+            for readability (<code>run-tests</code>). The general syntax is:</para>
+        <para><code>run-test[s] &lt;comma-separated list of test ids>|--all &lt;build
+            id></code></para>
+        <para>The actual test scripts are located in <code>*.feature</code> files in the
+                <code>/de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts</code>
+            directory. The "test ids" in the command description are the annotation-like tags above
+            the indivual test scenarios, e.g. "@Test01". These can be specified in the command with
+            or without the "@" character. "<code>--all</code>" executes all available test
+            scenarios. The reserved "<code>@Disabled</code>" and "<code>@disabled</code>" tags can
+            be used to mark tests as excluded in the <code>*.feature</code> files.</para>
+        <para>The &lt;build id> is usually the part of the configured download URL marked by an
+            asterisk ("*"); for example, <code>snapshots/trunk</code> or
+            <code>releases/8.1.1</code>. This id is used within the test scripts as part of certain
+            test steps. For example, the test step "Given instances ... using the default build"
+            sets up one or more test instances to run with the build specified in the command, which
+            allows test scripts to be executed on different builds instead of hardcoding the release
+            or snapshot version to test.</para>
+        <para>Example: <code>run-test Test04 snapshots/trunk</code></para>
+        <para>To support running test scripts on locally generated builds, a special form of build
+            id is supported as well: By prefixing it with "<code>local:"</code>, a local path to a
+            build can be specified. This build is then executed from that location without copying
+            it. Note that the given path must point to an unpacked RCE build, unlike the standard
+            download URL, which points to zipped release packages.</para>
+    </sect2>
+</sect1>

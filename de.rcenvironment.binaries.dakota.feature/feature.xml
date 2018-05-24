@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.binaries.dakota.feature"
       label="RCE Binaries - Dakota (Feature)"
-      version="8.1.0.qualifier"
+      version="8.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -118,7 +118,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          arch="x86_64"
          download-size="0"
          install-size="0"
-         version="8.1.0.qualifier"/>
+         version="0.0.0"/>
 
    <plugin
          id="de.rcenvironment.binaries.dakota.linux.x86_64"
@@ -127,6 +127,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          arch="x86_64"
          download-size="0"
          install-size="0"
-         version="8.1.0.qualifier"/>
+         version="0.0.0"/>
 
 </feature>

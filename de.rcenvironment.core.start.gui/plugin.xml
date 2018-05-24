@@ -70,5 +70,36 @@
             splashId="de.rcenvironment.core.start.SplashHandler">
        </splashHandlerProductBinding>
     </extension>
+    
+    <extension
+         point="org.eclipse.ui.menus">      
+	    <menuContribution
+	      		allPopups="false"
+	            locationURI="menu:file?after=de.rcenvironment.core.gui.workflow.saveasimage">
+			<command
+	        	commandId="org.eclipse.ui.file.import"
+	        	label="Import..."
+	        	style="push">
+			</command>
+	    </menuContribution>
+	    <menuContribution
+	      		allPopups="false"
+	            locationURI="menu:file?after=de.rcenvironment.core.gui.workflow.saveasimage">
+		      	<separator
+	    		    name="separator"
+	        		visible="true">
+				</separator>
+		</menuContribution>
+	      
+		<menuContribution
+	      		allPopups="false"
+	            locationURI="menu:file?after=org.eclipse.ui.file.import">
+	    	<command
+	        	commandId="org.eclipse.ui.file.export"
+	            label="Export..."
+	            style="push">
+	        </command>
+	    </menuContribution>
+	</extension>
 	
 </plugin>

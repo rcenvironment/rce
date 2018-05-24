@@ -27,17 +27,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-
 /**
  * Utility class to handle ZIP file archives.
  * 
  * @author Markus Kunde, Markus Litz
+ * @author Robert Mischke (improved error handling)
  */
 public final class ZipFolderUtil {
-    
+
     /** Our logger instance. */
-    protected static final Log LOGGER = LogFactory.getLog(ZipFolderUtil.class);
-    
+    protected static final Log LOG = LogFactory.getLog(ZipFolderUtil.class);
+
     /** archiver name. */
     private static final String ARCHIVERNAME = ArchiveStreamFactory.ZIP;
 
@@ -47,74 +47,75 @@ public final class ZipFolderUtil {
     private ZipFolderUtil() {
         // empty constructor
     }
-    
-    
+
     /**
      * Compress content of a folder (without root-folder).
      * 
      * @param folder parent to compress
      * @param targetZipFile target zip-file
+     * @throws IOException on failure
      */
-    public static void zipFolderContent(final File folder, final File targetZipFile) {
-        OutputStream out = null;
-        InputStream is = null;
+    public static void zipFolderContent(final File folder, final File targetZipFile) throws IOException {
+        ArchiveOutputStream out = null;
+        InputStream in = null;
         try {
-            out = new FileOutputStream(targetZipFile);
-            ArchiveOutputStream os = new ArchiveStreamFactory().createArchiveOutputStream(ARCHIVERNAME, out);  
-            
-            for (File file: FileUtils.listFiles(folder, null, true)) {
+            out = new ArchiveStreamFactory().createArchiveOutputStream(ARCHIVERNAME, new FileOutputStream(targetZipFile));
+
+            for (File file : FileUtils.listFiles(folder, null, true)) {
                 String zipPath = StringUtils.difference(folder.getCanonicalPath(), file.getCanonicalPath());
                 zipPath = zipPath.substring(1);
-                is = new FileInputStream(file);
-                os.putArchiveEntry(new ZipArchiveEntry(zipPath));
-                IOUtils.copy(is, os);
-                os.closeArchiveEntry();
-                is.close();
+                in = new FileInputStream(file);
+                out.putArchiveEntry(new ZipArchiveEntry(zipPath));
+                IOUtils.copy(in, out);
+                out.closeArchiveEntry();
+                in.close();
+                in = null;
             }
-            
+
             out.flush();
-            os.flush();
-            os.close(); 
+            out.close();
+            out = null;
         } catch (FileNotFoundException e) {
-            LOGGER.error("Zip-file could not be found.", e);
+            throw new IOException("File not found during zipping process", e);
         } catch (ArchiveException e) {
-            LOGGER.error("Zip-file could not be compressed.", e);
+            throw new IOException("Zip file could not be compressed", e); // when does this actually happen?
         } catch (IOException e) {
-            LOGGER.error("IO-Exception occured during extracting zip-file.", e);
+            throw new IOException("Error while creating zip file", e);
         } finally {
-            if (is != null) {
+            if (in != null) {
                 try {
-                    is.close();
+                    in.close();
                 } catch (IOException e) {
-                    LOGGER.error("IO-Exception occured during closing inputstream of zipping mechanism.", e);
+                    // should only happen as part of an already thrown exception, so only log it
+                    LOG.warn("Error while closing leftover input stream of zipping mechanism", e);
                 }
             }
             if (out != null) {
                 try {
                     out.close();
                 } catch (IOException e) {
-                    LOGGER.error("IO-Exception occured during closing outputstream of zipping mechanism.", e);
+                    // as above
+                    LOG.warn("Error while closing output stream of zipping mechanism", e);
                 }
             }
-        }  
+        }
     }
 
-    
     /**
      * Extract Zip file to a destination folder.
      * 
      * @param folder destination where zip file should be extracted
      * @param sourceZipFile zip file to extract
+     * @throws IOException on failure
      */
-    public static void extractZipToFolder(final File folder, final File sourceZipFile) {
-        InputStream is = null;
-        
+    public static void extractZipToFolder(final File folder, final File sourceZipFile) throws IOException {
+        ArchiveInputStream in = null;
+
         try {
-            is = new FileInputStream(sourceZipFile);
-            ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ARCHIVERNAME, is);
-            
+            in = new ArchiveStreamFactory().createArchiveInputStream(ARCHIVERNAME, new FileInputStream(sourceZipFile));
+
             ZipArchiveEntry entry;
-            
+
             while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
                 String parentOfFile;
                 if (entry.isDirectory()) {
@@ -132,21 +133,22 @@ public final class ZipFolderUtil {
                     OutputStream out = new FileOutputStream(new File(folder, entry.getName()));
                     IOUtils.copy(in, out);
                     out.close();
-                }             
+                }
             }
             in.close();
+            in = null;
         } catch (FileNotFoundException e) {
-            LOGGER.error("Zip-file could not be found.", e);
+            throw new IOException("Zip file " + sourceZipFile + " not found", e);
         } catch (ArchiveException e) {
-            LOGGER.error("Zip-file could not be extracted.", e);
+            throw new IOException("Failed to extract zip file " + sourceZipFile, e);
         } catch (IOException e) {
-            LOGGER.error("IO-Exception occured during extracting zip-file", e);
+            throw new IOException("Error while extracting zip file " + sourceZipFile, e);
         } finally {
-            if (is != null) {
+            if (in != null) {
                 try {
-                    is.close();
+                    in.close();
                 } catch (IOException e) {
-                    LOGGER.error("IO-Exception occured during closing inputstream of unzipping mechanism.", e);
+                    LOG.warn("Error while closing leftover input stream of unzip process", e);
                 }
             }
         }

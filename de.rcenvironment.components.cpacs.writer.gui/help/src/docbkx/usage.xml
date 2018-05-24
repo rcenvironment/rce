@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://docbook.org/xml/4.5/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://docbook.org/xml/4.4/docbookx.dtd">
 <chapter>
     <title>CPACS Writer Component Usage</title>
     <sect1>
@@ -18,7 +18,10 @@
             “Inputs/Outputs”. You are also able to add dynamic input or output channels here. Thus
             it is possible to map single values into the XML dataset via XPATH declaration.
             Moreover, you can select single values in order to write them in an output
-            channel.</para>
+            channel.
+            <note>Search for the XPathChooser help in the User Guide (3. Usage -> 2. Workflows -> 2.3 Workflow components) 
+            to garner further information about the usage of XPaths.</note>
+        </para>
         <para>On the “Workflow Data” tab you can select whether to store history data for each
             component run or not.</para>
     </sect1>

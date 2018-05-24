@@ -20,6 +20,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URLDecoder;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -50,6 +52,7 @@ import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
+import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
@@ -57,6 +60,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.AbstractTextOutputReceiver;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
@@ -68,12 +72,20 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.JSchRCECommandLineExecutor;
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
  */
 public class InstanceManagementServiceImpl implements InstanceManagementService {
+
+    private static final String INSTANCE_MANAGEMENT_DISABLED =
+        "Local instance management is disabled due to missing or invalid configuration: ";
+
+    private static final String ON_INSTANCE = " on instance ";
 
     private static final String ZIP = ".zip";
 
     private static final String SLASH = "/";
+
+    private static final String TO = " to ";
 
     private static final String INDENT = "- ";
 
@@ -118,6 +130,10 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private volatile boolean hasValidDownloadConfiguration = false;
 
+    private volatile boolean instanceManagementStarted = false;
+
+    private String reasonInstanceManagementNotStarted = "";
+
     private ConcurrentHashMap<String, String> profileIdToInstallationIdMap = new ConcurrentHashMap<>();
 
     private ConfigurationService configurationService;
@@ -125,8 +141,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private PersistentSettingsService persistentSettingsService;
 
     // split into distinct classes to allow separate testing
-    private final InstanceOperations instanceOperations = new InstanceOperationsImplSynchronizeDecorator(
-        new InstanceOperationsImplReleaseLockDecorator(new InstanceOperationsImpl()));
+    private final InstanceOperationsImpl instanceOperations = new InstanceOperationsImpl();
 
     private final DeploymentOperationsImpl deploymentOperations = new DeploymentOperationsImpl();
 
@@ -161,16 +176,31 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         final ConfigurationSegment configuration = this.configurationService.getConfigurationSegment(CONFIGURATION_SUBTREE_PATH);
         if (!configuration.isPresentInCurrentConfiguration()) {
             log.debug("No '" + CONFIGURATION_SUBTREE_PATH + "' configuration segment found, disabling instance management");
+            reasonInstanceManagementNotStarted =
+                "No '" + CONFIGURATION_SUBTREE_PATH + "' configuration segment found in configuration.json";
             return;
         }
         try {
             applyConfiguration(configuration);
-            initProfileIdToInstallationMap();
+            if (hasValidLocalConfiguration) {
+                initProfileIdToInstallationMap();
+                instanceManagementStarted = true;
+            }
         } catch (IOException e) {
             // do not fail the activate() method; the failure is marked by the "hasValidConfiguration" flag being "false"
             log.error("Error while configuring " + getClass().getSimpleName(), e);
+            reasonInstanceManagementNotStarted =
+                INSTANCE_MANAGEMENT_DISABLED + e.getMessage();
         }
 
+    }
+
+    public boolean isInstanceManagementStarted() {
+        return instanceManagementStarted;
+    }
+
+    public String getReasonInstanceManagementNotStarted() {
+        return reasonInstanceManagementNotStarted;
     }
 
     /**
@@ -252,31 +282,44 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     }
 
     @Override
-    public void configureInstance(String instanceId, ConfigurationChangeSequence changeSequence, TextOutputReceiver userOutputReceiver)
-        throws IOException {
+    public boolean isSpecialInstallationId(String input) {
+        return MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID.equals(input)
+            || input.startsWith(CUSTOM_LOCAL_INSTALLATION_PATH_INSTALLATION_ID_PREFIX);
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence newConfigurationOperationSequence() {
+        return new InstanceConfigurationOperationSequenceImpl();
+    }
+
+    @Override
+    public void applyInstanceConfigurationOperations(String instanceId, InstanceConfigurationOperationSequence changeSequence,
+        TextOutputReceiver userOutputReceiver) throws InstanceConfigurationException, IOException {
 
         validateConfiguration(true, false);
-        final File destinationConfigFile = new File(profilesRootDir + SLASH + instanceId, CONFIGURATION_FILENAME);
+        final File destinationConfigFile = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
         createProfileWithEmptyConfigFileIfNotPresent(destinationConfigFile);
 
-        List<ConfigurationChangeEntry> changeEntries = changeSequence.getAll();
+        List<InstanceConfigurationOperationDescriptor> changeEntries =
+            ((InstanceConfigurationOperationSequenceImpl) changeSequence).getConfigurationSteps();
         if (changeEntries.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one configuration step to perform");
         }
 
         // perform commands "reset" or "apply template" that can only reasonably happen as the first step,
         // and before creating the in-memory configuration modification class
-        ConfigurationChangeEntry firstEntry = changeEntries.get(0);
+        InstanceConfigurationOperationDescriptor firstEntry = changeEntries.get(0);
         switch (firstEntry.getFlag()) {
-        case RESET_CONFIGURATION:
+        case InstanceManagementConstants.SUBCOMMAND_RESET:
             // FIXME backup?!
             writeEmptyConfigFile(destinationConfigFile);
             userOutputReceiver.addOutput("Clearing/resetting the configuration" + OF_INSTANCE + instanceId);
             break;
-        case APPLY_TEMPLATE:
+        case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
             // FIXME backup?!
-            userOutputReceiver.addOutput("Replacing configuration" + OF_INSTANCE + instanceId + " with template " + firstEntry.getValue());
-            File template = resolveAndCheckTemplateDir((String) firstEntry.getValue() + SLASH + CONFIGURATION_FILENAME);
+            userOutputReceiver
+                .addOutput("Replacing configuration" + OF_INSTANCE + instanceId + " with template " + firstEntry.getSingleParameter());
+            File template = resolveAndCheckTemplateDir(firstEntry.getSingleParameter() + SLASH + CONFIGURATION_FILENAME);
             Path src = template.toPath();
             Files.copy(src, destinationConfigFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             break;
@@ -287,8 +330,9 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         applyChangeEntries(changeEntries, destinationConfigFile, instanceId, userOutputReceiver);
     }
 
-    private void applyChangeEntries(List<ConfigurationChangeEntry> changeEntries, final File destinationConfigFile, String instanceId,
-        TextOutputReceiver userOutputReceiver) throws IOException {
+    // TODO change exceptions types
+    private void applyChangeEntries(List<InstanceConfigurationOperationDescriptor> changeEntries, final File destinationConfigFile,
+        String instanceId, TextOutputReceiver userOutputReceiver) throws InstanceConfigurationException {
         final InstanceConfigurationImpl configOperations;
         if (CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(destinationConfigFile) == null) {
             configOperations = new InstanceConfigurationImpl(destinationConfigFile);
@@ -298,136 +342,122 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
 
         boolean isFirstCommand = true;
-        for (ConfigurationChangeEntry entry : changeEntries) {
+        for (InstanceConfigurationOperationDescriptor entry : changeEntries) {
+
+            final Object[] parameters = entry.getParameters();
+
             switch (entry.getFlag()) {
-            case SET_NAME:
-                configOperations.setInstanceName((String) entry.getValue());
-                userOutputReceiver.addOutput("Setting instance name of instance " + instanceId + " to " + (String) entry.getValue());
+            case InstanceManagementConstants.SUBCOMMAND_SET_NAME:
+                configOperations.setInstanceName((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Setting instance name of instance " + instanceId + TO + entry.getSingleParameter());
                 break;
-            case DISABLE_RELAY:
-                configOperations.setRelayFlag((Boolean) entry.getValue());
-                userOutputReceiver.addOutput("Disabling relay flag" + OF_INSTANCE + instanceId);
+            case InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION:
+                if (!Boolean.TRUE.equals(entry.getSingleParameter()) && !Boolean.FALSE.equals(entry.getSingleParameter())) {
+                    throw new InstanceConfigurationException(
+                        "The parameter of the " + InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION
+                            + " sub-command must be a boolean value, but is a " + entry.getSingleParameter().getClass());
+                }
+                configOperations.setRelayFlag((Boolean) entry.getSingleParameter());
+                userOutputReceiver.addOutput("The relay flag" + OF_INSTANCE + instanceId + " is set to " + entry.getSingleParameter());
                 break;
-            case ENABLE_RELAY:
-                configOperations.setRelayFlag((Boolean) entry.getValue());
-                userOutputReceiver.addOutput("Enabling relay flag" + OF_INSTANCE + instanceId);
+            case InstanceManagementConstants.SUBCOMMAND_SET_COMMENT:
+                String entryString = (String) entry.getSingleParameter();
+                configOperations.setInstanceComment(entryString);
+                userOutputReceiver.addOutput("Setting comment field " + OF_INSTANCE + instanceId + TO + entryString);
                 break;
-            case SET_COMMENT:
-                configOperations.setInstanceComment((String) entry.getValue());
-                userOutputReceiver.addOutput("Setting comment field " + OF_INSTANCE + instanceId + " to " + entry.getValue());
-                break;
-            case ADD_ALLOWED_IP:
-                configOperations.addAllowedIp((String) entry.getValue());
-                userOutputReceiver.addOutput("Adding " + (String) entry.getValue() + " to allowed ips was successfull");
-                break;
-            case ADD_CONNECTION:
-                final ConfigurationConnection connectionData = (ConfigurationConnection) entry.getValue();
+            case InstanceManagementConstants.SUBCOMMAND_ADD_CONNECTION:
+                final ConfigurationConnection connectionData = (ConfigurationConnection) entry.getSingleParameter();
                 configOperations.addConnection(connectionData);
                 userOutputReceiver.addOutput("Adding connection " + connectionData.getConnectionName() + " to instance " + instanceId);
                 break;
-            case ADD_SERVER_PORT:
-                addServerPortToConfig(instanceId, userOutputReceiver, SUCCESS, TO_INSTANCE, configOperations, entry);
+            case InstanceManagementConstants.SUBCOMMAND_REMOVE_CONNECTION:
+                configOperations.removeConnection((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Removing connection " + entry.getSingleParameter() + " from instance " + instanceId);
                 break;
-            case SET_BACKGROUND_MONITORING:
-                @SuppressWarnings("unchecked") Map<String, Integer> map = (HashMap<String, Integer>) entry.getValue();
-                configOperations.setBackgroundMonitoring((String) map.keySet().toArray()[0], map.get(map.keySet().toArray()[0]));
-                userOutputReceiver.addOutput("Setting background monitoring " + OF_INSTANCE + instanceId);
+            case InstanceManagementConstants.SUBCOMMAND_ADD_SERVER_PORT:
+                if (parameters.length != 3) {
+                    throw new IllegalArgumentException("Wrong number of parameters.");
+                }
+                final String serverPortName = (String) parameters[0];
+                final String serverPortIp = (String) parameters[1];
+                final Integer serverPortNumber = (Integer) parameters[2];
+                configOperations.addServerPort(serverPortName, serverPortIp, serverPortNumber);
+                userOutputReceiver.addOutput("Adding server port " + serverPortName + TO_INSTANCE + instanceId + SUCCESS);
                 break;
-            case ADD_SSH_CONNECTION:
-                configOperations.addSshConnection((ConfigurationSshConnection) entry.getValue());
-                userOutputReceiver.addOutput("Adding ssh connection " + TO_INSTANCE + instanceId);
-                break;
-            case DISABLE_DEP_INPUT_TAB:
-                configOperations.disableDeprecatedInputTab();
-                userOutputReceiver.addOutput("Disabling deprecated input tab" + OF_INSTANCE + instanceId);
-                break;
-            case DISABLE_SSH_SERVER:
+            case InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER:
                 configOperations.disableSshServer();
                 userOutputReceiver.addOutput("Disabling ssh server" + OF_INSTANCE + instanceId);
                 break;
-            case DISABLE_WORKFLOWHOST:
-                configOperations.disableWorkflowHost();
-                userOutputReceiver.addOutput("Disabling workflow host flag" + OF_INSTANCE + instanceId);
+            case InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION:
+                configOperations.setWorkflowHostFlag((Boolean) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Set workflow host flag" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
                 break;
-            case ENABLE_DEP_INPUT_TAB:
-                configOperations.enableDeprecatedInputTab();
-                userOutputReceiver.addOutput("Enabling deprecated input tab" + OF_INSTANCE + instanceId);
-                break;
-            case ENABLE_IP_FILTER:
-                configOperations.enableIpFilter();
-                userOutputReceiver.addOutput("Enabling ip filter" + OF_INSTANCE + instanceId);
-                break;
-            case DISABLE_IP_FILTER:
-                configOperations.disableIpFilter();
-                userOutputReceiver.addOutput("Disabling ip filter" + OF_INSTANCE + instanceId);
-                break;
-            case ENABLE_SSH_SERVER:
-                configOperations.enableSshServer();
-                userOutputReceiver.addOutput("Enabling ssh server" + OF_INSTANCE + instanceId);
-                break;
-            case ENABLE_WORKFLOWHOST:
-                configOperations.enableWorkflowHost();
-                userOutputReceiver.addOutput("Enabling workflow host flag" + OF_INSTANCE + instanceId);
-                break;
-            case FORWARDING_TIMEOUT:
-                configOperations.setForwardingTimeout((Long) entry.getValue());
-                userOutputReceiver.addOutput("Setting forwarding timeout" + OF_INSTANCE + instanceId);
-                break;
-            case PUBLISH_COMPONENT:
-                configOperations.publishComponent((String) entry.getValue());
-                userOutputReceiver.addOutput("Publishing component" + OF_INSTANCE + instanceId);
-                break;
-            case REMOVE_ALLOWED_IP:
-                configOperations.removeAllowedIp((String) entry.getValue());
-                userOutputReceiver.addOutput("Removing allowed ip" + OF_INSTANCE + instanceId);
-                break;
-            case REMOVE_CONNECTION:
-                configOperations.removeConnection((String) entry.getValue());
-                userOutputReceiver.addOutput("Removing connection " + (String) entry.getValue() + OF_INSTANCE + instanceId);
-                break;
-            case REMOVE_SERVER_PORT:
-                configOperations.removeServerPort((String) entry.getValue());
-                userOutputReceiver.addOutput("Removing server port " + (String) entry.getValue() + OF_INSTANCE + instanceId);
-                break;
-            case REMOVE_SSH_CONNECTION:
-                configOperations.removeSshConnection((String) entry.getValue());
-                userOutputReceiver
-                    .addOutput("Removing ssh connection " + (String) entry.getValue() + OF_INSTANCE + instanceId);
-                break;
-            case REQUEST_TIMEOUT:
-                configOperations.setRequestTimeout((Long) entry.getValue());
-                userOutputReceiver.addOutput("Setting request timeout" + OF_INSTANCE + instanceId);
-                break;
-            case SET_SSH_SERVER_IP:
-                configOperations.setSshServerIP((String) entry.getValue());
-                userOutputReceiver.addOutput("Setting ssh server ip" + OF_INSTANCE + instanceId);
-                break;
-            case SET_SSH_SERVER_PORT:
-                configOperations.setSshServerPort((Integer) entry.getValue());
-                userOutputReceiver.addOutput("Setting ssh server port" + OF_INSTANCE + instanceId);
-                break;
-            case TEMP_DIR:
-                configOperations.setTempDirectory((String) entry.getValue());
+            case InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH:
+                configOperations.setTempDirectory((String) entry.getSingleParameter());
                 userOutputReceiver.addOutput("Setting temp directory" + OF_INSTANCE + instanceId);
                 break;
-            case UNPUBLISH_COMPONENT:
-                configOperations.unPublishComponent((String) entry.getValue());
-                userOutputReceiver.addOutput("Unpublishing component" + OF_INSTANCE + instanceId);
-                break;
-            case ENABLE_IM_SSH_ACCESS:
-                configOperations.enableImSshAccess(((Integer) entry.getValue()), getHashedPassphrase());
+            case InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS:
+                configOperations.enableImSshAccess(((Integer) entry.getSingleParameter()), getHashedPassphrase());
                 userOutputReceiver.addOutput("Configuring ssh access for IM on instance" + instanceId);
                 break;
-            case RESET_CONFIGURATION:
-            case APPLY_TEMPLATE:
+            case InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER:
+                configOperations.enableSshServer();
+                configOperations.setSshServerIP((String) parameters[0]);
+                configOperations.setSshServerPort((Integer) parameters[1]);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION:
+                configOperations.setIpFilterFlag((Boolean) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Set ip filter flag" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_RESET:
+            case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
                 // these operations were already performed; only run a consistency check here
                 if (!isFirstCommand) {
-                    throw new IOException("Resetting the configuration or applying a template "
-                        + "must take place *before* applying any other configuration commands"); // TODO better exception type
+                    throw new InstanceConfigurationException("Resetting the configuration or applying a template "
+                        + "must take place *before* applying any other configuration commands");
                 }
                 break;
+            case InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT:
+                configOperations.setRequestTimeout((Long) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Set request timeout" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT:
+                configOperations.setForwardingTimeout((Long) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Set forwarding timeout" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_ADD_ALLOWED_INBOUND_IP:
+                configOperations.addAllowedIp((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Added allowed IP " + entry.getSingleParameter() + TO_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_REMOVE_ALLOWED_INBOUND_IP:
+                configOperations.removeAllowedIp((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Removed allowed IP " + entry.getSingleParameter() + " from " + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_ADD_SSH_CONNECTION:
+                final ConfigurationSshConnection sshConnectionData = (ConfigurationSshConnection) entry.getSingleParameter();
+                configOperations.addSshConnection(sshConnectionData);
+                userOutputReceiver.addOutput("Adding SSH connection " + sshConnectionData.getName() + TO_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION:
+                configOperations.removeSshConnection((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Removing SSH connection " + entry.getSingleParameter() + " from instance " + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT:
+                configOperations.publishComponent((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Published component " + entry.getSingleParameter() + ON_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_UNPUBLISH_COMPONENT:
+                configOperations.unPublishComponent((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Unpublished component " + entry.getSingleParameter() + ON_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_SET_BACKGROUND_MONITORING:
+                String id = (String) entry.getParameters()[0];
+                int interval = (Integer) entry.getParameters()[1];
+                configOperations.setBackgroundMonitoring(id, interval);
+                userOutputReceiver.addOutput("Setting background monitoring interval for instance" + instanceId + TO + interval);
+                break;
             default:
-                throw new IOException("Unhandled configuration change request: " + entry.getFlag()); // TODO better exception type
+                throw new InstanceConfigurationException("Unhandled configuration change request: " + entry.getFlag());
             }
             isFirstCommand = false;
         }
@@ -464,47 +494,50 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         return BCrypt.hashpw(passphrase, BCrypt.gensalt(10));
     }
 
-    private void addServerPortToConfig(String instanceId, TextOutputReceiver userOutputReceiver, final String success,
-        final String toInstance, InstanceConfigurationImpl configOperations, ConfigurationChangeEntry key) throws IOException {
-        // explicit type cast as we can't guarantee the correct type of the list objects itself with generics.
-        Object o = key.getValue();
-        if (o instanceof List) {
-            @SuppressWarnings("unchecked") List<String> list = (List<String>) o;
-            if (list.size() > 3) {
-                throw new IOException("Wrong number of parameters.");
-            }
-            String name = list.get(0);
-            String ip = list.get(1);
-            int port = Integer.parseInt(list.get(2));
-
-            configOperations.addServerPort((String) name, (String) ip, (int) port);
-            userOutputReceiver.addOutput("Adding server port " + ((String) name) + toInstance + instanceId + success);
-        } else {
-            throw new IOException("Failure.");
-        }
+    @Override
+    public File resolveRelativePathWithinProfileDirectory(String instanceId, final String relativePath) {
+        return new File(new File(profilesRootDir, instanceId).getAbsoluteFile(), relativePath);
     }
 
     @Override
     public void startInstance(String installationId, List<String> instanceIdList,
-        TextOutputReceiver userOutputReceiver, final long timeout, boolean startWithGui) throws IOException {
-        // TODO add some user output instead of simply return.
+        TextOutputReceiver userOutputReceiver, final long timeout, boolean startWithGui) throws InstanceOperationException, IOException {
+
+        // the list may be modified, so replace it with a local copy
+        instanceIdList = new ArrayList<>(instanceIdList);
+
         if (installationId == null || instanceIdList == null || installationId.isEmpty() || instanceIdList.isEmpty()) {
             throw new IOException("Malformed command: either no installation id or instance id defined.");
         }
-        File possibleInstallation = new File(installationsRootDir + SLASH + installationId);
-        if (!possibleInstallation.exists()) {
-            throw new IOException("Installation with id: " + installationId + " does not exist.");
+
+        final File installationDir;
+        if (InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID.equals(installationId)) {
+            installationDir = new File(getIMMasterInstallationPathAsInstallationId());
+        } else if (installationId.startsWith(CUSTOM_LOCAL_INSTALLATION_PATH_INSTALLATION_ID_PREFIX)) {
+            // cut away the prefix, expecting the remainder to point to an installation's directory
+            installationDir = new File(installationId.substring(CUSTOM_LOCAL_INSTALLATION_PATH_INSTALLATION_ID_PREFIX.length()));
+        } else {
+            File possibleInstallation = new File(installationsRootDir + SLASH + installationId);
+            if (!possibleInstallation.exists()) {
+                throw new IOException("Installation with id: " + installationId + " does not exist");
+            }
+            validateInstallationId(installationId);
+            installationDir = resolveAndCheckInstallationDir(installationId);
         }
-        validateInstallationId(installationId);
+
+        if (!installationDir.isDirectory()) {
+            throw new IOException(
+                "Resolved the given installation id to directory \"" + installationDir.getAbsolutePath() + "\", but it does not exist");
+        }
+
         validateInstanceId(instanceIdList, false);
         validateConfiguration(true, false);
         userOutputReceiver = ensureUserOutputReceiverDefined(userOutputReceiver);
-        final File installationDir = resolveAndCheckInstallationDir(installationId);
 
         for (String s : new ArrayList<String>(instanceIdList)) {
             if (isInstanceRunning(s)) {
                 instanceIdList.remove(s);
-                userOutputReceiver.addOutput("Profile with id: " + s + " is already in use.");
+                userOutputReceiver.addOutput("Profile with id: " + s + " is already running.");
             }
         }
         List<File> profileDirList = resolveAndCheckProfileDirList(instanceIdList);
@@ -512,39 +545,62 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         try {
             instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, timeout, userOutputReceiver, startWithGui);
         } catch (InstanceOperationException e) {
-            if (e.getMessage().contains("Timeout reached")) {
-                List<String> names = new ArrayList<String>();
-                for (File profile : e.getFailedInstances()) {
-                    names.add(profile.getName());
-                }
-                userOutputReceiver.addOutput("Timeout reached... Aborting startup process of failed instances: " + names);
-                stopInstance(names, userOutputReceiver, 0);
-            } else {
-                throw new IOException(e);
-            }
+            throw new IOException("An error occured on the startup process of some instances. Aborted with message: " + e.getMessage());
         }
 
         addInstanceToMap(instanceIdList, installationId);
     }
 
     @Override
-    public void stopInstance(List<String> instanceIdList, TextOutputReceiver userOutputReceiver, final long timeout) throws IOException {
-        // TODO add some user output instead of simply return.
+    public void stopInstance(List<String> instanceIdList, TextOutputReceiver userOutputReceiver, final long timeout)
+        throws InstanceOperationException, IOException {
+
         if (instanceIdList == null || instanceIdList.isEmpty()) {
             userOutputReceiver.addOutput("No instance to stop defined.. aborting.");
             return;
         }
+
+        // the list may be modified, so replace it with a local copy
+        instanceIdList = new ArrayList<>(instanceIdList);
+
         validateInstanceId(instanceIdList, true);
         validateConfiguration(true, false);
         userOutputReceiver = ensureUserOutputReceiverDefined(userOutputReceiver);
         final List<File> profileDirList = resolveAndCheckProfileDirList(instanceIdList);
-
+        for (File profile : new ArrayList<>(profileDirList)) {
+            if (!isInstanceRunning(profile.getName())) {
+                userOutputReceiver.addOutput("Instance with id: " + profile.getName() + " is currently not running.");
+                profileDirList.remove(profile);
+            }
+        }
+        if (profileDirList.isEmpty()) {
+            return;
+        }
         try {
             instanceOperations.shutdownInstance(profileDirList, timeout, userOutputReceiver);
         } catch (IOException e) {
             checkAndRemoveInstanceLock(profileDirList, instanceIdList, e);
         } finally {
+            checkAndRemoveInstanceLock(profileDirList, instanceIdList, null);
             removeInstanceTopMap(instanceIdList);
+            removeInstallationFileIfProfileIsNotRunning(resolveAndCheckProfileDirList(instanceIdList));
+        }
+    }
+
+    private void removeInstallationFileIfProfileIsNotRunning(List<File> profileDirList) throws IOException {
+        for (File profile : profileDirList) {
+            if (!isInstanceRunning(profile.getName())) {
+                if (profile.isDirectory()) {
+                    for (File file : profile.listFiles()) {
+                        if (file.getName().equals(InstanceOperationsUtils.INSTALLATION_ID_FILE_NAME)) {
+                            boolean success = file.delete();
+                            if (!success) {
+                                throw new IOException("Failed to delete installation id.");
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -572,7 +628,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     public boolean isInstanceRunning(String instanceId) throws IOException {
         validateConfiguration(true, false);
         final File profileDir = resolveAndCheckProfileDir(instanceId);
-        return instanceOperations.isProfileLocked(profileDir);
+        return InstanceOperationsUtils.isProfileLocked(profileDir);
     }
 
     /**
@@ -693,14 +749,20 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     }
 
     @Override
-    public void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout) throws IOException {
+    public void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout)
+        throws InstanceOperationException, IOException {
         List<String> instanceIdList = new ArrayList<>();
-        addProfiles(profilesRootDir.toPath(), instanceIdList);
+        try {
+            addProfiles(profilesRootDir.toPath(), instanceIdList);
+        } catch (IOException e) {
+            throw new InstanceOperationException("Failed to add profile. Aborted with message: " + e.getMessage());
+        }
         startInstance(installationId, instanceIdList, userOutputReceiver, timeout, false);
     }
 
     @Override
-    public void stopAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout) throws IOException {
+    public void stopAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout)
+        throws InstanceOperationException, IOException {
         List<String> instanceIdList = new ArrayList<>();
         if (!installationId.isEmpty()) {
             synchronized (profileIdToInstallationIdMap) {
@@ -711,7 +773,11 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 }
             }
         } else {
-            addProfiles(profilesRootDir.toPath(), instanceIdList);
+            try {
+                addProfiles(profilesRootDir.toPath(), instanceIdList);
+            } catch (IOException e) {
+                throw new InstanceOperationException("Failed to add profile. Aborted with message: " + e.getMessage());
+            }
         }
         stopInstance(instanceIdList, userOutputReceiver, timeout);
     }
@@ -795,7 +861,9 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
             hasValidLocalConfiguration = true;
         } catch (IOException e) {
-            log.info("Disabling local instance management due to missing or invalid configuration: " + e.getMessage());
+            log.error("Disabling local instance management due to missing or invalid configuration: " + e.getMessage());
+            reasonInstanceManagementNotStarted =
+                INSTANCE_MANAGEMENT_DISABLED + e.getMessage();
         }
 
         // note: these settings use an empty string as "undefined" markers
@@ -817,6 +885,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             hasValidDownloadConfiguration = true;
         } catch (IOException e) {
             log.error("Error in instance management download configuration: " + e.getMessage());
+            reasonInstanceManagementNotStarted =
+                INSTANCE_MANAGEMENT_DISABLED + e.getMessage();
         }
     }
 
@@ -1176,7 +1246,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         UnsupportedEncodingException, FileNotFoundException {
         for (File profile : profileDirList) {
             try (Writer writer =
-                new BufferedWriter(new OutputStreamWriter(new FileOutputStream(profile.getAbsolutePath() + "/" + "installation"),
+                new BufferedWriter(new OutputStreamWriter(new FileOutputStream(profile.getAbsolutePath() + SLASH + "installation"),
                     "utf-8"))) {
                 writer.write(installationId);
             }
@@ -1186,10 +1256,21 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     @Override
     public void executeCommandOnInstance(String instanceId, String command, TextOutputReceiver userOutputReceiver) throws JSchException,
         SshParameterException, IOException, InterruptedException {
+        Objects.requireNonNull(instanceId); // sanity check
         if (isInstanceRunning(instanceId)) {
             Logger logger = JschSessionFactory.createDelegateLogger(log);
-            Integer port = getSshPortForInstance(instanceId);
-            String ip = getSshIpForInstance(instanceId);
+            Integer port = null;
+            try {
+                port = getSshPortForInstance(instanceId);
+            } catch (InstanceConfigurationException e) {
+                throw new IOException(e);
+            }
+            String ip = null;
+            try {
+                ip = getSshIpForInstance(instanceId);
+            } catch (InstanceConfigurationException e) {
+                throw new IOException(e);
+            }
             String passphrase = persistentSettingsService.readStringValue(InstanceManagementConstants.IM_MASTER_PASSPHRASE_KEY);
             if (passphrase != null && port != null && ip != null) {
                 Session session =
@@ -1199,12 +1280,16 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 JSchRCECommandLineExecutor rceExecutor = new JSchRCECommandLineExecutor(session);
                 rceExecutor.start(command);
                 try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
-                    TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver).start();
-                    TextStreamWatcherFactory.create(stderrStream, userOutputReceiver).start();
+                    TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver);
+                    TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderrStream, userOutputReceiver);
+                    stdoutWatcher.start();
+                    stderrWatcher.start();
                     rceExecutor.waitForTermination();
+                    stdoutWatcher.waitForTermination();
+                    stderrWatcher.waitForTermination();
                 }
                 session.disconnect();
-                userOutputReceiver.addOutput("Finished executing command " + command + " on instance " + instanceId);
+                userOutputReceiver.addOutput("Finished executing command " + command + ON_INSTANCE + instanceId);
             } else {
                 userOutputReceiver.addOutput("Could not retrieve password and/or port for instance " + instanceId + ".");
             }
@@ -1218,9 +1303,10 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * 
      * @return the port
      * @throws IOException
+     * @throws InstanceConfigurationException
      */
-    private Integer getSshPortForInstance(String instanceId) throws IOException {
-        File config = new File(new File(profilesRootDir, instanceId), CONFIGURATION_FILENAME);
+    private Integer getSshPortForInstance(String instanceId) throws IOException, InstanceConfigurationException {
+        File config = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
         if (!config.exists()) {
             log.warn("No config file for instance " + instanceId + " exists.");
             return null;
@@ -1238,10 +1324,10 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * Retrieve SSH ip from configuration.
      * 
      * @return the port
-     * @throws IOException
+     * @throws InstanceConfigurationException
      */
-    private String getSshIpForInstance(String instanceId) throws IOException {
-        File config = new File(new File(profilesRootDir, instanceId), CONFIGURATION_FILENAME);
+    private String getSshIpForInstance(String instanceId) throws InstanceConfigurationException {
+        File config = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
         if (!config.exists()) {
             log.warn("No config file for instance " + instanceId + " exists.");
             return null;
@@ -1255,4 +1341,18 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         return configOperations.getSshServerIp();
     }
 
+    private String getIMMasterInstallationPathAsInstallationId() throws IOException {
+        String runningIMInstallationPath = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+        runningIMInstallationPath = runningIMInstallationPath.substring(0, runningIMInstallationPath.lastIndexOf(SLASH));
+        runningIMInstallationPath = runningIMInstallationPath.substring(0, runningIMInstallationPath.lastIndexOf(SLASH));
+        try {
+            runningIMInstallationPath = URLDecoder.decode(runningIMInstallationPath, "UTF-8");
+        } catch (UnsupportedEncodingException e1) {
+            throw new IOException("Failed to decode installation path");
+        }
+        if (runningIMInstallationPath == null || runningIMInstallationPath.isEmpty()) {
+            throw new IOException("Installation path of IM master instance is either null or empty");
+        }
+        return runningIMInstallationPath;
+    }
 }

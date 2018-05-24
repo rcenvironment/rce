@@ -28,6 +28,15 @@ public final class TextStreamWatcherFactory {
     /**
      * Creates a {@link TextStreamWatcher} using the global {@link Toolkit} instance.
      * 
+     * @return the new {@link TextStreamWatcher} instance
+     */
+    public static TextStreamWatcher createWatcher() {
+        return new TextStreamWatcher(ConcurrencyUtils.getAsyncTaskService());
+    }
+
+    /**
+     * Creates a {@link TextStreamWatcher} using the global {@link Toolkit} instance and a pre-registered input stream.
+     * 
      * @param input see {@link TextStreamWatcher#TextStreamWatcher (InputStream, AsyncTaskService, TextOutputReceiver...) }
      * @param receivers see {@link TextStreamWatcher#TextStreamWatcher(InputStream, AsyncTaskService, TextOutputReceiver...) }
      * @return the new {@link TextStreamWatcher} instance

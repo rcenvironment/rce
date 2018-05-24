@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
-import org.apache.commons.lang3.EnumUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
@@ -163,7 +162,7 @@ public class InternalTDImpl implements InternalTD {
             throw new IllegalArgumentException(e);
         }
         String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).getTextValue();
-        if (!EnumUtils.isValidEnum(InternalTDType.class, typeStr)) {
+        if (!isValidType(typeStr)) {
             return null;
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(typeStr);
@@ -186,4 +185,12 @@ public class InternalTDImpl implements InternalTD {
         return new InternalTDImpl(type, identifier, hops, pyld);
     }
 
+    private static boolean isValidType(String typeStr) {
+        for (int i = 0; i < InternalTDType.values().length; i++) {
+            if (InternalTDType.values()[i].toString().equals(typeStr)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

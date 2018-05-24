@@ -30,7 +30,16 @@ public class Messages extends NLS {
     public static String deleteFilesActionContextMenuLabel;
 
     /** Constant. */
-    public static String saveNodeActionContextMenuLabel;
+    public static String saveNodeToFilesystemActionContextMenuLabel;
+    
+    /** Constant. */
+    public static String saveNodeToFilesystemActionShortcut;
+    
+    /** Constant. */
+    public static String saveNodeToProjectActionContextMenuLabel;
+
+    /** Constant. */
+    public static String saveNodeToProjectActionShortcut;
 
     /** Constant. */
     public static String refreshNodeActionContextMenuLabel;

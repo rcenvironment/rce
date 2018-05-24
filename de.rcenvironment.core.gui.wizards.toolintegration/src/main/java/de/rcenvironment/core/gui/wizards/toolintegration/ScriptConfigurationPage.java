@@ -674,7 +674,8 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         @SuppressWarnings("unchecked") List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap.get(key);
         if (endpointList != null) {
             for (Map<String, String> endpoint : endpointList) {
-                if (!(tabNumber == 0 && endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.Vector.name()))) {
+                if (!(tabNumber == 0 && (endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.Vector.name())
+                    || endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.Matrix.name())))) {
                     endpointCombo.add(endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
                 }
             }

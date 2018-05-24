@@ -22,9 +22,9 @@
     <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/> 
     
 	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.xml.loader.common" />
-	<property name="rce.component.icon-16" type="String" value="loader16.png"/>
-	<property name="rce.component.icon-24" type="String" value="loader24.png"/>
-    <property name="rce.component.icon-32" type="String" value="loader32.png"/>
+	<property name="rce.component.icon-16" type="String" value="xmlLoader16.png"/>
+	<property name="rce.component.icon-24" type="String" value="xmlLoader24.png"/>
+    <property name="rce.component.icon-32" type="String" value="xmlLoader32.png"/>
     <property name="rce.component.version" type="String" value="3.2"/>
     
     <property name="rce.component.size" type="String" value="small"/>

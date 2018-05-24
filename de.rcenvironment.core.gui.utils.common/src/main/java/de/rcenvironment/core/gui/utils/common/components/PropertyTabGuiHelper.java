@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -71,25 +72,17 @@ public final class PropertyTabGuiHelper {
      * Constant for the layout manager.
      */
     public static final int PERC_100 = 100;
+    
 
     /**
      * The log instance.
-     */
+     */    
     private static final Log LOGGER = LogFactory.getLog(PropertyTabGuiHelper.class);
 
     /**
      * Validates if current selection is instance of {@link IFile}.
      */
-    private static ISelectionStatusValidator fileValidator = new ISelectionStatusValidator() {
-
-        @Override
-        public IStatus validate(Object[] selection) {
-            if (selection.length == 1 && selection[0] instanceof IFile) {
-                return Status.OK_STATUS;
-            }
-            return Status.CANCEL_STATUS;
-        }
-    };
+    private static FileValidator fileValidator = new FileValidator();
 
     /**
      * Selection type for files and/or directories.
@@ -99,6 +92,7 @@ public final class PropertyTabGuiHelper {
         DIRECTORY,
         FILE_AND_DIRECTORY
     }
+    
 
     /**
      * Hiding constructor. There are only static methods in this class.
@@ -249,6 +243,59 @@ public final class PropertyTabGuiHelper {
     }
 
     /**
+     * Dialog for project directories or the project root itself.
+     * 
+     * @param shell The shell to block modally
+     * @param title The title to show
+     * @param message The message to show
+     * @return The ifolder/iproject selected or null
+     */
+    public static IResource selectDirectoryFromActiveProjectIncludingItsRoot(final Shell shell, final String title, final String message) {
+        final IProject project = getProjectOfCurrentlyActiveEditor();
+
+        final ElementTreeSelectionDialog selectionDialog = new ElementTreeSelectionDialog(shell,
+            new WorkbenchLabelProvider(),
+            new BaseWorkbenchContentProvider()) {
+
+            @Override
+            protected Control createContents(Composite parent) {
+                final Control result = super.createContents(parent);
+                
+                if (project != null) {
+                    getTreeViewer().setExpandedElements(new Object[] { project });
+                }
+                return result;
+            }
+
+            @Override
+            protected void updateButtonsEnableState(IStatus status) {
+                getOkButton().setEnabled(status.isOK());
+            }
+
+        };
+        
+        selectionDialog.addFilter(new ViewerFilter() {
+            
+            @Override
+            public boolean select(Viewer viewer, Object parent, Object element) {
+                return element == project || element instanceof IFolder;
+            }
+        });
+        
+        selectionDialog.setStatusLineAboveButtons(false);
+        selectionDialog.setTitle(title);
+        selectionDialog.setMessage(message);
+        selectionDialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
+        selectionDialog.setInitialSelection(project);
+        
+        if (selectionDialog.open() == ElementTreeSelectionDialog.OK && selectionDialog.getResult().length > 0) {
+            return (IResource) selectionDialog.getResult()[0];
+        }
+        return null;
+
+    }
+
+    /**
      * Dialog for project files.
      * 
      * @param shell The shell to block modally
@@ -257,9 +304,27 @@ public final class PropertyTabGuiHelper {
      * @return The ifile selected or null
      */
     public static IFile selectFileFromProjects(final Shell shell, final String title, final String message) {
+        fileValidator.setFileSuffix("");
         return (IFile) selectFileOrDirectoryFromWorkspace(shell, title, message, ResourcesPlugin.getWorkspace().getRoot(),
             SelectionType.FILE);
     }
+    
+
+    /**
+     * Dialog for project files with a given suffix.
+     * 
+     * @param shell shell The shell to block modally
+     * @param title The title to show
+     * @param message The message to show
+     * @param fileSuffix The file suffix to validate
+     * @return The ifile selected or null
+     */
+    public static IFile selectFileFromProjects(Shell shell, String title, String message, String fileSuffix) {
+        fileValidator.setFileSuffix(fileSuffix);
+        return (IFile) selectFileOrDirectoryFromWorkspace(shell, title, message, ResourcesPlugin.getWorkspace().getRoot(),
+            SelectionType.FILE);
+    }
+       
 
     private static Object selectFileOrDirectoryFromWorkspace(final Shell shell, final String title, final String message,
         Object input, final SelectionType filter) {
@@ -267,6 +332,12 @@ public final class PropertyTabGuiHelper {
         final ElementTreeSelectionDialog selectionDialog = new ElementTreeSelectionDialog(shell,
             new WorkbenchLabelProvider(),
             new BaseWorkbenchContentProvider()) {
+
+
+            @Override
+            protected void updateStatus(IStatus status) {
+                updateButtonsEnableState(status);
+            }
 
             @Override
             protected Control createContents(Composite parent) {
@@ -300,10 +371,9 @@ public final class PropertyTabGuiHelper {
         selectionDialog.setTitle(title);
         selectionDialog.setMessage(message);
         selectionDialog.setInput(input);
-        if (selectionDialog.open() == ElementTreeSelectionDialog.OK) {
-            if (selectionDialog.getResult().length > 0) {
-                return selectionDialog.getResult()[0];
-            }
+        selectionDialog.setAllowMultiple(false);
+        if (selectionDialog.open() == ElementTreeSelectionDialog.OK && selectionDialog.getResult().length > 0) {
+            return selectionDialog.getResult()[0];
         }
         return null;
     }
@@ -392,4 +462,34 @@ public final class PropertyTabGuiHelper {
         return null;
     }
 
+}
+
+/**
+ * Custom file validator implementation that additionally validates a given file suffix.
+ *
+ * @author Jan Flink
+ */
+class FileValidator implements ISelectionStatusValidator {
+
+    private String fileSuffix = "";
+
+    /**
+     * Sets the file suffix for validation.
+     * 
+     * @param suffix The file suffix without the leading dot.
+     */
+    public void setFileSuffix(String suffix) {
+        this.fileSuffix = suffix;
+    }
+
+    @Override
+    public IStatus validate(Object[] selection) {
+        if (selection.length == 1 && selection[0] instanceof IFile) {
+            if (!fileSuffix.equals("") && !selection[0].toString().endsWith("." + fileSuffix)) {
+                return Status.CANCEL_STATUS;
+            }
+            return Status.OK_STATUS;
+        }
+        return Status.CANCEL_STATUS;
+    }
 }

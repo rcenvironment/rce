@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.xml.loader.gui</artifactId>
 	<name>RCE XML Loader Component GUI Bundle</name>
-	<version>8.1.1-SNAPSHOT</version>
+	<version>8.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

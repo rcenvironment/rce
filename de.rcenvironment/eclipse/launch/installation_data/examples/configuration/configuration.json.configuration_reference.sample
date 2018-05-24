@@ -1,7 +1,7 @@
 {
 	"general" : {
 		"comment" : "This is a reference file demonstrating all available settings; it is not intended for out-of-the-box usage",
-		"instanceName" : "Reference example started by \"${systemUser}\" on ${hostName} with profile \"${profileName}\"",
+		"instanceName" : "Reference example started by \"${systemUser}\" on ${hostName}, running profile \"${profileName}\" with version ${version}",
 		"isWorkflowHost" : true,
 		"isRelay" : true,
 		"tempDirectory" : "/tmp/custom-temp-directory/${systemUser}",

@@ -74,15 +74,15 @@ public class InstanceOperationsImplManualTests {
 
         InstanceOperationsImpl instanceOperations = new InstanceOperationsImpl();
 
-        assertFalse(instanceOperations.isProfileLocked(profileDir));
+        assertFalse(InstanceOperationsUtils.isProfileLocked(profileDir));
 
         for (int i = 0; i < repetitions; i++) {
 
             instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, 0, null, false);
-            assertTrue("profile not locked after start", instanceOperations.isProfileLocked(profileDir));
+            assertTrue("profile not locked after start", InstanceOperationsUtils.isProfileLocked(profileDir));
 
             instanceOperations.shutdownInstance(profileDirList, 0, null);
-            assertFalse("profile still locked after shutdown", instanceOperations.isProfileLocked(profileDir));
+            assertFalse("profile still locked after shutdown", InstanceOperationsUtils.isProfileLocked(profileDir));
         }
     }
 }

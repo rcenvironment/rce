@@ -36,6 +36,10 @@ import org.eclipse.compare.IStreamContentAccessor;
 import org.eclipse.compare.ITypedElement;
 import org.eclipse.compare.structuremergeviewer.DiffNode;
 import org.eclipse.compare.structuremergeviewer.Differencer;
+import org.eclipse.core.internal.resources.Folder;
+import org.eclipse.core.internal.resources.Project;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -86,6 +90,7 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.SelectionProviderAction;
@@ -137,7 +142,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private static final String BRACKET_OPEN = "[";
 
     private static final String BRACKET_CLOSE = "]";
-    
+
     private static final String LOCAL = "local";
 
     private static final MetaData META_DATA_WORKFLOW_FINAL_STATE = new MetaData(MetaDataKeys.WORKFLOW_FINAL_STATE, true, true);
@@ -157,7 +162,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private static final List<DMBrowserNodeType> REFRESHABLE_NODE_TYPES = new ArrayList<>();
 
     private static final List<DMBrowserNodeType> COMPARABLE_NODE_TYPES = new ArrayList<>();
-    
+
     private static final List<DMBrowserNodeType> OPEN_IN_EDITOR_NODE_TYPES = new ArrayList<>();
 
     protected final Log log = LogFactory.getLog(getClass());
@@ -186,7 +191,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
     private Action deleteFilesAction;
 
-    private Action exportNodeAction;
+    private Action exportNodeToFileSystemAction;
+
+    private Action exportNodeToProjectAction;
 
     private RefreshNodeAction refreshNodeAction;
 
@@ -210,7 +217,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private Action sortTimestampDesc;
 
     private ServiceRegistryAccess serviceRegistryAccess;
-    
+
     static {
         /*
          * Set all savable DMBrowserNodeTypes.
@@ -275,6 +282,15 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     }
 
     /**
+     * Export locations.
+     *
+     * @author Oliver Seebach
+     */
+    private enum ExportType {
+        FILESYSTEM, PROJECT;
+    }
+
+    /**
      * An {@link Action} to export data management entries to local files.
      * 
      * @author Christian Weiss
@@ -286,10 +302,12 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         private Display display;
 
+        private ExportType exportType;
 
-        private CustomExportAction(ISelectionProvider provider, String text) {
+        private CustomExportAction(ISelectionProvider provider, String text, ExportType exportType) {
             super(provider, text);
             setEnabled(false);
+            this.exportType = exportType;
         }
 
         @Override
@@ -325,7 +343,31 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         public void run() {
             final List<DMBrowserNode> browserNodesToSave = new LinkedList<>(selectedNodes);
             FileDialog fileDialog = new FileDialog(display.getActiveShell(), SWT.SAVE);
-            fileDialog.setText("Export");
+            if (exportType == ExportType.PROJECT) {
+                String exportLocationDefaultPath = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile().getAbsolutePath();
+                IViewPart projectExplorerView = getProjectExplorer();
+                if (projectExplorerView != null) {
+                    TreeSelection treeSelection = (TreeSelection) projectExplorerView.getViewSite().getSelectionProvider().getSelection();
+                    if (treeSelection.size() == 1) {
+                        if (treeSelection.getFirstElement() instanceof org.eclipse.core.internal.resources.File) {
+                            // take absolute path of parent folder of file
+                            exportLocationDefaultPath = ((org.eclipse.core.internal.resources.File) treeSelection.getFirstElement())
+                                .getParent().getLocation().toFile().getAbsolutePath();
+                        } else if (treeSelection.getFirstElement() instanceof Folder) {
+                            // take absolute path of folder itself
+                            exportLocationDefaultPath = ((Folder) treeSelection.getFirstElement()).getLocation().toFile().getAbsolutePath();
+                        } else if (treeSelection.getFirstElement() instanceof Project) {
+                            // take absolute path of project itself
+                            exportLocationDefaultPath =
+                                ((Project) treeSelection.getFirstElement()).getLocation().toFile().getAbsolutePath();
+                        }
+                    }
+                }
+                fileDialog.setFilterPath(exportLocationDefaultPath);
+                fileDialog.setText("Export to selected folder...");
+            } else {
+                fileDialog.setText("Export to file system...");
+            }
             fileDialog.setFileName(browserNodesToSave.get(0).getTitle().replace(":", "_"));
             final String directoryPath = fileDialog.open();
             if (directoryPath == null) {
@@ -349,6 +391,13 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                                 } else {
                                     location = StringUtils.format(Messages.exportLocationText,
                                         targetDirectory.getAbsolutePath());
+                                }
+                                if (exportType == ExportType.PROJECT) {
+                                    try {
+                                        ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
+                                    } catch (CoreException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                                 new CustomPopupDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
                                     "Workflow Data Browser\nData export", StringUtils.format(Messages.exportSuccessText,
@@ -385,6 +434,19 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             });
             job.setUser(true);
             job.schedule();
+        }
+
+        private IViewPart getProjectExplorer() {
+            IWorkbenchWindow[] workbenchs = PlatformUI.getWorkbench().getWorkbenchWindows();
+            for (IWorkbenchWindow workbench : workbenchs) {
+                for (IWorkbenchPage page : workbench.getPages()) {
+                    IViewPart projectExplorerView = page.findView("org.eclipse.ui.navigator.ProjectExplorer");
+                    if (projectExplorerView != null) {
+                        return projectExplorerView;
+                    }
+                }
+            }
+            return null;
         }
 
         /**
@@ -639,7 +701,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         @Override
         public void selectionChanged(IStructuredSelection selection) {
             Object obj = selection.getFirstElement();
-            if (obj instanceof DMBrowserNode) {
+            if (selection.size() == 1 && obj instanceof DMBrowserNode) {
                 DMBrowserNode node = (DMBrowserNode) obj;
 
                 if (node.isEnabled() && node.getType() == DMBrowserNodeType.DMFileResource
@@ -693,11 +755,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         private Display display;
 
-
         private boolean hasNotFinishedWorkflows;
 
         private boolean isFileAction;
-
 
         private CustomDeleteAction(ISelectionProvider provider, String text, boolean isFileAction) {
             super(provider, text);
@@ -765,7 +825,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                             .getParent();
                         if (!isFileAction) {
                             boolean deleted = deleteWorkflowRun(browserNodeToDelete);
-                            if (deleted) {
+                            if (deleted && parentNode != null) {
                                 parentNode.removeChild(browserNodeToDelete);
                             }
                         } else {
@@ -845,7 +905,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         @Override
         public void selectionChanged(IStructuredSelection selection) {
             Object obj = selection.getFirstElement();
-            if (obj instanceof DMBrowserNode) {
+            if (selection.size() == 1 && obj instanceof DMBrowserNode) {
                 DMBrowserNode node = (DMBrowserNode) obj;
 
                 if (node.isEnabled()
@@ -893,9 +953,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private final class RefreshNodeAction extends SelectionProviderAction {
 
         private final List<DMBrowserNode> selectedNodes = new LinkedList<>();
-
-
-
 
         private RefreshNodeAction(ISelectionProvider provider, String text) {
             super(provider, text);
@@ -964,9 +1021,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         public void run() {
 
             try {
-                final IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().
-                    showView("de.rcenvironment.gui.Timeline", nodeSelected.getNodeWithTypeWorkflow().getWorkflowID(),
-                        IWorkbenchPage.VIEW_ACTIVATE);
+                final IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(
+                    "de.rcenvironment.gui.Timeline", nodeSelected.getNodeWithTypeWorkflow().getWorkflowID(),
+                    IWorkbenchPage.VIEW_ACTIVATE);
                 ((TimelineView) view).initialize(Long.parseLong(nodeSelected.getNodeWithTypeWorkflow().getWorkflowID()),
                     nodeSelected.getNodeWithTypeWorkflow().getWorkflowControllerNode());
             } catch (PartInitException e) {
@@ -1142,7 +1199,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         private DMBrowserNode node2;
 
-
         protected CustomCompareAction(ISelectionProvider provider, String text) {
             super(provider, text);
         }
@@ -1228,9 +1284,13 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     timelineAction.run();
                 } else if (event.keyCode == SWT.F5 && refreshNodeAction.isEnabled()) {
                     // add shortcut for refresh selected action
-                    if (refreshNodeAction.isEnabled()) {
-                        refreshNodeAction.run();
-                    }
+                    refreshNodeAction.run();
+                } else if (event.keyCode == 'f' && exportNodeToFileSystemAction.isEnabled()) {
+                    // add shortcut for export to file system
+                    exportNodeToFileSystemAction.run();
+                } else if (event.keyCode == 'g' && exportNodeToProjectAction.isEnabled()) {
+                    // add shortcut for export to project
+                    exportNodeToProjectAction.run();
                 }
             } else if (event.keyCode == SWT.DEL) {
                 // add shortcut for delete action
@@ -1266,6 +1326,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private void refresh(final DMBrowserNode node) {
         visibleExpandedElements = viewer.getVisibleExpandedElements();
         DMBrowserNode toRefresh = node.getNodeWithTypeWorkflow();
+        if (toRefresh == null) {
+            return;
+        }
         // clear children of selected node
         toRefresh.clearChildren();
         contentProvider.clear(toRefresh);
@@ -1392,6 +1455,10 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         subMenuManager.add(sortTimestampAsc);
         subMenuManager.add(sortTimestampDesc);
 
+        MenuManager subMenuManagerExport = new MenuManager("Export");
+        subMenuManagerExport.add(exportNodeToFileSystemAction);
+        subMenuManagerExport.add(exportNodeToProjectAction);
+
         manager.add(new Separator());
         manager.add(openInEditorAction);
         if (OS.isFamilyWindows()) {
@@ -1407,7 +1474,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         manager.add(subMenuManager);
         manager.add(new Separator());
         manager.add(copyAction);
-        manager.add(exportNodeAction);
+        manager.add(new Separator());
+        manager.add(subMenuManagerExport);
         manager.add(new Separator());
         manager.add(deleteFilesAction);
         manager.add(deleteNodeAction);
@@ -1465,8 +1533,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         deleteFilesAction.setImageDescriptor(DMBrowserImages.IMG_DESC_DELETE_FILES);
         deleteFilesAction.setEnabled(false);
 
-        exportNodeAction = new CustomExportAction(selectionProvider, Messages.saveNodeActionContextMenuLabel);
-        exportNodeAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.EXPORT_16));
+        exportNodeToFileSystemAction = new CustomExportAction(selectionProvider,
+            Messages.saveNodeToFilesystemActionContextMenuLabel + Messages.saveNodeToFilesystemActionShortcut, ExportType.FILESYSTEM);
+        exportNodeToFileSystemAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.EXPORT_16));
+
+        exportNodeToProjectAction = new CustomExportAction(selectionProvider,
+            Messages.saveNodeToProjectActionContextMenuLabel + Messages.saveNodeToProjectActionShortcut, ExportType.PROJECT);
+        exportNodeToProjectAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.EXPORT_16));
+
         collapseAllNodesAction = new CollapseAllNodesAction(Messages.collapseAllNodesActionContextMenuLabel);
         collapseAllNodesAction.setImageDescriptor(DMBrowserImages.IMG_DESC_COLLAPSE_ALL);
 
@@ -1585,8 +1659,11 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private void disableUnreachableNode(final ResolvableNodeId unreachableID) {
         for (TreeItem item : viewer.getTree().getItems()) {
             DMBrowserNode node = (DMBrowserNode) item.getData();
+            if (node == null) {
+                continue;
+            }
             ResolvableNodeId nodeID = node.getNodeIdentifier();
-            if (node.isEnabled() && nodeID.isSameInstanceNodeAs(unreachableID)) {
+            if (node.isEnabled() && nodeID != null && nodeID.isSameInstanceNodeAs(unreachableID)) {
                 node.setTitle(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME, node.getTitle(),
                     "[offline]"));
                 disableNode(node);

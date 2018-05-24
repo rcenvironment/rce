@@ -1206,11 +1206,11 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 break;
             case RESET:
                 forwardInternalTD(compExeRelatedInstances.compExeScheduler.getResetDatum());
-                if (!getState().equals(ComponentState.IDLING_AFTER_RESET)) {
-                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESET_REQUESTED));
-                } else {
+                if (getState().equals(ComponentState.IDLING_AFTER_RESET)) {
                     postEvent(
                         new ComponentStateMachineEvent(ComponentStateMachineEventType.IDLE_REQUESTED, ComponentState.IDLING_AFTER_RESET));
+                } else {
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESET_REQUESTED));
                 }
                 break;
             case FAILURE_FORWARD:
@@ -1242,6 +1242,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         }
 
         private void forwardInternalTD(InternalTDImpl internalTD) {
+
             Queue<WorkflowGraphHop> hopsToTraverse = internalTD.getHopsToTraverse();
             WorkflowGraphHop currentHop = hopsToTraverse.poll();
             compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(

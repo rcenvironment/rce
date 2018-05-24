@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Command Tests
 Bundle-SymbolicName: de.rcenvironment.core.command.tests
-Bundle-Version: 8.1.1.qualifier
+Bundle-Version: 8.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Fragment-Host: de.rcenvironment.core.command
 Require-Bundle: de.rcenvironment.core.utils.testing

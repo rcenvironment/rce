@@ -15,7 +15,7 @@
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "print(\"Test read_input(), value should be 1 ...\")\r\nprint(RCE.read_input(\"x\"))\r\nprint(RCE.read_input(\"x\") == 1)\r\n\r\nprint(\"Test  get_input_names_with_datum(), values should be x and y ...\")\r\nprint(RCE.get_input_names_with_datum())\r\nprint(RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"])\r\n\r\n\r\nprint(\"Test  get_output_names(), values should be f and g ...\")\r\nprint(RCE.get_output_names())\r\nprint(RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"])\r\n\r\nprint(\"Test get_execution_count() ...\")\r\nprint(RCE.get_execution_count())\r\nprint(RCE.get_execution_count() == 1)\r\n\r\nprint(\"Test write_output with value 3\")\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint(\"Test write_not_a_value_output\")\r\nRCE.write_not_a_value_output(\"g\")\r\n",
-      "scriptLanguage" : "Python",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },
@@ -155,8 +155,8 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "sum = RCE.read_state_variable(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n  RCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
-      "scriptLanguage" : "Python",
+      "script" : "sum = RCE.read_state_variable(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint (\"Current sum in dict: \" + str(RCE.get_state_dict()))\r\nprint (\"Current sum: \" + str(RCE.read_state_variable(\"sum\")))\r\n\r\nif RCE.get_execution_count() == 11:\r\n  RCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
+      "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },
