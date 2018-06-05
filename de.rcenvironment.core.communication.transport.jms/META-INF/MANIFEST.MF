@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication - JMS/ActiveMQ Transport
 Bundle-SymbolicName: de.rcenvironment.core.communication.transport.jms
-Bundle-Version: 8.2.1.qualifier
+Bundle-Version: 8.2.2.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.toolkitbridge.transitional,

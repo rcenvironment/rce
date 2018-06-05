@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.licensing.self.epl.feature</artifactId>
 	<name>RCE File Sets - EPL Self-Licensing Information</name>
-	<version>8.2.1-SNAPSHOT</version>
+	<version>8.2.2-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

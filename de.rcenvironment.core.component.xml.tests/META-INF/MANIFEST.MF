@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component XML Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.xml.tests
-Bundle-Version: 8.2.1.qualifier
+Bundle-Version: 8.2.2.qualifier
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.core.component.xml
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

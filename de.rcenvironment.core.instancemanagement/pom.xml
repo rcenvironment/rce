@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.instancemanagement</artifactId>
 	<name>RCE Core Instance Management Bundle</name>
-	<version>8.2.1-SNAPSHOT</version>
+	<version>8.2.2-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
