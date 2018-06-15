@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven-osgi.paxlogging.feature</artifactId>
 	<name>RCE Platform - Maven-OSGi Bridge Feature - PAX Logging</name>
-	<version>8.1.0-SNAPSHOT</version>
+	<version>8.2.2-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

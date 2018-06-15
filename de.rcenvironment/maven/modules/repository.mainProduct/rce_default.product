@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.2.1.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.2.2.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>

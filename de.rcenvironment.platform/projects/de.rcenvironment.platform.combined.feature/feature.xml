@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.combined.feature"
       label="RCE Platform - Combined Feature"
-      version="8.1.0.qualifier"
+      version="8.2.2.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
