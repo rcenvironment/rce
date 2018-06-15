@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>8.2.0-SNAPSHOT</version>
+		<version>8.2.1-SNAPSHOT</version>
 		<relativePath>../osgiProject</relativePath>
 	</parent>
 

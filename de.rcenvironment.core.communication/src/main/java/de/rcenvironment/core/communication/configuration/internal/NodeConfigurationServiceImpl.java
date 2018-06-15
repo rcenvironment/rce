@@ -202,7 +202,7 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
         if (predefinedInstanceIdString == null) {
             localInstanceId = nodeIdentifierService.generateInstanceNodeId();
             persistentSettingsService.saveStringValue(PERSISTENT_SETTINGS_KEY_PLATFORM_ID, localInstanceId.getInstanceNodeIdString());
-            log.info("Generated and stored id " + predefinedInstanceIdString + " for the local node");
+            log.info("Generated and stored id " + localInstanceId.getInstanceNodeIdString() + " for the local node");
         } else {
             try {
                 localInstanceId = nodeIdentifierService.parseInstanceNodeIdString(predefinedInstanceIdString);

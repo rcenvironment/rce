@@ -183,6 +183,8 @@ public class TIGLViewer extends ViewPart {
                 processID = i[0];
                 if (processID != 0) {
                     LOGGER.debug("TiGL Viewer application process startet with process ID:" + processID);
+                    OS.SetWindowLongPtr((int) handle, OS.GWL_STYLE,
+                        OS.WS_VISIBLE | OS.WS_CLIPSIBLINGS);
 
                     Display.getDefault().asyncExec(new Runnable() {
 
@@ -193,8 +195,6 @@ public class TIGLViewer extends ViewPart {
                             }
                             clearMessage();
                             Composite nativeComposite = new Composite(parentComposite, SWT.EMBEDDED);
-                            OS.SetWindowLongPtr((int) handle, OS.GWL_STYLE,
-                                OS.WS_VISIBLE | OS.WS_CLIPSIBLINGS);
                             OS.SetParent((int) handle, nativeComposite.handle);
                             nativeComposite.pack();
                             nativeComposite.setBounds(nativeComposite.getParent().getBounds());

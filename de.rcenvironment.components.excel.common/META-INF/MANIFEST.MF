@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.excel.common
-Bundle-Version: 8.2.0.qualifier
+Bundle-Version: 8.2.1.qualifier
 Export-Package: de.rcenvironment.components.excel.common
 Bundle-ClassPath: .
 Bundle-Vendor: DLR

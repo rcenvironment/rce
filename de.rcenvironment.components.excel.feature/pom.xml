@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.components.excel.feature</artifactId>
 	<name>RCE Excel Component Feature</name>
-	<version>8.2.0-SNAPSHOT</version>
+	<version>8.2.1-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

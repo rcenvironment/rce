@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.datamanagement</artifactId>
 	<name>RCE Core Component Data Management Bundle</name>
-	<version>8.2.0-SNAPSHOT</version>
+	<version>8.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

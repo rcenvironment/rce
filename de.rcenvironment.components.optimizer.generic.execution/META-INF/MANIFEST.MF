@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Optimizer Generic Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.generic.execution
-Bundle-Version: 8.2.0.qualifier
+Bundle-Version: 8.2.1.qualifier
 Fragment-Host: de.rcenvironment.components.optimizer.execution
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.communication.file.service</artifactId>
 	<name>RCE Core Communication File Service Bundle</name>
-	<version>8.2.0-SNAPSHOT</version>
+	<version>8.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
