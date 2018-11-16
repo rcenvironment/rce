@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Data Management
 Bundle-SymbolicName: de.rcenvironment.core.datamanagement;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 8.2.2.qualifier
+Bundle-Version: 8.2.3.qualifier
 Export-Package: 
  de.rcenvironment.core.datamanagement,
  de.rcenvironment.core.datamanagement.backend,
@@ -29,9 +29,9 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.utils.common,
- org.apache.commons.compress.archivers;version="1.4.0",
- org.apache.commons.compress.archivers.tar;version="1.4.0",
- org.apache.commons.compress.compressors.gzip;version="1.4.0",
+ org.apache.commons.compress.archivers;version="1.18.0",
+ org.apache.commons.compress.archivers.tar;version="1.18.0",
+ org.apache.commons.compress.compressors.gzip;version="1.18.0",
  org.apache.commons.io,
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",

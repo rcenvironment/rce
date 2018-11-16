@@ -37,6 +37,10 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCallSenderService {
 
+    // A soft size limit for individual network payloads; all messages exceeding this should be logged as warnings.
+    // This is currently (arbitrarily) set to 1 MB. TODO convert this to a global constant (or setting) -- misc_ro
+    private static final int OUTGOING_NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD = 1024 * 1024;
+
     private MessageRoutingService routingService;
 
     // NOTE: used in several locations
@@ -58,8 +62,15 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
                     serviceCallRequest.getMethodName()));
             }
             if (verboseRequestLoggingEnabled) {
-                log.debug(StringUtils.format("Converted RPC to %s.%s() into a network payload of %d bytes",
-                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serializedRequest.length));
+                log.debug(StringUtils.format("Converted RPC to %s.%s() on %s into a network payload of %d bytes",
+                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
+                    serializedRequest.length));
+            }
+            if (serializedRequest.length >= OUTGOING_NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
+                log.debug(
+                    StringUtils.format("Generated a large network message for an RPC to %s.%s() on %s (payload size: %d bytes)",
+                        serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
+                        serializedRequest.length));
             }
 
             NetworkResponse networkResponse =

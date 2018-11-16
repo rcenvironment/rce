@@ -114,6 +114,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         { WorkflowState.PAUSED, WorkflowState.RESUMING },
         { WorkflowState.RESUMING, WorkflowState.RUNNING },
         // cancel
+        { WorkflowState.PREPARING, WorkflowState.CANCELING },
+        // TODO review: allow STARTING -> CANCELING, too?
         { WorkflowState.RUNNING, WorkflowState.CANCELING },
         { WorkflowState.PAUSED, WorkflowState.CANCELING },
         { WorkflowState.CANCELING, WorkflowState.CANCELLED },
@@ -267,7 +269,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     }
 
     private void logInvalidStateChangeRequest(WorkflowState currentState, WorkflowState requestedState) {
-        LOG.debug(StringUtils.format("Ignored workflow state change request for workflow %s as it will cause an invalid"
+        LOG.debug(StringUtils.format("Ignored workflow state change request for workflow %s as it would cause an invalid"
             + " state transition: %s -> %s", wfNameAndIdMessagePart, currentState, requestedState));
     }
 

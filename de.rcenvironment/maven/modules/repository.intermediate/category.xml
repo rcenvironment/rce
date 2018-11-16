@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_8.2.2.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_8.2.2.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_8.2.2.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_8.2.2.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_8.2.2.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.tiglviewer.feature_8.2.2.qualifier.jar" id="de.rcenvironment.core.gui.tiglviewer.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.documentation.core.feature_8.2.2.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.extras.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.cpacs.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.licensing.self.epl.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.licensing.self.epl.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.licensing.thirdparty.default.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.licensing.thirdparty.default.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.logging.default.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.logging.default.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.sql.connectors.mysql.feature_8.2.2.qualifier.jar" id="de.rcenvironment.filesets.sql.connectors.mysql.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.help.feature_8.2.2.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="8.2.2.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_8.2.3.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.special.feature_8.2.3.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.standard.feature_8.2.3.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.core.combined.feature_8.2.3.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_8.2.3.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.tiglviewer.feature_8.2.3.qualifier.jar" id="de.rcenvironment.core.gui.tiglviewer.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.documentation.core.feature_8.2.3.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.extras.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.cpacs.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.licensing.self.epl.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.licensing.self.epl.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.licensing.thirdparty.default.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.licensing.thirdparty.default.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.logging.default.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.logging.default.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.sql.connectors.mysql.feature_8.2.3.qualifier.jar" id="de.rcenvironment.filesets.sql.connectors.mysql.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.help.feature_8.2.3.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="8.2.3.qualifier"/>
    <feature url="features/de.vonloesch.pdf4eclipse_1.1.0.jar" id="de.vonloesch.pdf4eclipse" version="1.1.0"/>
    <feature url="features/nu.psnet.quickimage_1.0.3.2.jar" id="nu.psnet.quickimage" version="1.0.3.2"/>
-   <feature url="features/de.rcenvironment.binaries.dakota.feature_8.2.2.qualifier.jar" id="de.rcenvironment.binaries.dakota.feature" version="8.2.2.qualifier"/>
-   <feature url="features/de.rcenvironment.binaries.tiglviewer.feature_8.2.2.qualifier.jar" id="de.rcenvironment.binaries.tiglviewer.feature" version="8.2.2.qualifier"/>
+   <feature url="features/de.rcenvironment.binaries.dakota.feature_8.2.3.qualifier.jar" id="de.rcenvironment.binaries.dakota.feature" version="8.2.3.qualifier"/>
+   <feature url="features/de.rcenvironment.binaries.tiglviewer.feature_8.2.3.qualifier.jar" id="de.rcenvironment.binaries.tiglviewer.feature" version="8.2.3.qualifier"/>
 </site>

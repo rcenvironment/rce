@@ -66,8 +66,9 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConsta
 import de.rcenvironment.core.component.registration.api.ComponentRegistry;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.utils.common.CompressingHelper;
 import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -83,6 +84,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Sascha Zur
  * @author Robert Mischke (minor fix)
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class ToolIntegrationServiceImpl implements ToolIntegrationService, RemoteToolIntegrationService {
 
@@ -258,20 +260,23 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         LOGGER.debug("ToolIntegration: Registered new Component " + toolComponentID);
     }
 
-    private String createDocumentationHash(Map<String, Object> configurationMap, ToolIntegrationContext context) {
-        File toolDir = createToolDirFile(configurationMap, context);
-        File docDir = new File(toolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
+    private String createDocumentationHash(final Map<String, Object> configurationMap, final ToolIntegrationContext context) {
+        final File toolDir = createToolDirFile(configurationMap, context);
+        final File docDir = new File(toolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
         if (!docDir.exists()) {
             docDir.mkdirs();
         }
         if (docDir.listFiles() != null && docDir.listFiles().length > 0) {
             if (docDir.exists() && validateDocumentationDirectory(docDir)) {
-                try {
-                    byte[] zippedByteArray = CompressingHelper.createZippedByteArrayFromFolder(docDir);
-                    return DigestUtils.md5Hex(zippedByteArray);
-                } catch (IOException e) {
-                    LOGGER.error("Could not create hash for documentation: ", e);
+                final byte[] zippedByteArray = FileCompressionService.compressDirectoryToByteArray(docDir,
+                    FileCompressionFormat.ZIP, false);
+
+                if (zippedByteArray == null) {
+                    LOGGER.error("Was not able to create hash for documentation due to an issue with the compression.");
+                    return "";
                 }
+
+                return DigestUtils.md5Hex(zippedByteArray);
             }
         }
         return "";
@@ -968,21 +973,27 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @Override
     @AllowRemoteAccess
-    public byte[] getToolDocumentation(String identifier) throws RemoteOperationException {
-        ToolIntegrationContext context = getContextForIdentifier(identifier);
+    public byte[] getToolDocumentation(final String identifier) throws RemoteOperationException {
+        final ToolIntegrationContext context = getContextForIdentifier(identifier);
         if (context == null) {
             return null;
         }
+
         String name = identifier.substring(context.getPrefixForComponentId().length());
         name = name.substring(0, name.indexOf(ComponentConstants.ID_SEPARATOR));
-        try {
-            return CompressingHelper
-                .createZippedByteArrayFromFolder(new File(toolNameToPath.get(name),
-                    ToolIntegrationConstants.DOCS_DIR_NAME));
-        } catch (IOException e) {
-            LOGGER.error("Could not create zip file for documentation: ", e);
+
+        final File sourceDirectory = new File(toolNameToPath.get(name),
+            ToolIntegrationConstants.DOCS_DIR_NAME);
+
+        final byte[] resultData =
+            FileCompressionService.compressDirectoryToByteArray(sourceDirectory, FileCompressionFormat.ZIP, false);
+
+        if (resultData == null) {
+            LOGGER.error("Was not able to create an archive for documentation due to a compression issue.");
+            return null;
         }
-        return null;
+
+        return resultData;
     }
 
     private ToolIntegrationContext getContextForIdentifier(String identifier) {

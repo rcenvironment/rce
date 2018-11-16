@@ -513,6 +513,16 @@ public class Main {
 		return libPath;
 	}
 
+    /**
+     * 
+     * Note: In the course of centralizing all ZIP and TAR implementations in RCE into the class {@link FileCompressionService}, the
+     * implementation in this method was intentionally not refactored. Firstly, it filters very specifically for individual files, which the
+     * new service does not provide in this way. Secondly, the data found is not extracted to the file system, so the zip slip vulnerability
+     * does not apply here.
+     * 
+     * @param fragment a JAR archive
+     * @return
+     */
 	private String getLibraryFromFragment(String fragment) {
 		if (fragment.startsWith(FILE_SCHEME))
 			fragment = fragment.substring(5);
@@ -2364,9 +2374,13 @@ public class Main {
 	}
 
 	/*
-	 * Look for the specified spash file in the given JAR and extract it to the config 
-	 * area for caching purposes.
-	 */
+     * Look for the specified spash file in the given JAR and extract it to the config area for caching purposes.
+     * 
+     * <b>Note:</b> In the course of centralizing all ZIP and TAR implementations in RCE into the class {@link FileCompressionService}, the
+     * implementation in this method was intentionally not refactored. Firstly, individual files are filtered here, which the new service
+     * does not provide in this way. Secondly, the data found is not extracted to the file system, so the zip slip vulnerability does not
+     * apply here.
+     */
 	private String extractFromJAR(String jarPath, String jarEntry) {
 		String configLocation = System.getProperty(PROP_CONFIG_AREA);
 		if (configLocation == null) {

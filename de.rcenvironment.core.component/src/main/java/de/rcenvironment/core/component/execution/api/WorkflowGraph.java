@@ -9,12 +9,13 @@
 package de.rcenvironment.core.component.execution.api;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -78,16 +79,16 @@ public class WorkflowGraph implements Serializable {
         // A set of node that stores all visited nodes during the recursive calculation of the hops to traverse for resetting a nested loop.
         Set<WorkflowGraphNode> alreadyVisitedNodes = new HashSet<>();
 
-        List<List<WorkflowGraphEdge>> recursionResult = new LinkedList<>();
+        List<List<WorkflowGraphEdge>> recursionResult = new ArrayList<>();
 
-        recursion(alreadyVisitedNodes, nodes.get(startNodeExecutionId), EndpointCharacter.SAME_LOOP, new LinkedList<WorkflowGraphEdge>(),
+        recursion(alreadyVisitedNodes, nodes.get(startNodeExecutionId), EndpointCharacter.SAME_LOOP, new ArrayList<WorkflowGraphEdge>(),
             recursionResult);
 
         // create a copy of the data structure
         Set<Deque<WorkflowGraphHop>> hopsDequesSnapshot = new HashSet<>();
         for (List<WorkflowGraphEdge> edgeList : recursionResult) {
 
-            Deque<WorkflowGraphHop> deque = new LinkedList<>();
+            Deque<WorkflowGraphHop> deque = new ArrayDeque<>();
 
             // transform edges into the necessary WorkflowGraphHops
             for (WorkflowGraphEdge edge : edgeList) {
@@ -146,7 +147,7 @@ public class WorkflowGraph implements Serializable {
 
                 WorkflowGraphNode nextNode = nodes.get(nextEdge.getTargetExecutionIdentifier());
 
-                List<WorkflowGraphEdge> currentChainCopy = new LinkedList<>(currentChain);
+                List<WorkflowGraphEdge> currentChainCopy = new ArrayList<>(currentChain);
                 currentChainCopy.add(nextEdge);
 
                 recursion(alreadyVisitedNodes, nextNode, nextEdge.getInputCharacter(), currentChainCopy, completedChains);
@@ -160,7 +161,7 @@ public class WorkflowGraph implements Serializable {
     private List<WorkflowGraphEdge> nextEdgesToVisit(Set<WorkflowGraphNode> alreadyVisitedNodes, WorkflowGraphNode startNode,
         EndpointCharacter startEndpointCharacter) {
 
-        List<WorkflowGraphEdge> nextEdgesToVisit = new LinkedList<>();
+        List<WorkflowGraphEdge> nextEdgesToVisit = new ArrayList<>();
 
         // have a look at each output
         for (String startNodeOutputId : startNode.getOutputIdentifiers()) {
@@ -307,7 +308,7 @@ public class WorkflowGraph implements Serializable {
         for (String outputName : hopDeques.keySet()) {
             hopsDequesSnapshot.put(outputName, new HashSet<Deque<WorkflowGraphHop>>());
             for (Deque<WorkflowGraphHop> hops : hopDeques.get(outputName)) {
-                hopsDequesSnapshot.get(outputName).add(new LinkedList<>(hops));
+                hopsDequesSnapshot.get(outputName).add(new ArrayDeque<>(hops));
             }
         }
         return hopsDequesSnapshot;
@@ -320,7 +321,7 @@ public class WorkflowGraph implements Serializable {
 
         WorkflowGraphNode nextNode = nodes.get(edge.getTargetExecutionIdentifier());
 
-        Deque<WorkflowGraphHop> hopsDeque = new LinkedList<WorkflowGraphHop>();
+        Deque<WorkflowGraphHop> hopsDeque = new ArrayDeque<WorkflowGraphHop>();
 
         WorkflowGraphHop firstHop = new WorkflowGraphHop(edge.getSourceExecutionIdentifier(),
             startNode.getEndpointName(edge.getOutputIdentifier()), edge.getTargetExecutionIdentifier(),
@@ -447,7 +448,7 @@ public class WorkflowGraph implements Serializable {
         Deque<WorkflowGraphHop> hopsDeque, Set<Deque<WorkflowGraphHop>> hopsDeques, boolean isResetSearch)
         throws ComponentExecutionException {
 
-        Deque<WorkflowGraphHop> newHopDeque = new LinkedList<WorkflowGraphHop>(hopsDeque);
+        Deque<WorkflowGraphHop> newHopDeque = new ArrayDeque<WorkflowGraphHop>(hopsDeque);
 
         WorkflowGraphNode nextNode = nodes.get(edge.getTargetExecutionIdentifier());
 

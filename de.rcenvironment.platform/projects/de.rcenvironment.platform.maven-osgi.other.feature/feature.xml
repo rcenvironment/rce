@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven-osgi.other.feature"
       label="RCE Platform - Maven-OSGi Bridge Feature - Other Libraries"
-      version="8.2.2.qualifier"
+      version="8.2.3.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

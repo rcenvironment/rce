@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Incubator Bundle
 Bundle-SymbolicName: de.rcenvironment.core.utils.incubator;singleton:=true
-Bundle-Version: 8.2.2.qualifier
+Bundle-Version: 8.2.3.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
@@ -15,9 +15,6 @@ Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.toolkit.modules.concurrency.api,
  net.sf.saxon;version="9.4.0.1",
- org.apache.commons.compress.archivers;version="1.4.0",
- org.apache.commons.compress.archivers.zip;version="1.4.0",
- org.apache.commons.compress.utils;version="1.4.0",
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.lang3;version="3.1.0",
  org.dom4j;version="1.6.1",

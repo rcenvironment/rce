@@ -549,7 +549,7 @@ public class DerbyMetaDataBackendOperationsImpl {
                 while (rs.next()) {
                     binaryReferences.add(new BinaryReference(rs.getString(BINARY_REFERENCE_KEY).trim(), CompressionFormat.valueOf(rs
                         .getString(COMPRESSION)), rs
-                        .getString(REVISION)));
+                            .getString(REVISION)));
                 }
                 dataRef =
                     new DataReference(dataReferenceKey,
@@ -741,7 +741,7 @@ public class DerbyMetaDataBackendOperationsImpl {
             SELECT + COMPONENT_RUN_ID + FROM + VIEW_WORKFLOWRUN_COMPONENTRUN + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         List<Long> crIds = new ArrayList<>();
         try (PreparedStatement stmtComponentRunIds =
-            connection.prepareStatement(sqlComponentRunIds, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)){
+            connection.prepareStatement(sqlComponentRunIds, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
             stmtComponentRunIds.setLong(1, workflowRunId);
             ResultSet rs = stmtComponentRunIds.executeQuery();
             if (rs != null) {
@@ -816,7 +816,7 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sqlTypedDatum = DELETE_FROM + DB_PREFIX + TABLE_TYPED_DATUM + WHERE + TYPED_DATUM_ID + EQUAL + QMARK;
 
         try (PreparedStatement stmtEndpointData =
-                connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            connection.prepareStatement(sqlEndpointData, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtTypedDatum =
                 connection.prepareStatement(sqlTypedDatum, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);) {
             for (Long id : typedDatumIds) {
@@ -861,16 +861,16 @@ public class DerbyMetaDataBackendOperationsImpl {
         try (PreparedStatement stmtRelBinaryDataRef =
             connection.prepareStatement(sqlRelBinaryDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtRelCompRunDataRef =
-            connection.prepareStatement(sqlRelCompRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                connection.prepareStatement(sqlRelCompRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtRelCompInstanceDataRef =
-            connection.prepareStatement(sqlRelCompInstanceDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                connection.prepareStatement(sqlRelCompInstanceDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtRelWorkflowRunDataRef =
-            connection.prepareStatement(sqlRelWorkflowRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                connection.prepareStatement(sqlRelWorkflowRunDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtBinaryRef =
-            connection.prepareStatement(sqlBinaryRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                connection.prepareStatement(sqlBinaryRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             PreparedStatement stmtDataRef = connection.prepareStatement(sqlDataRef, ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);) {
-           
+
             for (Long id : dataReferenceKeys.keySet()) {
                 stmtRelBinaryDataRef.setLong(1, id);
                 result &= !stmtRelBinaryDataRef.execute();
@@ -887,7 +887,7 @@ public class DerbyMetaDataBackendOperationsImpl {
                 stmtDataRef.setLong(1, id);
                 result &= !stmtDataRef.execute();
             }
-        } 
+        }
         return result;
     }
 

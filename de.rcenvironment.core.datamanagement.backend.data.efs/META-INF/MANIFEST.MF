@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Data Management EFS Backend
 Bundle-SymbolicName: de.rcenvironment.core.datamanagement.backend.data.efs;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 8.2.2.qualifier
+Bundle-Version: 8.2.3.qualifier
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Import-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamanagement.backend,
- org.apache.commons.compress.compressors.gzip;version="1.4.0",
+ org.apache.commons.compress.compressors.gzip;version="1.18.0",
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.core.filesystem,
  org.eclipse.core.resources,

@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.componentgroups.standard.feature</artifactId>
 	<name>RCE Standard Components Feature</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

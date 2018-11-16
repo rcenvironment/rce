@@ -33,7 +33,8 @@ import de.rcenvironment.core.component.integration.ToolIntegrationDocumentationS
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
-import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
@@ -41,6 +42,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Implementation of {@link ToolIntegrationDocumentationService}.
  * 
  * @author Sascha Zur
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class ToolIntegrationDocumentationServiceImpl implements ToolIntegrationDocumentationService {
 
@@ -109,41 +111,51 @@ public class ToolIntegrationDocumentationServiceImpl implements ToolIntegrationD
     }
 
     @Override
-    public File getToolDocumentation(String identifier, String nodeId, String hashValue)
+    public File getToolDocumentation(final String identifier, final String nodeId, final String hashValue)
         throws RemoteOperationException, FileNotFoundException, IOException {
-        byte[] documentation = null;
-        File cacheDir = loadDocumentationCache();
+        final File cacheDir = loadDocumentationCache();
 
+        final String documentationNodeId;
         if (nodeId.endsWith(ToolIntegrationConstants.DOCUMENTATION_CACHED_SUFFIX)) {
-            nodeId = nodeId.substring(0, nodeId.length() - 3);
+            documentationNodeId = nodeId.substring(0, nodeId.length() - 3);
+        } else {
+            documentationNodeId = nodeId;
         }
 
         if (toolDocumentationCache.get(identifier) != null
-            && toolDocumentationCache.get(identifier).get(nodeId) != null
-            && toolDocumentationCache.get(identifier).get(nodeId).get(KEY_HASH).equals(hashValue)) {
+            && toolDocumentationCache.get(identifier).get(documentationNodeId) != null
+            && toolDocumentationCache.get(identifier).get(documentationNodeId).get(KEY_HASH).equals(hashValue)) {
 
             // documentation in cache
-            File docuDir = new File(cacheDir, toolDocumentationCache.get(identifier).get(nodeId).get(KEY_DOCUMENTATION_DIR_NAME));
-            toolDocumentationCache.get(identifier).get(nodeId).put(KEY_LAST_USED, String.valueOf(System.currentTimeMillis()));
+            final File docuDir =
+                new File(cacheDir, toolDocumentationCache.get(identifier).get(documentationNodeId).get(KEY_DOCUMENTATION_DIR_NAME));
+            toolDocumentationCache.get(identifier).get(documentationNodeId).put(KEY_LAST_USED, String.valueOf(System.currentTimeMillis()));
             return docuDir;
         } else {
             // documentation not in cache, retrieve
             // TODO improve method by passing the id object into it (instead of a node id string)
-            RemoteToolIntegrationService rtis =
+            final RemoteToolIntegrationService rtis =
                 communicationService.getRemotableService(RemoteToolIntegrationService.class,
-                    NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId));
-            documentation = rtis.getToolDocumentation(identifier);
+                    NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(documentationNodeId));
+
+            final byte[] documentation = rtis.getToolDocumentation(identifier);
             if (documentation != null) {
-                File tempDir = null;
-                tempDir = findFirstUnusedDirectory(cacheDir);
+                final File tempDir = findFirstUnusedDirectory(cacheDir);
                 tempDir.mkdirs();
-                CompressingHelper.decompressFolderByteArray(documentation, tempDir);
-                Map<String, Map<String, String>> nodeIDMap = new HashMap<>();
-                Map<String, String> values = new HashMap<>();
+
+                if (!FileCompressionService.expandCompressedDirectoryFromByteArray(documentation, tempDir,
+                    FileCompressionFormat.ZIP)) {
+                    LOGGER.error("Was not able to retrive the tool documentation due to an issue with the archive expansion.");
+                    throw new IOException("Was not able to retrive the tool documentation due to an issue with the archive expansion.");
+                }
+
+                final Map<String, Map<String, String>> nodeIDMap = new HashMap<>();
+                final Map<String, String> values = new HashMap<>();
                 values.put(KEY_DOCUMENTATION_DIR_NAME, tempDir.getName());
                 values.put(KEY_HASH, hashValue);
                 values.put(KEY_LAST_USED, String.valueOf(System.currentTimeMillis()));
-                nodeIDMap.put(nodeId, values);
+
+                nodeIDMap.put(documentationNodeId, values);
                 toolDocumentationCache.put(identifier, nodeIDMap);
 
                 mapper.writerWithDefaultPrettyPrinter().writeValue(new File(cacheDir, METADATA_FILE_NAME), toolDocumentationCache);

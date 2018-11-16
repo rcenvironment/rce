@@ -378,9 +378,14 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     private void sendNonBlockingRequest(final Session session, final Queue destinationQueue, final NetworkRequest request,
         final MessageChannelResponseHandler responseHandler, final int timeoutMsec) {
         try {
+            final int requestPayloadSize = request.getContentBytes().length;
             if (verboseRequestLoggingEnabled) {
                 log.debug(StringUtils.format("Sending request   %s: type %s, payload length %d", request.getRequestId(),
-                    request.getMessageType(), request.getContentBytes().length));
+                    request.getMessageType(), requestPayloadSize));
+            }
+            if (requestPayloadSize >= NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
+                log.debug(StringUtils.format("Sending large network request %s towards recipient %s: type %s, payload length %d",
+                    request.getRequestId(), request.accessMetaData().getFinalRecipient(), request.getMessageType(), requestPayloadSize));
             }
             // construct message
             Message jmsRequest = JmsProtocolUtils.createMessageFromNetworkRequest(request, session);
@@ -397,9 +402,23 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                     NetworkResponse response;
                     try {
                         response = JmsProtocolUtils.createNetworkResponseFromMessage(jmsResponse, request);
+                        final int responsePayloadSize = response.getContentBytes().length;
                         if (verboseRequestLoggingEnabled) {
-                            log.debug(StringUtils.format("Received response %s: payload length %d", response.getRequestId(),
-                                response.getContentBytes().length));
+                            log.debug(
+                                StringUtils.format("Received response %s from %s: response payload length is %d", response.getRequestId(),
+                                    request.accessMetaData().getFinalRecipient(), responsePayloadSize));
+                        }
+                        if (responsePayloadSize >= NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
+                            log.debug(StringUtils.format(
+                                "Received large network response %s from %s: request type was %s, response payload length is %d",
+                                response.getRequestId(), request.accessMetaData().getFinalRecipient(), request.getMessageType(),
+                                responsePayloadSize));
+                        } else if (requestPayloadSize >= NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
+                            // non-large response to large request
+                            log.debug(StringUtils.format("Received network response %s for a large request sent to %s: "
+                                + "request type was %s, response payload length is %d",
+                                response.getRequestId(), request.accessMetaData().getFinalRecipient(), request.getMessageType(),
+                                responsePayloadSize));
                         }
                         responseHandler.onResponseAvailable(response);
                     } catch (JMSException e) {
@@ -458,11 +477,13 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                 if (currentState == MessageChannelState.CLOSED || currentState == MessageChannelState.MARKED_AS_BROKEN) {
                     throw new TimeoutException(StringUtils.format(
                         "Received JMS exception while waiting for a response from message channel %s (on queue %s), "
-                            + "which is already %s", getChannelId(), tempResponseQueue.getQueueName(), currentState));
+                            + "which is already %s",
+                        getChannelId(), tempResponseQueue.getQueueName(), currentState));
                 } else {
                     throw new TimeoutException(StringUtils.format(
                         "Timeout (%d ms) exceeded while waiting for a response from message channel %s (on queue %s), "
-                            + "which is in state %s", timeoutMsec, getChannelId(), tempResponseQueue.getQueueName(), currentState));
+                            + "which is in state %s",
+                        timeoutMsec, getChannelId(), tempResponseQueue.getQueueName(), currentState));
                 }
             }
         } finally {

@@ -114,21 +114,28 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
                 // execute single provided command and exit
                 // note: this logs all incoming commands, but at the current time, DEBUG level logging is considered to be safe (ie not
                 // accessible from remote nodes)
-                logger.debug(StringUtils.format("Starting command execution for user \"%s\": %s", loginName, sshCommand));
-                CommandExecutionResult result = executeSingleCommand(sshCommand);
-                switch (result) {
-                case DEFAULT:
-                case EXIT_REQUESTED:
-                    callback.onExit(0);
-                    break;
-                case ERROR:
-                case INTERRUPTED:
-                    callback.onExit(1);
-                    break;
-                default:
-                    throw new IllegalArgumentException();
+                final long startTime = System.currentTimeMillis();
+                CommandExecutionResult result = null;
+                try {
+                    result = executeSingleCommand(sshCommand);
+                    switch (result) {
+                    case DEFAULT:
+                    case EXIT_REQUESTED:
+                        callback.onExit(0);
+                        break;
+                    case ERROR:
+                    case INTERRUPTED:
+                        callback.onExit(1);
+                        break;
+                    default:
+                        throw new IllegalArgumentException();
+                    }
+                } finally {
+                    final long execTimeMsec = System.currentTimeMillis() - startTime;
+                    logger.debug(StringUtils.format(
+                        "Finished execution of console command for SSH user \"%s\" (result code %s, duration %d msec): %s", loginName,
+                        result, execTimeMsec, sshCommand));
                 }
-                logger.debug(StringUtils.format("Finished command execution for user \"%s\": %s", loginName, sshCommand));
             }
         } catch (IOException e) {
             // not logging the full stacktrace as it is usually irrelevant, and this case happens frequently

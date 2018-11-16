@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Authorization
 Bundle-SymbolicName: de.rcenvironment.core.authorization;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 8.2.2.qualifier
+Bundle-Version: 8.2.3.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.authorization.rbac

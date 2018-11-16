@@ -20,11 +20,9 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.testing.CommonTestOptions;
 
 /**
  * Tests for {@link DataManagementServiceImpl}.
@@ -56,40 +54,6 @@ public class DataManagementServiceImplTest {
         for (File tempFile : tempFiles) {
             tempFileService.disposeManagedTempDirOrFile(tempFile);
         }
-    }
-
-    /**
-     * Tests packing and unpacking of tar archives.
-     * 
-     * @throws IOException on unexpected error
-     */
-    @Test
-    public void testTarGzUnPacking() throws IOException {
-        // testing with 1000 files in "extended" testing as this caused a StackOverflowError with older implementation of
-        // DataManagementServiceImpl#createFileOrDirForTarEntry (see https://mantis.sc.dlr.de/view.php?id=13499)
-        final int fileCount = CommonTestOptions.selectStandardOrExtendedValue(20, 1000);
-
-        DataManagementServiceImpl dmService = new DataManagementServiceImpl();
-        TempFileServiceAccess.setupUnitTestEnvironment();
-        File rootDir = tempFileService.createManagedTempDir();
-        tempFiles.add(rootDir);
-        File dir = rootDir;
-        for (int i = 0; i < 5; i++) {
-            dir = createDirAndBunchOfFiles(dir, fileCount);
-        }
-
-        File archiveFile = tempFileService.createTempFileWithFixedFilename("arc.tar.gz");
-        tempFiles.add(archiveFile);
-        dmService.createTarGz(rootDir, archiveFile);
-
-        File targetDir = tempFileService.createManagedTempDir();
-        tempFiles.add(targetDir);
-        dmService.createDirectoryFromTarGz(archiveFile, targetDir);
-
-        File[] targetDirFileList = targetDir.listFiles();
-        assertEquals(1, targetDirFileList.length);
-
-        compareDirectories(rootDir, targetDirFileList[0]);
     }
 
     private void compareDirectories(File rootDir, File targetRootDir) throws IOException {

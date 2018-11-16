@@ -22,7 +22,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 public class UpateWorkflowFileAutomaticallyPreferencesPage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
 
     public UpateWorkflowFileAutomaticallyPreferencesPage() {
-       super(GRID);
+        super(GRID);
     }
     
     @Override

@@ -10,12 +10,12 @@ package de.rcenvironment.core.component.integration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -27,13 +27,15 @@ import org.junit.Test;
 
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager;
-import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
  * Test the {@link ToolIntegrationFileWatcherManager} and the {@link ToolIntegrationFileWatcher}.
  * 
  * @author Sascha Zur
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class ToolIntegrationFileWatcherManagerTest {
 
@@ -66,11 +68,18 @@ public class ToolIntegrationFileWatcherManagerTest {
             TempFileServiceAccess.setupUnitTestEnvironment();
             try {
                 toolDirectory = TempFileServiceAccess.getInstance().createManagedTempDir();
-                CompressingHelper.unzip(ToolIntegrationFileWatcherManagerTest.class.getResourceAsStream("/TestTools.zip"), toolDirectory);
-            } catch (IOException | ArchiveException e) {
+
+                final InputStream inputStream =
+                    ToolIntegrationFileWatcherManagerTest.class.getResourceAsStream("/TestTools.zip");
+
+                if (!FileCompressionService.expandCompressedDirectoryFromInputStream(inputStream, toolDirectory,
+                    FileCompressionFormat.ZIP)) {
+                    Assert.fail("Was not able to set up the test directories due to an archive issue.");
+                }
+
+            } catch (IOException e) {
                 Assert.fail(e.getMessage());
             }
-
         }
     }
 

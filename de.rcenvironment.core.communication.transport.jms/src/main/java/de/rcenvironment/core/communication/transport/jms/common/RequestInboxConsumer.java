@@ -88,9 +88,14 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
             if (JmsProtocolConstants.MESSAGE_TYPE_REQUEST.equals(messageType)) {
                 request = JmsProtocolUtils.createNetworkRequestFromMessage(message);
 
+                final int requestPayloadSize = request.getContentBytes().length;
                 if (verboseRequestLoggingEnabled) {
                     log.debug(StringUtils.format("Received request  %s: type %s, payload length %d", request.getRequestId(),
-                        request.getMessageType(), request.getContentBytes().length));
+                        request.getMessageType(), requestPayloadSize));
+                }
+                if (requestPayloadSize >= NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
+                    log.debug(StringUtils.format("Received large network request %s from %s: type %s, payload length %d",
+                        request.getRequestId(), request.accessMetaData().getSender(), request.getMessageType(), requestPayloadSize));
                 }
 
                 // on the messaging level, senders and receivers are identified by instance session ids

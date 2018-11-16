@@ -1,5 +1,3 @@
-//CHECKSTYLE:DISABLE (e)
-
 package de.rcenvironment.core.gui.utils.incubator;
 
 /*

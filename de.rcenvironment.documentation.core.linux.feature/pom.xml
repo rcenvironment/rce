@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.documentation.core.linux.feature</artifactId>
 	<name>RCE Documentation (Core) Deployment Feature - Linux</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>
@@ -20,7 +20,7 @@
 			<artifactId>de.rcenvironment.documentation.core</artifactId>
 			<groupId>de.rcenvironment</groupId>
 			<type>pom</type>
-			<version>8.2.2-SNAPSHOT</version>
+			<version>8.2.3-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

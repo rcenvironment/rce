@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform</artifactId>
 	<name>RCE Platform Master Project</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>

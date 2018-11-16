@@ -9,9 +9,11 @@
 package de.rcenvironment.toolkit.modules.statistics.internal;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -195,6 +197,8 @@ public class StatisticsTrackerServiceImpl implements StatisticsTrackerService {
 
     private static ThreadsafeAutoCreationMap<String, ValueEventCategoryImpl> valueTrackerMap;
 
+    private final Set<String> categoriesAlreadyLoggedAsDisabled = new HashSet<>();
+
     private final StatisticsFilterLevel globalFilterLevel;
 
     private final Log log = LogFactory.getLog(getClass());
@@ -253,9 +257,15 @@ public class StatisticsTrackerServiceImpl implements StatisticsTrackerService {
         if (filterLevel.compareTo(globalFilterLevel) <= 0) {
             return counterMap.get(categoryName); // automatically creates new entries
         } else {
-            log.debug(StringUtils
-                .format("Returning a disabled receiver for category '%s' as it was requested "
-                    + "with level %s while the global level is %s", categoryName, filterLevel, globalFilterLevel));
+            synchronized (categoriesAlreadyLoggedAsDisabled) {
+                // only log each category once if it is requested repeatedly, e.g. in the constructor of helper classes
+                if (!categoriesAlreadyLoggedAsDisabled.contains(categoryName)) {
+                    log.debug(StringUtils
+                        .format("Returning a disabled receiver for category '%s' as it was requested "
+                            + "with level %s while the global level is %s", categoryName, filterLevel, globalFilterLevel));
+                    categoriesAlreadyLoggedAsDisabled.add(categoryName); // note: shared with value events
+                }
+            }
             return NO_OPERATION_COUNTER;
         }
     }
@@ -270,9 +280,15 @@ public class StatisticsTrackerServiceImpl implements StatisticsTrackerService {
         if (filterLevel.compareTo(globalFilterLevel) <= 0) {
             return valueTrackerMap.get(categoryName); // automatically creates new entries
         } else {
-            log.debug(StringUtils
-                .format("Returning a disabled receiver for category '%s' as it was requested "
-                    + "with level %s while the global level is %s", categoryName, filterLevel, globalFilterLevel));
+            synchronized (categoriesAlreadyLoggedAsDisabled) {
+                // only log each category once if it is requested repeatedly, e.g. in the constructor of helper classes
+                if (!categoriesAlreadyLoggedAsDisabled.contains(categoryName)) {
+                    log.debug(StringUtils
+                        .format("Returning a disabled receiver for category '%s' as it was requested "
+                            + "with level %s while the global level is %s", categoryName, filterLevel, globalFilterLevel));
+                    categoriesAlreadyLoggedAsDisabled.add(categoryName); // note: shared with counters
+                }
+            }
             return NO_OPERATION_EVENT_TRACKER;
         }
     }

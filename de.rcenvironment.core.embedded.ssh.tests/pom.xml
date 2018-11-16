@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.embedded.ssh.tests</artifactId>
 	<name>RCE Core Embedded SSH Server Tests</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

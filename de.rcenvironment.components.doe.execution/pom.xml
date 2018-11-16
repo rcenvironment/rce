@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.doe.execution</artifactId>
 	<name>RCE Components DOE Execution Bundle</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

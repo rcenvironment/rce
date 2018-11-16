@@ -156,9 +156,9 @@ public final class NodeIdentifierServiceImpl implements NodeIdentifierService {
                         .format(LOG_PATTERN_REPLACING_NAME_ASSOCIATION + LOG_PATTERN_TRIGGER_SUFFIX, oldName, fullIdString, newName,
                             originalSourceId));
                 }
-            } else {
-                // TODO reduce/filter if logged too much
-                log.debug(StringUtils.format("Ignoring request to set the name association '%s' for %s again", newName, fullIdString));
+                // TODO consider returning this with a "verbose logging" switch
+                // } else {
+                // log.debug(StringUtils.format("Ignoring request to set the name association '%s' for %s again", newName, fullIdString));
             }
         }
         informationHolder.setDisplayName(newName);

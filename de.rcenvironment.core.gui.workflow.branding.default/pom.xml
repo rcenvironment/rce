@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.workflow.branding.default</artifactId>
 	<name>RCE Core GUI Workflow Branding Fragment Bundle</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

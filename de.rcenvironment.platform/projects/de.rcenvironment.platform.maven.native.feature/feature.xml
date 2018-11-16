@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven.native.feature"
       label="RCE Platform - Maven Native Code Libraries Feature"
-      version="8.2.2.qualifier">
+      version="8.2.3.qualifier">
 
    <description url="http://www.rcenvironment.de">
       Win32 library files for RCE (Remote Component Environment).

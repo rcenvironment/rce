@@ -12,11 +12,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.FileUtils;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
@@ -30,7 +30,8 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
-import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
@@ -38,6 +39,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * This class provides everything for running the generic optimizer blackbox.
  * 
  * @author Sascha Zur
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
 
@@ -54,17 +56,27 @@ public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
     @Override
     protected void prepareProblem() throws ComponentException {
         try {
-            File sourceFolder = getSourceFolder();
+            final File sourceFolder = getSourceFolder();
             if (sourceFolder.exists()) {
                 if (sourceFolder.exists()) {
                     FileUtils.copyDirectoryToDirectory(sourceFolder, workingDir);
                 }
             }
-            CompressingHelper.unzip(GenericAlgorithmExecutor.class.getResourceAsStream("/resources/RCE_Optimizer_API.zip"),
-                new File(workingDir, "source/"));
-        } catch (IOException | ArchiveException e) {
+
+            final InputStream inputStream =
+                GenericAlgorithmExecutor.class.getResourceAsStream("/resources/RCE_Optimizer_API.zip");
+
+            final File destinationDirectory = new File(workingDir, "source/");
+            if (!FileCompressionService.expandCompressedDirectoryFromInputStream(inputStream, destinationDirectory,
+                FileCompressionFormat.ZIP)) {
+
+                LOGGER.error("Was not able to prepare the generic algorithm due to an archive issue.");
+                throw new ComponentException("Was not able to prepare the generic algorithm due to an archive issue.");
+            }
+        } catch (IOException e) {
             throw new ComponentException("Failed to prepare generic algorithm", e);
         }
+
         configurationFile = new File(new File(workingDir, OptimizerComponentConstants.GENERIC_SOURCE), "configuration.json");
         writeConfigurationFile(configurationFile);
     }

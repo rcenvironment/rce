@@ -8,21 +8,13 @@
 
 package de.rcenvironment.core.datamanagement.internal;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -37,6 +29,8 @@ import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -45,6 +39,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class DataManagementServiceImpl implements DataManagementService {
 
@@ -94,53 +89,22 @@ public class DataManagementServiceImpl implements DataManagementService {
     public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, ResolvableNodeId nodeId)
         throws IOException, AuthorizationException, InterruptedException, CommunicationException {
 
-        File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
-        createTarGz(dir, archive);
+        final File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
 
-        try (FileInputStream fileInputStream = new FileInputStream(archive)) {
-            String reference = createReferenceFromStream(fileInputStream, additionalMetaData, nodeId);
+        try {
+            if (!FileCompressionService.compressDirectoryToFile(dir, archive,
+                FileCompressionFormat.TAR_GZ, true)) {
+
+                // Case: Was not able to compress & archive the directory:
+                LOGGER.error("Was not able to create a reference from a local directory due to an issue with the compression.");
+                throw new IOException("Was not able to create a reference from a local directory due to an issue with the compression.");
+            }
+
+            try (FileInputStream fileInputStream = new FileInputStream(archive)) {
+                return createReferenceFromStream(fileInputStream, additionalMetaData, nodeId);
+            }
+        } finally {
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
-            return reference;
-        }
-    }
-
-    // set visibility from private to protected for test purposes
-    protected void createTarGz(File dir, File archive) throws IOException {
-
-        try (FileOutputStream fileOutStream = new FileOutputStream(archive);
-            BufferedOutputStream bufferedOutStream = new BufferedOutputStream(fileOutStream);
-            GzipCompressorOutputStream gzipOutStream = new GzipCompressorOutputStream(bufferedOutStream);
-            TarArchiveOutputStream tarOutStream = new TarArchiveOutputStream(gzipOutStream)) {
-            addFileToTarGz(tarOutStream, dir.getAbsolutePath(), "");
-        }
-    }
-
-    private void addFileToTarGz(TarArchiveOutputStream tOutStream, String path, String base) throws IOException {
-        File file = new File(path);
-        if (!CrossPlatformFilenameUtils.isPathValid(file.getAbsolutePath())) {
-            LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, file.getAbsolutePath()));
-        }
-        String entryName = base + file.getName();
-        TarArchiveEntry tarEntry = new TarArchiveEntry(file, entryName);
-        tOutStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-        tOutStream.putArchiveEntry(tarEntry);
-
-        if (file.isFile()) {
-            try (InputStream inputStream = new FileInputStream(file)) {
-                IOUtils.copy(inputStream, tOutStream);
-            }
-            tOutStream.closeArchiveEntry();
-        } else {
-            tOutStream.closeArchiveEntry();
-            File[] children = file.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    if (!CrossPlatformFilenameUtils.isFilenameValid(child.getName())) {
-                        LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, child.getName()));
-                    }
-                    addFileToTarGz(tOutStream, child.getAbsolutePath(), entryName + TAR_GZ_PATH_SEPARATOR);
-                }
-            }
         }
     }
 
@@ -208,44 +172,20 @@ public class DataManagementServiceImpl implements DataManagementService {
     @Override
     public void copyReferenceToLocalDirectory(String reference, File targetDir, ResolvableNodeId node) throws IOException,
         CommunicationException {
-        File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
-        copyReferenceToLocalFile(reference, archive, node);
-        createDirectoryFromTarGz(archive, targetDir);
-        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
-    }
 
-    // set visibility to from private to protected for test purposes
-    protected void createDirectoryFromTarGz(File archive, File targetDir) throws FileNotFoundException, IOException {
+        final File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
 
-        targetDir.mkdirs();
+        try {
+            copyReferenceToLocalFile(reference, archive, node);
+            if (!FileCompressionService.expandCompressedDirectoryFromFile(archive, targetDir,
+                FileCompressionFormat.TAR_GZ)) {
 
-        try (FileInputStream fileInStream = new FileInputStream(archive);
-            BufferedInputStream bufferedInStream = new BufferedInputStream(fileInStream);
-            GzipCompressorInputStream gzipInStream = new GzipCompressorInputStream(bufferedInStream);
-            TarArchiveInputStream tarInStream = new TarArchiveInputStream(gzipInStream)) {
-            createFileOrDirForTarEntry(tarInStream, targetDir);
-        }
-    }
-
-    private void createFileOrDirForTarEntry(TarArchiveInputStream tarInStream, File targetDir) throws IOException {
-
-        TarArchiveEntry tarEntry;
-        while ((tarEntry = tarInStream.getNextTarEntry()) != null) {
-            File destPath = new File(targetDir, tarEntry.getName());
-
-            if (tarEntry.isDirectory()) {
-                destPath.mkdirs();
-            } else {
-                destPath.createNewFile();
-                byte[] btoRead = new byte[BUFFER];
-                try (BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(destPath))) {
-                    int len = 0;
-                    final int minusOne = -1;
-                    while ((len = tarInStream.read(btoRead)) != minusOne) {
-                        bout.write(btoRead, 0, len);
-                    }
-                }
+                // Case: Expanding of archive was not possible.
+                LOGGER.error("Was not able to copy reference to local directory due to an uncompression issue.");
+                throw new CommunicationException("Was not able to copy reference to local directory due to an uncompression issue.");
             }
+        } finally {
+            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
         }
     }
 

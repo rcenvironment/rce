@@ -111,6 +111,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.FINISHED, ComponentState.DISPOSING },
         { ComponentState.DISPOSING, ComponentState.DISPOSED },
         // canceling
+        { ComponentState.INIT, ComponentState.CANCELLING },
         { ComponentState.PREPARING, ComponentState.CANCELLING },
         { ComponentState.PREPARED, ComponentState.CANCELLING },
         { ComponentState.STARTING, ComponentState.CANCELLING },
@@ -150,6 +151,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.RESUMING, ComponentState.IDLING },
         { ComponentState.RESUMING, ComponentState.IDLING_AFTER_RESET },
         // failures
+        { ComponentState.INIT, ComponentState.TEARING_DOWN },
         { ComponentState.PREPARING, ComponentState.TEARING_DOWN },
         { ComponentState.PREPARED, ComponentState.TEARING_DOWN },
         { ComponentState.STARTING, ComponentState.TEARING_DOWN },
@@ -372,7 +374,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private void logInvalidStateChangeRequest(ComponentState currentState, ComponentState requestedState,
         ComponentStateMachineEvent event) {
         LOG.debug(StringUtils.format("Ignored component state change request for component '%s' (%s) of workflow '%s' (%s) "
-            + "as it will cause an invalid state transition: %s -> %s; event was: %s",
+            + "as it would cause an invalid state transition: %s -> %s; event was: %s",
             compExeRelatedInstances.compExeCtx.getInstanceName(),
             compExeRelatedInstances.compExeCtx.getExecutionIdentifier(),
             compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),

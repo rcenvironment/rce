@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.extras.linux.feature</artifactId>
 	<name>RCE File Sets - Installation Scripts for Linux Daemon</name>
-	<version>8.2.2-SNAPSHOT</version>
+	<version>8.2.3-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

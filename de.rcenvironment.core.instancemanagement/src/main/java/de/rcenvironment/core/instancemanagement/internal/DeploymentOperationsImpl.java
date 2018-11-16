@@ -18,17 +18,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.common.FileCompressionFormat;
+import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
-import de.rcenvironment.core.utils.incubator.ZipFolderUtil;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * I/O operations for managing external installations, like downloading, unpacking, deleting etc.
  * 
  * @author Robert Mischke
+ * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
 public class DeploymentOperationsImpl {
 
@@ -131,28 +133,34 @@ public class DeploymentOperationsImpl {
      *        success (ie no additional "rce/" folder inside this directory)
      * @throws IOException on setup failure; in this case, this method will try to remove the incomplete directory
      */
-    public void installFromProductZip(File zipFile, File installationDir) throws IOException {
+    public void installFromProductZip(final File zipFile, final File installationDir) throws IOException {
         // - for safety, the installationDir *must not* already exist (to prevent any overwriting)
         // - try to delete the (incomplete) directory on any failure
         if (installationDir.exists()) {
             throw new IOException("Target installation directory does already exist: " + installationDir.getAbsolutePath());
         }
         log.debug("Starting to extract " + zipFile.getAbsolutePath() + " to " + installationDir.getAbsolutePath());
-        ZipFolderUtil.extractZipToFolder(installationDir, zipFile);
+
+        if (!FileCompressionService.expandCompressedDirectoryFromFile(zipFile, installationDir,
+            FileCompressionFormat.ZIP)) {
+            log.error("Was not able to install from product zip due to an archive issue.");
+            throw new IOException("Was not able to install from product zip due to an archive issue.");
+        }
+
         // move all content one folder level "up"
-        File rceFolder = new File(installationDir, RCE);
+        final File rceFolder = new File(installationDir, RCE);
         if (!rceFolder.isDirectory()) {
             throw new IOException("Expected 'rce' folder does not exist");
         }
-        File newFolder = new File(installationDir, "something");
+        final File newFolder = new File(installationDir, "something");
         rceFolder.renameTo(newFolder);
-        for (File contentFile : newFolder.listFiles()) {
+        for (final File contentFile : newFolder.listFiles()) {
             FileUtils.moveToDirectory(contentFile, installationDir, false);
         }
         if (!newFolder.delete()) {
             throw new IOException("Failed to delete the nested 'rce' folder (which should be empty at this point)");
         }
-        File execfile = new File(installationDir, RCE);
+        final File execfile = new File(installationDir, RCE);
         if (execfile.exists()) {
             // If the file "rce" exists, this is a linux platform and we have to make the file executable.
             final LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(installationDir);

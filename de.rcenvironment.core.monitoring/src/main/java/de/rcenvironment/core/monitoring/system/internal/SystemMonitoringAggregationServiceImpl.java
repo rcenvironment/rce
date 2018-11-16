@@ -54,6 +54,7 @@ import de.rcenvironment.toolkit.utils.common.DefaultTimeSource;
  * 
  * @author David Scholz (original "snapshot" code)
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMonitoringService, LocalSystemMonitoringAggregationService {
 
@@ -108,16 +109,16 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         Objects.requireNonNull(objectBindingsService);
         Objects.requireNonNull(asyncTaskService);
 
+        initializeSelfPidsIfNecessary();
+
         try {
-            initializeSelfPidsIfNecessary();
-        } catch (OperatingSystemException e) {
-            log.error("Failed to get the process IDs of the local instance; "
-                + "a new attempt will be made when actual monitoring data is requested: " + e.toString());
-            return;
-        }
-        try {
-            selfLauncherProcState = systemDataService.fetchProcessState(selfLauncherPid);
-            selfJavaProcState = systemDataService.fetchProcessState(selfJavaPid);
+            // note: this is never updated if the PID was not available on activation; move this into the initialization method? --misc_ro
+            if (selfLauncherPid != 0) {
+                selfLauncherProcState = systemDataService.fetchProcessState(selfLauncherPid);
+            }
+            if (selfJavaPid != 0) {
+                selfJavaProcState = systemDataService.fetchProcessState(selfJavaPid);
+            }
             topicIdToDescriptionMap.put(SystemMonitoringConstants.PERIODIC_MONITORING_TOPIC_SIMPLE_SYSTEM_INFO,
                 "Logs basic system monitoring data (total CPU and RAM usage)");
             // topicIdToDescriptionMap
@@ -125,7 +126,7 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
             // "Logs monitoring data in more detail. Information such as CPU-usage, "
             // + "RAM-usage ect. of rce and rce sub-processes will be logged.");
         } catch (OperatingSystemException e) {
-            log.error("Failed to initialize some system monitoring data: " + e.toString());
+            log.error("Failed to initialize process states for system monitoring : " + e.toString());
         }
 
         objectBindingsService.addBinding(PeriodicMonitoringDataContributor.class, setUpPeriodicMonitoringDataContributorAdapter(), this);
@@ -170,12 +171,12 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
     @AllowRemoteAccess
     public synchronized FullSystemAndProcessDataSnapshot getCompleteSnapshot() throws OperatingSystemException {
 
-        // TODO review if this is really necessary; calling this over and over seems clumsy
-        initializeSelfPidsIfNecessary();
-
         if (hasValidCachedFullSnapshot()) {
             return cachedFullSnapshot;
         }
+
+        // this may have failed on initialization, so retry if necessary; if it was already initialized, then this method returns fast
+        initializeSelfPidsIfNecessary();
 
         FullSystemAndProcessDataSnapshot newSnapshot = createFullSnapshot();
 
@@ -322,12 +323,20 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         }
     }
 
-    private void initializeSelfPidsIfNecessary() throws OperatingSystemException {
-        if (selfLauncherPid == 0) {
-            selfLauncherPid = systemDataService.fetchProcessState(Humidor.getInstance().getSigar().getPid()).getPpid();
-        }
+    private void initializeSelfPidsIfNecessary() {
         if (selfJavaPid == 0) {
             selfJavaPid = Humidor.getInstance().getSigar().getPid();
+            log.debug("Java process ID: " + selfJavaPid);
+        }
+        if (selfJavaPid != 0 && selfLauncherPid == 0) {
+            try {
+                selfLauncherPid = systemDataService.fetchProcessState(selfJavaPid).getPpid();
+                log.debug("Launcher process ID: " + selfLauncherPid);
+            } catch (OperatingSystemException e) {
+                // note: if this happens repeatedly "in the wild", add a failure limit here
+                log.error("Failed to determine the ID of the launcher process; "
+                    + "a new attempt will be made on the next monitoring data request: " + e.toString());
+            }
         }
     }
 

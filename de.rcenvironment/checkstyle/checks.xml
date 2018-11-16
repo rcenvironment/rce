@@ -2,7 +2,6 @@
 <!DOCTYPE module PUBLIC
       "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
           "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
-<!-- $Id: tent_checks.xml,v 1.29 2005/12/28 17:11:01 maas Exp $ -->
 <!--
   Checkstyle configuration that checks the sun coding conventions from:
 
@@ -128,7 +127,9 @@
     
     <!-- Modifiers -->
     <module name="ModifierOrder" />
-    <module name="RedundantModifier" />
+    <module name="RedundantModifier">
+      <property name="severity" value="warning" />
+    </module>
     
     <!-- Naming Conventions -->
     <module name="ConstantName">
@@ -184,9 +185,19 @@
       <property name="tokens"
         value="ASSIGN,MINUS,PLUS,PLUS_ASSIGN,MINUS_ASSIGN,STAR_ASSIGN,DIV_ASSIGN,QUESTION,LOR,LAND,NOT_EQUAL,EQUAL,LT,GT,LE,GE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE" />
     </module>
-    
-    <module name="FileContentsHolder"/>
 
+    <!-- Comment-based local suppression of CheckStyle rules -->
+    <module name="SuppressionCommentFilter">
+      <property name="offCommentFormat" value="CHECKSTYLE\:DISABLE \((\w+)\)"/>
+      <property name="onCommentFormat" value="CHECKSTYLE\:ENABLE \((\w+)\)"/>
+      <property name="checkFormat" value="$1"/>
+    </module>
+
+  </module>
+
+  <!-- Global exclusion filter; mostly used to exclude external source files (e.g. our patched Eclipse launcher code) -->
+  <module name="SuppressionFilter">
+    <property name="file" value="${config_loc}/suppressions.xml" />
   </module>
   
   <module name="NewlineAtEndOfFile">
@@ -203,15 +214,9 @@
   </module>
   
   <module name="Header">
-    <property name="header" value="/*\n * Copyright (C) 2006-2011 DLR, Germany\n * \n * All rights reserved\n * \n * http://www.rcenvironment.de/\n */"/>
-    <property name="ignoreLines" value="2"/>
+    <property name="header" value="/*\n * Copyright (C) 2006-20xx DLR, Germany\n * \n * All rights reserved\n * \n * http://www.rcenvironment.de/\n */"/>
+    <property name="ignoreLines" value="2"/> <!-- ignore the line containing year information -->
     <property name="fileExtensions" value="java"/>
-  </module>
-  
-  <module name="SuppressionCommentFilter">
-    <property name="offCommentFormat" value="CHECKSTYLE\:DISABLE \((\w+)\)"/>
-    <property name="onCommentFormat" value="CHECKSTYLE\:ENABLE \((\w+)\)"/>
-    <property name="checkFormat" value="$1"/>
   </module>
 
 </module>

@@ -25,6 +25,10 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  */
 public abstract class AbstractMessageChannel implements MessageChannel {
 
+    // A soft size limit for individual network payloads; all messages exceeding this should be logged as warnings.
+    // This is currently (arbitrarily) set to 1 MB. TODO convert this to a global constant (or setting) -- misc_ro
+    protected static final int NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD = 1024 * 1024;
+
     protected ServerContactPoint associatedSCP;
 
     private volatile MessageChannelState state = MessageChannelState.CONNECTING;
