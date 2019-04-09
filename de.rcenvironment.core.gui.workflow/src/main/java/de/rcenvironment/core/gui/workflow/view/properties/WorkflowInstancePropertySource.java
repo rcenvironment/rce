@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,7 +15,7 @@ import java.util.Set;
 
 import org.eclipse.ui.views.properties.IPropertyDescriptor;
 import org.eclipse.ui.views.properties.IPropertySource;
-import org.eclipse.ui.views.properties.TextPropertyDescriptor;
+import org.eclipse.ui.views.properties.PropertyDescriptor;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
@@ -63,13 +63,13 @@ public class WorkflowInstancePropertySource implements IPropertySource {
     public IPropertyDescriptor[] getPropertyDescriptors() {
         IPropertyDescriptor[] descriptors = new IPropertyDescriptor[7];
 
-        descriptors[0] = new TextPropertyDescriptor(PROP_KEY_NAME, Messages.name);
-        descriptors[1] = new TextPropertyDescriptor(PROP_KEY_STARTTIME, Messages.starttime);
-        descriptors[2] = new TextPropertyDescriptor(PROP_KEY_WORKKLOWPLATFORM, Messages.platform);
-        descriptors[3] = new TextPropertyDescriptor(PROP_KEY_WORKFLOWNODES_COUNT, "Component count");
-        descriptors[4] = new TextPropertyDescriptor(PROP_KEY_CONNECTIONS_COUNT, "Connection count");
-        descriptors[5] = new TextPropertyDescriptor(PROP_KEY_COMPONENT_TYPES, "Component types count");
-        descriptors[6] = new TextPropertyDescriptor(PROP_KEY_INVOLVED_INSTANCES, "Instances involved");
+        descriptors[0] = new PropertyDescriptor(PROP_KEY_NAME, Messages.name);
+        descriptors[1] = new PropertyDescriptor(PROP_KEY_STARTTIME, Messages.starttime);
+        descriptors[2] = new PropertyDescriptor(PROP_KEY_WORKKLOWPLATFORM, Messages.platform);
+        descriptors[3] = new PropertyDescriptor(PROP_KEY_WORKFLOWNODES_COUNT, "Component count");
+        descriptors[4] = new PropertyDescriptor(PROP_KEY_CONNECTIONS_COUNT, "Connection count");
+        descriptors[5] = new PropertyDescriptor(PROP_KEY_COMPONENT_TYPES, "Component types count");
+        descriptors[6] = new PropertyDescriptor(PROP_KEY_INVOLVED_INSTANCES, "Instances involved");
 
         return descriptors;
     }

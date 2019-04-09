@@ -2,6 +2,7 @@
 
 
 @Test01
+@DefaultTestSuite
 Scenario: Basic multi-instance handling and command execution
 
   Given instances "NodeA, NodeB" using the default build
@@ -31,6 +32,7 @@ Scenario: Basic networking between three instances (auto-start connections, no r
 
 
 @Test03
+@DefaultTestSuite
 Scenario: Executing "wf self-test"
 
   # note: this test frequently fails when testing 8.1.0 or 8.1.1 as the SSH timeout was accidentally set too low in these releases  
@@ -42,6 +44,7 @@ Scenario: Executing "wf self-test"
 
 
 @Test04
+@DefaultTestSuite
 Scenario: Concurrent headless instance starting and stopping
 
   Given instances "Node1, Node2, Node3, Node4, Node5" using the default build
@@ -64,6 +67,7 @@ Scenario: Concurrent GUI instance starting and stopping
 
 
 @Test06
+@DefaultTestSuite
 Scenario: Frequent single-instance headless start/stop
 
   Given instance "Node1" using the default build

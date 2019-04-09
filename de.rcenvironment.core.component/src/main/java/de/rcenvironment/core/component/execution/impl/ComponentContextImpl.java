@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import java.util.Set;
 import de.rcenvironment.core.communication.api.ServiceCallContext;
 import de.rcenvironment.core.communication.api.ServiceCallContextUtils;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
@@ -30,6 +31,7 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.PersistedComponentData;
 import de.rcenvironment.core.component.execution.internal.ComponentContextBridge;
+import de.rcenvironment.core.component.execution.internal.ComponentExecutionStorageBridge;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -62,7 +64,9 @@ public class ComponentContextImpl implements ComponentContext {
 
     private final LogicalNodeId wfCtrlNode;
 
-    private LogicalNodeId defaultStorageNode;
+    private final LogicalNodeId storageNodeId;
+
+    private final NetworkDestination storageNetworkDestination;
 
     private File workingDirectory;
 
@@ -131,14 +135,17 @@ public class ComponentContextImpl implements ComponentContext {
         }
     };
 
-    public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentContextBridge compExeCtxBridge) {
+    public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentContextBridge compExeCtxBridge,
+        ComponentExecutionStorageBridge compExeStorageBridge) {
         compExeId = compExeCtx.getExecutionIdentifier();
         instanceName = compExeCtx.getInstanceName();
         node = compExeCtx.getNodeId();
         wfCtrlNode = compExeCtx.getWorkflowNodeId();
         wfExeCrtlId = compExeCtx.getWorkflowExecutionIdentifier();
         wfCtrlInstanceName = compExeCtx.getWorkflowInstanceName();
-        defaultStorageNode = compExeCtx.getWorkflowNodeId();
+        storageNodeId = compExeCtx.getStorageNodeId();
+        storageNetworkDestination = compExeStorageBridge.getStorageNetworkDestination();
+        // compExeCtxBridge.
         workingDirectory = compExeCtx.getWorkingDirectory();
         configurationDescription = compExeCtx.getComponentDescription().getConfigurationDescription();
         for (EndpointDescription ep : compExeCtx.getComponentDescription().getInputDescriptionsManager().getEndpointDescriptions()) {
@@ -189,8 +196,13 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     @Override
-    public LogicalNodeId getDefaultStorageNodeId() {
-        return defaultStorageNode;
+    public LogicalNodeId getStorageNodeId() {
+        return storageNodeId;
+    }
+
+    @Override
+    public NetworkDestination getStorageNetworkDestination() {
+        return storageNetworkDestination;
     }
 
     @Override
@@ -204,10 +216,6 @@ public class ComponentContextImpl implements ComponentContext {
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
-    }
-
-    public void setDefaultStorageNode(LogicalNodeId defaultStorageNode) {
-        this.defaultStorageNode = defaultStorageNode;
     }
 
     public void setWorkingDirectory(File workingDirectory) {
@@ -274,7 +282,7 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public Set<String> getInputMetaDataKeys(String inputName) {
-        return Collections.unmodifiableSet(inputsMetaData.keySet());
+        return Collections.unmodifiableSet(inputsMetaData.get(inputName).keySet());
     }
 
     @Override
@@ -299,7 +307,7 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public Set<String> getOutputMetaDataKeys(String outputName) {
-        return Collections.unmodifiableSet(outputsMetaData.keySet());
+        return Collections.unmodifiableSet(outputsMetaData.get(outputName).keySet());
     }
 
     @Override

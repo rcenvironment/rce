@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionControllerService;
@@ -177,7 +178,7 @@ public class ComponentExecutionServiceImpl implements ComponentExecutionService 
 
     @Override
     public String init(ComponentExecutionContext executionContext, String authToken, Long referenceTimestamp)
-        throws RemoteOperationException, ComponentExecutionException {
+        throws ComponentExecutionException {
         final LogicalNodeId remoteNodeId = executionContext.getNodeId();
 
         boolean wasDelayedAtLeastOnce = false;
@@ -203,40 +204,50 @@ public class ComponentExecutionServiceImpl implements ComponentExecutionService 
         }
 
         try {
-            return getExecutionControllerService(remoteNodeId)
-                .createExecutionController(executionContext, authToken, referenceTimestamp);
+            try {
+                if (authToken == null) {
+                    // not allowed since 9.0.0; every component execution requires an auth token now
+                    throw new ComponentExecutionException(
+                        "Received a 'null' authorization token for component execution " + executionContext.getExecutionIdentifier());
+                }
+                return getExecutionControllerService(remoteNodeId).createExecutionController(executionContext, authToken,
+                    referenceTimestamp);
+            } catch (RemoteOperationException e) {
+                throw new ComponentExecutionException(
+                    "Error initiating component " + executionContext.getExecutionIdentifier() + " for execution", e);
+            }
         } finally {
             rateLimiter.releasePermission(remoteNodeId);
         }
     }
 
     @Override
-    public void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void pause(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performPause(executionId);
     }
 
     @Override
-    public void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void resume(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performResume(executionId);
     }
 
     @Override
-    public void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void cancel(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performCancel(executionId);
     }
 
     @Override
-    public void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void dispose(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performDispose(executionId);
     }
 
     @Override
-    public void prepare(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void prepare(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performPrepare(executionId);
     }
 
     @Override
-    public void start(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
+    public void start(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performStart(executionId);
     }
 
@@ -304,12 +315,13 @@ public class ComponentExecutionServiceImpl implements ComponentExecutionService 
         return new HashSet<ComponentExecutionInformation>(cmpExeCtrlService.getComponentExecutionInformations());
     }
 
-    private RemotableComponentExecutionControllerService getExecutionControllerService(ResolvableNodeId node) {
-        if (platformService.matchesLocalInstance(node)) {
+    private RemotableComponentExecutionControllerService getExecutionControllerService(NetworkDestination destination) {
+        // TODO is this explicit check for the local node necessary?
+        if (destination instanceof ResolvableNodeId && platformService.matchesLocalInstance((ResolvableNodeId) destination)) {
             return cmpExeCtrlService;
         } else {
             // fetching the service proxy on each call, assuming that it will be cached centrally if necessary
-            return communicationService.getRemotableService(RemotableComponentExecutionControllerService.class, node);
+            return communicationService.getRemotableService(RemotableComponentExecutionControllerService.class, destination);
         }
     }
 

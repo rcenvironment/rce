@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,6 +9,7 @@
 package de.rcenvironment.core.component.testutils;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -31,7 +32,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     }
 
     @Override
-    public LogicalNodeId getInputsNodeId() {
+    public LogicalNodeId getDestinationNodeId() {
         return null;
     }
 
@@ -51,7 +52,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     }
 
     @Override
-    public LogicalNodeId getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowControllerLocation() {
         return null;
     }
 
@@ -75,4 +76,8 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
         return null;
     }
 
+    @Override
+    public NetworkDestination getNetworkDestination() {
+        return null;
+    }
 }

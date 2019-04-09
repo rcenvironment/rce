@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.api;
 
 import java.util.List;
@@ -24,11 +24,11 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient
 public class ComponentExecutionContextBuilder {
 
     private ComponentExecutionContextImpl compExeCtx;
-    
+
     public ComponentExecutionContextBuilder() {
         compExeCtx = new ComponentExecutionContextImpl();
     }
-    
+
     /**
      * Sets the execution identifiers.
      * 
@@ -41,7 +41,7 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setWorkflowExecutionIdentifier(workflowExecutionIdentifier);
         return this;
     }
-    
+
     /**
      * Sets the instance names.
      * 
@@ -54,7 +54,7 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setWorkflowInstanceName(workflowInstanceName);
         return this;
     }
-    
+
     /**
      * Sets the nodes.
      * 
@@ -64,10 +64,10 @@ public class ComponentExecutionContextBuilder {
      */
     public ComponentExecutionContextBuilder setNodes(LogicalNodeId workflowNode, LogicalNodeId defaultStorageNode) {
         compExeCtx.setWorkflowNodeId(workflowNode);
-        compExeCtx.setDefaultStorageNode(defaultStorageNode);
+        compExeCtx.setStorageNodeId(defaultStorageNode);
         return this;
     }
-    
+
     /**
      * Sets the {@link ComponentDescription} of the component executed.
      * 
@@ -78,13 +78,13 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setComponentDescription(componentDescription);
         return this;
     }
-    
+
     /**
      * Sets information about predecessors and successors of the component executed.
      * 
      * @param isConnectedToEndpointDatumSenders <code>true</code> if the component executed is connected to inputs, otherwise
      *        <code>false</code>
-     * @param endpointDatumRecipients set of {@link EndpointDatumRecipient}s 
+     * @param endpointDatumRecipients set of {@link EndpointDatumRecipient}s
      * @return {@link ComponentExecutionContextBuilder} instance for method chaining purposes
      */
     public ComponentExecutionContextBuilder setPredecessorAndSuccessorInformation(boolean isConnectedToEndpointDatumSenders,
@@ -93,7 +93,7 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setEndpointDatumRecipients(endpointDatumRecipients);
         return this;
     }
-    
+
     /**
      * Sets the workflow graph.
      * 
@@ -104,7 +104,7 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setWorkflowGraph(workflowGraph);
         return this;
     }
-    
+
     /**
      * Sets the data management id of the component instance.
      * 
@@ -123,12 +123,12 @@ public class ComponentExecutionContextBuilder {
         compExeCtx.setOutputDataManagementIds(outputDataManagementIds);
         return this;
     }
-    
+
     /**
      * @return {@link ComponentExecutionContext} object
      */
     public ComponentExecutionContext build() {
         return compExeCtx;
     }
-    
+
 }

@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Mail
 Bundle-SymbolicName: de.rcenvironment.core.mail;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-ManifestVersion: 2
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/*.xml
 Import-Package: com.icegreen.greenmail.util;version="1.5.1",
@@ -21,7 +21,7 @@ Import-Package: com.icegreen.greenmail.util;version="1.5.1",
  jodd.mail;version="3.7.1",
  org.apache.commons.lang3.concurrent;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson.map;version="1.9.13"
+ com.fasterxml.jackson.databind;version="2.9.8"
 Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.platform.maven.mail
 Export-Package: de.rcenvironment.core.mail

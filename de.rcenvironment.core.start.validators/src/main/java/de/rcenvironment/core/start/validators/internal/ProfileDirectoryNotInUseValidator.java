@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,6 +10,9 @@ package de.rcenvironment.core.start.validators.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
@@ -25,6 +28,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Jan Flink
  * @author Robert Mischke
  */
+@Component(service = InstanceValidator.class)
 public class ProfileDirectoryNotInUseValidator extends DefaultInstanceValidator {
 
     private static ConfigurationService configService;
@@ -43,6 +47,7 @@ public class ProfileDirectoryNotInUseValidator extends DefaultInstanceValidator 
         return InstanceValidationResultFactory.createResultForPassed(validationDisplayName);
     }
 
+    @Reference
     protected void bindConfigurationService(ConfigurationService configIn) {
         configService = configIn;
     }

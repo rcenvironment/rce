@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -58,7 +58,7 @@ public class InstanceValidationServiceImplTest {
     private void validateInstanceAndCheckResults(int numPassed, int numFailedProceed, int numFailedShutdown) {
         Map<InstanceValidationResultType, List<InstanceValidationResult>> results = service.validateInstance();
         assertEquals(numPassed, results.get(InstanceValidationResultType.PASSED).size());
-        assertEquals(numFailedProceed, results.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size());
+        assertEquals(numFailedProceed, results.get(InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED).size());
         assertEquals(numFailedShutdown, results.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size());
     }
 
@@ -168,12 +168,12 @@ public class InstanceValidationServiceImplTest {
 
         List<Class<? extends InstanceValidator>> validatorAnecessaryPredecessors = new LinkedList<Class<? extends InstanceValidator>>();
         validatorAnecessaryPredecessors.add(validatorB.getClass());
-        EasyMock.expect(validatorA.getNecessaryPredecessors()).andReturn(validatorAnecessaryPredecessors);
+        EasyMock.expect(validatorA.getNecessaryPredecessors()).andReturn(validatorAnecessaryPredecessors).atLeastOnce();
         EasyMock.replay(validatorA);
 
         List<Class<? extends InstanceValidator>> validatorBnecessaryPredecessors = new LinkedList<Class<? extends InstanceValidator>>();
         validatorBnecessaryPredecessors.add(validatorA.getClass());
-        EasyMock.expect(validatorB.getNecessaryPredecessors()).andReturn(validatorBnecessaryPredecessors);
+        EasyMock.expect(validatorB.getNecessaryPredecessors()).andReturn(validatorBnecessaryPredecessors).atLeastOnce();
         EasyMock.replay(validatorB);
 
         ((InstanceValidationServiceImpl) service).bindInstanceValidator(validatorA);

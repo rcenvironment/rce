@@ -2,11 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Data Management
 Bundle-SymbolicName: de.rcenvironment.core.component.datamanagement;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Import-Package: de.rcenvironment.core.authentication,
- de.rcenvironment.core.authorization,
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -19,10 +18,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.utils.incubator,
  org.apache.commons.compress.compressors.gzip;version="1.18.0",
  org.apache.commons.io,
- org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13"
+ org.apache.commons.logging;version="1.1.1"
 Export-Package: de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.datamanagement.stateful
 Service-Component: OSGI-INF/*.xml

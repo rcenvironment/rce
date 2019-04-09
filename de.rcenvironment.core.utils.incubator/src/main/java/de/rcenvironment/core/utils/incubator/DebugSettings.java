@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -31,7 +31,7 @@ public final class DebugSettings {
 
     // template/example for development settings; this is useful to enable logging for multiple development instances at once, instead of
     // adding/editing the runtime system property in several launch configurations
-    // private static final String DEFAULT_VERBOSE_LOGGING_PATTERN = "*.NodePropertiesService,*.DistributedComponentKnowledgeService";
+    // private static final String DEFAULT_VERBOSE_LOGGING_PATTERN = "Notifications,WorkflowExecution,RemoteServiceCalls";
 
     // singleton field
     private static final DebugSettings INSTANCE = new DebugSettings();

@@ -1,29 +1,18 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.login.internal;
 
-import java.io.File;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.IDialogSettings;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Text;
 
-import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.authentication.AuthenticationService;
-import de.rcenvironment.core.authentication.User.Type;
 import de.rcenvironment.core.login.LoginConfiguration;
 
 /**
@@ -72,7 +61,7 @@ public class LoginDialogController {
     /**
      * The name of the tab to set to the front at the next (Re-)Login.
      */
-    private String tabTitle = Messages.certificateTabName;
+    private String tabTitle = Messages.ldapTabName;
     
     
     /**
@@ -88,25 +77,6 @@ public class LoginDialogController {
         this.loginDialog = loginDialog;
         this.authenticationService = authenticationService;
         this.loginConfiguration = loginConfiguration;
-    }
-    
-    /**
-     * Set ups the dialog for the certificate login.
-     * 
-     * @param relogin true if re-login should be processed, else false.
-     */
-    protected void setUpDialogForCertificate(boolean relogin) {
-        loadSettings();
-
-        addListenerToKeyPathButton();
-
-        if (!relogin || loginDialog.getUser().getType() != Type.certificate) {
-            addListenerToCertificatePathButton();
-            tryToLoadDefaultCertificate();
-        } else {
-            loadCertificateFromFile();
-        }
-        tryToLoadDefaultKey();
     }
     
     /**
@@ -164,149 +134,6 @@ public class LoginDialogController {
         } // else it is the default value set above
     }
 
-    /**
-     * 
-     * Adds a listener.
-     *
-     */
-    private void addListenerToCertificatePathButton() {
-        
-        Button certificateDirectoryButton = loginDialog.getCertificateFileButton();
-        
-        certificateDirectoryButton.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent event) {
-                FileDialog fileDialog = new FileDialog(loginDialog.getShell(), SWT.OPEN);
-                fileDialog.setText(Messages.chooseCert);
-                fileDialog.setFilterPath(new File(certificatePath).getParent());
-
-                Text myCertificateFileText = loginDialog.getCertificateFileText();
-                
-                final String newCertificatePath = fileDialog.open();
-                if (newCertificatePath != null) {
-                    try {
-                        loginDialog.setCertificate(authenticationService.loadCertificate(newCertificatePath));
-                        myCertificateFileText.setBackground(loginDialog.getShell().getBackground());
-                        myCertificateFileText.setText(new File(newCertificatePath).getName());
-                        
-                        certificatePath = newCertificatePath;
-                    } catch (AuthenticationException e) {
-                        loginDialog.setCertificate(null);
-                        myCertificateFileText.setBackground(loginDialog.getShell().getDisplay().getSystemColor(SWT.COLOR_RED));
-                        myCertificateFileText.setText(""); //$NON-NLS-1$
-                        
-                        MessageDialog.openError(loginDialog.getShell(), Messages.loginDialog,
-                            Messages.certRevoked);
-                    }
-                }
-            }
-            @Override
-            public void widgetDefaultSelected(SelectionEvent e) {
-            }
-
-        });
-    }
-    
-    /**
-     * 
-     * Sets the certificate in the loginDialog, if there was a certificate login before.
-     *
-     */
-    private void loadCertificateFromFile(){
-        
-        try {
-            loginDialog.setCertificate(authenticationService.loadCertificate(certificatePath));
-        } catch (AuthenticationException e) {
-            loginDialog.setCertificate(null);
-        }
-        
-    }
-    
-    /**
-     * Adds a listener.
-     */
-    private void addListenerToKeyPathButton() {
-        
-        Button keyFileButton = loginDialog.getkeyFileButton();
-        
-        keyFileButton.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent event) {
-                FileDialog fileDialog = new FileDialog(loginDialog.getShell(), SWT.OPEN);
-                fileDialog.setFilterPath(keyPath);
-                fileDialog.setText(Messages.chooseKey);
-
-                Text myKeyFileText = loginDialog.getKeyFileText();
-
-                final String newKeyPath = fileDialog.open();
-                if (newKeyPath != null) {
-                    try {
-                        loginDialog.setKey(authenticationService.loadKey(newKeyPath));
-                        myKeyFileText.setBackground(loginDialog.getShell().getBackground());
-                        myKeyFileText.setText(new File(newKeyPath).getName());
-                        
-                        keyPath = newKeyPath;
-                    } catch (AuthenticationException e) {
-                        loginDialog.setKey(null);
-                        myKeyFileText.setBackground(loginDialog.getShell().getDisplay().getSystemColor(SWT.COLOR_RED));
-                        myKeyFileText.setText(""); //$NON-NLS-1$
-                        
-                        MessageDialog.openError(loginDialog.getShell(),
-                                                Messages.loginDialog,
-                                                Messages.keyRevoked);
-                    }
-                }
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent e) { }
-        });
-    }
-
-    /**
-     * Tries to load default or previously used certificate and (if successful) set the GUI entry to it.
-     */
-    private void tryToLoadDefaultCertificate() {
-        
-        Text myCertificateFileText = loginDialog.getCertificateFileText();
-        myCertificateFileText.setText(""); //$NON-NLS-1$
-        myCertificateFileText.setBackground(loginDialog.getShell().getDisplay().getSystemColor(SWT.COLOR_RED));
-        loginDialog.setCertificate(null);
-        
-        if (new File(certificatePath).exists()) {
-            try {
-                loginDialog.setCertificate(authenticationService.loadCertificate(certificatePath));
-                myCertificateFileText.setText(new File(certificatePath).getName());
-                myCertificateFileText.setBackground(loginDialog.getShell().getBackground());
-            } catch (AuthenticationException e) {
-                LOGGER.error("Given certificate could not be loaded: " + certificatePath, e); //$NON-NLS-1$
-            }
-        }        
-    }
-
-    /**
-     * Tries to load default or previously used private key and (if successful) set the GUI entry to it.
-     */
-    private void tryToLoadDefaultKey() {
-        
-        Text myKeyFileText = loginDialog.getKeyFileText();
-        myKeyFileText.setText(""); //$NON-NLS-1$
-        myKeyFileText.setBackground(loginDialog.getShell().getDisplay().getSystemColor(SWT.COLOR_RED));
-        loginDialog.setKey(null);
-        
-        if (new File(keyPath).exists()) {
-            try {
-                loginDialog.setKey(authenticationService.loadKey(keyPath));
-                myKeyFileText.setText(new File(keyPath).getName());
-                myKeyFileText.setBackground(loginDialog.getShell().getBackground());
-            } catch (AuthenticationException e) {
-                LOGGER.error("Given private key could not be loaded: " + keyPath, e); //$NON-NLS-1$
-            }
-        }
-    }
-    
     /**
      * 
      * Sets the entry of the usernameLDAP to username for the LDAP login. It might be "".

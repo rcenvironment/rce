@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -109,6 +109,22 @@ public class InstanceConfigurationImpl {
             writableSegment.setBoolean(builder.general().isWorkflowHost().getConfigurationKey(), isWorkflowHost);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set the workflow host flag."), e);
+        }
+    }
+
+    /**
+     * Sets a custom node id override value; typically used for automated testing.
+     * 
+     * @param customNodeId the node id to use
+     * @throws InstanceConfigurationException on failure.
+     */
+    public void setCustomNodeId(String customNodeId) throws InstanceConfigurationException {
+        try {
+            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().getPath());
+            // note: not using the unnecessarily complex builder approach for new code here
+            writableSegment.setString("customNodeId", customNodeId);
+        } catch (ConfigurationException e) {
+            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "setting a custom node id"), e);
         }
     }
 
@@ -597,4 +613,5 @@ public class InstanceConfigurationImpl {
             throw new InstanceConfigurationException("Failed to update configuration.");
         }
     }
+
 }

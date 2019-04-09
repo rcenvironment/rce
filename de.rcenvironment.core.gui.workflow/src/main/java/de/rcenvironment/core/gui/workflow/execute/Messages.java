@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -203,6 +203,9 @@ public final class Messages extends NLS {
 
     /** Constant. */
     public static String missingPlaceholder;
+    
+    /** Constant. */
+    public static String textExceedsMaxLength;
     
     /** Constant. */
     public static String validationProblem;

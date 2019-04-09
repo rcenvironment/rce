@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -40,7 +40,8 @@ public class LoggingConfiguredProperlyValidator extends DefaultInstanceValidator
             // properly.
             return createInstanceValidationResultForFailure(validationDisplayName);
         }
-        String nonDefaultPaxConfigKey = "log4j.appender.DEBUG_LOG";
+        // TODO (p2) - in the remaining error cases, does this property actually detect them?
+        String nonDefaultPaxConfigKey = "log4j.appender.CONSOLE";
         isConfiguredProperly = paxLoggingConfiguration.getProperties() != null
             && paxLoggingConfiguration.getProperties().get(nonDefaultPaxConfigKey) != null;            
         if (!isConfiguredProperly) {
@@ -51,6 +52,7 @@ public class LoggingConfiguredProperlyValidator extends DefaultInstanceValidator
     }
     
     private InstanceValidationResult createInstanceValidationResultForFailure(String validationDisplayName) {
+        // TODO (p2) - this message is obsolete, update it with any remaining failure cases and info - March 2018
         final String errorMessage1 = "Failed to initialize background logging properly."
             + " Most likely, because RCE was started from another directory than its installation directory. "
             + "(The installation directory is the directory that contains the 'rce' executable.)";

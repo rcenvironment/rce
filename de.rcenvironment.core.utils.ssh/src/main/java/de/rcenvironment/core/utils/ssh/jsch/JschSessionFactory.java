@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -30,6 +30,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public final class JschSessionFactory {
 
+    private static final int SERVER_ALIVE_INTERVAL = 5000;
     private static Log log = LogFactory.getLog(JschSessionFactory.class);
 
     private JschSessionFactory() {
@@ -54,16 +55,29 @@ public final class JschSessionFactory {
         }
 
         @Override
-        public void log(int level, String arg1) {
+        public void log(int level, String rawMessage) {
             if (level >= minLevel) {
-                final String logMessage = "JSch connection log: " + level + ": " + arg1;
-                if (level == 0 || level == 1) {
-                    // Debug and info messages are both logged as debug, as the "info" output is quite verbose.
-                    apacheCommonsLogger.debug(logMessage);
+                final String wrappedMessage = StringUtils.format("SSH connection log (L%s): %s", level, rawMessage);
+                if (level == 0) {
+                    apacheCommonsLogger.debug(wrappedMessage);
+                } else if (level == 1) {
+                    // always log JSch "info" messages as debug, as they are quite verbose
+                    // also, filter out certain messages that are usually irrelevant unless JSch DEBUG level is requested
+                    if (minLevel > 0 && (rawMessage.startsWith("kex: ") || rawMessage.endsWith(" sent") || rawMessage.endsWith(" received")
+                        || rawMessage.startsWith("expecting "))) {
+                        return; // suppress this line
+                    }
+
+                    apacheCommonsLogger.debug(wrappedMessage);
                 } else if (level == 2) {
-                    apacheCommonsLogger.warn(logMessage);
+                    if (rawMessage.startsWith("Permanently added ")) {
+                        // we do not consider these messages actual warnings in our log levels
+                        apacheCommonsLogger.info(wrappedMessage);
+                    } else {
+                        apacheCommonsLogger.warn(wrappedMessage);
+                    }
                 } else {
-                    apacheCommonsLogger.error(logMessage);
+                    apacheCommonsLogger.error(wrappedMessage);
                 }
             }
         }
@@ -154,8 +168,8 @@ public final class JschSessionFactory {
 
         // TODO provide a constructor that accepts a SSHSessionConfiguration directly?
 
-        //Retry loop in case of a SignatureException (caused by a bug that occurs randomly). 
-        //The actual setup is done in the setupSessionInternal method.
+        // Retry loop in case of a SignatureException (caused by a bug that occurs randomly).
+        // The actual setup is done in the setupSessionInternal method.
         int i = 5;
         do {
             try {
@@ -222,6 +236,8 @@ public final class JschSessionFactory {
         }
 
         JSch.setLogger(connectionLogger);
+        
+        jschSession.setServerAliveInterval(SERVER_ALIVE_INTERVAL);
 
         jschSession.connect();
         return jschSession;
@@ -234,6 +250,7 @@ public final class JschSessionFactory {
      * @return a new SSH logger delegate
      */
     public static Logger createDelegateLogger(final Log apacheCommonsLogger) {
+        // TODO consider using the "verbose logging" flag to enable log level 0; never needed so far, though
         return new ACLDelegate(apacheCommonsLogger, Logger.INFO);
     }
 

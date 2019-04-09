@@ -8,9 +8,8 @@
 			<emphasis>not encrypted</emphasis>. This means that it is <emphasis>not
 			secure</emphasis> to expose RCE server ports to untrusted networks like the internet. In
 		the case that it is not possible or not secure to use RCE connections, SSH connections
-		provide a more secure alternative. However, not all tools can be used via an SSH connection
-		in the current version. The following table compares the two connection types:<table
-			frame="all">
+		provide a more secure alternative. The following table compares the two connection
+			types:<table frame="all">
 			<title>Connection types</title>
 			<tgroup cols="6">
 				<colspec colname="c1" colnum="1" colwidth="2.06*"/>
@@ -23,11 +22,10 @@
 					<row>
 						<entry>Connection type</entry>
 						<entry>Access to all published tools</entry>
-						<entry>Supporting all RCE network functions (e.g. tool documentation, remote
-							monitoring...)</entry>
+						<entry>Supporting all RCE network functions (e.g. remote monitoring)</entry>
 						<entry>Encrypted traffic</entry>
 						<entry>Using login name and password or RSA key</entry>
-						<entry><![CDATA[Sym-       metri-     cal]]></entry>
+						<entry>Symmetrical</entry>
 					</row>
 				</thead>
 				<tbody>
@@ -41,7 +39,7 @@
 					</row>
 					<row>
 						<entry>SSH connections</entry>
-						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
 						<entry><emphasis role="bold">no</emphasis></entry>
 						<entry><emphasis role="bold">yes</emphasis></entry>
 						<entry><emphasis role="bold">yes</emphasis></entry>
@@ -82,15 +80,12 @@
 	<sect2>
 		<title>SSH Remote Access Connections</title>
 		<para>SSH connections provide a more secure alternative to the standard RCE connections and can be
-			used to access tools remotely that were integrated using the "Remote Tool Access"
-			template, which determines certain inputs and outputs. The published tools meeting the
-			requirements of the "Remote Tool Access" template are shown in the palette of the
-			client's Workflow Editor in the group "SSH Remote Access Tools" (this may take a few
-			seconds after connecting, as the tool list is fetched from the remote hosts every few
-			seconds). From there, you can use them in your workflows just like your local components
-			and tools. Differently from tools accessed by RCE network connections, in this case the
-			component is shown to be executed on your local instance in the Workflow Execution
-			wizard.</para>
+			used to access tools remotely. The published tools are shown in the palette of the
+			client's Workflow Editor (this may take a few seconds after connecting, as the tool list
+			is fetched from the remote hosts every few seconds). From there, you can use them in
+			your workflows just like your local components and tools. Differently from tools
+			accessed by RCE network connections, in this case the component is shown to be executed
+			on your local instance in the Workflow Execution wizard.</para>
 		<para>Also workflows that were published on the remote instance (for information about the
 			publishing see section "Remote Tool and Workflow Access") are shown as components in the
 			palette of the client's Workflow Editor in the group "SSH Remote Access Workflows" (if
@@ -122,14 +117,65 @@
 				file. If your private key is protected by a passphrase, select the authentication
 				type "Keyfile with passphrase protection", else select "Keyfile without passphrase
 				protection".</para>
-			<para>The connections are shown in the "SSH Remote Access"->"SSH Remote Access
-				Connections" subtree. They can also be edited, connected and disconnected in the
-				"network" view. It is possible to store passphrases using the Eclipse Secure Storage
-				Mechanism. However, the changes made here are not saved in the configuration yet,
-				i.e. they will be lost when RCE is closed or restarted. To permanently add SSH
-				connections, you can edit the configuration file (see the "Configuration" section
-				for details). However, it is not possible yet to store the passphrases for such
-				connections permanently.</para>
+			<para>The connections are shown in the "SSH Remote Access"->"SSH Remote Access Connections"
+				subtree. They can also be edited, connected and disconnected in the "network" view.
+				It is possible to store passphrases using the Eclipse Secure Storage Mechanism (this
+				is only available on Windows). However, the changes made here are not saved in the
+				configuration yet, i.e. they will be lost when RCE is closed or restarted. To
+				permanently add SSH connections, you can edit the configuration file (see the
+				"Configuration" section for details). However, it is not possible yet to store the
+				passphrases for such connections permanently.</para>
 		</sect3>
+	</sect2>
+	<sect2>
+		<title>Example Structure of an RCE network with several project partners</title>
+		<para>This section describes how an RCE network with several project partners could be
+			structured. RCE provides two different types of connections between RCE instances which
+			can both be used to access published tools:</para>
+		<para>Standard RCE connections are meant to be used in a trusted (internal) network, as the
+			data exchanged via those connections is not encrypted. These connections are
+			bidirectional and allow to share more data than just the information about published
+			tools (e.g. they can be used to access data about executed workflows on another
+			instance).</para>
+		<para>RCE SSH connections use the SSH protocol to provide an encrypted connection. They are
+			meant to securely connect RCE instances from different institutions over the internet.
+			These connections are one-directional and allow the client to run published tools and
+			workflows on the server (of course, both instances can be configured as client AND
+			server at the same time if necessary so they can use each other’s tools).</para>
+		<para>In practice, most partners will probably use both types of connections: RCE
+			connections to connect different RCE instances within their institution and SSH
+			connections to connect to the other partners. The following figure gives an example of
+			how such a project network could be structured:</para>
+		<figure>
+				<title>Example RCE network</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/RCE-SSH-network.png" contentwidth="400"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>The four project partners in the example all have an internal network of RCE instances which
+			are connected by standard RCE connections. SSH connections are used to connect between
+			the different partners. Therefore, each partner who wants to publish tools to other
+			partners has one RCE instance which is configured as an SSH server. Only this one
+			instance per institution has to be reachable via SSH over the internet, all other
+			instances in the institution’s internal network can be connected to it by standard RCE
+			connections and still publish tools to the other partners/access tools published by
+			other partners.</para>
+		<para>In the example, the RCE instances in Partner A’s network can access the tools
+			published in Partner C’s network and vice versa. One of the instances from Partner D can
+			access Partner C’s tools; and all the partners can access the tools in Partner B’s
+			network.</para>
+		<para>Each institution in the example has a different internal setup, all of which are
+			possible:</para>
+		<para>Partner A has a dedicated RCE server where the published tools are located, which is
+			connected to the SSH server by an RCE connection. All other RCE users in the internal
+			network are connected to this server.</para>
+		<para>Partner B has put all the tools directly on the SSH server.</para>
+		<para>In Partner C’s network, some tools are located on the SSH server, but some tools are
+			also published by users directly on their own machines. As long as they are connected to
+			the SSH server, also those tools can be used by the other partners. </para>
+		<para>Partner D has not published any tools and has no SSH server, instead the users’
+			computers connect directly to the other partner’s SSH servers. </para>
 	</sect2>
 </sect1>

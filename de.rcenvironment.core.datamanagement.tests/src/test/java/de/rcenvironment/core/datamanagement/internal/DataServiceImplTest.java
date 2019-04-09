@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,8 +23,8 @@ import org.osgi.framework.BundleContext;
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.datamanagement.RemotableFileDataService;
@@ -93,7 +93,7 @@ public class DataServiceImplTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) {
             T service = null;
             if (iface.equals(RemotableMetaDataService.class)) {
                 service = (T) EasyMock.createNiceMock(RemotableMetaDataService.class);
@@ -143,6 +143,11 @@ public class DataServiceImplTest {
 
         @Override
         public long put(URI loc, Object object) {
+            return put(loc, object);
+        }
+
+        @Override
+        public long put(URI loc, Object object, boolean alreadyCompressed) {
             return 0;
         }
 
@@ -153,6 +158,11 @@ public class DataServiceImplTest {
 
         @Override
         public Object get(URI loc) {
+            return get(loc, true);
+        }
+
+        @Override
+        public Object get(URI loc, boolean decompress) {
             return null;
         }
 

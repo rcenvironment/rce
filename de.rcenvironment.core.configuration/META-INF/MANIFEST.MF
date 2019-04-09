@@ -3,31 +3,36 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.configuration.internal,
  de.rcenvironment.core.configuration.testutils
-Import-Package: de.rcenvironment.core.configuration.bootstrap,
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.core.type;version="2.9.8",
+ com.fasterxml.jackson.core.util;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.node;version="2.9.8",
+ de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.configuration.bootstrap.profile,
- de.rcenvironment.core.configuration.discovery.bootstrap,
  de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.toolkit.modules.statistics.api,
+ de.rcenvironment.toolkit.utils.common,
  org.apache.commons.io,
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.impl;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
- org.codehaus.jackson.util;version="1.9.13",
- org.eclipse.equinox.security.storage;version="1.0.0",
+ org.eclipse.equinox.internal.security.auth,
+ org.eclipse.equinox.security.storage,
+ org.eclipse.equinox.security.storage.provider,
  org.eclipse.osgi.util,
- org.osgi.framework
+ org.osgi.framework,
+ org.osgi.service.component.annotations
 Bundle-ClassPath: .
-Service-Component: OSGI-INF/*.xml
+Service-Component: OSGI-INF/*.xml,
+ OSGI-INF/generated/*.xml
 Bundle-Activator: de.rcenvironment.core.configuration.internal.Activator
+Require-Bundle: org.eclipse.core.runtime

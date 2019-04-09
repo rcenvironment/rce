@@ -20,7 +20,7 @@
 			example workflows are grouped in sub folders. It is recommended to walk through the
 			workflows following the prefix starting with '01_01_Hello_World.wf'.</para>
 	</sect2>
-	<sect2>
+	<sect2 id="workflow_components">
 		<title>Workflow Components</title>
 		<para>Workflow components are either tools that are integrated by users or are provided by RCE
 			supplying multi-purpose functionality. The following list shows workflow components
@@ -29,45 +29,67 @@
 			<itemizedlist>
 				<listitem>
 					<para>
-					<emphasis role="italic">Data:</emphasis>Database</para>
+					<emphasis role="italic">Data:</emphasis> Database</para>
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">Data Flow:</emphasis>Input Provider, Output Writer, Joiner, Switch</para>
+					<emphasis role="italic">Data Flow:</emphasis> Input Provider, Output Writer, Joiner, Switch</para>
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">Evaluation:</emphasis>Optimizer, Design of Experiments, Parametric Study, Converger, Evaluation Memory</para>
+					<emphasis role="italic">Evaluation:</emphasis> Optimizer, Design of Experiments, Parametric Study, Converger, Evaluation Memory</para>
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">Execution:</emphasis>Script, Cluster, Excel</para>
+					<emphasis role="italic">Execution:</emphasis> Script, Cluster, Excel</para>
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">XML:</emphasis>XML Loader, XML Merger, XML Values</para>
+					<emphasis role="italic">XML:</emphasis> XML Loader, XML Merger, XML Values</para>
 				</listitem>
 				<listitem>
 					<para>
-					<emphasis role="italic">CPACS:</emphasis>TiGL Viewer, VAMPzero Initializer</para>
+					<emphasis role="italic">CPACS:</emphasis> TiGL Viewer, VAMPzero Initializer</para>
 				</listitem>
 			</itemizedlist>
-		<para>The example workflows in sub folder '02_Component Groups' introduce some of the workflow
-			components provided. Additionally, there is a documentation for each workflow component
-			available in RCE. To access it, you can either rightclick on a component in a workflow
-			and select "Open Help" or press "F1". A help view opens on the right-hand side. Moreover
-			there is an entry "Help Contents" in the "Help" menu where you can navigate to the
-			component help you require.</para>
-		<para>The XML and CPACS components are able to read or extract data from an Xml-file via dynamic in- or outputs. 
-		The XPathChooser is a feature that provides help selecting the item, which shall be read or extracted. Add an in- or output
-		and press the "XPath choosing..." button to open a window , where you can select the Xml-file, which contains the item that 
-		shall be selected. After choosing the file, the XPathChooser opens containing a tree, symbolizing the Xml-File. By 
-		selecting an element, the text below is updated and displays the current path. The last two columns are used to choose 
-		attributes. The attribute name can be selected via the column “Attributes”. In the column “Values”, the proper value can 
-		be selected. Use a double-click on an element to expand or fold the tree. The chosen XPath will be written in the text 
-		field of the window, in which the XPathChooser has been opened originally. Using this text field, new paths can be 
-		created. Add a slash and the name of the node that shall be created to the existing	path. The new path will be added 
-		during the workflow run. </para>
+		<para><note>
+				<para>The Optimizer component uses the <ulink url="https://dakota.sandia.gov/"
+						>Dakota toolkit</ulink> in order to perform the actual optimization. This
+					toolkit is included in the RCE distribution, i.e., it is installed together with
+					RCE. On some systems, however, notably Ubuntu 18.04, this toolkit cannot be
+					executed, as the required library <emphasis role="italic"
+						>libgfortran3</emphasis> is not installed by default. If the toolkit cannot
+					be executed, the Optimizer component will issue the error "Could not start
+					optimizer. Maybe binaries are missing or not compatible with system.; cause:
+					Optimizer exited with a non zero exit code. Optimizer exit code = 127
+					(E#1543567120128)" or similar in the workflow console and the data
+					management.</para>
+				<para><phrase os="linux">On Ubuntu 18.04, this library can be installed by installing the
+						package <emphasis role="italic">libgfortran3</emphasis>. For other systems,
+						please refer to the documentation or the administrator of your system in
+						order to satisfy the missing dependency of the Dakota toolkit.</phrase>
+					<phrase os="windows">Please refer to the documentation or the administrator of
+						your system in order to satisfy the missing dependency of the Dakota
+						toolkit.</phrase></para>
+			</note>The example workflows in sub folder '02_Component Groups' introduce some of the
+			workflow components provided. Additionally, there is a documentation for each workflow
+			component available in RCE. To access it, you can either rightclick on a component in a
+			workflow and select "Open Help" or press "F1". A help view opens on the right-hand side.
+			Moreover there is an entry "Help Contents" in the "Help" menu where you can navigate to
+			the component help you require.</para>
+		<para>The XML and CPACS components are able to read or extract data from an XML file via dynamic
+			in- or outputs. The XPathChooser is a feature that provides help selecting the item,
+			which shall be read or extracted. Add an in- or output and press the "XPath choosing..."
+			button to open a window , where you can select the XML file, which contains the item
+			that shall be selected. After choosing the file, the XPathChooser opens containing a
+			tree, symbolizing the XML file. By selecting an element, the text below is updated and
+			displays the current path. The last two columns are used to choose attributes. The
+			attribute name can be selected via the column “Attributes”. In the column “Values”, the
+			proper value can be selected. Use a double-click on an element to expand or fold the
+			tree. The chosen XPath will be written in the text field of the window, in which the
+			XPathChooser has been opened originally. Using this text field, new paths can be
+			created. Add a slash and the name of the node that shall be created to the existing
+			path. The new path will be added during the workflow run. </para>
 		<para>New XPaths can only be generated within the inputs tab. Using the outputs tab will cause an error.</para>
 	</sect2>
 	<sect2>
@@ -382,7 +404,7 @@
 	</sect2>
 	<sect2>
 		<title>(Nested) Loops</title>
-		<para>Workflow components can be coupled to loops. A loop must always contain a so called driver
+		<para>Workflow components can be coupled to loops. A loop must always contain a so-called driver
 			workflow component. Driver workflow components (group "Evaluation") are: Optimizer,
 			Design of Experiments, Parametric Study, Converger (see the example workflow
 			"02_02_Evaluation_Drivers"). The responsibilities of a driver workflow component in a
@@ -671,7 +693,7 @@
 		<para> In the "Fault Tolerance" configuration tab of workflow driver components, it can be
 			configured how to handle failures in loops, for both kind of failures separately.</para>
 	</sect2>
-	<sect2>
+	<sect2 id="tool_result_verification">
 		<title>Manual Tool Result Verification</title>
 		<para>After the execution of an integrated tool, the results are sent via outputs to the
 			next workflow component (e.g. to the next integrated tool). By default, this is done in

@@ -7,4 +7,5 @@ Eclipse-BundleShape: dir
 RCE-Unpacked-Fileset-Id: testScripts
 RCE-Unpacked-Fileset-Path: resources/scripts
 RCE-Unpacked-Fileset-Presence-Test-File: README.txt
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Vendor: DLR

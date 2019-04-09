@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,7 +16,6 @@ import java.util.Set;
 
 import org.apache.commons.collections4.map.HashedMap;
 import org.easymock.EasyMock;
-import org.omg.IOP.ExceptionDetailMessage;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
@@ -30,7 +29,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDescripti
  * 
  * @author Doreen Seider
  */
-public final class InputDescriptionManagerMockFactory implements ExceptionDetailMessage {
+public final class InputDescriptionManagerMockFactory {
 
     private InputDescriptionManagerMockFactory() {}
 

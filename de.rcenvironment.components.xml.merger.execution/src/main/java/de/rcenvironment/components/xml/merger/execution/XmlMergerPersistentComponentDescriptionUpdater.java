@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,14 +9,14 @@ package de.rcenvironment.components.xml.merger.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.xml.merger.common.XmlMergerComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -119,26 +119,26 @@ public class XmlMergerPersistentComponentDescriptionUpdater implements Persisten
 
     private PersistentComponentDescription updateFrom3To31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
 
         final String name = "name";
         TextNode nameNode = (TextNode) rootNode.get(name);
-        String nodeName = nameNode.getTextValue();
+        String nodeName = nameNode.textValue();
         if (nodeName.contains("CPACS Joiner")) {
             nodeName = nodeName.replaceAll("CPACS Joiner", "XML Merger");
-            ((ObjectNode) rootNode).put(name, TextNode.valueOf(nodeName));
+            ((ObjectNode) rootNode).set(name, TextNode.valueOf(nodeName));
         }
 
         JsonNode dynInputs = rootNode.get("staticInputs");
         for (JsonNode staticInput : dynInputs) {
-            ((ObjectNode) staticInput).put(name, TextNode.valueOf(staticInput.get(name).getTextValue().replace(CPACS, "XML")));
+            ((ObjectNode) staticInput).set(name, TextNode.valueOf(staticInput.get(name).textValue().replace(CPACS, "XML")));
         }
 
         JsonNode staticOutputs = rootNode.get("staticOutputs");
         for (JsonNode staticOutput : staticOutputs) {
-            ((ObjectNode) staticOutput).put(name, TextNode.valueOf(staticOutput.get(name).getTextValue().replace(CPACS, "XML")));
+            ((ObjectNode) staticOutput).set(name, TextNode.valueOf(staticOutput.get(name).textValue().replace(CPACS, "XML")));
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();

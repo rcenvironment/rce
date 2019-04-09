@@ -54,13 +54,6 @@
          </propertyTab>
       </propertyTabs>
   </extension>
-     <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator
-            class="de.rcenvironment.components.outputwriter.gui.OutputWriterComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.outputwriter.gui.OutputWriterComponentFilter">
-      </validator>
-   </extension>
        <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

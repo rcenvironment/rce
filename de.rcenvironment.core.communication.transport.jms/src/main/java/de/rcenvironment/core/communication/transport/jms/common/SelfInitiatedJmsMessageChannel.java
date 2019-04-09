@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -26,7 +26,6 @@ import de.rcenvironment.core.communication.transport.spi.HandshakeInformation;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Represents a self-initiated JMS connection, ie a connection that was established from the local node to a remote node.
@@ -73,15 +72,7 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
         final boolean isActiveShutdown = getState() == MessageChannelState.CLOSED;
 
         log.debug("Triggering asynchronous JMS disconnect of message channel " + getChannelId());
-        threadPool.execute(new Runnable() {
-
-            @Override
-            @TaskDescription("JMS Network Transport: Asynchronous disconnect")
-            public void run() {
-                tearDownJmsConnection(isActiveShutdown);
-            }
-        }, getChannelId());
-
+        threadPool.execute("JMS Network Transport: Asynchronous disconnect", getChannelId(), () -> tearDownJmsConnection(isActiveShutdown));
     }
 
     private void tearDownJmsConnection(boolean isActiveShutdown) {
@@ -146,10 +137,12 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
             // spawn incoming request listener
             // note: this listener is not part of the message channel, so it must be closed explicitly
             // TODO clarify ownership
+            final String uniqueTaskId =
+                StringUtils.format("B2C Request Inbox Consumer for channel %s @ %s", remoteHandshakeInformation.getChannelId(),
+                    tempQueueManager.getB2CRequestQueue());
             ConcurrencyUtils.getAsyncTaskService().execute(
                 new RequestInboxConsumer(tempQueueManager.getB2CRequestQueue(), connection, remoteInitiatedConnectionEndpointHandler),
-                StringUtils.format("B2C Request Inbox Consumer for channel %s @ %s", remoteHandshakeInformation.getChannelId(),
-                    tempQueueManager.getB2CRequestQueue()));
+                uniqueTaskId);
 
             String outgoingRequestQueueName = tempQueueManager.getC2BRequestQueue();
             String incomingResponseQueueName = tempQueueManager.getC2BResponseQueue();

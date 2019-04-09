@@ -15,7 +15,7 @@
    <extension
          point="org.eclipse.ui.menus">
            <menuContribution
-            locationURI="menu:help?before=de.rcenvironment.core.gui.configuration.configurationInformation">
+            locationURI="menu:de.rcenvironment.configuration.menu?before=de.rcenvironment.core.gui.configuration.configurationInformation">
             <command
                commandId="de.rcenvironment.core.gui.configuration.configurationFile"
                icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigFile.png"
@@ -24,7 +24,7 @@
             </command>
 	      </menuContribution>
 	      <menuContribution
-	            locationURI="menu:help?before=about">
+	            locationURI="menu:de.rcenvironment.configuration.menu">
 	            <command
 	               commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
 	               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
@@ -34,25 +34,26 @@
 	      </menuContribution>
 	      <menuContribution
 	            allPopups="false"
-	            locationURI="menu:help?after=de.rcenvironment.core.gui.configuration.configurationInformation">
+	            locationURI="menu:de.rcenvironment.configuration.menu?after=de.rcenvironment.core.gui.configuration.configurationInformation">
 	      <separator name="separator" visible="true" />
 	      </menuContribution>
 	      
 	       <menuContribution
-            locationURI="toolbar:org.eclipse.ui.main.toolbar">
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=de.rcenvironment.configuration.toolbar">
          <toolbar
                id="de.rcenvironment.core.gui.configuration.toolbar">
-            <separator name="separatorConfig" visible="true" />
             <command
                commandId="de.rcenvironment.core.gui.configuration.configurationFile"
                icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigFile.png"
                label="Open Configuration File"
+               tooltip="Open Configuration File"
                style="push">
        		</command>
        		<command
                commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
                icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
                label="Open Configuration Information..."
+               tooltip="Open Configuration Information..."
                style="push">
        		</command>
          </toolbar>

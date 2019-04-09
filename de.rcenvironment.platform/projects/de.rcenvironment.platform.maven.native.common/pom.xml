@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.native.common</artifactId>
 	<name>RCE Platform - Maven Native Code Libraries - Cross-Platform</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -23,7 +23,12 @@
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
-			<version>4.2.2</version> <!-- latest version as of 2016-03-30 - misc_ro -->
+			<version>5.0.0</version> <!-- latest version as of 2018-10-25 - bode_br -->
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>5.0.0</version> <!-- latest version as of 2018-10-25 - bode_br -->
 		</dependency>
 	</dependencies>
 

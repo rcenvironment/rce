@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.2.3.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="9.0.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -25,7 +25,6 @@
       startupProgressRect="0,280,455,15" />
    <launcher name="rce">
       <linux icon="/resources/icons/rce_logo.xpm"/>
-      <solaris/>
       <win useIco="true">
          <ico path="/resources/icons/rce_logo.ico"/>
          <bmp
@@ -148,7 +147,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <feature id="de.rcenvironment.documentation.core.feature"/>
       <feature id="de.rcenvironment.filesets.configuration.samples.feature"/>
       <feature id="de.rcenvironment.filesets.extras.feature"/>
-      <feature id="de.rcenvironment.filesets.integration.tools.templates.common.feature"/>
       <feature id="de.rcenvironment.filesets.licensing.thirdparty.default.feature"/>
       <feature id="de.rcenvironment.filesets.licensing.self.epl.feature"/>
       <feature id="de.rcenvironment.filesets.logging.default.feature"/>
@@ -158,6 +156,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <feature id="nu.psnet.quickimage"/>
       <feature id="org.eclipse.wst.xml_ui.feature"/>
       <feature id="de.rcenvironment.core.gui.help.feature"/>
+      <feature id="de.rcenvironment.extensions.testscriptrunner.feature" version="1.0.0.qualifier"/>
    </features>
 
    <configurations>
@@ -183,6 +182,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="3" />
       <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="2" />
       <plugin id="org.eclipse.osgi.services" autoStart="true" startLevel="1" />
+      <plugin id="org.eclipse.osgi.util" autoStart="true" startLevel="1" />
       <plugin id="org.ops4j.pax.configmanager" autoStart="true" startLevel="2" />
       <plugin id="org.ops4j.pax.logging.pax-logging-api" autoStart="true" startLevel="2" />
       <plugin id="org.ops4j.pax.logging.pax-logging-service" autoStart="true" startLevel="2" />

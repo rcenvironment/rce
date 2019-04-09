@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.execution
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
@@ -19,9 +19,9 @@ Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common,
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13"
+ com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.node;version="2.9.8"
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-ClassPath: .

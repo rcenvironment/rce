@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,6 +10,7 @@ package de.rcenvironment.core.component.execution.internal;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.execution.api.BatchingConsoleRowsForwarder;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
@@ -21,6 +22,7 @@ import de.rcenvironment.core.component.execution.api.WorkflowExecutionController
  * for better unit testing.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ComponentExecutionRelatedInstances {
 
@@ -47,6 +49,8 @@ public class ComponentExecutionRelatedInstances {
     protected WorkflowExecutionControllerCallbackService wfExeCtrlBridge;
 
     protected WorkflowExecutionControllerBridgeDelegator wfExeCtrlBridgeDelegator;
+
+    protected NetworkDestination wfStorageNetworkDestination;
 
     protected int timestampOffsetToWorkfowNode = 0;
 

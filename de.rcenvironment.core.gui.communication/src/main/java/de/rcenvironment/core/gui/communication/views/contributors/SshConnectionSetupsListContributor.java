@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -77,10 +77,11 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             case START:
                 return !sshConnectionSetup.isConnected();
             case STOP:
-                return sshConnectionSetup.isConnected();
+                return sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry();
             case EDIT:
+                return !(sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry());
             case DELETE:
-                return !sshConnectionSetup.isConnected();
+                return !(sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry());
             default:
                 return false;
             }
@@ -94,27 +95,65 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
                     @Override
                     public void run() {
-                        if (sshConnectionSetup.getUsePassphrase() && !sshConnectionSetup.getStorePassphrase()) {
-                            EnterPassphraseDialog dialog = new EnterPassphraseDialog(treeViewer.getTree().getShell());
-                            if (dialog.open() == Window.OK) {
-                                sshConnectionService.setAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
-                                    dialog.getStorePassphrase());
-                                sshConnectionService.connectSession(connectionId, dialog.getPassphrase());
+                        if (sshConnectionSetup.getUsePassphrase()) {
+                            String passphrase = sshConnectionService.retrieveSshConnectionPassword(connectionId);
+                            if (passphrase == null) {
+                                // If no stored passphrase is found, show dialog to the user
+                                EnterPassphraseDialog dialog = new EnterPassphraseDialog(treeViewer.getTree().getShell());
+                                if (dialog.open() == Window.OK) {
+                                    passphrase = dialog.getPassphrase();
+                                    sshConnectionService.setAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
+                                        dialog.getStorePassphrase());
+                                }
                             }
+                            final String passphraseToConnect = passphrase;
+                            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+
+                                @TaskDescription("Connect SSH session.")
+                                @Override
+                                public void run() {
+                                    sshConnectionService.connectSession(connectionId, passphraseToConnect);
+                                }
+                                
+                            });
+
                         } else {
-                            sshConnectionService.connectSession(connectionId);
+                            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                                
+                                @TaskDescription("Connect SSH session.")
+                                @Override
+                                public void run() {
+                                    sshConnectionService.connectSession(connectionId);
+                                }
+                            });
                         }
                     }
                 });
                 break;
             case STOP:
-                sshConnectionService.disconnectSession(connectionId);
+                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+
+                    @TaskDescription("Disconnect SSH Connection.")
+                    @Override
+                    public void run() {
+                        sshConnectionService.disconnectSession(connectionId);
+                    }
+                    
+                });
                 break;
             case EDIT:
                 performEdit();
                 break;
             case DELETE:
-                sshConnectionService.disposeConnection(connectionId);
+                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+
+                    @TaskDescription("Dispose SSH Connection.")
+                    @Override
+                    public void run() {
+                        sshConnectionService.disposeConnection(connectionId);
+                    }
+                    
+                });
                 break;
             default:
                 break;
@@ -127,10 +166,11 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                     sshConnectionSetup.getHost(), sshConnectionSetup.getPort(), sshConnectionSetup.getUsername(),
                     sshConnectionSetup.getKeyfileLocation(), sshConnectionSetup.getUsePassphrase(),
                     sshConnectionSetup.getStorePassphrase(),
-                    sshConnectionSetup.getConnectOnStartUp());
+                    sshConnectionSetup.getConnectOnStartUp(),
+                    sshConnectionSetup.getAutoRetry());
             if (sshConnectionSetup.getStorePassphrase()) {
                 // Retrieve stored passphrase
-                String passphrase = sshConnectionService.retreiveSshConnectionPassword(sshConnectionSetup.getId());
+                String passphrase = sshConnectionService.retrieveSshConnectionPassword(sshConnectionSetup.getId());
                 if (passphrase != null) {
                     dialog.setPassphrase(passphrase);
                 }
@@ -148,13 +188,14 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 final boolean storePassphrase = dialog.shouldStorePassPhrase();
                 final String keyfileLocation = dialog.getKeyfileLocation();
                 final boolean usePassphrase = dialog.getUsePassphrase();
+                final boolean autoRetry = dialog.getAutoRetry();
                 ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                     @TaskDescription("Edit SSH Connection.")
                     @Override
                     public void run() {
                         sshConnectionService.editSshConnection(new SshConnectionContext(id, connectionName, host, port, username,
-                            keyfileLocation, usePassphrase, connectImmediately));
+                            keyfileLocation, usePassphrase, connectImmediately, autoRetry));
                         sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
                         if (connectImmediately) {
                             sshConnectionService.connectSession(id, passphrase);
@@ -168,7 +209,11 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
         public String getText() {
             String status = "connected";
             if (!sshConnectionService.isConnected(connectionId)) {
-                status = "disconnected";
+                if (sshConnectionService.isWaitingForRetry(connectionId)) {
+                    status = "disconnected, waiting for retry";
+                } else {
+                    status = "disconnected";
+                }
             }
             return StringUtils.format("%s (%s)", sshConnectionSetup.getDisplayName(), status);
         }
@@ -251,7 +296,8 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
         if (dialog.open() == Window.OK) {
             final String connectionName = dialog.getConnectionName();
-            final boolean connectImmediately = dialog.getConnectImmediately();
+            final boolean connectImmediately = dialog.getAutoRetry();
+            final boolean autoRetry = dialog.getConnectImmediately();
             final String host = dialog.getHost();
             final int port = dialog.getPort();
             final String username = dialog.getUsername();
@@ -266,8 +312,8 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 @Override
                 public void run() {
                     String id =
-                        sshConnectionService.addSshConnection(connectionName, host, port, username, keyfileLocation, usePassphrase,
-                            connectImmediately);
+                        sshConnectionService.addSshConnection(new SshConnectionContext(null, connectionName, host, port, username,
+                            keyfileLocation, usePassphrase, connectImmediately, autoRetry));
                     sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
                     if (connectImmediately) {
                         sshConnectionService.connectSession(id, passphrase);
@@ -369,18 +415,25 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             @Override
             public void onConnectionAttemptFailed(final SshConnectionSetup setup, final String reason, boolean firstConsecutiveFailure,
                 boolean willAutoRetry) {
-                display.asyncExec(new Runnable() {
+                // Show popup message only for first consecutive failure, not for every retry.
+                if (firstConsecutiveFailure) {
+                    display.asyncExec(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        MessageBox dialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
-                        dialog
-                            .setMessage(StringUtils.format("SSH connection attempt to host %s on port %s failed:\n%s",
-                                setup.getHost(),
-                                setup.getPort(), reason));
-                        dialog.open();
-                    }
-                });
+                        @Override
+                        public void run() {
+                            MessageBox dialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                            String retryMessage = "\n\nWill not try to reconnect.";
+                            if (willAutoRetry) {
+                                retryMessage = "\n\nWill automatically try to reconnect.";
+                            }
+                            dialog
+                                .setMessage(StringUtils.format("SSH connection attempt to host %s on port %s failed:\n%s%s",
+                                    setup.getHost(),
+                                    setup.getPort(), reason, retryMessage));
+                            dialog.open();
+                        }
+                    });
+                }
                 display.asyncExec(new Runnable() {
 
                     @Override

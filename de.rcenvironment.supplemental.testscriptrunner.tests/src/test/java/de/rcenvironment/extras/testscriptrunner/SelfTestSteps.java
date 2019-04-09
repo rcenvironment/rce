@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,24 +10,23 @@ package de.rcenvironment.extras.testscriptrunner;
 
 import static org.junit.Assert.assertEquals;
 
-import org.picocontainer.annotations.Inject;
-
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
-import de.rcenvironment.extras.testscriptrunner.internal.TestScenarioExecutionContext;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.AbstractStepDefinitionBase;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioExecutionContext;
 
 /**
  * Step definitions for self-testing the TestScriptRunner plugin backend.
  *
  * @author Robert Mischke
  */
-public class SelfTestSteps {
+public class SelfTestSteps extends AbstractStepDefinitionBase {
 
     private boolean testFlag;
 
-    @Inject
-    // injected by test framework
-    private TestScenarioExecutionContext executionContext;
+    public SelfTestSteps(TestScenarioExecutionContext executionContext) {
+        super(executionContext);
+    }
 
     /**
      * Dummy/test command.

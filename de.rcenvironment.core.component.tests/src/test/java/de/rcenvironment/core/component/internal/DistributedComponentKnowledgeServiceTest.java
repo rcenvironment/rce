@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,23 +20,35 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
+import de.rcenvironment.core.authorization.api.AuthorizationService;
+import de.rcenvironment.core.authorization.testutils.AuthorizationTestUtils;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
+import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
 
 /**
  * Test for {@link DistributedComponentKnowledgeService}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class DistributedComponentKnowledgeServiceTest {
 
-    private DistributedComponentKnowledgeServiceImpl knowledgeService = new DistributedComponentKnowledgeServiceImpl();
+    private DistributedComponentKnowledgeServiceImpl service;
 
-    private Collection<ComponentInstallation> allInstallations = new ArrayList<ComponentInstallation>();
+    private Collection<DistributedComponentEntry> localInstallations = new ArrayList<>();
 
-    private Collection<ComponentInstallation> publishedInstallations = new ArrayList<ComponentInstallation>();
+    private LogicalNodeId defaultComponentLocationId;
+
+    private final AuthorizationService authorizationServiceStub = AuthorizationTestUtils.createAuthorizationServiceStub();
+
+    private final AuthorizationPermissionSet publicPermissionSet =
+        authorizationServiceStub.getDefaultAuthorizationObjects().permissionSetPublicInLocalNetwork();
 
     /**
      * Set up.
@@ -44,13 +56,18 @@ public class DistributedComponentKnowledgeServiceTest {
     @Before
     public void setUp() {
 
-        ComponentInstallationImpl installation1 = new ComponentInstallationImpl();
-        installation1.setInstallationId("id-1");
-        allInstallations.add(installation1);
-        publishedInstallations.add(installation1);
-        ComponentInstallationImpl installation2 = new ComponentInstallationImpl();
-        installation2.setInstallationId("id-2");
-        allInstallations.add(installation2);
+        LogicalNodeSessionId localNodeId = NodeIdentifierTestUtils.createTestLogicalNodeSessionId(true);
+        defaultComponentLocationId = localNodeId.convertToLogicalNodeId();
+
+        service = new DistributedComponentKnowledgeServiceImpl(localNodeId.convertToInstanceNodeSessionId());
+        service.activate();
+
+        localInstallations
+            .add(ComponentTestUtils.createTestDistributedComponentEntry("id-1", "1", defaultComponentLocationId,
+                publicPermissionSet, authorizationServiceStub));
+        localInstallations
+            .add(ComponentTestUtils.createTestDistributedComponentEntry("id-2", "2", defaultComponentLocationId, null,
+                authorizationServiceStub));
 
     }
 
@@ -65,40 +82,40 @@ public class DistributedComponentKnowledgeServiceTest {
         nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(firstDelta));
         Capture<Map<String, String>> secondDelta = new Capture<Map<String, String>>();
         nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(secondDelta));
-        Capture<Map<String, String>> thrirdDelta = new Capture<Map<String, String>>();
-        nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(thrirdDelta));
-        knowledgeService.bindNodePropertiesService(nodePropertiesService);
+        Capture<Map<String, String>> thirdDelta = new Capture<Map<String, String>>();
+        nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(thirdDelta));
+        service.bindNodePropertiesService(nodePropertiesService);
         EasyMock.replay(nodePropertiesService);
 
-        knowledgeService.setLocalComponentInstallations(allInstallations, publishedInstallations);
+        service.updateLocalComponentInstallations(localInstallations, true);
 
         Map<String, String> delta = firstDelta.getValue();
         assertTrue(!delta.containsValue(null));
         assertEquals(1, delta.size());
 
-        ComponentInstallationImpl installation3 = new ComponentInstallationImpl();
-        installation3.setInstallationId("id-3");
-        installation3.setNodeIdFromObject(NodeIdentifierTestUtils.createTestLogicalNodeSessionId(true).convertToLogicalNodeId());
-        allInstallations.add(installation3);
-        publishedInstallations.add(installation3);
+        final DistributedComponentEntry entry3 =
+            ComponentTestUtils.createTestDistributedComponentEntry("id-3", "3", defaultComponentLocationId,
+                publicPermissionSet, authorizationServiceStub);
+        localInstallations.add(entry3);
 
-        ComponentInstallationImpl installation4 = new ComponentInstallationImpl();
-        installation4.setInstallationId("id-4");
-        allInstallations.add(installation4);
-        publishedInstallations.add(installation4);
+        final DistributedComponentEntry entry4 =
+            ComponentTestUtils.createTestDistributedComponentEntry("id-4", "4", defaultComponentLocationId,
+                publicPermissionSet, authorizationServiceStub);
+        localInstallations.add(entry4);
 
-        knowledgeService.setLocalComponentInstallations(allInstallations, publishedInstallations);
+        service.updateLocalComponentInstallations(localInstallations, true);
 
         delta = secondDelta.getValue();
         assertTrue(!delta.containsValue(null));
         assertEquals(2, delta.size());
 
-        allInstallations.remove(installation3);
-        publishedInstallations.remove(installation3);
+        localInstallations.remove(entry3);
 
-        knowledgeService.setLocalComponentInstallations(allInstallations, publishedInstallations);
+        // TODO add test(s) for change of component publication type (LOCAL vs SHARED) and/or authorization settings
 
-        delta = thrirdDelta.getValue();
+        service.updateLocalComponentInstallations(localInstallations, true);
+
+        delta = thirdDelta.getValue();
         assertTrue(delta.containsValue(null));
         assertEquals(1, delta.size());
 

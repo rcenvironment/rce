@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -126,7 +126,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         case IDialogConstants.FINISH_ID:
             if (!isEdit) {
                 finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
+                if (((ToolIntegrationWizard) getWizard()).isConfigurationOk() && this.getParentShell() != null) {
                     MessageBox infoDialog = new MessageBox(this.getParentShell(),
                         SWT.ICON_INFORMATION | SWT.OK);
                     infoDialog.setText("Tool integrated");
@@ -146,7 +146,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
             synchronized (LOCK_OBJECT) {
                 ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
                 finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
+                if (((ToolIntegrationWizard) getWizard()).isConfigurationOk() && this.getParentShell() != null) {
                     MessageBox infoDialog = new MessageBox(this.getParentShell(),
                         SWT.ICON_INFORMATION | SWT.OK);
                     infoDialog.setText("Tool updated");

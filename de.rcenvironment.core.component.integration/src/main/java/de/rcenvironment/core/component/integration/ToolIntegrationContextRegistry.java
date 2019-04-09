@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,57 +11,44 @@ package de.rcenvironment.core.component.integration;
 import java.util.Collection;
 
 /**
- * Registry for all {@link ToolIntegrationContext}. After the registration, the tools that are
- * stored in the given place are read and registered as workflow components.
+ * Registry for all {@link ToolIntegrationContext}s. After the registration, the tools that are stored in the given place are read and
+ * registered as workflow components.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke (rework/cleanup)
  */
 public interface ToolIntegrationContextRegistry {
 
     /**
-     * Adds the given {@link ToolIntegrationContext} for integration. Directly registers them as an
-     * workflow component.
-     * 
-     * @param information new information
+     * @param contextId the context id to look for; case sensitive
+     * @return the {@link ToolIntegrationContext} for the given id; null if not available.
      */
-    void addToolIntegrationContext(ToolIntegrationContext information);
+    ToolIntegrationContext getToolIntegrationContextById(String contextId);
 
     /**
-     * Removes the {@link ToolIntegrationContext} with the given ID from the list of all information
-     * registered. Does not unregister the workflow component.
-     * 
-     * @param contextID id to remove
+     * @param type the type (e.g. "common") to look for; not case sensitive
+     * @return the {@link ToolIntegrationContext} for the given type; null if not available.
      */
-    void removeToolIntegrationContext(String contextID);
+    ToolIntegrationContext getToolIntegrationContextByType(String type);
 
     /**
-     * Removes the given {@link ToolIntegrationContext} from the list of all information registered.
-     * Does not unregister the workflow component.
-     * 
-     * @param context to remove
-     */
-    void removeToolIntegrationContext(ToolIntegrationContext context);
-
-    /**
-     * 
-     * @param informationID that is searched for
-     * @return the {@link ToolIntegrationContext} for the given id for further use. null if not
-     *         available.
-     * 
-     */
-    ToolIntegrationContext getToolIntegrationContext(String informationID);
-
-    /**
-     * Checks whether there is a context registered with the given id.
+     * Checks whether there is a context matching the prefix of the given tool id. (Note: apparently, this method has undergone semantic
+     * changes over time; all uses should be checked for correctness.)
      * 
      * @param informationID to check
      * @return true, if id exists
      */
-    boolean hasId(String informationID);
+    boolean hasTIContextMatchingPrefix(String informationID);
 
     /**
      * @return all registered contexts.
      */
     Collection<ToolIntegrationContext> getAllIntegrationContexts();
+
+    /**
+     * @return the next unitialized {@link ToolIntegrationContext}, or null if no further context is queued; the element is removed from the
+     *         internal global queue
+     */
+    ToolIntegrationContext fetchNextUninitializedToolIntegrationContext();
 
 }

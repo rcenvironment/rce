@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -76,7 +76,10 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
     }
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+        // Since we allocate no resources, we also do not need to release any resources upon disposal.
+        // Thus, we can leave this method empty.
+    }
 
     @Override
     public Object[] getElements(Object parent) {
@@ -177,7 +180,7 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
             }
             break;
         case RAW_NODE_PROPERTIES_FOLDER:
-            List<NetworkGraphNodeWithContext> children = new ArrayList<NetworkGraphNodeWithContext>();
+            List<NetworkGraphNodeWithContext> children = new ArrayList<>();
             Map<String, String> propertyValueMap = typedParentNode.getAttachedNodeProperties();
             if (propertyValueMap != null) {
                 for (Entry<String, String> property : propertyValueMap.entrySet()) {

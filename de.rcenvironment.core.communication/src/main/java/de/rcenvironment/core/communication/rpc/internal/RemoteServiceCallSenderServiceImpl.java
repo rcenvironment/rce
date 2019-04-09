@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,6 +14,8 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
@@ -24,7 +26,6 @@ import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
 import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
 import de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService;
-import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.Assertions;
@@ -35,19 +36,20 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  * 
  * @author Robert Mischke
  */
+@Component
 public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCallSenderService {
 
-    // A soft size limit for individual network payloads; all messages exceeding this should be logged as warnings.
-    // This is currently (arbitrarily) set to 1 MB. TODO convert this to a global constant (or setting) -- misc_ro
-    private static final int OUTGOING_NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD = 1024 * 1024;
-
     private MessageRoutingService routingService;
+
+    private ReliableRPCStreamService reliableRPCStreamService;
 
     // NOTE: used in several locations
     private final boolean forceLocalRPCSerialization = System
         .getProperty(NodeConfigurationService.SYSTEM_PROPERTY_FORCE_LOCAL_RPC_SERIALIZATION) != null;
 
-    private final boolean verboseRequestLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("NetworkRequests");
+    private final boolean verboseRequestLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("RemoteServiceCalls");
+
+    private final ServiceCallSerializer serviceCallSerializer = new ServiceCallSerializer();
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -56,50 +58,21 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
     @Override
     public ServiceCallResult performRemoteServiceCall(ServiceCallRequest serviceCallRequest) {
         try {
-            byte[] serializedRequest = MessageUtils.serializeObject(serviceCallRequest);
-            if (forceLocalRPCSerialization) {
+            if (forceLocalRPCSerialization) { // TODO review: shouldn't this check if this is an actual local call?
                 log.debug(StringUtils.format("Handling local RPC with forced serialization: %s#%s()", serviceCallRequest.getServiceName(),
                     serviceCallRequest.getMethodName()));
             }
-            if (verboseRequestLoggingEnabled) {
-                log.debug(StringUtils.format("Converted RPC to %s.%s() on %s into a network payload of %d bytes",
-                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
-                    serializedRequest.length));
-            }
-            if (serializedRequest.length >= OUTGOING_NETWORK_PAYLOAD_SIZE_WARNING_THRESHOLD) {
-                log.debug(
-                    StringUtils.format("Generated a large network message for an RPC to %s.%s() on %s (payload size: %d bytes)",
-                        serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
-                        serializedRequest.length));
-            }
 
-            NetworkResponse networkResponse =
-                routingService.performRoutedRequest(serializedRequest, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC,
+            final NetworkResponse networkResponse;
+            if (serviceCallRequest.getReliableRPCStreamId() != null) {
+                return reliableRPCStreamService.performRequest(serviceCallRequest);
+            } else {
+                // perform a direct call without reliability and ordering guarantees
+                byte[] serializedRequest = serviceCallSerializer.getSerializedForm(serviceCallRequest);
+                networkResponse = routingService.performRoutedRequest(serializedRequest, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC,
                     serviceCallRequest.getTargetNodeId().convertToInstanceNodeSessionId());
-
-            // if a low-level network error occurred, the message's payload is either null, or a serialized String with additional error
-            // information; in both cases, convert it into a synthetic ServiceCallResult that will cause a ROE to be thrown
-
-            // create a synthetic CommunicationException for errors that were not thrown by the
-            // remote method or the remote service invoker (e.g. routing errors)
-            if (!networkResponse.isSuccess()) {
-                return ServiceCallResultFactory.representNetworkErrorAsRemoteOperationException(serviceCallRequest, networkResponse);
+                return deserializeSCRNetworkResponse(serviceCallRequest, networkResponse);
             }
-
-            Serializable deserializedContent = networkResponse.getDeserializedContent();
-            // TODO find out how this can be reached without the response code being != SUCCESS, which is caught above - misc_ro
-            if (deserializedContent == null) {
-                String errorMessage =
-                    StringUtils.format("Received null service call result for RPC to %s; response code is %s",
-                        formatServiceRequest(serviceCallRequest), networkResponse.getResultCode());
-                return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, errorMessage);
-            }
-            if (!(deserializedContent instanceof ServiceCallResult)) {
-                return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest,
-                    "Received a serialized response of unexpected type " + deserializedContent.getClass().getName());
-            }
-
-            return (ServiceCallResult) deserializedContent;
         } catch (SerializationException | RuntimeException e) {
             return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest,
                 "Uncaught exception while performing a service call to " + formatServiceRequest(serviceCallRequest), e);
@@ -140,7 +113,36 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
         }
     }
 
-    private String formatServiceRequest(ServiceCallRequest serviceCallRequest) {
+    // TODO (p2) avoid static method or move it to a utils class
+    protected static ServiceCallResult deserializeSCRNetworkResponse(ServiceCallRequest serviceCallRequest,
+        final NetworkResponse networkResponse)
+        throws SerializationException {
+        // if a low-level network error occurred, the message's payload is either null, or a serialized String with additional error
+        // information; in both cases, convert it into a synthetic ServiceCallResult that will cause a ROE to be thrown
+
+        // create a synthetic CommunicationException for errors that were not thrown by the
+        // remote method or the remote service invoker (e.g. routing errors)
+        if (!networkResponse.isSuccess()) {
+            return ServiceCallResultFactory.representNetworkErrorAsRemoteOperationException(serviceCallRequest, networkResponse);
+        }
+
+        Serializable deserializedContent = networkResponse.getDeserializedContent();
+        // TODO find out how this can be reached without the response code being != SUCCESS, which is caught above - misc_ro
+        if (deserializedContent == null) {
+            String errorMessage =
+                StringUtils.format("Received null service call result for RPC to %s; response code is %s",
+                    formatServiceRequest(serviceCallRequest), networkResponse.getResultCode());
+            return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, errorMessage);
+        }
+        if (!(deserializedContent instanceof ServiceCallResult)) {
+            return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest,
+                "Received a serialized response of unexpected type " + deserializedContent.getClass().getName());
+        }
+
+        return (ServiceCallResult) deserializedContent;
+    }
+
+    protected static String formatServiceRequest(ServiceCallRequest serviceCallRequest) {
         return StringUtils.format("%s#%s() on %s", serviceCallRequest.getServiceName(),
             serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId());
     }
@@ -194,7 +196,19 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
      * 
      * @param newInstance the routing service implementation
      */
+    @Reference
     public void bindMessageRoutingService(MessageRoutingService newInstance) {
         this.routingService = newInstance;
     }
+
+    /**
+     * Sets the {@link ReliableRPCStreamService} implementation to use; called by OSGi-DS and unit tests.
+     * 
+     * @param newInstance the service implementation
+     */
+    @Reference
+    public void bindReliableRPCStreamService(ReliableRPCStreamService newInstance) {
+        this.reliableRPCStreamService = newInstance;
+    }
+
 }

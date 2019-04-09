@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -63,7 +63,7 @@ public class WorkflowRunEditorContextMenuProvider extends ContextMenuProvider {
             WorkflowExecutionInformation wfExeInfo = (WorkflowExecutionInformation) ((WorkflowExecutionInformationPart)
                 ((WorkflowPart) part.getParent()).getParent()).getModel();
             final WorkflowNode wfNode = (WorkflowNode) part.getModel();
-            final ComponentExecutionInformation compExeInfo = wfExeInfo.getComponentExecutionInformation(wfNode.getIdentifier());
+            final ComponentExecutionInformation compExeInfo = wfExeInfo.getComponentExecutionInformation(wfNode.getIdentifierAsObject());
             
             // Find registered views
             IExtensionRegistry extReg = Platform.getExtensionRegistry();

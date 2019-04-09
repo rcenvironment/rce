@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -43,7 +43,7 @@ final class MockSshConnectionService implements SshConnectionService {
     }
 
     @Override
-    public String retreiveSshConnectionPassword(String connectionId) {
+    public String retrieveSshConnectionPassword(String connectionId) {
         return null;
     }
 
@@ -99,8 +99,12 @@ final class MockSshConnectionService implements SshConnectionService {
     }
 
     @Override
-    public String addSshConnection(String displayName, String destinationHost, int port, String sshAuthUser, String keyfileLocation,
-        boolean usePassphrase, boolean connectImmediately) {
+    public String addSshConnection(SshConnectionContext context) {
         return null;
+    }
+
+    @Override
+    public boolean isWaitingForRetry(String connectionId) {
+        return false;
     }
 }

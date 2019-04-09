@@ -186,34 +186,36 @@
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
-            locationURI="toolbar:org.eclipse.ui.main.toolbar">
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=de.rcenvironment.toolintegration.toolbar">
          <toolbar
                id="de.rcenvironment.rce.gui.workflow.integration.toolbar">
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_new.png"
                   label="%integrateLabel"
-                  style="push"
                   tooltip="%integrateTooltip">
             </command>
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.edit.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_edit.png"
                   label="%integrateEditLabel"
-                  style="push"
                   tooltip="%integrateEditTooltip">
             </command>
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.remove.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_remove.png"
                   label="%integrateRemoveLabel"
-                  style="push"
                   tooltip="%integrateRemoveTooltip">
             </command>
          </toolbar>
       </menuContribution>
       <menuContribution
-            locationURI="menu:file?before=new">
+            locationURI="menu:org.eclipse.ui.main.menu">
+            <menu id="de.rcenvironment.integration.menu"
+            	label="Tool Integration" />
+      </menuContribution>
+      <menuContribution
+            locationURI="menu:de.rcenvironment.integration.menu">
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_new.png"
@@ -235,10 +237,6 @@
                   style="push"
                   tooltip="%integrateRemoveTooltip">
             </command>
-            <separator
-               name="separatorToolIntegrationFileMenu"
-               visible="true">
-         </separator>
       </menuContribution>       
    </extension>
  <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
@@ -248,7 +246,7 @@
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.integration" />
    </extension>
-      <extension
+   <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">
          
       <action
@@ -258,8 +256,30 @@
             id="de.rcenvironment.integration.getDocumentation"
             label="Open Documentation">
       </action>
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.GetDocumentationWorkflowEditorAction"
+            component="de.rcenvironment.remoteaccess.*"
+            default="true"
+            id="de.rcenvironment.integration.getDocumentation"
+            label="Open Documentation">
+      </action>
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.ExportDocumentationWorkflowEditorAction"
+            component="de.rcenvironment.integration.*"
+            default="true"
+            id="de.rcenvironment.integration.downloadDocumentation"
+            label="Export Documentation">
+      </action>
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.ExportDocumentationWorkflowEditorAction"
+            component="de.rcenvironment.remoteaccess.*"
+            default="true"
+            id="de.rcenvironment.integration.downloadDocumentation"
+            label="Export Documentation">
+      </action>
       
    </extension>
+      
     <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">
          
@@ -271,11 +291,5 @@
             label="Enable/Disable tool run imitation mode">
       </action>
       
-   </extension>
-   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator 
-      		class="de.rcenvironment.core.gui.workflow.editor.validator.DefaultWorkflowNodeValidator"
-            filter="de.rcenvironment.core.gui.workflow.integration.DefaultToolIntegratorComponentFilter">
-      </validator>
    </extension>
 </plugin>

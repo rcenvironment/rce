@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -113,12 +113,12 @@ public class WorkflowDescriptionTest {
         WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         WorkflowNode node = new WorkflowNode(cd);
         try {
-            desc.getWorkflowNode(node.getIdentifier());
+            desc.getWorkflowNode(node.getIdentifierAsObject());
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
         desc.addWorkflowNode(node);
-        assertEquals(node, desc.getWorkflowNode(node.getIdentifier()));
+        assertEquals(node, desc.getWorkflowNode(node.getIdentifierAsObject()));
     }
 
     /** Test. */

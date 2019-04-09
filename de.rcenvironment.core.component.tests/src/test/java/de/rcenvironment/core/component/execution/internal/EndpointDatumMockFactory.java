@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -35,7 +35,7 @@ public final class EndpointDatumMockFactory {
         String outputsCompExeId, LogicalNodeId outputsNodeId) {
         EndpointDatum endpointDatumToProcessMock = EasyMock.createNiceMock(EndpointDatum.class);
         EasyMock.expect(endpointDatumToProcessMock.getInputsComponentExecutionIdentifier()).andReturn(inputsCompExeId).anyTimes();
-        EasyMock.expect(endpointDatumToProcessMock.getInputsNodeId()).andReturn(inputsNodeId).anyTimes();
+        EasyMock.expect(endpointDatumToProcessMock.getDestinationNodeId()).andReturn(inputsNodeId).anyTimes();
         EasyMock.expect(endpointDatumToProcessMock.getOutputsComponentExecutionIdentifier()).andReturn(outputsCompExeId).anyTimes();
         EasyMock.expect(endpointDatumToProcessMock.getOutputsNodeId()).andReturn(outputsNodeId).anyTimes();
         EasyMock.replay(endpointDatumToProcessMock);

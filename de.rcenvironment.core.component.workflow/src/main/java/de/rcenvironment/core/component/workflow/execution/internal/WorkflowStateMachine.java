@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -28,14 +28,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
+import de.rcenvironment.core.component.execution.api.ComponentControllerRoutingMap;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContextBuilder;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionService;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
@@ -43,6 +46,7 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.ConsoleRowBuilder;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
+import de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphEdge;
@@ -52,6 +56,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipientFactory;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
@@ -59,6 +64,7 @@ import de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecu
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -67,6 +73,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
@@ -76,15 +83,12 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 /**
  * Workflow-specific implementation of {@link AbstractStateMachine}.
  * 
+ * Note: I wouldn't trust the workflow state transition graph blindly but I consider it as sufficient for now. I'm not happy with the
+ * communication to the components and the resulting control flow including waiting for certain callbacks, etc. See note in
+ * {@link ComponentStatesChangedEntirelyListener}. --seid_do
+ * 
  * @author Doreen Seider
- * @author Robert Mischke (tweaked notification setup)
- * 
- * Note: I wouldn't trust the workflow state transition graph blindly but I consider it as sufficient for now.
- * 
- * I'm not happy with the communication to the components and the resulting control flow including waiting for certain callbacks,
- * etc. See note in {@link ComponentStatesChangedEntirelyListener}.
- * 
- * --seid_do
+ * @author Robert Mischke
  */
 public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<WorkflowState, WorkflowStateMachineEvent>
     implements ComponentStatesChangedEntirelyListener {
@@ -135,18 +139,23 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         { WorkflowState.FAILED, WorkflowState.DISPOSING }
     };
 
-    private static CommunicationService communicationService;
-
-    private static DistributedNotificationService notificationService;
-
-    private static ComponentExecutionService componentExecutionService;
-
-    private static WorkflowExecutionStatsService wfExeStatsService;
-
     // set visibility to protected for test purposes
     protected final Map<WorkflowStateMachineEventType, EventProcessor> eventProcessors = new HashMap<>();
 
+    private final CommunicationService communicationService;
+
+    private final DistributedNotificationService notificationService;
+
+    private final ComponentExecutionService componentExecutionService;
+
+    private final WorkflowExecutionStatsService wfExeStatsService;
+
+    private final EndpointDatumDispatchService endpointDatumDispatchService;
+
     private String wfNameAndIdMessagePart;
+
+    // a map of reliable RPC streams or simple network ids for executing method calls
+    private final ComponentControllerRoutingMap componentControllerCommandDestinations = new ComponentControllerRoutingMap();
 
     private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
@@ -158,6 +167,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
     private ScheduledFuture<?> heartbeatFuture;
 
+    private ScheduledFuture<?> compRestartDetectionFuture;
+
+    // map from Component Executor identifier to corresponding Node ID
     private final Map<String, LogicalNodeId> componentNodeIds = Collections
         .synchronizedMap(new HashMap<String, LogicalNodeId>());
 
@@ -177,6 +189,11 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     @Deprecated
     public WorkflowStateMachine() {
         super(WorkflowState.INIT, VALID_WORKFLOW_STATE_TRANSITIONS);
+        communicationService = null;
+        notificationService = null;
+        componentExecutionService = null;
+        wfExeStatsService = null;
+        endpointDatumDispatchService = null;
     }
 
     public WorkflowStateMachine(WorkflowStateMachineContext wfStateMachineCtx) {
@@ -187,6 +204,14 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             .removeDisabledWorkflowNodesWithoutNotify(wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription());
         this.wfNameAndIdMessagePart = StringUtils.format("'%s' (%s)", wfStateMachineCtx.getWorkflowExecutionContext().getInstanceName(),
             wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
+
+        final ServiceRegistryAccess serviceRegistryAccess = wfStateMachineCtx.getServiceRegistryAccess();
+
+        communicationService = serviceRegistryAccess.getService(CommunicationService.class);
+        notificationService = serviceRegistryAccess.getService(DistributedNotificationService.class);
+        componentExecutionService = serviceRegistryAccess.getService(ComponentExecutionService.class);
+        wfExeStatsService = serviceRegistryAccess.getService(WorkflowExecutionStatsService.class);
+        endpointDatumDispatchService = serviceRegistryAccess.getService(EndpointDatumDispatchService.class);
 
         initializeEventProcessors();
     }
@@ -285,9 +310,13 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
         if (WorkflowConstants.FINAL_WORKFLOW_STATES.contains(newState)) {
             wfExeStatsService.addStatsAtWorkflowTermination(wfStateMachineCtx.getWorkflowExecutionContext(), newState);
+            // TODO use better synchronization object
             synchronized (wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier()) {
                 if (heartbeatFuture != null && !heartbeatFuture.isCancelled()) {
                     heartbeatFuture.cancel(false);
+                }
+                if (compRestartDetectionFuture != null && !compRestartDetectionFuture.isCancelled()) {
+                    compRestartDetectionFuture.cancel(false);
                 }
             }
             sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType.WORKFLOW_FINISHED);
@@ -339,7 +368,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         @TaskDescription("Prepare workflow")
         public void run() {
 
-            wfExeStatsService.addStatsAtWorkflowStart(wfStateMachineCtx.getWorkflowExecutionContext());
+            final WorkflowExecutionContext workflowExecutionContext = wfStateMachineCtx.getWorkflowExecutionContext();
+            wfExeStatsService.addStatsAtWorkflowStart(workflowExecutionContext);
 
             notificationService.send(WorkflowConstants.NEW_WORKFLOW_NOTIFICATION_ID,
                 wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
@@ -362,10 +392,11 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                 onComponentStatesChangedCompletelyToPrepared();
             }
 
-            final Map<String, ComponentExecutionContext> compExeCtxts;
+            final Map<WorkflowNodeIdentifier, ComponentExecutionContext> compExeCtxts;
             try {
                 compExeCtxts = createComponentExecutionContexts(dmIds);
                 checkForUnreachableComponentNodes(compExeCtxts);
+                wfStateMachineCtx.getNodeRestartWatcher().initialize(compExeCtxts.values());
             } catch (WorkflowExecutionException e) {
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, e));
                 return;
@@ -375,30 +406,60 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
             final Long referenceTimestamp = System.currentTimeMillis();
 
+            ComponentControllerRoutingMap endpointDatumForwardingMap = new ComponentControllerRoutingMap();
+
             for (WorkflowNode wfNode : wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().getWorkflowNodes()) {
                 final WorkflowNode finalWfNode = wfNode;
-                final ComponentExecutionContext compExeCtx = compExeCtxts.get(wfNode.getIdentifier());
+                final WorkflowNodeIdentifier workflowNodeId = wfNode.getIdentifierAsObject();
+                final ComponentExecutionContext compExeCtx = compExeCtxts.get(workflowNodeId);
                 callablesGroup.add(new Callable<Throwable>() {
 
                     @Override
                     @TaskDescription("Create component execution controller and perform prepare")
-                    public Exception call() throws Exception {
+                    public Exception call() {
                         try {
+                            LOG.debug("Spawning component controller for workflow node id " + workflowNodeId
+                                + " mapped to component execution id " + compExeCtx.getExecutionIdentifier());
+                            // create reliable RPC streams for performing method calls on this component controller
+                            // TODO (p1) exclude local controllers, as rRPC will be ignored for them anyway
+                            // TODO (p2) optimize this by only creating one stream per remote node
+                            final ReliableRPCStreamHandle reliableWfCtrlToCompCtrlRPCStream =
+                                communicationService.createReliableRPCStream(compExeCtx.getNodeId());
+                            // trigger creation of the remote component controller
                             String compExeId = componentExecutionService.init(compExeCtx,
-                                executionAuthTokens.get(finalWfNode.getIdentifier()), referenceTimestamp);
+                                executionAuthTokens.get(finalWfNode.getIdentifierAsObject().toString()), referenceTimestamp);
+                            // store node id and rRPC stream handle
                             componentNodeIds.put(compExeId, compExeCtx.getNodeId());
+                            componentControllerCommandDestinations.setNetworkDestinationForComponentController(compExeId,
+                                reliableWfCtrlToCompCtrlRPCStream);
+                            // create rRPC streams for forwarding endpoint datums to component controllers if necessary;
+                            // rRPC streams are fairly "cheap" if they are never used, so just create one each in advance
+                            final ReliableRPCStreamHandle endpointForwardingStream =
+                                communicationService.createReliableRPCStream(compExeCtx.getNodeId());
+                            endpointDatumForwardingMap.setNetworkDestinationForComponentController(compExeId, endpointForwardingStream);
+                            // general setup
                             componentInstanceNames.put(compExeId, compExeCtx.getInstanceName());
                             initializeComponentConsoleLogWriting(compExeId);
                             componentExecutionService.prepare(compExeId, compExeCtx.getNodeId());
                             LOG.debug(StringUtils.format("Created component '%s' (%s) on node %s",
                                 compExeCtx.getInstanceName(), compExeId, compExeCtx.getNodeId()));
-                        } catch (RemoteOperationException | RuntimeException e) {
-                            return e;
+                        } catch (RemoteOperationException | RuntimeException | ExecutionControllerException
+                            | ComponentExecutionException e) {
+                            // wrap the caught exception into a new one with a more user-friendly message
+                            final String errorMessage = StringUtils.format(
+                                "Failed to initialize component execution of '%s' on %s: %s", compExeCtx.getInstanceName(),
+                                compExeCtx.getNodeId(), e.toString());
+                            LOG.debug(errorMessage);
+                            return new ComponentExecutionException(errorMessage); // TODO is this the most fitting exception type?
                         }
                         return null;
                     }
                 }, "Prepare component: " + compExeCtx.getExecutionIdentifier());
             }
+
+            // set the forwarding map so the dispatch service will know how to handle forwarding requests
+            endpointDatumDispatchService.registerComponentControllerForwardingMap(
+                workflowExecutionContext.getWorkflowExecutionHandle().getIdentifier(), endpointDatumForwardingMap);
 
             List<Throwable> throwables = callablesGroup.executeParallel(new AsyncExceptionListener() {
 
@@ -410,14 +471,19 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
             for (Throwable t : throwables) {
                 if (t != null) {
-                    LOG.error(StringUtils.format("Failed to prepare workflow %s", wfNameAndIdMessagePart), t);
+                    if (t instanceof ComponentExecutionException) {
+                        // log without stacktrace
+                        LOG.error(StringUtils.format("Failed to prepare workflow %s: %s", wfNameAndIdMessagePart, t.toString()));
+                    } else {
+                        LOG.error(StringUtils.format("Failed to prepare workflow %s", wfNameAndIdMessagePart), t);
+                    }
                 }
             }
 
             for (Throwable t : throwables) {
                 if (t != null) {
                     postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED,
-                        new Throwable("Failed to prepare workflow", t)));
+                        new Throwable("Failed to prepare workflow: " + t.getMessage())));
                     return;
                 }
             }
@@ -426,7 +492,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
     }
 
-    private void checkForUnreachableComponentNodes(Map<String, ComponentExecutionContext> compExeCtxts)
+    // TODO only the values of the map given as parameter is needed in the method; therefore only these should be provided and not the
+    // complete map
+    private void checkForUnreachableComponentNodes(Map<WorkflowNodeIdentifier, ComponentExecutionContext> compExeCtxts)
         throws WorkflowExecutionException {
 
         Map<String, ComponentExecutionContext> notReachableCompExeIds = new HashMap<>();
@@ -458,6 +526,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                     + createMessageListingComponents(notReachableCompExeIds.keySet()));
             }
         } finally {
+            // TODO (p3) this seems odd: the maps are always cleared here, only to be filled again later? -- misc_ro
             componentInstanceNames.clear();
             componentNodeIds.clear();
         }
@@ -489,29 +558,38 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getLogicalNodeIdString(),
             wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()), bufferSize);
         for (WorkflowNode wfNode : wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().getWorkflowNodes()) {
-            String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
+            ComponentExecutionIdentifier compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wfNode);
             // set to 3 as the state before the component is disposing->disposed must be
             // accessible by the GUI
-            notificationService.setBufferSize(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, 3);
-            notificationService.setBufferSize(ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX + compExeId, 1);
+            notificationService.setBufferSize(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId.toString(), 3);
+            notificationService.setBufferSize(ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX + compExeId.toString(), 1);
         }
     }
 
-    private Map<String, ComponentExecutionContext> createComponentExecutionContexts(DataManagementIdsHolder dmIds)
+    /**
+     * Creates a {@link ComponentExecutionContext} for each Workflow Node in the Workflow Description.
+     */
+    private Map<WorkflowNodeIdentifier, ComponentExecutionContext> createComponentExecutionContexts(DataManagementIdsHolder dmIds)
         throws WorkflowExecutionException {
         WorkflowDescription workflowDescription = wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription();
         WorkflowGraph workflowGraph = createWorkflowGraph(workflowDescription);
-        Map<String, ComponentExecutionContext> compExeCtxs = new HashMap<>();
+        Map<WorkflowNodeIdentifier, ComponentExecutionContext> compExeCtxs = new HashMap<>();
         for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
-            compExeCtxs.put(wfNode.getIdentifier(), createComponentExecutionContext(wfNode, workflowGraph, dmIds));
+            // TODO why should the component execution context have access to the workflow graph?
+            compExeCtxs.put(wfNode.getIdentifierAsObject(), createComponentExecutionContext(wfNode, workflowGraph, dmIds));
         }
         return compExeCtxs;
     }
 
+    // The WorkflowGraph does only contain information about the execution locations indirectly via the ComponentExecutionIdentifiers. In
+    // the beginning, these are not associate with concrete execution locations.
     private WorkflowGraph createWorkflowGraph(WorkflowDescription workflowDescription) throws WorkflowExecutionException {
-        Map<String, WorkflowGraphNode> workflowGraphNodes = new HashMap<>();
-        Map<String, Set<WorkflowGraphEdge>> workflowGraphEdges = new HashMap<>();
+        // map from a workflow node's component executor identifier to its WorkflowGraphNode
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> workflowGraphNodes = new HashMap<>();
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
+            // TODO move the creation of these internal data structures inside the WorkflowGraph as soon as the WorkflowGraph has been moved
+            // into the workflow package
+            // map from an endpoint's identifier to its name
             Map<String, String> endpointNames = new HashMap<>();
             Set<String> inputIds = new HashSet<>();
             for (EndpointDescription ep : wn.getInputDescriptionsManager().getEndpointDescriptions()) {
@@ -523,23 +601,19 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                 outputIds.add(ep.getIdentifier());
                 endpointNames.put(ep.getIdentifier(), ep.getName());
             }
-            String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wn.getIdentifier());
-            workflowGraphNodes.put(compExeId, new WorkflowGraphNode(compExeId, inputIds, outputIds, endpointNames,
-                wn.getComponentDescription().getComponentInstallation().getComponentRevision()
-                    .getComponentInterface().getIsLoopDriver(),
+            ComponentExecutionIdentifier compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wn);
+            workflowGraphNodes.put(compExeId, new WorkflowGraphNode(wn.getIdentifier(), compExeId, inputIds, outputIds, endpointNames,
+                wn.getComponentDescription().getComponentInstallation().getComponentInterface().getIsLoopDriver(),
                 isDrivingFaultTolerantNode(wn), wn.getName()));
         }
+        Set<WorkflowGraphEdge> workflowGraphEdges = new HashSet<>();
         for (Connection cn : workflowDescription.getConnections()) {
             WorkflowGraphEdge edge = new WorkflowGraphEdge(
-                wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(cn.getSourceNode().getIdentifier()),
+                wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(cn.getSourceNode()),
                 cn.getOutput().getIdentifier(), cn.getOutput().getEndpointDefinition().getEndpointCharacter(),
-                wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
+                wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(cn.getTargetNode()),
                 cn.getInput().getIdentifier(), cn.getInput().getEndpointDefinition().getEndpointCharacter());
-            String edgeKey = WorkflowGraph.createEdgeKey(edge);
-            if (!workflowGraphEdges.containsKey(edgeKey)) {
-                workflowGraphEdges.put(edgeKey, new HashSet<WorkflowGraphEdge>());
-            }
-            workflowGraphEdges.get(edgeKey).add(edge);
+            workflowGraphEdges.add(edge);
         }
         WorkflowGraph workflowGraph = new WorkflowGraph(workflowGraphNodes, workflowGraphEdges);
         validatedNestedLoopDriverConfiguration(workflowDescription, workflowGraph);
@@ -549,10 +623,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private void validatedNestedLoopDriverConfiguration(WorkflowDescription workflowDescription, WorkflowGraph workflowGraph)
         throws WorkflowExecutionException {
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
-            boolean isDriverComp = wn.getComponentDescription().getComponentInstallation().getComponentRevision()
-                .getComponentInterface().getIsLoopDriver();
+            boolean isDriverComp = wn.getComponentDescription().getComponentInstallation().getComponentInterface().getIsLoopDriver();
             if (isDriverComp) {
-                String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wn.getIdentifier());
+                ComponentExecutionIdentifier compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wn);
                 Boolean nestedLoop = Boolean.valueOf(wn.getConfigurationDescription()
                     .getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
                 try {
@@ -577,6 +650,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
     }
 
+    // TODO move this function inside the WorkflowGraph as soon as the WorkflowGraph has been moved into the workflow package
     private boolean isDrivingFaultTolerantNode(WorkflowNode wn) {
         ConfigurationDescription configDesc = wn.getComponentDescription().getConfigurationDescription();
         LoopBehaviorInCaseOfFailure behavior = LoopBehaviorInCaseOfFailure
@@ -585,28 +659,33 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     }
 
     private ComponentExecutionContext createComponentExecutionContext(WorkflowNode wfNode, WorkflowGraph workflowGraph,
-        DataManagementIdsHolder dmIds) {
-        String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
+        DataManagementIdsHolder dmIds) throws WorkflowExecutionException {
+        ComponentExecutionIdentifier compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wfNode);
         WorkflowDescription workflowDescription = wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription();
         ComponentExecutionContextBuilder builder = new ComponentExecutionContextBuilder();
-        builder.setExecutionIdentifiers(compExeId, wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
+        builder.setExecutionIdentifiers(compExeId.toString(), wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
         builder.setInstanceNames(wfNode.getName(), wfStateMachineCtx.getWorkflowExecutionContext().getInstanceName());
-        builder.setNodes(wfStateMachineCtx.getWorkflowExecutionContext().getNodeId(),
-            wfStateMachineCtx.getWorkflowExecutionContext().getDefaultStorageNodeId());
         builder.setComponentDescription(wfNode.getComponentDescription());
+
+        // set actual locations (node ids) of controller and storage
+        builder.setNodes(wfStateMachineCtx.getWorkflowExecutionContext().getNodeId(),
+            wfStateMachineCtx.getWorkflowExecutionContext().getStorageNodeId());
+
+        // does this wfNode has some predecessors?
         boolean isConnectedToEndpointDatumSenders = false;
         for (Connection cn : workflowDescription.getConnections()) {
-            if (cn.getTargetNode().getIdentifier().equals(wfNode.getIdentifier())) {
+            if (cn.getTargetNode().equals(wfNode)) {
                 isConnectedToEndpointDatumSenders = true;
                 break;
             }
         }
+        // For each output of the wfNode, this map contains a list of EndpointDatumRecipients that are connected to this output.
         Map<String, List<EndpointDatumRecipient>> endpointDatumRecipients = new HashMap<>();
         for (Connection cn : workflowDescription.getConnections()) {
-            if (cn.getSourceNode().getIdentifier().equals(wfNode.getIdentifier())) {
+            if (cn.getSourceNode().equals(wfNode)) {
                 EndpointDatumRecipient endpointDatumRecipient = EndpointDatumRecipientFactory
                     .createEndpointDatumRecipient(cn.getInput().getName(),
-                        wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
+                        wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(cn.getTargetNode()).toString(),
                         cn.getTargetNode().getName(), cn.getTargetNode().getComponentDescription().getNode());
                 if (!endpointDatumRecipients.containsKey(cn.getOutput().getName())) {
                     endpointDatumRecipients.put(cn.getOutput().getName(), new ArrayList<EndpointDatumRecipient>());
@@ -616,12 +695,10 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
         builder.setPredecessorAndSuccessorInformation(isConnectedToEndpointDatumSenders, endpointDatumRecipients);
         builder.setWorkflowGraph(workflowGraph);
-        Long compInstanceDmId =
-            dmIds.compInstDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier()));
-        Map<String, Long> inputDataManagementIds = dmIds.inputDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext()
-            .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
-        Map<String, Long> outputDataManagementIds = dmIds.outputDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext()
-            .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
+        ComponentExecutionIdentifier cei = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wfNode);
+        Long compInstanceDmId = dmIds.compInstDmIds.get(cei);
+        Map<String, Long> inputDataManagementIds = dmIds.inputDmIds.get(cei);
+        Map<String, Long> outputDataManagementIds = dmIds.outputDmIds.get(cei);
         builder.setDataManagementIds(wfStateMachineCtx.getWorkflowExecutionStorageBridge().getWorkflowInstanceDataManamagementId(),
             compInstanceDmId, inputDataManagementIds, outputDataManagementIds);
         return builder.build();
@@ -649,7 +726,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
                 @Override
                 public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
-                    componentExecutionService.start(compExeId, componentNodeIds.get(compExeId));
+                    componentExecutionService.start(compExeId,
+                        componentControllerCommandDestinations.getNetworkDestinationForComponentController(compExeId));
                     wfStateMachineCtx.getComponentLostWatcher().announceComponentHeartbeat(compExeId);
                 }
 
@@ -661,9 +739,12 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             Throwable throwable = ppc.callParallelAndWait();
 
             if (throwable == null) {
+                // TODO use better synchronization object
                 synchronized (wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier()) {
                     heartbeatFuture = threadPool.scheduleAtFixedRate(wfStateMachineCtx.getComponentLostWatcher(),
-                        ComponentLostWatcher.DEFAULT_MAX_HEA7RTBEAT_INTERVAL_MSEC);
+                        ComponentDisconnectWatcher.DEFAULT_TEST_INTERVAL_MSEC);
+                    compRestartDetectionFuture = threadPool.scheduleAtFixedRate(wfStateMachineCtx.getNodeRestartWatcher(),
+                        NodeRestartWatcher.DEFAULT_TEST_INTERVAL_MSEC);
                 }
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.START_ATTEMPT_SUCCESSFUL));
             } else {
@@ -703,7 +784,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
                 @Override
                 public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
-                    componentExecutionService.pause(compExeId, componentNodeIds.get(compExeId));
+                    componentExecutionService.pause(compExeId,
+                        componentControllerCommandDestinations.getNetworkDestinationForComponentController(compExeId));
                 }
 
                 @Override
@@ -761,7 +843,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
                 @Override
                 public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
-                    componentExecutionService.resume(compExeId, componentNodeIds.get(compExeId));
+                    componentExecutionService.resume(compExeId,
+                        componentControllerCommandDestinations.getNetworkDestinationForComponentController(compExeId));
                 }
 
                 @Override
@@ -826,12 +909,15 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             }
 
             Throwable throwable = null;
-            if (!componentNodeIds.isEmpty()) {
+            if (!componentNodeIds.isEmpty()) { // TODO what does this check? probably whether the component was instantiated yet
                 throwable = new ParallelComponentCaller(getComponentsToConsider(true), wfStateMachineCtx.getWorkflowExecutionContext()) {
 
                     @Override
                     public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
                         try {
+                            // Special case: As canceling should only be attempted for a limited time instead of retried indefinitely, the
+                            // component controller's node id is used instead of the usual rRPC channel here. This allows the normal network
+                            // exceptions to occur in case of failure, which are then handled by the code as in RCE 8. -- misc_ro
                             componentExecutionService.cancel(compExeId, componentNodeIds.get(compExeId));
                         } catch (ExecutionControllerException e) {
                             LOG.debug(StringUtils.format("Failed to cancel component(s) of %s; cause: %s",
@@ -954,7 +1040,12 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         @Override
         @TaskDescription("Dispose workflow")
         public void run() {
-            notificationService.send(WorkflowConstants.STATE_DISPOSED_NOTIFICATION_ID, wfStateMachineCtx.getWorkflowExecutionContext()
+            final WorkflowExecutionContext workflowExecutionContext = wfStateMachineCtx.getWorkflowExecutionContext();
+
+            endpointDatumDispatchService.unregisterComponentControllerForwardingMap(
+                workflowExecutionContext.getWorkflowExecutionHandle().getIdentifier());
+
+            notificationService.send(WorkflowConstants.STATE_DISPOSED_NOTIFICATION_ID, workflowExecutionContext
                 .getExecutionIdentifier());
             ParallelComponentCaller ppc = new ParallelComponentCaller(getComponentsToConsider(false, true),
                 wfStateMachineCtx.getWorkflowExecutionContext()) {
@@ -967,6 +1058,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
                 @Override
                 public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                    // see comment in AsyncCancelTask on the use of the direct node id
                     componentExecutionService.dispose(compExeId, componentNodeIds.get(compExeId));
                 }
 
@@ -1007,9 +1099,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         notificationService.removePublisher(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext()
             .getNodeId(), wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()));
         for (WorkflowNode wfNode : wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().getWorkflowNodes()) {
-            String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
-            notificationService.removePublisher(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId);
-            notificationService.removePublisher(ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX + compExeId);
+            ComponentExecutionIdentifier compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNode(wfNode);
+            notificationService.removePublisher(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId.toString());
+            notificationService.removePublisher(ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX + compExeId.toString());
         }
     }
 
@@ -1099,9 +1191,13 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
     @Override
     public void onComponentStatesChangedCompletelyToAnyFinalState() {
+        // TODO use better synchronization object
         synchronized (wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier()) {
             if (heartbeatFuture != null && !heartbeatFuture.isCancelled()) {
                 heartbeatFuture.cancel(false);
+            }
+            if (compRestartDetectionFuture != null && !compRestartDetectionFuture.isCancelled()) {
+                compRestartDetectionFuture.cancel(false);
             }
         }
         workflowTerminatedLatch.countDown();
@@ -1122,22 +1218,6 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
     private void sendComponentStateFailed(String compExeId) {
         notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, ComponentState.FAILED.name());
-    }
-
-    protected void bindCommunicationService(CommunicationService newService) {
-        communicationService = newService;
-    }
-
-    protected void bindComponentExecutionService(ComponentExecutionService newService) {
-        componentExecutionService = newService;
-    }
-
-    protected void bindWorkflowExecutionStatsService(WorkflowExecutionStatsService newService) {
-        wfExeStatsService = newService;
-    }
-
-    protected void bindDistributedNotificationService(DistributedNotificationService newService) {
-        notificationService = newService;
     }
 
     @Override

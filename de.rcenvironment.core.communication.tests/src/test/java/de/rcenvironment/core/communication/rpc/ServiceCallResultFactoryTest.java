@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -91,7 +91,7 @@ public class ServiceCallResultFactoryTest {
         targetNodeId = NodeIdentifierTestUtils.createTestLogicalNodeSessionId(true);
         callerNodeId = NodeIdentifierTestUtils.createTestLogicalNodeSessionId(true);
         final ServiceCallRequest request =
-            new ServiceCallRequest(targetNodeId, callerNodeId, "Service", "Method", new ArrayList<Serializable>());
+            new ServiceCallRequest(targetNodeId, callerNodeId, "Service", "Method", new ArrayList<Serializable>(), null);
         return request;
     }
 

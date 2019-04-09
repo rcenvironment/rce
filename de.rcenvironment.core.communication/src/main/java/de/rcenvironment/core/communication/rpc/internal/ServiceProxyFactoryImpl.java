@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService;
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
@@ -128,7 +129,8 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
     }
 
     @Override
-    public Object createServiceProxy(final ResolvableNodeId nodeId, final Class<?> serviceIface, Class<?>[] ifaces) {
+    public Object createServiceProxy(final ResolvableNodeId nodeId, final Class<?> serviceIface, Class<?>[] ifaces,
+        final ReliableRPCStreamHandle reliableRPCStreamHandle) {
 
         Assertions.isDefined(nodeId, "The identifier of the requested platform" + ASSERT_MUST_NOT_BE_NULL);
         Assertions.isDefined(serviceIface, "The interface of the requested service" + ASSERT_MUST_NOT_BE_NULL);
@@ -183,7 +185,7 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
 
                 ServiceCallRequest serviceCallRequest =
                     new ServiceCallRequest(destinationLogicalNodeSessionId, ps.getLocalDefaultLogicalNodeSessionId(),
-                        myService.getCanonicalName(), method.getName(), parameterList);
+                        myService.getCanonicalName(), method.getName(), parameterList, reliableRPCStreamHandle);
 
                 Object returnValue = remoteServiceCallService.performRemoteServiceCallAsProxy(serviceCallRequest);
                 if (returnValue != null) {
@@ -194,6 +196,14 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
 
             private void resolveDestinationNodeIdOrFail() throws RemoteOperationException {
                 int retries = 0;
+
+                if (reliableRPCStreamHandle != null) {
+                    // for reliable RPC sessions, the logical node must have been specifically resolved on session start already;
+                    // anything else would be an internal consistency error -- misc_ro
+                    destinationLogicalNodeSessionId = (LogicalNodeSessionId) destinationNodeId;
+                    return;
+                }
+
                 // TODO this retry loop is mostly needed for unit tests, as waiting for node visibility does not guarantee complete
                 // propagation of ids to the resolution service; check if there is a more elegant solution to this - misc_ro, 8.0.0
                 while (true) {

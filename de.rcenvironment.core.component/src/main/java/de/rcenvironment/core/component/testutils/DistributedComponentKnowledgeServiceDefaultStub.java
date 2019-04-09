@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 
 /**
  * Default mock for {@link DistributedComponentKnowledgeService}.
@@ -22,11 +22,10 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 public class DistributedComponentKnowledgeServiceDefaultStub implements DistributedComponentKnowledgeService {
 
     @Override
-    public void setLocalComponentInstallations(Collection<ComponentInstallation> allInstallations,
-        Collection<ComponentInstallation> installationsToPublish) {}
+    public void updateLocalComponentInstallations(Collection<DistributedComponentEntry> allInstallations, boolean publicationEnabled) {}
 
     @Override
-    public DistributedComponentKnowledge getCurrentComponentKnowledge() {
+    public DistributedComponentKnowledge getCurrentSnapshot() {
         return new DistributedComponentKnowledgeDefaultStub();
     }
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -116,26 +116,26 @@ public class ServiceProxyFactoryImplTest {
     @Test
     public void testCreateServiceProxyForSuccess() {
 
-        Object proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        Object proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         assertTrue(proxy instanceof MethodCallTestInterface);
 
         proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class,
-            new Class<?>[] { BundleActivator.class, Bundle.class });
+            new Class<?>[] { BundleActivator.class, Bundle.class }, null);
         assertTrue(proxy instanceof MethodCallTestInterface);
         assertTrue(proxy instanceof BundleActivator);
         assertTrue(proxy instanceof Bundle);
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         assertTrue(proxy instanceof MethodCallTestInterface);
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         assertTrue(proxy instanceof MethodCallTestInterface);
 
         Map<String, String> properties = new HashMap<String, String>();
         properties.put("rumpel", "false");
         properties.put("pumpel", "true");
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         assertTrue(proxy instanceof MethodCallTestInterface);
 
     }
@@ -148,7 +148,7 @@ public class ServiceProxyFactoryImplTest {
     @Test
     public void testNativeReturnValue() throws RemoteOperationException {
         MethodCallTestInterface proxy =
-            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
@@ -173,7 +173,7 @@ public class ServiceProxyFactoryImplTest {
     public void testStringReturnValue() throws RemoteOperationException {
 
         MethodCallTestInterface proxy =
-            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
@@ -198,7 +198,7 @@ public class ServiceProxyFactoryImplTest {
     public void testCallbackParameterDoesNotFail() throws RemoteOperationException {
 
         MethodCallTestInterface proxy =
-            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
@@ -225,7 +225,7 @@ public class ServiceProxyFactoryImplTest {
     public void testRemoteExceptionThrowing() throws RemoteOperationException {
 
         MethodCallTestInterface proxy =
-            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null, null);
 
         // create a network mock that simulates the remote generation of the expected result
         MessageRoutingService routingServiceMock = createSingleCallNetworkMock(ServiceCallResultFactory.wrapMethodException(exception));
@@ -251,13 +251,13 @@ public class ServiceProxyFactoryImplTest {
     @Test
     public void testCreateServiceProxyForFailure() {
         try {
-            serviceProxyFactory.createServiceProxy(null, MethodCallTestInterface.class, null);
+            serviceProxyFactory.createServiceProxy(null, MethodCallTestInterface.class, null, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
         try {
-            serviceProxyFactory.createServiceProxy(LOCAL_LOGICAL_NODE_SESSION_ID, null, null);
+            serviceProxyFactory.createServiceProxy(LOCAL_LOGICAL_NODE_SESSION_ID, null, null, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);

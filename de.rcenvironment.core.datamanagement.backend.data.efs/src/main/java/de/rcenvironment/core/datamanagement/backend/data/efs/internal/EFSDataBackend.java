@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -162,6 +162,11 @@ public class EFSDataBackend implements DataBackend {
 
     @Override
     public InputStream get(URI uri) {
+        return get(uri, true);
+    }
+
+    @Override
+    public InputStream get(URI uri, boolean decompress) {
         IFileStore fileStore = null;
 
         if (!isURIValid(uri)) {
@@ -179,18 +184,16 @@ public class EFSDataBackend implements DataBackend {
 
             InputStream storageInputStream;
             // get buffered storage file stream
-            if (isZipped) {
+            if (isZipped && decompress) {
                 storageInputStream =
                     new BufferedInputStream(new GzipCompressorInputStream(fileStore.openInputStream(EFS.NONE, null)), STREAM_BUFFER_SIZE);
             } else {
                 storageInputStream = new BufferedInputStream(fileStore.openInputStream(EFS.NONE, null), STREAM_BUFFER_SIZE);
             }
             return storageInputStream;
-        } catch (CoreException e) {
+        } catch (CoreException | IOException e) {
             throw new RuntimeException("File with given URI could not be found: " + uri, e);
-        } catch (IOException e) {
-            throw new RuntimeException("File with given URI could not be found: " + uri, e);
-        }
+        } 
     }
 
     @Override
@@ -207,8 +210,13 @@ public class EFSDataBackend implements DataBackend {
     }
 
     @Override
-    // TODO messy exception handling; improve
     public long put(URI uri, Object object) {
+        return put(uri, object, false);
+    }
+
+    @Override
+    // TODO messy exception handling; improve
+    public long put(URI uri, Object object, boolean alreadyCompressed) {
 
         if (!isURIValid(uri)) {
             throw new IllegalArgumentException("Given URI representing the location to put a file to is not valid: " + uri);
@@ -224,7 +232,7 @@ public class EFSDataBackend implements DataBackend {
             try {
                 File fileToSave;
                 IFileStore parent = null;
-                if (useGZipCompression) {
+                if (useGZipCompression && !alreadyCompressed) {
                     fileToSave = new File(getFileStorageRoot().getAbsolutePath() + new File(uri.getRawPath()).getPath() + ZIP_FILE_SUFFIX);
                 } else {
                     fileToSave = new File(getFileStorageRoot().getAbsolutePath() + new File(uri.getRawPath()).getPath());
@@ -238,7 +246,7 @@ public class EFSDataBackend implements DataBackend {
 
 
                 // get buffered storage file stream for writing
-                if (useGZipCompression) {
+                if (useGZipCompression && !alreadyCompressed) {
                     storageOutputStream =
                         new BufferedOutputStream(new GzipCompressorOutputStream(fileStore.openOutputStream(EFS.NONE, null)),
                             STREAM_BUFFER_SIZE);

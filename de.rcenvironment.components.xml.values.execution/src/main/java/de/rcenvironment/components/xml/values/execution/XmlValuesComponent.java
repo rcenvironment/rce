@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -75,7 +75,7 @@ public class XmlValuesComponent extends DefaultComponent {
             tempMainFile = tempFileService.createTempFileFromPattern("XMLValues-*.xml");
 
             dataManagementService.copyReferenceToLocalFile(mainXml.getFileReference(), tempMainFile,
-                componentContext.getDefaultStorageNodeId());
+                componentContext.getStorageNetworkDestination());
         } catch (IOException e) {
             throw new ComponentException(
                 "Failed to write XML file into a temporary file " + "(that is required for XML Values)",

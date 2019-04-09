@@ -10,16 +10,19 @@
                 <para>Windows 10</para>
             </listitem>
             <listitem>
-                <para>Windows Server 2012 R2</para>
+                <para>Windows Server 2016</para>
+            </listitem>
+            <listitem>
+                <para>CentOS 7</para>
+            </listitem>
+            <listitem>
+                <para>Debian 9</para>
             </listitem>
             <listitem>
                 <para>SUSE Linux Enterprise Desktop ("SLED") 12 SP2</para>
             </listitem>
             <listitem>
-                <para>Ubuntu 16.04 LTS</para>
-            </listitem>
-            <listitem>
-                <para>Red Hat Enterprise Linux 6</para>
+                <para>Ubuntu 18.04 LTS</para>
             </listitem>
         </itemizedlist></para>
     <sect2>

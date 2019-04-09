@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Remote-accessible methods for component execution control.
  *
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 @RemotableService
 public interface RemotableComponentExecutionControllerService extends RemotableExecutionControllerService {
@@ -53,15 +54,6 @@ public interface RemotableComponentExecutionControllerService extends RemotableE
     void performPrepare(String executionId) throws ExecutionControllerException, RemoteOperationException;
 
     /**
-     * Add a new execution auth token.
-     * 
-     * @param authToken new auth token, which authorizes for execution
-     * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
-     *         locally)
-     */
-    void addComponentExecutionAuthToken(String authToken) throws RemoteOperationException;
-
-    /**
      * @param verificationToken verification token used to verify results of a certain component run
      * @return {@link ComponentExecutionInformation} of the component related to the verification token or <code>null</code> if no one
      *         related was found
@@ -84,7 +76,7 @@ public interface RemotableComponentExecutionControllerService extends RemotableE
     Boolean performVerifyResults(String executionId, String verificationToken, Boolean verified)
         throws ExecutionControllerException, RemoteOperationException;
 
-        /**
+    /**
      * Called if asynchronous sending of an {@link EndpointDatum} failed.
      * 
      * @param executionId execution identifier of the component that requested sending the {@link EndpointDatum}
@@ -94,7 +86,7 @@ public interface RemotableComponentExecutionControllerService extends RemotableE
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void onSendingEndointDatumFailed(String executionId, String serializedEndpointDatum, RemoteOperationException e) 
+    void onSendingEndointDatumFailed(String executionId, String serializedEndpointDatum, RemoteOperationException e)
         throws ExecutionControllerException, RemoteOperationException;
 
 }

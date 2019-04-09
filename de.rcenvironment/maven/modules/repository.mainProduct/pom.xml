@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.modules.repository.mainProduct</artifactId>
 	<name>RCE Main Product Repository</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-repository</packaging>
 
 	<parent>

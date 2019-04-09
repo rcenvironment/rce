@@ -20,8 +20,6 @@
 		<module>${projects-root}/de.rcenvironment.core.authentication.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.authorization</module>
 		<module>${projects-root}/de.rcenvironment.core.authorization.tests</module>
-		<module>${projects-root}/de.rcenvironment.core.authorization.xml</module>
-		<module>${projects-root}/de.rcenvironment.core.authorization.xml.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.command</module>
 		<module>${projects-root}/de.rcenvironment.core.command.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.communication</module>
@@ -35,6 +33,7 @@
 		<module>${projects-root}/de.rcenvironment.core.component.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.component.executor.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.integration</module>
+		<module>${projects-root}/de.rcenvironment.core.component.integration.documentation</module>
 		<module>${projects-root}/de.rcenvironment.core.component.integration.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.scripting</module>
 		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess</module>
@@ -49,8 +48,6 @@
 		<module>${projects-root}/de.rcenvironment.core.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap.tests</module>
-		<module>${projects-root}/de.rcenvironment.core.configuration.discovery</module>
-		<module>${projects-root}/de.rcenvironment.core.configuration.discovery.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.logging</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.ui</module>
@@ -67,8 +64,6 @@
 		<module>${projects-root}/de.rcenvironment.core.eventlog</module>
 		<module>${projects-root}/de.rcenvironment.core.instancemanagement</module>
 		<module>${projects-root}/de.rcenvironment.core.instancemanagement.tests</module>
-		<module>${projects-root}/de.rcenvironment.core.jetty</module>
-		<module>${projects-root}/de.rcenvironment.core.jetty.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.launcher.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.log</module>
 		<module>${projects-root}/de.rcenvironment.core.log.tests</module>
@@ -112,6 +107,7 @@
 
 		<!-- core gui -->
 		<module>${projects-root}/de.rcenvironment.core.gui.cluster</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.authorization</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.command</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.communication</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>

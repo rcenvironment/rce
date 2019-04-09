@@ -1,11 +1,14 @@
+/*
+ * Copyright (c) 2000, 2002 IBM Corp.  All rights reserved
+ * Copyright 2019 DLR, Germany (header adaptations only)
+ * 
+ * SPDX-License-Identifier: CPL-1.0
+ *  
+ * http://www.rcenvironment.de/
+ */
+
 package de.rcenvironment.core.gui.utils.incubator;
 
-/*
- * Copyright (c) 2000, 2002 IBM Corp.  All rights reserved.
- * This file is made available under the terms of the Common Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/cpl-v10.html
- */
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;

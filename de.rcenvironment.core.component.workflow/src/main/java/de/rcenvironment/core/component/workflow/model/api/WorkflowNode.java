@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -52,7 +52,7 @@ public class WorkflowNode extends PropertiesChangeSupport
 
     private ComponentDescription compDesc;
 
-    private String identifier;
+    private WorkflowNodeIdentifier identifier;
 
     private String name;
 
@@ -83,7 +83,7 @@ public class WorkflowNode extends PropertiesChangeSupport
      */
     public WorkflowNode(ComponentDescription componentDescription) {
         compDesc = componentDescription;
-        identifier = UUID.randomUUID().toString();
+        identifier = new WorkflowNodeIdentifier(UUID.randomUUID().toString());
         x = DEFAULT_X_Y;
         y = DEFAULT_X_Y;
         zIndex = INITIAL_ZINDEX;
@@ -174,7 +174,12 @@ public class WorkflowNode extends PropertiesChangeSupport
         return name;
     }
 
+    @Deprecated
     public String getIdentifier() {
+        return identifier.toString();
+    }
+    
+    public WorkflowNodeIdentifier getIdentifierAsObject() {
         return identifier;
     }
 
@@ -193,7 +198,7 @@ public class WorkflowNode extends PropertiesChangeSupport
 
     // needed for the persistence handler to set the identifier given by file
     public void setIdentifier(String newIdentifier) {
-        identifier = newIdentifier;
+        identifier = new WorkflowNodeIdentifier(newIdentifier);
     }
 
     @Override

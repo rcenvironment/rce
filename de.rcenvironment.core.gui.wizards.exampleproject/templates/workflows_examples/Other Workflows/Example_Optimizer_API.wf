@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "f117efdb-87e6-46d8-b1ae-c0a8ba9007a5",
     "name" : "Evaluation",
-    "location" : "639:192",
+    "location" : "641:280",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -49,7 +49,7 @@
   }, {
     "identifier" : "3d3c4f9f-8a92-41df-bd58-b667b911d027",
     "name" : "IntegratedOptimizer",
-    "location" : "408:192",
+    "location" : "410:280",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -273,5 +273,5 @@
     "target" : "f117efdb-87e6-46d8-b1ae-c0a8ba9007a5",
     "input" : "cc0d8326-4079-4082-bf19-5caecafa9b9c"
   } ],
-  "labels" : "[{\"identifier\":\"445bfda9-160f-4121-9e89-66efad00791e\",\"headerText\":\"\",\"text\":\"Example workflow: \\\"Example_Optimizer_API\\\"\\r\\nObjective: Introducing the Optimization Algorithm API\\r\\n\\r\\nThis workflows uses the example optimizer algorithm integration, which can be found in the \\\"examples\\\" directory in the RCE installation directory. It is no real optimization, but it shows how to use the API. A documentation for the API can be found in the user guide.\",\"location\":\"30:13\",\"size\":\"1047:126\",\"alpha\":\"152\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"8\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"445bfda9-160f-4121-9e89-66efad00791e\",\"headerText\":\"Introducing the Optimization Algorithm API\",\"text\":\"This workflows uses the example optimizer algorithm integration, which can be found in the \\\"examples\\\" directory in the RCE installation directory. It is no real optimization, but it shows how to use the API. A documentation for the API can be found in the user guide.\",\"location\":\"68:101\",\"size\":\"1047:135\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,15 +15,12 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
-import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,7 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
@@ -61,30 +61,96 @@ public class ToolIntegrationFileWatcher implements Runnable {
 
     private WatchService watcher;
 
+    private FileService fileService;
+
     private ToolIntegrationContext context;
 
     private ToolIntegrationService integrationService;
 
-    private Map<WatchKey, Path> registeredKeys;
+    private Map<WatchKey, Path> registeredKeys = new HashMap<>();
 
     private AtomicBoolean isActive = new AtomicBoolean(true);
 
-    private Map<Path, Long> lastModified;
+    private Map<Path, Long> lastModified = new HashMap<>();
 
     private Path rootContextPath;
 
-    private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+    private final ObjectMapper mapper;
 
-    private CountDownLatch stoppingLatch;
+    // Used to notify callers of #stop that the thread has finished.
+    private CountDownLatch stoppingLatch = new CountDownLatch(1);
 
-    public ToolIntegrationFileWatcher(ToolIntegrationContext context, ToolIntegrationService integrationService) throws IOException {
-        this.watcher = FileSystems.getDefault().newWatchService();
+    /**
+     *
+     * @author Alexander Weinert
+     */
+    @Component(service = Factory.class)
+    public static class Factory {
+
+        private WatchService.Builder watchServiceBuilder;
+
+        private FileService fileService;
+
+        private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+
+        private ToolIntegrationService toolIntegrationService;
+
+        /**
+         * @param context The context of the tool whose configuration folder shall be watched by the constructed ToolIntegrationFileWatcher.
+         * @return A file watcher that watches the configuration folder of the given tool integration.
+         * @throws IOException If no {@link WatchService} can be constructed for the integration folder of the given tool.
+         */
+        public ToolIntegrationFileWatcher create(ToolIntegrationContext context)
+            throws IOException {
+            final Path rootContextPath = fileService.getPath(context.getRootPathToToolIntegrationDirectory(),
+                context.getNameOfToolIntegrationDirectory());
+            final ToolIntegrationFileWatcher fileWatcher =
+                new ToolIntegrationFileWatcher(context, toolIntegrationService, rootContextPath, fileService, mapper,
+                    watchServiceBuilder.build());
+            return fileWatcher;
+        }
+
+        /**
+         * We explicitly implement this method instead of only relying on OSGI annotations for creating this method in order to make it
+         * accessible for testing. During normal operation, this method should not be called, but instead OSGI should be configured to
+         * inject the correct implementation into the Factory.
+         * 
+         * @param newInstance The WatchService to be supplied to newly created {@link ToolIntegrationFileWatcher}s
+         */
+        @Reference
+        public void bindWatchServiceBuilder(WatchService.Builder newInstance) {
+            watchServiceBuilder = newInstance;
+        }
+
+        /**
+         * We explicitly implement this method instead of only relying on OSGI annotations for creating this method in order to make it
+         * accessible for testing. During normal operation, this method should not be called, but instead OSGI should be configured to
+         * inject the correct implementation into the Factory.
+         * 
+         * @param newInstance The FileService to be supplied to newly created {@link ToolIntegrationFileWatcher}s
+         */
+        @Reference
+        public void bindFileService(FileService newInstance) {
+            fileService = newInstance;
+        }
+
+        public void setToolIntegrationService(final ToolIntegrationService newInstance) {
+            toolIntegrationService = newInstance;
+        }
+
+        public void setObjectMapper(final ObjectMapper newInstance) {
+            mapper = newInstance;
+        }
+    }
+
+    protected ToolIntegrationFileWatcher(ToolIntegrationContext context, ToolIntegrationService integrationService,
+        final Path rootContextPathParam, FileService fileServiceParam, ObjectMapper mapperParam, WatchService watchService) {
         this.context = context;
         this.integrationService = integrationService;
-        this.registeredKeys = new HashMap<>();
-        this.lastModified = new HashMap<>();
-        this.rootContextPath =
-            FileSystems.getDefault().getPath(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
+        this.rootContextPath = rootContextPathParam;
+        this.fileService = fileServiceParam;
+        this.mapper = mapperParam;
+        this.watcher = watchService;
     }
 
     /**
@@ -94,7 +160,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
      * @throws IOException if registration fails.
      */
     public void registerRecursive(Path path) throws IOException {
-        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+        fileService.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
@@ -117,7 +183,8 @@ public class ToolIntegrationFileWatcher implements Runnable {
      */
     public void register(Path dir) throws IOException {
         if (!registeredKeys.containsValue(dir)) {
-            WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            WatchKey key = watcher.watch(dir, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            LOGGER.debug(String.format("Watching %s", dir));
             registeredKeys.put(key, dir);
         }
     }
@@ -151,13 +218,14 @@ public class ToolIntegrationFileWatcher implements Runnable {
     }
 
     /**
-     * Stops the watcher and ends the thread.
+     * Stops the watcher and ends the thread. May only be called after #run has been called
      */
     public void stop() {
-        stoppingLatch = new CountDownLatch(1);
         try {
             watcher.close();
             stoppingLatch.await(5, TimeUnit.SECONDS);
+            // We have to reinitialize the countdown latch in case the FileWatcher is restarted
+            stoppingLatch = new CountDownLatch(1);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Error stopping watcher thread:", e);
         }
@@ -241,12 +309,12 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 StringUtils.format("Could not register new path after %s tries: %s", MAX_RETRIES_REGISTER_ON_CREATE, child.toString()));
         }
         if (isActive.get()) {
-            if (Files.isDirectory(child)) {
+            if (fileService.isDirectory(child)) {
                 if (child.getNameCount() == rootContextPath.getNameCount() + 1) {
-                    File configurationFile = new File(child.toFile(), context.getConfigurationFilename());
+                    File configurationFile = fileService.createFile(child.toFile(), context.getConfigurationFilename());
                     integrateFile(configurationFile);
                 }
-            } else if (Files.isRegularFile(child)) {
+            } else if (fileService.isRegularFile(child)) {
                 if (child.endsWith(ToolIntegrationConstants.PUBLISHED_COMPONENTS_FILENAME)) {
                     integrationService.updatePublishedComponents(context);
                 } else if (child.endsWith(context.getConfigurationFilename())) {
@@ -319,11 +387,11 @@ public class ToolIntegrationFileWatcher implements Runnable {
             integrationService.updatePublishedComponents(context);
         }
         if (directory.getNameCount() == rootContextPath.getNameCount() + 1) {
-            File configurationFile = new File(directory.toFile(), context.getConfigurationFilename());
+            File configurationFile = fileService.createFile(directory.toFile(), context.getConfigurationFilename());
             removeAndReintegrate(directory.toFile(), configurationFile);
         }
         if (directory.getName(directory.getNameCount() - 1).endsWith(ToolIntegrationConstants.DOCS_DIR_NAME)) {
-            File configurationFile = new File(directory.getParent().toFile(), context.getConfigurationFilename());
+            File configurationFile = fileService.createFile(directory.getParent().toFile(), context.getConfigurationFilename());
             removeAndReintegrate(directory.getParent().toFile(), configurationFile);
         }
     }
@@ -335,6 +403,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
     }
 
     private void removeTool(File toolDir) {
+        LOGGER.debug(StringUtils.format("Unregistering integrated tool %s", toolDir.getAbsolutePath()));
         String toolName = integrationService.getToolNameToPath(toolDir.getAbsolutePath());
         if (toolName != null) {
             integrationService.removeTool(toolName, context);
@@ -342,6 +411,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
     }
 
     private void integrateFile(File newConfiguration) {
+        LOGGER.debug(StringUtils.format("Trying to integrate tool from configuration file %s", newConfiguration.getAbsolutePath()));
         boolean read = false;
         int attempt = 0;
         while (!read && attempt < MAX_RETRIES_INTEGRATE_NEW_FILE) {
@@ -360,7 +430,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 }
             } catch (IOException e) {
                 read = false;
-                LOGGER.error(
+                LOGGER.debug(
                     StringUtils.format("Could not read tool configuration (Tried %s of %s times)", ++attempt,
                         MAX_RETRIES_INTEGRATE_NEW_FILE),
                     e);

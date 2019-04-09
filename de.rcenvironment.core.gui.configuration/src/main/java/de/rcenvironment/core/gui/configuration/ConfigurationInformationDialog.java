@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -140,7 +140,7 @@ public class ConfigurationInformationDialog extends Dialog {
         CLabel informationLabel = new CLabel(informationGroup, SWT.NONE);
         informationLabel.setText("You need to configure RCE to change the name of your instance, connect your instance to others, etc.\n"
             + "All configuration is done within a single file called \"configuration.json\" in your profile directory \n"
-            + "(see 'File System Locations' below). You can easily open and edit it with the \"Help > Open Configuration File\" \n"
+            + "(see 'File System Locations' below). You can easily open and edit it with the \"Configuration > Open Configuration File\" \n"
             + "menu option, or with the corresponding tool bar button.");
         informationLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16));
         

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.validation.api.ComponentValidationMessage
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage.Type;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 
 /**
@@ -43,7 +44,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
 
 //    private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
     
-    private String componentId;
+    private WorkflowNodeIdentifier componentId;
     
     private final ComponentValidationMessageStore messageStore = ComponentValidationMessageStore.getInstance();
     
@@ -63,7 +64,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
 
     @Override
     protected final void afterInitializingModelBinding() {
-        componentId = ((WorkflowNode) getConfiguration()).getIdentifier();
+        componentId = ((WorkflowNode) getConfiguration()).getIdentifierAsObject();
         updateErrorStates();
         afterInitializingModelBindingWithValidation();
         getPart().addPropertyListener(propertyListener);
@@ -87,7 +88,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     }
 
     protected void updateErrorStates() {
-        final List<ComponentValidationMessage> messages = messageStore.getMessagesByComponentId(componentId);
+        final List<ComponentValidationMessage> messages = messageStore.getMessagesByComponentId(componentId.toString());
         updateErrorStates(messages);
     }
 

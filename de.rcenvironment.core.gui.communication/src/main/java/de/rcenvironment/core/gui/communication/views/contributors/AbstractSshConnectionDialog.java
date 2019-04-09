@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -39,7 +39,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Oliver Seebach
  */
 public abstract class AbstractSshConnectionDialog extends Dialog implements PasteListener, VerifyListener {
-    
+
     private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Keyfile with passphrase protection";
 
     private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Keyfile without passphrase protection";
@@ -49,7 +49,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     private static final int DIALOG_WINDOW_OFFSET_Y = 100;
 
     private static final int DIALOG_WINDOW_OFFSET_X = 150;
-    
+
     private static final String COLON = ":";
 
     private static final String NAME_LABEL = "Name" + COLON;
@@ -67,9 +67,9 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     private static final String PASSPHRASE_LABEL = "Passphrase:";
 
     private static final int CHECKBOX_LABEL_WIDTH = 300;
-    
+
     private static Text portTextField;
-    
+
     private static PasteListeningText hostTextField;
 
     protected String connectionName = "";
@@ -85,21 +85,27 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     protected String keyfileLocation = "";
 
     protected String hint = "";
-    
+
     protected String networkContactPointID = "";
-    
+
     private boolean storePassphrase = true;
 
     private boolean useKeyFile = false;
 
     private boolean connectImmediately = true;
 
+    private boolean autoRetry = true;
+
     private boolean usePassphrase = true;
 
     private Button useDefaultNameButton;
-    
+
     private Button storePasswordButton;
-    
+
+    private Button immediateConnectButton;
+
+    private Button autoRetryButton;
+
     private Label nameLabel;
 
     private boolean isDefaultName = true;
@@ -109,7 +115,8 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     }
 
     public AbstractSshConnectionDialog(Shell parentShell, String connectionName, String host, int port,
-        String username, String keyfileLocation, boolean usePassphrase, boolean storePassphrase, boolean connectImmediately) {
+        String username, String keyfileLocation, boolean usePassphrase, boolean storePassphrase, boolean connectImmediately,
+        boolean autoRetry) {
         super(parentShell);
         this.connectionName = connectionName;
         this.host = host;
@@ -117,6 +124,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         String hostAndPortString = StringUtils.format("%s:%s", host, port);
         this.username = username;
         this.connectImmediately = connectImmediately;
+        this.autoRetry = autoRetry;
         this.storePassphrase = storePassphrase;
         this.isDefaultName = (connectionName.equals(hostAndPortString));
         this.keyfileLocation = keyfileLocation;
@@ -140,7 +148,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         // set shell label to "Connection" as fallback
         shell.setText("Connection");
     }
-    
+
     @Override
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
@@ -157,12 +165,16 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         GridData connectImmediateCheckboxGridData = new GridData();
         connectImmediateCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         connectImmediateCheckboxGridData.horizontalSpan = 2;
+        GridData autoRetryCheckboxGridData = new GridData();
+        autoRetryCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
+        autoRetryCheckboxGridData.horizontalSpan = 2;
+
         Label cpLabelHost = new Label(container, SWT.NULL);
         cpLabelHost.setText(HOST_LABEL);
         hostTextField = new PasteListeningText(container, SWT.SINGLE | SWT.BORDER);
         hostTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         if (!host.isEmpty()) {
-            hostTextField.setText(host); 
+            hostTextField.setText(host);
         }
         hostTextField.addPasteListener(this);
         Label cpLabelPort = new Label(container, SWT.NULL);
@@ -170,7 +182,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         portTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
         portTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         if (!port.isEmpty()) {
-            portTextField.setText(port);  
+            portTextField.setText(port);
         }
         portTextField.addVerifyListener(this);
         GridData separatorGridData = new GridData();
@@ -186,26 +198,27 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
         placeholderLabel.setText("");
-       
+
         useDefaultNameButton = new Button(container, SWT.CHECK);
         useDefaultNameButton.setText("Use default name (host" + COLON + "port)");
         useDefaultNameButton.setLayoutData(useDefaultCheckboxGridData);
         useDefaultNameButton.setSelection(isDefaultName);
         useDefaultNameButton.addSelectionListener(new SelectionListener() {
-        
+
             @Override
             public void widgetSelected(SelectionEvent e) {
                 nameText.setEnabled(!useDefaultNameButton.getSelection());
                 nameText.setText("");
                 if (useDefaultNameButton.getSelection()) {
-                    if (!hostTextField.getText().isEmpty() 
+                    if (!hostTextField.getText().isEmpty()
                         && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() 
+                        nameText.setText(hostTextField.getText()
                             + COLON + portTextField.getText());
                     }
                 }
                 updateOkButtonActivation();
             }
+
             @Override
             public void widgetDefaultSelected(SelectionEvent e) {
                 widgetDefaultSelected(e);
@@ -269,35 +282,42 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         storePasswordButton.setSelection(storePassphrase);
         storePasswordButton.setVisible(usePassphrase);
 
+        createButtonsAndHint(container, connectImmediateCheckboxGridData, autoRetryCheckboxGridData, separatorGridData);
+        defineListenerForAuthenticationType(authTypeCombo, keyfileLabel, keyfileComposite, passphraseLabel, passphraseText);
+
+        initVariablesAndCreateListeners(hostTextField, portTextField, nameText, usernameText, passphraseText, keyfileText);
+        return container;
+    }
+
+    private void createButtonsAndHint(Composite container, GridData connectImmediateCheckboxGridData, GridData autoRetryCheckboxGridData,
+        GridData separatorGridData) {
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
         separator.setLayoutData(separatorGridData);
 
-        final Button immediateConnectButton = new Button(container, SWT.CHECK);
+        immediateConnectButton = new Button(container, SWT.CHECK);
         immediateConnectButton.setSelection(connectImmediately);
         immediateConnectButton.setText("Connect immediately");
         immediateConnectButton.setLayoutData(connectImmediateCheckboxGridData);
+
+        autoRetryButton = new Button(container, SWT.CHECK);
+        autoRetryButton.setSelection(autoRetry);
+        autoRetryButton.setText("Try reconnect after error (requires stored passphrase)");
+        autoRetryButton.setLayoutData(autoRetryCheckboxGridData);
 
         final Label persistHint = new Label(container, SWT.NULL);
         GridData hintGridData = new GridData();
         hintGridData.horizontalSpan = 2;
         persistHint.setText(hint);
         persistHint.setLayoutData(hintGridData);
-
-        defineListenerForAuthenticationType(authTypeCombo, keyfileLabel, keyfileComposite, passphraseLabel, passphraseText);
-
-        initVariablesAndCreateListeners(hostTextField, portTextField, nameText, usernameText, passphraseText, keyfileText,
-            immediateConnectButton);
-        return container;
     }
 
-
-    
     /**
-    *
-    * Paste host and port.
-    * @param text String
-    * 
-    **/
+     *
+     * Paste host and port.
+     * 
+     * @param text String
+     * 
+     **/
     @Override
     public void paste(String text) {
         CustomPasteHandler.paste(text, hostTextField, portTextField);
@@ -326,6 +346,11 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
                 passphraseLabel.setVisible(usePassphrase);
                 passphraseText.setVisible(usePassphrase);
                 storePasswordButton.setVisible(usePassphrase);
+                autoRetryButton.setEnabled(!usePassphrase || storePassphrase);
+                if (!storePassphrase) {
+                    autoRetryButton.setSelection(false);
+                    autoRetry = false;
+                }
             }
 
             @Override
@@ -360,10 +385,11 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     }
 
     private void initVariablesAndCreateListeners(final PasteListeningText hostTextFieldInit, final Text portTextFieldInit,
-        final Text nameTextInit,  final Text usernameText, final Text passphraseText,
-        final Text keyfileText, final Button immediateConnectButton) {
-      
+        final Text nameTextInit, final Text usernameText, final Text passphraseText,
+        final Text keyfileText) {
+
         hostTextField.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent e) {
                 host = hostTextField.getText();
@@ -381,6 +407,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         });
 
         portTextField.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent e) {
                 port = portTextField.getText();
@@ -399,6 +426,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         connectionName = nameTextInit.getText();
         nameTextInit.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent e) {
                 connectionName = nameTextInit.getText();
@@ -407,6 +435,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         username = usernameText.getText();
         usernameText.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent arg0) {
                 username = usernameText.getText();
@@ -416,6 +445,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         passphrase = passphraseText.getText();
         passphraseText.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent arg0) {
                 passphrase = passphraseText.getText();
@@ -424,6 +454,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         keyfileLocation = keyfileText.getText();
         keyfileText.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent arg0) {
                 keyfileLocation = keyfileText.getText();
@@ -444,12 +475,12 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
             }
         });
 
-        storePassphrase = storePasswordButton.getSelection();
-        storePasswordButton.addSelectionListener(new SelectionListener() {
+        autoRetry = autoRetryButton.getSelection();
+        autoRetryButton.addSelectionListener(new SelectionListener() {
 
             @Override
             public void widgetSelected(SelectionEvent event) {
-                storePassphrase = storePasswordButton.getSelection();
+                autoRetry = autoRetryButton.getSelection();
             }
 
             @Override
@@ -458,16 +489,35 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
             }
         });
 
-        
+        storePassphrase = storePasswordButton.getSelection();
+        storePasswordButton.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                storePassphrase = storePasswordButton.getSelection();
+                autoRetryButton.setEnabled(storePassphrase);
+                if (!storePassphrase) {
+                    autoRetryButton.setSelection(false);
+                    autoRetry = false;
+                }
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent event) {
+                widgetSelected(event);
+            }
+        });
+
         useDefaultNameButton.addSelectionListener(new SelectionListener() {
+
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (useDefaultNameButton.getSelection()) {
                     // if selection is enabled
                     nameTextInit.setEnabled(false);
-                    if (!hostTextField.getText().isEmpty() 
-                        &&  !portTextField.getText().isEmpty()) {
-                        nameTextInit.setText(hostTextField.getText() 
+                    if (!hostTextField.getText().isEmpty()
+                        && !portTextField.getText().isEmpty()) {
+                        nameTextInit.setText(hostTextField.getText()
                             + COLON + portTextField.getText());
                     } else {
                         nameTextInit.setText("");
@@ -478,19 +528,20 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
                     nameTextInit.setText("");
                 }
             }
+
             @Override
             public void widgetDefaultSelected(SelectionEvent e) {
                 widgetDefaultSelected(e);
             }
         });
     }
+
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
         super.createButtonsForButtonBar(parent);
         updateOkButtonActivation();
     }
 
-   
     @Override
     protected Control createButtonBar(Composite parent) {
         Control buttonBar = super.createButtonBar(parent);
@@ -548,6 +599,10 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         return connectImmediately;
     }
 
+    public boolean getAutoRetry() {
+        return autoRetry;
+    }
+
     protected void activateDefaultName() {
         isDefaultName = true;
     }
@@ -557,9 +612,9 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     }
 
     /**
-     * If the passphrase should be stored in the secure store.
+     * If the passphrase should be stored in the secure storage.
      * 
-     * @return true, if a passphrase is used and should be stored in the secure store.
+     * @return true, if a passphrase is used and should be stored in the secure storage.
      */
     public boolean shouldStorePassPhrase() {
         if (usePassphrase) {

@@ -2,12 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.common.tests
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.utils.common
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.incubator,
- org.apache.commons.logging;version="1.1.1",
- org.apache.commons.lang3;version="3.1.0"
+ org.apache.commons.lang3;version="3.1.0",
+ org.apache.commons.logging;version="1.1.1"

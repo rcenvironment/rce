@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -132,7 +132,7 @@ public final class ProfileUtils {
         for (File profileDirectory : profileParentDirectory.listFiles()) {
 
             try {
-                Profile profile = new Profile(profileDirectory, false);
+                Profile profile = new Profile.Builder(profileDirectory).create(false).migrate(false).buildUserProfile();
                 profiles.add(profile);
             } catch (ProfileException e) {
                 // Ignore, profileDirectory was not a valid profileDirectory
@@ -149,7 +149,7 @@ public final class ProfileUtils {
     public static Profile getFallbackProfile() throws ProfileException {
         String fallbackProfileName = "rce-fallback-profile-" + System.currentTimeMillis();
         File fallbackProfileDirectory = new File(System.getProperty(SYSTEM_PROPERTY_SYSTEM_TEMP_DIR), fallbackProfileName);
-        return new Profile(fallbackProfileDirectory);
+        return new Profile.Builder(fallbackProfileDirectory).create(true).migrate(true).buildUserProfile();
     }
 
 }

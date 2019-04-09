@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -38,8 +38,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Christian Weiss
  */
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
-
-    private static final String READ_ONLY_WF_EDITOR_ID = "de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor";
 
     private static final int MINIMUM_HEIGHT = 250;
 
@@ -120,8 +118,10 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
                 UnwantedUIRemover.removeUnwantedNewWizards();
                 UnwantedUIRemover.removeUnwantedExportWizards();
                 UnwantedUIRemover.removeUnwantedImportWizards();
-                UnwantedUIRemover.removeUnWantedPerspectives();
-                UnwantedUIRemover.removeUnWantedViews();
+                UnwantedUIRemover.removeUnwantedPerspectives();
+                UnwantedUIRemover.removeUnwantedViews();
+                UnwantedUIRemover.removeUnwantedMenuEntries();
+                
                 EclipsePreferencesUIOrganizer.removeUnwantetPreferencePages();
 
                 // setting minimum size for the whole RCE window
@@ -139,10 +139,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         try {
             IWorkspace workspace = ResourcesPlugin.getWorkspace();
             workspace.save(true, null);
-        } catch (CoreException e) {
-            // swallow
-            @SuppressWarnings("unused") int i = 0;
-        } catch (RuntimeException e) {
+        } catch (CoreException | RuntimeException e) {
             // swallow
             @SuppressWarnings("unused") int i = 0;
         }
@@ -164,16 +161,24 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         }
 
         @Override
-        public void partDeactivated(IWorkbenchPart workbenchPart) {}
+        public void partDeactivated(IWorkbenchPart workbenchPart) { 
+            // do nothing 
+        }
 
         @Override
-        public void partClosed(IWorkbenchPart workbenchPart) {}
+        public void partClosed(IWorkbenchPart workbenchPart) {
+            // do nothing 
+        }
 
         @Override
-        public void partBroughtToTop(IWorkbenchPart workbenchPart) {}
+        public void partBroughtToTop(IWorkbenchPart workbenchPart) {
+            // do nothing 
+        }
 
         @Override
-        public void partActivated(IWorkbenchPart workbenchPart) {}
+        public void partActivated(IWorkbenchPart workbenchPart) {
+            // do nothing 
+        }
     }
 
 }

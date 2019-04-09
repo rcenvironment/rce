@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,8 +17,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
@@ -42,9 +44,13 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  */
 public class ScriptSection extends AbstractScriptSection {
 
+    private static final String JYTHON = "Jython";
+
+    private static final String PYTHON = "Python";
+
     private static final Log LOGGER = LogFactory.getLog(ScriptSection.class);
 
-    private CCombo languages;
+    private Combo languages;
 
     public ScriptSection() {
         super(Messages.scriptname);
@@ -55,8 +61,21 @@ public class ScriptSection extends AbstractScriptSection {
         Composite scriptParent = factory.createFlatFormComposite(composite);
         scriptParent.setLayout(new RowLayout());
         new Label(scriptParent, SWT.NONE).setText(Messages.chooseLanguage);
-        languages = new CCombo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
+        languages = new Combo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
         languages.setData(CONTROL_PROPERTY_KEY, ScriptComponentConstants.SCRIPT_LANGUAGE);
+        languages.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int index = languages.getSelectionIndex();
+                if (index == 1) {
+                    setProperty(ScriptComponentConstants.SCRIPT_LANGUAGE, PYTHON);
+                } else {
+                    setProperty(ScriptComponentConstants.SCRIPT_LANGUAGE, JYTHON);
+                }
+            }
+
+        });
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         ScriptExecutorFactoryRegistry scriptExecutorRegistry = serviceRegistryAccess.getService(ScriptExecutorFactoryRegistry.class);
         List<ScriptLanguage> languagesForCombo =
@@ -66,9 +85,17 @@ public class ScriptSection extends AbstractScriptSection {
         }
     }
 
+
     @Override
     public void refreshSection() {
         super.refreshSection();
+        refreshScriptSection();
+    }
+
+    /**
+     * 
+     */
+    public void refreshScriptSection() {
         if (getProperty(ScriptComponentConstants.SCRIPT_LANGUAGE) == null
             || ((String) getProperty(ScriptComponentConstants.SCRIPT_LANGUAGE)).isEmpty()
             || languages.getText().equals("\"\"")) {
@@ -92,18 +119,11 @@ public class ScriptSection extends AbstractScriptSection {
                 }
                 final String returnValue = IOUtils.toString(is);
                 IOUtils.closeQuietly(is);
-                setProperty(SshExecutorConstants.CONFIG_KEY_SCRIPT, returnValue);
+                setPropertyNotUndoable(SshExecutorConstants.CONFIG_KEY_SCRIPT, returnValue);
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
             }
         }
 
     }
-
-    @Override
-    public void aboutToBeShown() {
-        super.aboutToBeShown();
-        refresh();
-    }
-
 }

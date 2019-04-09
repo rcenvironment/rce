@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -128,21 +128,21 @@ public class EFSDataBackendTest {
     @Test
     public void testPut() {
         try {
-            efsDataBackend.put(uri, (Object) brokenIs);
+            efsDataBackend.put(uri, (Object) brokenIs, false);
             fail();
         } catch (RuntimeException e) {
             assertTrue(true);
         }
 
         try {
-            efsDataBackend.put(uri, new Object());
+            efsDataBackend.put(uri, new Object(), false);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            efsDataBackend.put(new URI("och://du"), (Object) is);
+            efsDataBackend.put(new URI("och://du"), (Object) is, false);
             fail();
         } catch (URISyntaxException e) {
             fail();

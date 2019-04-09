@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,8 +18,6 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.equinox.security.storage.StorageException;
 
 import com.jcraft.jsch.Session;
 
@@ -32,13 +30,16 @@ import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListen
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
 import de.rcenvironment.core.communication.sshconnection.impl.SshConnectionSetupImpl;
-import de.rcenvironment.core.configuration.SecurePreferencesFactory;
+import de.rcenvironment.core.configuration.SecureStorageSection;
+import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
 
 /**
  * Default implementation of {@link SshConnectionService}.
@@ -49,6 +50,8 @@ public class SshConnectionServiceImpl implements SshConnectionService {
 
     private static final String NO_SSH_CONNECTION_WITH_ID_S_CONFIGURED = "No SSH connection with id %s configured.";
 
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
+
     private final Map<String, SshConnectionSetup> connectionSetups;
 
     private final Log log = LogFactory.getLog(getClass());
@@ -57,6 +60,10 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
     private NodeConfigurationService configurationService;
+
+    private SecureStorageService securePreferencesService;
+
+    private SecureStorageSection secureStorageSection;
 
     public SshConnectionServiceImpl() {
         connectionSetups = new HashMap<String, SshConnectionSetup>();
@@ -73,15 +80,15 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     }
 
     @Override
-    public String addSshConnection(String displayName, String destinationHost, int port, String sshAuthUser, String keyfileLocation,
-        boolean usePassphrase, boolean connectImmediately) {
+    public String addSshConnection(SshConnectionContext context) {
         String connectionId = UUID.randomUUID().toString();
 
         SshConnectionListener listenerAdapter = defineListenerForSSHConnectionSetup();
 
         final SshConnectionSetupImpl newSetup;
-        newSetup = new SshConnectionSetupImpl(connectionId, displayName, destinationHost, port, sshAuthUser,
-            keyfileLocation, usePassphrase, false, connectImmediately, listenerAdapter);
+        newSetup = new SshConnectionSetupImpl(connectionId, context.getDisplayName(), context.getDestinationHost(),
+            context.getPort(), context.getSshAuthUser(), context.getKeyfileLocation(), context.isUsePassphrase(),
+            false, context.isConnectImmediately(), context.isAutoRetry(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -105,6 +112,11 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             @Override
             public void onConnectionAttemptFailed(final SshConnectionSetup setup, final String reason,
                 final boolean firstConsecutiveFailure, final boolean willAutoRetry) {
+
+                if (willAutoRetry) {
+                    scheduleAutoRetry(setup);
+                }
+
                 callbackManager.enqueueCallback(new AsyncCallback<SshConnectionListener>() {
 
                     @Override
@@ -116,6 +128,11 @@ public class SshConnectionServiceImpl implements SshConnectionService {
 
             @Override
             public void onConnectionClosed(final SshConnectionSetup setup, final boolean willAutoRetry) {
+
+                if (willAutoRetry) {
+                    scheduleAutoRetry(setup);
+                }
+
                 callbackManager.enqueueCallback(new AsyncCallback<SshConnectionListener>() {
 
                     @Override
@@ -151,18 +168,36 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         return listenerAdapter;
     }
 
+    private void scheduleAutoRetry(final SshConnectionSetup setup) {
+        log.debug(StringUtils.format("Scheduling auto-retry of connection %s in %d msec", setup.getDisplayName(),
+            SshConnectionConstants.DELAY_BEFORE_RETRY));
+        threadPool.scheduleAfterDelay("Communication Layer: SshConnectionService auto-reconnect timer", () -> {
+            if (setup.isWaitingForRetry()) {
+                connectSession(setup.getId());
+            }
+        },
+            SshConnectionConstants.DELAY_BEFORE_RETRY);
+        setup.setWaitingForRetry(true);
+    }
+
     @Override
     public boolean isConnected(String connectionId) {
         return connectionSetups.get(connectionId).isConnected();
     }
 
     @Override
+    public boolean isWaitingForRetry(String connectionId) {
+        return connectionSetups.get(connectionId).isWaitingForRetry();
+    }
+
+    @Override
     public Session connectSession(String connectionId) {
+        ThreadGuard.checkForForbiddenThread();
 
         String passphrase = "";
         if (connectionSetups.get(connectionId).getUsePassphrase()) {
-            // Retreive passphrase from secure store.
-            passphrase = retreiveSshConnectionPassword(connectionId);
+            // Retreive passphrase from secure storage.
+            passphrase = retrieveSshConnectionPassword(connectionId);
         }
 
         return connectSession(connectionId, passphrase);
@@ -170,6 +205,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
 
     @Override
     public Session connectSession(String connectionId, String passphrase) {
+        ThreadGuard.checkForForbiddenThread();
         final SshConnectionSetup sshConnectionSetup = connectionSetups.get(connectionId);
         if (sshConnectionSetup == null) {
             log.warn(StringUtils.format(NO_SSH_CONNECTION_WITH_ID_S_CONFIGURED, connectionId));
@@ -185,7 +221,18 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             log.warn(StringUtils.format(NO_SSH_CONNECTION_WITH_ID_S_CONFIGURED, connectionId));
             return;
         }
-        sshConnectionSetup.disconnect();
+        if (sshConnectionSetup.isConnected()) {
+            sshConnectionSetup.disconnect();
+        } else if (sshConnectionSetup.isWaitingForRetry()) {
+            sshConnectionSetup.setWaitingForRetry(false);
+            callbackManager.enqueueCallback(new AsyncCallback<SshConnectionListener>() {
+
+                @Override
+                public void performCallback(SshConnectionListener listener) {
+                    listener.onConnectionClosed(sshConnectionSetup, false);
+                }
+            });
+        }
     }
 
     @Override
@@ -197,6 +244,8 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         }
         if (setup.isConnected()) {
             setup.disconnect();
+        } else if (setup.isWaitingForRetry()) {
+            setup.setWaitingForRetry(false);
         }
         synchronized (connectionSetups) {
             connectionSetups.remove(connectionId);
@@ -259,8 +308,8 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         final SshConnectionSetupImpl newSetup;
         newSetup =
             new SshConnectionSetupImpl(context.getId(), context.getDisplayName(), context.getDestinationHost(),
-                context.getPort(), context.getSshAuthUser(),
-                context.getKeyfileLocation(), context.isUsePassphrase(), false, context.isConnectImmediately(), listenerAdapter);
+                context.getPort(), context.getSshAuthUser(), context.getKeyfileLocation(), context.isUsePassphrase(), false,
+                context.isConnectImmediately(), context.isAutoRetry(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -286,22 +335,34 @@ public class SshConnectionServiceImpl implements SshConnectionService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
-            @Override
-            @TaskDescription("Client-Side Remote Access: Add pre-configured SSH connections")
-            public void run() {
-                addInitialSshConfigs(configurationService.getInitialSSHConnectionConfigs());
-            }
-        });
+        try {
+            secureStorageSection = securePreferencesService.getSecureStorageSection(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
+        } catch (IOException e) {
+            // TODO decide: how to handle this case?
+            log.error("Failed to initialize secure storage");
+        }
+
+        ConcurrencyUtils.getAsyncTaskService().execute("Client-Side Remote Access: Add pre-configured SSH connections",
+            () -> addAndConnectInitialSshConfigs(configurationService.getInitialSSHConnectionConfigs()));
     }
 
-    private void addInitialSshConfigs(List<InitialSshConnectionConfig> configs) {
+    private void addAndConnectInitialSshConfigs(List<InitialSshConnectionConfig> configs) {
+        ThreadGuard.checkForForbiddenThread();
         for (InitialSshConnectionConfig config : configs) {
             SshConnectionSetup setup =
                 new SshConnectionSetupImpl(config.getId(), config.getDisplayName(), config.getHost(), config.getPort(), config.getUser(),
-                    config.getKeyFileLocation(), config.getUsePassphrase(), false, false, defineListenerForSSHConnectionSetup());
+                    config.getKeyFileLocation(), config.getUsePassphrase(), false, config.getConnectOnStartup(), config.getAutoRetry(),
+                    defineListenerForSSHConnectionSetup());
             connectionSetups.put(config.getId(), setup);
+            if (config.getConnectOnStartup()) {
+                if (config.getUsePassphrase()) {
+                    // log.error("Could not connect connection " + config.getDisplayName() + " on startup, it requires a passphrase.");
+                    setup.connect(retrieveSshConnectionPassword(setup.getId()));
+                } else {
+                    setup.connect("");
+                }
+            }
         }
     }
 
@@ -317,33 +378,27 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     private void storeSshConnectionPassword(String connectionId, String password) {
 
         try {
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences node = prefs.node(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
-            node.put(connectionId, password, true);
-        } catch (IOException | StorageException e) {
+            secureStorageSection.store(connectionId, password);
+        } catch (OperationFailureException e) {
             log.error("Could not store password: " + e);
         }
     }
 
-    private void removeSshConnectionPassword(String connectionId) {
+    private void removeSshConnectionPasswordIfExists(String connectionId) {
 
         try {
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences node = prefs.node(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
-            node.remove(connectionId);
-        } catch (IOException e) {
+            secureStorageSection.delete(connectionId);
+        } catch (OperationFailureException e) {
             log.error("Could not remove password: " + e);
         }
     }
 
     @Override
-    public String retreiveSshConnectionPassword(String connectionId) {
+    public String retrieveSshConnectionPassword(String connectionId) {
         String passphrase = null;
         try {
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences node = prefs.node(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
-            passphrase = node.get(connectionId, null);
-        } catch (IOException | StorageException e) {
+            passphrase = secureStorageSection.read(connectionId, null);
+        } catch (OperationFailureException e) {
             log.error("Could not retrieve password: " + e);
             return null;
         }
@@ -359,7 +414,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         newSetup =
             new SshConnectionSetupImpl(id, oldSetup.getDisplayName(), oldSetup.getHost(), oldSetup.getPort(), oldSetup.getUsername(),
                 oldSetup.getKeyfileLocation(), oldSetup.getUsePassphrase(), storePassphrase, oldSetup.getConnectOnStartUp(),
-                listenerAdapter);
+                oldSetup.getAutoRetry(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -375,11 +430,14 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             }
             if (storePassphrase) {
                 storeSshConnectionPassword(id, sshAuthPassPhrase);
-            } else if (oldSetup.getStorePassphrase()) {
+            } else {
                 // Remove old stored password, if one exists.
-                removeSshConnectionPassword(id);
+                removeSshConnectionPasswordIfExists(id);
             }
         }
     }
 
+    protected void bindSecureStorageService(SecureStorageService newService) {
+        securePreferencesService = newService;
+    }
 }

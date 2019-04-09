@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallSenderServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"/>
+   </service>
+   <reference bind="bindMessageRoutingService" interface="de.rcenvironment.core.communication.routing.MessageRoutingService" name="MessageRoutingService"/>
+   <reference bind="bindReliableRPCStreamService" interface="de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamService" name="ReliableRPCStreamService"/>
+   <implementation class="de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallSenderServiceImpl"/>
+</scr:component>

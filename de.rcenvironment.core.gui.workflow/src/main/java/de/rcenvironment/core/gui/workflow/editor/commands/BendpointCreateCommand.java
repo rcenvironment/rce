@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -47,8 +47,8 @@ public class BendpointCreateCommand extends AbstractBendpointCommand {
     public boolean canExecute() {
 
         if (!connectionsInModel.isEmpty()) {
-            if (connectionsInModel.get(0).getSourceNode().getIdentifier().
-                equals(connectionsInModel.get(0).getTargetNode().getIdentifier())) {
+            if (connectionsInModel.get(0).getSourceNode().getIdentifierAsObject().
+                equals(connectionsInModel.get(0).getTargetNode().getIdentifierAsObject())) {
                 return false;
             }
         } 

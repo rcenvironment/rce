@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component Scripting
 Bundle-SymbolicName: de.rcenvironment.core.component.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Export-Package: de.rcenvironment.core.component.scripting
 Bundle-ManifestVersion: 2
 Import-Package: 
@@ -16,5 +16,5 @@ Import-Package:
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.logging;version="1.1.1"
 Service-Component: OSGI-INF/*.xml
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.component

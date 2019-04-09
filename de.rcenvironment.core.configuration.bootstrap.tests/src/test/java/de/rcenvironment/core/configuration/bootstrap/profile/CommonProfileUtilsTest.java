@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -46,7 +46,7 @@ public class CommonProfileUtilsTest {
     private TempFileService tempFileService;
 
     private String originalUserHome;
-    
+
     private String originalOsgiInstallArea;
 
     /**
@@ -86,7 +86,7 @@ public class CommonProfileUtilsTest {
         // create a new profile and mark is as recently used
         File profileParentDir = ProfileUtils.getProfilesParentDirectory();
         File newProfileDirectory = new File(profileParentDir, "randomProfileName");
-        Profile newProfile = new Profile(newProfileDirectory);
+        Profile newProfile = new Profile.Builder(newProfileDirectory).create(true).migrate(false).buildUserProfile();
         CommonProfileUtils.markAsDefaultProfile(newProfile);
         CommonProfileUtils.markAsDefaultProfile(newProfile);
     }
@@ -108,9 +108,9 @@ public class CommonProfileUtilsTest {
                 public Void execute() throws CommonProfileException {
                     throw new CommonProfileException("test");
                 }
-                
+
             });
-            
+
             fail("expected exception");
         } catch (CommonProfileException e) {
             // execute another method of the CommonProfileUtils to check if the lock was released even though an exception was thrown and
@@ -137,7 +137,7 @@ public class CommonProfileUtilsTest {
         // create a new profile and mark is as recently used
         File profileParentDir = ProfileUtils.getProfilesParentDirectory();
         File newProfileDirectory = new File(profileParentDir, "test1");
-        Profile newProfile = new Profile(newProfileDirectory);
+        Profile newProfile = new Profile.Builder(newProfileDirectory).create(true).migrate(true).buildUserProfile();
         newProfile.markAsRecentlyUsed();
 
         // assertions
@@ -158,9 +158,9 @@ public class CommonProfileUtilsTest {
     public void testOrderOfRecentlyUsedProfiles() throws IOException, ProfileException, CommonProfileException {
         // create multiple new profiles and mark is as recently used
         File profileParentDir = ProfileUtils.getProfilesParentDirectory();
-        Profile newProfile1 = new Profile(new File(profileParentDir, "test1"));
-        Profile newProfile2 = new Profile(new File(profileParentDir, "test2"));
-        Profile newProfile3 = new Profile(new File(profileParentDir, "test3"));
+        Profile newProfile1 = new Profile.Builder(new File(profileParentDir, "test1")).create(true).buildUserProfile();
+        Profile newProfile2 = new Profile.Builder(new File(profileParentDir, "test2")).create(true).buildUserProfile();
+        Profile newProfile3 = new Profile.Builder(new File(profileParentDir, "test3")).create(true).buildUserProfile();
         newProfile1.markAsRecentlyUsed();
         newProfile3.markAsRecentlyUsed();
         newProfile2.markAsRecentlyUsed();
@@ -188,7 +188,7 @@ public class CommonProfileUtilsTest {
 
         // create a new profile, mark it as recently used and then delete the profile
         File profileParentDir = ProfileUtils.getProfilesParentDirectory();
-        Profile newProfile = new Profile(new File(profileParentDir, "test"));
+        Profile newProfile = new Profile.Builder(new File(profileParentDir, "test")).create(true).migrate(true).buildUserProfile();
         newProfile.markAsRecentlyUsed();
         FileUtils.deleteDirectory(newProfile.getProfileDirectory());
 
@@ -211,8 +211,10 @@ public class CommonProfileUtilsTest {
     public void testGetRecentlyUsedThrowsExceptionIfAccessProblem() throws IOException, ProfileException, CommonProfileException {
 
         // create a directory named recentlyUsed which should be a file in normal operations
-        File profileParentDir = ProfileUtils.getProfilesParentDirectory();
-        BaseProfile commonProfile = new BaseProfile(profileParentDir.toPath().resolve("common").toFile(), 1, true);
+        final File profileParentDir = ProfileUtils.getProfilesParentDirectory();
+        final File commonProfileDir = profileParentDir.toPath().resolve("common").toFile();
+        CommonProfile commonProfile =
+            new CommonProfile.Builder(commonProfileDir).create(true).migrate(false).buildCommonProfile();
         File recentlyUsedFile = commonProfile.getProfileDirectory().toPath().resolve("profiles").resolve("recentlyUsed").toFile();
         assertTrue(recentlyUsedFile.mkdirs());
         assertTrue(recentlyUsedFile.isDirectory());
@@ -222,7 +224,7 @@ public class CommonProfileUtilsTest {
         expectedException.expectMessage("Unable to read the list of recently used profiles");
         CommonProfileUtils.getRecentlyUsedProfiles();
     }
-    
+
     /**
      * Tests if the default profile clear method can be called even if no file is available.
      * 
@@ -248,7 +250,8 @@ public class CommonProfileUtilsTest {
     public void testClearDefaultProfile() throws IOException, ProfileException, CommonProfileException {
 
         File profileParentDirectory = ProfileUtils.getProfilesParentDirectory();
-        Profile profile = new Profile(new File(profileParentDirectory, "someProfile"));
+        Profile profile =
+            new Profile.Builder(new File(profileParentDirectory, "someProfile")).create(true).migrate(true).buildUserProfile();
         profile.markAsDefaultProfile();
 
         // execution

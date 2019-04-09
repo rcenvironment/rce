@@ -4,5 +4,6 @@ Bundle-Name: RCE Toolkit - Common Modules Tests
 Bundle-SymbolicName: de.rcenvironment.toolkit.modules.common.tests
 Bundle-Version: 1.0.0.qualifier
 Fragment-Host: de.rcenvironment.toolkit.modules.common
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
+Bundle-Vendor: DLR

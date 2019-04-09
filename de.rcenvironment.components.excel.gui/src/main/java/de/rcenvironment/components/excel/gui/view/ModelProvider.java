@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,12 +23,13 @@ import de.rcenvironment.components.excel.common.ChannelValue;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
-import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * ModelProvider of channels.
@@ -67,12 +68,13 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
     public void subscribeToLocalToolRunPlatForm(final String componentIdentifier, final ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         if (!isSubscribed) {
-            SimpleNotificationService sns = new SimpleNotificationService();
+            DistributedNotificationService notificationService =
+                ServiceRegistry.createAccessFor(this).getService(DistributedNotificationService.class);
 
             Map<String, Long> lastMissedNotifications;
             try {
                 lastMissedNotifications =
-                    sns.subscribe(componentIdentifier + ExcelComponentConstants.NOTIFICATION_SUFFIX, this, publishPlatform);
+                    notificationService.subscribe(componentIdentifier + ExcelComponentConstants.NOTIFICATION_SUFFIX, this, publishPlatform);
             } catch (RemoteOperationException e) {
                 LogFactory.getLog(getClass()).error("Failed to subscribe to Excel run platform: " + e.getMessage());
                 return;
@@ -87,7 +89,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
                     setNotificationsMissed(true);
                     setLastMissedNotification(lastMissedNumber);
                 }
-                for (List<Notification> notifications : sns.getNotifications(notifId, publishPlatform).values()) {
+                for (List<Notification> notifications : notificationService.getNotifications(notifId, publishPlatform).values()) {
                     Iterator<Notification> notificationIterator = notifications.iterator();
                     while (notificationIterator.hasNext()) {
                         notify(notificationIterator.next());

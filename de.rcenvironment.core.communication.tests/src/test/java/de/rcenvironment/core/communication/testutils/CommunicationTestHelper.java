@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -120,13 +120,13 @@ public final class CommunicationTestHelper {
      * Test communication request.
      */
     public static final ServiceCallRequest REQUEST = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID,
-        SERVICE, METHOD, PARAMETER_LIST);
+        SERVICE, METHOD, PARAMETER_LIST, null);
 
     /**
      * Test communication request.
      */
     public static final ServiceCallRequest REMOTE_REQUEST = new ServiceCallRequest(REMOTE_LOGICAL_NODE_SESSION_ID,
-        LOCAL_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST);
+        LOCAL_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST, null);
 
     /**
      * Test communication request.

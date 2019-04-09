@@ -83,15 +83,6 @@
             </itemizedlist></para>
         <para>Optional fields:<itemizedlist>
                 <listitem>
-                    <para><emphasis role="bold">Publish component after integration:</emphasis> With
-                        this option, you can choose whether your component is published in the
-                        network you are connected to or if it is a local component which only you
-                        can use in workflows. Consider that the execution of the tool will always be
-                        done on your machine also if other users use it in their workflow. Note that
-                        if you deactivate your component and then reactivate it, this option is
-                        always turned off and must be enabled manually on each reactivation.</para>
-                </listitem>
-                <listitem>
                     <para><emphasis role="bold">Use a new working directory on each run:</emphasis>
                         You can choose whether your tool should have new input and configuration
                         folders on each run or if they will only be created once.</para>

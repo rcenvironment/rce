@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,11 +24,18 @@ import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 /**
  * Class that calls a specified method.
  * 
- * This class does: - Detect interfaces and super classes of parameters. - Caching of method detection for faster access.
+ * This class does:
+ * <ul>
+ * <li>Detect interfaces and super classes of parameters.
+ * <li>Caching of method detection for faster access.
+ * </ul>
  * 
- * This class has some restrictions: - Primitives are not supported. - It only detects public functions. - It can not handle null arguments.
- * 
- * For a more detailed overview see: - http://www.ddj.com/dept/java/184403978
+ * This class has some restrictions:
+ * <ul>
+ * <li>Primitives are not supported.
+ * <li>It only detects public functions.
+ * <li>It can not handle null arguments.
+ * </ul>
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider

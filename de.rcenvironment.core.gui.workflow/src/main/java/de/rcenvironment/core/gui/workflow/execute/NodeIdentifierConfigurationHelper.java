@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,8 +20,8 @@ import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -63,7 +63,7 @@ public final class NodeIdentifierConfigurationHelper {
     /** Comparator to sort NodeIdentifier instances by their name. */
     private static final NodeIdentifierNameComparator NODE_IDENTIFIER_COMPARATOR = new NodeIdentifierNameComparator();
 
-    private Collection<ComponentInstallation> installations;
+    private Collection<DistributedComponentEntry> installations;
 
     private ServiceRegistryAccess serviceRegistryAccess;
 
@@ -72,7 +72,7 @@ public final class NodeIdentifierConfigurationHelper {
     public NodeIdentifierConfigurationHelper() {
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class)
-            .getCurrentComponentKnowledge();
+            .getCurrentSnapshot();
         installations = compKnowledge.getAllInstallations();
     }
 
@@ -92,6 +92,7 @@ public final class NodeIdentifierConfigurationHelper {
      * @param compDesc Description of the component.
      * @return List of platform the component is installed on.
      */
+    // TODO 9.0.0: replace with LogicalNodeSessionId?
     public Map<LogicalNodeId, Integer> getTargetPlatformsForComponent(ComponentDescription compDesc) {
 
         return ComponentUtils.getNodesForComponent(installations, compDesc);
@@ -115,7 +116,7 @@ public final class NodeIdentifierConfigurationHelper {
     public synchronized void refreshInstallations() {
 
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class)
-            .getCurrentComponentKnowledge();
+            .getCurrentSnapshot();
         installations = compKnowledge.getAllInstallations();
 
     }

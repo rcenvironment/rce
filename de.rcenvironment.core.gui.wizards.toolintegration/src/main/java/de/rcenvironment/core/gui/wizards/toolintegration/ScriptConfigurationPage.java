@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -204,7 +204,6 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     private void setMockScriptTabEnabled(boolean enabled) {
-        tabFolder.getTabList()[3].setEnabled(enabled);
         setChildrenEnabled(mockScriptTabComposite, enabled);
         setChildrenEnabled(mockScriptTabButtonComposite, enabled);
     }
@@ -757,6 +756,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             }
             if (currentText.isEnabled()) {
                 if (comboType == INPUT_COMBO && insertText != null && !insertText.isEmpty()) {
+                    int distanceCaretPositionToTextLength = currentText.getText().length() - currentText.getSelection().x;
                     String possibleQuotes = "";
                     List<Map<String, Object>> endpointList =
                         (List<Map<String, Object>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_INPUTS);
@@ -777,13 +777,17 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                         + ToolIntegrationConstants.PLACEHOLDER_INPUT_PREFIX
                         + ToolIntegrationConstants.PLACEHOLDER_SEPARATOR + insertText + ToolIntegrationConstants.PLACEHOLDER_SUFFIX
                         + possibleQuotes);
+                    currentText.setSelection(currentText.getText().length() - distanceCaretPositionToTextLength);
                 }
                 if (comboType == OUTPUT_COMBO && insertText != null && !insertText.isEmpty()) {
+                    int distanceCaretPositionToTextLength = currentText.getText().length() - currentText.getSelection().x;
                     currentText.insert(ToolIntegrationConstants.PLACEHOLDER_PREFIX + ToolIntegrationConstants.PLACEHOLDER_OUTPUT_PREFIX
                         + ToolIntegrationConstants.PLACEHOLDER_SEPARATOR + insertText + ToolIntegrationConstants.PLACEHOLDER_SUFFIX);
+                    currentText.setSelection(currentText.getText().length() - distanceCaretPositionToTextLength);
                 }
                 if (comboType == PROPERTY_COMBO && insertText != null && !insertText.isEmpty()
                     && configurationMap.containsKey(ToolIntegrationConstants.KEY_PROPERTIES)) {
+                    int distanceCaretPositionToTextLength = currentText.getText().length() - currentText.getSelection().x;
                     Map<String, Object> properties = (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
                     for (String propTabName : properties.keySet()) {
                         Map<String, Object> proptab = (Map<String, Object>) properties.get(propTabName);
@@ -799,13 +803,16 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                             }
                         }
                     }
+                    currentText.setSelection(currentText.getText().length() - distanceCaretPositionToTextLength);
                 }
                 if (comboType == DIRECTORY_COMBO && insertText != null && !insertText.isEmpty()) {
+                    int distanceCaretPositionToTextLength = currentText.getText().length() - currentText.getSelection().x;
                     currentText.insert(QUOTE + ToolIntegrationConstants.PLACEHOLDER_PREFIX
                         + ToolIntegrationConstants.PLACEHOLDER_DIRECTORY_PREFIX
                         + ToolIntegrationConstants.PLACEHOLDER_SEPARATOR
                         + ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[combo.getSelectionIndex()]
                         + ToolIntegrationConstants.PLACEHOLDER_SUFFIX + QUOTE);
+                    currentText.setSelection(currentText.getText().length() - distanceCaretPositionToTextLength);
                 }
 
                 if (comboType == ADD_PROPERTY_COMBO && insertText != null && !insertText.isEmpty()) {

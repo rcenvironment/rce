@@ -6,4 +6,5 @@
    <service>
       <provide interface="de.rcenvironment.core.communication.sshconnection.SshConnectionService"/>
    </service>
+   <reference bind="bindSecureStorageService" cardinality="1..1" interface="de.rcenvironment.core.configuration.SecureStorageService" name="SecureStorageService" policy="static"/>
 </scr:component>

@@ -8,6 +8,8 @@
 				"displayName" : "example",
 				"host" : "127.0.0.1",
 				"port" : 31005,
+				"connectOnStartup": false,
+				"autoRetry" : false,
 				"loginName" : "ra_demo"
 				//The passphrase is not stored here, it has to be entered when connecting.
 			}

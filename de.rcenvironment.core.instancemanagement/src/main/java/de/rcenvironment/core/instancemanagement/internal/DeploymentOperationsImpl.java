@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,7 +24,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * I/O operations for managing external installations, like downloading, unpacking, deleting etc.
@@ -83,33 +82,28 @@ public class DeploymentOperationsImpl {
 
         downloadRunning = true;
 
-        // show download progress
         if (showProgress) {
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            // spawn background task to show download progress
+            ConcurrencyUtils.getAsyncTaskService().execute("Instance Management: Print download progress to console", () -> {
+                final long totalProgressValue = sizeOfRequestedFile / BYTE_TO_MEGABYTE_FACTOR;
+                long lastProgressValue = 0; // intended side effect: do not print "0 MB done" progress
 
-                @Override
-                @TaskDescription("Instance Management: Print download progress to console")
-                public void run() {
-                    final long totalProgressValue = sizeOfRequestedFile / BYTE_TO_MEGABYTE_FACTOR;
-                    long lastProgressValue = 0; // intended side effect: do not print "0 MB done" progress
-
-                    while (downloadRunning && tempDownloadFile.length() < sizeOfRequestedFile) {
-                        final long roundedProgressValue = tempDownloadFile.length() / BYTE_TO_MEGABYTE_FACTOR;
-                        // do not print the same progress value over and over in case of a slow download
-                        if (roundedProgressValue != lastProgressValue) {
-                            userOutputReceiver.addOutput("Downloaded " + roundedProgressValue
-                                + " MB of " + totalProgressValue + " MB");
-                            lastProgressValue = roundedProgressValue;
-                        }
-                        try {
-                            Thread.sleep(CONSOLE_SHOW_PROGRESS_INTERVAL);
-                        } catch (InterruptedException e) {
-                            log.error("InterruptedException while download progress thread sleeps.");
-                        }
+                while (downloadRunning && tempDownloadFile.length() < sizeOfRequestedFile) {
+                    final long roundedProgressValue = tempDownloadFile.length() / BYTE_TO_MEGABYTE_FACTOR;
+                    // do not print the same progress value over and over in case of a slow download
+                    if (roundedProgressValue != lastProgressValue) {
+                        userOutputReceiver.addOutput("Downloaded " + roundedProgressValue
+                            + " MB of " + totalProgressValue + " MB");
+                        lastProgressValue = roundedProgressValue;
                     }
-                    userOutputReceiver.addOutput("Download finished.");
+                    try {
+                        Thread.sleep(CONSOLE_SHOW_PROGRESS_INTERVAL);
+                    } catch (InterruptedException e) {
+                        log.error("InterruptedException while download progress thread sleeps.");
+                    }
                 }
-            }, "checkSize");
+                userOutputReceiver.addOutput("Download finished.");
+            });
 
         }
 

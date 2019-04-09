@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,11 +14,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
@@ -131,9 +132,9 @@ public class InternalTDImpl implements InternalTD {
         if (hops != null) {
             for (WorkflowGraphHop hop : getHopsToTraverse()) {
                 ArrayNode hopArrayNode = mapper.createArrayNode();
-                hopArrayNode.add(hop.getHopExecutionIdentifier());
+                hopArrayNode.add(hop.getHopExecutionIdentifier().toString());
                 hopArrayNode.add(hop.getHopOuputName());
-                hopArrayNode.add(hop.getTargetExecutionIdentifier());
+                hopArrayNode.add(hop.getTargetExecutionIdentifier().toString());
                 hopArrayNode.add(hop.getTargetInputName());
                 hopsArrayNode.add(hopArrayNode);
             }
@@ -161,26 +162,26 @@ public class InternalTDImpl implements InternalTD {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
-        String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).getTextValue();
+        String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).textValue();
         if (!isValidType(typeStr)) {
             return null;
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(typeStr);
-        String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).getTextValue();
+        String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).textValue();
         Queue<WorkflowGraphHop> hops = null;
         if (rootNode.has(SERIALIZE_KEY_HOPS)) {
             ArrayNode hopsArrayNode = (ArrayNode) rootNode.get(SERIALIZE_KEY_HOPS);
             hops = new LinkedList<>();
-            Iterator<JsonNode> hopsElements = hopsArrayNode.getElements();
+            Iterator<JsonNode> hopsElements = hopsArrayNode.elements();
             while (hopsElements.hasNext()) {
                 ArrayNode hopArrayNode = (ArrayNode) hopsElements.next();
-                hops.add(new WorkflowGraphHop(hopArrayNode.get(0).asText(), hopArrayNode.get(1).asText(),
-                    hopArrayNode.get(2).asText(), hopArrayNode.get(3).asText()));
+                hops.add(new WorkflowGraphHop(new ComponentExecutionIdentifier(hopArrayNode.get(0).asText()), hopArrayNode.get(1).asText(),
+                    new ComponentExecutionIdentifier(hopArrayNode.get(2).asText()), hopArrayNode.get(3).asText()));
             }
         }
         String pyld = null;
         if (rootNode.has(SERIALIZE_KEY_PAYLOAD)) {
-            pyld = rootNode.get(SERIALIZE_KEY_PAYLOAD).getTextValue();
+            pyld = rootNode.get(SERIALIZE_KEY_PAYLOAD).textValue();
         }
         return new InternalTDImpl(type, identifier, hops, pyld);
     }

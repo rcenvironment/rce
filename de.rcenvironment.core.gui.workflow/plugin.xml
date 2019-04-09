@@ -285,11 +285,6 @@
    		id="de.rcenvironment.core.gui.workflow.editorActions"
    		name="Workflow Editor Actions"
    		schema="resources/de.rcenvironment.core.gui.workflow.editorActions.exsd"/>
-   <!-- Workflow Node Validators Extension Point -->
-   <extension-point
-   		id="de.rcenvironment.core.gui.workflow.nodeValidators"
-   		name="Workflow Node Validators"
-   		schema="resources/de.rcenvironment.core.gui.workflow.nodeValidators.exsd"/>
    <extension
          point="org.eclipse.ui.commands">
       <category
@@ -413,9 +408,10 @@
    </extension>
    <extension
          point="org.eclipse.ui.menus">
+      <!-- Add "execute workflow" to project explorer context menu -->
       <menuContribution
             allPopups="false"
-            locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu">
          <command
                commandId="de.rcenvironment.core.gui.workflow.execute"
                disableIcon="resources/icons/states/run_disable.gif"
@@ -425,6 +421,20 @@
                tooltip="%executeWorkflowTooltip">
          </command>
       </menuContribution>
+       <!-- Add "execute workflow" to workflow editor context menu -->
+            <menuContribution
+            allPopups="false"
+            locationURI="popup:de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor?after=additions">
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.execute"
+               disableIcon="resources/icons/states/run_disable.gif"
+               icon="resources/icons/states/run_enabled.gif"
+               label="%executeWorkflowLabel"
+               style="push"
+               tooltip="%executeWorkflowTooltip">
+         </command>
+      </menuContribution>
+      <!-- Add "execute workflow" to run menu -->
       <menuContribution
             allPopups="false"
             locationURI="menu:org.eclipse.ui.run">
@@ -445,7 +455,7 @@
 
       <menuContribution
       		allPopups="false"
-            locationURI="menu:file?after=saveall">
+            locationURI="menu:file?after=saveAll">
       <command
                   commandId="de.rcenvironment.core.gui.workflow.saveasimage"
                   label="%exportAsImageLabel"
@@ -654,7 +664,7 @@
          </command>
       </menuContribution>
       <menuContribution
-            locationURI="toolbar:org.eclipse.ui.main.toolbar">
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=de.rcenvironment.workflow.toolbar">
          <toolbar
                id="de.rcenvironment.core.gui.workflow.execution.toolbar">
             <command
@@ -664,16 +674,12 @@
                   style="push"
                   tooltip="%createWorkflowTooltip">
             </command>
-            <separator
-                  name="separator"
-                  visible="true">
-            </separator>
             <command
                   commandId="de.rcenvironment.core.gui.workflow.connectioneditor"
                   icon="resources/icons/connectEditor16.png"
                   label="%connectioneditor"
                   style="push">
-               <visibleWhen
+               <enabledWhen
                      checkEnabled="false">
                   <or>
                      <reference
@@ -683,18 +689,14 @@
                            definitionId="workflowContext">
                      </reference>
                   </or>
-               </visibleWhen>
+               </enabledWhen>
             </command>
-            <separator
-                  name="separatorExecute"
-                  visible="true">
-            </separator>
             <command
                   commandId="de.rcenvironment.core.gui.workflow.execute"
                   icon="resources/icons/states/run_enabled.gif"
                   label="%executeWorkflowLabel"
                   style="push">
-               <visibleWhen
+               <enabledWhen
                      checkEnabled="false">
                   <or>
                      <reference
@@ -704,7 +706,7 @@
                            definitionId="workflowContext">
                      </reference>
                   </or>
-               </visibleWhen>
+               </enabledWhen>
             </command>
          </toolbar>
       </menuContribution>
@@ -1587,7 +1589,17 @@
    			parentId="org.eclipse.ui.contexts.window">
    		</context>
    </extension>
-   
+      
+      <!-- View part default location for palette --> 
+   <extension point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension targetID="de.rcenvironment.core">
+         <view id="org.eclipse.gef.ui.palette_view"
+            relationship="stack"
+            relative="de.rcenvironment.core.Perspective.left"
+            visible="false">
+         </view>
+      </perspectiveExtension>
+   </extension>
    
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

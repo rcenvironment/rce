@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -432,7 +432,12 @@ public enum StandardImages implements ImageSource {
     /**
      * Icon for SQL statements (e.g. in a folder).
      */
-    SQL_STATEMENTS(fromLocalBundle("SQL/sqlStatements_16.gif"));
+    SQL_STATEMENTS(fromLocalBundle("SQL/sqlStatements_16.gif")),
+    
+    /**
+     * Default 16px icon for integrated tools.
+     */
+    INTEGRATED_TOOL_DEFAULT_16(fromLocalBundle("tool16.png"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 

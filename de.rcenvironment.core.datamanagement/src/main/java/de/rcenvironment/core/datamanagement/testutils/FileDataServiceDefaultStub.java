@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.datamanagement.RemotableFileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Default stub for {@link RemotableFileDataService}. All methods with a return value respond with the default field value for this type
@@ -63,6 +64,29 @@ public class FileDataServiceDefaultStub implements RemotableFileDataService {
 
     @Override
     public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet) throws IOException {
+        return null;
+    }
+
+    @Override
+    public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote, Boolean decompress)
+        throws RemoteOperationException {
+        return null;
+    }
+
+    @Override
+    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, Boolean alreadyCompressed)
+        throws RemoteOperationException {
+        return null;
+    }
+
+    @Override
+    public void finishUpload(String id, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException, RemoteOperationException {
+        
+    }
+
+    @Override
+    public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+        RemoteOperationException {
         return null;
     }
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -61,6 +61,7 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -358,10 +359,10 @@ final class WorkflowPage extends WizardPage {
         return workflowDescription.getControllerNode();
     }
 
-    protected Map<String, ComponentInstallation> getComponentInstallations() {
-        Map<String, ComponentInstallation> cmpInstallations = new HashMap<>();
+    protected Map<WorkflowNodeIdentifier, ComponentInstallation> getComponentInstallations() {
+        Map<WorkflowNodeIdentifier, ComponentInstallation> cmpInstallations = new HashMap<>();
         for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
-            cmpInstallations.put(wfNode.getIdentifier(), wfNode.getComponentDescription().getComponentInstallation());
+            cmpInstallations.put(wfNode.getIdentifierAsObject(), wfNode.getComponentDescription().getComponentInstallation());
         }
         return cmpInstallations;
     }

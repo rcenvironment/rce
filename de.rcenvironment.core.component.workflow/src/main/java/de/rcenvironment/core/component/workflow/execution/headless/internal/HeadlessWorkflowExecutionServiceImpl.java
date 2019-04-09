@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,13 +19,13 @@ import java.util.TreeSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.LogicalNodeId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
@@ -36,6 +36,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowDescriptio
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContextBuilder;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionHandle;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
@@ -51,7 +52,6 @@ import de.rcenvironment.core.component.workflow.execution.spi.SingleWorkflowStat
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -61,18 +61,17 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 /**
  * Default {@link HeadlessWorkflowExecutionService} implementation.
  * 
+ * Note: Implementation of headless workflow execution is eroded for different reasons. Root cause is that it was introduce without a
+ * reliable concept but just by start implementing. The code is also a bit messed up as {@link NotificationSubscriber}s must be implemented
+ * to recognize certain workflow states. I would suggest to start over at some point in time. --seid_do
+ * 
  * @author Sascha Zur
  * @author Phillip Kroll
- * @author Robert Mischke
  * @author Doreen Seider
- * 
- * Note: Implementation of headless workflow execution is eroded for different reasons. Root cause is that it was introduce without
- * a reliable concept but just by start implementing. The code is also a bit messed up as {@link NotificationSubscriber}s must be
- * implemented to recognize certain workflow states. I would suggest to start over at some point in time. --seid_do
+ * @author Robert Mischke
  */
+@Component
 public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExecutionService {
-
-    private final Log log = LogFactory.getLog(getClass());
 
     private DistributedNotificationService notificationService;
 
@@ -82,7 +81,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
     private PlatformService platformService;
 
-    private MetaDataService metaDataService;
+    private final Log log = LogFactory.getLog(getClass());
 
     @Override
     public void validatePlaceholdersFile(File placeholdersFile) throws WorkflowFileException {
@@ -91,24 +90,40 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     @Override
-    public FinalWorkflowState executeWorkflowSync(HeadlessWorkflowExecutionContext wfExeContext) throws WorkflowExecutionException {
-        final ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx = new ExtendedHeadlessWorkflowExecutionContext(wfExeContext);
-        executeWorkflow(headlessWfExeCtx);
+    public FinalWorkflowState executeWorkflow(HeadlessWorkflowExecutionContext wfExeContext) throws WorkflowExecutionException {
+        final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx = new ExtendedHeadlessWorkflowExecutionContext(wfExeContext);
+        startHeadlessWorkflowExecution(extHeadlessWfExeCtx);
+        return waitForWorkflowTerminationAndCleanup(extHeadlessWfExeCtx);
+    }
+
+    @Override
+    public WorkflowExecutionInformation startHeadlessWorkflowExecution(HeadlessWorkflowExecutionContext wfExeContext)
+        throws WorkflowExecutionException {
+        ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx = (ExtendedHeadlessWorkflowExecutionContext) wfExeContext;
+        return startHeadlessWorkflowExecutionInternal1(headlessWfExeCtx);
+    }
+
+    @Override
+    public FinalWorkflowState waitForWorkflowTerminationAndCleanup(HeadlessWorkflowExecutionContext wfExeContext)
+        throws WorkflowExecutionException {
+        ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx = (ExtendedHeadlessWorkflowExecutionContext) wfExeContext;
         FinalWorkflowState finalState = waitForWorkflowExecutionTermination(headlessWfExeCtx);
         disposeOrDeleteWorkflowIfIntended(headlessWfExeCtx, finalState.equals(FinalWorkflowState.FINISHED));
         headlessWfExeCtx.unsubscribeNotificationSubscribersQuietly(notificationService);
         return finalState;
     }
 
-    private void executeWorkflow(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx) throws WorkflowExecutionException {
+    private WorkflowExecutionInformation startHeadlessWorkflowExecutionInternal1(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx)
+        throws WorkflowExecutionException {
         headlessWfExeCtx.addOutput(null, StringUtils.format("Loading: '%s'; log directory: %s (full path: %s)",
             headlessWfExeCtx.getWorkflowFile().getName(), headlessWfExeCtx.getLogDirectory().getAbsolutePath(),
             headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
 
         final WorkflowDescription workflowDescription = loadWorkflowDescriptionAndPlaceholders(headlessWfExeCtx);
 
+        WorkflowExecutionInformation wfExecInfo;
         try {
-            executeWorkflow(workflowDescription, headlessWfExeCtx);
+            wfExecInfo = startHeadlessWorkflowExecutionInternal2(workflowDescription, headlessWfExeCtx);
             headlessWfExeCtx.addOutput(headlessWfExeCtx.getWorkflowExecutionContext().getExecutionIdentifier(),
                 StringUtils.format("Executing: '%s'; id: %s (full path: %s)",
                     headlessWfExeCtx.getWorkflowFile().getName(),
@@ -121,6 +136,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             headlessWfExeCtx.unsubscribeNotificationSubscribersQuietly(notificationService);
             throw e;
         }
+        return wfExecInfo;
     }
 
     private FinalWorkflowState waitForWorkflowExecutionTermination(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx)
@@ -133,8 +149,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         }
         headlessWfExeCtx.addOutput(StringUtils.format("%s: %s", headlessWfExeCtx.getWorkflowExecutionContext()
             .getExecutionIdentifier(), finalState.getDisplayName()), StringUtils.format("%s: '%s'(full path: %s)",
-            finalState.getDisplayName(), headlessWfExeCtx.getWorkflowFile().getName(),
-            headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
+                finalState.getDisplayName(), headlessWfExeCtx.getWorkflowFile().getName(),
+                headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
         headlessWfExeCtx.closeResourcesQuietly();
         // map to reduced set of final workflow states (to avoid downstream checking for invalid values)
         switch (finalState) {
@@ -164,19 +180,18 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
     private void disposeOrDeleteWorkflowIfIntended(ExtendedHeadlessWorkflowExecutionContext wfHeadlessExeCtx, boolean behavedAsExpected) {
         final String wfExecutionId = wfHeadlessExeCtx.getWorkflowExecutionContext().getExecutionIdentifier();
+        final WorkflowExecutionHandle wfExecutionHandle = wfHeadlessExeCtx.getWorkflowExecutionContext().getWorkflowExecutionHandle();
 
         boolean dispose = wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.Always
             || (behavedAsExpected
-            && wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.OnExpected);
+                && wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.OnExpected);
         boolean delete = wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.Always
             || (behavedAsExpected
-            && wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.OnExpected);
-        if (delete) {
+                && wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.OnExpected);
+        if (delete) { // includes disposal
             try {
-                LogicalNodeId nodeId = wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId();
-                delete(workflowExecutionService.getWorkflowDataManagementId(wfExecutionId,
-                    nodeId), nodeId);
-                dispose(wfExecutionId, nodeId);
+                deleteFromDataManagement(wfExecutionHandle);
+                dispose(wfExecutionHandle);
                 wfHeadlessExeCtx.waitForDisposal();
                 try {
                     FileUtils.deleteDirectory(wfHeadlessExeCtx.getLogDirectory());
@@ -195,7 +210,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         } else {
             if (dispose) {
                 try {
-                    dispose(wfExecutionId, wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId());
+                    dispose(wfExecutionHandle);
                     wfHeadlessExeCtx.waitForDisposal();
                 } catch (ExecutionControllerException | RemoteOperationException | RuntimeException e) {
                     log.error(StringUtils.format("Failed to dispose workflow '%s' (%s) ",
@@ -221,7 +236,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx =
                 new ExtendedHeadlessWorkflowExecutionContext(headlessWfExeCtx);
             try {
-                executeWorkflow(extHeadlessWfExeCtx);
+                startHeadlessWorkflowExecutionInternal1(extHeadlessWfExeCtx);
             } catch (WorkflowExecutionException e) {
                 wfVerificationResultReorder.addWorkflowError(headlessWfExeCtx.getWorkflowFile(), e.getMessage());
                 log.error(e.getMessage(), e);
@@ -269,13 +284,14 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         }
     }
 
-    private void executeWorkflow(final WorkflowDescription wfDescription, final ExtendedHeadlessWorkflowExecutionContext wfHeadlessExeCtx)
+    private WorkflowExecutionInformation startHeadlessWorkflowExecutionInternal2(final WorkflowDescription wfDescription,
+        final ExtendedHeadlessWorkflowExecutionContext wfHeadlessExeCtx)
         throws WorkflowExecutionException {
 
         setupLogDirectory(wfHeadlessExeCtx);
 
         WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(wfDescription,
-            platformService.getLocalDefaultLogicalNodeId(), compKnowledgeService.getCurrentComponentKnowledge());
+            platformService.getLocalDefaultLogicalNodeId(), compKnowledgeService.getCurrentSnapshot());
         WorkflowExecutionUtils
             .setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, platformService.getLocalDefaultLogicalNodeId());
 
@@ -283,7 +299,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             wfDescription));
         wfDescription.setFileName(wfHeadlessExeCtx.getWorkflowFile().getName());
 
-        if (!validateWorkflowDescription(wfDescription).isSucceeded()) {
+        if (!validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(wfDescription).isSucceeded()) {
             throw new WorkflowExecutionException("Workflow description invalid: " + wfHeadlessExeCtx.getWorkflowFile().getAbsolutePath());
         }
 
@@ -315,6 +331,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
         // add console output subscriber
         ConsoleRowSubscriber consoleRowSubscriber = new ConsoleRowSubscriber(wfHeadlessExeCtx, wfHeadlessExeCtx.getLogDirectory());
+        insertLogFileMetaInformation(consoleRowSubscriber, wfExeCtx);
         wfHeadlessExeCtx.registerResourceToCloseOnFinish(consoleRowSubscriber);
 
         // subscribe to a console row notification on workflow controller node
@@ -333,7 +350,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
         WorkflowExecutionInformation wfExeInfo;
         try {
-            wfExeInfo = executeWorkflowAsync(wfExeCtx);
+            wfExeInfo = startWorkflowExecution(wfExeCtx);
         } catch (RemoteOperationException e) {
             // consoleRowSubscriber is closed in calling method
             throw new WorkflowExecutionException("Failed to execute workflow", e);
@@ -342,6 +359,23 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         log.debug(StringUtils.format("Created workflow from file '%s' with name '%s', with id %s on node %s",
             wfHeadlessExeCtx.getWorkflowFile().getName(), wfExeInfo.getInstanceName(), wfExeInfo.getExecutionIdentifier(),
             wfExeInfo.getNodeId()));
+        return wfExeInfo;
+    }
+
+    /**
+     * Writes a log file header providing information about log file formation version, wf and component controller locations, and the node
+     * that initiated the workflow run.
+     */
+    private void insertLogFileMetaInformation(ConsoleRowSubscriber consoleRowSubscriber, final WorkflowExecutionContext wfExeCtx) {
+        consoleRowSubscriber.insertMetaInformation("Log file format 1.1");
+        final WorkflowDescription workflowDescription = wfExeCtx.getWorkflowDescription();
+        consoleRowSubscriber.insertMetaInformation("Workflow run initiated from instance " + wfExeCtx.getNodeIdStartedExecution());
+        consoleRowSubscriber.insertMetaInformation("Location of workflow controller: " + workflowDescription.getControllerNode());
+        for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
+            consoleRowSubscriber.insertMetaInformation(
+                StringUtils.format("Location of workflow component \"%s\" [%s]: %s", wfNode.getName(), wfNode.getIdentifier(),
+                    wfNode.getComponentDescription().getNode()));
+        }
     }
 
     private WorkflowStateNotificationSubscriber createWorkflowStateChangeListener(
@@ -515,8 +549,14 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     @Override
-    public WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription) {
-        return workflowExecutionService.validateWorkflowDescription(workflowDescription);
+    public WorkflowDescriptionValidationResult validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(
+        WorkflowDescription workflowDescription) {
+        return workflowExecutionService.validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(workflowDescription);
+    }
+
+    @Override
+    public Map<String, String> validateRemoteWorkflowControllerVisibilityOfComponents(WorkflowDescription wfDescription) {
+        return workflowExecutionService.validateRemoteWorkflowControllerVisibilityOfComponents(wfDescription);
     }
 
     @Override
@@ -538,50 +578,46 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     @Override
-    public WorkflowExecutionInformation executeWorkflowAsync(WorkflowExecutionContext executionContext) throws WorkflowExecutionException,
+    public WorkflowExecutionInformation startWorkflowExecution(WorkflowExecutionContext executionContext) throws WorkflowExecutionException,
         RemoteOperationException {
-        return workflowExecutionService.executeWorkflowAsync(executionContext);
+        return workflowExecutionService.startWorkflowExecution(executionContext);
     }
 
     @Override
-    public void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        workflowExecutionService.cancel(executionId, node);
+    public void cancel(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        workflowExecutionService.cancel(handle);
     }
 
     @Override
-    public void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        workflowExecutionService.pause(executionId, node);
+    public void pause(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        workflowExecutionService.pause(handle);
     }
 
     @Override
-    public void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        workflowExecutionService.resume(executionId, node);
+    public void resume(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        workflowExecutionService.resume(handle);
     }
 
     @Override
-    public void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        workflowExecutionService.dispose(executionId, node);
+    public void dispose(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        workflowExecutionService.dispose(handle);
     }
 
     @Override
-    public void delete(Long wfDataManagementId, ResolvableNodeId nodeId) {
-        try {
-            metaDataService.deleteWorkflowRun(wfDataManagementId, nodeId);
-        } catch (CommunicationException e) {
-            log.error("Could not delete worklflow run " + wfDataManagementId);
-        }
+    public void deleteFromDataManagement(WorkflowExecutionHandle handle) throws ExecutionControllerException {
+        workflowExecutionService.deleteFromDataManagement(handle);
     }
 
     @Override
-    public WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    public WorkflowState getWorkflowState(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException {
-        return workflowExecutionService.getWorkflowState(executionId, node);
+        return workflowExecutionService.getWorkflowState(handle);
     }
 
     @Override
-    public Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    public Long getWorkflowDataManagementId(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException {
-        return workflowExecutionService.getWorkflowDataManagementId(executionId, node);
+        return workflowExecutionService.getWorkflowDataManagementId(handle);
     }
 
     @Override
@@ -600,38 +636,43 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     /**
-     * OSGi injection method. For test purposes set to public.
+     * OSGi injection method. Made public for access by test code.
      * 
      * @param newService {@link DistributedNotificationService} instance
      */
+    @Reference
     public void bindDistributedNotificationService(DistributedNotificationService newService) {
         notificationService = newService;
     }
 
     /**
-     * OSGi injection method. For test purposes set to public.
+     * OSGi injection method. Made public for access by test code.
      * 
      * @param newService {@link WorkflowExecutionService} instance
      */
+    @Reference
     public void bindWorkflowExecutionService(WorkflowExecutionService newService) {
         workflowExecutionService = newService;
     }
 
     /**
-     * OSGi injection method. For test purposes set to public.
+     * OSGi injection method. Made public for access by test code.
      * 
      * @param newService {@link PlatformService} instance
      */
+    @Reference
     public void bindPlatformService(PlatformService newService) {
         platformService = newService;
     }
 
-    protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
-        compKnowledgeService = newInstance;
-    }
-
-    protected void bindMetaDataService(MetaDataService incoming) {
-        this.metaDataService = incoming;
+    /**
+     * OSGi injection method. Made public for access by test code.
+     * 
+     * @param newService {@link DistributedComponentKnowledgeService} instance
+     */
+    @Reference
+    public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newService) {
+        compKnowledgeService = newService;
     }
 
 }

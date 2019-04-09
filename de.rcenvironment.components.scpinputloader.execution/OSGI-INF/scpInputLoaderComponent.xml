@@ -1,0 +1,32 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="SCP Input Loader">
+
+	<implementation class="de.rcenvironment.components.scpinputloader.execution.ScpInputLoaderComponent"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String">
+		de.rcenvironment.scpinputloader
+		de.rcenvironment.components.scpinputloader.execution.ScpInputLoaderComponent_SCP Input Loader
+	</property>
+	
+	<property name="rce.component.name" type="String" value="SCP Input Loader"/>
+	
+	<property name="rce.component.group" type="String" value="_Internal"/>
+	
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.scpinputloader.execution.ScpInputLoaderComponent"/>
+		
+  	<property name="rce.component.version" type="String" value="1.1"/>
+  	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.scpinputloader.common" />  	
+  	<property name="rce.component.icon-16" type="String" value="scp_input_16.png"/>
+	<property name="rce.component.icon-24" type="String" value="scp_input_24.png"/>
+	<property name="rce.component.icon-32" type="String" value="scp_input_32.png"/>	
+  	 
+    <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+    <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+    <property name="rce.component.size" type="String" value="small"/>
+    <property name="rce.component.color" type="String" value="yellow"/>
+    <property name="rce.component.shape" type="String" value="square"/>
+
+</scr:component> 

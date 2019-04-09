@@ -1,0 +1,35 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"default",
+			"group": "orGroup",
+            "dataTypes":[
+                "FileReference",
+                "DirectoryReference",
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+				"Vector",
+				"Matrix"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+             "inputExecutionConstraintOptions":[
+                "None"
+            ],
+            "defaultInputExecutionConstraint":"None"
+        }
+    ],
+	"staticInputGroups":[
+        {
+            "name":"orGroup",
+            "type": "Or"
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.component.authorization.impl.ComponentExecutionAuthorizationServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.component.authorization.api.ComponentExecutionAuthorizationService"/>
+      <provide interface="de.rcenvironment.core.component.authorization.api.RemotableComponentExecutionAuthorizationService"/>
+   </service>
+   <reference bind="bindAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="AuthorizationService"/>
+   <reference bind="bindCryptographyOperationsProvider" interface="de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider" name="CryptographyOperationsProvider"/>
+   <reference bind="bindLocalComponentRegistrationService" interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService" name="LocalComponentRegistrationService"/>
+   <implementation class="de.rcenvironment.core.component.authorization.impl.ComponentExecutionAuthorizationServiceImpl"/>
+</scr:component>

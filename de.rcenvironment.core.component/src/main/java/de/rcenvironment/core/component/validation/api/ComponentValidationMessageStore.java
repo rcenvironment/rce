@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -54,12 +54,16 @@ public final class ComponentValidationMessageStore {
     }
 
     /**
-     * 
      * @param componentId that the messages belong to.
-     * @param messageList that should put to the map (Note that this is a replacing operation).
+     * @param messageList that should put to the map; note that since 9.0.0, the new list is appended instead of replacing any former list
      */
     public void addValidationMessagesByComponentId(String componentId, List<ComponentValidationMessage> messageList) {
         synchronized (messageMap) {
+            List<ComponentValidationMessage> oldList = messageMap.get(componentId);
+            if (oldList != null && !oldList.isEmpty()) { // append?
+                oldList.addAll(messageList);
+                messageList = oldList;
+            }
             messageMap.put(componentId, messageList);
         }
     }

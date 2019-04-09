@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -54,7 +54,7 @@ import de.rcenvironment.core.scripting.python.PythonComponentConstants;
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 /**
  * Abstract class for testing the implementations of {@link ScriptExecutor} since all should have the same results with the same

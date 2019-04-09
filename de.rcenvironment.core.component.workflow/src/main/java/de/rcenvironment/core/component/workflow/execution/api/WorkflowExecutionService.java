@@ -1,77 +1,55 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.api;
 
-import java.io.File;
+import java.util.Map;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ExecutionController;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
-import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Manages workflow executions.
+ * Provides the main entry method for executing a workflow, and various operations that control a workflow's life-cycle.
+ * 
+ * Note: Loading {@link WorkflowDescription} evolved over time. Especially, adding robustness and the fact that there are slight differences
+ * when loaded in editor compared to loading prior to headless workflow execution result in multiple methods dealing with loading
+ * {@link WorkflowDescription} which I'm not happy with. --seid_do
  * 
  * @author Doreen Seider
- * @author Robert Mischke (added fail-on-update flag)
- * 
- * Note: Loading {@link WorkflowDescription} evolved over time. Especially, adding robustness and the fact that there are slight
- * differences when loaded in editor compared to loading prior to headless workflow execution result in multiple methods dealing
- * with loading {@link WorkflowDescription} which I'm not happy with. --seid_do
+ * @author Robert Mischke
  */
-public interface WorkflowExecutionService {
-
-    /**
-     * Loads {@link WorkflowDescription} from a {@link File}. It checks for updates and perform updates if needed.
-     * 
-     * @param wfFile the worflow file to load the {@link WorkflowDescription} from
-     * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
-     * @return {@link WorkflowDescription}
-     * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
-     */
-    WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback)
-        throws WorkflowFileException;
-
-    /**
-     * Loads {@link WorkflowDescription} from a {@link File}. It checks for updates and perform updates if needed.
-     * 
-     * @param wfFile the worflow file to load the {@link WorkflowDescription} from
-     * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
-     * @param abortIfWorkflowUpdateRequired whether a required workflow update should be considered an error
-     * @return {@link WorkflowDescription}
-     * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
-     */
-    WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback,
-        boolean abortIfWorkflowUpdateRequired) throws WorkflowFileException;
-
-    /**
-     * Loads {@link WorkflowDescription} from a {@link File}. It _doesn't_ check for updates and _doesn't_ perform updates at all.
-     * 
-     * @param wfFile the worflow file to load the {@link WorkflowDescription} from
-     * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
-     * @return {@link WorkflowDescription}
-     * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
-     */
-    WorkflowDescription loadWorkflowDescriptionFromFile(File wfFile, WorkflowDescriptionLoaderCallback callback)
-        throws WorkflowFileException;
+public interface WorkflowExecutionService extends PersistentWorkflowDescriptionLoaderService {
 
     /**
      * Checks if the components of the workflow are installed on the configured target nodes and if the configured controller node is
-     * available.
+     * available. Note that this check is based on the network knowledge of the local node, not the controller's.
      * 
-     * @param workflowDescription {@link WorkflowDescription} to validate
+     * @param workflowDescription the {@link WorkflowDescription} to validate
      * @return {@link WorkflowDescriptionValidationResult}
      */
-    WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription);
+    WorkflowDescriptionValidationResult validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(
+        WorkflowDescription workflowDescription);
+
+    /**
+     * Checks if the user-selected nodes for this workflow's components are reachable/visible, and whether the individual components on
+     * these nodes are known/visible. If the node is visible, but the component is not, the typical cause is assumed to be a lack of
+     * authorization group membership of the controller node (the local node), as the client typically wouldn't send a request for
+     * components that are not accessible for it. Of course, the cause may also be a race condition between the client sending the request
+     * and the controller processing it, so this conclusion is not definite. -- misc_ro
+     * 
+     * @param wfDescription the {@link WorkflowDescription} to validate
+     * @return a map containing error messages, if any; keys are component identifiers (the common keys for validation errors), and the
+     *         values are error messages
+     */
+    Map<String, String> validateRemoteWorkflowControllerVisibilityOfComponents(WorkflowDescription wfDescription);
 
     /**
      * Executes a workflow represented by its {@link WorkflowExecutionContext}.
@@ -82,77 +60,79 @@ public interface WorkflowExecutionService {
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      */
-    WorkflowExecutionInformation executeWorkflowAsync(WorkflowExecutionContext executionContext) throws WorkflowExecutionException,
+    WorkflowExecutionInformation startWorkflowExecution(WorkflowExecutionContext executionContext) throws WorkflowExecutionException,
         RemoteOperationException;
 
     /**
      * Triggers workflow to cancel.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to cancel
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void cancel(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to pause.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to pause
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void pause(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to resume when paused.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to resume
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void resume(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to dispose.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to dispose
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void dispose(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException;
+
+    /**
+     * Deletes a workflow run from data management.
+     * 
+     * @param handle the {@link WorkflowExecutionHandle} identifying the workflow to delete
+     * @throws ExecutionControllerException on failure
+     */
+    void deleteFromDataManagement(WorkflowExecutionHandle handle) throws ExecutionControllerException;
 
     /**
      * Gets current workflow state.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to get the state for
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to get the state for
      * @return {@link WorkflowState}
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    WorkflowState getWorkflowState(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException;
 
     /**
-     * Gets current workflow state.
+     * Gets the data management id for a workflow.
      * 
-     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to get the state for
-     * @param node the node of the workflow controller
+     * @param handle the handle identifying the workflow to get the data management id for
      * @return {@link WorkflowState}
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    Long getWorkflowDataManagementId(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException;
 
     /**
@@ -171,5 +151,4 @@ public interface WorkflowExecutionService {
      * @return {@link WorkflowExecutionInformation} objects of all active workflows
      */
     Set<WorkflowExecutionInformation> getWorkflowExecutionInformations(boolean forceRefresh);
-
 }

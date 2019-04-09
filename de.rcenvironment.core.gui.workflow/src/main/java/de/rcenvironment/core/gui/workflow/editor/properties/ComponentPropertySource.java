@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -169,7 +169,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
 
     @Override
     public ConfigurationDescription getConfigurationDescription() {
-        node.getComponentDescription().getComponentInterface().getIdentifier();
+        node.getComponentDescription().getComponentInterface().getIdentifierAndVersion();
         return node.getConfigurationDescription();
     }
 

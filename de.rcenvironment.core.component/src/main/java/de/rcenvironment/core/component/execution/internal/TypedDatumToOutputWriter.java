@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
+import de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDatumImpl;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -32,7 +33,7 @@ public class TypedDatumToOutputWriter {
 
     private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(TypedDatumToOutputWriter.class);
     
-    private static EndpointDatumDispatcher endpointDatumDispatcher;
+    private static EndpointDatumDispatchService endpointDatumDispatcher;
     
     private ComponentExecutionContext compExeCtx;
     
@@ -100,7 +101,7 @@ public class TypedDatumToOutputWriter {
             || (epRecipient.getInputName().equals(inputName) && epRecipient.getInputsComponentExecutionIdentifier().equals(inputCompExeId));
     }
     
-    protected void bindEndpointDatumDispatcher(EndpointDatumDispatcher newService) {
+    protected void bindEndpointDatumDispatcher(EndpointDatumDispatchService newService) {
         TypedDatumToOutputWriter.endpointDatumDispatcher = newService;
     }
 }

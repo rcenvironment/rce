@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -54,7 +54,7 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
          * 
          * @param newInstance the new service instance
          */
-        public static void bindRemoteServiceCallService(RemoteServiceCallSenderService newInstance) {
+        public void bindRemoteServiceCallService(RemoteServiceCallSenderService newInstance) {
             RemoteServiceCallServiceHolder.remoteServiceCallService = newInstance;
         }
 
@@ -130,7 +130,8 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
         ServiceCallRequest serviceCallRequest =
             new ServiceCallRequest(objectNodeId.convertToDefaultLogicalNodeSessionId(),
                 proxyNodeId.convertToDefaultLogicalNodeSessionId(),
-                RemotableCallbackService.class.getCanonicalName(), "callback", parameterList);
+                RemotableCallbackService.class.getCanonicalName(), "callback", parameterList,
+                null); // no "reliable RPC" session support for callbacks yet
 
         RemoteServiceCallSenderService remoteServiceCallService = RemoteServiceCallServiceHolder.getRemoteServiceCallService();
         return remoteServiceCallService.performRemoteServiceCallAsProxy(serviceCallRequest);

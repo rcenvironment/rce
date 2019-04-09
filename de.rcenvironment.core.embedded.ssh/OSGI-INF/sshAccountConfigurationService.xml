@@ -10,7 +10,6 @@
  		name="Configuration Service"
  		interface="de.rcenvironment.core.configuration.ConfigurationService"
  		cardinality="1..1"
- 		policy="dynamic"
  		bind="bindConfigurationService"
  	/>
    	

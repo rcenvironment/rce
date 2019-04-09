@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -36,7 +36,7 @@ public final class EndpointDatumRecipientFactory {
         endpointDatumRecipient.setIdentifier(inputIdentifier);
         endpointDatumRecipient.setInputsComponentExecutionIdentifier(componentExecutionIdentifier);
         endpointDatumRecipient.setInputsComponentInstanceName(componentInstanceName);
-        endpointDatumRecipient.setInputsNodeId(inputsNode);
+        endpointDatumRecipient.setDestinationNodeId(inputsNode);
         return endpointDatumRecipient;
     }
 }

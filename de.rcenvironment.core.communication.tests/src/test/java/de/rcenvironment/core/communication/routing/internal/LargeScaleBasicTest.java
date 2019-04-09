@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,11 +25,9 @@ public class LargeScaleBasicTest extends AbstractLargeScaleTest {
     /*
      * Parameters for test scenarios.
      */
-    // test size 10 for fast/standard testing, 20 for extended testing; TODO review values
-    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(10, 20);
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(5, 20);
 
-    // note: previous value was 5; arbitrarily reduced to 3 for standard testing
-    private static final int EPOCHS = CommonTestOptions.selectStandardOrExtendedValue(3, 5);
+    private static final int EPOCHS = CommonTestOptions.selectStandardOrExtendedValue(2, 5);
 
     /**
      * @throws Exception on uncaught exceptions

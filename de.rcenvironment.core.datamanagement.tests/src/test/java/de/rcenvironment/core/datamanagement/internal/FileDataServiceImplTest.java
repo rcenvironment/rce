@@ -1,15 +1,22 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +55,7 @@ public class FileDataServiceImplTest {
 
     private DataReference dr;
 
-    private DataReference anotherDr;
+    private BinaryReference binaryReference;
 
     private RemotableFileDataServiceImpl fileDataService;
 
@@ -58,13 +65,11 @@ public class FileDataServiceImplTest {
         nodeId = NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy");
         drId = UUID.randomUUID();
 
+        binaryReference = new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1");
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
-        birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
+        birefs.add(binaryReference);
 
         dr = new DataReference(drId.toString(), nodeId, birefs);
-        birefs = new HashSet<BinaryReference>();
-        birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
-        anotherDr = new DataReference(UUID.randomUUID().toString(), nodeId, birefs);
 
         fileDataService = new RemotableFileDataServiceImpl();
         fileDataService.bindPlatformService(new PlatformServiceDefaultStub() {
@@ -78,14 +83,24 @@ public class FileDataServiceImplTest {
         MetaDataBackendService metaDataBackendService = EasyMock.createNiceMock(MetaDataBackendService.class);
         EasyMock.replay(metaDataBackendService);
 
-        new BackendSupportTest().setUp();
-        new BackendSupport().activate(BackendSupportTest.createBundleContext(metaDataBackendService, new DummyDataBackend()));
+        BackendSupport backendSupport = new BackendSupport();
+
+        backendSupport.bindDataBackendService(new DummyDataBackend());
+        backendSupport.activate(BackendSupportTest.createBundleContext(metaDataBackendService, new DummyDataBackend()));
     }
 
-    /** Test. */
+    /** Test. 
+     * @throws IOException */
     @Test
-    public void testGetStreamFromDataReference() {
-        fileDataService.getStreamFromDataReference(dr, true);
+    public void testGetStreamFromDataReference() throws IOException {
+        InputStream stream = fileDataService.getStreamFromDataReference(dr, true);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream));
+        final int buffersize = 8;
+        char[] buffer = new char[buffersize];
+        int blockLength = bufferedReader.read(buffer, 0, buffersize);
+        String content = new String(buffer, 0, blockLength);
+        assertNotNull(content);
+        assertNotEquals("", content);
     }
 
     /**
@@ -104,7 +119,10 @@ public class FileDataServiceImplTest {
         };
         MetaDataSet meta = new MetaDataSet();
         meta.setValue(new MetaData(MetaDataKeys.COMPONENT_RUN_ID, true, true), "7");
-        fileDataService.newReferenceFromStream(is, meta);
+        DataReference ref = fileDataService.newReferenceFromStream(is, meta);
+        assertNotNull(ref.getDataReferenceKey());
+        assertTrue(ref.getStorageNodeId().equals(nodeId));
+        assertEquals(1, ref.getBinaryReferences().size());
     }
 
     /**
@@ -116,11 +134,16 @@ public class FileDataServiceImplTest {
 
         @Override
         public URI suggestLocation(UUID guid) {
-            return null;
+            return location;
         }
 
         @Override
         public long put(URI loc, Object object) {
+            return put(loc, object);
+        }
+
+        @Override
+        public long put(URI loc, Object object, boolean alreadyCompressed) {
             return 0;
         }
 
@@ -131,6 +154,11 @@ public class FileDataServiceImplTest {
 
         @Override
         public Object get(URI loc) {
+            return get(loc, true);
+        }
+
+        @Override
+        public Object get(URI loc, boolean decompress) {
             if (location.equals(loc)) {
                 return new InputStream() {
 

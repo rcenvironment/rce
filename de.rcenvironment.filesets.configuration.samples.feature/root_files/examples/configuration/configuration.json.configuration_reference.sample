@@ -17,7 +17,7 @@
 		"connections" : {
 			"exampleConnection1" : {
 				"host" : "127.0.0.1",
-				"port" : 20001,
+				"port" : 21000,
 				"connectOnStartup": false,
 				"autoRetryInitialDelay" : 5,
 				"autoRetryMaximumDelay" : 300,
@@ -27,7 +27,7 @@
 		"serverPorts" : {
 			"examplePort1" : {
 				"ip" : "0.0.0.0",
-				"port" : 20005
+				"port" : 21000
 			}
 		},
 		"ipFilter" : {
@@ -44,7 +44,9 @@
 				"displayName" : "example",
 				"host" : "127.0.0.1",
 				"port" : 31005,
-				"loginName" : "ra_demo"
+				"loginName" : "ra_demo",
+				"connectOnStartup": true,
+				"autoRetry" : true
 			},
 			"exampleSSHConnectionWithKeyfileAuthentication" : {
 				"displayName" : "example",
@@ -62,16 +64,6 @@
 				"noPassphrase" : true
 			}
 		}
-	},
-	"publishing" : {
-		"components" : [
-			"de.rcenvironment.cluster",
-			"de.rcenvironment.converger",
-			"de.rcenvironment.joiner",
-			"de.rcenvironment.optimizer",
-			"de.rcenvironment.parametricstudy",
-			"de.rcenvironment.xmlmerger"
-		]
 	},
 	"componentSettings": {
 		"de.rcenvironment.cluster": {

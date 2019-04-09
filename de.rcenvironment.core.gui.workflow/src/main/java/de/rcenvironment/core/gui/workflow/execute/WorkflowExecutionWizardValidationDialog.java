@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -247,7 +247,12 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
             String nodeName = currentNode.getName();
             if (placeholderPage.getPlaceholderValidators().containsKey(nodeName)) {
                 for (String placeholderName : placeholderPage.getPlaceholderValidators().get(nodeName)) {
-                    addMessageItem(currentNode, Type.ERROR, Messages.missingPlaceholder + placeholderName);
+                    String dataType = placeholderPage.placeholderHelper.getPlaceholdersDataType().get(nodeName + "." + placeholderName);
+                    if (dataType != null && dataType.equals("text")) {
+                        addMessageItem(currentNode, Type.ERROR, Messages.textExceedsMaxLength + placeholderName);
+                    } else {
+                        addMessageItem(currentNode, Type.ERROR, Messages.missingPlaceholder + placeholderName); 
+                    }
                 }
             }
             for (ComponentValidationMessage message : messagesMap.get(nodeIdentifier)) {

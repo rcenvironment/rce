@@ -1,19 +1,18 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -38,13 +37,11 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
+import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
-import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.incubator.ServiceRegistry;
-import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * @author Sascha Zur
@@ -83,11 +80,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
     private Button deleteTempDirNotOnErrorIterationCheckbox;
 
-    private Button publishCheckbox;
-
     private Button deleteTempDirNotOnErrorOnceCheckbox;
-
-    private ButtonSelectionListener btnButtonSelectionListener;
 
     protected ToolConfigurationPage(String pageName, Map<String, Object> configurationMap) {
         super(pageName);
@@ -112,8 +105,9 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         iterationCheckboxCompositeData.horizontalSpan = 2;
         checkboxComposite.setLayoutData(iterationCheckboxCompositeData);
 
-        publishCheckbox = createSingleCheckboxes(checkboxComposite, Messages.publishComponentCheckbox,
-            ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
+        // tool publication mixed into tool integration is disabled for now; see Mantis #16044
+        // publishCheckbox = createSingleCheckboxes(checkboxComposite, Messages.publishComponentCheckbox,
+        // ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
 
         iterationDirectoryCheckbox = createSingleCheckboxes(checkboxComposite, Messages.useIterationDirectoriesText,
             ToolIntegrationConstants.KEY_TOOL_USE_ITERATION_DIRECTORIES);
@@ -312,8 +306,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         tableButtonAdd = new Button(client, SWT.FLAT);
         tableButtonAdd.setText(Messages.add);
         tableButtonAdd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
-        btnButtonSelectionListener = new ButtonSelectionListener(tableButtonAdd, toolConfigTable);
-        tableButtonAdd.addSelectionListener(btnButtonSelectionListener);
+        tableButtonAdd.addSelectionListener(new ButtonSelectionListener(tableButtonAdd, toolConfigTable));
         tableButtonEdit = new Button(client, SWT.FLAT);
         tableButtonEdit.setText(Messages.edit);
         tableButtonEdit.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -375,8 +368,9 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
         boolean isPageComplete = true;
 
-        if (!(((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)) != null
-            && ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).size() != 0)) {
+        final List<Map<String, String>> launchSettings =
+            (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+        if (!(launchSettings != null && !launchSettings.isEmpty())) {
             errorMessage += Messages.toolExecutionConfigurationNeeded + "\n";
             isPageComplete &= false;
         } else if (!deleteTempDirAlwaysCheckbox.getSelection() && !deleteTempDirNeverCheckbox.getSelection()
@@ -389,9 +383,10 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             setMessage(errorMessage, DialogPage.ERROR);
         } else {
             if (toolConfigTable.getItemCount() > 0) {
-                String error = StringUtils.checkAgainstCommonInputRules(toolConfigTable.getItem(0).getText(2));
-                if (error != null) {
-                    setMessage("Version not correct to use as a Remote Access Tool:\n  " + error, DialogPage.WARNING);
+                Optional<String> error = ComponentIdRules.validateComponentVersionRules(toolConfigTable.getItem(0).getText(2));
+                if (error.isPresent()) {
+                    setMessage(StringUtils.format("The chosen version is not valid.\n %s.", error.get()), DialogPage.ERROR);
+                    isPageComplete = false;
                 } else {
                     setMessage("Currently, only one launch setting is possible", DialogPage.WARNING);
                 }
@@ -404,12 +399,13 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     private void updateCheckBoxes() {
-        if (configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT) != null
-            && (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT)) {
-            publishCheckbox.setSelection(true);
-        } else {
-            publishCheckbox.setSelection(false);
-        }
+        // deprecated, remove when done; see Mantis #16044
+        // if (configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT) != null
+        // && (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT)) {
+        // publishCheckbox.setSelection(true);
+        // } else {
+        // publishCheckbox.setSelection(false);
+        // }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_USE_ITERATION_DIRECTORIES) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_USE_ITERATION_DIRECTORIES)) {
             iterationDirectoryCheckbox.setSelection(true);
@@ -614,14 +610,15 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     @Override
     public void setConfigMap(Map<String, Object> newConfigurationMap) {
         configurationMap = newConfigurationMap;
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-        ToolIntegrationService integrationService = serviceRegistryAccess.getService(ToolIntegrationService.class);
-        Set<String> published = integrationService.getPublishedComponents();
-        for (String path : published) {
-            if (path.substring(path.lastIndexOf(File.separator) + 1).equals(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
-                configurationMap.put(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT, true);
-            }
-        }
+        // tool publication mixed into tool integration is disabled for now; see Mantis #16044
+        // ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        // ToolIntegrationService integrationService = serviceRegistryAccess.getService(ToolIntegrationService.class);
+        // Set<String> published = integrationService.getPublishedComponents();
+        // for (String path : published) {
+        // if (path.substring(path.lastIndexOf(File.separator) + 1).equals(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
+        // configurationMap.put(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT, true);
+        // }
+        // }
         updatePageValues();
     }
 
@@ -642,15 +639,14 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     @SuppressWarnings("unchecked")
     private void addSelection() {
 
-        List<Map<String, String>> configs = new LinkedList<Map<String, String>>();
+        List<Map<String, String>> configs = new LinkedList<>();
         if (configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS) != null) {
             configs = (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
         } else {
             configurationMap.put(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS, configs);
         }
         WizardToolConfigurationDialog wtcd =
-            new WizardToolConfigurationDialog(null, Messages.addDiaglogTitle, configs,
-                ((ToolIntegrationWizard) getWizard()).getCurrentContext());
+            new WizardToolConfigurationDialog(null, Messages.addDiaglogTitle, ((ToolIntegrationWizard) getWizard()).getCurrentContext());
 
         int exit = wtcd.open();
         if (exit == 0) {
@@ -672,12 +668,11 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     selectedConfig = currentConfig;
                 }
             }
-            Map<String, String> selectedConfigCopy = new HashMap<String, String>();
+            Map<String, String> selectedConfigCopy = new HashMap<>();
             selectedConfigCopy.putAll(selectedConfig);
             WizardToolConfigurationDialog wtcd =
-                new WizardToolConfigurationDialog(null, Messages.editDiaglogTitle, selectedConfigCopy, configs,
-                    ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
-                    true);
+                new WizardToolConfigurationDialog(null, Messages.editDiaglogTitle, selectedConfigCopy,
+                    ((ToolIntegrationWizard) getWizard()).getCurrentContext());
             int exit = wtcd.open();
             if (exit == 0) {
                 configs.remove(selectedConfig);

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -271,5 +271,21 @@ public class DatabaseConnectionSection extends ValidatingWorkflowNodePropertySec
     // widgetSelected(event);
     // }
     // }
+
+    @Override
+    public void refreshSection() {
+        super.refreshSection();
+        String configString =
+            getConfiguration().getConfigurationDescription().getConfigurationValue(DatabaseComponentConstants.DATABASE_HOST);
+        // when db component is instantiated for the first time the configuration values have to be set with a default string ""
+        // this is necessary for the correct functionality of undo mechanism
+        // Kathrin Schaffert, Feb 2019
+        if (configString == null) {
+            getConfiguration().getConfigurationDescription().setConfigurationValue(DatabaseComponentConstants.DATABASE_NAME, "");
+            getConfiguration().getConfigurationDescription().setConfigurationValue(DatabaseComponentConstants.DATABASE_HOST, "");
+            getConfiguration().getConfigurationDescription().setConfigurationValue(DatabaseComponentConstants.DATABASE_PORT, "");
+            getConfiguration().getConfigurationDescription().setConfigurationValue(DatabaseComponentConstants.DATABASE_SCHEME, "");
+        }
+    }
 
 }

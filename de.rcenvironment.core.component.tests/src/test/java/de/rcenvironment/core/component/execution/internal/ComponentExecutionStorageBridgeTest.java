@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -518,7 +518,10 @@ public class ComponentExecutionStorageBridgeTest {
     private ComponentExecutionContext createComponentExecutionContextMock() {
         ComponentExecutionContext componentExecutionContextMock = EasyMock.createNiceMock(ComponentExecutionContext.class);
         EasyMock.expect(componentExecutionContextMock.getNodeId()).andReturn(NODE_ID.convertToDefaultLogicalNodeId()).anyTimes();
-        EasyMock.expect(componentExecutionContextMock.getDefaultStorageNodeId())
+        EasyMock.expect(componentExecutionContextMock.getStorageNetworkDestination())
+            .andReturn(STORAGE_NODE_SESSION_ID.convertToDefaultLogicalNodeId())
+            .anyTimes();
+        EasyMock.expect(componentExecutionContextMock.getStorageNodeId())
             .andReturn(STORAGE_NODE_SESSION_ID.convertToDefaultLogicalNodeId())
             .anyTimes();
         EasyMock.expect(componentExecutionContextMock.getInstanceDataManagementId()).andReturn(DM_INSTANCE_ID).anyTimes();
@@ -536,6 +539,7 @@ public class ComponentExecutionStorageBridgeTest {
         ComponentExecutionRelatedInstances compExeRelatedInstances = new ComponentExecutionRelatedInstances();
         compExeRelatedInstances.compExeCtx = compExeCtx;
         compExeRelatedInstances.compExeRelatedStates = new ComponentExecutionRelatedStates();
+        compExeRelatedInstances.wfStorageNetworkDestination = STORAGE_NODE_LOGICAL_NODE_ID;
         return compExeRelatedInstances;
     }
 

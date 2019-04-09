@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,8 +25,8 @@ public class EvaluationMemoryEndpointPropertiesSection extends EndpointPropertyS
         
         EndpointSelectionPane outputPaneToEvaluate = new EndpointSelectionPane("Outputs (values to evaluate sent to loop)",
             EndpointType.OUTPUT, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, new String[] {}, new String[] {}, this, true);
-        
-        InputCoupledWithOutputSelectionPane inputPaneToEvaluate = new InputCoupledWithOutputSelectionPane(
+
+        InputCoupledWithOutputSelectionPane inputPaneToEvaluate = new EvaluationMemoryInputPaneToEvaluate(
             "Inputs (values to evaluate received from evaluation component)",
             EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, this, outputPaneToEvaluate);
         

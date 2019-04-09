@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,7 +15,7 @@ import org.eclipse.swt.widgets.Shell;
  *
  * @author Brigitte Boden
  */
-public class EditSshConnectionDialog extends AbstractSshConnectionDialog  {
+public class EditSshConnectionDialog extends AbstractSshConnectionDialog {
 
     private static final String DIALOG_TITLE = "Edit SSH Connection";
 
@@ -25,8 +25,9 @@ public class EditSshConnectionDialog extends AbstractSshConnectionDialog  {
 
     public EditSshConnectionDialog(Shell parentShell, String connectionName, String host, int port, String username,
         String keyfileLocation, boolean usePassphrase, boolean storePassphrase,
-        boolean connectImmediately) {
-        super(parentShell, connectionName, host, port, username, keyfileLocation, usePassphrase, storePassphrase, connectImmediately);
+        boolean connectImmediately, boolean autoRetry) {
+        super(parentShell, connectionName, host, port, username, keyfileLocation, usePassphrase, storePassphrase, connectImmediately,
+            autoRetry);
         this.hint = HINT;
     }
 
@@ -35,7 +36,7 @@ public class EditSshConnectionDialog extends AbstractSshConnectionDialog  {
         super.configureShell(shell);
         shell.setText(DIALOG_TITLE);
     }
-    
+
     protected void setPassphrase(String password) {
         this.passphrase = password;
     }

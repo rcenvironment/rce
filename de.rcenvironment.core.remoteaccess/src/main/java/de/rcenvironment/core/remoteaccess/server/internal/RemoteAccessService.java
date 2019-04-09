@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -43,6 +43,26 @@ public interface RemoteAccessService {
      */
     void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format, boolean includeLoadData, int timeSpanMsec,
         int timeLimitMsec) throws InterruptedException, ExecutionException, TimeoutException;
+    
+    /**
+     * Prints details (inputs/outputs and their data types) for a single tool.
+     * 
+     * @param outputReceiver the receiver to print the output to
+     * @param toolId the tool id
+     * @param toolVersion the tool version
+     * @param nodeId the nodeId
+     * @param template if true, a template for the inputs.json file will be printed
+     */
+    void printToolDetails(TextOutputReceiver outputReceiver, String toolId, String toolVersion, String nodeId, boolean template);
+    
+    /**
+     * Prints details (inputs/outputs and their data types) for a single workflow.
+     * 
+     * @param outputReceiver the receiver to print the output to
+     * @param wfId the workflow id
+     * @param template if true, a template for the inputs.json file will be printed
+     */
+    void printWfDetails(TextOutputReceiver outputReceiver, String wfId, boolean template);
 
     /**
      * Prints information about all published workflows available for the "ra run-wf" command.
@@ -55,35 +75,34 @@ public interface RemoteAccessService {
     /**
      * Creates a workflow file from an internal template and the given parameters, and executes it.
      * 
-     * @param toolId the id of the integrated tool to run (see CommonToolIntegratorComponent)
-     * @param toolVersion the version of the integrated tool to run
-     * @param nodeId the already-validated node id where the tool should be run; must not be null
-     * @param parameterString an optional string containing tool-specific parameters
-     * @param inputFilesDir the local file system path to read input files from
-     * @param outputFilesDir the local file system path to write output files to
+     * @param parameters Object containing all the parameters for remote tool execution
      * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * 
      * @return the state the generated workflow finished in
      * @throws IOException on I/O errors
      * @throws WorkflowExecutionException on workflow execution errors
      */
-    FinalWorkflowState runSingleToolWorkflow(String toolId, String toolVersion, String nodeId, String parameterString,
-        File inputFilesDir, File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException,
+    FinalWorkflowState runSingleToolWorkflow(RemoteComponentExecutionParameter parameters, SingleConsoleRowsProcessor consoleRowReceiver)
+        throws IOException,
         WorkflowExecutionException;
 
     /**
      * Executes a previously published workflow template.
      * 
      * @param workflowId the id of the published workflow template
-     * @param parameterString an optional string containing tool-specific parameters
+     * @param sessionToken TODO
      * @param inputFilesDir the local file system path to read input files from
      * @param outputFilesDir the local file system path to write output files to
      * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * @param uncompressedUpload if the upload should be uncompressed
+     * @param simpleDescription if the simple inputs description format should be used
      * @return the state the generated workflow finished in
      * @throws IOException on I/O errors
      * @throws WorkflowExecutionException on workflow execution errors
      */
-    FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String parameterString, File inputFilesDir,
-        File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException;
+    FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String sessionToken, File inputFilesDir, File outputFilesDir,
+        SingleConsoleRowsProcessor consoleRowReceiver, boolean uncompressedUpload, boolean simpleDescription)
+        throws IOException, WorkflowExecutionException;
 
     /**
      * Checks if the given workflow file can be used with the "wf-run" console command, and if this check is positive, the workflow file is
@@ -92,12 +111,14 @@ public interface RemoteAccessService {
      * @param wfFile the workflow file
      * @param placeholdersFile TODO
      * @param publishId the id by which the workflow file should be made available
+     * @param groupName name of the palette group in which the workflow will be shown
      * @param outputReceiver receiver for user feedback
      * @param persistent whether the published workflow (and optionally, its properties file) should be restored after instance restarts
+     * @param neverDeleteExecutionData whether the execution data should be kept even for successful workflow runs
      * @throws WorkflowExecutionException on failure to load/parse the workflow file
      */
-    void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, TextOutputReceiver outputReceiver,
-        boolean persistent) throws WorkflowExecutionException;
+    void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, String groupName,
+        TextOutputReceiver outputReceiver, boolean persistent, boolean neverDeleteExecutionData) throws WorkflowExecutionException;
 
     /**
      * Makes the published workflow with the given id unavailable for remote invocation. If no such workflow exists, a text warning is
@@ -125,4 +146,30 @@ public interface RemoteAccessService {
      */
     String validateToolParametersAndGetFinalNodeId(String toolId, String toolVersion, String nodeId) throws WorkflowExecutionException;
 
+    /**
+     * Cancel a running workflow or tool.
+     * 
+     * @param sessionToken the session token to identify the tool/workflow.
+     */
+    void cancelToolOrWorkflow(String sessionToken);
+    
+    
+    /**
+     * Get list of nodeIds with documentation for given tool.
+     * 
+     * @param outputReceiver the receiver to print the output to
+     * @param toolId the tool id
+     */
+    void getToolDocumentationList(TextOutputReceiver outputReceiver, String toolId);
+    
+    /**
+     * Downloads the documentation for a tool.
+     * 
+     * @param outputReceiver the receiver to print the output to
+     * @param toolId the tool id
+     * @param nodeId the nodeId
+     * @param hashValue the documentation hash value
+     * @param outputFilePath the file path for the download
+     */
+    void getToolDocumentation(TextOutputReceiver outputReceiver, String toolId, String nodeId, String hashValue, File outputFilePath);
 }

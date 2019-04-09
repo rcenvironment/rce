@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,12 +20,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.map.HashedMap;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+import de.rcenvironment.core.component.management.internal.ComponentDataConverter;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescriptionStubFactory;
@@ -38,12 +39,13 @@ import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsPr
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
-import de.rcenvironment.core.utils.common.JsonUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
  * Test cases for {@link ComponentInstallationImpl}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (minor adaptations)
  */
 public class ComponentInstallationImplTest {
 
@@ -56,10 +58,11 @@ public class ComponentInstallationImplTest {
      * @throws JsonGenerationException on error
      * @throws JsonMappingException on error
      * @throws JsonParseException on error
+     * @throws OperationFailureException on error
      */
     @Test
-    public void testComponentInstallationSerialization() throws JsonParseException, JsonMappingException,
-        JsonGenerationException, IOException {
+    public void testRoundTripSerialization() throws JsonParseException, JsonMappingException,
+        JsonGenerationException, IOException, OperationFailureException {
 
         Integer maxInstances = Integer.valueOf(4);
         String readOnlyConfigKey = "someReadOnlyConfigKey";
@@ -92,13 +95,13 @@ public class ComponentInstallationImplTest {
         compInst.setComponentRevision(compRev);
         compInst.setInstallationId("install-id");
         compInst.setMaximumCountOfParallelInstances(maxInstances);
-        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-        ComponentInstallationImpl otherCompInst = mapper.readValue(mapper.writeValueAsString(compInst), ComponentInstallationImpl.class);
+        ComponentInstallationImpl otherCompInst = (ComponentInstallationImpl) ComponentDataConverter
+            .deserializeComponentInstallationData(ComponentDataConverter.serializeComponentInstallationData(compInst));
 
         assertEquals(0, otherCompInst.compareTo(compInst));
 
-        ComponentInterface otherCompInterf = otherCompInst.getComponentRevision().getComponentInterface();
+        ComponentInterface otherCompInterf = otherCompInst.getComponentInterface();
 
         assertEquals(compInterf.getIdentifiers().size(), otherCompInterf.getIdentifiers().size());
         assertEquals(compInst.getMaximumCountOfParallelInstances(), otherCompInst.getMaximumCountOfParallelInstances());
@@ -155,7 +158,7 @@ public class ComponentInstallationImplTest {
         assertNotNull(otherDynInputDef);
         assertEquals(dynInputDef.getMetaDataDefinition().getMetaDataKeys().size(),
             otherDynInputDef.getMetaDataDefinition().getMetaDataKeys().size());
-        
+
         assertEquals(compInterf.getInputDefinitionsProvider().getStaticEndpointGroupDefinitions().size(),
             otherCompInterf.getInputDefinitionsProvider().getStaticEndpointGroupDefinitions().size());
         assertEquals(compInterf.getInputDefinitionsProvider().getDynamicEndpointGroupDefinitions().size(),

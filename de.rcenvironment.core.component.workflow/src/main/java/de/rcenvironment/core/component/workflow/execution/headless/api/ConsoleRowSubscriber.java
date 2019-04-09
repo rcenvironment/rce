@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.execution.headless.api;
 
 import java.io.BufferedWriter;
@@ -44,7 +44,7 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
     private static final String LOG_FILE_SUFFIX = ".log";
 
     private static final String TEMP_FILE_SUFFIX = ".tmp";
-    
+
     private static final long serialVersionUID = 1233786794388388297L;
 
     private final transient File finalLogFileDestination;
@@ -56,7 +56,7 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
     private final transient Log log = LogFactory.getLog(getClass());
 
     private final transient ConsoleRowFormatter consoleRowFormatter = new ConsoleRowFormatter();
-    
+
     private transient BufferedWriter bufferedLogWriter;
 
     public ConsoleRowSubscriber(ExtendedHeadlessWorkflowExecutionContext context, File logDirectory) {
@@ -73,7 +73,9 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
         tempLogFileLocation = new File(logDirectory, consoleLogName + LOG_FILE_SUFFIX + TEMP_FILE_SUFFIX);
         if (!tempLogFileLocation.exists()) {
             try {
-                tempLogFileLocation.createNewFile();
+                if (!tempLogFileLocation.createNewFile()) {
+                    throw new IOException("createNewFile() returned false");
+                }
             } catch (IOException e) {
                 Logger.getAnonymousLogger().warning("Could not create " + tempLogFileLocation.getAbsolutePath());
             }
@@ -84,6 +86,25 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
     @Override
     public Class<?> getInterface() {
         return NotificationSubscriber.class;
+    }
+
+    /**
+     * Inserts a single line to the generated log file, which will be automatically terminated with the platform-specific line separator.
+     * Typically used to insert meta information in the log file. Note that currently, no error is generated if log file writing is not
+     * enabled at all, ie the writer is null (for any reason).
+     * 
+     * @param content the text data to insert
+     */
+    public void insertMetaInformation(String content) {
+        synchronized (this) {
+            if (bufferedLogWriter != null) {
+                try {
+                    bufferedLogWriter.write(consoleRowFormatter.toMetaInformationLine(content));
+                } catch (IOException e) {
+                    log.error("Error inserting this text line into the workflow log: " + content);
+                }
+            }
+        }
     }
 
     @Override
@@ -141,7 +162,8 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
                 log.debug("Closing temporary log file " + tempLogFileLocation);
                 try {
                     bufferedLogWriter.close();
-                    if (tempLogFileLocation.renameTo(finalLogFileDestination)) {
+                    if (!finalLogFileDestination.isFile() && tempLogFileLocation.renameTo(finalLogFileDestination)
+                        && finalLogFileDestination.isFile()) {
                         log.debug("Completed workflow log file " + finalLogFileDestination);
                     } else {
                         log.warn("Failed to move log file " + tempLogFileLocation + " to final destination " + finalLogFileDestination);

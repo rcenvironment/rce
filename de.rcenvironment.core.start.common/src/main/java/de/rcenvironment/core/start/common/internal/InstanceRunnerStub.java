@@ -1,17 +1,20 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.internal;
 
+import java.util.List;
+
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.start.common.InstanceRunner;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationService;
 
 /**
@@ -23,6 +26,8 @@ import de.rcenvironment.core.start.common.validation.api.InstanceValidationServi
  * @author Robert Mischke
  */
 public class InstanceRunnerStub extends InstanceRunner {
+
+    private static final String THIS_METHOD_SHOULD_NEVER_BE_CALLED = "This method should never be called";
 
     @Override
     public void bindCommandExecutionService(CommandExecutionService newService) {
@@ -38,7 +43,24 @@ public class InstanceRunnerStub extends InstanceRunner {
     
     @Override
     public int performRun() throws Exception {
-        throw new UnsupportedOperationException("This method should never be called");
+        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NEVER_BE_CALLED);
     }
+
+    @Override
+    public void onShutdownRequired(List<InstanceValidationResult> validationResults) {
+        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NEVER_BE_CALLED);
+    }
+
+    @Override
+    public boolean onRecoveryRequired(List<InstanceValidationResult> validationResults) {
+        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NEVER_BE_CALLED);
+    }
+
+    @Override
+    public boolean onConfirmationRequired(List<InstanceValidationResult> validationResults) {
+        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NEVER_BE_CALLED);
+    }
+    
+    
 
 }

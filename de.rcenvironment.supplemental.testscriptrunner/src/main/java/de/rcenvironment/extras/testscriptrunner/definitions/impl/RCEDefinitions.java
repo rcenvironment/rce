@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -73,7 +73,7 @@ public class RCEDefinitions {
         dynamicSubstitutionMap.put(profilePlaceholder, profileDir.getAbsolutePath());
 
         if (locked != null) {
-            new Profile(profileDir, Profile.PROFILE_VERSION_NUMBER, true).attemptToLockProfileDirectory();
+            new Profile.Builder(profileDir).create(true).migrate(true).buildUserProfile().attemptToLockProfileDirectory();
         }
     }
 

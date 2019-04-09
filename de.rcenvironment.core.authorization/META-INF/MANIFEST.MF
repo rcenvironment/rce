@@ -2,14 +2,28 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Authorization
 Bundle-SymbolicName: de.rcenvironment.core.authorization;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.authorization,
- de.rcenvironment.core.authorization.rbac
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Import-Package: de.rcenvironment.core.configuration,
+ de.rcenvironment.core.authorization.api,
+ de.rcenvironment.core.authorization.cryptography.api,
+ de.rcenvironment.core.authorization.testutils
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: de.rcenvironment.core.command.common,
+ de.rcenvironment.core.command.spi,
+ de.rcenvironment.core.configuration,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.modules.objectbindings.api,
+ de.rcenvironment.toolkit.utils.common,
+ org.apache.commons.codec.binary;version="1.6.0",
+ org.apache.commons.io;version="2.4.0",
  org.apache.commons.logging;version="1.1.1",
- org.osgi.framework
-Service-Component: OSGI-INF/authorizationService.xml
+ org.bouncycastle;version="1.60.0",
+ org.bouncycastle.jce.provider;version="1.60.0",
+ org.eclipse.equinox.security.storage;version="1.0.0",
+ org.osgi.framework,
+ org.osgi.service.component.annotations
+Bundle-ActivationPolicy: lazy
+Service-Component: OSGI-INF/generated/*

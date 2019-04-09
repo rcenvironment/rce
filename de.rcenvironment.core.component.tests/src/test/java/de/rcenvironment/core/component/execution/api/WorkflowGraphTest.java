@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,11 +22,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import de.rcenvironment.core.datamodel.api.EndpointCharacter;
-import de.rcenvironment.core.utils.common.StringUtils;
-import junit.framework.Assert;
 
 /**
  * Tests for {link WorkflowGraph}.
@@ -69,6 +68,7 @@ public class WorkflowGraphTest {
 
     private static final String OUTER_LOOP_NODE = "outerLoopNode";
 
+    // this is a utility map to allow creation and assertions in different methods
     private Map<String, WorkflowGraphNode> nodeNamesToNodes;
 
     /** Test. */
@@ -136,28 +136,31 @@ public class WorkflowGraphTest {
 
         graph = createCircleWorkflowGraph();
         hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
-        Deque<String> expectedHops = new LinkedList<>();
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+
+        Deque<WorkflowGraphHop> expectedHops = new LinkedList<>();
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE0).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE0).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE2).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE2).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), INPUT0));
+
         assertWorkflowGraphHops(expectedHops, hops.iterator().next());
 
         graph = createCircleWorkflowGraphWithInnerLoopBack();
         hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
         expectedHops = new LinkedList<>();
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE0).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE2).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+        // TODO copied from above!
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE0).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE0).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE2).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE2).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), INPUT0));
         assertWorkflowGraphHops(expectedHops, hops.iterator().next());
         assertEquals(hops.size(), 1);
 
@@ -169,10 +172,12 @@ public class WorkflowGraphTest {
         hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
         assertEquals(hops.size(), 1);
         expectedHops = new LinkedList<>();
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(),
-            INPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier()));
-        expectedHops.add(StringUtils.escapeAndConcat(OUTPUT0, nodeNamesToNodes.get(NODE1).getExecutionIdentifier(),
-            INPUT1, nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier()));
+        
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), INPUT0));
+        expectedHops.add(new WorkflowGraphHop(nodeNamesToNodes.get(NODE1).getExecutionIdentifier(), OUTPUT0,
+            nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier(), INPUT1));
+        
         assertWorkflowGraphHops(expectedHops, hops.iterator().next());
     }
 
@@ -183,7 +188,7 @@ public class WorkflowGraphTest {
     private WorkflowGraph createTwoSinksWorkflowGraph() {
 
         nodeNamesToNodes = new HashMap<>();
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         WorkflowGraphNode outerLoopNode = createNewNode(1, 1, true);
         nodeNamesToNodes.put(OUTER_LOOP_NODE, outerLoopNode);
         nodes.put(outerLoopNode.getExecutionIdentifier(), outerLoopNode);
@@ -199,7 +204,6 @@ public class WorkflowGraphTest {
             nodes.put(node.getExecutionIdentifier(), node);
         }
 
-        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
         Set<WorkflowGraphEdge> edgesSet = new HashSet<>();
         edgesSet.add(createEdge(nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(SINK_NODE0), 0, EndpointCharacter.SAME_LOOP));
@@ -210,9 +214,7 @@ public class WorkflowGraphTest {
         edgesSet.add(createEdge(nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP));
 
-        generateAndPutEdgeKeys(edges, edgesSet);
-        return new WorkflowGraph(nodes, edges);
-
+        return new WorkflowGraph(nodes, edgesSet);
     }
 
     /**
@@ -222,7 +224,7 @@ public class WorkflowGraphTest {
     private WorkflowGraph createReducedInputsWorkflowGraph() {
 
         nodeNamesToNodes = new HashMap<>();
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         WorkflowGraphNode driverNode = createNewNode(1, 1, true);
         nodeNamesToNodes.put(OUTER_LOOP_NODE, driverNode);
         nodes.put(driverNode.getExecutionIdentifier(), driverNode);
@@ -235,7 +237,6 @@ public class WorkflowGraphTest {
         nodeNamesToNodes.put(NODE + 1, node1);
         nodes.put(node1.getExecutionIdentifier(), node1);
 
-        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
         Set<WorkflowGraphEdge> edgesSet = new HashSet<>();
         edgesSet.add(createEdge(nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP));
@@ -246,9 +247,7 @@ public class WorkflowGraphTest {
         edgesSet.add(createEdge(nodeNamesToNodes.get(NODE1), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP));
 
-        generateAndPutEdgeKeys(edges, edgesSet);
-        return new WorkflowGraph(nodes, edges);
-
+        return new WorkflowGraph(nodes, edgesSet);
     }
 
     /**
@@ -258,7 +257,7 @@ public class WorkflowGraphTest {
     private WorkflowGraph createTwoSinksWithInnerLoopWorkflowGraph() {
 
         nodeNamesToNodes = new HashMap<>();
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         WorkflowGraphNode outerLoopNode = createNewNode(1, 2, true);
         nodeNamesToNodes.put(OUTER_LOOP_NODE, outerLoopNode);
         nodes.put(outerLoopNode.getExecutionIdentifier(), outerLoopNode);
@@ -274,7 +273,6 @@ public class WorkflowGraphTest {
             nodes.put(node.getExecutionIdentifier(), node);
         }
 
-        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
         Set<WorkflowGraphEdge> edgesSet = new HashSet<>();
         edgesSet.add(createEdge(nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP));
@@ -294,9 +292,8 @@ public class WorkflowGraphTest {
             nodeNamesToNodes.get(NODE3), 0, EndpointCharacter.SAME_LOOP));
         edgesSet.add(createEdge(nodeNamesToNodes.get(NODE3), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, EndpointCharacter.SAME_LOOP));
-        generateAndPutEdgeKeys(edges, edgesSet);
-        return new WorkflowGraph(nodes, edges);
 
+        return new WorkflowGraph(nodes, edgesSet);
     }
 
     /**
@@ -307,7 +304,7 @@ public class WorkflowGraphTest {
     private WorkflowGraph createCircleWorkflowGraph() {
 
         nodeNamesToNodes = new HashMap<>();
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         for (int i = 0; i < 1; i++) {
             WorkflowGraphNode node = createNewNode(1, 1, true);
             nodeNamesToNodes.put(SINK_NODE + i, node);
@@ -319,32 +316,22 @@ public class WorkflowGraphTest {
             nodes.put(node.getExecutionIdentifier(), node);
         }
 
-        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
+        Set<WorkflowGraphEdge> edges = new HashSet<WorkflowGraphEdge>();
         WorkflowGraphEdge e1 =
             createEdge(nodeNamesToNodes.get(SINK_NODE0), 0, EndpointCharacter.SAME_LOOP,
                 nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e1);
         WorkflowGraphEdge e2 = createEdge(nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE1), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e2);
         WorkflowGraphEdge e3 = createEdge(nodeNamesToNodes.get(NODE1), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE2), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e3);
         WorkflowGraphEdge e4 = createEdge(nodeNamesToNodes.get(NODE2), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(SINK_NODE0), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e4);
 
-        String key1 = WorkflowGraph.createEdgeKey(e1);
-        String key2 = WorkflowGraph.createEdgeKey(e2);
-        String key3 = WorkflowGraph.createEdgeKey(e3);
-        String key4 = WorkflowGraph.createEdgeKey(e4);
-
-        edges.put(key1, new HashSet<WorkflowGraphEdge>());
-        edges.get(key1).add(e1);
-        edges.put(key2, new HashSet<WorkflowGraphEdge>());
-        edges.get(key2).add(e2);
-        edges.put(key3, new HashSet<WorkflowGraphEdge>());
-        edges.get(key3).add(e3);
-        edges.put(key4, new HashSet<WorkflowGraphEdge>());
-        edges.get(key4).add(e4);
         return new WorkflowGraph(nodes, edges);
-
     }
 
     /**
@@ -355,7 +342,7 @@ public class WorkflowGraphTest {
     private WorkflowGraph createCircleWorkflowGraphWithInnerLoopBack() {
 
         nodeNamesToNodes = new HashMap<>();
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         for (int i = 0; i < 1; i++) {
             WorkflowGraphNode node = createNewNode(1, 1, true);
             nodeNamesToNodes.put(SINK_NODE + i, node);
@@ -370,33 +357,25 @@ public class WorkflowGraphTest {
         WorkflowGraphNode lastNode = createNewNode(1, 2, false);
         nodeNamesToNodes.put(NODE + 2, lastNode);
         nodes.put(lastNode.getExecutionIdentifier(), lastNode);
-        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
+        Set<WorkflowGraphEdge> edges = new HashSet<WorkflowGraphEdge>();
         WorkflowGraphEdge e1 =
             createEdge(nodeNamesToNodes.get(SINK_NODE0), 0, EndpointCharacter.SAME_LOOP,
                 nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e1);
         WorkflowGraphEdge e2 = createEdge(nodeNamesToNodes.get(NODE0), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE1), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e2);
         WorkflowGraphEdge e3 = createEdge(nodeNamesToNodes.get(NODE1), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE2), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e3);
         WorkflowGraphEdge e4 = createEdge(nodeNamesToNodes.get(NODE2), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(SINK_NODE0), 0, EndpointCharacter.SAME_LOOP);
+        edges.add(e4);
         WorkflowGraphEdge e5 = createEdge(nodeNamesToNodes.get(NODE2), 0, EndpointCharacter.SAME_LOOP,
             nodeNamesToNodes.get(NODE0), 1, EndpointCharacter.SAME_LOOP);
-        String key1 = WorkflowGraph.createEdgeKey(e1);
-        String key2 = WorkflowGraph.createEdgeKey(e2);
-        String key3 = WorkflowGraph.createEdgeKey(e3);
-        String key4 = WorkflowGraph.createEdgeKey(e4);
-        edges.put(key1, new HashSet<WorkflowGraphEdge>());
-        edges.get(key1).add(e1);
-        edges.put(key2, new HashSet<WorkflowGraphEdge>());
-        edges.get(key2).add(e2);
-        edges.put(key3, new HashSet<WorkflowGraphEdge>());
-        edges.get(key3).add(e3);
-        edges.put(key4, new HashSet<WorkflowGraphEdge>());
-        edges.get(key4).add(e4);
-        edges.get(key4).add(e5);
-        return new WorkflowGraph(nodes, edges);
+        edges.add(e5);
 
+        return new WorkflowGraph(nodes, edges);
     }
 
     /**
@@ -408,7 +387,7 @@ public class WorkflowGraphTest {
     @Test
     public void testWorkflowGraphResetInLoopWithSubLoops() throws ComponentExecutionException {
 
-        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes = new HashMap<>();
         WorkflowGraphNode outerDriverNode = createNewNode(1, 1, true, "outer-driver");
         nodes.put(outerDriverNode.getExecutionIdentifier(), outerDriverNode);
         WorkflowGraphNode nestedDriverNode = createNewNode(1, 1, true, "nested-driver");
@@ -433,9 +412,7 @@ public class WorkflowGraphTest {
         edgesSet.add(createEdge(nestedDriverNode, 0, EndpointCharacter.OUTER_LOOP,
             outerDriverNode, 0, EndpointCharacter.SAME_LOOP));
 
-        generateAndPutEdgeKeys(edges, edgesSet);
-
-        WorkflowGraph graph = new WorkflowGraph(nodes, edges);
+        WorkflowGraph graph = new WorkflowGraph(nodes, edgesSet);
         Set<Deque<WorkflowGraphHop>> hops = graph.getHopsToTraverseWhenResetting(nestedDriverNode.getExecutionIdentifier());
         assertEquals(2, hops.size());
 
@@ -452,46 +429,52 @@ public class WorkflowGraphTest {
         } else if (actualHops1.size() != 3 || actualHops2.size() != 2) {
             fail();
         }
-
+        
         assertEquals(3, actualHops1.size());
-        Deque<String> expectedHops1 = new LinkedList<>();
-        expectedHops1.add(StringUtils.escapeAndConcat(OUTPUT0, nestedDriverNode.getExecutionIdentifier(),
-            INPUT0, evalMemNode.getExecutionIdentifier()));
-        expectedHops1.add(StringUtils.escapeAndConcat(OUTPUT1, evalMemNode.getExecutionIdentifier(),
-            INPUT0, node.getExecutionIdentifier()));
-        expectedHops1.add(StringUtils.escapeAndConcat(DUMMY, node.getExecutionIdentifier(),
-            DUMMY, DUMMY));
+        Deque<WorkflowGraphHop> expectedHops1 = new LinkedList<>();
+        
+        expectedHops1.add(new WorkflowGraphHop(nestedDriverNode.getExecutionIdentifier(), OUTPUT0,
+            evalMemNode.getExecutionIdentifier(), INPUT0));
+        expectedHops1.add(new WorkflowGraphHop(evalMemNode.getExecutionIdentifier(), OUTPUT1,
+            node.getExecutionIdentifier(), INPUT0));
+        expectedHops1.add(new WorkflowGraphHop(node.getExecutionIdentifier(), DUMMY,
+            new ComponentExecutionIdentifier(DUMMY), DUMMY));
+        
         assertWorkflowGraphHops(expectedHops1, actualHops1);
 
         assertEquals(2, actualHops2.size());
-        Deque<String> expectedHops2 = new LinkedList<>();
-        expectedHops2.add(StringUtils.escapeAndConcat(OUTPUT0, nestedDriverNode.getExecutionIdentifier(),
-            INPUT0, evalMemNode.getExecutionIdentifier()));
-        expectedHops2.add(StringUtils.escapeAndConcat(OUTPUT0, evalMemNode.getExecutionIdentifier(),
-            INPUT0, nestedDriverNode.getExecutionIdentifier()));
+        Deque<WorkflowGraphHop> expectedHops2 = new LinkedList<>();
+        expectedHops2.add(new WorkflowGraphHop(nestedDriverNode.getExecutionIdentifier(), OUTPUT0,
+            evalMemNode.getExecutionIdentifier(), INPUT0));
+        expectedHops2.add(new WorkflowGraphHop(evalMemNode.getExecutionIdentifier(), OUTPUT0,
+            nestedDriverNode.getExecutionIdentifier(), INPUT0));
+        
         assertWorkflowGraphHops(expectedHops2, actualHops2);
     }
 
     /**
      * Checks if two queues represent the same WorkflowGraphHops.
      */
-    private void assertWorkflowGraphHops(Deque<String> expectedHops, Deque<WorkflowGraphHop> actualHops) {
+    // TODO override equals instead?
+    private void assertWorkflowGraphHops(Deque<WorkflowGraphHop> expectedHops, Deque<WorkflowGraphHop> actualHops) {
         assertEquals(expectedHops.size(), actualHops.size());
         Iterator<WorkflowGraphHop> hopsIterator = actualHops.iterator();
         while (hopsIterator.hasNext()) {
             WorkflowGraphHop hop = hopsIterator.next();
-            String[] hopParts = StringUtils.splitAndUnescape(expectedHops.poll());
-            assertEquals(hopParts[1], hop.getHopExecutionIdentifier());
+            WorkflowGraphHop expectedHop = expectedHops.poll();
+            assertEquals(expectedHop.getHopExecutionIdentifier(), hop.getHopExecutionIdentifier());
 
             // if the hop sequence is not circular, the last hop will point to a dummy node
-            if (hopParts[0].equals(DUMMY) && hopParts[2].equals(DUMMY) && hopParts[3].equals(DUMMY)) {
+            if (expectedHop.getHopOuputName().equals(DUMMY) && expectedHop.getTargetInputName().equals(DUMMY)
+                && expectedHop.getTargetExecutionIdentifier().toString().equals(DUMMY)) {
+                
                 assertTrue(hop.getHopOuputName().startsWith(DUMMY));
                 assertTrue(hop.getTargetInputName().startsWith(DUMMY));
-                assertTrue(hop.getTargetExecutionIdentifier().startsWith(DUMMY));
+                assertTrue(hop.getTargetExecutionIdentifier().toString().startsWith(DUMMY));
             } else {
-                assertEquals(hopParts[0], hop.getHopOuputName());
-                assertEquals(hopParts[2], hop.getTargetInputName());
-                assertEquals(hopParts[3], hop.getTargetExecutionIdentifier());
+                assertEquals(expectedHop.getHopOuputName(), hop.getHopOuputName());
+                assertEquals(expectedHop.getTargetInputName(), hop.getTargetInputName());
+                assertEquals(expectedHop.getTargetExecutionIdentifier(), hop.getTargetExecutionIdentifier());
             }
 
         }
@@ -543,16 +526,7 @@ public class WorkflowGraphTest {
             endpointnames.put(output, OUTPUT_PREFIX + i);
             i++;
         }
-        return new WorkflowGraphNode(UUID.randomUUID().toString(), inputs, outputs, endpointnames, isDriver, false, name);
-    }
-
-    private void generateAndPutEdgeKeys(Map<String, Set<WorkflowGraphEdge>> edges, Set<WorkflowGraphEdge> edgesSet) {
-        for (WorkflowGraphEdge egdge : edgesSet) {
-            String key = WorkflowGraph.createEdgeKey(egdge);
-            if (!edges.containsKey(key)) {
-                edges.put(key, new HashSet<WorkflowGraphEdge>());
-            }
-            edges.get(key).add(egdge);
-        }
+        return new WorkflowGraphNode(UUID.randomUUID().toString(), new ComponentExecutionIdentifier(UUID.randomUUID().toString()), inputs,
+            outputs, endpointnames, isDriver, false, name);
     }
 }

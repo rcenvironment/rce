@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.logging.default.feature"
       label="RCE File Sets - Default Logging Configuration"
-      version="8.2.3.qualifier"
+      version="9.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

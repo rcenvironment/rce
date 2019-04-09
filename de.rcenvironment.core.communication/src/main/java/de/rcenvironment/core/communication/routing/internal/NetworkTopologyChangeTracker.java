@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,6 +16,9 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
+import de.rcenvironment.core.communication.routing.InstanceRestartAndPresenceService;
+import de.rcenvironment.core.communication.routing.InstanceSessionNetworkStatus;
+import de.rcenvironment.core.communication.routing.InstanceSessionNetworkStatus.State;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
@@ -28,7 +31,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * 
  * @author Robert Mischke
  */
-class NetworkTopologyChangeTracker {
+class NetworkTopologyChangeTracker implements InstanceRestartAndPresenceService {
 
     private Set<InstanceNodeSessionId> lastReachableNodes; // invariant: must always contain an *immutable* set
 
@@ -43,14 +46,14 @@ class NetworkTopologyChangeTracker {
     }
 
     public synchronized boolean updateReachableNetwork(final NetworkGraphImpl reachableNetworkGraph) {
-        Set<InstanceNodeSessionId> addedNodes;
-        Set<InstanceNodeSessionId> removedNodes;
+        final Set<InstanceNodeSessionId> addedNodes;
+        final Set<InstanceNodeSessionId> removedNodes;
+        final Set<? extends InstanceNodeSessionId> reachableNodeIds = reachableNetworkGraph.getNodeIds();
 
-        Set<? extends InstanceNodeSessionId> reachableNodeIds = reachableNetworkGraph.getNodeIds();
         // create difference sets
-        addedNodes = new HashSet<InstanceNodeSessionId>(reachableNodeIds);
+        addedNodes = new HashSet<>(reachableNodeIds);
         addedNodes.removeAll(lastReachableNodes);
-        removedNodes = new HashSet<InstanceNodeSessionId>(lastReachableNodes);
+        removedNodes = new HashSet<>(lastReachableNodes);
         removedNodes.removeAll(reachableNodeIds);
 
         callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
@@ -89,6 +92,37 @@ class NetworkTopologyChangeTracker {
 
     public synchronized Set<InstanceNodeSessionId> getCurrentReachableNodes() {
         return lastReachableNodes; // immutable set; see invariant
+    }
+
+    @Override
+    public InstanceSessionNetworkStatus queryInstanceSessionNetworkStatus(InstanceNodeSessionId lookupId) {
+        InstanceNodeSessionId firstMatch = null;
+        for (InstanceNodeSessionId iterated : lastReachableNodes) {
+            if (iterated.isSameInstanceNodeAs(lookupId)) { // note: same INSTANCE, not SESSION id
+                if (firstMatch == null) {
+                    firstMatch = iterated;
+                } else {
+                    // there is more than one INSI with the same instance node id present in the current network (usually bad)
+                    InstanceNodeSessionId otherMatch;
+                    // determine which match is not the queried id
+                    if (firstMatch.isSameInstanceNodeSessionAs(lookupId)) {
+                        otherMatch = iterated;
+                    } else {
+                        otherMatch = firstMatch;
+                    }
+                    return new InstanceSessionNetworkStatus(lookupId, State.ID_COLLISION, otherMatch);
+                }
+            }
+        }
+        if (firstMatch != null) {
+            // a single match was found
+            if (firstMatch.isSameInstanceNodeSessionAs(lookupId)) {
+                return new InstanceSessionNetworkStatus(lookupId, State.PRESENT, null); // the session is simply present in the network
+            } else {
+                return new InstanceSessionNetworkStatus(lookupId, State.PRESENT_WITH_DIFFERENT_SESSION, firstMatch); // typically restarted
+            }
+        }
+        return new InstanceSessionNetworkStatus(lookupId, State.NOT_PRESENT, null); // not present; typically disconnected
     }
 
     /**

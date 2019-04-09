@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,12 +16,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants.HandleExistingFile;
+import de.rcenvironment.components.outputwriter.common.OutputWriterValidatorHelper;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -31,12 +31,11 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * A class for collecting simple input Data for an outputWriter and writing them into a formatted file.
  *
  * @author Brigitte Boden
+ * @author Dominik Schneider
  */
 public class OutputLocationWriter {
 
     private static final String ITERATION = " - iteration ";
-
-    private static final String BACKSLASHES = "\\";
 
     private static final String DOT = ".";
 
@@ -50,7 +49,7 @@ public class OutputLocationWriter {
 
     private FileOutputStream outputStream;
 
-    private List<String> inputNames;
+    // private List<String> inputNames; May be useful for future
 
     private final String header;
 
@@ -69,7 +68,7 @@ public class OutputLocationWriter {
         this.formatString = formatString;
         this.handleExistingFile = handle;
         this.iterations = 0;
-        this.inputNames = inputNames;
+        // this.inputNames = inputNames;
         this.componentLog = componentLog;
     }
 
@@ -102,7 +101,9 @@ public class OutputLocationWriter {
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, 0) + LINE_SEP, true);
+                    final String cleanedHeaderString = removeNewlines(header);
+                    FileUtils.writeStringToFile(outputFile,
+                        OutputWriterValidatorHelper.formatHeader(cleanedHeaderString, timeStamp, 0) + LINE_SEP, true);
                 }
 
             } catch (IOException e) {
@@ -114,7 +115,9 @@ public class OutputLocationWriter {
     }
 
     protected void writeOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount) throws ComponentException {
-        String outputString = formatOutput(inputMap, timestamp, executionCount);
+        final String cleanedFormatString = removeNewlines(formatString);
+        final String cleanedHeaderString = removeNewlines(header);
+        String outputString = OutputWriterValidatorHelper.replacePlaceholders(cleanedFormatString, inputMap, timestamp, executionCount);
         iterations++;
         try {
             if (handleExistingFile == HandleExistingFile.APPEND) {
@@ -122,24 +125,28 @@ public class OutputLocationWriter {
                 FileUtils.writeStringToFile(outputFile, outputString, true);
 
             } else if (handleExistingFile == HandleExistingFile.OVERRIDE) {
-                if (!header.isEmpty()) {
+                if (!cleanedHeaderString.isEmpty()) {
                     // For option OVERRIDE, write to the existing file without appending.
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, executionCount) + LINE_SEP + outputString, false);
+                    FileUtils.writeStringToFile(outputFile,
+                        OutputWriterValidatorHelper.formatHeader(cleanedHeaderString, timeStamp, executionCount) + LINE_SEP + outputString,
+                        false);
                 } else {
                     FileUtils.writeStringToFile(outputFile, outputString, false);
                 }
 
             } else if (handleExistingFile == HandleExistingFile.AUTORENAME) {
-                if (!header.isEmpty()) {
+                if (!cleanedHeaderString.isEmpty()) {
                     // For option AUTORENAME, create a file with new name and write to it.
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
                     outputFile = getNamePerIteration(outputFile);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, executionCount) + LINE_SEP + outputString, false);
+                    FileUtils.writeStringToFile(outputFile,
+                        OutputWriterValidatorHelper.formatHeader(cleanedHeaderString, timeStamp, executionCount) + LINE_SEP + outputString,
+                        false);
                 } else {
                     outputFile = getNamePerIteration(outputFile);
                     FileUtils.writeStringToFile(outputFile, outputString, false);
@@ -150,52 +157,6 @@ public class OutputLocationWriter {
         }
 
         componentLog.componentInfo(StringUtils.format("Wrote '%s' to: %s", inputMap, outputFile.getAbsolutePath()));
-    }
-
-    protected String formatOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount) {
-        String outputString = formatString;
-
-        outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_TIMESTAMP), timestamp);
-        outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_LINEBREAK), LINE_SEP);
-        outputString =
-            outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT), Integer.toString(executionCount));
-
-        for (Map.Entry<String, TypedDatum> entry : inputMap.entrySet()) {
-            outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_PREFIX) + entry.getKey()
-                + escapePlaceholder(OutputWriterComponentConstants.PH_SUFFIX),
-                entry.getValue().toString());
-            outputString =
-                outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_PREFIX)
-                    + OutputWriterComponentConstants.INPUTNAME + OutputWriterComponentConstants.PH_DELIM + entry.getKey()
-                    + escapePlaceholder(OutputWriterComponentConstants.PH_SUFFIX),
-                    entry.getKey());
-        }
-
-        return outputString;
-    }
-
-    protected String formatHeader(String timestamp, int executionCount) {
-        String outputString = this.header;
-
-        outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_TIMESTAMP), timestamp);
-        outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_LINEBREAK), LINE_SEP);
-        outputString =
-            outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT), Integer.toString(executionCount));
-
-        for (String inputName : inputNames) {
-            outputString =
-                outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_PREFIX)
-                    + OutputWriterComponentConstants.INPUTNAME + OutputWriterComponentConstants.PH_DELIM + inputName
-                    + escapePlaceholder(OutputWriterComponentConstants.PH_SUFFIX),
-                    inputName);
-        }
-
-        return outputString;
-    }
-
-    private String escapePlaceholder(String placeholder) {
-        placeholder = placeholder.replace(OutputWriterComponentConstants.PH_PREFIX, BACKSLASHES + OutputWriterComponentConstants.PH_PREFIX);
-        return placeholder.replace(OutputWriterComponentConstants.PH_SUFFIX, BACKSLASHES + OutputWriterComponentConstants.PH_SUFFIX);
     }
 
     protected File getNamePerIteration(File fileToWrite) {
@@ -244,4 +205,9 @@ public class OutputLocationWriter {
             + "renamed to: %s", fileToWrite.getAbsolutePath(), possibleFile.getAbsolutePath()));
         return possibleFile;
     }
+
+    private String removeNewlines(String input) {
+        return input.replaceAll("\\n", "").replaceAll("\\r", "");
+    }
+
 }

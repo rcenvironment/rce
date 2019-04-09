@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,10 +10,10 @@ package de.rcenvironment.components.doe.common;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
@@ -102,7 +102,7 @@ public class DOEComponentHistoryDataItem extends CommonComponentHistoryDataItem 
             throw new IOException(e);
         }
         if (((ObjectNode) rootNode).has(referenceName)) {
-            return ((ObjectNode) rootNode).get(referenceName).getTextValue();
+            return ((ObjectNode) rootNode).get(referenceName).textValue();
         }
         return null;
     }

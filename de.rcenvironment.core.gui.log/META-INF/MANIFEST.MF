@@ -2,12 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Log
 Bundle-SymbolicName: de.rcenvironment.core.gui.log;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR & Fraunhofer SCAI
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.communication.management,

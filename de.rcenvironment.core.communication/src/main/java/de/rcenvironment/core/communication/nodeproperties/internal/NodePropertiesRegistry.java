@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,12 +14,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.common.CommonIdBase;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Registry for received node property information.
@@ -30,13 +33,13 @@ import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
  */
 public class NodePropertiesRegistry {
 
-    private final Map<CompositeNodePropertyKey, NodePropertyImpl> knowledgeMap;
+    // Note that both of these maps are technically causing memory leaks at this time, as any instance id that has been observed once is
+    // never fully removed. Unfortunately, this cannot be avoided for now without checking consistency on network splits and re-joins first.
+    private final Map<CompositeNodePropertyKey, NodePropertyImpl> knowledgeMap = new HashMap<>();
+
+    private final Map<String, String> mostRecentSessionIds = new HashMap<>();
 
     private final Log log = LogFactory.getLog(getClass());
-
-    public NodePropertiesRegistry() {
-        this.knowledgeMap = new HashMap<CompositeNodePropertyKey, NodePropertyImpl>();
-    }
 
     /**
      * Returns the full property map for a single node. Modifications to the map do not cause any side effects.
@@ -46,7 +49,7 @@ public class NodePropertiesRegistry {
      */
     public Map<String, String> getNodeProperties(InstanceNodeSessionId nodeId) {
         String nodeIdString = nodeId.getInstanceNodeSessionIdString();
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         for (NodePropertyImpl entry : knowledgeMap.values()) {
             CompositeNodePropertyKey key = entry.getCompositeKey();
             if (key.getInstanceNodeSessionIdString().equals(nodeIdString)) {
@@ -90,13 +93,13 @@ public class NodePropertiesRegistry {
      * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
     public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties() {
-        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<InstanceNodeSessionId, Map<String, String>>();
+        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<>();
         for (NodePropertyImpl entry : knowledgeMap.values()) {
             CompositeNodePropertyKey key = entry.getCompositeKey();
             InstanceNodeSessionId nodeId = entry.getInstanceNodeSessionId();
             Map<String, String> nodeMap = result.get(nodeId);
             if (!result.containsKey(nodeId)) {
-                nodeMap = new HashMap<String, String>();
+                nodeMap = new HashMap<>();
                 result.put(nodeId, nodeMap);
             }
             nodeMap.put(key.getDataKey(), entry.getValue());
@@ -111,7 +114,7 @@ public class NodePropertiesRegistry {
      * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
     public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties(Collection<InstanceNodeSessionId> nodeIds) {
-        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<InstanceNodeSessionId, Map<String, String>>();
+        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<>();
         for (InstanceNodeSessionId nodeId : nodeIds) {
             result.put(nodeId, getNodeProperties(nodeId));
         }
@@ -125,9 +128,14 @@ public class NodePropertiesRegistry {
      * @param update the entries to merge
      */
     public void mergeUnchecked(Collection<NodePropertyImpl> update) {
+        Map<String, String> updatedSessionsByInstanceNodeIds = new HashMap<>();
         for (NodePropertyImpl entry : update) {
-            knowledgeMap.put(entry.getCompositeKey(), entry);
+            final boolean performActualMerge = processSessionTimestampOfIncomingEntry(entry, updatedSessionsByInstanceNodeIds);
+            if (performActualMerge) {
+                knowledgeMap.put(entry.getCompositeKey(), entry);
+            }
         }
+        purgeOutdatedEntries(updatedSessionsByInstanceNodeIds);
     }
 
     /**
@@ -138,15 +146,20 @@ public class NodePropertiesRegistry {
      * @return the subset of the given entries that caused a change to the registry state
      */
     public Collection<NodePropertyImpl> mergeAndGetEffectiveSubset(Collection<NodePropertyImpl> update) {
-        List<NodePropertyImpl> effectiveSubset = new ArrayList<NodePropertyImpl>();
+        final Map<String, String> updatedSessionsByInstanceNodeIds = new HashMap<>();
+        final List<NodePropertyImpl> effectiveSubset = new ArrayList<>();
         for (NodePropertyImpl entry : update) {
-            CompositeNodePropertyKey ckey = entry.getCompositeKey();
-            NodePropertyImpl existing = knowledgeMap.get(ckey);
-            if (existing == null || existing.getSequenceNo() < entry.getSequenceNo()) {
-                knowledgeMap.put(ckey, entry);
-                effectiveSubset.add(entry);
+            final boolean performActualMerge = processSessionTimestampOfIncomingEntry(entry, updatedSessionsByInstanceNodeIds);
+            if (performActualMerge) {
+                CompositeNodePropertyKey ckey = entry.getCompositeKey();
+                NodePropertyImpl existing = knowledgeMap.get(ckey);
+                if (existing == null || existing.getSequenceNo() < entry.getSequenceNo()) {
+                    knowledgeMap.put(ckey, entry);
+                    effectiveSubset.add(entry);
+                }
             }
         }
+        purgeOutdatedEntries(updatedSessionsByInstanceNodeIds);
         return effectiveSubset;
     }
 
@@ -163,9 +176,10 @@ public class NodePropertiesRegistry {
      * @param input the entries representing the known state of the sender
      * @return the set of entries that newer than or not present in the given input
      */
+    // TODO check whether this should filter to exclude the calling node, and/or exclude session data outdated by the input
     public Collection<NodePropertyImpl> getComplementingKnowledge(Collection<NodePropertyImpl> input) {
         // create set to avoid O(n*m) search over input keys
-        Map<CompositeNodePropertyKey, NodePropertyImpl> inputMap = new HashMap<CompositeNodePropertyKey, NodePropertyImpl>();
+        Map<CompositeNodePropertyKey, NodePropertyImpl> inputMap = new HashMap<>();
 
         for (NodePropertyImpl entry : input) {
             CompositeNodePropertyKey ckey = entry.getCompositeKey();
@@ -182,7 +196,7 @@ public class NodePropertiesRegistry {
         }
 
         // construct response
-        Collection<NodePropertyImpl> response = new ArrayList<NodePropertyImpl>();
+        Collection<NodePropertyImpl> response = new ArrayList<>();
         for (NodePropertyImpl ownEntry : knowledgeMap.values()) {
             CompositeNodePropertyKey ckey = ownEntry.getCompositeKey();
 
@@ -197,6 +211,79 @@ public class NodePropertiesRegistry {
 
     public int getEntryCount() {
         return knowledgeMap.size();
+    }
+
+    /**
+     * @param entry the received {@link NodeProperty}
+     * @param updatedSessionsByInstanceNodeIds a map for collecting changed session ids of observed/known nodes
+     * @return true if the received node property is part of the current or a more recent session, and should be applied
+     */
+    private boolean processSessionTimestampOfIncomingEntry(NodePropertyImpl entry, Map<String, String> updatedSessionsByInstanceNodeIds) {
+        final boolean performActualMerge;
+        // extract node id and session id (which is its starting timestamp)
+        InstanceNodeSessionId instanceNodeSessionId = entry.getInstanceNodeSessionId();
+        final String instanceNodeIdString = instanceNodeSessionId.getInstanceNodeIdString();
+        final String incomingSessionId = instanceNodeSessionId.getSessionIdPart();
+        // fetch the most recent known session for that node
+        final String previousSessionId = mostRecentSessionIds.get(instanceNodeIdString);
+        final int incomingSessionComparedToPrevious;
+        if (previousSessionId != null) {
+            // actually compare them
+            incomingSessionComparedToPrevious = compareSessionIdTimes(incomingSessionId, previousSessionId);
+        } else {
+            // if there is no previous session, set the comparison result to "newer"
+            incomingSessionComparedToPrevious = 1;
+        }
+        if (incomingSessionComparedToPrevious < 0) {
+            // old session data received -> ignore
+            log.debug("Received a node property for the outdated node session " + instanceNodeSessionId + "; ignoring the update");
+            performActualMerge = false;
+        } else {
+            if (incomingSessionComparedToPrevious > 0) {
+                // newer session observed -> register it for purging the old session
+                mostRecentSessionIds.put(instanceNodeIdString, incomingSessionId);
+                updatedSessionsByInstanceNodeIds.put(instanceNodeIdString, incomingSessionId);
+            }
+            performActualMerge = true;
+        }
+        return performActualMerge;
+    }
+
+    private void purgeOutdatedEntries(Map<String, String> sessionPartsOfAffectedInstanceNodeIds) {
+        final List<CompositeNodePropertyKey> propertyKeysToDelete = new ArrayList<>();
+        for (Entry<CompositeNodePropertyKey, NodePropertyImpl> propertyEntry : knowledgeMap.entrySet()) {
+            final CompositeNodePropertyKey propertyKey = propertyEntry.getKey();
+            // note: it would be slightly more efficient if the key parts could be accessed without string operations,
+            // but the benefit is too small compared to the risk of the required changes so close to release
+            String propertyKeyInstanceNodeSessionId = propertyKey.getInstanceNodeSessionIdString();
+            String propertyKeyInstanceNodeIdPart =
+                propertyKeyInstanceNodeSessionId.substring(0, CommonIdBase.INSTANCE_PART_LENGTH);
+            // null for unaffected nodes
+            String incomingSessionPart = sessionPartsOfAffectedInstanceNodeIds.get(propertyKeyInstanceNodeIdPart);
+            if (incomingSessionPart != null) {
+                String propertyKeySessionPart =
+                    propertyKeyInstanceNodeSessionId
+                        .substring(propertyKeyInstanceNodeSessionId.length() - CommonIdBase.SESSION_PART_LENGTH);
+                if (isSessionIdMoreRecentThan(incomingSessionPart, propertyKeySessionPart)) {
+                    // TODO 9.0.0 (p1): consider disabling this log message for release
+                    log.debug(StringUtils.format("Removing cached node property %s as the most recent session id is now %s",
+                        propertyKey, incomingSessionPart));
+                    propertyKeysToDelete.add(propertyKey);
+                }
+            }
+        }
+        for (CompositeNodePropertyKey key : propertyKeysToDelete) {
+            knowledgeMap.remove(key);
+        }
+    }
+
+    private boolean isSessionIdMoreRecentThan(String session1, String session2) {
+        // alphabetic comparison of hex strings to avoid parsing
+        return compareSessionIdTimes(session1, session2) > 0;
+    }
+
+    private int compareSessionIdTimes(String session1, String session2) {
+        return session1.compareTo(session2);
     }
 
 }

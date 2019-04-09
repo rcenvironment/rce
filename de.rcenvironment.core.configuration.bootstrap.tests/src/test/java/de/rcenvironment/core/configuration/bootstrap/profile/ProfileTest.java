@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.bootstrap.profile;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,10 +29,11 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Tests for {@link Profile}.
  *
  * @author Tobias Brieden
+ * @author Alexander Weinert
  */
 public class ProfileTest {
 
-    private static final int ARBITRARY_VERSION_NUMBER = 23;
+    private static final int CURRENT_VERSION_NUMBER = 2;
 
     private static final String ARBITRARY_PROFILE_NAME = "profileDir";
 
@@ -54,18 +57,25 @@ public class ProfileTest {
     }
 
     /**
-     * Tests if the constructor sets the version number.
+     * Tests whether the constructor sets the version number supplied upon object creation when given a non-existing directory backing the
+     * profile on the file system.
      * 
-     * @throws IOException unexpected
-     * @throws ProfileException unexpected
+     * @throws IOException Thrown if setting up the test environment fails. Not expected to be thrown.
+     * @throws ProfileException Thrown if creating the instance of Profile fails. Not expected to be thrown.
      */
     @Test
     public void testConstructorSetsVersionNumber() throws IOException, ProfileException {
         File tempDir = tempFileService.createManagedTempDir();
-        File profileDir = tempDir.toPath().resolve(ARBITRARY_PROFILE_NAME).toFile();
+        final ProfileRepresentation profileRepresentation =
+            ProfileRepresentation.create(tempDir, ARBITRARY_PROFILE_NAME);
 
-        Profile profile = new Profile(profileDir, ARBITRARY_VERSION_NUMBER, true);
-        assertEquals(ARBITRARY_VERSION_NUMBER, profile.getVersion());
+        Profile profile = new Profile.Builder(profileRepresentation.getProfileDir()).create(true).migrate(true).buildUserProfile();
+        assertEquals(CURRENT_VERSION_NUMBER, profile.getVersion());
+        assertTrue(profile instanceof Profile);
+
+        final byte[] expectedVersionOnFileSystem = String.valueOf(CURRENT_VERSION_NUMBER).getBytes();
+        byte[] actualVersionOnFileSystem = Files.readAllBytes(profileRepresentation.getVersionFile().toPath());
+        assertArrayEquals(expectedVersionOnFileSystem, actualVersionOnFileSystem);
     }
 
     /**
@@ -81,9 +91,8 @@ public class ProfileTest {
         File profileDir = tempDir.toPath().resolve(ARBITRARY_PROFILE_NAME).toFile();
 
         expectedException.expect(ProfileException.class);
-        expectedException.expectMessage("does not contain an existing profile");
         // do not create the profile if the folder does not already contain a valid one
-        new Profile(profileDir, false);
+        new Profile.Builder(profileDir).create(false).migrate(true).buildUserProfile();
     }
 
     /**
@@ -101,13 +110,12 @@ public class ProfileTest {
         assertTrue(profileDir.toPath().resolve("file").toFile().createNewFile());
 
         expectedException.expect(ProfileException.class);
-        expectedException.expectMessage("is neither an existing profile directory nor is it empty");
-        new Profile(profileDir);
+        new Profile.Builder(profileDir).create(true).migrate(true).buildUserProfile();
     }
 
     /**
      * Older versions of RCE (< 7.0) created profiles without a profile.version file. If such a profile is started now, the profile.version
-     * file should be created.
+     * file should be created if the user requests migration.
      * 
      * @throws IOException unexpected
      * @throws ProfileException unexpected
@@ -117,9 +125,9 @@ public class ProfileTest {
         File tempDir = tempFileService.createManagedTempDir();
         File profileDir = tempDir.toPath().resolve(ARBITRARY_PROFILE_NAME).toFile();
         assertTrue(profileDir.mkdirs());
-        assertTrue(profileDir.toPath().resolve("file").toFile().createNewFile());
+        assertTrue(profileDir.toPath().resolve("internal").toFile().mkdir());
 
-        Profile profile = new Profile(profileDir, true, true);
+        final Profile profile = new Profile.Builder(profileDir).create(true).migrate(true).buildUserProfile();
         assertTrue(profile.getInternalDirectory().toPath().resolve("profile.version").toFile().exists());
     }
 
@@ -134,7 +142,7 @@ public class ProfileTest {
         File tempDir = tempFileService.createManagedTempDir();
         File profileDir = tempDir.toPath().resolve(ARBITRARY_PROFILE_NAME).toFile();
 
-        Profile profile = new Profile(profileDir, ARBITRARY_VERSION_NUMBER, true);
+        Profile profile = new Profile.Builder(profileDir).create(true).migrate(false).buildUserProfile();
         assertTrue(profile.attemptToLockProfileDirectory());
 
         expectedException.expect(ProfileException.class);
@@ -154,7 +162,8 @@ public class ProfileTest {
         // setup
         String originalUserHome = TestUtils.setSystemPropertyToTempFolder(ProfileUtils.SYSTEM_PROPERTY_USER_HOME, tempFileService);
         File profileParentDirectory = ProfileUtils.getProfilesParentDirectory();
-        Profile profile = new Profile(new File(profileParentDirectory, "someProfile"));
+        final Profile profile =
+            new Profile.Builder(new File(profileParentDirectory, "someProfile")).create(true).migrate(true).buildUserProfile();
 
         // assertion
         assertEquals("someProfile", profile.getLocationDependentName());
@@ -175,7 +184,7 @@ public class ProfileTest {
         // setup
         String originalUserHome = TestUtils.setSystemPropertyToTempFolder(ProfileUtils.SYSTEM_PROPERTY_USER_HOME, tempFileService);
         File randomDir = tempFileService.createManagedTempDir("someTempFolder");
-        Profile profile = new Profile(new File(randomDir, "anotherProfile"));
+        Profile profile = new Profile.Builder(new File(randomDir, "anotherProfile")).create(true).migrate(true).buildUserProfile();
 
         // assertion
         assertEquals(profile.getProfileDirectory().getAbsolutePath(), profile.getLocationDependentName());

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Toolkit - Common Modules
 Bundle-SymbolicName: de.rcenvironment.toolkit.modules.common;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  de.rcenvironment.toolkit.core.api,
  de.rcenvironment.toolkit.core.setup,
@@ -23,3 +23,4 @@ Export-Package: de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.modules.statistics.utils,
  de.rcenvironment.toolkit.utils.common,
  de.rcenvironment.toolkit.utils.text
+Bundle-Vendor: DLR

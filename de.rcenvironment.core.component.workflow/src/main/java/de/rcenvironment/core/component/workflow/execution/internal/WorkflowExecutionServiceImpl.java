@@ -1,38 +1,41 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
+import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
+import de.rcenvironment.core.authorization.api.AuthorizationAccessGroupKeyData;
+import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
+import de.rcenvironment.core.authorization.api.AuthorizationService;
+import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
@@ -40,27 +43,31 @@ import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.authorization.api.ComponentExecutionAuthorizationService;
+import de.rcenvironment.core.component.authorization.api.RemotableComponentExecutionAuthorizationService;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.RemotableComponentExecutionControllerService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
+import de.rcenvironment.core.component.workflow.execution.api.PersistentWorkflowDescriptionLoaderService;
 import de.rcenvironment.core.component.workflow.execution.api.RemotableWorkflowExecutionControllerService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowDescriptionValidationResult;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionHandle;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
-import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
-import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
-import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateUtils;
+import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
@@ -73,10 +80,10 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Doreen Seider
  * @author Robert Mischke
  */
+@Component
 public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
-    private static final String FAILED_TO_LOAD_WORKFLOW_FILE = "Failed to load workflow file: ";
-
+    // TODO make non-static
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionServiceImpl.class);
 
     /**
@@ -85,13 +92,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
      */
     private static final int ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC = 6 * 1000;
 
-    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled("WorkflowExecution");
 
     private CommunicationService communicationService;
 
     private DistributedNotificationService notificationService;
 
-    private PersistentWorkflowDescriptionUpdateService wfUpdateService;
+    private PersistentWorkflowDescriptionLoaderService workflowDescriptionLoaderService;
 
     private PlatformService platformService;
 
@@ -99,7 +106,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     private RemotableWorkflowExecutionControllerService wfExeCtrlService;
 
+    private ComponentExecutionAuthorizationService componentExecutionAuthorizationService;
+
     private DistributedComponentKnowledgeService componentKnowledgeService;
+
+    private AuthorizationService authorizationService;
+
+    private CryptographyOperationsProvider cryptographyOperationsProvider;
 
     private RemotableComponentExecutionControllerService componentExecutionControllerService;
 
@@ -109,6 +122,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     private ScheduledFuture<?> heartbeatSendFuture;
 
+    private MetaDataService metaDataService;
+
+    @Activate
     protected void activate(BundleContext context) {
 
         heartbeatSendFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
@@ -154,6 +170,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }, ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC);
     }
 
+    @Deactivate
     protected void deactivate() {
         if (heartbeatSendFuture != null) {
             heartbeatSendFuture.cancel(true);
@@ -163,140 +180,28 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     @Override
     public WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException {
-        // delegate
-        return loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, callback, false);
+        // delegate for backwards compatibility
+        return workflowDescriptionLoaderService.loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, callback);
     }
 
     @Override
     public WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback,
         boolean abortIfWorkflowUpdateRequired) throws WorkflowFileException {
-
-        try {
-            int wfVersion = readWorkflowVersionNumber(wfFile);
-            if (wfVersion > WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER) {
-                throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath()
-                    + StringUtils.format(". Its version (%d) is newer than the expected"
-                        + " one (%d). Most likely reason: it was opened with a newer version of RCE before.",
-                        wfVersion, WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER));
-
-            }
-
-            try (InputStream fileInputStream = new FileInputStream(wfFile)) {
-
-                PersistentWorkflowDescription persistentDescription = wfUpdateService.createPersistentWorkflowDescription(
-                    IOUtils.toString(fileInputStream, WorkflowConstants.ENCODING_UTF8));
-
-                boolean updateRequired = wfUpdateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, false);
-                boolean nonSilentUpdateRequired = updateRequired;
-
-                if (updateRequired && abortIfWorkflowUpdateRequired) {
-                    throw new WorkflowFileException(
-                        "The workflow file "
-                            + wfFile.getAbsolutePath()
-                            + " would require an update before execution, but the 'fail on required update' flag has been set. "
-                            + "Typically, this means that it was generated from an internal template which should be updated.");
-                }
-
-                if (!nonSilentUpdateRequired) {
-                    updateRequired = wfUpdateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, true);
-                }
-                if (updateRequired) {
-                    String backupFilename = null;
-                    if (nonSilentUpdateRequired) {
-                        backupFilename = PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + ".wf";
-                        FileUtils.copyFile(wfFile, new File(wfFile.getParentFile().getAbsolutePath(), backupFilename));
-                    }
-                    try {
-                        updateWorkflow(persistentDescription, wfFile, nonSilentUpdateRequired);
-                        onWorkflowFileUpdated(wfFile, !nonSilentUpdateRequired, backupFilename, callback);
-                    } catch (IOException | RuntimeException e) {
-                        if (nonSilentUpdateRequired) {
-                            throw new WorkflowFileException(StringUtils.format("Failed to update workflow file: %s. Backup file "
-                                + "was generated: %s.", wfFile.getAbsolutePath(), backupFilename), e);
-                        } else {
-                            throw new WorkflowFileException(StringUtils.format("Failed to update workflow file: %s.",
-                                wfFile.getAbsolutePath()), e);
-                        }
-                    }
-                }
-            }
-            return loadWorkflowDescriptionFromFile(wfFile, callback);
-        } catch (IOException | ParseException e) {
-            throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
-        }
-    }
-
-    private int readWorkflowVersionNumber(File wfFile) throws ParseException, IOException {
-        try (InputStream fileInputStream = new FileInputStream(wfFile)) {
-            return new WorkflowDescriptionPersistenceHandler().readWorkflowVersionNumber(fileInputStream);
-        }
+        // delegate for backwards compatibility
+        return workflowDescriptionLoaderService.loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, callback,
+            abortIfWorkflowUpdateRequired);
     }
 
     @Override
     public WorkflowDescription loadWorkflowDescriptionFromFile(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException {
-        try {
-            int wfVersion = readWorkflowVersionNumber(wfFile);
-            if (wfVersion > WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER) {
-                throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath()
-                    + StringUtils.format(". Its version (%d) is older than the expected"
-                        + " one (%d). Most likely reason: Internal error on workflow update.",
-                        wfVersion, WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER));
-            }
-            WorkflowDescriptionPersistenceHandler wdPesistenceHandler = new WorkflowDescriptionPersistenceHandler();
-            WorkflowDescription wd;
-            try (InputStream fileInputStream = new FileInputStream(wfFile)) {
-                wd = wdPesistenceHandler.readWorkflowDescriptionFromStream(fileInputStream);
-            } catch (WorkflowFileException e) {
-                if (e.getParsedWorkflowDescription() != null && callback.arePartlyParsedWorkflowConsiderValid()) {
-                    // backup the orginal workflow file and overwrite it with the reduced but valid workflow description
-                    String backupFilename =
-                        PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WorkflowConstants.WORKFLOW_FILE_ENDING;
-                    FileUtils.copyFile(wfFile, new File(wfFile.getParentFile().getAbsolutePath(), backupFilename));
-                    wd = e.getParsedWorkflowDescription();
-                    try (FileOutputStream fos = new FileOutputStream(wfFile);
-                        ByteArrayOutputStream baos = wdPesistenceHandler.writeWorkflowDescriptionToStream(wd)) {
-                        baos.writeTo(fos);
-                    }
-                    callback.onWorkflowFileParsingPartlyFailed(backupFilename);
-                } else {
-                    throw e;
-                }
-            }
-            return wd;
-        } catch (IOException | ParseException | RuntimeException e) {
-            throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
-        }
-    }
-
-    private void onWorkflowFileUpdated(File wfFile, boolean silentUpdate, String backupFilename,
-        WorkflowDescriptionLoaderCallback callback) {
-        if (silentUpdate) {
-            String message = StringUtils.format("'%s' was updated (silently) (full path: %s)", wfFile.getName(), wfFile.getAbsolutePath());
-            LOG.debug(message);
-            callback.onSilentWorkflowFileUpdated(message);
-        } else {
-            String message =
-                StringUtils.format("'%s' was updated (non-silently); backup file generated: %s (full path: %s)", wfFile.getName(),
-                    backupFilename, wfFile.getAbsolutePath());
-            LOG.debug(message);
-            callback.onNonSilentWorkflowFileUpdated(message, backupFilename);
-        }
-    }
-
-    /**
-     * Invokes the update of the workflow description and stores the updated workflow description in the specified file.
-     */
-    private void updateWorkflow(PersistentWorkflowDescription persWfDescr, File file, boolean hasNonSilentUpdate) throws IOException {
-        try (InputStream tempInputStream = IOUtils.toInputStream(wfUpdateService
-            .performWorkflowDescriptionUpdate(persWfDescr).getWorkflowDescriptionAsString(), WorkflowConstants.ENCODING_UTF8)) {
-            FileUtils.write(file, IOUtils.toString(tempInputStream));
-            tempInputStream.close();
-        }
+        // delegate for backwards compatibility
+        return workflowDescriptionLoaderService.loadWorkflowDescriptionFromFile(wfFile, callback);
     }
 
     @Override
-    public WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription) {
+    public WorkflowDescriptionValidationResult validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(
+        WorkflowDescription workflowDescription) {
         LogicalNodeId missingControllerNodeId = null;
         Map<String, LogicalNodeId> missingComponentsNodeIds = new HashMap<>();
 
@@ -308,7 +213,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             missingControllerNodeId = controllerNode;
         }
 
-        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
 
         for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
             LogicalNodeId componentNode = node.getComponentDescription().getNode();
@@ -328,11 +233,43 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     @Override
-    public WorkflowExecutionInformation executeWorkflowAsync(WorkflowExecutionContext wfExeCtx)
+    public Map<String, String> validateRemoteWorkflowControllerVisibilityOfComponents(WorkflowDescription wfDescription) {
+        List<String> componentRefs = new ArrayList<>();
+        for (WorkflowNode wfDescNode : wfDescription.getWorkflowNodes()) {
+            LogicalNodeId compLocation = wfDescNode.getComponentDescription().getNode();
+            if (platformService.matchesLocalInstance(compLocation)) {
+                // components on the initiating instance do not need to be checked as they grant the controller special access -- misc_ro
+                continue;
+            }
+            componentRefs.add(StringUtils.escapeAndConcat(
+                // 0: component id (for display grouping)
+                wfDescNode.getIdentifierAsObject().toString(),
+                // 1: component id and version
+                wfDescNode.getComponentIdentifierWithVersion(),
+                // 2: location (node id)
+                compLocation.getLogicalNodeIdString()));
+        }
+        RemotableWorkflowExecutionControllerService remoteWFExecControllerService =
+            communicationService.getRemotableService(RemotableWorkflowExecutionControllerService.class, wfDescription.getControllerNode());
+        try {
+            return remoteWFExecControllerService.verifyComponentVisibility(componentRefs);
+        } catch (RemoteOperationException e) {
+            Map<String, String> result = new HashMap<>();
+            for (WorkflowNode wfDescNode : wfDescription.getWorkflowNodes()) {
+                result.put(wfDescNode.getIdentifierAsObject().toString(),
+                    "Failed to query the selected workflow controller about component visibility: " + e.getMessage());
+            }
+            return result;
+        }
+    }
+
+    @Override
+    // Implementation note: this is currently the first method that is shared between the headless and GUI execution paths
+    public WorkflowExecutionInformation startWorkflowExecution(WorkflowExecutionContext wfExeCtx)
         throws WorkflowExecutionException, RemoteOperationException {
         WorkflowExecutionInformation workflowExecutionInformation = createExecutionController(wfExeCtx);
         try {
-            performStartOnExecutionController(workflowExecutionInformation.getExecutionIdentifier(), wfExeCtx.getNodeId());
+            performStartOnExecutionController(workflowExecutionInformation.getWorkflowExecutionHandle());
         } catch (ExecutionControllerException e) {
             throw new WorkflowExecutionException("Failed to execute workflow", e);
         }
@@ -342,79 +279,69 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private WorkflowExecutionInformation createExecutionController(WorkflowExecutionContext wfExeCtx) throws RemoteOperationException,
         WorkflowExecutionException {
 
-        Map<String, String> authTokens = createAndRegisterLocalComponentExecutionAuthTokens((wfExeCtx).getWorkflowDescription());
+        Map<String, String> authTokens = acquireExecutionAuthorizationTokensForComponents(wfExeCtx.getWorkflowDescription());
+
         return getExecutionControllerService(wfExeCtx.getNodeId()).createExecutionController(wfExeCtx, authTokens,
             !platformService.matchesLocalInstance(wfExeCtx.getNodeId()));
     }
 
-    /**
-     * Creates an auth token for each component which must be instantiated locally from an remote workflow execution controller that was
-     * instantiated from local node. It ensures that local components, which were not published, can be instantiated from remote, but only
-     * from workflow execution controllers, which were created from local node and thus, which are allowed to instantiate local components
-     * even if they are not published.
-     */
-    private Map<String, String> createAndRegisterLocalComponentExecutionAuthTokens(WorkflowDescription workflowDescription) {
-        Map<String, String> compIdToTokenMapping = new HashMap<String, String>();
-        for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
-            LogicalNodeId node = wfNode.getComponentDescription().getNode();
-            // Use empty string instead of null to avoid "remote method not found" issue. If null is
-            // passed the method can not be inspected
-            String token = "";
-            if (node == null || platformService.matchesLocalInstance(node)) {
-                token = UUID.randomUUID().toString();
-                try {
-                    componentExecutionControllerService.addComponentExecutionAuthToken(token);
-                } catch (RemoteOperationException e) {
-                    // should not happen as it is finally local call
-                    throw new IllegalStateException("Failed to add auth tokens for component execution; cause: " + e.toString());
-                }
-            }
-            compIdToTokenMapping.put(wfNode.getIdentifier(), token);
+    private void performStartOnExecutionController(WorkflowExecutionHandle handle) throws ExecutionControllerException,
+        RemoteOperationException {
+        getExecutionControllerService(handle.getLocation()).performStart(handle.getIdentifier());
+    }
+
+    @Override
+    public void cancel(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(handle.getLocation()).performCancel(handle.getIdentifier());
+    }
+
+    @Override
+    public void pause(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(handle.getLocation()).performPause(handle.getIdentifier());
+    }
+
+    @Override
+    public void resume(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(handle.getLocation()).performResume(handle.getIdentifier());
+    }
+
+    @Override
+    public void dispose(WorkflowExecutionHandle handle) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(handle.getLocation()).performDispose(handle.getIdentifier());
+    }
+
+    @Override
+    public void deleteFromDataManagement(WorkflowExecutionHandle handle) throws ExecutionControllerException {
+        Long wfDataManagementId;
+        try {
+            wfDataManagementId = getWorkflowDataManagementId(handle);
+        } catch (ExecutionControllerException | RemoteOperationException e) {
+            throw new ExecutionControllerException("Failed to determine the storage id of workflow run " + handle.getIdentifier(), e);
         }
-        return compIdToTokenMapping;
+        try {
+            // note: this relies on the current convention that the storage location is always the wf controller's location
+            metaDataService.deleteWorkflowRun(wfDataManagementId, handle.getLocation());
+        } catch (CommunicationException e) {
+            throw new ExecutionControllerException("Could not delete workflow run " + wfDataManagementId, e);
+        }
     }
 
-    private void performStartOnExecutionController(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    @Override
+    public WorkflowState getWorkflowState(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException {
-        getExecutionControllerService(node).performStart(executionId);
+        return getExecutionControllerService(handle.getLocation()).getWorkflowState(handle.getIdentifier());
     }
 
     @Override
-    public void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        getExecutionControllerService(node).performCancel(executionId);
-    }
-
-    @Override
-    public void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        getExecutionControllerService(node).performPause(executionId);
-    }
-
-    @Override
-    public void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        getExecutionControllerService(node).performResume(executionId);
-    }
-
-    @Override
-    public void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
-        getExecutionControllerService(node).performDispose(executionId);
-    }
-
-    @Override
-    public WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+    public Long getWorkflowDataManagementId(WorkflowExecutionHandle handle) throws ExecutionControllerException,
         RemoteOperationException {
-        return getExecutionControllerService(node).getWorkflowState(executionId);
-    }
-
-    @Override
-    public Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
-        RemoteOperationException {
-        return getExecutionControllerService(node).getWorkflowDataManagementId(executionId);
+        return getExecutionControllerService(handle.getLocation()).getWorkflowDataManagementId(handle.getIdentifier());
     }
 
     @Override
     public Set<WorkflowExecutionInformation> getLocalWorkflowExecutionInformations() {
         try {
-            return new HashSet<WorkflowExecutionInformation>(wfExeCtrlService.getWorkflowExecutionInformations());
+            return new HashSet<>(wfExeCtrlService.getWorkflowExecutionInformations());
         } catch (ExecutionControllerException | RemoteOperationException e) {
             // should not happen as it is finally a local call and the ExecutionController are directly fetched before
             throw new IllegalStateException("Failed to get local workflow execution information; cause: " + e.toString());
@@ -484,36 +411,187 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         return communicationService.getRemotableService(RemotableWorkflowExecutionControllerService.class, node);
     }
 
+    @Reference
     protected void bindCommunicationService(CommunicationService newService) {
         communicationService = newService;
     }
 
+    @Reference
     protected void bindNotificationService(DistributedNotificationService newService) {
         notificationService = newService;
     }
 
-    protected void bindPersistentWorkflowDescriptionUpdateService(PersistentWorkflowDescriptionUpdateService newService) {
-        wfUpdateService = newService;
-    }
-
+    @Reference
     protected void bindPlatformService(PlatformService newService) {
         platformService = newService;
     }
 
+    @Reference
     protected void bindComponentExecutionControllerService(RemotableComponentExecutionControllerService newService) {
         componentExecutionControllerService = newService;
     }
 
+    @Reference
+    protected void bindPersistentWorkflowDescriptionLoaderService(PersistentWorkflowDescriptionLoaderService newService) {
+        workflowDescriptionLoaderService = newService;
+    }
+
+    @Reference
     protected void bindWorkflowHostService(WorkflowHostService newService) {
         workflowHostService = newService;
     }
 
+    @Reference
     protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newService) {
         componentKnowledgeService = newService;
     }
 
+    @Reference
     protected void bindWorkflowExecutionControllerService(RemotableWorkflowExecutionControllerService newService) {
         wfExeCtrlService = newService;
+    }
+
+    @Reference
+    protected void bindMetaDataService(MetaDataService newService) {
+        metaDataService = newService;
+    }
+
+    @Reference
+    protected void bindComponentExecutionAuthorizationService(ComponentExecutionAuthorizationService newService) {
+        this.componentExecutionAuthorizationService = newService;
+    }
+
+    @Reference
+    protected void bindAuthorizationService(AuthorizationService newService) {
+        this.authorizationService = newService;
+    }
+
+    @Reference
+    protected void bindCryptographyOperationsProvider(CryptographyOperationsProvider newService) {
+        this.cryptographyOperationsProvider = newService;
+    }
+
+    private Map<String, String> acquireExecutionAuthorizationTokensForComponents(WorkflowDescription workflowDescription)
+        throws WorkflowExecutionException {
+
+        final Map<String, String> resultMap = new HashMap<>(); // access must be synchronized by caller
+        DistributedComponentKnowledge distrCompKnowledge = componentKnowledgeService.getCurrentSnapshot();
+
+        final CallablesGroup<WorkflowExecutionException> callablesGroup =
+            ConcurrencyUtils.getFactory().createCallablesGroup(WorkflowExecutionException.class);
+        for (WorkflowNode wfDescriptionNode : workflowDescription.getWorkflowNodes()) {
+
+            // do not acquire authorization tokens for disabled components
+            // note that when redesigning the workflow engine, this sort of exclusion should happen centrally -- misc_ro
+            if (!wfDescriptionNode.isEnabled()) {
+                continue;
+            }
+
+            // TODO convert to lambda after API migration is complete
+            // TODO this would really benefit from an "execute with standard exception handling" API
+            callablesGroup.add(new Callable<WorkflowExecutionException>() {
+
+                @Override
+                public WorkflowExecutionException call() throws Exception {
+                    try {
+                        final String accessToken =
+                            acquireOrRegisterExecutionAuthorizationToken(wfDescriptionNode, distrCompKnowledge, resultMap);
+                        synchronized (resultMap) {
+                            // note: map key kept unchanged from previous code; could be improved/clarified
+                            resultMap.put(wfDescriptionNode.getIdentifierAsObject().toString(), accessToken);
+                        }
+                        return null;
+                    } catch (RemoteOperationException | OperationFailureException e) {
+                        final String message = "Failed to acquire permission to execute component \"" + wfDescriptionNode.getName()
+                            + "\" on " + wfDescriptionNode.getComponentDescription().getNode();
+                        // log here immediately (without a stacktrace), as only the first exception will be rethrown
+                        LOG.error(message + ": " + e.toString());
+                        return new WorkflowExecutionException(message, e);
+                    }
+                }
+            });
+
+        }
+        final List<WorkflowExecutionException> exceptions = callablesGroup.executeParallel(null);
+        // rethrow first exception (if any) to abort
+        for (WorkflowExecutionException e : exceptions) {
+            if (e != null) {
+                throw e;
+            }
+        }
+        // synchronized to ensure thread visibility; may be redundant
+        synchronized (resultMap) {
+            return resultMap;
+        }
+    }
+
+    private String acquireOrRegisterExecutionAuthorizationToken(WorkflowNode wfDescriptionNode,
+        DistributedComponentKnowledge distrCompKnowledge, Map<String, String> resultMap)
+        throws RemoteOperationException, OperationFailureException {
+
+        // extract data
+        ComponentDescription componentDescription = wfDescriptionNode.getComponentDescription();
+        LogicalNodeId compLocation = componentDescription.getNode();
+        String compIdWithoutVersion = componentDescription.getComponentInterface().getIdentifier();
+        String compVersion = componentDescription.getComponentInterface().getVersion();
+
+        final String accessToken;
+        if (compLocation == null || platformService.matchesLocalInstance(compLocation)) {
+            // for components on the same instance as the workflow initiator, special access is granted to the (potentially remote) workflow
+            // controller; the id parameter is only provided here for usable log output
+            accessToken = componentExecutionAuthorizationService
+                .createAndRegisterExecutionTokenForLocalComponent(compIdWithoutVersion);
+        } else {
+            Optional<DistributedComponentEntry> distrComponentEntryResult =
+                resolveComponentIdToDistributedComponentEntry(distrCompKnowledge, compLocation, compIdWithoutVersion);
+            if (!distrComponentEntryResult.isPresent()) {
+                throw new OperationFailureException("Could  not resolve component id " + compIdWithoutVersion
+                    + " to an accessible component on instance " + compLocation.getAssociatedDisplayName());
+            }
+            DistributedComponentEntry distrComponentEntry = distrComponentEntryResult.get();
+
+            AuthorizationPermissionSet matchingPermissionSet = distrComponentEntry.getMatchingPermissionSet();
+            LOG.debug(StringUtils.format("Determined [%s] as the list of available authorization group(s) "
+                + "for component '%s' on %s", matchingPermissionSet, compIdWithoutVersion, compLocation));
+
+            RemotableComponentExecutionAuthorizationService remoteService =
+                communicationService.getRemotableService(RemotableComponentExecutionAuthorizationService.class, compLocation);
+            if (matchingPermissionSet.isPublic()) {
+                accessToken = remoteService.requestExecutionTokenForPublicComponent(compIdWithoutVersion, compVersion);
+            } else if (!matchingPermissionSet.isLocalOnly()) {
+                // arbitrarily choose the first group shared by the local instance and the component host; no obvious criterion to choose by
+                AuthorizationAccessGroup sharedAccessGroup = matchingPermissionSet.getAccessGroups().iterator().next();
+                // request a token, which is returned encrypted with the group key (as a simple authorization check)
+                String encryptedAccessToken = remoteService.requestEncryptedExecutionTokenViaGroupMembership(compIdWithoutVersion,
+                    compVersion, sharedAccessGroup.getFullId());
+                // attempt to decrypt it
+                AuthorizationAccessGroupKeyData groupKeyData = authorizationService.getKeyDataForGroup(sharedAccessGroup);
+                accessToken = cryptographyOperationsProvider.decodeAndDecryptString(groupKeyData.getSymmetricKey(), encryptedAccessToken);
+                // simple verification: check for a known substring; must match the string composed within the token-generating method
+                if (!accessToken.contains(":group:")) {
+                    throw new OperationFailureException(
+                        "Failed to decrypt the component execution token for component " + componentDescription.getName());
+                }
+            } else {
+                throw new OperationFailureException(
+                    "Failed to acquire permission to execute component \"" + componentDescription.getName()
+                        + "\": There are no shared authorization groups between the local instance "
+                        + "and the instance providing the component");
+            }
+        }
+        return accessToken;
+    }
+
+    // TODO convert this into a central API method?
+    private Optional<DistributedComponentEntry> resolveComponentIdToDistributedComponentEntry(
+        DistributedComponentKnowledge distrCompKnowledge,
+        LogicalNodeId compLocation, String compIdWithoutVersion) {
+        for (DistributedComponentEntry componentEntry : distrCompKnowledge.getKnownSharedInstallationsOnNode(compLocation, false)) {
+            if (componentEntry.getComponentInterface().getIdentifier().equals(compIdWithoutVersion)) {
+                return Optional.of(componentEntry);
+            }
+        }
+        return Optional.empty();
     }
 
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -83,8 +83,8 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.expect(internalEndpointDatumMock.getValue()).andReturn(internalTypedDatumMock).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getInputsComponentExecutionIdentifier()).andReturn("comp-exe-id-1").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getInputsComponentInstanceName()).andReturn("comp name 1").anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(targetCompNodeLogicalNodeId).anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getWorkflowNodeId()).andReturn(wfCtrlNodeLogicalNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getDestinationNodeId()).andReturn(targetCompNodeLogicalNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getWorkflowControllerLocation()).andReturn(wfCtrlNodeLogicalNodeId).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getOutputsComponentExecutionIdentifier()).andReturn("comp-exe-id-4").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getOutputsNodeId()).andReturn(sourceCompNodeLogicalNodeId).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowExecutionIdentifier()).andReturn("wf-exe-id-1").anyTimes();
@@ -138,8 +138,8 @@ public class EndpointDatumSerializerImplTest {
         EasyMock.expect(internalEndpointDatumMock.getValue()).andReturn(typedDatumMock).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getInputsComponentExecutionIdentifier()).andReturn("comp-exe-id-2").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getInputsComponentInstanceName()).andReturn("comp name 2").anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(targetCompNodeLogicalNodeId).anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getWorkflowNodeId()).andReturn(wfCtrlNodeLogicalNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getDestinationNodeId()).andReturn(targetCompNodeLogicalNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getWorkflowControllerLocation()).andReturn(wfCtrlNodeLogicalNodeId).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowExecutionIdentifier()).andReturn("wf-exe-id-2").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getOutputsComponentExecutionIdentifier()).andReturn("comp-exe-id-5").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getOutputsNodeId()).andReturn(sourceCompNodeLogicalNodeId).anyTimes();
@@ -171,11 +171,11 @@ public class EndpointDatumSerializerImplTest {
         assertNull(deserializeEndpointDatum.getDataManagementId());
         assertEquals("comp-exe-id-1", deserializeEndpointDatum.getInputsComponentExecutionIdentifier());
         assertEquals("comp name 1", deserializeEndpointDatum.getInputsComponentInstanceName());
-        assertEquals(targetCompNodeLogicalNodeId, deserializeEndpointDatum.getInputsNodeId());
+        assertEquals(targetCompNodeLogicalNodeId, deserializeEndpointDatum.getDestinationNodeId());
         assertEquals("wf-exe-id-1", deserializeEndpointDatum.getWorkflowExecutionIdentifier());
         assertEquals("comp-exe-id-3", deserializeEndpointDatum.getOutputsComponentExecutionIdentifier());
         assertEquals(sourceCompNodeLogicalNodeId, deserializeEndpointDatum.getOutputsNodeId());
-        assertEquals(wfCtrlNodeLogicalNodeId, deserializeEndpointDatum.getWorkflowNodeId());
+        assertEquals(wfCtrlNodeLogicalNodeId, deserializeEndpointDatum.getWorkflowControllerLocation());
         assertEquals("6b5d89c8-3a12-48aa-9440-c078646e7172", ((InternalTDImpl) deserializeEndpointDatum.getValue()).getIdentifier());
         assertEquals(InternalTDType.WorkflowFinish, ((InternalTDImpl) deserializeEndpointDatum.getValue()).getType());
     }
@@ -224,11 +224,11 @@ public class EndpointDatumSerializerImplTest {
         assertEquals(dmId, deserializedEndpointDatum.getDataManagementId());
         assertEquals("comp-exe-id-2", deserializedEndpointDatum.getInputsComponentExecutionIdentifier());
         assertEquals("comp name 2", deserializedEndpointDatum.getInputsComponentInstanceName());
-        assertEquals(targetCompNodeLogicalNodeId, deserializedEndpointDatum.getInputsNodeId());
+        assertEquals(targetCompNodeLogicalNodeId, deserializedEndpointDatum.getDestinationNodeId());
         assertEquals("wf-exe-id-2", deserializedEndpointDatum.getWorkflowExecutionIdentifier());
         assertEquals("comp-exe-id-5", deserializedEndpointDatum.getOutputsComponentExecutionIdentifier());
         assertEquals(sourceCompNodeLogicalNodeId, deserializedEndpointDatum.getOutputsNodeId());
-        assertEquals(wfCtrlNodeLogicalNodeId, deserializedEndpointDatum.getWorkflowNodeId());
+        assertEquals(wfCtrlNodeLogicalNodeId, deserializedEndpointDatum.getWorkflowControllerLocation());
         assertEquals(typedDatumMock, deserializedEndpointDatum.getValue());
     }
 

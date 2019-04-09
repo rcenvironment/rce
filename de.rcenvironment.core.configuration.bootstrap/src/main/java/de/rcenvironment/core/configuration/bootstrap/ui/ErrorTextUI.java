@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -30,14 +30,26 @@ public class ErrorTextUI {
     private String errorMessage;
 
     private Terminal terminal;
-    
+
     private final Log log = LogFactory.getLog(getClass());
 
+    /**
+     * If you would like the error message to be wrapped, consider using {@link LanternaUtils#applyWordWrapping(String)}.
+     * 
+     * @param errorMessage The error message to be displayed. Will not be wrapped.
+     * @param terminal The terminal to use to display the message. If this is null, a new terminal will be created and used.
+     */
     public ErrorTextUI(String errorMessage, Terminal terminal) {
         this.errorMessage = errorMessage;
         this.terminal = terminal;
     }
 
+    /**
+     * Convenience constructor, equivalent to calling ErrorTextUI(errorMessage, null).
+     * 
+     * @param errorMessage The error message to be displayed. Will not be wrapped.
+     * @see #ErrorTextUI(String, Terminal)
+     */
     public ErrorTextUI(String errorMessage) {
         this.errorMessage = errorMessage;
     }
@@ -51,7 +63,7 @@ public class ErrorTextUI {
         } else {
             guiScreen = TerminalFacade.createGUIScreen();
         }
-        
+
         if (guiScreen == null) {
             log.error("Failed to initialize text-mode UI; terminating");
             return;
@@ -59,7 +71,7 @@ public class ErrorTextUI {
         }
         guiScreen.setBackgroundRenderer(new DefaultBackgroundRenderer(BACKGROUND_MESSAGE));
         guiScreen.getScreen().startScreen();
-        
+
         LanternaUtils.showErrorMessageBox(guiScreen, errorMessage);
 
         guiScreen.getScreen().stopScreen();

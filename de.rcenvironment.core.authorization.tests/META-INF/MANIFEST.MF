@@ -2,8 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Authorization Tests
 Bundle-SymbolicName: de.rcenvironment.core.authorization.tests
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.authorization
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
 Bundle-Vendor: DLR & Fraunhofer SCAI
+Import-Package: org.apache.commons.io;version="2.4.0"

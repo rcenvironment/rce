@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -47,10 +47,20 @@ public final class ConsoleRowFormatter {
      * @return the generated log entry
      */
     public String toCombinedLogFileFormat(ConsoleRow row) {
-        return StringUtils.format("[%s] [%s] [%s] [%s] %s%n", new Date(row.getTimestamp()), row.getWorkflowName(), row.getComponentName(),
-            row.getType(), row.getPayload());
+        return StringUtils.format("[%s] [%s] [%s] [%s] %s%n", timeFormat.format(new Date(row.getTimestamp())), row.getWorkflowName(),
+            row.getComponentName(), row.getType(), row.getPayload());
     }
-    
+
+    /**
+     * Formats a simple "meta information" text line.
+     * 
+     * @param content the text content to format
+     * @return the generated log entry
+     */
+    public String toMetaInformationLine(String content) {
+        return StringUtils.format("[%s] [META] [-] %s%n", timeFormat.format(new Date()), content);
+    }
+
     /**
      * Returns a log entry to use in an error log file for one single workflow execution.
      * 
@@ -59,19 +69,19 @@ public final class ConsoleRowFormatter {
      */
     public String toWorkflowErrorLogFileFormat(ConsoleRow row) {
         if (row.getType().equals(ConsoleRow.Type.WORKFLOW_ERROR)) {
-            return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()), 
-                row.getType().getDisplayName(), row.getPayload());            
+            return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()),
+                row.getType().getDisplayName(), row.getPayload());
         } else {
             if (row.getComponentRun() > 0) {
-                return StringUtils.format("%s %s - %s [run %d]: %s", timeFormat.format(row.getTimestamp()), 
+                return StringUtils.format("%s %s - %s [run %d]: %s", timeFormat.format(row.getTimestamp()),
                     row.getType().getDisplayName(), row.getComponentName(), row.getComponentRun(), row.getPayload());
             } else {
-                return StringUtils.format("%s %s - %s: %s", timeFormat.format(row.getTimestamp()), 
-                    row.getType().getDisplayName(), row.getComponentName(), row.getPayload());                
+                return StringUtils.format("%s %s - %s: %s", timeFormat.format(row.getTimestamp()),
+                    row.getType().getDisplayName(), row.getComponentName(), row.getPayload());
             }
         }
     }
-    
+
     /**
      * Returns a log entry to use in a complete log file for one single component execution.
      * 
@@ -79,10 +89,10 @@ public final class ConsoleRowFormatter {
      * @return the generated log entry
      */
     public String toComponentCompleteLogFileFormat(ConsoleRow row) {
-        return StringUtils.format("[%d] %s %s: %s", row.getSequenzNumber(), timeFormat.format(row.getTimestamp()), 
+        return StringUtils.format("[%d] %s %s: %s", row.getSequenzNumber(), timeFormat.format(row.getTimestamp()),
             row.getType().getDisplayName(), row.getPayload());
     }
-    
+
     /**
      * Returns a log entry to use in a complete log file for one single component execution.
      * 
@@ -90,7 +100,7 @@ public final class ConsoleRowFormatter {
      * @return the generated log entry
      */
     public String toComponentErrorLogFileFormat(ConsoleRow row) {
-        return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()), 
+        return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()),
             row.getType().getDisplayName(), row.getPayload());
     }
 }

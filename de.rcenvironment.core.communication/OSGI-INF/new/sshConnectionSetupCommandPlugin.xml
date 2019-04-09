@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Plugin for 'ssh' Commands">
+
+	<implementation class="de.rcenvironment.core.communication.sshconnection.internal.SshConnectionSetupCommandPlugin"/>
+	<service>
+		<provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+	</service>
+	
+ 	<reference
+ 		name="SSH Connection Setup Service"
+ 		interface="de.rcenvironment.core.communication.sshconnection.SshConnectionService"
+ 		bind="bindSshConnectionSetupService"
+ 	/>
+
+</scr:component>

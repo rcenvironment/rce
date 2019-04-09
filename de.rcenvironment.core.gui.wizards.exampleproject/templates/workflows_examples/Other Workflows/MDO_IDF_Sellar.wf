@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "a7ec9b7f-4043-4dd3-9c8a-a3703eaccfb9",
     "name" : "Discipline 1",
-    "location" : "260:40",
+    "location" : "473:62",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -69,7 +69,7 @@
   }, {
     "identifier" : "dc6e6892-7661-4524-822e-f43f78220f9d",
     "name" : "Discipline 2",
-    "location" : "260:400",
+    "location" : "473:422",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -124,7 +124,7 @@
   }, {
     "identifier" : "bc02467f-0494-4516-b98c-896293a0bd28",
     "name" : "Objective",
-    "location" : "260:220",
+    "location" : "473:242",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -219,7 +219,7 @@
   }, {
     "identifier" : "451b43d2-f062-4246-a0b2-5b95d32c81b4",
     "name" : "Optimizer",
-    "location" : "40:220",
+    "location" : "253:242",
     "zIndex" : "1",
     "active" : "true",
     "component" : {

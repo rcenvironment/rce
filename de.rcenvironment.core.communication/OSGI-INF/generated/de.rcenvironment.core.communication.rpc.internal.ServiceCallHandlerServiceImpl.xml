@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.communication.rpc.internal.ServiceCallHandlerServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService"/>
+   </service>
+   <reference bind="bindCallbackProxyService" interface="de.rcenvironment.core.communication.rpc.api.CallbackProxyService" name="CallbackProxyService"/>
+   <reference bind="bindCallbackService" interface="de.rcenvironment.core.communication.rpc.api.CallbackService" name="CallbackService"/>
+   <reference bind="bindLocalServiceResolver" interface="de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver" name="LocalServiceResolver"/>
+   <reference bind="bindPlatformService" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService"/>
+   <implementation class="de.rcenvironment.core.communication.rpc.internal.ServiceCallHandlerServiceImpl"/>
+</scr:component>

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,10 +18,11 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -97,7 +98,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public String getString(String relativePath, String defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
-            return useDefaultValueIfNull(treeLocation.getTextValue(), defaultValue);
+            return useDefaultValueIfNull(treeLocation.textValue(), defaultValue);
         } else {
             return defaultValue;
         }
@@ -125,7 +126,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
                         + "\"; treating it as the default value \"" + defaultValue + "\"");
                 return defaultValue;
             }
-            return treeLocation.getLongValue();
+            return treeLocation.longValue();
         } else {
             return defaultValue;
         }
@@ -148,7 +149,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
                         + "\"; treating it as the default value \"" + defaultValue + "\"");
                 return defaultValue;
             }
-            return treeLocation.getIntValue();
+            return treeLocation.intValue();
         } else {
             return defaultValue;
         }
@@ -163,7 +164,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public Double getDouble(String relativePath, Double defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
-            return useDefaultValueIfNull(treeLocation.getDoubleValue(), defaultValue);
+            return useDefaultValueIfNull(treeLocation.doubleValue(), defaultValue);
         } else {
             return defaultValue;
         }
@@ -178,7 +179,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public Boolean getBoolean(String relativePath, Boolean defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
-            return useDefaultValueIfNull(treeLocation.getBooleanValue(), defaultValue);
+            return useDefaultValueIfNull(treeLocation.booleanValue(), defaultValue);
         } else {
             return defaultValue;
         }
@@ -236,7 +237,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         if (treeLocation == null) {
             return new HashMap<>(); // see JavaDoc
         }
-        Iterator<Entry<String, JsonNode>> iterator = treeLocation.getFields();
+        Iterator<Entry<String, JsonNode>> iterator = treeLocation.fields();
         while (iterator.hasNext()) {
             Entry<String, JsonNode> entry = iterator.next();
             resultMap.put(entry.getKey(), new WritableConfigurationSegmentImpl(entry.getValue(), rootSegment));

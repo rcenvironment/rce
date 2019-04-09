@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -28,6 +28,7 @@ import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
@@ -84,8 +85,6 @@ public class CommunicationServiceImplTest {
      * @throws InvalidSyntaxException on uncaught exceptions
      */
     @Before
-    // suppress warnings from generics mocking; TODO check if this can be solved better
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void setUp() throws InvalidSyntaxException {
 
         serviceProperties.put("piti", "platsch");
@@ -103,22 +102,26 @@ public class CommunicationServiceImplTest {
         communicationService.bindLiveNetworkIdResolutionService(idResolutionService);
 
         contextMock = EasyMock.createNiceMock(BundleContext.class);
-        ServiceReference ifaceReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
-        EasyMock.expect(contextMock.getServiceReference(iface.getName())).andReturn(ifaceReferenceMock).anyTimes();
+        ServiceReference<?> ifaceReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
+        contextMock.getServiceReference(iface.getName());
+        EasyMock.expectLastCall().andReturn(ifaceReferenceMock).anyTimes();
 
         // for OSGiLocalServiceResolver compatibility, which uses this call pattern
         EasyMock.expect(contextMock.getServiceReferences(iface.getName(), null)).andReturn(new ServiceReference[] { ifaceReferenceMock })
             .anyTimes();
 
-        ServiceReference[] referencesDummy = new ServiceReference[2];
+        ServiceReference<?>[] referencesDummy = new ServiceReference[2];
         referencesDummy[0] = ifaceReferenceMock;
         EasyMock.expect(contextMock.getServiceReferences(iface.getName(),
             ServiceUtils.constructFilter(serviceProperties))).andReturn(referencesDummy).anyTimes();
 
-        EasyMock.expect(contextMock.getService(ifaceReferenceMock)).andReturn(serviceInstance).anyTimes();
-        ServiceReference platformReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
-        EasyMock.expect(contextMock.getServiceReference(PlatformService.class.getName())).andReturn(platformReferenceMock).anyTimes();
-        EasyMock.expect(contextMock.getService(platformReferenceMock)).andReturn(new DummyPlatformServiceLocal()).anyTimes();
+        contextMock.getService(ifaceReferenceMock);
+        EasyMock.expectLastCall().andReturn(serviceInstance).anyTimes();
+        ServiceReference<?> platformReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
+        contextMock.getServiceReference(PlatformService.class.getName());
+        EasyMock.expectLastCall().andReturn(platformReferenceMock).anyTimes();
+        contextMock.getService(platformReferenceMock);
+        EasyMock.expectLastCall().andReturn(new DummyPlatformServiceLocal()).anyTimes();
 
         EasyMock.replay(contextMock, serviceInstance);
 
@@ -162,7 +165,7 @@ public class CommunicationServiceImplTest {
         assertEquals(serviceInstance, service);
 
         try {
-            communicationService.getRemotableService(iface, null);
+            communicationService.getRemotableService(iface, (ResolvableNodeId) null);
             fail("Exception expected on null node id");
         } catch (RuntimeException e) {
             assertTrue(e instanceof IllegalArgumentException);
@@ -178,7 +181,7 @@ public class CommunicationServiceImplTest {
         assertEquals(serviceInstance, service);
 
         try {
-            communicationService.getRemotableService(iface, null);
+            communicationService.getRemotableService(iface, (ResolvableNodeId) null);
             fail("Exception expected on null node id");
         } catch (RuntimeException e) {
             assertTrue(e instanceof IllegalArgumentException);
@@ -288,7 +291,8 @@ public class CommunicationServiceImplTest {
         }
 
         @Override
-        public Object createServiceProxy(ResolvableNodeId rawNodeId, Class<?> serviceIface, Class<?>[] ifaces) {
+        public Object createServiceProxy(ResolvableNodeId rawNodeId, Class<?> serviceIface, Class<?>[] ifaces,
+            ReliableRPCStreamHandle reliableRPCStreamHandle) {
             Object service = null;
             LogicalNodeSessionId nodeId;
             try {

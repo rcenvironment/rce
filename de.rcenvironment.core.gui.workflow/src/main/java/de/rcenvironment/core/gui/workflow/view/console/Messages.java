@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,9 +16,6 @@ import org.eclipse.osgi.util.NLS;
  * @author Tobias Menden
  */
 public class Messages extends NLS {
-
-    /** Constant. */
-    public static String all;
 
     /** Constant. */
     public static String clear;

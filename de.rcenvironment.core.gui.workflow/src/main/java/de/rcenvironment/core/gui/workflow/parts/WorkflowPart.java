@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -171,8 +171,8 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         // Add up channels in both directions to show number of channels on GUI
         for (ConnectionWrapper wrapper : connections) {
             for (Connection c : connectionsInModel) {
-                if (c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
-                    && c.getTargetNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
+                if (c.getSourceNode().getIdentifierAsObject().equals(wrapper.getSource().getIdentifierAsObject())
+                    && c.getTargetNode().getIdentifierAsObject().equals(wrapper.getTarget().getIdentifierAsObject())) {
                     wrapper.incrementNumberOfConnections();
                 }
             }
@@ -217,10 +217,10 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 if (getModel() instanceof WorkflowDescription) {
                     WorkflowDescription workflowDescription = (WorkflowDescription) getModel();
                     for (Connection connection : workflowDescription.getConnections()) {
-                        if (((connection.getTargetNode().getIdentifier()
-                            .equals(((WorkflowNode) child.getModel()).getIdentifier()))
-                            || (connection.getSourceNode().getIdentifier()
-                                .equals(((WorkflowNode) child.getModel()).getIdentifier())))
+                        if (((connection.getTargetNode().getIdentifierAsObject()
+                            .equals(((WorkflowNode) child.getModel()).getIdentifierAsObject()))
+                            || (connection.getSourceNode().getIdentifierAsObject()
+                                .equals(((WorkflowNode) child.getModel()).getIdentifierAsObject())))
                             && checkIfSourceAndTargetAreSelected(connection.getSourceNode(),
                                 connection.getTargetNode(), child.getViewer().getSelectedEditParts())) {
                             relatedConnections.add(connection);
@@ -258,10 +258,10 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             for (Object part : selectedEditParts) {
                 if (part instanceof WorkflowNodePart) {
                     WorkflowNode selectedNode = (WorkflowNode) ((WorkflowNodePart) part).getModel();
-                    if (sourceNode.getIdentifier().equals(selectedNode.getIdentifier())) {
+                    if (sourceNode.getIdentifierAsObject().equals(selectedNode.getIdentifierAsObject())) {
                         sourceContained = true;
                     }
-                    if (targetNode.getIdentifier().equals(selectedNode.getIdentifier())) {
+                    if (targetNode.getIdentifierAsObject().equals(selectedNode.getIdentifierAsObject())) {
                         targetContained = true;
                     }
                 }
@@ -287,8 +287,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 List<MoveHandle> list = new ArrayList<>();
                 if (isDragAllowed()) {
                     if (child instanceof WorkflowNodePart && ((WorkflowNode) ((WorkflowNodePart) child).getModel())
-                        .getComponentDescription().getComponentInstallation().getComponentRevision()
-                        .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
+                        .getComponentDescription().getComponentInstallation().getComponentInterface().getShape() == ComponentShape.CIRCLE) {
                         list.add(new OvalBorderMoveHandle((GraphicalEditPart) child));
                     } else {
                         list.add(new MoveHandle((GraphicalEditPart) child));

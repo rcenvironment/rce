@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -92,7 +92,6 @@ public final class WorkflowDescriptionValidationUtils {
     }
 
     private static void validateWorkflowNodesAndUpdateValidState(List<WorkflowNode> nodes, boolean onWorkflowStart) {
-        MESSAGE_STORE.emptyMessageStore(); // Delete all old messages
         for (WorkflowNode node : nodes) {
             // for the node fix above, this must be commented, but it's not the best for the performance
             if (!node.isValid()) {
@@ -103,7 +102,7 @@ public final class WorkflowDescriptionValidationUtils {
 
     private static void setTargetNodesInvalid(WorkflowDescription workflowDescription, WorkflowNode node) {
         for (Connection connection : workflowDescription.getConnections()) {
-            if (connection.getSourceNode().getIdentifier().equals(node.getIdentifier())) {
+            if (connection.getSourceNode().getIdentifierAsObject().equals(node.getIdentifierAsObject())) {
                 connection.getTargetNode().setValid(false);
             }
         }
@@ -118,7 +117,7 @@ public final class WorkflowDescriptionValidationUtils {
     public static void validateComponent(WorkflowNode workflowNode, boolean onWorkflowStart) {
         List<ComponentValidationMessage> messages;
         messages = ValidationSupport.getInstance().validate(workflowNode.getComponentDescription(), onWorkflowStart);
-        MESSAGE_STORE.addValidationMessagesByComponentId(workflowNode.getIdentifier(), messages);
+        MESSAGE_STORE.addValidationMessagesByComponentId(workflowNode.getIdentifierAsObject().toString(), messages);
     }
 
 }

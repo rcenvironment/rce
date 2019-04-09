@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.outputwriter.gui;
 
 import org.eclipse.swt.SWT;
@@ -18,6 +18,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 
+import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 
 /**
  * Provides GUI elements needed by the OutputWriterEditDialog as well as the OutputLocationEditDialog.
@@ -26,8 +27,10 @@ import org.eclipse.swt.widgets.Text;
  * 
  */
 public final class OutputWriterGuiUtils {
-    
-    private OutputWriterGuiUtils(){}
+
+    private static final String LINE_SEP = System.getProperty("line.separator");
+
+    private OutputWriterGuiUtils() {}
 
     /**
      * Create a combo for selecting placeholders.
@@ -39,7 +42,7 @@ public final class OutputWriterGuiUtils {
     public static Combo createPlaceholderCombo(Composite parent, String[] placeholders) {
         final Combo placeholderCombo = new Combo(parent, SWT.READ_ONLY);
         placeholderCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-        
+
         placeholderCombo.setItems(placeholders);
         placeholderCombo.select(0);
 
@@ -54,7 +57,7 @@ public final class OutputWriterGuiUtils {
      * @param textfield The textfield into which the placeholders are inserted
      * @return button to insert placeholders
      */
-    public  static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final Text textfield) {
+    public static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final Text textfield) {
         Button insertButton = new Button(parent, SWT.PUSH);
         insertButton.setText(Messages.insertButtonText);
         insertButton.addSelectionListener(new SelectionListener() {
@@ -62,7 +65,10 @@ public final class OutputWriterGuiUtils {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 int positionbuffer = textfield.getCaretPosition();
-                String word = placeholderCombo.getText();
+                String word = escapeSquaredBrackets(placeholderCombo.getText());
+                if (word.equals(OutputWriterComponentConstants.PH_LINEBREAK)) {
+                    word = word + LINE_SEP;
+                }
                 textfield.insert(word);
                 if (textfield.getText().length() >= (positionbuffer + word.length())) {
                     textfield.setSelection(positionbuffer + word.length());
@@ -77,18 +83,16 @@ public final class OutputWriterGuiUtils {
         });
         return insertButton;
     }
-    
-    
+
     /**
-     * Create an "insert" button for a given placeholder combo.
-     * Additional method for StyledText fields.
+     * Create an "insert" button for a given placeholder combo. Additional method for StyledText fields.
      * 
      * @param parent The parent composite
      * @param placeholderCombo The placeholder selection combo
      * @param textfield The textfield into which the placeholders are inserted
      * @return button to insert placeholders
      */
-    public  static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final StyledText textfield) {
+    public static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final StyledText textfield) {
         Button insertButton = new Button(parent, SWT.PUSH);
         insertButton.setText(Messages.insertButtonText);
         insertButton.addSelectionListener(new SelectionListener() {
@@ -96,7 +100,10 @@ public final class OutputWriterGuiUtils {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 int positionbuffer = textfield.getCaretOffset();
-                String word = placeholderCombo.getText();
+                String word = escapeSquaredBrackets(placeholderCombo.getText());
+                if (word.equals(OutputWriterComponentConstants.PH_LINEBREAK)) {
+                    word = word + LINE_SEP;
+                }
                 textfield.insert(word);
                 if (textfield.getText().length() >= (positionbuffer + word.length())) {
                     textfield.setSelection(positionbuffer + word.length());
@@ -110,5 +117,29 @@ public final class OutputWriterGuiUtils {
             }
         });
         return insertButton;
+    }
+
+    private static String escapeSquaredBrackets(String text) {
+        final StringBuilder resultBuilder = new StringBuilder("[");
+        // We consciously omit the square brackets around the given text, as they should not be escaped
+        for (int index = 1; index < text.length() - 1; ++index) {
+            final char currentChar = text.charAt(index);
+            switch (currentChar) {
+            case '[':
+                resultBuilder.append("\\[");
+                break;
+            case ']':
+                resultBuilder.append("\\]");
+                break;
+            case '\\':
+                resultBuilder.append("\\\\");
+                break;
+            default:
+                resultBuilder.append(currentChar);
+                break;
+            }
+        }
+        resultBuilder.append("]");
+        return resultBuilder.toString();
     }
 }

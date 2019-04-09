@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -50,19 +50,19 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
 import de.rcenvironment.core.gui.workflow.view.properties.ComponentInstancePropertySource;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
-import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
- * Read-only EditPart representing a WorkflowNode, storing
- * additional workflow execution information.
+ * Read-only EditPart representing a WorkflowNode, storing additional workflow execution information.
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider
@@ -100,7 +100,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
     private volatile long lastStateNotificationNumber = UNDEFINED;
 
     private volatile long lastIterationCountNotificationNumber = UNDEFINED;
-    
+
     private Label runCountLabel;
 
     public WorkflowRunNodePart() {
@@ -142,7 +142,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
     protected String generateTooltipText() {
         return generateTooltipTextBase((WorkflowNode) getModel());
     }
-    
+
     @Override
     protected IFigure createFigure() {
         // get the plain figure from the parent implementation
@@ -151,7 +151,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
         stateFigure = new ComponentStateFigureImpl();
         createExecutionCountLabel();
         ComponentInterface ci =
-            ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface();
+            ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentInterface();
         if (ci.getShape() == ComponentShape.CIRCLE) {
             stateFigure.setBounds(new Rectangle(1, 1, INTEGER_22, INTEGER_22));
             final int x = 19;
@@ -175,10 +175,10 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
         figure.add(stateFigure);
         figure.add(runCountLabel);
         figure.add(informationFigure);
-        
+
         return figure;
     }
-    
+
     private void createExecutionCountLabel() {
         runCountLabel = new Label("-");
         runCountLabel.setTextPlacement(PositionConstants.NORTH_EAST);
@@ -223,7 +223,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
     public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
         if (type == IPropertySource.class) {
             return new ComponentInstancePropertySource(getWorkflowExecutionInformation(),
-                ((WorkflowNode) getModel()).getIdentifier());
+                ((WorkflowNode) getModel()).getIdentifierAsObject());
         }
         return super.getAdapter(type);
     }
@@ -233,7 +233,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
     }
 
     private ComponentExecutionInformation getComponentExecutionInformation() {
-        return getWorkflowExecutionInformation().getComponentExecutionInformation(((WorkflowNode) getModel()).getIdentifier());
+        return getWorkflowExecutionInformation().getComponentExecutionInformation(((WorkflowNode) getModel()).getIdentifierAsObject());
     }
 
     private void initializeStatus() {
@@ -243,7 +243,8 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
             final String iterationCountNotifId = ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX
                 + compExeInfo.getExecutionIdentifier();
             final LogicalNodeId ctrlerNode = getWorkflowExecutionInformation().getNodeId();
-            final SimpleNotificationService notificationService = new SimpleNotificationService();
+            final DistributedNotificationService notificationService =
+                ServiceRegistry.createAccessFor(this).getService(DistributedNotificationService.class);
             notificationService.subscribe(stateNotifId, stateChangeListener, ctrlerNode);
             final List<Notification> stateNotifications = notificationService.getNotifications(stateNotifId, ctrlerNode).get(stateNotifId);
             if (stateNotifications != null && stateNotifications.size() > 0) {
@@ -262,7 +263,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
             LOGGER.error("Failed to register workflow state change listeners: " + e.getMessage());
         }
     }
-    
+
     private Notification getLastNonDisposedStateNotification(List<Notification> stateNotifications) {
         for (int i = 1; i <= stateNotifications.size(); i++) {
             Notification notification = stateNotifications.get(stateNotifications.size() - i);
@@ -292,9 +293,9 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
                 for (final IConfigurationElement viewConfElement : viewConfElements) {
                     if (viewConfElement.getAttribute("id").equals(confElement.getAttribute("view"))) {
                         try {
-                            final IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().
-                                showView(viewConfElement.getAttribute("class"),
-                                    cid.getExecutionIdentifier(), IWorkbenchPage.VIEW_VISIBLE); //$NON-NLS-1$
+                            final IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(
+                                viewConfElement.getAttribute("class"),
+                                cid.getExecutionIdentifier(), IWorkbenchPage.VIEW_VISIBLE); // $NON-NLS-1$
                             ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                                 @Override
@@ -327,8 +328,8 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
         if (!foundRuntimeView) {
             // If not existent: open properties view
             try {
-                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().
-                    showView("org.eclipse.ui.views.PropertySheet"); //$NON-NLS-1$
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(
+                    "org.eclipse.ui.views.PropertySheet"); //$NON-NLS-1$
             } catch (PartInitException e) {
                 throw new RuntimeException(e);
             }
@@ -352,7 +353,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
             // last notification is sent before publisher is removed
         }
     }
-    
+
     protected void updateComponentState(final ComponentState state) {
         if (stateFigure != null) {
 
@@ -379,7 +380,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
                 @Override
                 public void run() {
                     if (counts.length == 1) {
-                        runCountLabel.setText(counts[0]);   
+                        runCountLabel.setText(counts[0]);
                         runCountLabel.setToolTip(new Label("Runs: " + counts[0]));
                     } else {
                         runCountLabel.setText(String.valueOf(counts.length) + "/"
@@ -463,7 +464,7 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
             innerImageFigure.setOpaque(false);
             setVisible(true);
             setOpaque(false);
-            
+
             refresh();
         }
 

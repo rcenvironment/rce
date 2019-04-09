@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -29,7 +29,6 @@ import org.junit.Test;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
-import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -670,13 +669,13 @@ public class ComponentContextBridgeTest {
         return compExeRelatedInstances;
     }
 
-    private WorkflowGraphHop createWorkflowGraphHopMock(String targetCompExeId, String targetInputName) {
-        WorkflowGraphHop wfGraphMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
-        EasyMock.expect(wfGraphMock.getTargetExecutionIdentifier()).andStubReturn(targetCompExeId);
-        EasyMock.expect(wfGraphMock.getTargetInputName()).andStubReturn(targetInputName);
-        EasyMock.replay(wfGraphMock);
-        return wfGraphMock;
-    }
+//    private WorkflowGraphHop createWorkflowGraphHopMock(ComponentExecutionIdentifier targetCompExeId, String targetInputName) {
+//        WorkflowGraphHop wfGraphMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
+//        EasyMock.expect(wfGraphMock.getTargetExecutionIdentifier()).andStubReturn(targetCompExeId);
+//        EasyMock.expect(wfGraphMock.getTargetInputName()).andStubReturn(targetInputName);
+//        EasyMock.replay(wfGraphMock);
+//        return wfGraphMock;
+//    }
 
     private EndpointDescriptionsManager createEndpointDescriptionManagerMock(Map<String, EndpointDescription> epDescriptions) {
         EndpointDescriptionsManager epDescManagerMock = EasyMock.createStrictMock(EndpointDescriptionsManager.class);

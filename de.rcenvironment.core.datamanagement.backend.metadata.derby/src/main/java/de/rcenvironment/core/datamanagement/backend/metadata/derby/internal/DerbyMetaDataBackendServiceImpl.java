@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -152,14 +152,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             // note: the "else" path was not doing anything before; at least log if this happens
             LOGGER.warn("Unexpected state: Database URL already defined");
         }
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-
-            @Override
-            @TaskDescription(value = "Database initialization")
-            public void run() {
-                initialize();
-            }
-        });
+        ConcurrencyUtils.getAsyncTaskService().execute("Database initialization", this::initialize);
     }
 
     protected void deactivate() {

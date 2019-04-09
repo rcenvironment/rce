@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
     "name" : "DOE",
-    "location" : "211:343",
+    "location" : "387:291",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -73,7 +73,7 @@
   }, {
     "identifier" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
     "name" : "Eval",
-    "location" : "482:343",
+    "location" : "658:291",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -128,7 +128,7 @@
   }, {
     "identifier" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
     "name" : "Evaluation Memory",
-    "location" : "327:362",
+    "location" : "503:310",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -150,7 +150,8 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Single",
+        "tolerance" : ""
       }
     }, {
       "identifier" : "83630628-7f01-45cb-a598-65ecabd32727",
@@ -160,7 +161,8 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Single",
+        "tolerance" : ""
       }
     }, {
       "identifier" : "e7019eec-2797-4a68-9095-0e9ea2105b4f",
@@ -170,7 +172,8 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Single",
+        "tolerance" : ""
       }
     }, {
       "identifier" : "12beff8f-d3f9-4e05-a68c-98ec61b89677",
@@ -246,5 +249,5 @@
     "target" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
     "input" : "807b6c16-ad7d-4e32-9df5-b43491117ae8"
   } ],
-  "labels" : "[{\"identifier\":\"f08ab455-376c-4fec-bd08-37c0a6be0fcf\",\"headerText\":\"\",\"text\":\"Example workflow: \\\"Evaluation memory\\\"\\r\\nObjective: Introducing evaluation memory component\\r\\n\\r\\nCurrently, RCE doesn't support restart of workflows from a certain execution state. The evaluation memory component partly compensates that.\\r\\n\\r\\nThe evaluation memory component is usually used within loops. It is put directly behind and also in front of the evaluation driver of the loop. It stores the design values sent by the evaluation driver and the related evaluation results returned by the loop. In case of an already known set of design values, the evaluation memory component doesn't forward the design values to the loop for evaluation but feeds back the stored evaluation results directly to the evaluation driver.\\r\\n\\r\\nIn this example workflow, the evluation memory component (in the middle) stores all of the design values sent by the component \\\"DOE\\\" with the related evaluation results sent by the component \\\"Eval\\\". If you execute the workflow for the first time, the component \\\"Eval\\\" is executed eight times. The second time you execute the workflow, the component \\\"Eval\\\" is not executed at all as all of the design values sent by the component \\\"DOE\\\" are already known. Thus, the evaluation results from the first workflow execution are directly fed back.\\r\\n\",\"location\":\"38:14\",\"size\":\"768:311\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"a64894b6-c472-4c39-adbe-b5a5a25229e9\",\"headerText\":\"\",\"text\":\"In this example workflow, the evluation memory component (in the middle) stores all of the design values sent by the component \\\"DOE\\\" with the related evaluation results sent by the component \\\"Eval\\\". If you execute the workflow for the first time, the component \\\"Eval\\\" is executed eight times. The second time you execute the workflow, the component \\\"Eval\\\" is not executed at all as all of the design values sent by the component \\\"DOE\\\" are already known. Thus, the evaluation results from the first workflow execution are directly fed back.\",\"location\":\"38:437\",\"size\":\"1075:108\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"f08ab455-376c-4fec-bd08-37c0a6be0fcf\",\"headerText\":\"Introducing evaluation memory component\",\"text\":\"Currently, RCE doesn't support restart of workflows from a certain execution state. The evaluation memory component partly compensates that.\\r\\n\\r\\nThe evaluation memory component is usually used within loops. It is put directly behind and also in front of the evaluation driver of the loop. It stores the design values sent by the evaluation driver and the related evaluation results returned by the loop. In case of an already known set of design values, the evaluation memory component doesn't forward the design values to the loop for evaluation but feeds back the stored evaluation results directly to the evaluation driver.\",\"location\":\"38:62\",\"size\":\"1075:188\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -45,7 +45,7 @@ public final class InputEditingHelper {
     
     private static String getComponentIdentifier(WorkflowExecutionInformation workflowInformation, Endpoint endpoint) {
         WorkflowNode workflowNode = endpoint.getWorkflowNode();
-        return workflowInformation.getComponentExecutionInformation(workflowNode.getIdentifier()).getExecutionIdentifier();
+        return workflowInformation.getComponentExecutionInformation(workflowNode.getIdentifierAsObject()).getExecutionIdentifier();
     }
     
     /**

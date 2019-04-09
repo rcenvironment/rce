@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,19 +11,19 @@ package de.rcenvironment.components.joiner.execution;
 import java.io.IOException;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.joiner.common.JoinerComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -133,7 +133,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         if (node.has(DYNAMIC_INPUTS)) {
             ArrayNode dynInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
             ObjectNode firstInput = (ObjectNode) dynInputs.get(0);
-            dataType = firstInput.get(DATATYPE).getTextValue();
+            dataType = firstInput.get(DATATYPE).textValue();
             inputCount = String.valueOf(dynInputs.size());
         } else {
             dataType = "Float";
@@ -158,38 +158,38 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
     
     private PersistentComponentDescription updateFromV31ToV32(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
         TextNode nameNode = (TextNode) rootNode.get(NAME);
-        String nodeName = nameNode.getTextValue();
+        String nodeName = nameNode.textValue();
         if (nodeName.contains("Merger")) {
             nodeName = nodeName.replaceAll("Merger", "Joiner");
-            ((ObjectNode) rootNode).put(NAME, TextNode.valueOf(nodeName));
+            ((ObjectNode) rootNode).set(NAME, TextNode.valueOf(nodeName));
         }
 
         final String joinedString = "Joined";
 
         ArrayNode staticOutputs = (ArrayNode) rootNode.get("staticOutputs");
         ObjectNode staticOutput = (ObjectNode) staticOutputs.get(0);
-        staticOutput.put(NAME, TextNode.valueOf(joinedString));
+        staticOutput.set(NAME, TextNode.valueOf(joinedString));
 
         JsonNode dynInputs = rootNode.get("dynamicInputs");
         if (dynInputs != null) {
             for (JsonNode dynInput : dynInputs) {
-                ((ObjectNode) dynInput).put("epIdentifier", TextNode.valueOf(JoinerComponentConstants.DYNAMIC_INPUT_ID));
+                ((ObjectNode) dynInput).set("epIdentifier", TextNode.valueOf(JoinerComponentConstants.DYNAMIC_INPUT_ID));
             }
         }
 
         ObjectNode configuration = (ObjectNode) rootNode.get(CONFIGURATION);
         if (configuration != null) {
-            String number = configuration.get(MERGED).getTextValue();
+            String number = configuration.get(MERGED).textValue();
             configuration.remove(MERGED);
-            configuration.put(joinedString, TextNode.valueOf(number));
+            configuration.set(joinedString, TextNode.valueOf(number));
         } else {
             configuration = mapper.createObjectNode();
-            configuration.put(joinedString, TextNode.valueOf("2"));
-            ((ObjectNode) rootNode).put(CONFIGURATION, configuration);
+            configuration.set(joinedString, TextNode.valueOf("2"));
+            ((ObjectNode) rootNode).set(CONFIGURATION, configuration);
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -201,17 +201,17 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
 
     private PersistentComponentDescription updateFromV3ToV31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
         JsonNode staticInputs = rootNode.get("staticInputs");
         if (staticInputs != null) {
             for (JsonNode staticInput : staticInputs) {
-                String name = staticInput.get(NAME).getTextValue();
+                String name = staticInput.get(NAME).textValue();
                 String number = name.substring(name.length() - 3);
                 for (JsonNode dynInput : rootNode.get(DYNAMIC_INPUTS)) {
-                    if (dynInput.get(NAME).getTextValue().endsWith(number)) {
-                        ((ObjectNode) dynInput).put(IDENTIFIER, staticInput.get(IDENTIFIER));
+                    if (dynInput.get(NAME).textValue().endsWith(number)) {
+                        ((ObjectNode) dynInput).set(IDENTIFIER, staticInput.get(IDENTIFIER));
                     }
                 }
             }
@@ -234,18 +234,18 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
             PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier(DYNAMIC_INPUTS,
                 JoinerComponentConstants.DYNAMIC_INPUT_ID, description);
 
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
 
         ArrayNode staticOutputs = JsonNodeFactory.instance.arrayNode();
         ObjectNode output = JsonNodeFactory.instance.objectNode();
-        output.put(NAME, TextNode.valueOf(MERGED));
-        output.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
-        output.put(DATATYPE, TextNode.valueOf(rootNode.get(DYNAMIC_INPUTS).get(0).get(DATATYPE).getTextValue()));
+        output.set(NAME, TextNode.valueOf(MERGED));
+        output.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        output.set(DATATYPE, TextNode.valueOf(rootNode.get(DYNAMIC_INPUTS).get(0).get(DATATYPE).textValue()));
 
         staticOutputs.add(output);
-        ((ObjectNode) rootNode).put("staticOutputs", staticOutputs);
+        ((ObjectNode) rootNode).set("staticOutputs", staticOutputs);
         ((ObjectNode) rootNode).remove("dynamicOutputs");
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
@@ -259,19 +259,19 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
 
         JsonProcessingException, JsonGenerationException, JsonMappingException {
 
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
         ArrayNode dynamicInputsNode = (ArrayNode) rootNode.findPath(DYNAMIC_ADD_INPUTS);
         ArrayNode newDynamicInputsNode = JsonNodeFactory.instance.arrayNode();
 
         for (JsonNode endpoint : dynamicInputsNode) {
-            String newString = "Input " + endpoint.getTextValue()
-                .substring(endpoint.getTextValue().indexOf("_") + 1);
+            String newString = "Input " + endpoint.textValue()
+                .substring(endpoint.textValue().indexOf("_") + 1);
             newDynamicInputsNode.add(TextNode.valueOf(newString));
         }
         ((ObjectNode) rootNode).remove(DYNAMIC_ADD_INPUTS);
-        ((ObjectNode) rootNode).put(DYNAMIC_ADD_INPUTS, newDynamicInputsNode);
+        ((ObjectNode) rootNode).set(DYNAMIC_ADD_INPUTS, newDynamicInputsNode);
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
         description.setComponentVersion(V1_0);

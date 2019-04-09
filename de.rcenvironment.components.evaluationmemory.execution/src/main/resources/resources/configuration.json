@@ -12,6 +12,10 @@
 			"defaultValue": "true"
 		},
 		{
+			"key": "tolerance_overlap_behavior",
+			"defaultValue": "STRICT"
+		},
+		{
 			"key": "mem_file_wf_start",
 			"defaultValue": "${memory_file}",
 			"activationFilter": {

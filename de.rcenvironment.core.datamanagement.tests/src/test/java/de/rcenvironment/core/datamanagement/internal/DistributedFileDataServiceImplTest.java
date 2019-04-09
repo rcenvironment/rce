@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -39,6 +39,7 @@ import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
@@ -56,7 +57,7 @@ import de.rcenvironment.core.datamanagement.testutils.FileDataServiceDefaultStub
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
 import de.rcenvironment.core.notification.api.RemotableNotificationService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases of {@link FileDataServiceImpl}.
@@ -285,7 +286,7 @@ public class DistributedFileDataServiceImplTest {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) {
             if (iface == RemotableNotificationService.class
                 && nodeId.equals(localLogicalNodeSessionId)) {
                 return (T) new MockLocalFileDataService();
@@ -361,9 +362,7 @@ public class DistributedFileDataServiceImplTest {
     private class MockRemoteFileDataService extends RemotableFileDataServiceImpl {
 
         @Override
-        @AllowRemoteAccess
-        public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet)
-            throws AuthorizationException {
+        public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, Boolean alreadyCompressed) {
             Set<BinaryReference> birefs = new HashSet<BinaryReference>();
             birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
@@ -373,7 +372,7 @@ public class DistributedFileDataServiceImplTest {
         }
 
         @Override
-        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote, Boolean decompress)
             throws AuthorizationException {
             if (dataReference.equals(reference)) {
                 return is;
@@ -431,6 +430,30 @@ public class DistributedFileDataServiceImplTest {
 
         @Override
         public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet) throws IOException {
+            throw new UndeclaredThrowableException(null);
+        }
+
+        @Override
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote, Boolean decompress)
+            throws RemoteOperationException {
+            throw new UndeclaredThrowableException(null);
+        }
+
+        @Override
+        public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, Boolean alreadyCompressed)
+            throws RemoteOperationException {
+            throw new UndeclaredThrowableException(null);
+        }
+
+        @Override
+        public void finishUpload(String id, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+            RemoteOperationException {
+            throw new UndeclaredThrowableException(null);
+        }
+
+        @Override
+        public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+            RemoteOperationException {
             throw new UndeclaredThrowableException(null);
         }
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -149,7 +149,7 @@ public class HeadlessShutdown {
                 if (message != null) {
                     writeToLog("Message \"" + message + "\" received");
                     if (message.contains("shutdown") && message.contains(secretString)) {
-                        writeToLog("Received shutdown signal, shutting down");
+                        logger.info("Received shutdown signal, shutting down");
                         IOUtils.closeQuietly(serverSocket);
                         Instance.shutdown(); // non-blocking
                         try {

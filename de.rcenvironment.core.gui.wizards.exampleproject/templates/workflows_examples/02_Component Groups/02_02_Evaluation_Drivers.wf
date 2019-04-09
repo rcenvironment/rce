@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "a8333e04-092c-416b-82b3-967721b51f07",
     "name" : "Converger",
-    "location" : "146:458",
+    "location" : "375:225",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -69,7 +69,7 @@
   }, {
     "identifier" : "0ba3462b-04a0-4ab5-a380-d23b95aedb66",
     "name" : "Design of Experiments",
-    "location" : "538:458",
+    "location" : "767:225",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -129,7 +129,7 @@
   }, {
     "identifier" : "e73ba730-3bce-4ef0-b191-3199d7b16a8a",
     "name" : "Evaluate 1",
-    "location" : "265:458",
+    "location" : "494:225",
     "zIndex" : "7",
     "active" : "true",
     "component" : {
@@ -164,7 +164,7 @@
   }, {
     "identifier" : "4c716cca-5152-47ca-bf13-3802bfd5abfb",
     "name" : "Evaluate 2",
-    "location" : "393:458",
+    "location" : "622:225",
     "zIndex" : "6",
     "active" : "true",
     "component" : {
@@ -199,7 +199,7 @@
   }, {
     "identifier" : "2175fac8-edaf-4b15-8931-24334c0c6594",
     "name" : "Evaluate 3",
-    "location" : "265:573",
+    "location" : "494:340",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -234,7 +234,7 @@
   }, {
     "identifier" : "45792e59-a836-4cfe-ae56-5a073f57187b",
     "name" : "Evaluate 4",
-    "location" : "393:573",
+    "location" : "622:340",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -269,7 +269,7 @@
   }, {
     "identifier" : "7069a23e-a3f2-4f1b-ac28-4abc88999c7f",
     "name" : "Optimizer",
-    "location" : "146:573",
+    "location" : "375:340",
     "zIndex" : "5",
     "active" : "true",
     "component" : {
@@ -350,7 +350,7 @@
   }, {
     "identifier" : "38a0ab49-74e7-466f-a154-92ace5325f23",
     "name" : "Parametric Study",
-    "location" : "538:573",
+    "location" : "767:340",
     "zIndex" : "4",
     "active" : "true",
     "component" : {
@@ -435,5 +435,5 @@
     "target" : "45792e59-a836-4cfe-ae56-5a073f57187b",
     "input" : "9d34d3c7-199d-4300-83aa-b82916177f12"
   } ],
-  "labels" : "[{\"identifier\":\"9ad96ab7-b47a-4e79-952b-88c49b44a61b\",\"headerText\":\"\",\"text\":\"Example workflow: \\\"Evaluation Drivers\\\"\\r\\nObjective: Introducing driver components\\r\\n\\r\\nWorkflow components can be coupled to loops. In a loop, there must be exactly one workflow component that is driving the loop. See the user guide for more information about loops and driver workflow components.\\r\\n\\r\\nThe driver workflow component are:\\r\\n\\r\\nConverger: Checks the last incoming values for convergence. This means, that the absolute difference between the last values must be smaller than the pre- defined absolute convergence criteria or the absolute difference divided by the absolute value of the last value must be smaller than the predefined relative convergence criteria. If one of those criteria is met for all of the input values, it finishes the evaluation loop.\\r\\n\\r\\nDesign of Experiments: Sends pre-defined or generated values to its outputs. It is able to receive result values.\\r\\n\\r\\nOptimizer: Sends values to its output based on a chosen algorithm and based on previously received evaluation result values. There are multiple algorithms implemented which differ in the way of finding the next value. \\r\\n\\r\\nParametric Study: Sends values in a specified range and step size to its output. It is able to receive result values.\\r\\n\\r\\nIn the workflow, all driver workflow components send their values to a Script workflow component that returns half of the value every time. \",\"location\":\"30:13\",\"size\":\"768:414\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"58d5c389-ec2b-4fbf-a8e0-e796a6b97896\",\"headerText\":\"Parametric Study\",\"text\":\"Sends values in a specified range and step size to its output. It is able to receive result values.\",\"location\":\"622:489\",\"size\":\"517:112\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"4\"},{\"identifier\":\"5fdeca79-c3dc-432c-a306-026ea8dcd439\",\"headerText\":\"Design of Experiments\",\"text\":\"Sends pre-defined or generated values to its outputs. It is able to receive result values.\",\"location\":\"868:191\",\"size\":\"271:275\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"6c1d9ba4-d238-4dc9-884f-22e57f45cf96\",\"headerText\":\"Converger\",\"text\":\"Checks the last incoming values for convergence. This means, that the absolute difference between the last values must be smaller than the pre- defined absolute convergence criteria or the absolute difference divided by the absolute value of the last value must be smaller than the predefined relative convergence criteria. If one of those criteria is met for all of the input values, it finishes the evaluation loop.\",\"location\":\"41:191\",\"size\":\"295:275\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"9ad96ab7-b47a-4e79-952b-88c49b44a61b\",\"headerText\":\"Introducing driver components\",\"text\":\"Workflow components can be coupled to loops. In a loop, there must be exactly one workflow component that is driving the loop. See the user guide for more information about loops and driver workflow components.\\r\\n\\r\\nIn the workflow, all driver workflow components send their values to a Script workflow component that returns half of the value every time. \",\"location\":\"41:4\",\"size\":\"1098:169\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"b9cc0eba-0c14-452d-9e0b-4ea9151ea197\",\"headerText\":\"Optimizer\",\"text\":\"Sends values to its output based on a chosen algorithm and based on previously received evaluation result values. There are multiple algorithms implemented which differ in the way of finding the next value. \",\"location\":\"41:489\",\"size\":\"534:112\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"3\"}]"
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -50,8 +50,9 @@ import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.components.excel.common.ChannelValue;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
+import de.rcenvironment.components.excel.common.ExcelService;
+import de.rcenvironment.components.excel.common.ExcelServiceAccess;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
@@ -392,7 +393,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
      * Export values to Excel.
      */
     private void exportToExcel(final File saveTo) {
-        final SimpleExcelService excel = new SimpleExcelService();
+        final ExcelService excel = ExcelServiceAccess.get();
         ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override

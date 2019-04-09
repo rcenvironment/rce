@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.converger.gui;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin

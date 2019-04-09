@@ -1,0 +1,6 @@
+<contexts>
+	<context id="scpoutputcollector" title="SCP Output Collector Component Help">
+		<description>Helper component for building workflows that will be published for remote access</description>
+		<topic href="help/generated/html/usage.xhtml" label="SCP Output Collector Component Usage"></topic>
+	</context>
+</contexts>

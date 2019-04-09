@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,9 +11,10 @@ package de.rcenvironment.components.outputwriter.gui;
 import java.io.IOException;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -52,7 +53,7 @@ public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointComm
         EndpointDescription newDescription, String outputLocationId, Refreshable... refreshable) {
         super(direction, oldDescription, newDescription, refreshable);
         mapper = JsonUtils.getDefaultObjectMapper();
-        mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
         this.outputLocationId = outputLocationId;
     }
 

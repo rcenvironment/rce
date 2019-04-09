@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,12 +10,12 @@ package de.rcenvironment.components.cluster.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.components.cluster.common.ClusterComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -128,13 +128,13 @@ public class ClusterPersistentComponentDescriptionUpdater implements PersistentC
         checkConfig("outputsToDownload", oldConfig, newConfig);
         checkConfig("script", oldConfig, newConfig);
 
-        ((ObjectNode) node).put(CONFIGURATION, newConfig);
+        ((ObjectNode) node).set(CONFIGURATION, newConfig);
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
 
     private void checkConfig(String configKey, ObjectNode oldConfig, ObjectNode newConfig) {
-        if (!oldConfig.get(configKey).getTextValue().isEmpty()) {
+        if (!oldConfig.get(configKey).textValue().isEmpty()) {
             newConfig.put(configKey, oldConfig.get(configKey));
         }
     }

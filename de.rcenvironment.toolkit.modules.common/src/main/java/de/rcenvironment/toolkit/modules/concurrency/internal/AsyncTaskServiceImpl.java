@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -63,13 +63,13 @@ import de.rcenvironment.toolkit.utils.text.impl.MultiLineOutputWrapper;
 public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolManagementAccess {
 
     // compatibility and test flag: declare this property to make the thread pool behave like RCE 7.0.x.
+    // TODO (p3) remove in 8.0.0 or later
     @Deprecated
-    // TODO remove for 8.0.0
     private static final String SYSTEM_PROPERTY_USE_70x_THREAD_POOL_CONFIGURATION = "rce.threadpool.use70xBehavior";
 
     // preliminary cap to prevent excessive thread allocation; quite high as currently, network forwarding is still a blocking operation, so
     // a lower cap may bottleneck busy relay nodes in very slow networks; also, workflow execution is unbounded. this is planned to be
-    // reworked in 8.0.0.
+    // reworked, and then this value should be lowered significantly to reduce thread switching.
     private static final int DEFAULT_COMMON_THREAD_POOL_SIZE = 512;
 
     private static final String DEFAULT_THREAD_NAME_PREFIX = "ToolkitThreadPool-";
@@ -106,17 +106,14 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         // only initialized once a null taskId is passed in
         private Set<Thread> anonymousTaskThreads;
 
-        private final Class<?> taskClass;
+        private final String categoryName;
 
-        private final String taskName;
-
-        StatisticsEntry(Class<?> taskClass) {
-            this.taskClass = taskClass;
-            this.taskName = determineTaskName();
+        StatisticsEntry(String categoryName) {
+            this.categoryName = categoryName;
         }
 
-        public String getTaskName() {
-            return taskName;
+        public String getCategoryName() {
+            return categoryName;
         }
 
         private synchronized void beforeExecution(String taskId) {
@@ -131,7 +128,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
                 Thread replaced = activeTaskIds.put(taskId, Thread.currentThread());
                 if (replaced != null) {
                     log.warn(StringUtils.format("Task id '%s' used more than once for task '%s' (existing: %s, new: %s)", taskId,
-                        taskName, replaced.getName(), Thread.currentThread().getName()), new RuntimeException());
+                        categoryName, replaced.getName(), Thread.currentThread().getName()), new RuntimeException());
                 }
             } else {
                 if (anonymousTaskThreads == null) {
@@ -159,7 +156,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
                 Thread removed = activeTaskIds.remove(taskId);
                 if (removed == null) {
                     log.warn(StringUtils.format("No registered task id '%s' for task '%s'; was there an id collision before?", taskId,
-                        taskName));
+                        categoryName));
                 }
             } else {
                 if (!anonymousTaskThreads.remove(Thread.currentThread())) {
@@ -207,30 +204,6 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             }
         }
 
-        private String determineTaskName() {
-            Method runMethod;
-            try {
-                runMethod = taskClass.getMethod("run");
-            } catch (NoSuchMethodException e) {
-                try {
-                    runMethod = taskClass.getMethod("call");
-                } catch (NoSuchMethodException e2) {
-                    throw new IllegalStateException("Task is neither Runnable nor Callable? " + taskClass.getClass());
-                }
-            }
-            for (Annotation annotation : runMethod.getDeclaredAnnotations()) {
-                if (annotation.annotationType() == TaskDescription.class) {
-                    return ((TaskDescription) annotation).value();
-                }
-            }
-            final String taskClassName = taskClass.getName();
-            final boolean isAnonymousNestedTestClass = taskClassName.matches("^.*Test(s)?\\$(.*\\$)?\\d+$");
-            if (!isAnonymousNestedTestClass) {
-                log.warn("Thread pool task " + taskClassName + " should have a @TaskDescription");
-            }
-            return "<" + taskClass.getName() + ">";
-        }
-
     }
 
     /**
@@ -248,8 +221,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
 
         private final ThreadContext contextObject;
 
-        WrappedCallable(Callable<T> callable, String taskId) {
+        private final StatisticsEntry statisticsEntry;
+
+        WrappedCallable(Callable<T> callable, StatisticsEntry statisticsEntry, String taskId) {
             this.innerCallable = callable;
+            this.statisticsEntry = statisticsEntry;
             this.taskId = taskId;
             this.contextObject = ThreadContextHolder.getCurrentContext(); // transfer from calling thread
         }
@@ -258,7 +234,6 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         public T call() throws Exception {
             final ThreadContextMemento previousThreadContext = ThreadContextHolder.setCurrentContext(contextObject); // apply
 
-            final StatisticsEntry statisticsEntry = getStatisticsEntry(innerCallable.getClass());
             final long startTime = System.nanoTime();
             final T result;
 
@@ -268,7 +243,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
                 try {
                     result = innerCallable.call();
                 } catch (RuntimeException e) {
-                    log.warn("Unhandled exception in Callable for task " + statisticsEntry.getTaskName(), e);
+                    log.warn("Unhandled exception in Callable for task " + statisticsEntry.getCategoryName(), e);
                     exception = true;
                     throw e;
                 }
@@ -279,7 +254,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             }
             if (Thread.interrupted()) {
                 log.debug(StringUtils.format("Thread %s was interrupted after running task '%s', resetting flag", Thread
-                    .currentThread().getName(), statisticsEntry.getTaskName()));
+                    .currentThread().getName(), statisticsEntry.getCategoryName()));
             }
             return result;
         }
@@ -299,8 +274,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
 
         private final ThreadContext contextObject;
 
-        WrappedRunnable(Runnable runnable, String taskId) {
+        private final StatisticsEntry statisticsEntry;
+
+        WrappedRunnable(Runnable runnable, StatisticsEntry statisticsEntry, String taskId) {
             this.innerRunnable = runnable;
+            this.statisticsEntry = statisticsEntry;
             this.taskId = taskId;
             this.contextObject = ThreadContextHolder.getCurrentContext(); // transfer from calling thread
         }
@@ -308,17 +286,14 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         @Override
         public void run() {
             final ThreadContextMemento previousThreadContext = ThreadContextHolder.setCurrentContext(contextObject); // apply
-
-            final StatisticsEntry statisticsEntry = getStatisticsEntry(innerRunnable.getClass());
             final long startTime = System.nanoTime();
-
             statisticsEntry.beforeExecution(taskId);
             boolean exception = false;
             try {
                 try {
                     innerRunnable.run();
                 } catch (RuntimeException e) {
-                    log.warn("Unhandled exception in Runnable for task " + statisticsEntry.getTaskName(), e);
+                    log.warn("Unhandled exception in Runnable for task " + statisticsEntry.getCategoryName(), e);
                     exception = true;
                 }
             } finally {
@@ -328,7 +303,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             }
             if (Thread.interrupted()) {
                 log.debug(StringUtils.format("Thread %s was interrupted after running task '%s', resetting flag", Thread
-                    .currentThread().getName(), statisticsEntry.getTaskName()));
+                    .currentThread().getName(), statisticsEntry.getCategoryName()));
             }
         }
     }
@@ -341,7 +316,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
 
     private ThreadGroup currentThreadGroup;
 
-    private Map<Class<?>, StatisticsEntry> statisticsMap;
+    // not final to allow re-initialization on reset()
+    private Map<String, StatisticsEntry> statisticsEntriesByCategoryName;
+
+    // final as class annotations are not expected to change on reset()
+    private final Map<Class<?>, String> categoryNamesForTaskClasses;
 
     private ScheduledExecutorService schedulerService;
 
@@ -351,6 +330,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
 
     public AsyncTaskServiceImpl(ConcurrencyModuleConfiguration configuration, StatusCollectionRegistry statusCollectionRegistry) {
         this.configuration = configuration; // stored to reuse it from the reset() method
+        this.categoryNamesForTaskClasses = Collections.synchronizedMap(new HashMap<>());
         initialize();
 
         statusCollectionRegistry.addContributor(new StatusCollectionContributor() {
@@ -376,70 +356,154 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
     }
 
     @Override
+    @Deprecated
     public void execute(Runnable task) {
-        execute(task, null);
+        execute(task, null); // delegate with a "null" task id
     }
 
     @Override
-    public void execute(Runnable task, String taskId) {
+    public void execute(String categoryName, Runnable runnable) {
+        execute(categoryName, null, runnable); // delegate with a "null" task id
+    }
+
+    @Override
+    @Deprecated
+    public void execute(Runnable runnable, String taskId) {
         try {
-            getNullSafeExecutorService().execute(new WrappedRunnable(task, taskId));
+            getNullSafeExecutorService().execute(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), taskId));
         } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(task);
+            logExecutionRejectedAfterShutdown(runnable);
             throw e;
         }
     }
 
     @Override
+    public void execute(String categoryName, String taskId, Runnable runnable) {
+        try {
+            getNullSafeExecutorService().execute(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), taskId));
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(runnable);
+            throw e;
+        }
+    }
+
+    @Override
+    @Deprecated
     public Future<?> submit(Runnable task) {
-        return submit(task, null);
+        return submit(task, null); // delegate with a "null" task id
     }
 
     @Override
-    public Future<?> submit(Runnable task, String taskId) {
+    public Future<?> submit(String categoryName, Runnable task) {
+        return submit(categoryName, null, task); // delegate with a "null" task id
+    }
+
+    @Override
+    @Deprecated
+    public Future<?> submit(Runnable runnable, String taskId) {
         try {
-            return getNullSafeExecutorService().submit(new WrappedRunnable(task, taskId));
+            return getNullSafeExecutorService().submit(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), taskId));
         } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(task);
+            logExecutionRejectedAfterShutdown(runnable);
             throw e;
         }
     }
 
     @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return submit(task, null);
+    public Future<?> submit(String categoryName, String taskId, Runnable runnable) {
+        try {
+            return getNullSafeExecutorService().submit(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), taskId));
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(runnable);
+            throw e;
+        }
     }
 
     @Override
+    @Deprecated
+    public <T> Future<T> submit(Callable<T> task) {
+        return submit(task, null); // delegate with a "null" task id
+    }
+
+    @Override
+    public <T> Future<T> submit(String categoryName, Callable<T> task) {
+        return submit(categoryName, null, task); // delegate with a "null" task id
+    }
+
+    @Override
+    @Deprecated
     public <T> Future<T> submit(Callable<T> task, String taskId) {
         try {
-            return getNullSafeExecutorService().submit(new WrappedCallable<T>(task, taskId));
+            return getNullSafeExecutorService().submit(new WrappedCallable<T>(task, getStatisticsEntry(task.getClass()), taskId));
         } catch (RejectedExecutionException e) {
             logExecutionRejectedAfterShutdown(task);
-            throw e; // otherwise, a synthetic Future would be required; hard to say which is better
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
         }
     }
 
     @Override
+    public <T> Future<T> submit(String categoryName, String taskId, Callable<T> task) {
+        try {
+            return getNullSafeExecutorService().submit(new WrappedCallable<T>(task, getStatisticsEntry(categoryName), taskId));
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(task);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
+    }
+
+    @Override
+    @Deprecated
     public ScheduledFuture<?> scheduleAfterDelay(Runnable runnable, long delayMsec) {
-        return schedulerService.schedule(new WrappedRunnable(runnable, null),
+        return schedulerService.schedule(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
             delayMsec, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public <T> ScheduledFuture<T> scheduleAfterDelay(Callable<T> callable, long delayMsec) {
-        return schedulerService.schedule(new WrappedCallable<T>(callable, null),
+    public ScheduledFuture<?> scheduleAfterDelay(String categoryName, Runnable runnable, long delayMsec) {
+        return schedulerService.schedule(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
             delayMsec, TimeUnit.MILLISECONDS);
     }
 
     @Override
+    public <T> ScheduledFuture<T> scheduleAfterDelay(String categoryName, Callable<T> callable, long delayMsec) {
+        return schedulerService.schedule(new WrappedCallable<T>(callable, getStatisticsEntry(categoryName), null),
+            delayMsec, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    @Deprecated
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long repetitionDelayMsec) {
-        return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec);
+        return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
     }
 
     @Override
+    public ScheduledFuture<?> scheduleAtFixedRate(String categoryName, Runnable runnable, long repetitionDelayMsec) {
+        return scheduleAtFixedRateAfterDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedInterval(String categoryName, Runnable runnable, long repetitionDelayMsec) {
+        return scheduleAtFixedIntervalAfterInitialDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+    }
+
+    @Override
+    @Deprecated
     public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(Runnable runnable, long initialDelayMsec, long repetitionDelayMsec) {
-        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, null),
+        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
+            initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(String categoryName, Runnable runnable, long initialDelayMsec,
+        long repetitionDelayMsec) {
+        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
+            initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedIntervalAfterInitialDelay(String categoryName, Runnable runnable, long initialDelayMsec,
+        long repetitionDelayMsec) {
+        return schedulerService.scheduleWithFixedDelay(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
             initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
     }
 
@@ -480,13 +544,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
 
     private void renderStatistics(final boolean addTaskIds, final boolean includeInactive, TextLinesReceiver receiver) {
         final StringBuilder lineBuffer = new StringBuilder(512); // reserve sufficient space to avoid resizing
-        final Map<String, StatisticsEntry> sortedMap = new TreeMap<String, StatisticsEntry>();
-        synchronized (statisticsMap) {
-            // TODO change to values()? - misc_ro
-            for (Entry<Class<?>, StatisticsEntry> entry : statisticsMap.entrySet()) {
-                StatisticsEntry statisticsEntry = entry.getValue();
+        final Map<String, StatisticsEntry> sortedMap = new TreeMap<>();
+        synchronized (statisticsEntriesByCategoryName) {
+            for (StatisticsEntry statisticsEntry : statisticsEntriesByCategoryName.values()) {
                 if (statisticsEntry.activeTasks != 0 || includeInactive) {
-                    sortedMap.put(statisticsEntry.getTaskName(), statisticsEntry);
+                    sortedMap.put(statisticsEntry.getCategoryName(), statisticsEntry);
                 }
             }
         }
@@ -580,7 +642,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             executorService = Executors.newCachedThreadPool(threadFactory);
             schedulerService = Executors.newScheduledThreadPool(1, threadFactory);
         }
-        statisticsMap = Collections.synchronizedMap(new HashMap<Class<?>, StatisticsEntry>());
+        statisticsEntriesByCategoryName = Collections.synchronizedMap(new HashMap<>());
 
         if (configuration.getPeriodicTaskLoggingIntervalMsec() > 0) {
             scheduleAtFixedRate(new Runnable() {
@@ -595,30 +657,40 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         }
     }
 
-    private StatisticsEntry getStatisticsEntry(Class<?> r) {
-        // TODO >=8.0.0: use ThreadsafeAutoCreationMap? - misc_ro
-        StatisticsEntry statisticsEntry = statisticsMap.get(r);
-        if (statisticsEntry == null) {
-            // NOTE: while this looks similar to the double-checked locking anti-pattern,
-            // it should be safe as statisticsMap is a synchronizedMap; the synchronized block only
-            // serves to prevent race conditions <b>between</b> the already-synchronized calls
-            synchronized (statisticsMap) {
-                statisticsEntry = statisticsMap.get(r);
-                statisticsEntry = createEntryIfNotPresent(r, statisticsEntry);
-            }
-        }
-        return statisticsEntry;
+    @Deprecated
+    private StatisticsEntry getStatisticsEntry(Class<?> taskClass) {
+        // safe as this is a synchronized map, so computeIfAbsent() is atomic
+        final String categoryName = categoryNamesForTaskClasses.computeIfAbsent(taskClass, this::determineTaskName);
+        return getStatisticsEntry(categoryName);
     }
 
-    /**
-     * A workaround method to circumvent the (well-intentioned) CheckStyle double-checked locking prevention.
-     */
-    private StatisticsEntry createEntryIfNotPresent(Class<?> r, StatisticsEntry statisticsEntry) {
-        if (statisticsEntry == null) {
-            statisticsEntry = new StatisticsEntry(r);
-            statisticsMap.put(r, statisticsEntry);
+    private StatisticsEntry getStatisticsEntry(String categoryName) {
+        // safe as this is a synchronized map, so computeIfAbsent() is atomic
+        return statisticsEntriesByCategoryName.computeIfAbsent(categoryName, StatisticsEntry::new);
+    }
+
+    private String determineTaskName(Class<?> taskClass) {
+        Method runMethod;
+        try {
+            runMethod = taskClass.getMethod("run");
+        } catch (NoSuchMethodException e) {
+            try {
+                runMethod = taskClass.getMethod("call");
+            } catch (NoSuchMethodException e2) {
+                throw new IllegalStateException("Task is neither Runnable nor Callable? " + taskClass.getClass());
+            }
         }
-        return statisticsEntry;
+        for (Annotation annotation : runMethod.getDeclaredAnnotations()) {
+            if (annotation.annotationType() == TaskDescription.class) {
+                return ((TaskDescription) annotation).value();
+            }
+        }
+        final String taskClassName = taskClass.getName();
+        final boolean isAnonymousNestedTestClass = taskClassName.matches("^.*Test(s)?\\$(.*\\$)?\\d+$");
+        if (!isAnonymousNestedTestClass) {
+            log.warn("Thread pool task " + taskClassName + " should have a @TaskDescription");
+        }
+        return "<" + taskClass.getName() + ">";
     }
 
 }

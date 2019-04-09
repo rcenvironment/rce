@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,8 +25,8 @@ import org.junit.Test;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
@@ -281,13 +281,45 @@ public class RemotableFileStreamAccessServiceImplTest {
         }
 
         @Override
-        public DataReference newReferenceFromStream(InputStream inStream, MetaDataSet metaDataSet, ResolvableNodeId platform)
+        public DataReference newReferenceFromStream(InputStream inStream, MetaDataSet metaDataSet, NetworkDestination platform)
             throws AuthorizationException, IOException, InterruptedException, CommunicationException {
             return dataRef;
         }
 
         @Override
         public void deleteReference(DataReference dataReference) throws CommunicationException {}
+
+        @Override
+        public InputStream getStreamFromDataReference(DataReference dr, boolean decompress) throws AuthorizationException,
+            CommunicationException {
+            if (dr != null && dr.equals(dataRef)) {
+                return inputStream;
+            }
+            return null;
+        }
+
+        @Override
+        public DataReference newReferenceFromStream(InputStream inputStream1, MetaDataSet metaDataSet, Boolean alreadyCompressed)
+            throws RemoteOperationException {
+            return null;
+        }
+
+        @Override
+        public void finishUpload(String id, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+            RemoteOperationException {
+        }
+
+        @Override
+        public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+            RemoteOperationException {
+            return null;
+        }
+
+        @Override
+        public DataReference newReferenceFromStream(InputStream inputStream1, MetaDataSet metaDataSet, NetworkDestination platform,
+            boolean alreadyCompressed) throws AuthorizationException, IOException, InterruptedException, CommunicationException {
+            return null;
+        }
 
     }
 

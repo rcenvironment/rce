@@ -1,58 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" configuration-policy="optional" name="Command Execution Service" activate="activate">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Command Execution Service" activate="activate">
 
 	<implementation class="de.rcenvironment.core.command.internal.CommandExecutionServiceImpl"/>
 	<service>
 		<provide interface="de.rcenvironment.core.command.api.CommandExecutionService"/>
 	</service>
-	<!--
-	<reference
-		bind="bindCommunicationService"
-		interface="de.rcenvironment.core.communication.api.CommunicationService"
-		name="Communication Service"
-	/>
-	<reference
-		bind="bindBenchmarkService"
-		interface="de.rcenvironment.core.communication.management.BenchmarkService"
-		name="Benchmark Service"
-	/>
- 	<reference
- 		bind="bindDistributedComponentRegistry"
- 		interface="de.rcenvironment.core.component.registration.api.DistributedComponentRegistry"
- 		name="Distributed Component Registry"
- 	/>
- 	<reference
- 		bind="bindDistributedNotificationService"
- 		interface="de.rcenvironment.core.notification.DistributedNotificationService"
- 		name="Distributed Notification Service"
- 	/>
- 	<reference
- 		bind="bindDistributedWorkflowRegistry"
- 		interface="de.rcenvironment.core.component.workflow.registration.api.DistributedWorkflowRegistry"
- 		name="Distributed Workflow Registry"
- 	/>
- 	<reference
-		name="NodePropertiesService" 
-		interface="de.rcenvironment.core.communication.nodeproperties.NodePropertiesService" 
-		cardinality="1..1" 
-		bind="bindNodePropertiesService" 
-		policy="dynamic"/>
- 	<reference
- 		bind="bindPlatformService"
- 		interface="de.rcenvironment.core.communication.api.PlatformService"
- 		name="Platform Service"
- 	/>
- 	<reference
- 		bind="bindPersistentWorkflowDescriptionUpdateService"
- 		interface="de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService"
- 		name="Persistent Workflow Description Update Service"
- 	/> 	
- 	<reference
- 		bind="bindConnectionSetupService"
- 		interface="de.rcenvironment.core.communication.connection.api.ConnectionSetupService"
- 		name="Connection Setup Service"
- 	/>
- 	-->
+	
 	<reference
 		name="CommandPlugins" 
 		interface="de.rcenvironment.core.command.spi.CommandPlugin" 

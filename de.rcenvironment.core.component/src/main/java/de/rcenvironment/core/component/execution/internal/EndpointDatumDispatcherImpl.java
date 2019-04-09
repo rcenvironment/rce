@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,17 +9,24 @@
 package de.rcenvironment.core.component.execution.internal;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
+import de.rcenvironment.core.component.execution.api.ComponentControllerRoutingMap;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionController;
+import de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService;
 import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService;
@@ -32,15 +39,15 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
-import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Implementation of {@link RemotableEndpointDatumDispatcher}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (id and caching adaptations)
+ * @author Robert Mischke
  */
-public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, RemotableEndpointDatumDispatcher {
+@Component
+public class EndpointDatumDispatcherImpl implements EndpointDatumDispatchService, RemotableEndpointDatumDispatcher {
 
     private static final String FAILED_TO_SEND_ENDPOINT_DATUM = "Failed to send endpoint datum %s";
 
@@ -48,12 +55,12 @@ public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, Rem
 
     private static final int CACHE_SIZE = 20;
 
-    private AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
-
     private AsyncOrderedExecutionQueue executionQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(
         AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     private Map<String, WeakReference<ComponentExecutionController>> compExeCtrls = new LRUMap<>(CACHE_SIZE);
+
+    private Map<String, ComponentControllerRoutingMap> componentControllerForwardingMaps = Collections.synchronizedMap(new HashMap<>());
 
     private BundleContext bundleContext;
 
@@ -65,6 +72,7 @@ public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, Rem
 
     private EndpointDatumSerializer endpointDatumSerializer;
 
+    @Activate
     protected void activate(BundleContext context) {
         bundleContext = context;
     }
@@ -76,48 +84,14 @@ public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, Rem
 
             @Override
             public void run() {
-                if (platformService.matchesLocalInstance(endpointDatum.getInputsNodeId())) {
+                if (platformService.matchesLocalInstance(endpointDatum.getDestinationNodeId())) {
+                    // datum has arrived at its location -> process it
                     processEndpointDatum(executionId, endpointDatum);
                 } else {
-                    // checking the reachability of the equivalent default logical node id for now; 
-                    // could be changed once we have active logical node announcements
-                    if (communicationService.getReachableLogicalNodes().contains(
-                        endpointDatum.getInputsNodeId().convertToDefaultLogicalNodeId())) {
-                        forwardEndpointDatum(endpointDatum.getInputsNodeId(), endpointDatum);
-                    } else {
-                        if (!platformService.matchesLocalInstance(endpointDatum.getWorkflowNodeId())) {
-                            forwardEndpointDatum(endpointDatum.getWorkflowNodeId(), endpointDatum);
-                        } else {
-                            tryToForwardEndpointDatumToActualTarget();
-                        }
-                    }
+                    forwardEndpointDatum(endpointDatum);
                 }
             }
 
-            private void tryToForwardEndpointDatumToActualTarget() {
-                int failureCount = 0;
-                while (true) {
-                    if (communicationService.getReachableLogicalNodes().contains(endpointDatum.getInputsNodeId())) {
-                        forwardEndpointDatum(endpointDatum.getInputsNodeId(), endpointDatum);
-                        ComponentExecutionUtils.logCallbackSuccessAfterFailure(LOG, StringUtils.format("Sending endpoint datum %s",
-                            endpointDatum), failureCount);
-                        break;
-                    } else {
-                        if (++failureCount < ComponentExecutionUtils.MAX_RETRIES) {
-                            ComponentExecutionUtils.waitForRetryAfterCallbackFailure(LOG, failureCount, StringUtils.format(
-                                FAILED_TO_SEND_ENDPOINT_DATUM, endpointDatum), "Target node not reachable: "
-                                + endpointDatum.getInputsNodeId());
-                        } else {
-                            RemoteOperationException e = new RemoteOperationException("Target node not reachable: "
-                                + endpointDatum.getInputsNodeId());
-                            ComponentExecutionUtils.logCallbackFailureAfterRetriesExceeded(LOG,
-                                StringUtils.format(FAILED_TO_SEND_ENDPOINT_DATUM, endpointDatum), e);
-                            callbackComponentExecutionController(endpointDatum, e);
-                            break;
-                        }
-                    }
-                }
-            }
         });
     }
 
@@ -127,16 +101,49 @@ public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, Rem
         dispatchEndpointDatum(endpointDatumSerializer.deserializeEndpointDatum(serializedEndpointDatum));
     }
 
-    protected void forwardEndpointDatum(LogicalNodeId node, EndpointDatum endpointDatum) {
-        // fetching the service proxy on each call, assuming that it will be cached centrally if necessary
-        final RemotableEndpointDatumDispatcher dispatcher =
-            communicationService.getRemotableService(RemotableEndpointDatumDispatcher.class, node);
+    @Override
+    public void registerComponentControllerForwardingMap(String workflowExecutionId, ComponentControllerRoutingMap destinationMap) {
+        componentControllerForwardingMaps.put(workflowExecutionId, destinationMap);
+        LOG.debug("Registered component endpoint forwarding map for workflow " + workflowExecutionId);
+    }
 
-        // retrying disabled as long as methods called are not robust against multiple calls
+    @Override
+    public void unregisterComponentControllerForwardingMap(String workflowExecutionId) {
+        componentControllerForwardingMaps.remove(workflowExecutionId);
+        LOG.debug("Unregistered component endpoint forwarding map for workflow " + workflowExecutionId);
+    }
 
-        // int failureCount = 0;
-        // while (true) {
+    protected void forwardEndpointDatum(EndpointDatum endpointDatum) {
+
         try {
+            // does the endpoint have a prepared network destination?
+            final NetworkDestination networkDestination;
+            if (endpointDatum.getNetworkDestination() != null) {
+                // if yes, then we are on a component controller node; simply use the provided destination
+                networkDestination = endpointDatum.getNetworkDestination();
+            } else {
+                // otherwise, we are on the associated workflow controller and are forwarding the datum
+                final String workflowExecutionIdentifier = endpointDatum.getWorkflowExecutionIdentifier();
+                final String componentExecutionIdentifier = endpointDatum.getInputsComponentExecutionIdentifier();
+                ComponentControllerRoutingMap routingMap =
+                    componentControllerForwardingMaps.get(workflowExecutionIdentifier);
+                if (routingMap == null) {
+                    throw new RemoteOperationException(
+                        "A endpoint datum forwarding for target component " + componentExecutionIdentifier
+                            + " was requested, but there is no routing information available for workflow " + workflowExecutionIdentifier);
+                }
+                networkDestination = routingMap.getNetworkDestinationForComponentController(componentExecutionIdentifier);
+                if (networkDestination == null) {
+                    throw new RemoteOperationException(
+                        "Found routing information for workflow " + workflowExecutionIdentifier
+                            + ", but it did not contain a route for component " + componentExecutionIdentifier);
+                }
+            }
+
+            // fetching the service proxy on each call, assuming that it will be cached centrally if necessary
+            final RemotableEndpointDatumDispatcher dispatcher =
+                communicationService.getRemotableService(RemotableEndpointDatumDispatcher.class, networkDestination);
+
             dispatcher.dispatchEndpointDatum(endpointDatumSerializer.serializeEndpointDatum(endpointDatum));
             // ComponentExecutionUtils.logCallbackSuccessAfterFailure(LOG, StringUtils.format("Sending endpoint datum %s",
             // endpointDatum), failureCount);
@@ -216,18 +223,22 @@ public class EndpointDatumDispatcherImpl implements EndpointDatumDispatcher, Rem
         return compExeCtrl;
     }
 
+    @Reference
     protected void bindCommunicationService(CommunicationService newService) {
         communicationService = newService;
     }
 
+    @Reference
     protected void bindLocalExecutionControllerUtilsService(LocalExecutionControllerUtilsService newService) {
         exeCtrlUtilsService = newService;
     }
 
+    @Reference
     protected void bindPlatformService(PlatformService newService) {
         platformService = newService;
     }
 
+    @Reference
     protected void bindEndpointDatumSerializer(EndpointDatumSerializer newService) {
         endpointDatumSerializer = newService;
     }

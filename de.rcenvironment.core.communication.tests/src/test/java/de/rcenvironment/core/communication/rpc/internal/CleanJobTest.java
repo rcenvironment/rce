@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,8 +24,8 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.internal.CleanJob.CleanRunnable;
@@ -150,7 +150,7 @@ public class CleanJobTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) {
             T service = null;
             if (iface == CallbackService.class && nodeId.equals(instanceIdLocal1)) {
                 service = (T) new DummyCallbackService1();

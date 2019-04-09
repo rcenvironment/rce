@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,11 +22,11 @@ public class WorkflowGraphEdge implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String sourceExecutionIdentifier;
+    private final ComponentExecutionIdentifier sourceExecutionIdentifier;
 
     private final String outputIdentifier;
 
-    private final String targetExecutionIdentifier;
+    private final ComponentExecutionIdentifier targetExecutionIdentifier;
 
     private final String inputIdentifier;
 
@@ -34,8 +34,9 @@ public class WorkflowGraphEdge implements Serializable {
 
     private final EndpointCharacter inputEndpointCharacter;
 
-    public WorkflowGraphEdge(String sourceExecutionIdentifier, String outputIdentifier, EndpointCharacter outputEndpointCharacter,
-        String targetExecutionIdentifier, String inputIdentifier, EndpointCharacter inputEndpointCharacter) {
+    public WorkflowGraphEdge(ComponentExecutionIdentifier sourceExecutionIdentifier, String outputIdentifier,
+        EndpointCharacter outputEndpointCharacter, ComponentExecutionIdentifier targetExecutionIdentifier, String inputIdentifier,
+        EndpointCharacter inputEndpointCharacter) {
         this.sourceExecutionIdentifier = sourceExecutionIdentifier;
         this.outputIdentifier = outputIdentifier;
         this.outputEndpointCharacter = outputEndpointCharacter;
@@ -44,7 +45,7 @@ public class WorkflowGraphEdge implements Serializable {
         this.inputEndpointCharacter = inputEndpointCharacter;
     }
 
-    public String getSourceExecutionIdentifier() {
+    public ComponentExecutionIdentifier getSourceExecutionIdentifier() {
         return sourceExecutionIdentifier;
     }
 
@@ -52,7 +53,7 @@ public class WorkflowGraphEdge implements Serializable {
         return outputIdentifier;
     }
 
-    public String getTargetExecutionIdentifier() {
+    public ComponentExecutionIdentifier getTargetExecutionIdentifier() {
         return targetExecutionIdentifier;
     }
 

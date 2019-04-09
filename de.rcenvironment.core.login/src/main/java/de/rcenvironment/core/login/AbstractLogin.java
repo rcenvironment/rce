@@ -1,18 +1,15 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.login;
 
-import java.security.cert.X509Certificate;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.globus.gsi.OpenSSLKey;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.authentication.AuthenticationService;
@@ -102,8 +99,6 @@ public abstract class AbstractLogin {
                     LOGGER.debug("Using anonymous/default login");
                 } else if (loginInput.getType() == Type.ldap) {
                     loginSuccess = ldapLogin(loginInput.getUsernameLDAP(), loginInput.getPassword());
-                } else if (loginInput.getType() == Type.certificate) {
-                    loginSuccess = certificateLogin(loginInput.getCertificate(), loginInput.getKey(), loginInput.getPassword());
                 }
             }
             if (loginSuccess) {
@@ -167,62 +162,6 @@ public abstract class AbstractLogin {
     }
 
     /**
-     * 
-     * Handles login via certificate.
-     * 
-     * @return True for success, else false.
-     * @throws AuthenticationException
-     */
-    private boolean certificateLogin(X509Certificate certificate, OpenSSLKey key, String password)
-        throws AuthenticationException {
-
-        boolean isLoginSuccessful = false;
-        AuthenticationService.X509AuthenticationResult authenticationResult = authenticationService.authenticate(
-            certificate, key, password);
-
-        if (AuthenticationService.X509AuthenticationResult.AUTHENTICATED == authenticationResult) {
-            isLoginSuccessful = true;
-            Session.create(authenticationService.createUser(certificate, loginConfiguration.getValidityInDays()));
-            LOGGER.info(LOGIN_SUCCESFULL);
-        } else {
-            isLoginSuccessful = false;
-            String reasonForFailing;
-            String reasonForFailingEN;
-            switch (authenticationResult) {
-            case PASSWORD_REQUIRED:
-                reasonForFailing = Messages.passwordRequiered;
-                reasonForFailingEN = LOGIN_FAILED_1_2;
-                break;
-            case PASSWORD_INCORRECT:
-                reasonForFailing = Messages.passwordIncorrect;
-                reasonForFailingEN = LOGIN_FAILED_1_3;
-                break;
-            case PRIVATE_KEY_NOT_BELONGS_TO_PUBLIC_KEY:
-                reasonForFailing = Messages.keyNotMatched;
-                reasonForFailingEN = LOGIN_FAILED_1_4;
-                break;
-            case NOT_SIGNED_BY_TRUSTED_CA:
-                reasonForFailing = Messages.certNotSigned;
-                reasonForFailingEN = LOGIN_FAILED_1_5;
-                break;
-            case CERTIFICATE_REVOKED:
-                reasonForFailing = Messages.certRevoced;
-                reasonForFailingEN = LOGIN_FAILED_1_6;
-                break;
-            default:
-                reasonForFailing = Messages.unknownReason;
-                reasonForFailingEN = LOGIN_FAILED_1_7;
-                break;
-            }
-            informUserAboutError(Messages.authenticationFailed + " " //$NON-NLS-1$
-                + reasonForFailing, null);
-            LOGGER.error(reasonForFailingEN);
-        }
-
-        return isLoginSuccessful;
-    }
-
-    /**
      * Handles logout.
      */
     public final void logout() {
@@ -248,31 +187,6 @@ public abstract class AbstractLogin {
      * @throws AuthenticationException Thrown when loading key or path failed.
      */
     protected abstract LoginInput getLoginInput() throws AuthenticationException;
-
-    /**
-     * Creates a new {@link LoginInput}.
-     * 
-     * @param certificatePath Path to the certificate (public key).
-     * @param keyPath Path to the key (private key).
-     * @param password The password the private key is encrypted with.
-     * @throws AuthenticationException Thrown when loading key or path failed.
-     * @return The generated {@link LoginInput}.
-     */
-    protected LoginInput createLoginInputCertificate(String certificatePath, String keyPath, String password)
-        throws AuthenticationException {
-
-        LoginInput loginInput = null;
-
-        OpenSSLKey key = authenticationService.loadKey(keyPath);
-        X509Certificate cert = authenticationService.loadCertificate(certificatePath);
-
-        if (key == null || cert == null) {
-            throw new AuthenticationException(Messages.keyOrCertCouldNotBeLoaded);
-        }
-
-        loginInput = new LoginInput(cert, key, password);
-        return loginInput;
-    }
 
     /**
      * 

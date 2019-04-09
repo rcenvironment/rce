@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "c14ea0c9-3339-4411-b615-4d99780f5584",
     "name" : "Analysis",
-    "location" : "240:428",
+    "location" : "278:451",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -39,7 +39,7 @@
   }, {
     "identifier" : "e00c4c85-5fae-425c-9410-166a4eaa6394",
     "name" : "Design of Experiments",
-    "location" : "240:289",
+    "location" : "278:312",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -103,7 +103,7 @@
   }, {
     "identifier" : "73e43109-b3b1-4f71-9b67-d22415d0c6a4",
     "name" : "Optimizer",
-    "location" : "440:428",
+    "location" : "478:451",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -198,7 +198,7 @@
   }, {
     "identifier" : "f00dee17-158b-4395-8b5d-34fa5ae47d38",
     "name" : "Preparing",
-    "location" : "440:289",
+    "location" : "478:312",
     "zIndex" : "4",
     "active" : "true",
     "component" : {
@@ -243,7 +243,7 @@
   }, {
     "identifier" : "6689f940-3d6e-473f-be31-9b0eb77b0936",
     "name" : "Simulation",
-    "location" : "697:428",
+    "location" : "735:451",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -312,5 +312,5 @@
     "target" : "73e43109-b3b1-4f71-9b67-d22415d0c6a4",
     "input" : "2ee0ecd8-a3ee-4a4b-a6ac-51a20e8db536"
   } ],
-  "labels" : "[{\"identifier\":\"30327db6-6057-445d-ac1e-055f34dacd81\",\"headerText\":\"\",\"text\":\"Example workflow: 'Nested Loops'\\r\\nObjective: Introducing nested loops\\r\\n\\r\\nSee the user guide for basic information to nested loops first.\\r\\n\\r\\nThe outer loop is started by the \\\"Design of Experiments\\\" workflow component (the same that is used in the example workflow \\\"03_01_Simple_Loops\\\"). The \\\"Preparing\\\" and \\\"Analysis\\\" Script workflow components are \\r\\nalso the ones used in the example workflow \\\"03_01_Simple_Loops\\\". The only difference is the \\\"Optimizer\\\" component, which is explained below. \\r\\n\\r\\nIf you start this workflow, you will see that the run count of the Optimizer will get a count like \\\"2/1\\\". This shows, that the optimizer is running in the second run of the outer loop and has its first run in the nested loop. If the optimizer finishes, it will reset all components in the nested loop, which means, they get the same state as if they had not run at all. \\r\\n\",\"location\":\"56:1\",\"size\":\"707:263\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"},{\"identifier\":\"cc43de85-5c1e-498f-b2ae-7547f63dd17d\",\"headerText\":\"\",\"text\":\"This Optimizer is the driver workflow component of the nested loop. For that, in the Properties tab \\\"Nested Loop\\\", the appropriate box must be checked. Nested loops must always have \\\"start\\\" inputs. In the case of the Optimizer, these are design variables that don't have a static start value.\\r\\nThe chosen algorithm and other inputs/outputs won't cause the workflow components in the nested loop to run.\\r\\nIf the nested Optimizer is finished with the optimization, it sends the optimal design variables to the outer loop (output with the suffix '_optimal'). The outer loop will continue. Other driver workflow components have similar outputs (and also the necessary start inputs). See the user guide for a detailed list of inputs and outputs of driver workflow components.\",\"location\":\"296:514\",\"size\":\"440:326\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"1\"}]"
+  "labels" : "[{\"identifier\":\"30327db6-6057-445d-ac1e-055f34dacd81\",\"headerText\":\"Introducing nested loops\",\"text\":\"See the user guide for basic information to nested loops first.\\r\\n\\r\\nThe outer loop is started by the \\\"Design of Experiments\\\" workflow component (the same that is used in the example workflow \\\"03_01_Simple_Loops\\\"). The \\\"Preparing\\\" and \\\"Analysis\\\" Script workflow components are \\r\\nalso the ones used in the example workflow \\\"03_01_Simple_Loops\\\". The only difference is the \\\"Optimizer\\\" component, which is explained below. \\r\\n\\r\\nIf you start this workflow, you will see that the run count of the Optimizer will get a count like \\\"2/1\\\". This shows, that the optimizer is running in the second run of the outer loop and has its first run in the nested loop. If the optimizer finishes, it will reset all components in the nested loop, which means, they get the same state as if they had not run at all. \",\"location\":\"56:15\",\"size\":\"753:281\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"cc43de85-5c1e-498f-b2ae-7547f63dd17d\",\"headerText\":\"\",\"text\":\"This Optimizer is the driver workflow component of the nested loop. For that, in the Properties tab \\\"Nested Loop\\\", the appropriate box must be checked. Nested loops must always have \\\"start\\\" inputs. In the case of the Optimizer, these are design variables that don't have a static start value.\\r\\nThe chosen algorithm and other inputs/outputs won't cause the workflow components in the nested loop to run.\\r\\nIf the nested Optimizer is finished with the optimization, it sends the optimal design variables to the outer loop (output with the suffix '_optimal'). The outer loop will continue. Other driver workflow components have similar outputs (and also the necessary start inputs). See the user guide for a detailed list of inputs and outputs of driver workflow components.\",\"location\":\"831:171\",\"size\":\"299:419\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
 }

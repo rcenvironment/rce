@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -32,6 +32,7 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
@@ -45,7 +46,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Factory for creating a new palette with all running components.
  * 
  * @author Heinrich Wendel
- * 
+ * @author Robert Mischke (API adaptations)
  */
 public class WorkflowPaletteFactory {
 
@@ -55,14 +56,14 @@ public class WorkflowPaletteFactory {
      * @param componentInstallations {@link List} of {@link ComponentInstallation}s
      * @return A palette.
      */
-    public PaletteRoot createPalette(List<ComponentInstallation> componentInstallations) {
+    public PaletteRoot createPalette(List<DistributedComponentEntry> componentInstallations) {
         PaletteRoot palette = new PaletteRoot();
         createToolsGroup(palette);
         createComponentsGroup(palette, componentInstallations);
         return palette;
     }
 
-    private void createComponentsGroup(PaletteRoot palette, List<ComponentInstallation> componentInstallations) {
+    private void createComponentsGroup(PaletteRoot palette, List<DistributedComponentEntry> componentInstallations) {
 
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         PlatformService platformService = serviceRegistryAccess.getService(PlatformService.class);
@@ -70,10 +71,17 @@ public class WorkflowPaletteFactory {
 
         Map<String, List<PaletteEntry>> groupedComponents = new HashMap<String, List<PaletteEntry>>();
         componentInstallations = ComponentUtils.eliminateComponentInterfaceDuplicates(componentInstallations, localNode);
-        Collections.sort(componentInstallations);
+        Collections.sort(componentInstallations, new Comparator<DistributedComponentEntry>() {
 
-        for (ComponentInstallation ci : componentInstallations) {
-            ComponentInterface componentInterface = ci.getComponentRevision().getComponentInterface();
+            @Override
+            public int compare(DistributedComponentEntry o1, DistributedComponentEntry o2) {
+                return o1.getComponentInstallation().compareTo(o2.getComponentInstallation());
+            }
+        });
+
+        for (DistributedComponentEntry componentEntry : componentInstallations) {
+            ComponentInterface componentInterface =
+                componentEntry.getComponentInstallation().getComponentInterface();
             // prepare the icon of the component
             ImageDescriptor imageDescriptor = null;
             Image image = ComponentImageManager.getInstance().getIcon16Image(componentInterface);
@@ -86,13 +94,14 @@ public class WorkflowPaletteFactory {
             String name = componentInterface.getDisplayName();
             ToolIntegrationContextRegistry toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
             if (componentInterface.getVersion() != null
-                && (toolIntegrationRegistry.hasId(componentInterface.getIdentifier()) || componentInterface.getIdentifier()
-                .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "remoteaccess"))) {
+                && (toolIntegrationRegistry.hasTIContextMatchingPrefix(componentInterface.getIdentifierAndVersion())
+                    || componentInterface.getIdentifierAndVersion()
+                        .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "remoteaccess"))) {
                 name = name + StringUtils.format(WorkflowEditor.COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
             }
             // create the palette entry
             CombinedTemplateCreationEntry component = new CombinedTemplateCreationEntry(name, name,
-                new WorkflowNodeFactory(ci), imageDescriptor, imageDescriptor);
+                new WorkflowNodeFactory(componentEntry.getComponentInstallation()), imageDescriptor, imageDescriptor);
 
             if (!groupedComponents.containsKey(componentInterface.getGroupName())) {
                 groupedComponents.put(componentInterface.getGroupName(), new ArrayList<PaletteEntry>());
@@ -153,7 +162,7 @@ public class WorkflowPaletteFactory {
             Messages.connection,
             Messages.newConnection,
             new SimpleFactory(null),
-            ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/connection16.gif")), //$NON-NLS-1$ 
+            ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/connection16.gif")), //$NON-NLS-1$
             ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/connection24.gif"))); //$NON-NLS-1$
         tool.setLabel(tool.getLabel());
         entries.add(tool);

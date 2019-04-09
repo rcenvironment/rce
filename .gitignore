@@ -4,8 +4,14 @@ target/
 sys$command
 /.sonar/
 */help/generated/
-/de.rcenvironment.platform/projects/**/lib/maven/*.jar
+# ignore resources copied from git-lfs folders to these locations
+/de.rcenvironment.binaries.tiglviewer.win32.x86_64/resources/binaries
+/de.rcenvironment.binaries.dakota.win32.x86_64/resources/binaries
+/de.rcenvironment.binaries.dakota.linux.x86_64/resources/binaries
+# not necessary anymore, but kept until migration to git-lfs is complete
 /de.rcenvironment.platform/thirdparty/p2-mirrored
+# ignore Maven artifacts copied into bundles during the platform build
+/de.rcenvironment.platform/projects/**/lib/maven/*.jar
 /de.rcenvironment/eclipse/launch/profiles/common/
 /de.rcenvironment/eclipse/launch/profiles/*/internal/
 /de.rcenvironment/eclipse/launch/profiles/*/integration/

@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "bfc126bb-0144-4895-9210-ba161f8c8d61",
     "name" : "Example",
-    "location" : "262:267",
+    "location" : "582:278",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -19,19 +19,17 @@
     "staticInputs" : [ {
       "identifier" : "037be484-e240-48a6-9ef7-44979c1fbbc3",
       "name" : "x",
-      "group" : "null",
       "datatype" : "Float"
     } ],
     "staticOutputs" : [ {
       "identifier" : "f4d9dc99-6436-4478-b42c-65742791ae3b",
       "name" : "x_square",
-      "group" : "null",
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "10716ee5-3734-413c-a272-e7acc103af5b",
     "name" : "Input Provider",
-    "location" : "156:286",
+    "location" : "476:297",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -51,7 +49,7 @@
   }, {
     "identifier" : "3f03143a-c896-41d9-bda2-86c9a6f342d4",
     "name" : "Result Printer",
-    "location" : "262:385",
+    "location" : "582:396",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -104,5 +102,5 @@
     "target" : "3f03143a-c896-41d9-bda2-86c9a6f342d4",
     "input" : "4511ea30-9c0f-4cd5-80a1-9fede2134173"
   } ],
-  "labels" : "[{\"identifier\":\"10d6ea1d-ab3e-4472-8dc5-1e3a671cda71\",\"headerText\":\"\",\"text\":\"Example workflow: 'Tool Integration'\\r\\nObjective: Introducing workflow components that represent integrated tools\\r\\n\\r\\nThis example contains a workflow component that is an integrated tool. If the \\\"Example\\\" workflow component below is a red square, you probably did not check the \\\"Integrate example tool\\\" box when you created the \\\"Workflow Example Project\\\". Tools are integrated with the help of a dialog that you can open by clicking on the \\\"Integrate Tool\\\" button in the tool bar above. After you have successfully integrated your tool, it will appear in the palette and can be used just like any other workflow component. (See User Guide for more details on tool integration.)\\r\\n\",\"location\":\"56:19\",\"size\":\"488:211\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"10d6ea1d-ab3e-4472-8dc5-1e3a671cda71\",\"headerText\":\"Introducing workflow components that represent integrated tools\",\"text\":\"This example contains a workflow component that is an integrated tool. If the \\\"Example\\\" workflow component below is a red square, you probably did not check the \\\"Integrate example tool\\\" box when you created the \\\"Workflow Example Project\\\". Tools are integrated with the help of a dialog that you can open by clicking on the \\\"Integrate Tool\\\" button in the tool bar above. After you have successfully integrated your tool, it will appear in the palette and can be used just like any other workflow component. (See User Guide for more details on tool integration.)\",\"location\":\"172:19\",\"size\":\"866:184\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

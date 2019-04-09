@@ -91,27 +91,6 @@
             </note>
         </para>
         <sect3>
-            <title>Publishing a Component on a Server Instance in Headless Mode</title>
-            <para>An integrated tool on a server is not neccessarily visible for other users in the
-                same network. Publishing means to make it available for all others, but they are not
-                allowed to change the tool's integration. If a component should be published, the
-                    <code>published.conf</code> file in the integration kind subdirectory must be
-                edited. In this file, the tool's directory name (or absolute path) must be written
-                in a single line. After saving the file, RCE reads the file automatically and the
-                component will be published in the network.</para>
-            <para>
-                <note>
-                    <para>Using a graphical editor to edit the <code>published.conf</code> or a tool
-                        configuration file <emphasis role="bold">might</emphasis> not work as
-                        expected. It it possible, that the tool or the publishing status is not
-                        updated when saving the tool. This problem did not occur with headless
-                        editors.</para>
-                    <para os="linux">For example the emacs graphical editor does not work for
-                        editing the files, but vi does.</para>
-                </note>
-            </para>
-        </sect3>
-        <sect3>
             <title>Tool Execution Return Codes</title>
             <para>The tools are executed by using a command line call on the operating system via
                 the "Execution Script". When the tool finished executing (with or without error),
@@ -294,7 +273,8 @@
                             wrapper.</para>
                 </listitem>
                 <listitem>
-                    <para>Add a launch setting for the tool by clicking the <emphasis role="italic">Add</emphasis> button on the <emphasis role="italic">Launch
+                    <para>Add a launch setting for the tool by clicking the <emphasis role="italic"
+                                >Add</emphasis> button on the <emphasis role="italic">Launch
                                 Settings</emphasis> page. Configure the path of the CPACS tool and
                             fill in a version, click <emphasis role="italic">OK</emphasis>. If you
                             would like to allow users of your tool to choose that the temp directory
@@ -305,11 +285,8 @@
                             access to the server’s file system. But this option can result in disc
                             space issues as the amount required grows continuously with each
                             workflow execution. It is recommended to check that option during
-                            integrating the tool and uncheck it before publishing the tool. If you
-                            like to publish your tool to the entire network right after the
-                            integration, check <emphasis role="italic">Publish component after
-                                integration</emphasis>. Note that you can publish your tool at any
-                            later point in time.<?linebreak?> Click <emphasis role="italic">Next</emphasis>.</para>
+                            integrating the tool and uncheck it before publishing the tool.
+                            <?linebreak?>Click <emphasis role="italic">Next</emphasis>.</para>
                 </listitem>
                 <listitem>
                     <para>The <emphasis role="italic">CPACS Tool Properties</emphasis> are
@@ -343,11 +320,10 @@ post.bat</programlisting>
                             will appear immediately in the palette and is be ready to use.</para>
                 </listitem>
                 <listitem>
-                    <para>If not already done, do not forget to publish your tool after testing it
-                            locally. Therefore, edit your tool configuration by clicking <emphasis role="italic">Edit Tool</emphasis> in the <emphasis role="italic">File</emphasis> menu, navigate to the page <emphasis role="italic">Launch Configuration</emphasis> and check the property <emphasis role="italic">Publish component after integration</emphasis>. Click
-                                <emphasis role="italic">Save and activate</emphasis>. To check if
-                            your tool is successfully published to the RCE network open the tab
-                                <emphasis role="italic">Network View</emphasis> at the bottom and
+                    <para>If not already done, do not forget to publish your tool (cf. Section<xref
+                                linkend="publishing_authorization"/> ) after testing it locally. To
+                            check if your tool is successfully published to the RCE network open the
+                            tab <emphasis role="italic">Network View</emphasis> at the bottom and
                             checkout <emphasis role="italic">Published Components</emphasis> after
                             expanding the entry of your RCE instance.</para>
                 </listitem>
@@ -363,11 +339,10 @@ post.bat</programlisting>
                 profile folder at the following location:</para>
             <para><code>/integration/tools/cpacs/[YourToolName]</code></para>
             <para>Copy the folder <code>[YourToolName]</code> to the same location inside the
-                profile folder running with your headless server instance. Edit the file
-                    <code>published.conf</code> in the cpacs directory by adding your tool's
-                directory name as a single line. If the server instance is already running, your
-                tool will be available immediately after saving the file (cf. section "Publishing a
-                component in headless mode").</para>
+                profile folder running with your headless server instance. Use the "auth" commands
+                (cf. Section<xref linkend="publishing_authorization"/> ) to publish your tool. If
+                the server instance is already running, your tool will be available immediately
+                after publishing.</para>
         </sect3>
     </sect2>
     

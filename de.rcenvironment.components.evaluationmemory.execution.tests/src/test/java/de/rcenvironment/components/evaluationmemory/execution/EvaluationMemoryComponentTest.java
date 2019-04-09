@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -27,8 +27,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants;
+import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants.OverlapBehavior;
 import de.rcenvironment.components.evaluationmemory.execution.internal.EvaluationMemoryAccess;
 import de.rcenvironment.components.evaluationmemory.execution.internal.EvaluationMemoryFileAccessService;
+import de.rcenvironment.components.evaluationmemory.execution.internal.ToleranceHandling;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.testutils.ComponentContextMock;
@@ -81,10 +83,11 @@ public class EvaluationMemoryComponentTest {
         private static final long serialVersionUID = 1570441783510990090L;
 
         public void configure(EvaluationMemoryFileAccessService service, boolean fileSelectedAtWfStart) {
-            configure(service, fileSelectedAtWfStart, false);
+            configure(service, fileSelectedAtWfStart, false, OverlapBehavior.STRICT);
         }
         
-        public void configure(EvaluationMemoryFileAccessService service, boolean fileSelectedAtWfStart, boolean considerLoopFailures) {
+        public void configure(EvaluationMemoryFileAccessService service, boolean fileSelectedAtWfStart, boolean considerLoopFailures,
+            OverlapBehavior behavior) {
             context.setConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_MEMORY_FILE, memoryFilePath);
             context.setConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_MEMORY_FILE_WF_START, memoryFilePathAtWfStart);
             context.setConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START, 
@@ -92,9 +95,17 @@ public class EvaluationMemoryComponentTest {
             context.setConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_CONSIDER_LOOP_FAILURES, 
                 String.valueOf(considerLoopFailures));
             
-            context.addSimulatedInput(TO_EVAL_X1, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
-            context.addSimulatedInput(TO_EVAL_X2, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
-            context.addSimulatedInput(TO_EVAL_X3, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
+            context.setConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR, behavior.toString());
+
+            final Map<String, String> metaData = new TreeMap<>();
+            metaData.put(EvaluationMemoryComponentConstants.META_TOLERANCE, "");
+
+            context.addSimulatedInput(TO_EVAL_X1, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true,
+                metaData);
+            context.addSimulatedInput(TO_EVAL_X2, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true,
+                metaData);
+            context.addSimulatedInput(TO_EVAL_X3, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true,
+                metaData);
             
             context.addSimulatedInput(EVAL_Y1, EvaluationMemoryComponentConstants.ENDPOINT_ID_EVALUATION_RESULTS, DataType.Float,
                 true, null);
@@ -280,7 +291,7 @@ public class EvaluationMemoryComponentTest {
         outputs.put(EVAL_Y2, DataType.Float);
         
         EvaluationMemoryFileAccessService accessService = createFileAccessHandlerService(values, outputs, captures, true);
-        context.configure(accessService, true, considerNotAValue);
+        context.configure(accessService, true, considerNotAValue, OverlapBehavior.STRICT);
         component = new ComponentTestWrapper(new EvaluationMemoryComponent(), context);
         component.start();
 
@@ -529,13 +540,23 @@ public class EvaluationMemoryComponentTest {
         EvaluationMemoryAccess fileAccess = EasyMock.createStrictMock(EvaluationMemoryAccess.class);
         for (SortedMap<String, TypedDatum> key : values.keySet()) {
             if (values.get(key) == null) {
-                EasyMock.expect(fileAccess.getEvaluationResult(key, outputs)).andStubThrow(new IOException());                
+                EasyMock
+                    .expect(
+                        fileAccess.getEvaluationResult(EasyMock.eq(key), EasyMock.eq(outputs), EasyMock.anyObject(SortedMap.class),
+                            EasyMock.anyObject(ToleranceHandling.class)))
+                    .andStubThrow(new IOException());
             } else {
-                EasyMock.expect(fileAccess.getEvaluationResult(key, outputs)).andStubReturn(values.get(key));
+                EasyMock
+                    .expect(
+                        fileAccess.getEvaluationResult(EasyMock.eq(key), EasyMock.eq(outputs), EasyMock.anyObject(SortedMap.class),
+                            EasyMock.anyObject(ToleranceHandling.class)))
+                    .andStubReturn(values.get(key));
             }
         }
         if (values.isEmpty()) {
-            EasyMock.expect(fileAccess.getEvaluationResult(EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class)))
+            EasyMock
+                .expect(fileAccess.getEvaluationResult(EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class),
+                    EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(ToleranceHandling.class)))
                 .andStubReturn(null);
         }
         for (Capture<SortedMap<String, TypedDatum>> keyCapture : captures.keySet()) {
@@ -562,7 +583,8 @@ public class EvaluationMemoryComponentTest {
         String filePath = getFilePath(fileFromStart);
         EvaluationMemoryAccess fileAccess = EasyMock.createStrictMock(EvaluationMemoryAccess.class);
         EasyMock.expect(fileAccess.getEvaluationResult(EasyMock.anyObject(SortedMap.class), 
-            EasyMock.anyObject(SortedMap.class))).andThrow(new IOException());
+            EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(ToleranceHandling.class)))
+            .andThrow(new IOException());
         fileAccess.addEvaluationValues(EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class));
         EasyMock.expectLastCall().andThrow(new IOException());
         fileAccess.setInputsOutputsDefinition(EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class));

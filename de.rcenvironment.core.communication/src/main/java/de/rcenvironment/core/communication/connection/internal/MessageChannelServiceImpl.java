@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -167,18 +167,14 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                         idOfInboundChannel, channel));
                     // close the mirror channel in a separate thread to avoid deadlocks if the
                     // caller holds any monitors
-                    threadPool.execute(new Runnable() {
-
-                        @Override
-                        @TaskDescription("Communication Layer: Close mirror channel after inbound channel was closed")
-                        public void run() {
+                    threadPool.execute("Communication Layer: Close mirror channel after inbound channel was closed", idOfInboundChannel,
+                        () -> {
                             // only set flag if the local channel is not closing already, i.e. this is not a double indirect closing
                             if (channel.getState() == MessageChannelState.ESTABLISHED) {
                                 channel.markAsClosedBecauseMirrorChannelClosed();
                             }
                             closeOutgoingChannel(channel);
-                        }
-                    }, idOfInboundChannel);
+                        });
                 }
             }
         }
@@ -578,27 +574,21 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             for (final MessageChannel channel : activeOutgoingChannels.values()) {
                 String uniqueTaskId =
                     StringUtils.format("%s-%s", channel.getChannelId(), Long.toString(healthCheckTaskCounter.incrementAndGet()));
-                threadPool.execute(new Runnable() {
-
-                    @Override
-                    @TaskDescription("Communication Layer: Channel health check")
-                    public void run() {
-                        // random delay ("jitter") to avoid all connections being checked at once
+                threadPool.execute("Communication Layer: Channel health check", uniqueTaskId, () -> {
+                    try {
                         try {
-                            try {
-                                Thread.sleep(ThreadLocalRandom.current().nextInt(
-                                    CommunicationConfiguration.CONNECTION_HEALTH_CHECK_MAX_JITTER_MSEC));
-                            } catch (InterruptedException e) {
-                                logger.debug("Interrupted while waiting to perform the next connection health check, skipping");
-                                return;
-                            }
-                            performHealthCheckAndActOnResult(channel);
-                        } catch (InterruptedException e) {
-                            logger.debug("Interruption during channel health check", e);
+                            // random delay ("jitter") to avoid all connections being checked at once
+                            Thread.sleep(ThreadLocalRandom.current().nextInt(
+                                CommunicationConfiguration.CONNECTION_HEALTH_CHECK_MAX_JITTER_MSEC));
+                        } catch (InterruptedException e1) {
+                            logger.debug("Interrupted while waiting to perform the next connection health check, skipping");
+                            return;
                         }
+                        performHealthCheckAndActOnResult(channel);
+                    } catch (InterruptedException e2) {
+                        logger.debug("Interruption during channel health check", e2);
                     }
-
-                }, uniqueTaskId);
+                });
             }
         }
     }
@@ -792,14 +782,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     }
 
     private void triggerAsyncClosingOfBrokenChannel(final MessageChannel channel) {
-        threadPool.execute(new Runnable() {
-
-            @Override
-            @TaskDescription("Communication Layer: Close broken channel after health check failure")
-            public void run() {
-                handleBrokenChannel(channel);
-            }
-        });
+        threadPool.execute("Communication Layer: Close broken channel after health check failure", () -> handleBrokenChannel(channel));
     }
 
     /**

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -366,9 +366,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                             File currentFile =
                                 new File(tempDir, ((FileReferenceTD) inputValues.get(inputName)).getFileName());
                             datamanagementService.copyReferenceToLocalFile(uuidLastRun, lastFile, componentContext
-                                .getDefaultStorageNodeId());
+                                .getStorageNetworkDestination());
                             datamanagementService.copyReferenceToLocalFile(uuidCurrentRun, currentFile, componentContext
-                                .getDefaultStorageNodeId());
+                                .getStorageNetworkDestination());
                             if (compareFiles(tempDir, lastFile, currentFile)) {
                                 return true;
                             }

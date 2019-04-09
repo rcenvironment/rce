@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,11 +15,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.equinox.security.storage.StorageException;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
@@ -28,13 +23,17 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
-import de.rcenvironment.core.configuration.SecurePreferencesFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.rcenvironment.core.configuration.SecureStorageSection;
+import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.gui.cluster.internal.ErrorMessageDialogFactory;
 import de.rcenvironment.core.gui.cluster.view.internal.ClusterConnectionInformation;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.ClusterServiceManager;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -42,8 +41,11 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Controller of cluster connection configuration related dialogs.
  *
  * @author Doreen Seider
+ * @author Robert Mischke (migrated to new Secure Storage API)
  */
 public class ClusterConnectionConfigurationDialogsController {
+
+    protected static final String SECURE_STORAGE_SECTION_ID = "core.cluster.monitoring";
 
     protected static final String SETTINGS_KEY_CONFIGURATIONS = "de.rcenvironment.core.gui.cluster.connectionconfigurations";
 
@@ -178,7 +180,7 @@ public class ClusterConnectionConfigurationDialogsController {
         if (configuration.getPassword() == null || configuration.getPassword().isEmpty()) {
             String password = openPasswordInputDialog();
             if (password != null) {
-                configuration.setPassword(password);                
+                configuration.setPassword(password);
             } else {
                 return null;
             }
@@ -246,7 +248,9 @@ public class ClusterConnectionConfigurationDialogsController {
             dialogSettings.put(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS,
                 mapper.writeValueAsString(plainConfigurations));
 
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
+            SecureStorageSection storageSection =
+                serviceRegistryAccess.getService(SecureStorageService.class).getSecureStorageSection(SECURE_STORAGE_SECTION_ID);
+
             if (savePassword) {
                 dialogSettings.put(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_PASSWORD_STORED, true);
 
@@ -255,22 +259,13 @@ public class ClusterConnectionConfigurationDialogsController {
                 for (int i = 0; i < sensitiveConfigurations.length; i++) {
                     sensitiveConfigurations[i] = configurations[i].getSensitiveClusterConnectionConfiguration();
                 }
-                prefs.put(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS,
-                    mapper.writeValueAsString(sensitiveConfigurations), true);
+                storageSection.store(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS,
+                    mapper.writeValueAsString(sensitiveConfigurations));
             } else {
                 dialogSettings.put(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_PASSWORD_STORED, false);
-                prefs.remove(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS);
+                storageSection.delete(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS);
             }
-        } catch (JsonParseException e) {
-            ErrorMessageDialogFactory.createMessageDialogForStoringConfigurationFailure(parent);
-            LOGGER.error(STORING_CONFIGURATION_FAILED, e);
-        } catch (JsonMappingException e) {
-            ErrorMessageDialogFactory.createMessageDialogForStoringConfigurationFailure(parent);
-            LOGGER.error(STORING_CONFIGURATION_FAILED, e);
-        } catch (IOException e) {
-            ErrorMessageDialogFactory.createMessageDialogForStoringConfigurationFailure(parent);
-            LOGGER.error(STORING_CONFIGURATION_FAILED, e);
-        } catch (StorageException e) {
+        } catch (IOException | OperationFailureException e) {
             ErrorMessageDialogFactory.createMessageDialogForStoringConfigurationFailure(parent);
             LOGGER.error(STORING_CONFIGURATION_FAILED, e);
         }
@@ -293,10 +288,14 @@ public class ClusterConnectionConfigurationDialogsController {
             }
 
             if (dialogSettings.getBoolean(SETTINGS_KEY_PASSWORD_STORED)) {
-                ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-                String configurationJsonString = prefs.get(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS, "");
+                SecureStorageSection storageSection =
+                    serviceRegistryAccess.getService(SecureStorageService.class).getSecureStorageSection(SECURE_STORAGE_SECTION_ID);
+                String configurationJsonString;
+                configurationJsonString =
+                    storageSection.read(ClusterConnectionConfigurationDialogsController.SETTINGS_KEY_CONFIGURATIONS, "");
                 if (!configurationJsonString.isEmpty()) {
-                    sensitiveConfigurations = mapper.readValue(configurationJsonString, SensitiveClusterConnectionConfiguration[].class);
+                    sensitiveConfigurations =
+                        mapper.readValue(configurationJsonString, SensitiveClusterConnectionConfiguration[].class);
                 }
             }
 
@@ -315,19 +314,7 @@ public class ClusterConnectionConfigurationDialogsController {
                 }
             }
 
-        } catch (JsonParseException e) {
-            ErrorMessageDialogFactory.createMessageDialogForReadingConfigurationsFailure(parent);
-            storeClusterConnectionConfigurations(configurations, true);
-            LOGGER.error(READING_STORED_CONFIGURATION_FAILED_WILL_BE_RESET, e);
-        } catch (JsonMappingException e) {
-            ErrorMessageDialogFactory.createMessageDialogForReadingConfigurationsFailure(parent);
-            storeClusterConnectionConfigurations(configurations, true);
-            LOGGER.error(READING_STORED_CONFIGURATION_FAILED_WILL_BE_RESET, e);
-        } catch (IOException e) {
-            ErrorMessageDialogFactory.createMessageDialogForReadingConfigurationsFailure(parent);
-            storeClusterConnectionConfigurations(configurations, true);
-            LOGGER.error(READING_STORED_CONFIGURATION_FAILED_WILL_BE_RESET, e);
-        } catch (StorageException e) {
+        } catch (IOException | OperationFailureException e) {
             ErrorMessageDialogFactory.createMessageDialogForReadingConfigurationsFailure(parent);
             storeClusterConnectionConfigurations(configurations, true);
             LOGGER.error(READING_STORED_CONFIGURATION_FAILED_WILL_BE_RESET, e);

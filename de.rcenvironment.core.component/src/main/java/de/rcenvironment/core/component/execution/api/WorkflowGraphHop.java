@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,21 +24,23 @@ public class WorkflowGraphHop implements Serializable {
 
     private static final long serialVersionUID = 2180475342338990576L;
 
-    private final String executionIdentifier;
+    private final ComponentExecutionIdentifier executionIdentifier;
 
     private final String ouputName;
 
-    private final String targetExecutionIdentifier;
+    private final ComponentExecutionIdentifier targetExecutionIdentifier;
 
     private final String targetInputName;
 
     private final String hopOutputId;
 
-    public WorkflowGraphHop(String hopExecutionIdentifier, String hopOuputName, String targetExecutionIdentifier, String targetInputName) {
+    public WorkflowGraphHop(ComponentExecutionIdentifier hopExecutionIdentifier, String hopOuputName,
+        ComponentExecutionIdentifier targetExecutionIdentifier, String targetInputName) {
         this(hopExecutionIdentifier, hopOuputName, targetExecutionIdentifier, targetInputName, null);
     }
 
-    public WorkflowGraphHop(String hopExecutionIdentifier, String hopOuputName, String targetExecutionIdentifier, String targetInputName,
+    public WorkflowGraphHop(ComponentExecutionIdentifier hopExecutionIdentifier, String hopOuputName,
+        ComponentExecutionIdentifier targetExecutionIdentifier, String targetInputName,
         String hopOutputId) {
         this.executionIdentifier = hopExecutionIdentifier;
         this.ouputName = hopOuputName;
@@ -47,7 +49,7 @@ public class WorkflowGraphHop implements Serializable {
         this.hopOutputId = hopOutputId;
     }
 
-    public String getHopExecutionIdentifier() {
+    public ComponentExecutionIdentifier getHopExecutionIdentifier() {
         return executionIdentifier;
     }
 
@@ -55,7 +57,7 @@ public class WorkflowGraphHop implements Serializable {
         return ouputName;
     }
 
-    public String getTargetExecutionIdentifier() {
+    public ComponentExecutionIdentifier getTargetExecutionIdentifier() {
         return targetExecutionIdentifier;
     }
 

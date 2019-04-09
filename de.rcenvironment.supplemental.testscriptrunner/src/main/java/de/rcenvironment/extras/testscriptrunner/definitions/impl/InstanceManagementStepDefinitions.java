@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,40 +14,32 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.picocontainer.annotations.Inject;
-
-import com.jcraft.jsch.JSchException;
-
+import cucumber.api.DataTable;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
-import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService.InstallationPolicy;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
-import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.common.textstream.receivers.PrefixingTextOutForwarder;
-import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
-import de.rcenvironment.extras.testscriptrunner.internal.TestScenarioExecutionContext;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.AbstractStepDefinitionBase;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.ManagedInstance;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioExecutionContext;
 import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
 
 /**
@@ -56,146 +48,70 @@ import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
  *
  * @author Robert Mischke
  */
-public class InstanceManagementStepDefinitions {
+public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBase {
+
+    private static final String WARNINGS_LOG_FILE_NAME = "warnings.log";
+
+    private static final String DEBUG_LOG_FILE_NAME = "debug.log";
 
     private static final int IM_OPERATION_TIMEOUT = 30000;
 
     private static final ManagedInstance[] EMPTY_INSTANCE_ARRAY = new ManagedInstance[0];
 
-    // injected once via OSGi bind method
-    private static InstanceManagementService instanceManagementService;
+    private static final Pattern INSTANCE_DEFINITION_PATTERN = Pattern.compile("(\\w+)( \\[.*\\])?");
 
-    // injected by test framework
-    @Inject
-    private TestScenarioExecutionContext executionContext;
+    private static final Pattern INSTANCE_DEFINITION_ID_SUBPATTERN = Pattern.compile("Id=(\\w+)"); // length intentionally undefined
 
-    private TextOutputReceiver outputReceiver;
+    private static final String ABSENT_COMPONENT_STRING = "(absent)";
 
     private final AtomicInteger portNumberGenerator = new AtomicInteger(52100);
-
-    private ManagedInstance lastInstanceWithSingleCommandExecution; // TODO check: actually helpful/necessary?
-
-    // note: only supposed to be accessed from the main thread, so no synchronization is performed or necessary
-    private final Map<String, ManagedInstance> instancesById = new HashMap<>();
 
     // note: only supposed to be accessed from the main thread, so no synchronization is performed or necessary
     private final Collection<ManagedInstance> enabledInstances = new HashSet<>();
 
-    private final Log log = LogFactory.getLog(getClass());
-
     /**
-     * Represents an instance (ie, a profile) managed by these test steps.
-     * 
+     * Represents the expected vs. the actual visibility and authorization state of a local or remote component.
+     *
      * @author Robert Mischke
      */
-    private final class ManagedInstance {
+    private class ComponentVisibilityState {
 
-        private final String id; // the id of the instance/profile
+        private String componentName;
 
-        private String installationId; // the id of the installation to run this instance/profile with
+        private String nodeName;
 
-        private Integer serverPort; // currently only supporting one server port; could be changed later
+        private String expectedState;
 
-        private final List<String> configuredAutostartConnectionIds = new ArrayList<>();
+        private String actualState;
 
-        private String lastCommandOutput;
+        ComponentVisibilityState(String componentName, String nodeName, String expectedState, String actualState) {
+            this.componentName = componentName;
+            this.nodeName = nodeName;
+            setExpectedState(expectedState);
+            setActualState(actualState);
+        }
 
-        // cache to avoid I/O on multiple check operations; only used while instance is stopped, and reset on startup
-        private Map<String, String> cachedFileContent = new HashMap<>();
+        public void setExpectedState(String expectedState) {
+            this.expectedState = Optional.ofNullable(expectedState).orElse(ABSENT_COMPONENT_STRING);
+        }
 
-        private boolean potentiallyRunning;
+        public void setActualState(String actualState) {
+            this.actualState = Optional.ofNullable(actualState).orElse(ABSENT_COMPONENT_STRING);
+        }
 
-        private ManagedInstance(String instanceId, String installationId) {
-            this.id = instanceId;
-            this.installationId = installationId;
+        public boolean stateMatches() {
+            return expectedState.equals(actualState);
         }
 
         @Override
         public String toString() {
-            return getId();
+            return StringUtils.format("%s | %s | expected: %s | found: %s", nodeName, componentName, expectedState, actualState);
         }
 
-        public String getId() {
-            return id; // immutable
-        }
-
-        public synchronized String getInstallationId() {
-            return installationId;
-        }
-
-        @SuppressWarnings("unused") // for potential future use
-        public synchronized void setInstallationId(String installationId) {
-            this.installationId = installationId;
-        }
-
-        public synchronized Integer getServerPort() {
-            return serverPort;
-        }
-
-        public synchronized void setServerPort(Integer serverPort) {
-            this.serverPort = serverPort;
-        }
-
-        /**
-         * @return the internal mutable list; not a copy!
-         */
-        public List<String> accessConfiguredAutostartConnectionIds() {
-            return configuredAutostartConnectionIds; // the list reference itself is immutable
-        }
-
-        public synchronized String getLastCommandOutput() {
-            return lastCommandOutput;
-        }
-
-        public synchronized void setLastCommandOutput(String lastCommandOutput) {
-            this.lastCommandOutput = lastCommandOutput;
-        }
-
-        public synchronized String getProfileRelativeFileContent(String relativePath, boolean forceReload) throws IOException {
-            if (!potentiallyRunning) {
-                if (cachedFileContent.containsKey(relativePath)) {
-                    return cachedFileContent.get(relativePath); // may be null if file does not exist
-                }
-            } else {
-                log.warn("Requested file " + relativePath + " of running instance " + id + "; not using I/O cache");
-            }
-
-            final File fileLocation = instanceManagementService.resolveRelativePathWithinProfileDirectory(id, relativePath);
-            final String content;
-            if (!fileLocation.exists()) {
-                content = null;
-            } else {
-                content = FileUtils.readFileToString(fileLocation, "UTF-8"); // no other information available; assume UTF8
-            }
-
-            if (!potentiallyRunning) {
-                cachedFileContent.put(relativePath, content); // content may be null if file is missing
-            }
-            return content;
-        }
-
-        public synchronized void onStarting() {
-            potentiallyRunning = true;
-            cachedFileContent.clear();
-        }
-
-        public synchronized void onStopped() {
-            potentiallyRunning = false;
-        }
-
-        @SuppressWarnings("unused") // for future use
-        public synchronized boolean getPotentiallyRunning() {
-            return potentiallyRunning;
-        }
     }
 
-    /**
-     * OSGi bind method.
-     * 
-     * @param newService the new service instance
-     */
-    public void bindInstanceManagementService(InstanceManagementService newService) {
-        instanceManagementService = newService;
+    public InstanceManagementStepDefinitions(TestScenarioExecutionContext executionContext) {
+        super(executionContext);
     }
 
     /**
@@ -203,7 +119,6 @@ public class InstanceManagementStepDefinitions {
      */
     @Before
     public void initialize() {
-        outputReceiver = executionContext.getOutputReceiver();
         // sanity checks
         assertTrue(instancesById.isEmpty());
         assertTrue(enabledInstances.isEmpty());
@@ -225,12 +140,15 @@ public class InstanceManagementStepDefinitions {
      * 
      * @param autoStartPhrase an optional phrase that triggers auto-starting the instances if present
      * @param instanceList comma-separated list of instance names
+     * @param optionalTemplateId if set, this specifies a template configuration file to start from, instead of an empty configuration
      * @param buildOrInstallationId the URL part (e.g. "snapshots/trunk") defining the build to use, or a symbolic installation id (e.g.
      *        ":self" or "local:...")
      * @throws Throwable on failure
      */
-    @Given("^(?:the )?(running )?instance[s]? \"([^\"]*)\" using (?:the default build|build \"([^\"]*)\")$")
-    public void givenInstancesUsingBuild(String autoStartPhrase, String instanceList, String buildOrInstallationId) throws Throwable {
+    @Given("^(?:the )?(running )?instance[s]? \"([^\"]*)\" (?:based on template \"([^\"]*)\" )?"
+        + "using (?:the default build|build \"([^\"]*)\")$")
+    public void givenInstancesUsingBuild(String autoStartPhrase, String instanceList, String optionalTemplateId,
+        String buildOrInstallationId) throws Throwable {
 
         if (buildOrInstallationId == null) {
             // if this parameter is null, the phrase "the default build" was found instead of a "build <...>" part,
@@ -259,21 +177,62 @@ public class InstanceManagementStepDefinitions {
                 imOperationOutputReceiver, IM_OPERATION_TIMEOUT);
         }
 
-        final List<String> instanceIdList = parseInstanceList(instanceList);
-        for (String instanceId : instanceIdList) {
-            final ManagedInstance instance = new ManagedInstance(instanceId, installationId);
+        final List<String> instanceDefinitionParts = parseInstanceList(instanceList);
+        final List<String> instanceIds = new ArrayList<>();
+        for (String instanceDefinition : instanceDefinitionParts) {
+            final Matcher matcher = INSTANCE_DEFINITION_PATTERN.matcher(instanceDefinition);
+            if (!matcher.matches()) {
+                fail("Invalid instance definition part: " + instanceDefinition);
+            }
+
+            String instanceId = matcher.group(1);
+            instanceIds.add(instanceId);
+
+            String optionString = matcher.group(2);
+            if (optionString == null) {
+                optionString = "";
+            }
+
+            final ManagedInstance instance = new ManagedInstance(instanceId, installationId, instanceManagementService);
             instancesById.put(instanceId, instance);
             enabledInstances.add(instance);
             printToCommandConsole(StringUtils.format("Configuring test instance \"%s\"", instanceId));
 
             final int imSshPortNumber = portNumberGenerator.incrementAndGet(); // TODO check whether that port is actually free
-            final InstanceConfigurationOperationSequence operationSequence = instanceManagementService.newConfigurationOperationSequence()
-                .resetConfiguration().enableImSshAccess(imSshPortNumber).setName(instanceId);
-            instanceManagementService.applyInstanceConfigurationOperations(instanceId, operationSequence, imOperationOutputReceiver);
+            InstanceConfigurationOperationSequence setupSequence = instanceManagementService.newConfigurationOperationSequence();
+            // base on template or start configuration from scratch?
+            if (optionalTemplateId == null) {
+                setupSequence = setupSequence.resetConfiguration();
+            } else {
+                final File testTemplateFile =
+                    new File(executionContext.getTestScriptLocation(),
+                        StringUtils.format("instance_templates/%s.json", optionalTemplateId));
+                if (!testTemplateFile.isFile()) {
+                    throw new IOException(
+                        "Specified template file " + optionalTemplateId + " was not found at expected location " + testTemplateFile);
+                }
+                setupSequence = setupSequence.applyTemplateFile(testTemplateFile);
+            }
+            if (optionString.contains("Relay")) {
+                setupSequence = setupSequence.setRelayFlag(true);
+            }
+            if (optionString.contains("WorkflowHost") || optionString.contains("WfHost") || optionString.contains("WFHost")) {
+                setupSequence = setupSequence.setWorkflowHostFlag(true);
+            }
+            Matcher idMatcher = INSTANCE_DEFINITION_ID_SUBPATTERN.matcher(optionString);
+            String customNodeId = null;
+            if (idMatcher.find()) {
+                customNodeId = idMatcher.group(1);
+            }
+            setupSequence = setupSequence.enableImSshAccess(imSshPortNumber).setName(instanceId);
+            if (customNodeId != null) {
+                setupSequence = setupSequence.setCustomNodeId(customNodeId);
+            }
+            instanceManagementService.applyInstanceConfigurationOperations(instanceId, setupSequence, imOperationOutputReceiver);
         }
         printToCommandConsole(StringUtils.format("Auto-starting instance(s) \"%s\"", instanceList));
         if (autoStartPhrase != null) {
-            instanceManagementService.startInstance(installationId, instanceIdList, imOperationOutputReceiver,
+            instanceManagementService.startInstance(installationId, instanceIds, imOperationOutputReceiver,
                 IM_OPERATION_TIMEOUT, false);
         }
     }
@@ -349,6 +308,55 @@ public class InstanceManagementStepDefinitions {
     }
 
     /**
+     * Schedules a state change event for a single instance; intended for tests where instances start/stop concurrently to other (blocking)
+     * test steps. May be reworked to a multi-instance step/task in the future.
+     * 
+     * @param action a phrase indicating what should happen with the instance; currently supported: "shutdown", "restart"
+     * @param instanceId the id of the instance to modify
+     * @param delaySeconds the delay, in seconds, after which the action should be performed
+     * @throws Throwable on failure
+     */
+    @When("^scheduling (?:a|an instance) (shutdown|restart|reconnect) of \"([^\"]+)\" after (\\d+) seconds$")
+    public void whenSchedulingNodeActionsAfterDelay(final String action, final String instanceId, final int delaySeconds)
+        throws Throwable {
+
+        // TODO ensure proper integration with test cleanup
+        // TODO as this is the first asynchronous test action, check thread safety
+        // TODO support "restart" action as well
+
+        final ManagedInstance instance = resolveInstance(instanceId);
+        ConcurrencyUtils.getAsyncTaskService().scheduleAfterDelay(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    switch (action) {
+                    case "shutdown":
+                        stopSingleInstance(instance);
+                        break;
+                    case "restart":
+                        stopSingleInstance(instance);
+                        startSingleInstance(instance, false); // assuming headless mode here
+                        break;
+                    case "reconnect":
+                        cycleAllOutgoingConnectionsOf(instance);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(action);
+                    }
+                } catch (IOException e) {
+                    // TODO make outer script fail, probably on shutdown
+                    log.error("Error while executing aynchonous action '" + action + "' on instance '" + instanceId + "'", e);
+                }
+
+            }
+
+        }, TimeUnit.SECONDS.toMillis(delaySeconds));
+        printToCommandConsole(
+            StringUtils.format("Scheduling a '%s' action for instance '%s' after %d second(s)", action, instanceId, delaySeconds));
+    }
+
+    /**
      * Verifies the running/stopped state of one or more instances.
      * 
      * @param instanceList comma-separated list of instances to check
@@ -403,7 +411,7 @@ public class InstanceManagementStepDefinitions {
                 serverInstance.setServerPort(serverPort);
             }
             final String serverPortString = serverPort.toString();
-            final String connectionEntryName = serverInstanceId + "-" + serverPortString;
+            final String connectionEntryName = serverInstanceId + "_Port" + serverPortString;
 
             // note: as of release 8.1.0 and before, "cn list" does not output the connection id provided via IM configuration, but
             // "ip:port" for each connection; so this is the string needed to detect the connection's state from the output -- misc_ro
@@ -431,6 +439,8 @@ public class InstanceManagementStepDefinitions {
      */
     @Then("^all auto-start network connections should be ready within (\\d+) seconds$")
     public void thenAllAutoStartNetworkConnectionsShouldBeReadyWithinSeconds(int maxWaitTimeSeconds) throws Throwable {
+        printToCommandConsole("Waiting for all auto-start network connections to complete");
+
         final Set<ManagedInstance> pendingInstances = new HashSet<>();
         for (ManagedInstance instance : enabledInstances) {
             if (!instance.accessConfiguredAutostartConnectionIds().isEmpty()) {
@@ -478,7 +488,7 @@ public class InstanceManagementStepDefinitions {
     public void thenTheVisibleNetworkOfShouldConsistOf(String instanceId, String testType, String listOfExpectedVisibleInstances)
         throws Throwable {
         List<String> expectedVisibleInstances = parseInstanceList(listOfExpectedVisibleInstances);
-        String commandOutput = executeCommandOnInstanceInternal(resolveInstance(instanceId), "net info");
+        String commandOutput = executeCommandOnInstance(resolveInstance(instanceId), "net info", false);
 
         // TODO improve: actually parse the output and support "should consist of"
         for (String expectedInstanceId : expectedVisibleInstances) {
@@ -506,7 +516,7 @@ public class InstanceManagementStepDefinitions {
     @When("^executing (?:the )?command \"([^\"]*)\" on (?:instance )?\"([^\"]*)\"$")
     public void whenExecutingCommandOnSingleInstance(String commandString, String instanceId) throws Throwable {
         final ManagedInstance instance = resolveInstance(instanceId);
-        String commandOutput = executeCommandOnInstanceInternal(instance, commandString);
+        String commandOutput = executeCommandOnInstance(instance, commandString, true);
         instance.setLastCommandOutput(commandOutput);
         lastInstanceWithSingleCommandExecution = instance;
     }
@@ -520,7 +530,7 @@ public class InstanceManagementStepDefinitions {
     @When("^executing command \"([^\"]*)\" on all instances$")
     public void whenExecutingCommandOnAllInstances(String commandString) throws Throwable {
         for (ManagedInstance instance : enabledInstances) {
-            executeCommandOnInstanceInternal(instance, commandString);
+            executeCommandOnInstance(instance, commandString, true);
         }
         lastInstanceWithSingleCommandExecution = null; // prevent inconsistent data
     }
@@ -528,37 +538,119 @@ public class InstanceManagementStepDefinitions {
     /**
      * Verifies the output of the last specific instance a command was executed on via IM SSH.
      * 
-     * @param substring the substring expected in the command's output
+     * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
+     * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
+     * @param substring the substring or pattern expected to be present or absent in the command's output
      * @throws Throwable on failure
      */
-    @Then("^the (?:last )?output should contain \"([^\"]*)\"$")
-    public void thenTheLastOutputShouldContain(String substring) throws Throwable {
-        assertTheLastCommandOutputOfInstanceContains(lastInstanceWithSingleCommandExecution, substring);
+    @Then("^the (?:last )?output should (not )?contain (the pattern )?\"([^\"]*)\"$")
+    public void thenTheLastOutputShouldContain(String negationFlag, String useRegexpMarker, String substring) throws Throwable {
+        assertPropertyOfLastCommandOutput(lastInstanceWithSingleCommandExecution, negationFlag, useRegexpMarker, substring);
     }
 
     /**
      * Verifies the output of the last command executed on the given instance via IM SSH.
      * 
      * @param instanceId the instance of which the last command output should be tested
-     * @param substring the substring expected in the command's output
+     * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
+     * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
+     * @param substring the substring or pattern expected to be present or absent in the command's output
      * @throws Throwable on failure
      */
-    @Then("^the (?:last )?output of \"([^\"]*)\" should contain \"([^\"]*)\"$")
-    public void thenTheLastOutputOfInstanceShouldContain(String instanceId, String substring) throws Throwable {
+    @Then("^the (?:last )?output of \"([^\"]*)\" should (not )?contain (the pattern )?\"([^\"]*)\"$")
+    public void thenTheLastOutputOfInstanceShouldContain(String instanceId, String negationFlag, String useRegexpMarker, String substring)
+        throws Throwable {
         ManagedInstance instance = resolveInstance(instanceId);
-        assertTheLastCommandOutputOfInstanceContains(instance, substring);
+        assertPropertyOfLastCommandOutput(instance, negationFlag, useRegexpMarker, substring);
     }
 
     /**
      * Verifies the output of the last command executed on all previously configured instances via IM SSH.
      * 
-     * @param substring the substring expected in each command's output
+     * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
+     * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
+     * @param substring the substring or pattern expected to be present or absent in each command's output
      * @throws Throwable on failure
      */
-    @Then("^the (?:last )?output of each instance should contain \"([^\"]*)\"$")
-    public void thenTheLastOutputOfEachInstanceShouldContain(String substring) throws Throwable {
+    @Then("^the (?:last )?output of each instance should (not )?contain (the pattern )?\"([^\"]*)\"$")
+    public void thenTheLastOutputOfEachInstanceShouldContain(String negationFlag, String useRegexpMarker, String substring)
+        throws Throwable {
         for (ManagedInstance instance : enabledInstances) {
-            assertTheLastCommandOutputOfInstanceContains(instance, substring);
+            assertPropertyOfLastCommandOutput(instance, negationFlag, useRegexpMarker, substring);
+        }
+    }
+
+    /**
+     * Batch test for presence or absence of component installations and their properties.
+     * 
+     * TODO this should actually go into a separate step definition class; there should be some refactoring first, though
+     * 
+     * @param instanceId the instance to query
+     * @param componentsTable the expected component data to see (or not see in case of the reserved "absent" marker)
+     * @throws Throwable on failure
+     */
+    @Then("^instance \"([^\"]*)\" should see these components:$")
+    public void thenTheVisibleComponentsOfAnInstanceShouldBe(String instanceId, DataTable componentsTable) throws Throwable {
+        final ManagedInstance instance = resolveInstance(instanceId);
+
+        Map<String, ComponentVisibilityState> visibilityMap = new HashMap<>();
+
+        // parse expectations
+        for (List<String> criteriaRow : componentsTable.cells(0)) {
+            String argNodeName = criteriaRow.get(0);
+            String argCompName = criteriaRow.get(1);
+            String expectedState = criteriaRow.get(2);
+
+            final String mapKey = argNodeName + "/" + argCompName;
+
+            ComponentVisibilityState entry = new ComponentVisibilityState(argCompName, argNodeName, expectedState, null);
+            visibilityMap.put(mapKey, entry);
+
+            log.debug("Parsed component expectation: " + entry);
+        }
+
+        // parse actual state
+        String output = executeCommandOnInstance(instance, "components list --as-table --auth", false);
+        // log.debug(output);
+        for (String line : output.split("\n")) {
+            if (line.startsWith("Finished executing command")) {
+                // synthetic final line; not part of the actual output
+                continue;
+            }
+            String trimmedLine = line.trim();
+            if (trimmedLine.isEmpty()) {
+                continue;
+            }
+            String[] lineParts = trimmedLine.split("\\|");
+            if (lineParts.length != 6) {
+                log.error("Ignoring output line with unexpected number of elements: " + line);
+                continue;
+            }
+            final String componentRefName = lineParts[2];
+            final String nodeName = lineParts[0];
+            final String actualState = lineParts[5];
+
+            final String mapKey = nodeName + "/" + componentRefName;
+            ComponentVisibilityState existing = visibilityMap.get(mapKey);
+            if (existing != null) {
+                existing.setActualState(actualState);
+            }
+        }
+
+        boolean hasMismatch = false;
+        StringBuilder errorLines = new StringBuilder();
+        for (ComponentVisibilityState entry : visibilityMap.values()) {
+            if (!entry.stateMatches()) {
+                final String errorLine = "  Unexpected component state: " + entry;
+                errorLines.append("\n");
+                errorLines.append(errorLine);
+                printToCommandConsole(errorLine);
+                hasMismatch = true;
+            }
+        }
+
+        if (hasMismatch) {
+            fail("At least one component had an unexpected visibility/authorization state: " + errorLines.toString());
         }
     }
 
@@ -607,11 +699,34 @@ public class InstanceManagementStepDefinitions {
     public void thenTheLogOutputShouldIndicateACleanShutdown(String instances) throws Throwable {
         for (ManagedInstance instance : enabledInstances) {
             // expect empty or absent warnings.log file
-            assertTheProfileRelativeFileOfInstanceIsMissingOrEmpty(instance, "warnings.log");
-            assertTheProfileRelativeFileOfInstanceContains(instance, "debug.log", "Known unfinished operations on shutdown: <none>");
+            assertTheProfileRelativeFileOfInstanceIsMissingOrEmpty(instance, WARNINGS_LOG_FILE_NAME);
+            assertTheProfileRelativeFileOfInstanceContains(instance, DEBUG_LOG_FILE_NAME,
+                "Known unfinished operations on shutdown: <none>");
             // note: this will fail on instances below 8.2.0-snapshot
-            assertTheProfileRelativeFileOfInstanceContains(instance, "debug.log", "Main application shutdown complete, exit code: 0");
+            assertTheProfileRelativeFileOfInstanceContains(instance, DEBUG_LOG_FILE_NAME,
+                "Main application shutdown complete, exit code: 0");
         }
+    }
+
+    /**
+     * Verifies the presence or absence of certain output in the debug.log file of an instance.
+     * 
+     * @param instanceId the id of the instance to test
+     * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
+     * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
+     * @param substring the substring or pattern expected to be present or absent in the command's output
+     * @throws Throwable on failure
+     */
+    @Then("^the log output of \"([^\"]*)\" should (not )?contain (the pattern )?\"([^\"]*)\"$")
+    public void thenTheLogOutputShouldOrShouldNotContain(String instanceId, String negationFlag, String useRegexpMarker, String substring)
+        throws Throwable {
+        ManagedInstance instance = resolveInstance(instanceId);
+        final String fileContent = instance.getProfileRelativeFileContent(DEBUG_LOG_FILE_NAME, false);
+        if (fileContent == null || fileContent.isEmpty()) {
+            fail(
+                StringUtils.format("The expected file \"%s\" in profile \"%s\" does not exist or is empty", DEBUG_LOG_FILE_NAME, instance));
+        }
+        assertPropertyOfTextOutput(instance, negationFlag, useRegexpMarker, substring, fileContent, DEBUG_LOG_FILE_NAME + " content");
     }
 
     /**
@@ -621,7 +736,7 @@ public class InstanceManagementStepDefinitions {
      * @throws Throwable on failure
      */
     // TODO move to generic set of operations
-    @When("^waiting for (\\d+) seconds$")
+    @When("^waiting for (\\d+) second[s]?$")
     public void whenWaitingForSeconds(int secondsToWait) throws Throwable {
         printToCommandConsole("Waiting for " + secondsToWait + " seconds(s)...");
         Thread.sleep(TimeUnit.SECONDS.toMillis(secondsToWait));
@@ -644,6 +759,25 @@ public class InstanceManagementStepDefinitions {
         instance.onStopped();
     }
 
+    private void cycleAllOutgoingConnectionsOf(ManagedInstance instance) {
+        final String cnListOutput = executeCommandOnInstance(instance, "cn list", false);
+        Pattern connectionIdPattern = Pattern.compile("^\\s*\\((\\d+)\\) ");
+        final Matcher matcher = connectionIdPattern.matcher(cnListOutput);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+            final String connectionIndex = matcher.group(1);
+            executeCommandOnInstance(instance, "cn stop " + connectionIndex, false);
+            executeCommandOnInstance(instance, "cn start " + connectionIndex, false);
+        }
+        if (count == 0) {
+            printToCommandConsole("  WARNING: Attempted to stop and restart all outgoing connections of " + instance.getId()
+                + ", but no connections were found");
+        } else {
+            printToCommandConsole("  Stopped and restarted " + count + " outgoing connection(s) of " + instance.getId());
+        }
+    }
+
     private void executeRunnablesGroupAndHandlePotentialErrors(final RunnablesGroup runnablesGroup, String singleTaskDescription) {
         final List<RuntimeException> exceptions = runnablesGroup.executeParallel();
         boolean hasFailure = false;
@@ -663,50 +797,9 @@ public class InstanceManagementStepDefinitions {
         }
     }
 
-    private String executeCommandOnInstanceInternal(final ManagedInstance instance, String commandString) {
-        final String instanceId = instance.getId();
-        final String startInfoText = StringUtils.format("Executing command \"%s\" on instance \"%s\"", commandString, instanceId);
-        printToCommandConsole(startInfoText);
-        log.debug(startInfoText);
-        CapturingTextOutReceiver commandOutputReceiver = new CapturingTextOutReceiver();
-        try {
-            final int maxAttempts = 3;
-            int numAttempts = 0;
-            while (numAttempts < maxAttempts) {
-                try {
-                    instanceManagementService.executeCommandOnInstance(instanceId, commandString, commandOutputReceiver);
-                    break; // exit retry loop on success
-                } catch (JSchException e) {
-                    if (!e.toString().contains("Connection refused: connect")) {
-                        throw e; // rethrow and fail on other errors
-                    }
-                }
-                numAttempts++;
-            }
-            if (numAttempts > 1) {
-                String retrySuffix = " after retrying the SSH connection for " + (numAttempts - 1) + " times)";
-                printToCommandConsole(
-                    StringUtils.format("  (Executed command \"%s\" on instance \"%s\"%s", commandString, instanceId, retrySuffix));
-            }
-            String commandOutput = commandOutputReceiver.getBufferedOutput();
-            instance.setLastCommandOutput(commandOutput);
-            log.debug(StringUtils.format("Finished execution of command \"%s\" on instance \"%s\"", commandString, instanceId));
-            return commandOutput;
-        } catch (JSchException | SshParameterException | IOException | InterruptedException e) {
-            fail(StringUtils.format("Failed to execute command \"%s\" on instance \"%s\": %s", commandString, instanceId, e.toString()));
-            return null; // dummy command; never reached
-        }
-
-    }
-
-    private void assertTheLastCommandOutputOfInstanceContains(ManagedInstance instance, String substring) {
-        final String output = instance.getLastCommandOutput();
-        if (!output.contains(substring)) {
-            fail(StringUtils.format("The output of instance \"%s\" did not contain \"%s\"; full output:\n-----\n%s\n-----", instance,
-                substring, output.trim()));
-        }
-        printToCommandConsole(
-            StringUtils.format("  Command output of instance \"%s\" contained expected text \"%s\"", instance, substring));
+    private void assertPropertyOfLastCommandOutput(ManagedInstance instance, String negationFlag, String useRegexpMarker,
+        String substring) {
+        assertPropertyOfTextOutput(instance, negationFlag, useRegexpMarker, substring, instance.getLastCommandOutput(), "command output");
     }
 
     private void assertTheProfileRelativeFileOfInstanceContains(ManagedInstance instance, String relativeFilePath, String substring)
@@ -751,7 +844,7 @@ public class InstanceManagementStepDefinitions {
     private boolean testIfConfiguredOutgoingConnectionsAreConnected(final ManagedInstance instance, boolean isFinalAttempt) {
         final List<String> connectionIds = instance.accessConfiguredAutostartConnectionIds();
 
-        String commandOutput = executeCommandOnInstanceInternal(instance, "cn list");
+        String commandOutput = executeCommandOnInstance(instance, "cn list", false);
         int matches = 0;
         for (String connectionId : connectionIds) {
             Matcher matcher = Pattern.compile("'" + connectionId + "'.*?- (\\w+)").matcher(commandOutput);
@@ -827,20 +920,8 @@ public class InstanceManagementStepDefinitions {
         return buildId.replaceAll("[^\\w]", "_");
     }
 
-    private void printToCommandConsole(String text) {
-        outputReceiver.addOutput(text);
-    }
-
     private PrefixingTextOutForwarder getTextoutReceiverForIMOperations() {
         return new PrefixingTextOutForwarder("  (IM output) ", outputReceiver);
-    }
-
-    private ManagedInstance resolveInstance(String instanceId) {
-        return instancesById.get(instanceId);
-    }
-
-    private List<String> parseInstanceList(String instanceList) {
-        return Arrays.asList(instanceList.trim().split("\\s*,\\s*"));
     }
 
     private ManagedInstance[] detachedIterableCopy(final Collection<ManagedInstance> pendingInstances) {

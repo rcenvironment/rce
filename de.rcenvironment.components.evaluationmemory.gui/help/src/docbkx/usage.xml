@@ -24,27 +24,64 @@
         <title>Usage</title>
         <para>You need to configure three things: inputs/outputs, the path to the evaluation memory
             file wherein the values are stored respectively should be stored, and whether loop
-            failures shoud be considered as valid loop results.</para>
-        <para>The inputs and outputs are configured in the "Inputs/Outputs" configuration tab. There
-            are five tables whereby three of them are read-only. In the first one (seen from left to
-            right and up to down), create an input for each design value sent from the evaluation
-            loop driver to the loop. For each input an output is created as well in the second
-            table. They are used in case the design values are just forwarded into the loop. In the
-            third table, create one input for each result value evaluated by the loop. Again, for
-            each input an output is created as well, this time it is created in the fourth table.
-            They are used to forward the result values to the evaluation loop driver.</para>
-        <para>The path to the evaluation memory file is either configured in the 'Memory File'
-            configuration tab or is defined at workflow start if the checkbox is checked
-            appropriately.</para>
-        <para>If a component in the loop fails due to invalid parameters and sends a value of type
-            'not-a-value', the value will pass the Evaluation Memory component and will  be stored
-            as a loop result for the design values sent into the loop. By (un-)checking the checkbox
-            'Consider loop failures as valid loop results' you can decide wether the stored values
-            should be considered and re-used in case of equal design values.</para>
-        <para>Finally, the inputs and outputs must be connected to the evaluation loop driver and to
-            the loop properly. If done, there are actually two loops: evaluation loop driver -
-            Evaluation Memory component and Evaluation Memory component - evaluation loop. The first
-            one is driven by the evaluation loop driver, the second one is driven by the Evaluation
-            Memory component.</para>
+            failures should be considered as valid loop results.</para>
+        <sect2>
+        	<title>Evaluation Memory File</title>
+			<para>The path to the evaluation memory file is either configured in the 'Memory File'
+				configuration tab or is defined at workflow start if the checkbox is checked
+				appropriately.</para>
+		</sect2>
+        <sect2>
+        	<title>Handling Loop Failures</title>
+			<para>If a component in the loop fails due to invalid parameters and sends a value of type
+				'not-a-value', the value will pass the Evaluation Memory component and will  be stored
+				as a loop result for the design values sent into the loop. By (un-)checking the checkbox
+				'Consider loop failures as valid loop results' you can decide wether the stored values
+				should be considered and re-used in case of equal design values.</para>
+        </sect2>
+        <sect2>
+            <title>Inputs/Outputs</title>
+            <para>The inputs and outputs are configured in the "Inputs/Outputs" configuration tab.
+                There are five tables, three of which are read-only. In the first one (seen from
+                left to right and top to bottom), create an input for each design value sent from
+                the evaluation loop driver to the loop. For each input an output is created as well
+                in the second table. These are used in case the design values are just forwarded
+                into the loop. In the third table, create one input for each result value evaluated
+                by the loop. Again, for each input an output is created as well, this time in the
+                fourth table. These are used to forward the result values to the evaluation loop
+                driver.</para>
+            <para>For each design value of type float or integer added as an input in the first step
+                above, a tolerance on this value may be given. Incoming design values are compared
+                to stored ones with respect to this tolerance. Say, e.g., that there exist two
+                inputs x1 and x2, both of type float. The input x1 is configured with a tolerance of
+                10%, while the input x2 is configured with a tolerance of 20%. If the evaluation
+                memory component receives the input values x1 = 10.0 and x2 = 20.0, then it first
+                checks whether it has already stored results for these precise values. If this is
+                not the case, it checks whether it has stored result values for inputs in the ranges
+                9.0 &lt;= x1 &lt;= 11.0 and 16.0 &lt;= x2 &lt;= 24.0. <itemizedlist>
+                    <listitem>
+                        <para>If no such value exists, then the input values are forwarded to the
+                            loop to be evaluated.</para>
+                    </listitem>
+                    <listitem>
+                        <para>If exactly one such value exists, then the stored result values are
+                            returned to the loop driver.</para>
+                    </listitem>
+                    <listitem>
+                        <para>The behavior for the case that multiple such items exist can be
+                            configured in the "Evaluation Memory" tab: Strict behavior causes the
+                            Evaluation memory component to forward the input values to the loop for
+                            evaluation, while lenient behavior causes the component to arbitrarily
+                            pick any of the stored values and return them to the loop driver. The
+                            behavior can only be chosen if there is at least one input that has some
+                            tolerance configured.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Finally, the inputs and outputs must be connected to the evaluation loop driver
+                and to the loop properly. If done, there are actually two loops: evaluation loop
+                driver - Evaluation Memory component and Evaluation Memory component - evaluation
+                loop. The first one is driven by the evaluation loop driver, the second one is
+                driven by the Evaluation Memory component.</para>
+        </sect2>
     </sect1>
 </chapter>

@@ -1,7 +1,8 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
- * 
- * All rights reserved
+ * Copyright (c) 2000, 2005 IBM Corporation and others
+ * Copyright 2015-2019 DLR, Germany
+ *  
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -139,7 +140,7 @@ public final class CustomShortestPathConnectionRouter extends AbstractRouter {
             figuresToBounds.put(child, bounds);
             child.addFigureListener(figureListener);
             isDirty = true;
-        } 
+        }
     }
 
     private void hookAll() {
@@ -161,7 +162,7 @@ public final class CustomShortestPathConnectionRouter extends AbstractRouter {
                 if (!(child instanceof TransparentLabel)) {
                     figureItr.remove();
                     removeChild(child);
-                } 
+                }
             }
             figuresToBounds = null;
         }

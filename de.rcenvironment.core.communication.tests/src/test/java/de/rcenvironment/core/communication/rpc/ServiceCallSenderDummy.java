@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,7 +25,7 @@ public class ServiceCallSenderDummy implements ServiceCallSender {
     @Override
     public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws RemoteOperationException {
         try {
-            return OSGiServiceCallHandlerImplTest.getCallHandler().handle(serviceCallRequest);
+            return OSGiServiceCallHandlerImplTest.getCallHandler().dispatchToLocalService(serviceCallRequest);
         } catch (InternalMessagingException e) {
             return ServiceCallResultFactory.representInternalErrorAtHandler(serviceCallRequest, "Exception in mock handler", e);
         }

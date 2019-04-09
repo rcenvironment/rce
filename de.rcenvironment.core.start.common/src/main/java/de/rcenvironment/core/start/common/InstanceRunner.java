@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -97,32 +97,66 @@ public abstract class InstanceRunner {
     }
 
     private boolean validateInstance() {
-        Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults = instanceValidationService.validateInstance();
-        int passed = validationResults.get(InstanceValidationResultType.PASSED).size();
-        int failedWithProceedingAllowed = validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size();
-        int failedWithShutdownRequired = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size();
+        boolean repeatValidation;
+        do {
+            repeatValidation = false;
+            final Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults =
+                instanceValidationService.validateInstance();
 
-        log.debug(StringUtils.format("Instance validation results [%d in total]: %d passed, %d failed with proceeding allowed, "
-            + "%d failed with shutdown required", passed + failedWithProceedingAllowed + failedWithShutdownRequired,
-            passed, failedWithProceedingAllowed, failedWithShutdownRequired));
+            final int passed = validationResults.get(InstanceValidationResultType.PASSED).size();
+            final int failedWithConfirmationRequired =
+                validationResults.get(InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED).size();
+            final int failedWithRecoveryRequired =
+                validationResults.get(InstanceValidationResultType.FAILED_RECOVERY_REQUIRED).size();
+            final int failedWithShutdownRequired = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size();
 
-        if (validationResults.containsKey(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
-            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
+            log.debug(StringUtils.format(
+                "Instance validation results [%d in total]: %d passed, %d failed with confirmation required, "
+                + "%d passed with recovery required, %d failed with shutdown required",
+                passed + failedWithConfirmationRequired + failedWithRecoveryRequired + failedWithShutdownRequired,
+                passed, failedWithConfirmationRequired, failedWithRecoveryRequired, failedWithShutdownRequired));
+
+            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED)) {
                 log.error(StringUtils.format("Instance validation '%s' failed: %s", result.getValidationDisplayName(),
                     result.getLogMessage()));
             }
-        }
 
-        if (validationResults.containsKey(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED)) {
+            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_RECOVERY_REQUIRED)) {
+                log.debug(StringUtils.format("Instance validation '%s' failed recoverably: %s", result.getValidationDisplayName(),
+                    result.getLogMessage()));
+            }
+
             for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED)) {
-                log.error(StringUtils.format("Instance validation '%s' failed: %s. RCE is shutting down",
+                log.error(StringUtils.format("Instance validation '%s' failed irrecoverably: %s. RCE is shutting down",
                     result.getValidationDisplayName(), result.getLogMessage()));
             }
-        }
-
-        if (failedWithProceedingAllowed > 0 || failedWithShutdownRequired > 0) {
-            return onInstanceValidationFailures(validationResults);
-        }
+            
+            final boolean shutdownRequired = (failedWithShutdownRequired > 0);
+            if (shutdownRequired) {
+                onShutdownRequired(validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED));
+                return false;
+            }
+            
+            final boolean recoveryRequired = (failedWithRecoveryRequired > 0);
+            if (recoveryRequired) {
+                final boolean recoverySucceeded =
+                    onRecoveryRequired(validationResults.get(InstanceValidationResultType.FAILED_RECOVERY_REQUIRED));
+                if (recoverySucceeded) {
+                    repeatValidation = true;
+                } else {
+                    return false;
+                }
+            }
+            
+            final boolean confirmationRequired = (failedWithConfirmationRequired > 0);
+            if (confirmationRequired) {
+                final boolean confirmationGiven =
+                    onConfirmationRequired(validationResults.get(InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED));
+                if (!confirmationGiven) {
+                    return false;
+                }
+            }
+        } while (repeatValidation);
         return true;
     }
 
@@ -133,20 +167,52 @@ public abstract class InstanceRunner {
      * @throws Exception on uncaught exceptions
      */
     public abstract int performRun() throws Exception;
+    
+    /**
+     * Called if the validation determines that RCE needs to be shut down. Must be overridden to inform the users about the reason for the
+     * shutdown.
+     * 
+     * We consciously do not offer an empty default-implementation since subclasses shall have to make a conscious choice about silently
+     * ignoring the reasons for the error.
+     * 
+     * @param validationResults The validation results that cause the necessary shutdown.
+     */
+    public abstract void onShutdownRequired(List<InstanceValidationResult> validationResults);
+    
+    /**
+     * Called if the validation determines that RCE may be started if the user explicitly confirms the recovery from a failed validation.
+     * Must be overridden to actually query the user. If the user confirms the recovery actions, this necessitates another round of
+     * validation in order to ensure that the recovery indeed resulted in a valid instance of RCE.
+     * 
+     * We consciously do not offer an empty default-implementation since subclasses shall have to make a conscious choice about silently
+     * ignoring the reasons for the error.
+     * 
+     * @param validationResults The validation results that cause the necessity of recovery.
+     * @return True if the user confirmed all recoveries, false otherwise.
+     */
+    public abstract boolean onRecoveryRequired(List<InstanceValidationResult> validationResults);
 
     /**
-     * May (optionally) present user feedback about startup instance validation failures.
+     * Called if the validation determines that RCE may be started if the user explicitly confirms the startup. Must be overridden to
+     * actually query the user. If the user confirms the startup, this does not necessitate another round of validation.
      * 
-     * @param validationResults result of the instance validation
-     * @return <code>false</code> if instance validation failed and RCE must be shut down, otherwise <code>false</code>
+     * We consciously do not offer an empty default-implementation since subclasses shall have to make a conscious choice about silently
+     * ignoring the reasons for the error.
+     * 
+     * @param validationResults The validation results that cause the necessary confirmation.
+     * @return True if the user confirmed all validation results, false otherwise.
      */
-    // TODO refactor to avoid validation-specific parameter?
-    public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
-        if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
-            return false;
-        }
-        return true;
-    }
+    public abstract boolean onConfirmationRequired(List<InstanceValidationResult> validationResults);
+
+    /**
+     * Called if the validation determines that RCE may be started without further action.
+     * 
+     * In contrast to the other event handlers regarding validation, we do offer an empty default implementation since there is no immediate
+     * need to inform the user about a successful validation.
+     * 
+     * @param validationResults The validation results of the successful validations.
+     */
+    public void onValidationSuccess(List<InstanceValidationResult> validationResults) {}
 
     /**
      * Custom hook that is fired before the common code of {@link Instance#awaitShutdown()}.

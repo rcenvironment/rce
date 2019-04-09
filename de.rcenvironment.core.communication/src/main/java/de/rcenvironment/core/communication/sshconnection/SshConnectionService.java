@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -45,18 +45,11 @@ public interface SshConnectionService {
     /**
      * Adds a new ssh connection config to the service (does not store the passphrase). For adding keyfile and/or passphrase, call the
      * "setAuthDataForSshConnection" method after adding the connection.
-     * 
-     * @param displayName Name to be shown in network view.
-     * @param destinationHost The SSH host.
-     * @param port The port of the SSH server.
-     * @param sshAuthUser User name.
-     * @param keyfileLocation Location of the private key file. Must be in the OpenSSH format.
-     * @param usePassphrase if a passphrase should be used in case of keyfile authentication
-     * @param connectImmediately if the connection should be connected immediately
+     *
+     * @param context Parameters for the connection.
      * @return connection Id for the new connection
      */
-    String addSshConnection(String displayName, String destinationHost, int port, String sshAuthUser, String keyfileLocation,
-        boolean usePassphrase, boolean connectImmediately);
+    String addSshConnection(SshConnectionContext context);
 
     /**
      * Edits the ssh connection config with the given id (does not store the passphrase).
@@ -65,11 +58,11 @@ public interface SshConnectionService {
     void editSshConnection(SshConnectionContext context);
 
     /**
-     * Edits the keyfile/passphrase for the ssh connection with the given id, stores it in the secure store, if storePassphrase is set.
+     * Edits the keyfile/passphrase for the ssh connection with the given id, stores it in the secure storage, if storePassphrase is set.
      * 
      * @param id The id of the configuration to edit.
      * @param sshAuthPassPhrase passphrase (for password authentication or for the keyfile)
-     * @param storePassphrase if the passphrase should be stored in the secure store
+     * @param storePassphrase if the passphrase should be stored in the secure storage
      */
     void setAuthPhraseForSshConnection(String id, String sshAuthPassPhrase, boolean storePassphrase);
 
@@ -101,6 +94,14 @@ public interface SshConnectionService {
      * @return true, if there is and active ssh session with the given connection id, false else.
      */
     boolean isConnected(String connectionId);
+    
+    /**
+     * Returns true, if the connection will be automatically retried.
+     * 
+     * @param connectionId The connection id.
+     * @return true, if there is and active ssh session with the given connection id, false else.
+     */
+    boolean isWaitingForRetry(String connectionId);
 
     /**
      * Connects the SSH session for the given Id, assuming the passphrase is stored in the secure storage.
@@ -142,10 +143,10 @@ public interface SshConnectionService {
     void disposeConnection(String connectionId);
 
     /**
-     * Retreives the password for a connection id from the secure store.
+     * Retreives the password for a connection id from the secure storage.
      * 
      * @param connectionId the connection id.
      * @return the password
      */
-    String retreiveSshConnectionPassword(String connectionId);
+    String retrieveSshConnectionPassword(String connectionId);
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<chapter>
+    <title>SCP Input Loader Component Usage</title>
+    <sect1>
+        <para>The SCP Input Loader is a helper component for building workflows that will be published for remote access. This is the point where 
+the Remote Workflow Access feature sends the provided inputs into your workflow. You can change the data types or add/delete inputs 
+in the properties view of the input loader.</para>
+    </sect1>
+</chapter>

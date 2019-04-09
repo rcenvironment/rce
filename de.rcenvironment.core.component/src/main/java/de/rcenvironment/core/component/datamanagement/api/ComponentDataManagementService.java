@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.IOException;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 
@@ -23,6 +25,7 @@ import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
  * @author Robert Mischke
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public interface ComponentDataManagementService {
 
@@ -62,7 +65,19 @@ public interface ComponentDataManagementService {
      * @param nodeId The node to try to fetch data from
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId nodeId)
+    void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination nodeId)
+        throws IOException;
+
+    /**
+     * Copies the data "body" identified by a data management reference to a local file.
+     * 
+     * @param reference the reference
+     * @param targetFile the local file to write to
+     * @param nodeId The node to try to fetch data from
+     * @param decompress if set to true (default), the decompressed version of the object will be used, if it is stored in compressed form.
+     * @throws IOException on a local I/O or data management error
+     */
+    void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination nodeId, boolean decompress)
         throws IOException;
 
     /**
@@ -74,7 +89,7 @@ public interface ComponentDataManagementService {
      * @throws IOException on a local I/O or data management error
      * @throws CommunicationException in case of communication error
      */
-    String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException, CommunicationException;
+    String retrieveStringFromReference(String reference, NetworkDestination nodeId) throws IOException, CommunicationException;
 
     /**
      * Creates {@link FileReferenceTD} object from given file by creating a new data management reference.
@@ -86,6 +101,18 @@ public interface ComponentDataManagementService {
      * @throws IOException if given file doesn't exist or on data management error
      */
     FileReferenceTD createFileReferenceTDFromLocalFile(ComponentContext componentContext, File file, String filename)
+        throws IOException;
+
+    /**
+     * Creates {@link FileReferenceTD} object from given file by creating a new data management reference.
+     * 
+     * @param componentContext {@link ComponentContext} of the calling component
+     * @param file given file in compressed form
+     * @param filename name of file
+     * @return {@link FileReferenceTD}
+     * @throws IOException if given file doesn't exist or on data management error
+     */
+    FileReferenceTD createFileReferenceTDFromLocalCompressedFile(ComponentContext componentContext, File file, String filename)
         throws IOException;
 
     /**
@@ -101,6 +128,18 @@ public interface ComponentDataManagementService {
         String dirname) throws IOException;
 
     /**
+     * Creates {@link DirectoryReferenceTD} object from given directory by creating a new data management reference.
+     * 
+     * @param componentContext {@link ComponentContext} of the calling component
+     * @param dir given directory in compressed form
+     * @param dirname name of compressed directory
+     * @return {@link DirectoryReferenceTD}
+     * @throws IOException if given directory doesn't exist or on data management error
+     */
+    DirectoryReferenceTD createDirectoryReferenceTDFromLocalCompressedFile(ComponentContext componentContext, File dir,
+        String dirname) throws IOException;
+
+    /**
      * Retrieves a file from the data management referred by the given {@link FileReferenceTD}.
      * 
      * @param componentContext {@link ComponentContext} of the calling component
@@ -109,6 +148,17 @@ public interface ComponentDataManagementService {
      * @throws IOException on a local I/O or data management error
      */
     void copyFileReferenceTDToLocalFile(ComponentContext componentContext, FileReferenceTD fileReference, File targetFile)
+        throws IOException;
+
+    /**
+     * Retrieves a compressed file or directory from the data management referred by the given {@link FileReferenceTD}.
+     * 
+     * @param componentContext {@link ComponentContext} of the calling component
+     * @param fileReference {@link TypedDatum}
+     * @param targetFile local target file
+     * @throws IOException on a local I/O or data management error
+     */
+    void copyReferenceTDToLocalCompressedFile(ComponentContext componentContext, TypedDatum fileReference, File targetFile)
         throws IOException;
 
     /**
@@ -132,7 +182,7 @@ public interface ComponentDataManagementService {
      * @param node source {@link ResolvableNodeId}
      * @throws IOException on a local I/O or data management error
      */
-    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, ResolvableNodeId node)
+    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NetworkDestination node)
         throws IOException;
 
 }

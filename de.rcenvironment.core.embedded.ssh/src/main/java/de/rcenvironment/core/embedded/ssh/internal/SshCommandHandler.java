@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -215,8 +215,12 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
 
     private CommandExecutionResult sendToExecutionService(String command, Object invokerInfo) {
         List<String> tokens;
-        if (command.startsWith("rce")) {
-            command = command.replace("rce", "");
+
+        // When using rce locally, users have to prefix the rce commands with "rce". This is not the case in a ssh connection. In order to
+        // save users some frustration, we remove the (erroneously entered) prefix "rce" from ssh commands before executing
+        final String rcePrefix = "rce";
+        if (command.startsWith(rcePrefix)) {
+            command = command.replaceFirst(rcePrefix, "");
         }
         tokens = Arrays.asList(command.trim().split("\\s+"));
         Future<CommandExecutionResult> resultFuture = commandExecutionService.asyncExecMultiCommand(tokens, outputAdapter, invokerInfo);

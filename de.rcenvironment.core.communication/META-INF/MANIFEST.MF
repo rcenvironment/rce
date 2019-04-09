@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,
@@ -30,17 +30,21 @@ Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.transport.virtual.testutils,
  de.rcenvironment.core.communication.utils
 Bundle-ManifestVersion: 2
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 DynamicImport-Package: de.rcenvironment.*
-Import-Package: com.jcraft.jsch;version="0.1.45",
- de.rcenvironment.core.authentication,
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.core.type;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.type;version="2.9.8",
+ com.jcraft.jsch;version="0.1.54",
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.service,
@@ -61,11 +65,11 @@ Import-Package: com.jcraft.jsch;version="0.1.45",
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
  org.eclipse.equinox.security.storage;version="1.0.0",
- org.osgi.framework
-Service-Component: OSGI-INF/*.xml, OSGI-INF/new/*.xml
+ org.osgi.framework,
+ org.osgi.service.component.annotations
+Service-Component: OSGI-INF/*.xml,
+ OSGI-INF/new/*.xml,
+ OSGI-INF/generated/*.xml
 Bundle-ClassPath: .
 Eclipse-ExtensibleAPI: true

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -128,20 +128,20 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
         onSuccessDeleteTempDirectoryButton.setSelection(isKeepButtonActive()
             && Boolean.parseBoolean(getProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE)));
-        setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
+        setPropertyNotUndoable(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
     }
 
     private void determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive, boolean deleteAlwaysActive) {
         if (deleteOnceActive) {
             onceDeleteTempDirectoryButton.setSelection(true);
-            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
                 ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
         } else if (deleteNeverActive) {
             neverDeleteTempDirectoryButton.setSelection(true);
-            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
                 ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
         } else if (deleteAlwaysActive) {
-            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
                 ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
             alwaysDeleteTempDirectoryButton.setSelection(true);
         }

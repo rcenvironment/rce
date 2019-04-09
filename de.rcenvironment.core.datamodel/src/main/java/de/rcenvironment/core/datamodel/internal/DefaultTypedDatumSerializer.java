@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,13 +13,14 @@ import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -88,7 +89,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
 
         try {
             JsonNode rootNode = MAPPER.readTree(input);
-            DataType dataType = DataType.byShortName(rootNode.get(TYPE_STRING).getTextValue());
+            DataType dataType = DataType.byShortName(rootNode.get(TYPE_STRING).textValue());
             JsonNode valueNode = rootNode.get(VALUE_STRING);
             returnDatum = getTypedDatumFromNode(dataType, rootNode, valueNode);
         } catch (JsonParseException e) {
@@ -169,7 +170,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         case NotAValue:
             // backward-compatibility to RCE version < 8.0.0 if value is read from data management
             if (valueNode.isValueNode()) {
-                String id = valueNode.getTextValue();
+                String id = valueNode.textValue();
                 final String failureCaseSuffix = "_flr";
                 if (id.endsWith(failureCaseSuffix)) {
                     returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.Failure);
@@ -177,8 +178,8 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
                     returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.InvalidInputs);
                 }
             } else {
-                NotAValueTD notAValue = factory.createNotAValue(valueNode.get(ID_STRING).getTextValue(),
-                    NotAValueTD.Cause.valueOf(valueNode.get(TYPE_STRING).getTextValue()));
+                NotAValueTD notAValue = factory.createNotAValue(valueNode.get(ID_STRING).textValue(),
+                    NotAValueTD.Cause.valueOf(valueNode.get(TYPE_STRING).textValue()));
                 returnDatum = notAValue;
             }
             break;
@@ -187,9 +188,9 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             break;
         case FileReference:
             FileReferenceTD fileReference =
-                factory.createFileReference(valueNode.get(FILE_REFERENCE_STRING).getTextValue(),
-                    valueNode.get(FILE_NAME_STRING).getTextValue());
-            fileReference.setFileSize(valueNode.get(FILE_SIZE_STRING).getLongValue());
+                factory.createFileReference(valueNode.get(FILE_REFERENCE_STRING).textValue(),
+                    valueNode.get(FILE_NAME_STRING).textValue());
+            fileReference.setFileSize(valueNode.get(FILE_SIZE_STRING).longValue());
             if (valueNode.has(LAST_MODIFIED_STRING) && !valueNode.get(LAST_MODIFIED_STRING).isNull()) {
                 fileReference.setLastModified(new Date(valueNode.get(LAST_MODIFIED_STRING).asLong()));
             }
@@ -197,8 +198,8 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             break;
         case DirectoryReference:
             DirectoryReferenceTD directoryReference =
-                factory.createDirectoryReference(valueNode.get(DIRECTORY_REFERENCE_STRING).getTextValue(),
-                    valueNode.get(DIRECTORY_NAME_STRING).getTextValue());
+                factory.createDirectoryReference(valueNode.get(DIRECTORY_REFERENCE_STRING).textValue(),
+                    valueNode.get(DIRECTORY_NAME_STRING).textValue());
             directoryReference.setDirectorySize(valueNode.get(DIRECTORY_SIZE_STRING).asLong());
             returnDatum = directoryReference;
             break;
@@ -243,7 +244,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             for (int i = 0; i < vector.getRowDimension(); i++) {
                 vectorArray.add(vector.getFloatTDOfElement(i).getFloatValue());
             }
-            rootNode.put(VALUE_STRING, vectorArray);
+            rootNode.set(VALUE_STRING, vectorArray);
             break;
         case Matrix:
             MatrixTD matrix = (MatrixTD) input;
@@ -257,7 +258,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
                 }
                 matrixArray.add(matrixRowArray);
             }
-            rootNode.put(VALUE_STRING, matrixArray);
+            rootNode.set(VALUE_STRING, matrixArray);
             break;
         case SmallTable:
             SmallTableTD smallTable = (SmallTableTD) input;
@@ -271,7 +272,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
                 }
                 smallTableArray.add(smallTableRowArray);
             }
-            rootNode.put(VALUE_STRING, smallTableArray);
+            rootNode.set(VALUE_STRING, smallTableArray);
             break;
         case FileReference:
             ObjectNode fileObjectNode = mapper.createObjectNode();
@@ -282,7 +283,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             if (fileReference.getLastModified() != null) {
                 fileObjectNode.put(LAST_MODIFIED_STRING, fileReference.getLastModified().getTime());
             }
-            rootNode.put(VALUE_STRING, fileObjectNode);
+            rootNode.set(VALUE_STRING, fileObjectNode);
             break;
         case DirectoryReference:
             ObjectNode dirObjectNode = mapper.createObjectNode();
@@ -290,14 +291,14 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             dirObjectNode.put(DIRECTORY_REFERENCE_STRING, directoryReference.getDirectoryReference());
             dirObjectNode.put(DIRECTORY_NAME_STRING, directoryReference.getDirectoryName());
             dirObjectNode.put(DIRECTORY_SIZE_STRING, directoryReference.getDirectorySizeInBytes());
-            rootNode.put(VALUE_STRING, dirObjectNode);
+            rootNode.set(VALUE_STRING, dirObjectNode);
             break;
         case NotAValue:
             ObjectNode notAValueObjectNode = mapper.createObjectNode();
             NotAValueTD notAValue = (NotAValueTD) input;
             notAValueObjectNode.put(ID_STRING, notAValue.getIdentifier());
             notAValueObjectNode.put(TYPE_STRING, notAValue.getCause().name());
-            rootNode.put(VALUE_STRING, notAValueObjectNode);
+            rootNode.set(VALUE_STRING, notAValueObjectNode);
             break;
         case Empty:
             break;

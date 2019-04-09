@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -45,9 +45,9 @@ public class BendpointDeleteAllCommand extends Command {
     public void execute() {
         for (Connection connection : connections){
             if (!removedBendpointsPerConnection.keySet().contains(connection)){
-                removedBendpointsPerConnection.put(connection.getSourceNode().getIdentifier() 
+                removedBendpointsPerConnection.put(connection.getSourceNode().getIdentifierAsObject().toString() 
                     + SOURCE_TARGET_SEPARATOR 
-                    + connection.getTargetNode().getIdentifier()
+                    + connection.getTargetNode().getIdentifierAsObject().toString()
                     , connection.getBendpoints());
             }
             connection.removeAllBendpoints();
@@ -63,8 +63,8 @@ public class BendpointDeleteAllCommand extends Command {
             String targetId = sourceTargetString.split(SOURCE_TARGET_SEPARATOR)[1];
             for (Connection connection : connections){
                 List<Location> bendpointsToRestore = new ArrayList<>();
-                if (connection.getSourceNode().getIdentifier().equals(sourceId) 
-                    && connection.getTargetNode().getIdentifier().equals(targetId)){
+                if (connection.getSourceNode().getIdentifierAsObject().toString().equals(sourceId) 
+                    && connection.getTargetNode().getIdentifierAsObject().toString().equals(targetId)){
                     bendpointsToRestore = removedBendpointsPerConnection.get(sourceId + SOURCE_TARGET_SEPARATOR + targetId); 
                 }
                 connection.addBendpoints(bendpointsToRestore);

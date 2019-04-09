@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,12 +19,13 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -159,7 +160,7 @@ public class OutputWriterComponent extends DefaultComponent {
         // For "old" outputWriters that only have file/directory inputs, the jsonString may not be set
         if (jsonString != null && !jsonString.isEmpty()) {
             ObjectMapper jsonMapper = JsonUtils.getDefaultObjectMapper();
-            jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+            jsonMapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
             try {
                 OutputLocationList outputList = jsonMapper.readValue(jsonString, OutputLocationList.class);
                 for (OutputLocation out : outputList.getOutputLocations()) {
@@ -333,7 +334,7 @@ public class OutputWriterComponent extends DefaultComponent {
             incFileOrDir = new File(path);
             try {
                 dataManagementService.copyReferenceToLocalFile(((FileReferenceTD) input).getFileReference(),
-                    incFileOrDir, componentContext.getDefaultStorageNodeId());
+                    incFileOrDir, componentContext.getStorageNetworkDestination());
             } catch (IOException e) {
                 throw new ComponentException(StringUtils.format("Failed to write file of input '%s' to %s",
                     inputName, incFileOrDir.getAbsolutePath()), e);

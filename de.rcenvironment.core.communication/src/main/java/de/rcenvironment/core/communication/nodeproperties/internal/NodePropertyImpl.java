@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -64,6 +64,11 @@ public class NodePropertyImpl implements NodeProperty {
     @Override
     public String getKey() {
         return key.getDataKey();
+    }
+
+    @Override
+    public String getDistributedUniqueKey() {
+        return key.getAsUniqueString();
     }
 
     @Override

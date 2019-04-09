@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -116,7 +116,7 @@ public class CpacsWriterComponent extends DefaultComponent {
                 tempFile =
                     TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(CpacsWriterComponentConstants.CPACS_FILENAME);
                 dataManagementService.copyReferenceToLocalFile(cpacsFileRef.getFileReference(), tempFile,
-                    componentContext.getDefaultStorageNodeId());
+                    componentContext.getStorageNetworkDestination());
             } catch (IOException e) {
                 logError("Failed to write CPACS file into a temporary file (that is required for CPACS Writer) - skip run", e);
                 return;
@@ -174,7 +174,7 @@ public class CpacsWriterComponent extends DefaultComponent {
                 try {
                     File file = new File(localFolder, fileName);
                     dataManagementService.copyReferenceToLocalFile(cpacsFileRef.getFileReference(), file,
-                        componentContext.getDefaultStorageNodeId());
+                        componentContext.getStorageNetworkDestination());
                     componentLog.componentInfo("Stored CPACS file to: " + file.getAbsolutePath());
                 } catch (IOException e) {
                     logError("Failed to store CPACS file to the local file system", e);

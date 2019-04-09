@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -101,8 +101,12 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         boolean isAllowed = false;
         SshAccountRole userRole = getRoleForUser(username);
         try {
-            if (userRole != null && command.matches(userRole.getAllowedCommandRegEx())) {
-                isAllowed = true;
+            if (userRole != null) {
+                final boolean commandIsOnWhitelist = command.matches(userRole.getAllowedCommandRegEx());
+                final boolean commandIsOnBlacklist = command.matches(userRole.getDisallowedCommandRegEx());
+                if (commandIsOnWhitelist && !commandIsOnBlacklist) {
+                    isAllowed = true;
+                }
             }
         } catch (PatternSyntaxException e) {
             //Should never happen as the allowed command patterns are checked when the SSH server is started

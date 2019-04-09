@@ -16,8 +16,38 @@
 
 	<properties>
 		<relativePathToProjectsRoot>../../..</relativePathToProjectsRoot>
-		<relativePathToLocalP2Mirrors>${relativePathToProjectsRoot}/de.rcenvironment.platform/thirdparty/p2-mirrored</relativePathToLocalP2Mirrors>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>use-mirrored-p2-artifacts-from-lfs</id>
+			<activation>
+				<file>
+					<!-- When checking out with git, the SVN "p2-mirrored" folder containing 
+						a .svn sub-folder will not be present at all, so its absence indicates a 
+						git checkout. -->
+					<missing>${relativePathToProjectsRoot}/de.rcenvironment.platform/thirdparty/p2-mirrored/.svn</missing>
+				</file>
+			</activation>
+			<properties>
+				<relativePathToLocalP2Mirrors>${relativePathToProjectsRoot}/de.rcenvironment.platform/thirdparty/p2-mirrored-lfs</relativePathToLocalP2Mirrors>
+			</properties>
+		</profile>
+		<profile>
+			<id>use-mirrored-p2-artifacts-from-svn-externals</id>
+			<activation>
+				<file>
+					<!-- When checking out with svn, a .svn sub-folder will be present inside 
+						the svn:externals "p2-mirrored" folder. -->
+					<exists>${relativePathToProjectsRoot}/de.rcenvironment.platform/thirdparty/p2-mirrored/.svn</exists>
+				</file>
+			</activation>
+			<properties>
+				<relativePathToLocalP2Mirrors>${relativePathToProjectsRoot}/de.rcenvironment.platform/thirdparty/p2-mirrored</relativePathToLocalP2Mirrors>
+			</properties>
+		</profile>
+	</profiles>
+
 
 	<!-- Note: for most of the mirrored repositories, the original URLs are 
 		present as well, but commented out. This is intended to support testing of 
@@ -26,9 +56,9 @@
 
 	<repositories>
 		<repository>
-			<id>p2-mirror-indigo</id>
+			<id>p2-mirror-photon</id>
 			<layout>p2</layout>
-			<url>${project.baseUri}${relativePathToLocalP2Mirrors}/eclipse.org/indigo-sr2</url>
+			<url>${project.baseUri}${relativePathToLocalP2Mirrors}/eclipse.org/photon</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
@@ -97,12 +127,12 @@
 		<dependency>
 			<groupId>org.ops4j.pax.logging</groupId>
 			<artifactId>pax-logging-api</artifactId>
-			<version>1.8.1</version>
+			<version>1.10.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.ops4j.pax.logging</groupId>
 			<artifactId>pax-logging-service</artifactId>
-			<version>1.8.1</version>
+			<version>1.10.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.ops4j.pax.confman</groupId>

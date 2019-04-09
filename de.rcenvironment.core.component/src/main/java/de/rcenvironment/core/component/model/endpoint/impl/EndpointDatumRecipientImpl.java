@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,12 +9,14 @@
 package de.rcenvironment.core.component.model.endpoint.impl;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 
 /**
  * Implementation of {@link EndpointDatumRecipient}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
 
@@ -24,7 +26,9 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
 
     private String inputsComponentInstanceName;
 
-    private LogicalNodeId inputsNodeId;
+    private LogicalNodeId destinationNodeId;
+
+    private NetworkDestination networkDestination;
 
     @Override
     public String getInputName() {
@@ -42,8 +46,13 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
     }
 
     @Override
-    public LogicalNodeId getInputsNodeId() {
-        return inputsNodeId;
+    public LogicalNodeId getDestinationNodeId() {
+        return destinationNodeId;
+    }
+
+    @Override
+    public NetworkDestination getNetworkDestination() {
+        return networkDestination;
     }
 
     public void setIdentifier(String identifier) {
@@ -58,8 +67,11 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
         this.inputsComponentInstanceName = inputsComponentInstanceName;
     }
 
-    public void setInputsNodeId(LogicalNodeId inputsNodeId) {
-        this.inputsNodeId = inputsNodeId;
+    public void setDestinationNodeId(LogicalNodeId inputsNodeId) {
+        this.destinationNodeId = inputsNodeId;
     }
 
+    public void setNetworkDestination(NetworkDestination networkDestination) {
+        this.networkDestination = networkDestination;
+    }
 }

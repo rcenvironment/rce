@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,7 +25,9 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  */
 public class InstanceShutdownTask implements Runnable {
 
-    private static final String FAILED_TO_SHUTDOWN_MESSAGE = "Failed to shutdown instance with id %s. Aborted with message:  %s";
+    private static final String SINGLE_QUOTE = "'";
+
+    private static final String FAILED_TO_SHUTDOWN_MESSAGE = "Failed to shut down instance '%s' - aborted with message '%s'";
 
     private final File profile;
 
@@ -65,7 +67,8 @@ public class InstanceShutdownTask implements Runnable {
             }
         } catch (IOException e) {
             userOutputReceiver.addOutput(
-                "Couldn't check if profile with id : " + profile.getName() + " is running. Aborted with message: " + e.getMessage());
+                "Couldn't check if instance '" + profile.getName() + "' is running - aborted with message '" + e.getMessage()
+                    + SINGLE_QUOTE);
             releaseLockIfErrorOccurs();
             return;
         }
@@ -84,7 +87,7 @@ public class InstanceShutdownTask implements Runnable {
         }
 
         try {
-            userOutputReceiver.addOutput("Trying to shutdown instance with id: " + profile.getName());
+            userOutputReceiver.addOutput("Trying to shutdown instance '" + profile.getName() + SINGLE_QUOTE);
             new HeadlessShutdown().shutdownExternalInstance(profile);
         } catch (IOException e) {
             userOutputReceiver
@@ -103,7 +106,7 @@ public class InstanceShutdownTask implements Runnable {
                     InstanceOperationsUtils.deleteInstanceLockFromProfileFolder(profile);
                     globalLatch.countDown();
                     indicatesShutdownSuccess.countDown();
-                    userOutputReceiver.addOutput("Successfully shutdown instance with id: " + profile.getName());
+                    userOutputReceiver.addOutput("Successfully shut down instance '" + profile.getName() + SINGLE_QUOTE);
                     return;
                 } else {
                     try {
@@ -117,7 +120,7 @@ public class InstanceShutdownTask implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                userOutputReceiver.addOutput("Failed to check profile lock of instance with id: " + profile.getName() + ".");
+                userOutputReceiver.addOutput("Failed to check profile lock of instance '" + profile.getName() + SINGLE_QUOTE);
                 releaseLockIfErrorOccurs();
                 return;
             }

@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Incubator Bundle
 Bundle-SymbolicName: de.rcenvironment.core.utils.incubator;singleton:=true
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4"
@@ -23,4 +23,5 @@ Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
 Export-Package: de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.configuration,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
+ de.rcenvironment.core.utils.incubator.formatter,
  de.rcenvironment.core.utils.incubator.xml

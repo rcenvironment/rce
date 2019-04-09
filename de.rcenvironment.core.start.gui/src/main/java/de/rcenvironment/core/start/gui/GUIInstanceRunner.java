@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,7 +13,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.eclipse.core.runtime.Platform;
@@ -21,9 +20,7 @@ import org.eclipse.equinox.app.IApplication;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.osgi.service.datalocation.Location;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.ide.ChooseWorkspaceData;
 import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog;
@@ -34,7 +31,7 @@ import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.gui.utils.incubator.Sleak;
 import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
-import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.CallbackException;
 import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -150,20 +147,36 @@ public final class GUIInstanceRunner extends InstanceRunner {
     }
 
     @Override
-    public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
+    public void onShutdownRequired(List<InstanceValidationResult> validationResults) {
+        InstanceValidationResult result = validationResults.get(0);
+        showErrorDialog("Instance validation: failure", result.getGuiDialogMessage() + "\n\nRCE will be shut down.");
+    }
 
-        if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
-            InstanceValidationResult result = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).get(0);
-            showErrorDialog("Instance validation failure", result.getGuiDialogMessage() + "\n\nRCE will be shut down.");
-            return false;
-        }
-
-        if (validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size() > 0) {
-            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
-                if (!showQuestionDialog("Instance validation failure", result.getGuiDialogMessage()
-                    + "\n\nDo you like to proceed anyway?")) {
+    @Override
+    public boolean onRecoveryRequired(List<InstanceValidationResult> validationResults) {
+        for (InstanceValidationResult result : validationResults) {
+            if (showQuestionDialog("Instance validation: confirm startup", result.getGuiDialogMessage())) {
+                try {
+                    result.getCallback().onConfirmation();
+                } catch (CallbackException e) {
+                    showErrorDialog("Instance validation: recovery error", StringUtils
+                        .format("Error during recovery from instance validation error: %s. See log for more details.", e.getMessage()));
+                    log.error("Exception thrown during recovery from instance validation failure", e);
                     return false;
                 }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onConfirmationRequired(List<InstanceValidationResult> validationResults) {
+        for (InstanceValidationResult result : validationResults) {
+            if (!showQuestionDialog("Instance validation: confirm startup", result.getGuiDialogMessage()
+                + "\n\nWould you like to proceed anyway?")) {
+                return false;
             }
         }
         return true;
@@ -332,11 +345,11 @@ public final class GUIInstanceRunner extends InstanceRunner {
     }
 
     private void showErrorDialog(String title, String message) {
-        MessageDialog.openError(new Shell(SWT.ON_TOP), title, message);
+        MessageDialog.openError(Display.getDefault().getActiveShell(), title, message);
     }
 
     private boolean showQuestionDialog(String title, String message) {
-        return MessageDialog.openQuestion(new Shell(SWT.ON_TOP), title, message);
+        return MessageDialog.openQuestion(Display.getDefault().getActiveShell(), title, message);
     }
 
 }

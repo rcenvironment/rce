@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,7 +10,6 @@ package de.rcenvironment.core.gui.communication.views;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +20,8 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreePath;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -34,8 +29,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.events.MenuDetectEvent;
-import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
@@ -72,6 +65,7 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -217,16 +211,21 @@ public class NetworkView extends ViewPart {
                         ClipboardHelper.setContent(labelProvider.getText(selectionObject));
                     } else if (selectionObject.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
                         // all raw nodes folder selected
-                        String allRawNodeProperties = "RAW NODE PROPERTIES: \n\n";
                         Map<InstanceNodeSessionId, Map<String, String>> nodeProperties = model.getNodeProperties();
-                        for (InstanceNodeSessionId identifier : nodeProperties.keySet()) {
-                            if (identifier.getAssociatedDisplayName() == selectionObject.getDisplayNameOfNode()) {
-                                for (String nodeProperty : nodeProperties.get(identifier).keySet()) {
-                                    allRawNodeProperties += nodeProperty + ": " + nodeProperties.get(identifier).get(nodeProperty) + "\n";
+                        final StringBuilder allRawNodePropertiesBuilder = new StringBuilder("RAW NODE PROPERTIES: \n\n");
+                        for (Map.Entry<InstanceNodeSessionId, Map<String, String>> nodePropertiesEntry : nodeProperties.entrySet()) {
+                            final InstanceNodeSessionId identifier = nodePropertiesEntry.getKey();
+                            if (identifier.getAssociatedDisplayName().equals(selectionObject.getDisplayNameOfNode())) {
+                                for (String nodeProperty : nodePropertiesEntry.getValue().keySet()) {
+                                    allRawNodePropertiesBuilder.append(
+                                        StringUtils.format(
+                                            "%s: %s\n",
+                                            nodeProperty,
+                                            nodePropertiesEntry.getValue().get(nodeProperty)));
                                 }
                             }
                         }
-                        ClipboardHelper.setContent(allRawNodeProperties);
+                        ClipboardHelper.setContent(allRawNodePropertiesBuilder.toString());
                     }
                 }
             }
@@ -296,7 +295,6 @@ public class NetworkView extends ViewPart {
         viewer = new TreeViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL);
         viewer.setContentProvider(contentProvider);
         viewer.setLabelProvider(labelProvider);
-        // viewer.setSorter(new NetworkViewSorter());
 
         NetworkGraph initialGraph = serviceRegistryAccess.getService(NetworkRoutingService.class).getReachableNetworkGraph();
         Collection<ConnectionSetup> initialConnectionSetups =
@@ -314,24 +312,14 @@ public class NetworkView extends ViewPart {
         viewer.expandToLevel(3);
         viewer.getControl().addKeyListener(new NetworkViewKeyListener());
         // Update context menu on open
-        viewer.getTree().addMenuDetectListener(new MenuDetectListener() {
+        viewer.getTree().addMenuDetectListener(event -> updatePossibleActionsForSelection(getSelectedTreeNode()));
 
-            @Override
-            public void menuDetected(MenuDetectEvent event) {
-                updatePossibleActionsForSelection(getSelectedTreeNode());
+        viewer.addDoubleClickListener(dblClkEvent -> {
+            expandSelectedNode();
+            if (editAction.isEnabled()) {
+                editAction.run();
             }
-        });
 
-        viewer.addDoubleClickListener(new IDoubleClickListener() {
-
-            @Override
-            public void doubleClick(DoubleClickEvent arg0) {
-                expandSelectedNode();
-                if (editAction.isEnabled()) {
-                    editAction.run();
-                }
-
-            }
         });
 
         viewer.getTree().addKeyListener(new KeyListener() {
@@ -345,7 +333,11 @@ public class NetworkView extends ViewPart {
             }
 
             @Override
-            public void keyReleased(KeyEvent arg0) {}
+            public void keyReleased(KeyEvent arg0) {
+                // Since we already handle the enter key being pressed in #keyPressed(KeyEvent), we do not need to handle it again upon
+                // being released. However, the interface KeyListener requires this method being implemented, thus we implement it with an
+                // empty body
+            }
 
         });
 
@@ -387,20 +379,10 @@ public class NetworkView extends ViewPart {
                 instanceDataContributors.add(contributor);
             }
         }
-        Collections.sort(rootContributors, new Comparator<NetworkViewContributor>() {
-
-            @Override
-            public int compare(NetworkViewContributor o1, NetworkViewContributor o2) {
-                return Integer.compare(o1.getRootElementsPriority(), o2.getRootElementsPriority());
-            }
-        });
-        Collections.sort(instanceDataContributors, new Comparator<NetworkViewContributor>() {
-
-            @Override
-            public int compare(NetworkViewContributor o1, NetworkViewContributor o2) {
-                return Integer.compare(o1.getInstanceDataElementsPriority(), o2.getInstanceDataElementsPriority());
-            }
-        });
+        Collections.sort(rootContributors, (contributor1, contributor2) -> Integer.compare(contributor1.getRootElementsPriority(),
+            contributor2.getRootElementsPriority()));
+        Collections.sort(instanceDataContributors, (contributor1, contributor2) -> Integer
+            .compare(contributor1.getInstanceDataElementsPriority(), contributor2.getInstanceDataElementsPriority()));
 
         return new NetworkViewContentProvider(rootContributors, instanceDataContributors);
     }
@@ -425,19 +407,15 @@ public class NetworkView extends ViewPart {
 
         disableAllActions();
 
-        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-
-            @Override
-            public void selectionChanged(SelectionChangedEvent event) {
-                if (viewer.getControl().isDisposed()) {
-                    return;
-                }
-                Object node = getSelectedTreeNode();
-                if (node != null) {
-                    updatePossibleActionsForSelection(node);
-                } else {
-                    disableAllActions();
-                }
+        viewer.addSelectionChangedListener(event -> {
+            if (viewer.getControl().isDisposed()) {
+                return;
+            }
+            Object node = getSelectedTreeNode();
+            if (node != null) {
+                updatePossibleActionsForSelection(node);
+            } else {
+                disableAllActions();
             }
         });
     }
@@ -452,20 +430,16 @@ public class NetworkView extends ViewPart {
 
             @Override
             public void onReachableNetworkChanged(final NetworkGraph networkGraph) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        model.networkGraph = networkGraph;
-                        model.updateGraphWithProperties();
-                        if (viewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
-                        // update the tree, but no need to update existing labels
-                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
-                        viewer.setExpandedTreePaths(expandedTreePaths);
+                display.asyncExec(() -> {
+                    model.networkGraph = networkGraph;
+                    model.updateGraphWithProperties();
+                    if (viewer.getControl().isDisposed()) {
+                        return;
                     }
+                    TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
+                    // update the tree, but no need to update existing labels
+                    viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
+                    viewer.setExpandedTreePaths(expandedTreePaths);
                 });
             }
 
@@ -474,30 +448,26 @@ public class NetworkView extends ViewPart {
 
             @Override
             public void onNodePropertyMapsOfNodesChanged(final Map<InstanceNodeSessionId, Map<String, String>> updatedPropertyMaps) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        model.nodeProperties.putAll(updatedPropertyMaps); // inner maps are immutable
-                        model.updateGraphWithProperties();
-                        if (viewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
-                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
-                        viewer.setExpandedTreePaths(expandedTreePaths);
+                display.asyncExec(() -> {
+                    model.nodeProperties.putAll(updatedPropertyMaps); // inner maps are immutable
+                    model.updateGraphWithProperties();
+                    if (viewer.getControl().isDisposed()) {
+                        return;
                     }
+                    TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
+                    viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
+                    viewer.setExpandedTreePaths(expandedTreePaths);
                 });
             }
         });
+
+        // We are not going to refactor the anonymous implementation of the functional interface DistributedComponentKnowledgeListener into
+        // a lambda expression, since doing so in the current state would incur a nested lambda expression. For the sake of readability we
+        // opt for this slightly more verbose variant pending further refactoring
         serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class, new DistributedComponentKnowledgeListener() {
-
-            @Override
-            public void onDistributedComponentKnowledgeChanged(final DistributedComponentKnowledge newKnowledge) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
+                @Override
+                public void onDistributedComponentKnowledgeChanged(final DistributedComponentKnowledge newKnowledge) {
+                    display.asyncExec(() -> {
                         model.componentKnowledge = newKnowledge;
                         if (viewer.getControl().isDisposed()) {
                             return;
@@ -505,57 +475,52 @@ public class NetworkView extends ViewPart {
                         TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
                         viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
                         viewer.setExpandedTreePaths(expandedTreePaths);
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
         // TODO move this listener into the contributor for better separation
+        // We again refrain from refactoring the ConnectionSetupListenerAdapter into a lambda expression for similar reasons as above.
         serviceRegistryAccess.registerService(ConnectionSetupListener.class, new ConnectionSetupListenerAdapter() {
 
             @Override
             public void onCollectionChanged(final Collection<ConnectionSetup> setups) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        model.connectionSetups = setups;
-                        if (viewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        // no need to update all labels
-                        viewer.refresh(networkConnectionsContributor.getFullRefreshRootElement(), false);
-                        viewer.setExpandedState(networkConnectionsContributor.getRootElementToExpand(), true);
+                display.asyncExec(() -> {
+                    model.connectionSetups = setups;
+                    if (viewer.getControl().isDisposed()) {
+                        return;
                     }
+                    // no need to update all labels
+                    viewer.refresh(networkConnectionsContributor.getFullRefreshRootElement(), false);
+                    viewer.setExpandedState(networkConnectionsContributor.getRootElementToExpand(), true);
                 });
             }
 
             @Override
             public void onStateChanged(final ConnectionSetup setup, final ConnectionSetupState oldState, ConnectionSetupState newState) {
                 // trigger GUI refresh
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (viewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        // only update this specific label
-                        Object node = networkConnectionsContributor.getTreeNodeForSetup(setup);
-                        if (node != null) {
-                            if (node.equals(getSelectedTreeNode())) {
-                                updatePossibleActionsForSelection(node);
-                            }
-                            viewer.update(node, null);
-                        }
-                    }
-                });
+                display.asyncExec(() -> tryUpdatePossibleActionsForSelection(setup));
             }
+
+            private void tryUpdatePossibleActionsForSelection(final ConnectionSetup setup) {
+                if (viewer.getControl().isDisposed()) {
+                    return;
+                }
+                // only update this specific label
+                Object node = networkConnectionsContributor.getTreeNodeForSetup(setup);
+                if (node != null) {
+                    if (node.equals(getSelectedTreeNode())) {
+                        updatePossibleActionsForSelection(node);
+                    }
+                    viewer.update(node, null);
+                }
+            };
         });
     }
 
     private Object getSelectedTreeNode() {
         ISelection rawSelection = viewer.getSelection();
-        if (rawSelection != null && rawSelection instanceof TreeSelection) {
+        // We do not need to check for rawSelection != null explicitly, as null instanceof TreeSelection evaluates to false
+        if (rawSelection instanceof TreeSelection) {
             TreeSelection selection = ((TreeSelection) rawSelection);
             return selection.getFirstElement();
         }

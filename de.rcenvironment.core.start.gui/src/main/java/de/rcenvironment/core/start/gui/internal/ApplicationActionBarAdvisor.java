@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,7 +22,6 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarContributionItem;
 import org.eclipse.jface.action.ToolBarManager;
-import org.eclipse.swt.SWT;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -267,10 +266,13 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         register(helpAction);
         dynamicHelpAction = ActionFactory.DYNAMIC_HELP.create(window);
         register(dynamicHelpAction);
+        
         aboutAction = ActionFactory.ABOUT.create(window);
         aboutAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.RCE_LOGO_16));
+        aboutAction.setDisabledImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.RCE_LOGO_16));
+        aboutAction.setHoverImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.RCE_LOGO_16));
         register(aboutAction);
-        
+
         // Cool bar actions
         newWizardDropDownAction = IDEActionFactory.NEW_WIZARD_DROP_DOWN.create(window);
         register(newWizardDropDownAction);
@@ -324,29 +326,12 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         fileMenu.add(saveAction);
         fileMenu.add(saveAsAction);
         fileMenu.add(saveAllAction);
-        // fileMenu.add(revertAction);
         fileMenu.add(new Separator());
-        // fileMenu.add(moveAction);
-//        fileMenu.add(renameAction);
         fileMenu.add(refreshAction);
-        fileMenu.add(new GroupMarker(IWorkbenchActionConstants.SAVE_EXT));
-        fileMenu.add(new Separator());
-        // fileMenu.add(printAction);
-        // fileMenu.add(new GroupMarker(IWorkbenchActionConstants.PRINT_EXT));
-        // fileMenu.add(new Separator());
-        fileMenu.add(new Separator());
-//        fileMenu.add(switchWorkspaceAction);
-        fileMenu.add(restartAction);
-        fileMenu.add(new Separator());
-        fileMenu.add(new GroupMarker(IWorkbenchActionConstants.IMPORT_EXT));
         fileMenu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-        fileMenu.add(new Separator());
-        fileMenu.add(propertiesAction);
-        fileMenu.add(ContributionItemFactory.REOPEN_EDITORS.create(workbenchWindow));
-        fileMenu.add(new GroupMarker(IWorkbenchActionConstants.MRU));
-        fileMenu.add(new Separator());
         fileMenu.add(exitAction);
         fileMenu.add(new GroupMarker(IWorkbenchActionConstants.FILE_END));
+        fileMenu.add(ContributionItemFactory.REOPEN_EDITORS.create(workbenchWindow));
         // add to main menu
         menuBar.add(fileMenu);
         
@@ -355,12 +340,12 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         editMenu.add(new GroupMarker(IWorkbenchActionConstants.EDIT_START));
         editMenu.add(undoAction);
         editMenu.add(redoAction);
-        fileMenu.add(new GroupMarker(IWorkbenchActionConstants.UNDO_EXT));
+        editMenu.add(new GroupMarker(IWorkbenchActionConstants.UNDO_EXT));
         editMenu.add(new Separator());
         editMenu.add(cutAction);
         editMenu.add(copyAction);
         editMenu.add(pasteAction);
-        fileMenu.add(new GroupMarker(IWorkbenchActionConstants.CUT_EXT));
+        editMenu.add(new GroupMarker(IWorkbenchActionConstants.CUT_EXT));
         editMenu.add(new Separator());
         editMenu.add(deleteAction);
         editMenu.add(new Separator());
@@ -374,6 +359,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         menuBar.add(editMenu);
 
         // Additions
+        menuBar.add(new GroupMarker(IWorkbenchActionConstants.M_NAVIGATE));
         menuBar.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
         
         // Window menu
@@ -413,11 +399,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
     
     @Override
     protected void fillCoolBar(ICoolBarManager coolBar) {
-        coolBar.add(new GroupMarker(IIDEActionConstants.GROUP_FILE));
-
         // File Group
-        IToolBarManager fileToolBar = new ToolBarManager(SWT.FLAT | SWT.RIGHT);
-        fileToolBar.add(new Separator(IWorkbenchActionConstants.NEW_GROUP));
+        IToolBarManager fileToolBar = new ToolBarManager();
         fileToolBar.add(newWizardDropDownAction);
         fileToolBar.add(new GroupMarker(IWorkbenchActionConstants.NEW_EXT));
         fileToolBar.add(new GroupMarker(IWorkbenchActionConstants.SAVE_GROUP));
@@ -425,12 +408,18 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         fileToolBar.add(saveAllAction);
         fileToolBar.add(new GroupMarker(IWorkbenchActionConstants.SAVE_EXT));
         fileToolBar.add(new GroupMarker(IWorkbenchActionConstants.PRINT_EXT));
-        fileToolBar.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 
         // Add to the cool bar manager
+        coolBar.setLockLayout(false);
+        coolBar.add(new GroupMarker(IIDEActionConstants.GROUP_FILE));
         coolBar.add(new ToolBarContributionItem(fileToolBar, IWorkbenchActionConstants.TOOLBAR_FILE));
-
+        coolBar.add(new GroupMarker("de.rcenvironment.configuration.toolbar"));
+        coolBar.add(new GroupMarker("de.rcenvironment.toolintegration.toolbar"));
+        coolBar.add(new GroupMarker("de.rcenvironment.workflow.toolbar"));
+        coolBar.add(new GroupMarker(IWorkbenchActionConstants.GROUP_EDITOR));
+        coolBar.add(new GroupMarker(IWorkbenchActionConstants.M_NAVIGATE));
         coolBar.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
+
     };
     
     /**

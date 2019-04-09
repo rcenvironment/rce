@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,7 +23,11 @@ public class WorkflowGraphNode implements Serializable {
 
     private static final long serialVersionUID = 272922098023592460L;
 
-    private final String executionIdentifier;
+    private final ComponentExecutionIdentifier executionIdentifier;
+    
+    // TODO this should be replaced with WorkflowNodeIdentifier, which is currently not possible, since the WorkflowGraph is in the
+    // Components package
+    private final String wfNodeId;
 
     private final Set<String> inputIdentifiers;
 
@@ -36,15 +40,19 @@ public class WorkflowGraphNode implements Serializable {
     private final boolean isDrivingFaultTolerantLoop;
     
     private final String name;
-
-    public WorkflowGraphNode(String nodeId, Set<String> inputIdentifiers, Set<String> outputIdentifiers,
-        Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop) {
-        this(nodeId, inputIdentifiers, outputIdentifiers, endpointNames, isDriver, isDrivingFaultTolerantLoop, nodeId);
+    
+    // TODO this constructor is never used. remove?
+    public WorkflowGraphNode(String wfNodeId, ComponentExecutionIdentifier compExeId, Set<String> inputIdentifiers,
+        Set<String> outputIdentifiers, Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop) {
+        this(wfNodeId, compExeId, inputIdentifiers, outputIdentifiers, endpointNames, isDriver, isDrivingFaultTolerantLoop,
+            compExeId.toString());
     }
 
-    public WorkflowGraphNode(String nodeId, Set<String> inputIdentifiers, Set<String> outputIdentifiers,
-        Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop, String name) {
-        this.executionIdentifier = nodeId;
+    public WorkflowGraphNode(String wfNodeId, ComponentExecutionIdentifier compExeId, Set<String> inputIdentifiers,
+        Set<String> outputIdentifiers, Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop,
+        String name) {
+        this.wfNodeId = wfNodeId;
+        this.executionIdentifier = compExeId;
         this.inputIdentifiers = inputIdentifiers;
         this.outputIdentifiers = outputIdentifiers;
         this.endpointNames = endpointNames;
@@ -53,8 +61,12 @@ public class WorkflowGraphNode implements Serializable {
         this.name = name;
     }
 
-    public String getExecutionIdentifier() {
+    public ComponentExecutionIdentifier getExecutionIdentifier() {
         return executionIdentifier;
+    }
+    
+    public String getWorkflowNodeIdentifier() {
+        return this.wfNodeId;
     }
 
     public Set<String> getInputIdentifiers() {

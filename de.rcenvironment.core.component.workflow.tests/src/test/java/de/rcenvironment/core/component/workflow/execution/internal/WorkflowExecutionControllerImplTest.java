@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,11 +25,13 @@ import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccessStub;
 
 /**
  * Test cases for {@link WorkflowExecutionControllerImpl}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class WorkflowExecutionControllerImplTest {
 
@@ -39,11 +41,13 @@ public class WorkflowExecutionControllerImplTest {
 
     private ComponentStatesChangedEntirelyVerifier compStatesChangedVerifierMock;
 
-    private ComponentLostWatcher compLostWatcherMock;
+    private ComponentDisconnectWatcher compLostWatcherMock;
 
     private WorkflowStateMachine wfStateMachineMock;
 
     private DistributedNotificationService notificationServiceMock;
+
+    private NodeRestartWatcher nodeRestartWatcherMock;
 
     /**
      * Creates mock instances with default behavior used by {@link WorkflowExecutionControllerImpl}. Behavior will be overwritten in
@@ -68,8 +72,11 @@ public class WorkflowExecutionControllerImplTest {
         compStatesChangedVerifierMock.addListener(EasyMock.anyObject(ComponentStatesChangedEntirelyListener.class));
         EasyMock.replay(compStatesChangedVerifierMock);
 
-        compLostWatcherMock = EasyMock.createStrictMock(ComponentLostWatcher.class);
+        compLostWatcherMock = EasyMock.createStrictMock(ComponentDisconnectWatcher.class);
         EasyMock.replay(compLostWatcherMock);
+
+        nodeRestartWatcherMock = EasyMock.createStrictMock(NodeRestartWatcher.class);
+        EasyMock.replay(nodeRestartWatcherMock);
 
         WorkflowExecutionStorageBridge wfExeStorageBridgeMock = EasyMock.createStrictMock(WorkflowExecutionStorageBridge.class);
         EasyMock.replay(wfExeStorageBridgeMock);
@@ -86,6 +93,8 @@ public class WorkflowExecutionControllerImplTest {
             .andStubReturn(compStatesChangedVerifierMock);
         EasyMock.expect(wfExeInstancesFacMock.createComponentLostWatcher(wfCtxMock, compStatesChangedVerifierMock))
             .andStubReturn(compLostWatcherMock);
+        EasyMock.expect(wfExeInstancesFacMock.createNodeRestartWatcher(EasyMock.anyObject(), EasyMock.anyObject(), EasyMock.anyObject()))
+            .andStubReturn(nodeRestartWatcherMock);
         EasyMock.expect(wfExeInstancesFacMock.createWorkflowExecutionStorageBridge(wfCtxMock))
             .andStubReturn(wfExeStorageBridgeMock);
         EasyMock.expect(wfExeInstancesFacMock.createWorkflowStateMachine(EasyMock.anyObject(WorkflowStateMachineContext.class)))
@@ -95,8 +104,7 @@ public class WorkflowExecutionControllerImplTest {
         notificationServiceMock = EasyMock.createStrictMock(DistributedNotificationService.class);
         EasyMock.replay(notificationServiceMock);
 
-        @SuppressWarnings("deprecation")
-        WorkflowExecutionControllerImpl wfExeCtrlComp = new WorkflowExecutionControllerImpl();
+        @SuppressWarnings("deprecation") WorkflowExecutionControllerImpl wfExeCtrlComp = new WorkflowExecutionControllerImpl();
         wfExeCtrlComp.bindWorkflowExecutionRelatedInstancesFactory(wfExeInstancesFacMock);
         wfExeCtrlComp.bindDistributedNotificationService(notificationServiceMock);
     }
@@ -111,7 +119,7 @@ public class WorkflowExecutionControllerImplTest {
         compLostWatcherMock.announceComponentHeartbeat(COMP_EXE_ID_1);
         EasyMock.replay(compLostWatcherMock);
 
-        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock);
+        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock, new ServiceRegistryAccessStub(false));
         wfExeCtrl.onComponentHeartbeatReceived(COMP_EXE_ID_1);
 
         EasyMock.verify(compLostWatcherMock);
@@ -122,7 +130,7 @@ public class WorkflowExecutionControllerImplTest {
      */
     @Test
     public void testLifeCycleRequestDelegation() {
-        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock);
+        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock, new ServiceRegistryAccessStub(false));
 
         Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = resetAndSetupWorkflowStateMachineMock();
         wfExeCtrl.start();
@@ -162,15 +170,17 @@ public class WorkflowExecutionControllerImplTest {
 
     /**
      * Tests if component state change announcements are processed properly.
+     * 
      * @throws InterruptedException on unexpected error
      */
     @Test
     public void testComponentStateChangeProcessingInCaseOfNoFailure() throws InterruptedException {
         testComponentStateChangeProcessing(ComponentState.CANCELED);
     }
-    
+
     /**
      * Tests if component state change announcements are processed properly in case of {@link ComponentState#FAILED}.
+     * 
      * @throws InterruptedException on unexpected error
      */
     @Test
@@ -179,18 +189,18 @@ public class WorkflowExecutionControllerImplTest {
         Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = new Capture<>();
         wfStateMachineMock.postEvent(EasyMock.capture(wfStateMachineEveCapture));
         EasyMock.replay(wfStateMachineMock);
-        
+
         testComponentStateChangeProcessing(ComponentState.FAILED);
-        
+
         EasyMock.verify(wfStateMachineMock);
         assertTrue(wfStateMachineEveCapture.hasCaptured());
         assertEquals(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED, wfStateMachineEveCapture.getValue().getType());
-        
+
     }
-    
+
     private void testComponentStateChangeProcessing(ComponentState compState) throws InterruptedException {
         final String executionCountOnReset = "3";
-        
+
         EasyMock.reset(notificationServiceMock);
         Capture<String> notificationBodyCapture = new Capture<>(CaptureType.ALL);
         Capture<String> notificationIdCapture = new Capture<>(CaptureType.ALL);
@@ -205,12 +215,12 @@ public class WorkflowExecutionControllerImplTest {
         compStatesChangedVerifierMock.announceComponentState(EasyMock.capture(compExeIdCapture), EasyMock.capture(compStateCapture));
         EasyMock.replay(compStatesChangedVerifierMock);
 
-        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock);
+        WorkflowExecutionControllerImpl wfExeCtrl = new WorkflowExecutionControllerImpl(wfCtxMock, new ServiceRegistryAccessStub(false));
         wfExeCtrl.onComponentStateChanged(COMP_EXE_ID_1, compState, 5, executionCountOnReset, null, null);
 
         final int waitForAsyncSendingMsec = 200;
         Thread.sleep(waitForAsyncSendingMsec);
-        
+
         EasyMock.verify(notificationServiceMock);
         assertTrue(notificationIdCapture.hasCaptured());
         assertEquals(2, notificationIdCapture.getValues().size());
@@ -221,10 +231,9 @@ public class WorkflowExecutionControllerImplTest {
         assertEquals(executionCountOnReset, notificationBodyCapture.getValues().get(1));
 
         EasyMock.verify(compStatesChangedVerifierMock);
-        
+
         assertTrue(compExeIdCapture.hasCaptured());
         assertEquals(COMP_EXE_ID_1, compExeIdCapture.getValue());
     }
-
 
 }

@@ -2,13 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Output Writer Execution
 Bundle-SymbolicName: de.rcenvironment.components.outputwriter.execution
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Export-Package: de.rcenvironment.components.outputwriter.execution
-Import-Package: de.rcenvironment.components.outputwriter.common,
- de.rcenvironment.core.authentication,
+Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
+ com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.node;version="2.9.8",
+ de.rcenvironment.components.outputwriter.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
@@ -28,10 +31,6 @@ Import-Package: de.rcenvironment.components.outputwriter.common,
  de.rcenvironment.core.utils.common,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.annotate;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
  org.eclipse.core.resources,
  org.eclipse.core.runtime;version="3.4.0",
  org.eclipse.osgi.util;version="1.1.0"

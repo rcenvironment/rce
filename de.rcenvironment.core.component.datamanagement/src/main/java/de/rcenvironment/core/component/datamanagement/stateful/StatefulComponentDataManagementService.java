@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,19 +14,18 @@ import java.io.Serializable;
 import java.util.Collection;
 
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 
 /**
- * A stateful version of {@link ComponentDataManagementService}. Implementations will usually store
- * a relevant {@link ComponentInstanceInformation} internally.
+ * A stateful version of {@link ComponentDataManagementService}. Implementations will usually store a relevant
+ * {@link ComponentInstanceInformation} internally.
  * 
- * This interface allows clients to use implementations like
- * {@link SimpleComponentDataManagementService} and also pass them as parameters, while still
- * allowing replacement with mock objects for test runs or integration tests.
+ * This interface allows clients to use implementations like {@link SimpleComponentDataManagementService} and also pass them as parameters,
+ * while still allowing replacement with mock objects for test runs or integration tests.
  * 
  * @author Robert Mischke
  */
@@ -52,14 +51,13 @@ public interface StatefulComponentDataManagementService {
      * 
      * @param file the local file
      * @param filename either a custom filename to attach to the reference, or the constant
-     *        {@link ComponentDataManagementService#SAME_FILENAME} to use the filename of the local
-     *        file, or "null" to attach no filename
+     *        {@link ComponentDataManagementService#SAME_FILENAME} to use the filename of the local file, or "null" to attach no filename
      * @return the created reference
      * @throws IOException on a local I/O or data management error
      * 
      */
     String createTaggedReferenceFromLocalFile(File file, String filename) throws IOException;
-    
+
     /**
      * 
      * @param object the object
@@ -76,24 +74,24 @@ public interface StatefulComponentDataManagementService {
      * @param platforms The platforms to try to fetch data from
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, Collection<ResolvableNodeId> platforms) throws IOException;
+    void copyReferenceToLocalFile(String reference, File targetFile, Collection<NetworkDestination> platforms) throws IOException;
 
     /**
      * Copies the data "body" identified by a data management reference to a local file.
      * 
      * @param reference the reference
      * @param targetFile the local file to write to
-     * @param platform platform the data is stored
+     * @param platform the node to fetch the data from
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId platform) throws IOException;
-    
+    void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination platform) throws IOException;
+
     /**
      * Retrieved the String "body" identified by a data management reference.
      * 
      * @param reference the reference
      * @param nodeId The node to try to fetch data from
-     * @return the retrieved String 
+     * @return the retrieved String
      * @throws IOException on a local I/O or data management error
      */
     String retrieveStringFromReference(String reference, InstanceNodeSessionId nodeId) throws IOException;
@@ -101,18 +99,15 @@ public interface StatefulComponentDataManagementService {
     /**
      * Creates a "history" point in the data management with appropriate metadata entries.
      * 
-     * @param historyData the {@link Serializable} object that represents the history entry; is
-     *        decoded by an appropriate subtree builder (see
-     *        de.rcenvironment.rce.gui.datamanagement.browser.spi package for details)
-     * @param userInfoText a user description for this history entry; used as title for GUI entries
-     *        representing this history entry
+     * @param historyData the {@link Serializable} object that represents the history entry; is decoded by an appropriate subtree builder
+     *        (see de.rcenvironment.rce.gui.datamanagement.browser.spi package for details)
+     * @param userInfoText a user description for this history entry; used as title for GUI entries representing this history entry
      * @throws IOException on a data management error
      */
     void addHistoryDataPoint(Serializable historyData, String userInfoText) throws IOException;
-    
+
     /**
-     * Creates {@link FileReferenceTD} object from given file by creating a new data management
-     * reference.
+     * Creates {@link FileReferenceTD} object from given file by creating a new data management reference.
      * 
      * @param file given file
      * @param filename name of file
@@ -120,19 +115,17 @@ public interface StatefulComponentDataManagementService {
      * @throws IOException if given file doesn't exist or on data management error
      */
     FileReferenceTD createFileReferenceTDFromLocalFile(File file, String filename) throws IOException;
-    
+
     /**
-     * Creates {@link DirectoryReferenceTD} object from given directory by creating a new data
-     * management reference.
+     * Creates {@link DirectoryReferenceTD} object from given directory by creating a new data management reference.
      * 
      * @param dir given directory
      * @param dirname name of directory
      * @return {@link DirectoryReferenceTD}
-     * @throws IOException if given directory doesn't exist, is no directory, or on data management
-     *         error
+     * @throws IOException if given directory doesn't exist, is no directory, or on data management error
      */
     DirectoryReferenceTD createDirectoryReferenceTDFromLocalDirectory(File dir, String dirname) throws IOException;
-    
+
     /**
      * Retrieves a file from the data management referred by the given {@link FileReferenceTD}.
      * 
@@ -144,8 +137,7 @@ public interface StatefulComponentDataManagementService {
     void copyFileReferenceTDToLocalFile(FileReferenceTD fileReference, File targetFile, InstanceNodeSessionId node) throws IOException;
 
     /**
-     * Retrieves a directory from the data management referred by the given
-     * {@link DirectoryReferenceTD}.
+     * Retrieves a directory from the data management referred by the given {@link DirectoryReferenceTD}.
      * 
      * @param dirReference {@link DirectoryReferenceTD}
      * @param targetDir local target directory

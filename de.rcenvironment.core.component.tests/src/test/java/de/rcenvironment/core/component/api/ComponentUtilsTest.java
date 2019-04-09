@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,22 +23,26 @@ import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
  * Test cases for {@link ComponentUtils}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (8.0.0 id adaptations)
+ * @author Robert Mischke
  */
 public class ComponentUtilsTest {
 
     private static final String COMPONENT_NAME = "Comp Name";
+
+    private List<DistributedComponentEntry> distribCompEntries;
 
     private List<ComponentInstallation> installations;
 
@@ -83,10 +87,22 @@ public class ComponentUtilsTest {
 
     private ComponentInstallationImpl compInst4;
 
-    /** Setup. */
+    private DistributedComponentEntry distCompEntry1;
+
+    private DistributedComponentEntry distCompEntry2;
+
+    private DistributedComponentEntry distCompEntry3;
+
+    private DistributedComponentEntry distCompEntry4;
+
+    /**
+     * Common setup.
+     * 
+     * @throws OperationFailureException on unexpected errors
+     */
     @SuppressWarnings("serial")
     @Before
-    public void setUp() {
+    public void setUp() throws OperationFailureException {
 
         compInterf1 = createComponentInterfaceImpl(compId1, version1);
         compInterf2 = createComponentInterfaceImpl(compId1, version2);
@@ -103,6 +119,11 @@ public class ComponentUtilsTest {
         compInst4 = createComponentInstallationImpl(compInterf11, node1);
         cd4 = createComponentDescription(compInst4);
 
+        distCompEntry1 = ComponentTestUtils.wrapIntoDistributedComponentEntry(compInst1, null, null);
+        distCompEntry2 = ComponentTestUtils.wrapIntoDistributedComponentEntry(compInst2, null, null);
+        distCompEntry3 = ComponentTestUtils.wrapIntoDistributedComponentEntry(compInst3, null, null);
+        distCompEntry4 = ComponentTestUtils.wrapIntoDistributedComponentEntry(compInst4, null, null);
+
         installations = new ArrayList<ComponentInstallation>() {
 
             {
@@ -111,6 +132,17 @@ public class ComponentUtilsTest {
                 add(compInst3);
                 add(compInst4);
             }
+
+        };
+        distribCompEntries = new ArrayList<DistributedComponentEntry>() {
+
+            {
+                add(distCompEntry1);
+                add(distCompEntry2);
+                add(distCompEntry3);
+                add(distCompEntry4);
+            }
+
         };
     }
 
@@ -125,18 +157,18 @@ public class ComponentUtilsTest {
         ComponentRevisionImpl compRev = new ComponentRevisionImpl();
         compRev.setComponentInterface(compInterf);
         ComponentInstallationImpl compInst = new ComponentInstallationImpl();
-        compInst.setInstallationId(compInterf.getIdentifier());
+        compInst.setInstallationId(compInterf.getIdentifierAndVersion());
         compInst.setComponentRevision(compRev);
-        compInst.setNodeIdFromObject(node);
+        compInst.setNodeIdObject(node);
         return compInst;
     }
 
     private ComponentDescription createComponentDescription(ComponentInstallation compInst) {
         ComponentDescription cd = EasyMock.createNiceMock(ComponentDescription.class);
-        EasyMock.expect(cd.getIdentifier()).andReturn(compInst.getComponentRevision().getComponentInterface().getIdentifier()).anyTimes();
-        EasyMock.expect(cd.getVersion()).andReturn(compInst.getComponentRevision().getComponentInterface().getVersion()).anyTimes();
-        EasyMock.expect(cd.getNode())
-            .andReturn(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(compInst.getNodeId())).anyTimes();
+        EasyMock.expect(cd.getIdentifier()).andReturn(compInst.getComponentInterface().getIdentifierAndVersion())
+            .anyTimes();
+        EasyMock.expect(cd.getVersion()).andReturn(compInst.getComponentInterface().getVersion()).anyTimes();
+        EasyMock.expect(cd.getNode()).andReturn(compInst.getNodeIdObject()).anyTimes();
         EasyMock.expect(cd.getComponentInstallation()).andReturn(compInst).anyTimes();
         EasyMock.replay(cd);
         return cd;
@@ -145,7 +177,7 @@ public class ComponentUtilsTest {
     /** Test. */
     @Test
     public void testGetNodesForComponent() {
-        Map<LogicalNodeId, Integer> pis = ComponentUtils.getNodesForComponent(installations, cd1);
+        Map<LogicalNodeId, Integer> pis = ComponentUtils.getNodesForComponent(distribCompEntries, cd1);
         assertEquals(3, pis.size());
         assertTrue(pis.containsKey(node1));
         assertTrue(pis.get(node1).equals(ComponentUtils.EQUAL_COMPONENT_VERSION));
@@ -154,7 +186,7 @@ public class ComponentUtilsTest {
         assertTrue(pis.containsKey(node3));
         assertTrue(pis.get(node3).equals(ComponentUtils.GREATER_COMPONENT_VERSION));
 
-        pis = ComponentUtils.getNodesForComponent(installations, cd4);
+        pis = ComponentUtils.getNodesForComponent(distribCompEntries, cd4);
         assertEquals(1, pis.size());
         assertTrue(pis.containsKey(node1));
         assertTrue(pis.get(node1).equals(ComponentUtils.EQUAL_COMPONENT_VERSION));
@@ -163,29 +195,29 @@ public class ComponentUtilsTest {
     /** Test. */
     @Test
     public void testHasComponent() {
-        assertTrue(ComponentUtils.hasComponent(installations, cd1.getIdentifier(), node1));
-        assertFalse(ComponentUtils.hasComponent(installations, cd3.getIdentifier(), node1));
+        assertTrue(ComponentUtils.hasComponent(distribCompEntries, cd1.getIdentifier(), node1));
+        assertFalse(ComponentUtils.hasComponent(distribCompEntries, cd3.getIdentifier(), node1));
     }
 
     /** Test. */
     @Test
     public void testEliminateDuplicates() {
-        List<ComponentInstallation> insts = ComponentUtils.eliminateComponentInterfaceDuplicates(installations, node2);
+        List<DistributedComponentEntry> insts = ComponentUtils.eliminateComponentInterfaceDuplicates(distribCompEntries, node2);
         assertEquals(2, insts.size());
-        assertFalse(insts.contains(compInst1));
-        assertTrue(insts.contains(compInst2));
-        assertFalse(insts.contains(compInst3));
-        assertTrue(insts.contains(compInst4));
+        assertFalse(insts.contains(distCompEntry1));
+        assertTrue(insts.contains(distCompEntry2));
+        assertFalse(insts.contains(distCompEntry3));
+        assertTrue(insts.contains(distCompEntry4));
     }
 
     /** Test. */
     @Test
     public void testGetComponentInstallation() {
-        ComponentInstallation installation = ComponentUtils.getComponentInstallation(compId1WithVersion2, installations);
-        assertEquals(compInst3, installation);
+        DistributedComponentEntry distrEntry = ComponentUtils.getComponentInstallation(compId1WithVersion2, distribCompEntries);
+        assertEquals(compInst3, distrEntry.getComponentInstallation());
 
-        installation = ComponentUtils.getComponentInstallation("unknown-id", installations);
-        assertNull(installation);
+        distrEntry = ComponentUtils.getComponentInstallation("unknown-id", distribCompEntries);
+        assertNull(distrEntry);
     }
 
     /** Test. */
@@ -193,12 +225,12 @@ public class ComponentUtilsTest {
     public void testGetPlaceholderComponentDescription() {
         ComponentInstallation cd = ComponentUtils.createPlaceholderComponentInstallation("de.rcenvironment.comp", "4.2", COMPONENT_NAME,
             NodeIdentifierTestUtils.createTestLogicalNodeSessionId(true).convertToLogicalNodeId());
-        assertEquals(COMPONENT_NAME, cd.getComponentRevision().getComponentInterface().getDisplayName());
+        assertEquals(COMPONENT_NAME, cd.getComponentInterface().getDisplayName());
 
         cd =
             ComponentUtils.createPlaceholderComponentInstallation("de.rcenvironment.comp", "1.0", null, NodeIdentifierTestUtils
                 .createTestLogicalNodeSessionId(true).convertToLogicalNodeId());
-        assertEquals("N/A", cd.getComponentRevision().getComponentInterface().getDisplayName());
+        assertEquals("N/A", cd.getComponentInterface().getDisplayName());
     }
 
     /** Tests if a message is correctly created for difference kind of exception chains. */

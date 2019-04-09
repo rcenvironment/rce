@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -44,7 +44,8 @@ public class ComponentExecutionControllerImplTest {
             new ComponentExecutionRelatedInstancesFactoryDefaultStub();
         new ComponentExecutionControllerImpl().bindComponentExecutionRelatedInstancesFactory(compExeRelatedInstancesFactoryMock);
         ComponentExecutionContext compExeCtx = new ComponentExecutionContextMock();
-        ComponentExecutionControllerImpl comExeCtrl = new ComponentExecutionControllerImpl(compExeCtx, wfExeCtrlCallbackServiceMock, 0);
+        ComponentExecutionControllerImpl comExeCtrl =
+            new ComponentExecutionControllerImpl(compExeCtx, wfExeCtrlCallbackServiceMock, null, 0); // null = storage network destination
 
         ComponentStateMachine compStateMachineMock =
             createComponentStateMachineMockAndApply(null, comExeCtrl.geComponentExecutionRelatedInstances());

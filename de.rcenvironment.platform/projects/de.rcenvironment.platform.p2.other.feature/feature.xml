@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.p2.other.feature"
       label="RCE Platform - p2 Bridge Feature - Other Libraries"
-      version="8.2.3.qualifier"
+      version="9.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -121,14 +121,14 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="org.apache.commons.io"
          download-size="0"
          install-size="0"
-         version="2.0.1.v201105210651"
+         version="0.0.0"
          unpack="false"/>
 
    <plugin
          id="org.junit"
          download-size="0"
          install-size="0"
-         version="4.8.2.v4_8_2_v20130308-0413"
+         version="0.0.0"
          unpack="false"/>
 
    <plugin
@@ -142,36 +142,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="org.swtchart"
          download-size="0"
          install-size="0"
-         version="0.7.0.v201201201914"
-         unpack="false"/>
-
-   <plugin
-         id="org.aspectj.runtime"
-         download-size="0"
-         install-size="0"
          version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.aspectj.weaver"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.eclipse.equinox.weaving.aspectj"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.eclipse.equinox.weaving.hook"
-         fragment="true"
-         download-size="0"
-         install-size="0"
-         version="1.0.200.I20130319-1000"
          unpack="false"/>
 
 </feature>

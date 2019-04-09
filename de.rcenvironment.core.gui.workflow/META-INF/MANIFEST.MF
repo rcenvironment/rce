@@ -3,8 +3,8 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
  org.eclipse.help,
@@ -13,18 +13,24 @@ Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.core.component,
  org.eclipse.jface,
  org.junit
-Import-Package: de.rcenvironment.core.authentication,
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.core.util;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.node;version="2.9.8",
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.communication.management,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.integration,
+ de.rcenvironment.core.component.integration.documentation,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.spi,
+ de.rcenvironment.core.component.sshremoteaccess,
  de.rcenvironment.core.component.workflow.api,
+ de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
  de.rcenvironment.core.component.workflow.execution.impl,
  de.rcenvironment.core.component.workflow.execution.spi,
@@ -59,16 +65,13 @@ Import-Package: de.rcenvironment.core.authentication,
  org.apache.commons.lang3.text;version="3.1.0",
  org.apache.commons.lang3.time;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.util;version="1.9.13",
  org.eclipse.core.filesystem,
  org.eclipse.core.resources,
  org.eclipse.ui,
  org.eclipse.ui.dialogs,
  org.eclipse.ui.ide,
- org.eclipse.ui.part
+ org.eclipse.ui.part,
+ org.osgi.service.component.annotations;version="1.3.0"
 Export-Package: de.rcenvironment.core.gui.workflow,
  de.rcenvironment.core.gui.workflow.editor,
  de.rcenvironment.core.gui.workflow.editor.commands,

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -101,6 +101,8 @@ public class ActiveMQBroker implements JmsBroker {
         connectionFilterPlugin.setFilter(scp.getConnectionFilter());
         brokerService = createTransientEmbeddedBroker(brokerName, connectionFilterPlugin, externalUrl, jvmLocalUrl);
         brokerService.start();
+        log.info(StringUtils.format("Listening for standard connections on %s:%d", scp.getNetworkContactPoint().getHost(),
+            scp.getNetworkContactPoint().getPort()));
 
         ConnectionFactory localConnectionFactory = new ActiveMQConnectionFactory(jvmLocalUrl);
         localBrokerConnection = localConnectionFactory.createConnection();
@@ -145,8 +147,9 @@ public class ActiveMQBroker implements JmsBroker {
             }
             // CHECKSTYLE:DISABLE (IllegalCatch) - ActiveMQ method declares "throws Exception"
             try {
+                log.info("Shutting down server port " + scp.getNetworkContactPoint().getPort());
                 brokerService.stop();
-                log.info("Stopped JMS broker " + brokerService.getBrokerName());
+                log.debug("Stopped JMS broker " + brokerService.getBrokerName());
             } catch (Exception e) {
                 log.warn("Error shutting down JMS broker " + brokerService.getBrokerName(), e);
             }

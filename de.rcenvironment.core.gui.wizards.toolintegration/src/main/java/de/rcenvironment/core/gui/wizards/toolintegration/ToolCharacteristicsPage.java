@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,6 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
 
@@ -40,17 +43,23 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
+import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
-import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
-import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Sascha Zur
  */
 public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
+
+    private static final String STRING_TOOLNAME_INVALID = "The chosen tool name is not valid.\n %s.";
+
+    private static final String STRING_GROUPNAME_INVALID = "The chosen group name is not valid.\n %s.";
+
+    private static final String STRING_TOOL_NAME_EXISTS =
+        "A tool with the name '%s' is already configured within the current RCE profile.\n Note that tool names are not case sensitive.";
 
     private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_characteristics";
 
@@ -65,9 +74,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     private static final int TOOL_DESCRIPTION_TEXT_HEIGHT = 50;
 
     private static final String KEY_KEYS = "properties";
-
-    private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
-        '*', '?', '\"', '>', '<', '|' };
 
     protected Map<String, Object> configurationMap;
 
@@ -97,7 +103,12 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
     private String nameValid = "";
 
+    private String groupValid = "";
+
     private PathChooserButtonListener docPathChooserButtonListener;
+
+    private String nameOrigin = null;
+
 
     protected ToolCharacteristicsPage(String pageName, Map<String, Object> configurationMap, List<String> usedToolnames,
         List<String> groupNames) {
@@ -110,7 +121,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         if (configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON) == null) {
             configurationMap.put(ToolIntegrationConstants.KEY_UPLOAD_ICON, true);
         }
-
     }
 
     @Override
@@ -136,25 +146,16 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.nameRequired,
                 ToolIntegrationConstants.KEY_TOOL_NAME);
         ((GridData) toolNameText.getLayoutData()).horizontalSpan = 2;
-        toolNameText.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
-        toolNameText.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                nameValid = validateName();
-                validate(true);
-            }
+        toolNameText.addModifyListener(e -> {
+            nameValid = validateName();
+            validate(true);
         });
         iconText =
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.iconPath, ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
         iconText.setMessage(Messages.iconSizeMessage);
-        iconText.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                iconValid = validateIcon();
-                validate(true);
-            }
+        iconText.addModifyListener(e -> {
+            iconValid = validateIcon();
+            validate(true);
         });
         GridLayout iconCompLayout = new GridLayout(2, false);
         iconCompLayout.marginWidth = 0;
@@ -185,6 +186,10 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
                 ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
         GridData groupNameTextData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
         groupNameText.setLayoutData(groupNameTextData);
+        groupNameText.addModifyListener(e -> {
+            groupValid = validateGroupName();
+            validate(true);
+        });
         Button chooseGroupButton = new Button(toolPropertiesGroup, SWT.PUSH);
         chooseGroupButton.setText(DOTS);
         chooseGroupButton.addSelectionListener(new SelectionListener() {
@@ -207,14 +212,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
         docPathChooserButtonListener = new PathChooserButtonListener(documenationText, false, getShell());
         chooseDocButton.addSelectionListener(docPathChooserButtonListener);
-        documenationText.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                docValid = validateDoc();
-                validate(true);
-            }
-
+        documenationText.addModifyListener(e -> {
+            docValid = validateDoc();
+            validate(true);
         });
         Label toolDescriptionLabel = new Label(toolPropertiesGroup, SWT.NONE);
         toolDescriptionLabel.setText(Messages.toolDescription);
@@ -264,11 +264,11 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             if (doc.exists()) {
                 String extension = FilenameUtils.getExtension(doc.getAbsolutePath());
                 if (!ArrayUtils.contains(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, extension)) {
-                    String allowedExt = DOC_EXTENTION_NOT_VALID;
+                    StringBuilder allowedExt = new StringBuilder(DOC_EXTENTION_NOT_VALID);
                     for (String current : ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS) {
-                        allowedExt += current + VALID_EXTENSION_SEPERATOR;
+                        allowedExt.append(current + VALID_EXTENSION_SEPERATOR);
                     }
-                    return allowedExt.substring(0, allowedExt.length() - VALID_EXTENSION_SEPERATOR.length());
+                    return allowedExt.toString().substring(0, allowedExt.length() - VALID_EXTENSION_SEPERATOR.length());
                 }
             } else {
                 return DOC_DOES_NOT_EXIST;
@@ -302,8 +302,27 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     }
 
     private String validateName() {
-        if (!CrossPlatformFilenameUtils.isFilenameValid(toolNameText.getText())) {
-            return "The chosen filename is not valid.";
+        Optional<String> validationResult = ComponentIdRules.validateComponentIdRules(toolNameText.getText());
+        if (validationResult.isPresent()) {
+            return StringUtils.format(STRING_TOOLNAME_INVALID, validationResult.get());
+        }
+        String name = toolNameText.getText().trim();
+        if (nameOrigin != null && name.equalsIgnoreCase(nameOrigin)) {
+            return "";
+        }
+        Set<String> set = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        set.addAll(usedToolnames);
+        if (set.contains(name)) {
+            set.removeIf((String s) -> !s.trim().equalsIgnoreCase(name));
+            return StringUtils.format(STRING_TOOL_NAME_EXISTS, set.iterator().next());
+        }
+        return "";
+    }
+
+    private String validateGroupName() {
+        Optional<String> validationResult = ComponentIdRules.validateComponentGroupNameRules(groupNameText.getText());
+        if (!groupNameText.getText().isEmpty() && validationResult.isPresent()) {
+            return StringUtils.format(STRING_GROUPNAME_INVALID, validationResult.get());
         }
         return "";
     }
@@ -320,7 +339,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         dlg.setMessage(Messages.chooseGroupDlgMessage);
         dlg.setTitle(Messages.chooseGroupDlgTitle);
         if (!groupNameText.getText().isEmpty() && groupNames.contains(groupNameText.getText())) {
-            dlg.setInitialSelections(new String[] { groupNameText.getText() });
+            dlg.setInitialSelections(groupNameText.getText());
         }
         if (dlg.open() == Window.OK) {
             groupNameText.setText(dlg.getFirstResult().toString());
@@ -382,17 +401,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     private void validate(boolean update) {
         setMessage(null, DialogPage.NONE);
         setPageComplete(true);
-        String nameError = StringUtils.checkAgainstCommonInputRules(toolNameText.getText());
-        if (nameError != null) {
-            setMessage("This tool name is invalid for running the tool via Remote Access:\n  " + nameError, DialogPage.WARNING);
-        }
-        if (!iconValid.isEmpty()) {
-            setMessage(iconValid, DialogPage.WARNING);
-        }
-        if (!docValid.isEmpty()) {
-            setMessage(docValid, DialogPage.ERROR);
-            setPageComplete(false);
-        }
         String name = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
         if (name == null
             || name.trim().isEmpty()) {
@@ -401,6 +409,17 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         } else if ((!update) && usedToolnames.contains((configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
             setMessage(Messages.toolFilenameUsed, DialogPage.ERROR);
             setPageComplete(false);
+        }
+        if (!docValid.isEmpty()) {
+            setMessage(docValid, DialogPage.ERROR);
+            setPageComplete(false);
+        }
+        if (!groupValid.isEmpty()) {
+            setMessage(groupValid, DialogPage.ERROR);
+            setPageComplete(false);
+        }
+        if (!iconValid.isEmpty()) {
+            setMessage(iconValid, DialogPage.WARNING);
         }
         if (!nameValid.isEmpty()) {
             setMessage(nameValid, DialogPage.ERROR);
@@ -416,12 +435,11 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
      */
     @Override
     public void setConfigMap(Map<String, Object> newConfigurationMap) {
-        if ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) != null) {
-            usedToolnames.add((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-        }
         configurationMap = newConfigurationMap;
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) != null) {
-            usedToolnames.remove(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+            nameOrigin = String.valueOf(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+        } else {
+            nameOrigin = null;
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON) == null) {
             configurationMap.put(ToolIntegrationConstants.KEY_UPLOAD_ICON, true);
@@ -494,4 +512,5 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     public void updatePage() {
         // TODO Auto-generated method stub
     }
+
 }

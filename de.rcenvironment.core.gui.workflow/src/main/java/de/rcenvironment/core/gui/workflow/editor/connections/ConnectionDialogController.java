@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -105,7 +105,7 @@ public class ConnectionDialogController {
         boolean autoConnected = false;
         if (sourceWorkflowNode != null && targetWorkflowNode != null) {
             // if user tries to connect same node - no auto connect
-            if (sourceWorkflowNode.getIdentifier().equals(targetWorkflowNode.getIdentifier())) {
+            if (sourceWorkflowNode.getIdentifierAsObject().equals(targetWorkflowNode.getIdentifierAsObject())) {
                 return false;
             }
 

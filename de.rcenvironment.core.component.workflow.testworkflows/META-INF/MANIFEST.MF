@@ -2,12 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Workflow Test Workflows
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow.testworkflows
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.component.workflow
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
-Import-Package: de.rcenvironment.core.authentication,
- de.rcenvironment.core.communication.management.testutils,
+Import-Package: de.rcenvironment.core.communication.management.testutils,
  de.rcenvironment.core.communication.testutils,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.endpoint.api,

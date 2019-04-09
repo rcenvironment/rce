@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Resources Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.resources;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Activator: de.rcenvironment.core.gui.resources.internal.Activator
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.component.model.api,
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.jface.resource,

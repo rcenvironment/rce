@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -45,7 +45,7 @@ public interface SshConnectionListener {
     void onConnected(SshConnectionSetup setup);
 
     /**
-     * Reports that a connection attempt has failed, and whether the connection will be retried automatically. Not that this does not cover
+     * Reports that a connection attempt has failed, and whether the connection will be retried automatically. Note that this does not cover
      * the breakdown of established connections; use {@link #onConnectionClosed(SshConnectionSetup)} for this.
      * 
      * @param setup the affected {@link SshConnectionSetup}

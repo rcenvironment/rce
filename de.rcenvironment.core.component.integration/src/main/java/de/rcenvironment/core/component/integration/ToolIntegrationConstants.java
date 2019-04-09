@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,10 +17,10 @@ import java.util.UUID;
  * @author Sascha Zur
  */
 public final class ToolIntegrationConstants {
-    
+
     /** Constant. */
     public static final int CURRENT_TOOLINTEGRATION_VERSION = 1;
-    
+
     /** Constant. */
     public static final String KEY_TOOL_INTEGRATION_VERSION = "toolIntegrationVersion";
 
@@ -188,10 +188,10 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_VERIFICATION_TOKEN_LOCATION = "verificationKeyLocation";
-    
+
     /** Constant. */
     public static final String KEY_VERIFICATION_TOKEN_RECIPIENTS = "verificationKeyEmailRecipients";
-    
+
     /** Constant. */
     public static final String VERIFICATION_TOKEN_RECIPIENTS_SEPARATOR = ";";
 
@@ -248,7 +248,8 @@ public final class ToolIntegrationConstants {
     public static final String OTHER_TOOL_ROOT_DIRECTORIES = "Tool_Root_Directories.txt";
 
     /** Constant. */
-    public static final String COMMON_TOOL_INTEGRATION_CONTEXT_UID = UUID.randomUUID().toString() + "_COMMON_TOOL_INTEGRATION_CONTEXT";
+    // TODO review: is there an actual need for this ID to be dynamic?
+    public static final String COMMON_TOOL_INTEGRATION_CONTEXT_UID = UUID.randomUUID().toString() + "_COMMON";
 
     /** Constant. */
     public static final String KEY_TOOL_GROUPNAME = "groupName";
@@ -277,8 +278,8 @@ public final class ToolIntegrationConstants {
     /** Constant. */
     public static final String KEY_UPLOAD_ICON = "uploadIcon";
 
-    /** Constant. */
-    public static final String TEMP_KEY_PUBLISH_COMPONENT = "publishComponent";
+    // tool publication mixed into tool integration is disabled for now; see Mantis #16044
+    // public static final String TEMP_KEY_PUBLISH_COMPONENT = "publishComponent";
 
     /** Constant. */
     public static final String PUBLISHED_COMPONENTS_FILENAME = "published.conf";
@@ -293,7 +294,7 @@ public final class ToolIntegrationConstants {
     public static final String TEMPLATE_PATH = "tools" + File.separator + "templates";
 
     /** Constant. */
-    public static final String COMMON_TOOL_INTEGRATION_CONTEXT_TYPE = "common";
+    public static final String COMMON_TOOL_INTEGRATION_CONTEXT_TYPE = "Common";
 
     /** Constant. */
     public static final String INTEGRATION_TYPE = "integrationType";

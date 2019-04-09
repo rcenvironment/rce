@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,11 +12,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.dynamichelpers.IExtensionChangeHandler;
+import org.eclipse.jface.action.IContributionItem;
+import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.IPerspectiveRegistry;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.WorkbenchPlugin;
+import org.eclipse.ui.internal.WorkbenchWindow;
 import org.eclipse.ui.internal.dialogs.WorkbenchWizardElement;
 import org.eclipse.ui.internal.wizards.AbstractExtensionWizardRegistry;
 import org.eclipse.ui.views.IViewDescriptor;
@@ -37,7 +42,7 @@ import org.eclipse.ui.wizards.IWizardRegistry;
 public final class UnwantedUIRemover {
 
     /** NOT SHOWN PERSPECTIVES. **/
-    public static final String[] PERSPECTIVES = new String[] {
+    private static final String[] PERSPECTIVES = new String[] {
         /**
          * Debug
          */
@@ -57,7 +62,7 @@ public final class UnwantedUIRemover {
     };
 
     /** NOT SHOWN NEW WIZARDS. **/
-    public static final String[] NEW_WIZARDS = new String[] {
+    private static final String[] NEW_WIZARDS = new String[] {
         // Untitled Text File: Creates an empty untitled text file
         // "org.eclipse.ui.editors.wizards.UntitledTextFileWizard",
 
@@ -93,7 +98,7 @@ public final class UnwantedUIRemover {
     };
 
     /** NOT SHOWN VIEWS. **/
-    public static final String[] VIEWS = new String[] {
+    private static final String[] VIEWS = new String[] {
         /**
          * Breakpoints
          */
@@ -208,7 +213,7 @@ public final class UnwantedUIRemover {
     };
 
     /** NOT SHOWN EXPORT WIZARDS. **/
-    public static final String[] EXPORT_WIZARDS = new String[] {
+    private static final String[] EXPORT_WIZARDS = new String[] {
         /**
          * Breakpoints, Export breakpoints to the local file system.
          */
@@ -245,7 +250,7 @@ public final class UnwantedUIRemover {
     };
 
     /** NOT SHOWN IMPORT WIZARDS. **/
-    public static final String[] IMPORT_WIZARDS = new String[] {
+    private static final String[] IMPORT_WIZARDS = new String[] {
         /**
          * Breakpoints, Import breakpoints from the local file system.
          */
@@ -288,19 +293,30 @@ public final class UnwantedUIRemover {
          */
         "org.eclipse.wst.xml.ui.internal.wizards.ImportXMLCatalogWizard",
     };
-    
-    private UnwantedUIRemover() {}
+
+    /** NOT SHOWN MENU ITEM PATHS. **/
+    private static final String[] MENU_ITEM_PATHS = new String[] {
+
+        /**
+         * Window -> Editors
+         */
+        "window/org.eclipse.ui.editors"
+    };
+
+    private UnwantedUIRemover() {
+        // prevent instantiation
+    }
 
     /**
      * Removes the unwanted perspectives from Application.
      */
-    public static void removeUnWantedPerspectives() {
+    public static void removeUnwantedPerspectives() {
         List<String> ignoredPerspectives = Arrays.asList(PERSPECTIVES);
 
         IPerspectiveRegistry perspectiveRegistry = PlatformUI.getWorkbench().getPerspectiveRegistry();
         IPerspectiveDescriptor[] perspectiveDescriptors = perspectiveRegistry.getPerspectives();
 
-        List<IPerspectiveDescriptor> removePerspectiveDesc = new ArrayList<IPerspectiveDescriptor>();
+        List<IPerspectiveDescriptor> removePerspectiveDesc = new ArrayList<>();
 
         // Add the perspective descriptors with the matching perspective ids to the list
         for (IPerspectiveDescriptor perspectiveDescriptor : perspectiveDescriptors) {
@@ -317,13 +333,13 @@ public final class UnwantedUIRemover {
     /**
      * Removes the unwanted views from Application.
      */
-    public static void removeUnWantedViews() {
+    public static void removeUnwantedViews() {
         List<String> ignoredViews = Arrays.asList(VIEWS);
 
         IViewRegistry viewRegistry = PlatformUI.getWorkbench().getViewRegistry();
         IViewDescriptor[] viewDescriptors = viewRegistry.getViews();
 
-        List<IViewDescriptor> removeViewDesc = new ArrayList<IViewDescriptor>();
+        List<IViewDescriptor> removeViewDesc = new ArrayList<>();
 
         // Add the view descriptors with the matching view ids to the list
         for (IViewDescriptor d : viewDescriptors) {
@@ -331,9 +347,7 @@ public final class UnwantedUIRemover {
                 removeViewDesc.add(d);
             }
         }
-
-        IExtensionChangeHandler extChgHandler = (IExtensionChangeHandler) viewRegistry;
-        extChgHandler.removeExtension(null, removeViewDesc.toArray());
+        Platform.getExtensionRegistry().removeExtension(null, removeViewDesc.toArray());
     }
 
     /**
@@ -391,8 +405,22 @@ public final class UnwantedUIRemover {
         }
     }
 
+    /**
+     * Removes the unwanted menu entries defined by their path from the Application.
+     */
+    public static void removeUnwantedMenuEntries() {
+        IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+        IMenuManager menubarManager = ((WorkbenchWindow) workbenchWindow).getMenuBarManager();
+        for (String menuItemPath : MENU_ITEM_PATHS) {
+            IContributionItem contributionItem = menubarManager.findUsingPath(menuItemPath);
+            if (contributionItem != null) {
+                contributionItem.setVisible(false);
+            } 
+        }
+    }
+
     private static IWizardDescriptor[] getAllWizards(IWizardCategory... categories) {
-        List<IWizardDescriptor> results = new ArrayList<IWizardDescriptor>();
+        List<IWizardDescriptor> results = new ArrayList<>();
         for (IWizardCategory wizardCategory : categories) {
             results.addAll(Arrays.asList(wizardCategory.getWizards()));
             results.addAll(Arrays.asList(getAllWizards(wizardCategory.getCategories())));

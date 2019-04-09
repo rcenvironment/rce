@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,7 +11,6 @@ package de.rcenvironment.components.script.execution.validator;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,7 +44,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Jascha Riedel
  * @author Martin Misiak
  * @author David Scholz
- * @author Doreen Seider (caching)
+ * @author Doreen Seider (caching, first implementation)
+ * @author Thorsten Sommer (fixed version parsing + caching, second implementation)
  */
 public class ScriptComponentValidator extends AbstractComponentValidator {
 
@@ -59,8 +58,6 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     private static final String COLON = ": ";
 
     private static Log logger = LogFactory.getLog(ScriptComponentValidator.class);
-
-    private ExecutionOutputCache executionOutputCache = createExecutionOutputCache();
 
     @Override
     public String getIdentifier() {
@@ -139,34 +136,30 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     public List<ComponentValidationMessage> validateOnWorkflowStart(ComponentDescription componentDescription) {
         final List<ComponentValidationMessage> messages = new ArrayList<>();
         if (getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE).equals("Python")) {
-            String pythonInstallation = getProperty(componentDescription, PythonComponentConstants.PYTHON_INSTALLATION);
-
+            final String pythonInstallation = getProperty(componentDescription, PythonComponentConstants.PYTHON_INSTALLATION);
             if (!pythonInstallation.isEmpty()) {
-                final PythonVersionRegexValidator validator = new PythonVersionRegexValidator();
-                if (executionOutputCache.containsKey(pythonInstallation)) {
-                    replayValidationWithCachedExecutionOutput(pythonInstallation, validator);
+                final PythonValidationResult cachedResult =
+                    ScriptComponentValidatorCache.getCache().getValidationResult(pythonInstallation);
+                if (!cachedResult.isPlaceholder()) {
+                    // A cached result gets used:
+                    processPythonValidationResult(cachedResult, messages, pythonInstallation);
                 } else {
-                    executeAndValidate(pythonInstallation, validator);
+                    // No cached result known. Validate this path:
+                    final PythonVersionRegexValidator validator = new PythonVersionRegexValidator();
+                    final PythonValidationResult result = executeAndValidate(pythonInstallation, validator);
+                    processPythonValidationResult(result, messages, pythonInstallation);
                 }
-                processPythonValidationResult(validator, messages, pythonInstallation);
             }
         }
 
         return messages;
     }
 
-    private void replayValidationWithCachedExecutionOutput(final String pythonInstallation, final PythonVersionRegexValidator validator) {
-        for (String output : executionOutputCache.get(pythonInstallation)) {
-            validator.validatePythonVersion(output);
-        }
-    }
-
-    private void executeAndValidate(final String pythonInstallation, final PythonVersionRegexValidator validator) {
+    private PythonValidationResult executeAndValidate(final String pythonInstallation, final PythonVersionRegexValidator validator) {
         final LocalApacheCommandLineExecutor executor;
-
         final TextStreamWatcher stdOutTextStreamWatcher;
         final TextStreamWatcher stdErrTextStreamWatcher;
-        String command = "\"" + pythonInstallation + "\"" + " --version";
+        final String command = "\"" + pythonInstallation + "\"" + " --version";
 
         try {
 
@@ -178,7 +171,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                     @Override
                     public synchronized void addOutput(String line) {
                         super.addOutput(line);
-                        validator.validatePythonVersion(getBufferedOutput());
+                        validator.validatePythonVersion(line, pythonInstallation);
                     }
 
                 });
@@ -189,7 +182,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                         @Override
                         public synchronized void addOutput(String line) {
                             super.addOutput(line);
-                            validator.validatePythonVersion(getBufferedOutput());
+                            validator.validatePythonVersion(line, pythonInstallation);
                         }
 
                     });
@@ -215,50 +208,55 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
                 }
             });
 
-            // TODO review exception handling: why is executor.cancel() called in any case? and in case of a TimeoutException it is actually
-            // called twice. TimeoutException should be handled in some way, at least logged --seid_do
             try {
+                // Wait at most the desired amount of time to finish:
                 task.get(PYTHON_TEST_TIMEOUT, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
+                // Execution took too long:
                 executor.cancel();
             } catch (ExecutionException e) {
                 logger.error(PYTHON_VALIDATION_ERROR, e);
             } finally {
+                // Cancel the process in cases where an execution exception or an arbitrary other exception was thrown:
                 executor.cancel();
             }
 
-            executionOutputCache.put(pythonInstallation, validator.getOutputValidated());
+            // Add or update the cache:
+            final PythonValidationResult result = validator.getValidationResult();
+            ScriptComponentValidatorCache.getCache().addOrUpdateValidationResult(result);
+            return result;
 
         } catch (IOException | InterruptedException e) {
             logger.error(PYTHON_VALIDATION_ERROR, e);
         }
+
+        return PythonValidationResult.DEFAULT_NONE_PLACEHOLDER;
     }
 
-    private void processPythonValidationResult(PythonVersionRegexValidator validator,
-        List<ComponentValidationMessage> messages, String path) {
-        if (!validator.isPythonExecutionSuccessful()
-            && validator.getMajorPythonVersion() == MINUS_ONE) {
+    private void processPythonValidationResult(final PythonValidationResult validatorResult,
+        final List<ComponentValidationMessage> messages, final String path) {
+        if (!validatorResult.isPythonExecutionSuccessful() && validatorResult.getMajorPythonVersion() == MINUS_ONE) {
             final ComponentValidationMessage message = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, PythonComponentConstants.PYTHON_INSTALLATION,
                 Messages.pythonExecutionTestErrorRelative, StringUtils.format(Messages.pythonExecutionTestErrorRelative, path));
             messages.add(message);
-        } else if (!validator.isPythonExecutionSuccessful() && (validator.getMinorPythonVersion() < 6
-            && validator.getMajorPythonVersion() >= 2)) {
+        } else if (!validatorResult.isPythonExecutionSuccessful()
+            && (validatorResult.getMinorPythonVersion() < 6 && validatorResult.getMajorPythonVersion() >= 2)) {
             final ComponentValidationMessage message = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, PythonComponentConstants.PYTHON_INSTALLATION,
                 Messages.pythonExecutionUnsupportedVersionRelative,
                 Messages.pythonExecutionUnsupportedVersionRelative);
             messages.add(message);
-        } else if (validator.isPythonExecutionSuccessful()) {
-            logPythonExecutionSuccessfulMessage(validator);
+        } else if (validatorResult.isPythonExecutionSuccessful()) {
+            logPythonExecutionSuccessfulMessage(validatorResult);
         }
     }
 
-    private void logPythonExecutionSuccessfulMessage(PythonVersionRegexValidator validator) {
+    private void logPythonExecutionSuccessfulMessage(final PythonValidationResult validatorResult) {
         LogFactory.getLog(this.getClass())
-            .debug("Python Version Used: " + validator.getMajorPythonVersion() + "."
-                + validator.getMinorPythonVersion() + "."
-                + validator.getMicroPythonVersion());
+            .debug("Python Version Used: " + validatorResult.getMajorPythonVersion() + "."
+                + validatorResult.getMinorPythonVersion() + "."
+                + validatorResult.getMicroPythonVersion());
     }
 
     /**
@@ -276,97 +274,197 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     }
 
     /**
-     * @return the {@link ExecutionOutputCache} to use. Intended for unit testing.
-     */
-    protected ExecutionOutputCache createExecutionOutputCache() {
-        return new ExecutionOutputCache();
-    }
-
-    /**
-     * Caches the execution output produced when executing the given Python installation path.
      * 
-     * @author Doreen Seider
-     */
-    protected static class ExecutionOutputCache {
-
-        private static final int CACHE_EVICTION_TIME_MILLIS = 3000;
-
-        private PassiveExpiringMap<String, List<String>> cachedExecutionOutput = new PassiveExpiringMap<>(CACHE_EVICTION_TIME_MILLIS);
-
-        protected void put(String key, List<String> output) {
-            cachedExecutionOutput.put(key, output);
-        }
-
-        protected List<String> get(String key) {
-            return cachedExecutionOutput.get(key);
-        }
-
-        protected boolean containsKey(String key) {
-            return cachedExecutionOutput.containsKey(key);
-        }
-
-    }
-
-    // TODO add JavaDoc --seid_do
-    /**
-     * 
-     * @author David Scholz
+     * The Python validation result class. This is a container for the recognized Python version as well as its path. As placeholder for not
+     * yet known values, the static {@link DEFAULT_NONE_PLACEHOLDER} might be used.
      *
+     * @author Thorsten Sommer
      */
-    protected static class PythonVersionRegexValidator {
+    protected static final class PythonValidationResult {
 
-        private static final int MINUS_ONE = -1;
+        /**
+         * A static placeholder value which might be used instead of null for not yet known values.
+         * 
+         */
+        public static final PythonValidationResult DEFAULT_NONE_PLACEHOLDER = new PythonValidationResult("/none", -1, -1, -1, false);
 
-        private static final Pattern MATCH_PATTERN = Pattern.compile("^Python\\s([0-9]+)\\.([0-9]+)\\.([0-9]+)");
+        private final int majorPythonVersion;
 
-        private volatile int majorPythonVersion = MINUS_ONE;
+        private final int minorPythonVersion;
 
-        private volatile int minorPythonVersion = MINUS_ONE;
+        private final int microPythonVersion;
 
-        private volatile int microPythonVersion = MINUS_ONE;
+        private final boolean successfull;
 
-        private volatile boolean pythonExecutionSuccessful = false;
-
-        private List<String> outputValidated = Collections.synchronizedList(new ArrayList<String>());
+        private final String pythonPath;
 
         /**
          * 
-         * @param bufferedOutput stdout or stderr of the python exe.
+         * This is the constructor for a Python validation result.
+         * 
+         * @param pythonPath The validated Python path. It cannot null nor an empty string.
+         * @param majorVersion Python's major version
+         * @param minorVersion Python's minor version
+         * @param microVersion Python's micro version
+         * @param successfull The final state of the validation process. True means, that the Python version was accepted.
          */
-        public synchronized void validatePythonVersion(String bufferedOutput) {
-            outputValidated.add(bufferedOutput);
-            Matcher matcher = MATCH_PATTERN.matcher(bufferedOutput);
-            if (matcher.find()) {
-                majorPythonVersion = Integer.parseInt(matcher.group(1));
-                minorPythonVersion = Integer.parseInt(matcher.group(2));
-                microPythonVersion = Integer.parseInt(matcher.group(3));
+        public PythonValidationResult(final String pythonPath, final int majorVersion, final int minorVersion, final int microVersion,
+            final boolean successfull) {
+            if (pythonPath == null) {
+                throw new NullPointerException("The given Python path cannot be null");
+            }
+            
+            if (pythonPath.isEmpty()) {
+                throw new IllegalArgumentException("The given Python path cannot be empty.");
             }
 
-            if (majorPythonVersion == 3 || majorPythonVersion == 2 && minorPythonVersion >= 6) {
-                pythonExecutionSuccessful = true;
-            }
+            this.pythonPath = pythonPath;
+            this.majorPythonVersion = majorVersion;
+            this.minorPythonVersion = minorVersion;
+            this.microPythonVersion = microVersion;
+            this.successfull = successfull;
         }
 
+        /**
+         * 
+         * Returns true if the validation was successfully.
+         * 
+         * @return Returns true if the validation was successfully.
+         */
         public boolean isPythonExecutionSuccessful() {
-            return pythonExecutionSuccessful;
+            if (this.isPlaceholder()) {
+                return false;
+            }
+
+            return this.successfull;
         }
 
-        public List<String> getOutputValidated() {
-            return outputValidated;
-        }
-
+        /**
+         * 
+         * Returns Python's major version i.e. the first part of the version number.
+         * 
+         * @return Python's major version
+         */
         public int getMajorPythonVersion() {
             return this.majorPythonVersion;
         }
 
+        /**
+         * 
+         * Returns Python's minor version i.e. the second part of the version number.
+         * 
+         * @return Python's minor version
+         */
         public int getMinorPythonVersion() {
             return this.minorPythonVersion;
         }
 
+        /**
+         * 
+         * Returns Python's micro version i.e. the third part of the version number.
+         * 
+         * @return Python's micro version
+         */
         public int getMicroPythonVersion() {
             return this.microPythonVersion;
         }
 
+        /**
+         * 
+         * Returns Python's path which was used for the validation.
+         * 
+         * @return The Python path
+         */
+        public String getPythonPath() {
+            return pythonPath;
+        }
+
+        /**
+         * 
+         * Return true if this instance is the placeholder.
+         * 
+         * @return True if this instance is the placeholder.
+         */
+        public boolean isPlaceholder() {
+            return this == PythonValidationResult.DEFAULT_NONE_PLACEHOLDER;
+        }
     }
 
+    /**
+     * 
+     * This validator class validates Python installations. All methods are thread-safe for a particular instance.
+     * 
+     * @author David Scholz
+     * @author Thorsten Sommer (refactored class)
+     *
+     */
+    protected static final class PythonVersionRegexValidator {
+
+        private static final Pattern MATCH_PATTERN = Pattern.compile("^Python\\s([0-9]+)\\.{0,}([0-9]+){0,}\\.{0,}([0-9]+){0,}");
+
+        private static final int MINUS_ONE = -1;
+
+        private PythonValidationResult currentResult = PythonValidationResult.DEFAULT_NONE_PLACEHOLDER;
+
+        /**
+         * This method validates one line from a python --version output. The method can handle multiple lines by processing them one after
+         * another. Additional lines, after a Python version was recognized, are ignored.
+         * 
+         * @param line One line from stdout or stderr of a Python process.
+         */
+        public void validatePythonVersion(final String line, final String pythonPath) {
+
+            if (this.currentResult.isPythonExecutionSuccessful()) {
+                return;
+            }
+            
+            int majorPythonVersion = MINUS_ONE;
+            int minorPythonVersion = MINUS_ONE;
+            int microPythonVersion = MINUS_ONE;
+
+            Matcher matcher = MATCH_PATTERN.matcher(line);
+            if (matcher.find()) {
+                final String g1 = matcher.group(1);
+                final String g2 = matcher.group(2);
+                final String g3 = matcher.group(3);
+
+                if (g1 != null) {
+                    majorPythonVersion = Integer.parseInt(g1);
+                }
+
+                if (g2 != null) {
+                    minorPythonVersion = Integer.parseInt(g2);
+                }
+
+                if (g3 != null) {
+                    microPythonVersion = Integer.parseInt(g3);
+                }
+            }
+
+            if (majorPythonVersion == 3 || majorPythonVersion == 2 && minorPythonVersion >= 6) {
+                synchronized (this) {
+                    this.currentResult =
+                        new PythonValidationResult(pythonPath, majorPythonVersion, minorPythonVersion, microPythonVersion, true);
+                    return;
+                }
+            }
+
+            synchronized (this) {
+                this.currentResult =
+                    new PythonValidationResult(pythonPath, majorPythonVersion, minorPythonVersion, microPythonVersion, false);
+            }
+        }
+
+        /**
+         * 
+         * Yields the current result as {@link PythonValidationResult}.
+         * 
+         * @return The current result as {@link PythonValidationResult}
+         */
+        public PythonValidationResult getValidationResult() {
+            synchronized (this) {
+                return this.currentResult;
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,10 +19,10 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
  * 
  * @author Robert Mischke
  * 
- * Note: The concept of {@link ComponentInstallation}, {@link ComponentRevision}, and {@link ComponentInterface} are introduced
- * later on compared to {@link ComponentDescription}. The concept was not fully implemented yet. Implementation of
- * {@link ComponentRevision} is missing at all. Also, the concept was not applied in a way that the benefits of this approach really
- * come through. --seid_do
+ *         Note: The concept of {@link ComponentInstallation}, {@link ComponentRevision}, and {@link ComponentInterface} are introduced
+ *         later on compared to {@link ComponentDescription}. The concept was not fully implemented yet. Implementation of
+ *         {@link ComponentRevision} is missing at all. Also, the concept was not applied in a way that the benefits of this approach really
+ *         come through. --seid_do
  */
 public interface ComponentInstallation extends Comparable<ComponentInstallation>, Cloneable {
 
@@ -36,12 +36,18 @@ public interface ComponentInstallation extends Comparable<ComponentInstallation>
     /**
      * @return the node id that defines this installation's location
      */
-    LogicalNodeId fetchNodeIdAsObject();
+    LogicalNodeId getNodeIdObject();
 
     /**
-     * @return the {@link ComponentRevision} that this {@link ComponentInstallation} fulfills
+     * @return the {@link ComponentRevision} of this {@link ComponentInstallation}
      */
     ComponentRevision getComponentRevision();
+
+    /**
+     * @return the {@link ComponentInterface} of this {@link ComponentInstallation} (which is determined by its {@link ComponentRevision}).
+     *         Calling this method is equivalent to calling <code>getComponentInterface()</code>.
+     */
+    ComponentInterface getComponentInterface();
 
     /**
      * @return a string identifying this installation; only required to be unique per node
@@ -52,11 +58,5 @@ public interface ComponentInstallation extends Comparable<ComponentInstallation>
      * @return the number of maximum parallel instances, or <code>null</code> if unlimited
      */
     Integer getMaximumCountOfParallelInstances();
-
-    /**
-     * @return <code>true</code> if {@link ComponentInstallation} is published (is made available for remote nodes), otherwise
-     *         <code>false</code>
-     */
-    boolean getIsPublished();
 
 }

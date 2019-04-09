@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2006, 2015 IBM Corporation and others.
+ * Copyright 2019 DLR, Germany (header adaptations only)
+ *  
+ * SPDX-License-Identifier: EPL-1.0
+ * 
+ * http://www.rcenvironment.de/
+ */
+
 // CHECKSTYLE:DISABLE (e)
 /*******************************************************************************
 

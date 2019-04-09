@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.command.tests</artifactId>
 	<name>RCE Core Command Handling Bundle Tests</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

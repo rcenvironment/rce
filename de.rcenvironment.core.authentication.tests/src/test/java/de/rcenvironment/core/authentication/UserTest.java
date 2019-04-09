@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,7 +11,7 @@ package de.rcenvironment.core.authentication;
 import java.util.Calendar;
 import java.util.Date;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -156,7 +156,6 @@ public class UserTest {
      */
     @Test
     public void testEnumType(){
-        Type.certificate.toString();
         Type.ldap.toString();
     }
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,6 +9,7 @@
 package de.rcenvironment.core.utils.common.xml.impl;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -168,14 +169,24 @@ public class XMLSupportServiceImpl implements XMLSupportService {
 
     @Override
     public Document readXMLFromFile(File file) throws XMLException {
+        InputStream stream = null;
         Document doc;
+        DocumentBuilder db = getNewDocBuilder();
         try {
-            DocumentBuilder db = getNewDocBuilder();
-            doc = db.parse(file);
+            stream = new FileInputStream(file);
+            doc = db.parse(stream);
         } catch (SAXException | IOException e) {
             throw new XMLException(ERROR_WHILE_PARSING_XML_FILE + file.getAbsolutePath() + " " + e.toString());
         } catch (NullPointerException | IllegalArgumentException e) {
             throw new XMLException(ERROR_WHILE_PARSING_XML_FILE + e.toString());
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    log.error(e.getStackTrace());
+                }
+            }
         }
         return doc;
     }

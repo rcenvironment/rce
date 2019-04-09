@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Decrypter Component GUI (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.examples.decrypter.gui;singleton:=true
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Localization: plugin
 Import-Package: de.rcenvironment.components.examples.decrypter.common,
  de.rcenvironment.core.component.model.configuration.api,

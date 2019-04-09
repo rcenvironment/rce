@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  *
@@ -22,16 +22,16 @@ class RCEBuildPreprocessor {
 
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
-			'platform': 'releases/8.2.3',
-			'intermediate': 'releases/8.2.3'
+			'platform': 'releases/9.0.0',
+			'intermediate': 'releases/9.0.0'
 		],
 		'rc_or_release': [
-			'platform': 'releases/8.2.3',
-			'intermediate': 'releases/8.2.3'
+			'platform': 'releases/9.0.0',
+			'intermediate': 'releases/9.0.0'
 		]
 	]
 	
-	final DEFAULT_REPOSITORIES_ROOT_URL = 'https://software.dlr.de/updates/rce/8.x/repositories/'
+	final DEFAULT_REPOSITORIES_ROOT_URL = 'https://software.dlr.de/updates/rce/9.x/repositories/'
 	
 	private maven
 	private buildType     // snapshot, rc, release

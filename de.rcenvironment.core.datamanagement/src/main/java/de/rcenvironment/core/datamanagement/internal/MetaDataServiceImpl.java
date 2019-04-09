@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,7 +23,7 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.MetaDataService;
@@ -45,7 +45,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * Implementation of {@link DataManagementService}.
  * 
  * @author Doreen Seider
- * @author Jan Flink
+ * @author Jan Flink    
  * @author Robert Mischke
  */
 public class MetaDataServiceImpl implements MetaDataService {
@@ -58,7 +58,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public Long addComponentRun(Long componentInstanceId, String nodeId, Integer count, Long starttime,
-        ResolvableNodeId storageNodeId) throws CommunicationException {
+        NetworkDestination storageNodeId) throws CommunicationException {
 
         try {
             return getRemoteMetaDataService(storageNodeId).addComponentRun(componentInstanceId, nodeId, count, starttime);
@@ -70,7 +70,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public void addInputDatum(Long componentRunId, Long typedDatumId, Long endpointInstanceId, Integer count,
-        ResolvableNodeId storageNodeId) throws CommunicationException {
+        NetworkDestination storageNodeId) throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).addInputDatum(componentRunId, typedDatumId, endpointInstanceId, count);
         } catch (RemoteOperationException e) {
@@ -81,7 +81,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public Long addOutputDatum(Long componentRunId, Long endpointInstanceId, String datum, Integer count,
-        ResolvableNodeId storageNodeId) throws CommunicationException {
+        NetworkDestination storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).addOutputDatum(componentRunId, endpointInstanceId, datum, count);
         } catch (RemoteOperationException e) {
@@ -91,7 +91,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void addComponentRunProperties(Long componentRunId, Map<String, String> properties, ResolvableNodeId storageNodeId)
+    public void addComponentRunProperties(Long componentRunId, Map<String, String> properties, NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).addComponentRunProperties(componentRunId, properties);
@@ -103,7 +103,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public Long addTimelineInterval(Long workflowRunId, TimelineIntervalType intervalType, long starttime, Long relatedComponentId,
-        ResolvableNodeId storageNodeId) throws CommunicationException {
+        NetworkDestination storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).addTimelineInterval(workflowRunId, intervalType, starttime, relatedComponentId);
         } catch (RemoteOperationException e) {
@@ -113,7 +113,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setTimelineIntervalFinished(Long timelineIntervalId, long endtime, ResolvableNodeId storageNodeId)
+    public void setTimelineIntervalFinished(Long timelineIntervalId, long endtime, NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setTimelineIntervalFinished(timelineIntervalId, endtime);
@@ -124,7 +124,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setOrUpdateHistoryDataItem(Long componentRunId, String historyDataItem, ResolvableNodeId storageNodeId)
+    public void setOrUpdateHistoryDataItem(Long componentRunId, String historyDataItem, NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setOrUpdateHistoryDataItem(componentRunId, historyDataItem);
@@ -136,7 +136,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public void setComponentRunFinished(Long componentRunId, Long endtime, FinalComponentRunState finalState,
-        ResolvableNodeId storageNodeId)
+        NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setComponentRunFinished(componentRunId, endtime, finalState);
@@ -147,7 +147,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setComponentInstanceFinalState(Long componentInstanceId, FinalComponentState finalState, ResolvableNodeId storageNodeId)
+    public void setComponentInstanceFinalState(Long componentInstanceId, FinalComponentState finalState, NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setComponentInstanceFinalState(componentInstanceId, finalState);
@@ -230,7 +230,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public WorkflowRun getWorkflowRun(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
+    public WorkflowRun getWorkflowRun(Long workflowRunId, NetworkDestination storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -240,7 +240,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public WorkflowRunTimline getWorkflowTimeline(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
+    public WorkflowRunTimline getWorkflowTimeline(Long workflowRunId, NetworkDestination storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowTimeline(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -250,7 +250,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public Boolean deleteWorkflowRun(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
+    public Boolean deleteWorkflowRun(Long workflowRunId, NetworkDestination storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -260,7 +260,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public Boolean deleteWorkflowRunFiles(Long workflowRunId, ResolvableNodeId storageNodeId)
+    public Boolean deleteWorkflowRunFiles(Long workflowRunId, NetworkDestination storageNodeId)
         throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRunFiles(workflowRunId);
@@ -280,7 +280,7 @@ public class MetaDataServiceImpl implements MetaDataService {
         workflowHostService = newWorkflowHostService;
     }
 
-    private RemotableMetaDataService getRemoteMetaDataService(ResolvableNodeId nodeId) throws RemoteOperationException {
+    private RemotableMetaDataService getRemoteMetaDataService(NetworkDestination nodeId) throws RemoteOperationException {
         return (RemotableMetaDataService) communicationService.getRemotableService(RemotableMetaDataService.class, nodeId);
     }
 

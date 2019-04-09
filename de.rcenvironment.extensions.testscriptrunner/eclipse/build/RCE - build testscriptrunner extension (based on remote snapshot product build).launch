@@ -6,7 +6,7 @@
 <booleanAttribute key="M2_OFFLINE" value="false"/>
 <stringAttribute key="M2_PROFILES" value=""/>
 <listAttribute key="M2_PROPERTIES">
-<listEntry value="rce.maven.repositories.foundation.url=https://updates-external.sc.dlr.de/rce/8.x/repositories/standard/snapshots/trunk/"/>
+<listEntry value="rce.maven.repositories.foundation.url=https://updates-external.sc.dlr.de/rce/8.x/repositories/standard/releases/8.2.0/"/>
 </listAttribute>
 <stringAttribute key="M2_RUNTIME" value="EMBEDDED"/>
 <booleanAttribute key="M2_SKIP_TESTS" value="false"/>

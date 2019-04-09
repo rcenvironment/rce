@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Display;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.IntegrationHistoryDataItem;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -89,11 +90,12 @@ public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistor
             ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
             DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
                 .getService(DistributedComponentKnowledgeService.class);
-            Collection<ComponentInstallation> installations = componentKnowledgeService.getCurrentComponentKnowledge()
+            Collection<DistributedComponentEntry> installations = componentKnowledgeService.getCurrentSnapshot()
                 .getAllInstallations();
-            for (ComponentInstallation installation : installations) {
+            for (DistributedComponentEntry entry : installations) {
+                ComponentInstallation installation = entry.getComponentInstallation();
                 if (installation.getInstallationId().startsWith(identifier)) {
-                    icon = installation.getComponentRevision().getComponentInterface().getIcon16();
+                    icon = installation.getComponentInterface().getIcon16();
                     break;
                 }
             }

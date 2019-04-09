@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,9 +10,10 @@ package de.rcenvironment.core.component.integration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.easymock.EasyMock;
@@ -26,10 +27,13 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.integration.internal.ToolIntegrationDocumentationServiceImpl;
+import de.rcenvironment.core.component.integration.documentation.RemoteToolIntegrationDocumentationService;
+import de.rcenvironment.core.component.integration.documentation.internal.ToolIntegrationDocumentationServiceImpl;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -87,11 +91,11 @@ public class ToolIntegrationDocumentationServiceTest {
         service.bindConfigurationService(configService);
 
         byte[] returnArray = new byte[] { 1, 1, 1, 0, 0, 0 };
-        List<String> toolIDs = new ArrayList<>();
-        toolIDs.add(TOOL_IDENTIFIER_1);
-        toolIDs.add(TOOL_IDENTIFIER_2);
+        Map<String, String> toolIDsAndHashes = new HashMap<>();
+        toolIDsAndHashes.put(TOOL_IDENTIFIER_1, HASH_1);
+        toolIDsAndHashes.put(TOOL_IDENTIFIER_2, HASH_2);
 
-        RemoteToolIntegrationService rtis = createRemoteServiceMock(returnArray, toolIDs);
+        RemoteToolIntegrationDocumentationService rtis = createRemoteServiceMock(returnArray, toolIDsAndHashes);
 
         CommunicationService commService = createRemoteServiceWithReturningByteArray(LOCAL_NODE_ID, rtis);
         service.bindCommunicationService(commService);
@@ -118,11 +122,12 @@ public class ToolIntegrationDocumentationServiceTest {
 
     }
 
-    private RemoteToolIntegrationService createRemoteServiceMock(byte[] returnArray, List<String> toolIDs) {
-        RemoteToolIntegrationService rtis = EasyMock.createStrictMock(RemoteToolIntegrationService.class);
-        for (String tool : toolIDs) {
+    private RemoteToolIntegrationDocumentationService createRemoteServiceMock(byte[] returnArray, Map<String, String> toolIDsAndHashes) {
+        RemoteToolIntegrationDocumentationService rtis = EasyMock.createStrictMock(RemoteToolIntegrationDocumentationService.class);
+        for (String tool : toolIDsAndHashes.keySet()) {
             try {
-                EasyMock.expect(rtis.getToolDocumentation(tool)).andReturn(returnArray);
+                EasyMock.expect(rtis.loadToolDocumentation(tool, LOCAL_NODE_ID.getLogicalNodeIdString(), toolIDsAndHashes.get(tool)))
+                    .andReturn(returnArray);
             } catch (RemoteOperationException e) {
                 Assert.fail();
             }
@@ -143,29 +148,33 @@ public class ToolIntegrationDocumentationServiceTest {
         }
     }
 
+    // TODO replace this with a central mock/stub implementation?
     private ComponentInstallation createComponentInstallation(String installationID, String hash, String nodeID) {
-        ComponentInstallation ci = EasyMock.createNiceMock(ComponentInstallation.class);
-
-        EasyMock.expect(ci.getInstallationId()).andReturn(installationID).anyTimes();
 
         ComponentInterface cint = EasyMock.createNiceMock(ComponentInterface.class);
         EasyMock.expect(cint.getDocumentationHash()).andReturn(hash).anyTimes();
         EasyMock.replay(cint);
+
         ComponentRevision cr = EasyMock.createNiceMock(ComponentRevision.class);
         EasyMock.expect(cr.getComponentInterface()).andReturn(cint).anyTimes();
         EasyMock.replay(cr);
+
+        ComponentInstallation ci = EasyMock.createNiceMock(ComponentInstallation.class);
+        EasyMock.expect(ci.getInstallationId()).andReturn(installationID).anyTimes();
         EasyMock.expect(ci.getComponentRevision()).andReturn(cr).anyTimes();
+        EasyMock.expect(ci.getComponentInterface()).andReturn(cint).anyTimes();
         EasyMock.expect(ci.getNodeId()).andReturn(nodeID).anyTimes();
         EasyMock.replay(ci);
 
         return ci;
     }
 
-    private CommunicationService createRemoteServiceWithReturningByteArray(LogicalNodeId nodeId, RemoteToolIntegrationService rtis) {
+    private CommunicationService createRemoteServiceWithReturningByteArray(LogicalNodeId nodeId,
+        RemoteToolIntegrationDocumentationService rtis) {
 
         CommunicationService commService = EasyMock.createNiceMock(CommunicationService.class);
         EasyMock.expect(
-            commService.getRemotableService(RemoteToolIntegrationService.class, nodeId))
+            commService.getRemotableService(RemoteToolIntegrationDocumentationService.class, nodeId))
             .andReturn(rtis).anyTimes();
         EasyMock.replay(commService);
         return commService;
@@ -173,17 +182,19 @@ public class ToolIntegrationDocumentationServiceTest {
 
     private ConfigurationService createConfigService(File tempDirPath) {
         ConfigurationService configService = EasyMock.createNiceMock(ConfigurationService.class);
-        EasyMock.expect(configService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA)).andReturn(tempDirPath);
+        EasyMock.expect(configService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA)).andStubReturn(tempDirPath);
         EasyMock.replay(configService);
         return configService;
     }
 
+    // TODO replace this with a central mock/stub implementation?
     private DistributedComponentKnowledgeService createMockedKnowledgeService(Set<ComponentInstallation> ciSet) {
         DistributedComponentKnowledge dck = EasyMock.createNiceMock(DistributedComponentKnowledge.class);
-        EasyMock.expect(dck.getAllInstallations()).andReturn(ciSet).anyTimes();
+        List<DistributedComponentEntry> dceSet = ComponentTestUtils.convertToListOfDistributedComponentEntries(ciSet);
+        EasyMock.expect(dck.getAllInstallations()).andReturn(dceSet).anyTimes();
         EasyMock.replay(dck);
         DistributedComponentKnowledgeService dcks = EasyMock.createNiceMock(DistributedComponentKnowledgeService.class);
-        EasyMock.expect(dcks.getCurrentComponentKnowledge()).andReturn(dck).anyTimes();
+        EasyMock.expect(dcks.getCurrentSnapshot()).andReturn(dck).anyTimes();
         EasyMock.replay(dcks);
         return dcks;
     }

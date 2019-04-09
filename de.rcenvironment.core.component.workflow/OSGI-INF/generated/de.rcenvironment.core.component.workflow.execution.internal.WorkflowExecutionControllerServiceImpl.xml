@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionControllerServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.component.workflow.execution.api.RemotableWorkflowExecutionControllerService"/>
+   </service>
+   <reference bind="setCommunicationService" interface="de.rcenvironment.core.communication.api.CommunicationService" name="CommunicationService"/>
+   <reference bind="bindDistributedComponentKnowledgeService" interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" name="DistributedComponentKnowledgeService"/>
+   <reference bind="bindLocalExecutionControllerUtilsService" interface="de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService" name="LocalExecutionControllerUtilsService"/>
+   <reference bind="bindNotificationService" interface="de.rcenvironment.core.notification.NotificationService" name="NotificationService"/>
+   <reference bind="bindWorkflowHostService" interface="de.rcenvironment.core.communication.management.WorkflowHostService" name="WorkflowHostService"/>
+   <implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionControllerServiceImpl"/>
+</scr:component>

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.rpc.spi;
 import java.io.Serializable;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 
@@ -31,8 +32,11 @@ public interface ServiceProxyFactory extends Serializable {
      * @param nodeId the arbitrary-type node id to call the remote service at
      * @param serviceIface Interface of the desired service.
      * @param ifaces Interfaces of the expected return object. null if no additional interfaces expected.
+     * @param reliableRPCStreamHandle the handle of the Reliable RPC Stream to use for all resulting RPCs, if this mechanism should be used;
+     *        set this to null to use standard single-attempt RPCs
      * @return The proxy.
      */
-    Object createServiceProxy(ResolvableNodeId nodeId, Class<?> serviceIface, Class<?>[] ifaces);
+    Object createServiceProxy(ResolvableNodeId nodeId, Class<?> serviceIface, Class<?>[] ifaces,
+        ReliableRPCStreamHandle reliableRPCStreamHandle);
 
 }

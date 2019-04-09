@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Executor Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.executor.tests
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.utils.executor
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
-Import-Package: com.jcraft.jsch,
+Import-Package: com.jcraft.jsch;version="0.1.54",
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.ssh.jsch,
  de.rcenvironment.core.utils.ssh.jsch.executor

@@ -1,17 +1,12 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.authentication;
-
-import java.security.cert.X509Certificate;
-
-import org.globus.gsi.OpenSSLKey;
-
 
 /**
  * Interface for the authentication service.
@@ -77,20 +72,6 @@ public interface AuthenticationService {
     }
     
     /**
-     * Authenticates with the given certificate, key and password.
-     * 
-     * @param certificate The given certificate. 
-     * @param encryptedKey The given encrypted private key.
-     * @param password The given password.
-     * @return The result of the authentication.
-     * @throws AuthenticationException if an error occurs during the authentication process.
-     */
-    @Deprecated // note: some unit tests are already ignored due to maintenance effort for required test infrastructure
-    X509AuthenticationResult authenticate(X509Certificate certificate, OpenSSLKey encryptedKey, String password)
-        throws AuthenticationException;
-    
-    
-    /**
      * Authenticates with the given username and password.
      * 
      * @param uid The user ID
@@ -98,37 +79,6 @@ public interface AuthenticationService {
      * @return The result of the authentication.
      */
     LDAPAuthenticationResult authenticate(String uid, String password);
-
-    
-    /**
-     * 
-     * Loads a certificate (public key) from a file.
-     * 
-     * @param file The file (path to it) of the certificate.
-     * @return The loaded certificate as {@link X509Certificate} object.
-     * @throws AuthenticationException if an error occurs during loading the certificate.
-     */
-    X509Certificate loadCertificate(String file) throws AuthenticationException;
-
-    /**
-     * 
-     * Loads a key (private key) from file.
-     * 
-     * @param file The file (path to it) of the key.
-     * @return The loaded key as {@link OpenSSLKey} object.
-     * @throws AuthenticationException if an error occurs during loading the key.
-     */
-    OpenSSLKey loadKey(String file) throws AuthenticationException;
-    
-    /**
-     * 
-     * Creates a {@link User}.
-     * 
-     * @param certificate user's certificate.
-     * @param validityInDays the user's validity in days
-     * @return the {@link User}.
-     */
-    User createUser(X509Certificate certificate, int validityInDays);
 
     /**
      * Returns a {@link User} object with the default validity.

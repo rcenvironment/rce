@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -116,9 +116,9 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
 
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
         if (configNode.get(USAGEOFSCRIPT) != null) {
-            if (configNode.get(USAGEOFSCRIPT).getTextValue().equals("LOCAL")) {
-                configNode.put(USAGEOFSCRIPT, TextNode.valueOf("NEW"));
-                configNode.put("script", TextNode.valueOf(configNode.get("localScript").getTextValue()));
+            if (configNode.get(USAGEOFSCRIPT).textValue().equals("LOCAL")) {
+                configNode.set(USAGEOFSCRIPT, TextNode.valueOf("NEW"));
+                configNode.set("script", TextNode.valueOf(configNode.get("localScript").textValue()));
             }
         }
 
@@ -142,11 +142,11 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
         List<String> outputNameList = new LinkedList<String>();
         if (dynOutputs != null) {
             for (JsonNode output : dynOutputs) {
-                outputNameList.add(output.get("name").getTextValue());
+                outputNameList.add(output.get("name").textValue());
             }
         }
 
-        String script = configNode.get(SCRIPT).getTextValue();
+        String script = configNode.get(SCRIPT).textValue();
 
         Pattern p = Pattern.compile("(\\S*\\s*= [\"|\']FINISHED[\"|\'])");
         Matcher m = p.matcher(script);
@@ -160,7 +160,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
                         + script.substring(script.indexOf(group) + group.length());
             }
         }
-        configNode.put(SCRIPT, TextNode.valueOf(script));
+        configNode.set(SCRIPT, TextNode.valueOf(script));
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
 
@@ -183,14 +183,14 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
 
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
         if (node.get(CONFIGURATION).get(USAGE_OF_SCRIPT) != null) {
-            configNode.put(USAGEOFSCRIPT, node.get(CONFIGURATION).get(USAGE_OF_SCRIPT));
+            configNode.set(USAGEOFSCRIPT, node.get(CONFIGURATION).get(USAGE_OF_SCRIPT));
             configNode.remove(USAGE_OF_SCRIPT);
         }
         if (node.get(CONFIGURATION).get(USAGEOFSCRIPT) == null) {
-            configNode.put(USAGEOFSCRIPT, TextNode.valueOf("NEW"));
+            configNode.set(USAGEOFSCRIPT, TextNode.valueOf("NEW"));
         }
 
-        configNode.put(SCRIPT, TextNode.valueOf(configNode.get(SCRIPT).getTextValue().replaceAll("_dm_.clear\\(\\)", "")));
+        configNode.set(SCRIPT, TextNode.valueOf(configNode.get(SCRIPT).textValue().replaceAll("_dm_.clear\\(\\)", "")));
         configNode.remove("remote path of existing script");
         configNode.remove("debug");
         configNode.remove("remote upload path of new script");

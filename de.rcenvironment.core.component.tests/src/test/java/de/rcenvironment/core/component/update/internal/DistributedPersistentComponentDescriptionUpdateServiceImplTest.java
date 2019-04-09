@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
@@ -33,7 +34,9 @@ import de.rcenvironment.core.component.ComponentInstallationMockFactory;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
 import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeServiceDefaultStub;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
@@ -50,8 +53,9 @@ import de.rcenvironment.core.component.update.spi.PersistentComponentDescription
 public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
 
     private static final String VERSION_2 = "2";
+
     private static final String VERSION_1 = "1";
-    
+
     private static final InstanceNodeSessionId NODE_ID_WITH_UPDATE = NodeIdentifierTestUtils
         .createTestInstanceNodeSessionIdWithDisplayName("with update");
 
@@ -106,14 +110,16 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
     class TestComponentKnowledgeService extends DistributedComponentKnowledgeServiceDefaultStub {
 
         @Override
-        public DistributedComponentKnowledge getCurrentComponentKnowledge() {
+        public DistributedComponentKnowledge getCurrentSnapshot() {
             DistributedComponentKnowledge mock = EasyMock.createNiceMock(DistributedComponentKnowledge.class);
-            List<ComponentInstallation> componentInstallations = new LinkedList<ComponentInstallation>();
+            List<ComponentInstallation> componentInstallations = new LinkedList<>();
             componentInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock("comp_with_update", VERSION_2,
                 NODE_ID_WITH_UPDATE.convertToDefaultLogicalNodeId()));
             componentInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock("comp_without_update", VERSION_1,
                 localLogicalNodeId.convertToDefaultLogicalNodeId()));
-            EasyMock.expect(mock.getAllInstallations()).andReturn(componentInstallations).anyTimes();
+            EasyMock.expect(mock.getAllInstallations())
+                .andReturn(ComponentTestUtils.convertToListOfDistributedComponentEntries(componentInstallations))
+                .anyTimes();
             EasyMock.replay(mock);
 
             return mock;
@@ -128,7 +134,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
     class TestCommunicationService extends CommunicationServiceDefaultStub {
 
         @Override
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination dest) {
+            ResolvableNodeId nodeId = (ResolvableNodeId) dest;
             if (nodeId.isSameInstanceNodeAs(localLogicalNodeId)) {
                 return (T) new LocalComponentDescriptionUpdateService();
             } else if (nodeId.isSameInstanceNodeAs(NODE_ID_WITH_UPDATE)) {
@@ -245,7 +252,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
             localDefaultLogicalNodeId));
 
         // execution
-        LogicalNodeId targetNode = updateService.getTargetNodeForUpdate(persCompDesc, compInstalls);
+        LogicalNodeId targetNode = updateService.getTargetNodeForUpdate(persCompDesc,
+            ComponentTestUtils.convertToListOfDistributedComponentEntries(compInstalls));
         // assertions
         assertEquals(localDefaultLogicalNodeId, targetNode);
 
@@ -257,7 +265,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
         compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId2));
         compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId1));
         // execution
-        targetNode = updateService.getTargetNodeForUpdate(persCompDesc, compInstalls);
+        targetNode = updateService.getTargetNodeForUpdate(persCompDesc,
+            ComponentTestUtils.convertToListOfDistributedComponentEntries(compInstalls));
         // assertions
         assertEquals(nodeId1, targetNode);
 
@@ -269,7 +278,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
         compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId2));
         compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId3));
         // execution
-        targetNode = updateService.getTargetNodeForUpdate(persCompDesc, compInstalls);
+        targetNode = updateService.getTargetNodeForUpdate(persCompDesc,
+            ComponentTestUtils.convertToListOfDistributedComponentEntries(compInstalls));
         // assertions
         assertTrue(targetNode.equals(nodeId2));
 
@@ -277,7 +287,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
         | 4. Test
         *-------------------------------------------------------------------*/
         // setup and execution
-        targetNode = updateService.getTargetNodeForUpdate(persCompDesc, new ArrayList<ComponentInstallation>());
+        targetNode = updateService.getTargetNodeForUpdate(persCompDesc, new ArrayList<DistributedComponentEntry>());
         // assertions
         assertEquals(localDefaultLogicalNodeId, targetNode);
 

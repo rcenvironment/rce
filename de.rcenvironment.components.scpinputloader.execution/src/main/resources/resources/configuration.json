@@ -1,0 +1,20 @@
+{
+    "configuration": [
+        {
+            "key": "UploadDirectory",
+            "defaultValue": "##SCP_UPLOAD_DIRECTORY##"
+        },
+        {
+        	"key": "InputsDescriptionFile",
+        	"defaultValue": "inputs.json" 
+        },
+		{
+        	"key": "UncompressedUpload",
+        	"defaultValue": "##UNCOMPRESSED_UPLOAD_FLAG##" 
+        },
+		{
+        	"key": "SimpleDescriptionFormat",
+        	"defaultValue": "##SIMPLE_FORMAT_FLAG##" 
+        }
+    ]
+}

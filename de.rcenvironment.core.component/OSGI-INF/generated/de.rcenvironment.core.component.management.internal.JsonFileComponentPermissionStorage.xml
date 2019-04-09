@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.component.management.internal.JsonFileComponentPermissionStorage">
+   <service>
+      <provide interface="de.rcenvironment.core.component.management.internal.ComponentPermissionStorage"/>
+   </service>
+   <reference bind="bindAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="AuthorizationService"/>
+   <reference bind="bindConfigurationService" interface="de.rcenvironment.core.configuration.ConfigurationService" name="ConfigurationService"/>
+   <implementation class="de.rcenvironment.core.component.management.internal.JsonFileComponentPermissionStorage"/>
+</scr:component>

@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>8.2.3-SNAPSHOT</version>
+		<version>9.0.0-SNAPSHOT</version>
 		<relativePath>../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
 	</parent>
 
@@ -31,5 +31,78 @@
 			</plugin>
 		</plugins>
 	</build>
+  
+  	<!-- This is a temporary workaround for svn:externals/git-lfs coexistence. 
+		When using SVN, the binary resources are simply versioned in the actual location 
+		used by the OSGi plugin. When using git, on the other hand, the binaries 
+		are stored using LFS in the -lfs folder, and then copied to the actual location 
+		if no .svn folder is detected there. In this scenario, the actual location 
+		is also cleaned when the overall project is cleaned to ensure consistency. 
+		- R. Mischke, Aug 2018 -->
+	<profiles>
+		<profile>
+			<id>copy-binaries-from-lfs</id>
+			<activation>
+				<file>
+					<!-- This check relies on the fact that when checking out with git, 
+						the SVN resource folder will not be present at all, so its absence indicates 
+						a git checkout. -->
+					<missing>${basedir}/resources/binaries/.svn</missing>
+				</file>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-clean-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>clean-copied-lfs-binaries-from-common-location</id>
+								<phase>clean</phase>
+								<goals>
+									<goal>clean</goal>
+								</goals>
+								<configuration>
+									<verbose>true</verbose>
+									<filesets>
+										<fileset>
+											<directory>${basedir}/resources/binaries</directory>
+											<includes>
+												<include>*</include>
+											</includes>
+											<!-- Should be redundant, but ensures .svn is not deleted by accident -->
+											<useDefaultExcludes>true</useDefaultExcludes>
+											<followSymlinks>false</followSymlinks>
+										</fileset>
+									</filesets>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-lfs-binaries-to-common-location</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${basedir}/resources/binaries</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${basedir}/resources/binaries-lfs</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<!-- End of svn:externals/git-lfs workaround -->
+
+	</profiles>
 
 </project>

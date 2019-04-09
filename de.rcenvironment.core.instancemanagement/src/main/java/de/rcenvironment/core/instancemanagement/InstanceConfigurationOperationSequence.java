@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -32,6 +33,15 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence applyTemplate(String templateName);
+
+    /**
+     * Adds an operation to reset the configuration to the given template. Only reasonable as the first change operation.
+     * 
+     * @param templateFilePath the path of the configuration file to apply; if necessary, this could be changed to point to a directory in
+     *        the future
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence applyTemplateFile(File templateFilePath);
 
     /**
      * Adds an operation to set the instance's name to the given value.
@@ -66,6 +76,15 @@ public interface InstanceConfigurationOperationSequence {
     InstanceConfigurationOperationSequence setRelayFlag(boolean value);
 
     /**
+     * Adds an operation to add a custon network node id valud, which overrides any automatically generated and persisted node id. This
+     * feature is usually only used for automated testing.
+     * 
+     * @param customNodeId the custom id value to set
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence setCustomNodeId(String customNodeId);
+
+    /**
      * Adds an operation to configure the root temporary directory.
      * 
      * @param tempPath the root temporary directory path to set
@@ -96,7 +115,7 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence addNetworkConnectionFromStringParameters(List<String> parameters);
-    
+
     /**
      * Adds an operation to remove a connection.
      * 
@@ -196,12 +215,12 @@ public interface InstanceConfigurationOperationSequence {
     /**
      * Adds an operation to add a SSH connection. The individual parameters are parsed from a list of 5 string parameters.
      * 
-     * @param parameters the list of string parameter tokens; see
-     *        {@link #addSshConnection(String, String, String, int, String)} for their meaning and expected order
+     * @param parameters the list of string parameter tokens; see {@link #addSshConnection(String, String, String, int, String)} for their
+     *        meaning and expected order
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence addSshConnectionFromStringParameters(List<String> parameters);
-    
+
     /**
      * Adds an operation to remove a SSH connection.
      * 
@@ -209,7 +228,7 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence removeSshConnection(String name);
-    
+
     /**
      * Adds an operation to publish a component.
      * 
@@ -217,7 +236,7 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence publishComponent(String name);
-    
+
     /**
      * Adds an operation to unpublish a component.
      * 
@@ -225,7 +244,7 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence unpublishComponent(String name);
-    
+
     /**
      * Adds an operation to set the background monitoring.
      * 
@@ -234,4 +253,5 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence setBackgroundMonitoring(String id, int interval);
+
 }

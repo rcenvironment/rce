@@ -64,12 +64,6 @@
 							</cmdsynopsis></para>
 						<para> Example: <code>upgrade-core 8.0.0 8.1.0</code>
 						</para>
-						<note>
-							<para>Due to major structural changes in 8.1.0, the version upgrade
-								script tagged as part of the 8.1.0 release may not be updated to
-								perform the version upgrade to 8.2.0 yet; adapting this script will
-								be one of the first actions after the release.</para>
-						</note>
 					</listitem>
 					<listitem>
 						<para> Build the platform repository and the full product locally to verify that the build
@@ -96,6 +90,27 @@
 										around/available for handling possible problems! </para>
 								</listitem>
 							</itemizedlist></para>
+					</listitem>
+				</itemizedlist></para>
+			<para>If the platform will change in the upcoming release, it is also necessary to upgrade the
+				version of the platform projects. However, we do not upgrade the platform version
+				automatically with every RCE release (for example RCE 8.2.0 still uses the 8.1.0
+				platform, as there were no changes in the platform between these releases).</para>
+			<para>The version upgrade process for the platform projects is also mostly automated: <itemizedlist>
+					<listitem>
+						<para> Open a shell or command window in
+							"/de.rcenvironment.platform/maven/utils/" and run the "upgrade-version"
+							script. Usage: <cmdsynopsis>
+								<command> upgrade-version</command>
+								<arg choice="req">
+									<replaceable>old core version</replaceable>
+								</arg>
+								<arg choice="req">
+									<replaceable>new core version</replaceable>
+								</arg>
+							</cmdsynopsis></para>
+						<para> Example: <code>upgrade-version 8.1.0 9.0.0</code>
+						</para>
 					</listitem>
 				</itemizedlist></para>
 		</sect3>

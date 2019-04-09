@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,27 +17,21 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.io.IOUtils;
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
-import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.ExecutionOutputCache;
+import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.PythonValidationResult;
 import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.PythonVersionRegexValidator;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.scripting.python.PythonComponentConstants;
-import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 
 /**
  * 
@@ -46,18 +40,19 @@ import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
  * @author Jascha Riedel
  * @author David Scholz
  * @author Doreen Seider (caching test)
+ * @author Thorsten Sommer (fixed Python validation tests, added new tests)
  */
 public class ScriptComponentValidatorTest {
 
     private static final String PYTHON = "Python";
+
+    private static final String PYTHON_DUMMY_PATH = "/dummy";
 
     private ComponentDescription componentDescription;
 
     private ScriptComponentValidator validator;
 
     private ComponentDescriptionMockCreater componentDescriptionHelper;
-
-    private PythonVersionRegexValidator regexValidator;
 
     /**
      * 
@@ -67,7 +62,6 @@ public class ScriptComponentValidatorTest {
     @Before
     public void setUp() {
         validator = new ScriptComponentValidator();
-        regexValidator = validator.createPythonVersionRegexValidator();
         componentDescriptionHelper = new ComponentDescriptionMockCreater();
     }
 
@@ -177,40 +171,52 @@ public class ScriptComponentValidatorTest {
     @Test
     public void testPythonVersionRegexForPlainPython() {
 
-        String python279 = "Python 2.7.9";
-        String python2711 = "Python 2.7.11";
+        final String python279 = "Python 2.7.9";
+        final String python2711 = "Python 2.7.11";
         final int eleven = 11;
-        String python2x = "Python 2";
-        String python352 = "Python 3.5.2";
-        String python35 = "Python 3.5";
-        String python3 = "Python 3";
+        final String python2x = "Python 2";
+        final String python352 = "Python 3.5.2";
+        final String python35 = "Python 3.5";
+        final String python3 = "Python 3";
 
-        regexValidator.validatePythonVersion(python279);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 2 && regexValidator.getMinorPythonVersion() > 6
-            && regexValidator.getMicroPythonVersion() == 9);
+        PythonVersionRegexValidator regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python279, PYTHON_DUMMY_PATH);
+        PythonValidationResult result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 2 && result.getMinorPythonVersion() > 6
+            && result.getMicroPythonVersion() == 9);
 
-        regexValidator.validatePythonVersion(python2711);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 2 && regexValidator.getMinorPythonVersion() > 6
-            && regexValidator.getMicroPythonVersion() == eleven);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python2711, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 2 && result.getMinorPythonVersion() > 6
+            && result.getMicroPythonVersion() == eleven);
 
-        regexValidator.validatePythonVersion(python2x);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 2);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python2x, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertFalse(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 2);
 
-        regexValidator.validatePythonVersion(python352);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 3 && regexValidator.getMinorPythonVersion() == 5
-            && regexValidator.getMicroPythonVersion() == 2);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python352, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 3 && result.getMinorPythonVersion() == 5
+            && result.getMicroPythonVersion() == 2);
 
-        regexValidator.validatePythonVersion(python35);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 3 && regexValidator.getMinorPythonVersion() == 5);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python35, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 3 && result.getMinorPythonVersion() == 5);
 
-        regexValidator.validatePythonVersion(python3);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 3);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python3, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 3);
     }
 
     /**
@@ -221,17 +227,21 @@ public class ScriptComponentValidatorTest {
      */
     @Test
     public void testPythonVersionRegexForAnaconda() {
-        String validAnacondaOutput = "Python 3.5.2 :: Anaconda 4.2.0 (64-bit)";
-        String validOutput = "Python 3 Anaconda";
+        final String validAnacondaOutput = "Python 3.5.2 :: Anaconda 4.2.0 (64-bit)";
+        final String validOutput = "Python 3 Anaconda";
 
-        regexValidator.validatePythonVersion(validAnacondaOutput);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 3 && regexValidator.getMinorPythonVersion() == 5
-            && regexValidator.getMicroPythonVersion() == 2);
+        PythonVersionRegexValidator regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(validAnacondaOutput, PYTHON_DUMMY_PATH);
+        PythonValidationResult result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 3 && result.getMinorPythonVersion() == 5
+            && result.getMicroPythonVersion() == 2);
 
-        regexValidator.validatePythonVersion(validOutput);
-        assertTrue(regexValidator.isPythonExecutionSuccessful());
-        assertTrue(regexValidator.getMajorPythonVersion() == 3);
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(validOutput, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertTrue(result.isPythonExecutionSuccessful());
+        assertTrue(result.getMajorPythonVersion() == 3);
     }
 
     /**
@@ -241,93 +251,118 @@ public class ScriptComponentValidatorTest {
      */
     @Test
     public void testPythonVersionRegexWithFalseOutput() {
-        String falseOutput = "Hellö Wörld! UHD is nice. UHD is your friend.";
-        String python1 = "Python 1";
+        final String falseOutput = "Hellö Wörld! UHD is nice. UHD is your friend.";
+        final String python1 = "Python 1";
 
-        regexValidator.validatePythonVersion(falseOutput);
-        assertFalse(regexValidator.isPythonExecutionSuccessful());
+        PythonVersionRegexValidator regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(falseOutput, PYTHON_DUMMY_PATH);
+        PythonValidationResult result = regexValidator.getValidationResult();
+        assertFalse(result.isPythonExecutionSuccessful());
 
-        regexValidator.validatePythonVersion(python1);
-        assertFalse(regexValidator.isPythonExecutionSuccessful());
+        regexValidator = new PythonVersionRegexValidator();
+        regexValidator.validatePythonVersion(python1, PYTHON_DUMMY_PATH);
+        result = regexValidator.getValidationResult();
+        assertFalse(result.isPythonExecutionSuccessful());
     }
 
     /**
-     * Tests if the cache is used as intended. The test doesn't cover the actual caching functionality encapsulated in
-     * {@link ExecutionOutputCache}.
      * 
-     * @throws IOException on unexpected error
-     * @throws InterruptedException on unexpected error
+     * Tests if validation works if version string occurs later.
      * 
      */
     @Test
-    public void testCacheUsage() throws IOException, InterruptedException {
-
-        CacheTestingScriptComponentValidator testableValidator = new CacheTestingScriptComponentValidator();
-
-        componentDescriptionHelper.addConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT, "print('hello python')");
-        componentDescriptionHelper.addConfigurationValue(ScriptComponentConstants.SCRIPT_LANGUAGE, PYTHON);
-        componentDescriptionHelper.addConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION, testableValidator.somePath);
-        ComponentDescription compDesc = componentDescriptionHelper.createComponentDescriptionMock();
-
-        List<ComponentValidationMessage> validationMessages1 = testableValidator.validate(compDesc, true);
-        assertEquals(1, validationMessages1.size());
-        List<ComponentValidationMessage> validationMessages2 = testableValidator.validate(compDesc, true);
-        assertEquals(validationMessages1.size(), validationMessages2.size());
-        assertEquals(validationMessages1.get(0).getAbsoluteMessage(), validationMessages2.get(0).getAbsoluteMessage());
+    public void testPythonVersionNotInFirstLine() {
+        final String[] multiLineVersion = {
+            "Hellö Wörld! UHD is nice. UHD is your friend.",
+            "Another useless line",
+            "Python 3.5.2",
+            "a useless line afterwards"
+        };
         
-        EasyMock.verify(testableValidator.commandLineExecutorMock);
-        EasyMock.verify(testableValidator.executionOutputCacheMock);
+        final PythonVersionRegexValidator anotherValidator = new PythonVersionRegexValidator();
+        for (String line : multiLineVersion) {
+            anotherValidator.validatePythonVersion(line, PYTHON_DUMMY_PATH);
+        }
+
+        PythonValidationResult result = anotherValidator.getValidationResult();
+        assertTrue("Python version not in the first line was not detected", result.isPythonExecutionSuccessful());
     }
 
     /**
-     * {@link ScriptComponentValidator} that allows to inject the {@link LocalApacheCommandLineExecutor}.
-     * 
-     * @author Doreen Seider
+     * This test case ensures that the class {@link PythonValidationResult} works as intended.
      */
-    private static final class CacheTestingScriptComponentValidator extends ScriptComponentValidator {
+    @Test
+    public void testPythonValidationResult() {
 
-        private final String somePath = "/some/path";
+        // Simulate Python 3.4.5:
+        final int expectedMajor = 3;
+        final int expectedMinor = 4;
+        final int expectedMicro = 5;
+        final String path = "/bin/python";
+        final boolean state = true;
+        
+        PythonValidationResult result = new PythonValidationResult(path, expectedMajor, expectedMinor, expectedMicro, state);
+        assertEquals("The major version is wrong", expectedMajor, result.getMajorPythonVersion());
+        assertEquals("The minor version is wrong", expectedMinor, result.getMinorPythonVersion());
+        assertEquals("The mico version is wrong", expectedMicro, result.getMicroPythonVersion());
+        assertEquals("The path is wrong", path, result.getPythonPath());
+        assertTrue("The state was wrong", result.isPythonExecutionSuccessful());
+    }
 
-        private final String someOut = "some out";
+    /**
+     * This test case ensures that the class {@link PythonValidationResult} handled null as intended.
+     */
+    @Test(expected = NullPointerException.class)
+    public void testPythonValidationResultNull() {
 
-        private LocalApacheCommandLineExecutor commandLineExecutorMock;
+        // Simulate Python 3.4.5:
+        final int expectedMajor = 3;
+        final int expectedMinor = 4;
+        final int expectedMicro = 5;
+        final String path = null;
 
-        private ExecutionOutputCache executionOutputCacheMock;
+        new PythonValidationResult(path, expectedMajor, expectedMinor, expectedMicro, false);
+    }
 
-        @Override
-        protected LocalApacheCommandLineExecutor createCommandLineExecutor(File workDirPath) throws IOException {
+    /**
+     * This test case ensures that the class {@link PythonValidationResult} handled empty strings as intended.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testPythonValidationResultEmptyStrings() {
 
-            commandLineExecutorMock = EasyMock.createStrictMock(LocalApacheCommandLineExecutor.class);
-            commandLineExecutorMock.start(StringUtils.format("\"%s\" --version", somePath, " --version"));
-            EasyMock.expectLastCall().once();
-            InputStream outInStreamStub = IOUtils.toInputStream(someOut);
-            InputStream errInStreamStub = IOUtils.toInputStream("");
-            EasyMock.expect(commandLineExecutorMock.getStdout()).andReturn(outInStreamStub);
-            EasyMock.expect(commandLineExecutorMock.getStderr()).andReturn(errInStreamStub);
-            try {
-                EasyMock.expect(commandLineExecutorMock.waitForTermination()).andReturn(0);
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            }
-            EasyMock.expect(commandLineExecutorMock.cancel()).andReturn(true);
-            EasyMock.replay(commandLineExecutorMock);
+        // Simulates Python 3.4.5:
+        final int expectedMajor = 3;
+        final int expectedMinor = 4;
+        final int expectedMicro = 5;
+        final String path = "";
 
-            return commandLineExecutorMock;
-        }
+        new PythonValidationResult(path, expectedMajor, expectedMinor, expectedMicro, false);
+    }
 
-        @Override
-        protected ExecutionOutputCache createExecutionOutputCache() {
+    /**
+     * Ensures that a fake placeholder gets not recognized as actual placeholder.
+     */
+    @Test
+    public void testPythonValidationResultPlaceholder1() {
+        final PythonValidationResult fakePlaceholder = new PythonValidationResult("/none", -1, -1, -1, false);
+        assertFalse("A fake placeholder was detected as correct placeholder.", fakePlaceholder.isPlaceholder());
+    }
 
-            executionOutputCacheMock = EasyMock.createStrictMock(ExecutionOutputCache.class);
-            EasyMock.expect(executionOutputCacheMock.containsKey(somePath)).andReturn(false);
-            List<String> output = new ArrayList<>();
-            output.add(someOut + "\n"); // see CpaturingTextOutputReceiver for '\n'
-            executionOutputCacheMock.put(EasyMock.eq(somePath), EasyMock.eq(output));
-            EasyMock.expect(executionOutputCacheMock.containsKey(somePath)).andReturn(true);
-            EasyMock.expect(executionOutputCacheMock.get(somePath)).andReturn(output);
-            EasyMock.replay(executionOutputCacheMock);
+    /**
+     * Ensures that the actual placeholder gets recognized.
+     */
+    @Test
+    public void testPythonValidationResultPlaceholder2() {
+        final PythonValidationResult correctPlaceholder = PythonValidationResult.DEFAULT_NONE_PLACEHOLDER;
+        assertTrue("The correct placeholder was not recognized as such.", correctPlaceholder.isPlaceholder());
+    }
 
-            return executionOutputCacheMock;
-        }
+    /**
+     * Ensures that the placeholder is never successfully.
+     */
+    @Test
+    public void testPythonValidationResultPlaceholder3() {
+        final PythonValidationResult correctPlaceholder = PythonValidationResult.DEFAULT_NONE_PLACEHOLDER;
+        assertFalse("The placeholder cannot have the state 'successfully'.", correctPlaceholder.isPythonExecutionSuccessful());
     }
 }

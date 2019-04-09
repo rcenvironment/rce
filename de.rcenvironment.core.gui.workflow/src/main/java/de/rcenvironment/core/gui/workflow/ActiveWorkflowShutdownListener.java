@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -225,7 +225,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                     case RESULTS_REJECTED:
                     case FINISHED:
                         try {
-                            workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                            workflowExecutionService.dispose(wfExeInfo.getWorkflowExecutionHandle());
                         } catch (ExecutionControllerException | RemoteOperationException e) {
                             LOGGER.error(StringUtils.format("Failed to dispose workflow '%s' (%s)",
                                 wfExeInfo.getInstanceName(), wfExeInfo.getExecutionIdentifier()), e);
@@ -256,9 +256,9 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 ConsoleRowUtils.composeConsoleNotificationId(wfExeInfo.getNodeId(), wfExeInfo.getExecutionIdentifier()),
                 new ConsoleRowSubscriber(wfDisposedLatch), wfExeInfo.getNodeId());
             if (!WorkflowConstants.FINAL_WORKFLOW_STATES.contains(wfExeInfo.getWorkflowState())) {
-                workflowExecutionService.cancel(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.cancel(wfExeInfo.getWorkflowExecutionHandle());
             } else {
-                workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.dispose(wfExeInfo.getWorkflowExecutionHandle());
             }
         } catch (ExecutionControllerException | RemoteOperationException e) {
             LOGGER.error(StringUtils.format("Failed to cancel/dispose workflow '%s' (%s): %s",

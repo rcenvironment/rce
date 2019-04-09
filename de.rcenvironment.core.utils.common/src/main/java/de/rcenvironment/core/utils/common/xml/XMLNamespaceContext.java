@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -62,7 +62,8 @@ public class XMLNamespaceContext implements NamespaceContext {
      * @see javax.xml.namespace.NamespaceContext#getPrefixes(String)
      */
     @Override
-    public Iterator<?> getPrefixes(final String namespaceURI) {
+    @SuppressWarnings("rawtypes") // exact return type needed for JDK 9 and 11 compatibility
+    public Iterator getPrefixes(final String namespaceURI) {
         return null;
     }
 

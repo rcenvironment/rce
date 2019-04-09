@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.rpc;
 import java.io.Serializable;
 import java.util.List;
 
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -55,15 +56,25 @@ public class ServiceCallRequest implements Serializable {
      */
     private final List<? extends Serializable> parameters;
 
+    // may be null; serialized, as it is required for handling by the recipient
+    private final String reliableRPCStreamId;
+
+    // may be null; never serialized, only required for transmission
+    private final transient ReliableRPCStreamHandle senderSideReliableRPCStreamHandle;
+
+    // non-zero if a reliable RPC stream is being used; the only field that is set after the constructor
+    private long sequenceNumber;
+
     /**
      * @param targetNodeId the target node's {@link InstanceNodeSessionId}
      * @param callerNodeId the calling node's {@link InstanceNodeSessionId}
      * @param serviceName the FQN of the remote service interface to call
      * @param methodName the name of the remote method to call
      * @param parameters the method parameters
+     * @param reliableRPCStreamId
      */
     public ServiceCallRequest(LogicalNodeSessionId targetNodeId, LogicalNodeSessionId callerNodeId,
-        String serviceName, String methodName, List<? extends Serializable> parameters) {
+        String serviceName, String methodName, List<? extends Serializable> parameters, ReliableRPCStreamHandle reliableRPCStreamHandle) {
 
         Assertions.isDefined(targetNodeId, StringUtils.format(ERROR_PARAMETERS_NULL, "destination"));
         Assertions.isDefined(callerNodeId, StringUtils.format(ERROR_PARAMETERS_NULL, "sender"));
@@ -75,6 +86,12 @@ public class ServiceCallRequest implements Serializable {
         this.serviceName = serviceName;
         this.methodName = methodName;
         this.parameters = parameters;
+        this.senderSideReliableRPCStreamHandle = reliableRPCStreamHandle;
+        if (reliableRPCStreamHandle != null) {
+            this.reliableRPCStreamId = reliableRPCStreamHandle.getStreamId();
+        } else {
+            this.reliableRPCStreamId = null;
+        }
     }
 
     /**
@@ -103,4 +120,19 @@ public class ServiceCallRequest implements Serializable {
         return parameters;
     }
 
+    public String getReliableRPCStreamId() {
+        return reliableRPCStreamId;
+    }
+
+    public void setSequenceNumber(long sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    public long getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public ReliableRPCStreamHandle getSenderSideReliableRPCStreamHandle() {
+        return senderSideReliableRPCStreamHandle;
+    }
 }

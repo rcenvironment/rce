@@ -10,7 +10,7 @@
  		name="Configuration Service"
  		interface="de.rcenvironment.core.configuration.ConfigurationService"
  		cardinality="1..1"
- 		policy="dynamic"
+ 		policy="static"
  		bind="bindConfigurationService"
  	/>
  	
@@ -23,7 +23,7 @@
    	/>
    	
  	<reference 
-   		name="SCP Context Service" 
+   		name="SCP Context Manager" 
    		interface="de.rcenvironment.core.embedded.ssh.api.ScpContextManager" 
    		cardinality="1..1" 
    		policy="static"

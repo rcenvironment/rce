@@ -117,6 +117,16 @@
 		<module>${projects-root}/de.rcenvironment.components.xml.values.execution</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.values.gui</module>
 		
+		<!-- scp input loader component -->
+		<module>${projects-root}/de.rcenvironment.components.scpinputloader.common</module>
+		<module>${projects-root}/de.rcenvironment.components.scpinputloader.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.scpinputloader.gui</module>
+		
+		<!-- scp output collector component -->
+		<module>${projects-root}/de.rcenvironment.components.scpoutputcollector.common</module>
+		<module>${projects-root}/de.rcenvironment.components.scpoutputcollector.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.scpoutputcollector.gui</module>
+		
 		<!-- component group feature -->
 		<module>${modules-root}/de.rcenvironment.componentgroups.standard.feature</module>
 	</modules>

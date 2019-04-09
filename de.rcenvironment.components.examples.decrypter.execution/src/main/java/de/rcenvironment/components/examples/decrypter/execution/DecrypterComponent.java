@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -84,7 +84,7 @@ public class DecrypterComponent extends DefaultComponent {
         String encryptedString;
         try {
             encryptedString = dataManagementService.retrieveStringFromReference(incEncryptedFileReference.getFileReference(),
-                componentContext.getDefaultStorageNodeId());
+                componentContext.getStorageNetworkDestination());
         } catch (IOException e) {
             encryptedString = null;
         } catch (CommunicationException e) {

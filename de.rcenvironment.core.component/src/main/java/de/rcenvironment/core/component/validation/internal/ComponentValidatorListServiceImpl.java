@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -33,7 +33,7 @@ public class ComponentValidatorListServiceImpl implements ComponentValidatorList
     @Override
     public List<ComponentValidationMessage> validateComponentDescription(ComponentDescription componentDescription,
             boolean onWorkflowStart) {
-        String identifier = componentDescription.getComponentInterface().getIdentifier()
+        String identifier = componentDescription.getComponentInterface().getIdentifierAndVersion()
                 .split(ComponentConstants.ID_SEPARATOR)[0];
         if (validatorMap.containsKey(identifier)) {
             return validatorMap.get(identifier).validate(componentDescription, onWorkflowStart);

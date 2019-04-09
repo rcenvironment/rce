@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -39,7 +39,7 @@ import de.rcenvironment.core.communication.sshconnection.SshConnectionConstants;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
 
 /**
- * Test class for {@link SshConnectionServiceImpl}. 
+ * Test class for {@link SshConnectionServiceImpl}.
  *
  * @author Brigitte Boden
  */
@@ -157,6 +157,13 @@ public class SshConnectionServiceImplTest {
                 }
             }
         });
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("RCE");
+        buffer.append(" ");
+        buffer.append("RemoteAccess");
+        buffer.append("/");
+        buffer.append(SshConnectionConstants.REQUIRED_PROTOCOL_VERSION);
+        sshServer.getProperties().put(SshServer.SERVER_IDENTIFICATION, buffer.toString());
         sshServer.start();
     }
 
@@ -171,14 +178,14 @@ public class SshConnectionServiceImplTest {
 
     /**
      * Test adding, editing, connecting and disconnecting an SSH connection. Does not test storing a password because we can't access the
-     * secure store here.
+     * secure storage here.
      * 
      */
     @Test(timeout = TIMEOUT)
     public void testHandlingSshConnection() {
         // Add a connection
-        String connectionId =
-            sshConnectionService.addSshConnection(DISPLAYNAME, LOCALHOST, PORT, USER, null, true, false);
+        String connectionId = sshConnectionService
+            .addSshConnection(new SshConnectionContext(null, DISPLAYNAME, LOCALHOST, PORT, USER, null, true, false, false));
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);
@@ -189,7 +196,7 @@ public class SshConnectionServiceImplTest {
 
         // Edit the connection
         sshConnectionService.editSshConnection(new SshConnectionContext(connectionId, DISPLAYNAME2, LOCALHOST, PORT, USER, null, true,
-            false));
+            false, false));
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);

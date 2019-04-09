@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Service for registering new user integrated tools and read the already integrated from the configuration.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke (removed obsolete methods)
  */
 public interface ToolIntegrationService {
 
@@ -47,13 +48,6 @@ public interface ToolIntegrationService {
      * @param information about the component such as the prefix for the component id.
      */
     void removeTool(String toolName, ToolIntegrationContext information);
-
-    /**
-     * Reads all previously added {@link ComponentInterface}s.
-     * 
-     * @param information about the tools to be integrated.
-     */
-    void readAndIntegratePersistentTools(ToolIntegrationContext information);
 
     /**
      * Writes a new description of a component to the configuration folder of the local RCE.
@@ -91,11 +85,6 @@ public interface ToolIntegrationService {
     Set<String> getIntegratedComponentIds();
 
     /**
-     * @return all as published marked integrated components.
-     */
-    Set<String> getPublishedComponents();
-
-    /**
      * Returns the absolute path for the given componet id.
      * 
      * @param id of the component
@@ -118,14 +107,6 @@ public interface ToolIntegrationService {
     boolean isToolIntegrated(Map<String, Object> configurationMap, ToolIntegrationContext integrationContext);
 
     /**
-     * Reads the given configuration file and integrated it as a tool.
-     * 
-     * @param parentFile configuration json file
-     * @param context used for integration
-     */
-    void readToolDirectory(File parentFile, ToolIntegrationContext context);
-
-    /**
      * Returns the tool name to a given path, if its known.
      * 
      * @param path to search for
@@ -145,27 +126,6 @@ public interface ToolIntegrationService {
      * @param context .
      */
     void updatePublishedComponents(ToolIntegrationContext context);
-
-    /**
-     * Saves the current published components list for the given context.
-     * 
-     * @param context to save the components
-     */
-    void savePublishedComponents(ToolIntegrationContext context);
-
-    /**
-     * add the given tool to the published components.
-     * 
-     * @param toolName of the tool to publish
-     */
-    void addPublishedTool(String toolName);
-
-    /**
-     * removes the given tool from the published components.
-     * 
-     * @param toolPath to remove
-     */
-    void unpublishTool(String toolPath);
 
     /**
      * @param identifier with component id and version
@@ -198,9 +158,7 @@ public interface ToolIntegrationService {
      * @param integrationContext of the tool
      */
     void registerRecursive(String toolName, ToolIntegrationContext integrationContext);
+    
+    
 
-    /**
-     * Deactivate the service (e.g. unregister watcher).
-     */
-    void deactivateIntegrationService();
 }

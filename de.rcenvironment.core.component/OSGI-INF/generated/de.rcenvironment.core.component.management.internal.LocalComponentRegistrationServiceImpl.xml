@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.component.management.internal.LocalComponentRegistrationServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService"/>
+      <provide interface="de.rcenvironment.core.authorization.api.AuthorizationAccessGroupListener"/>
+   </service>
+   <reference bind="bindAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="AuthorizationService"/>
+   <reference bind="bindDistributedComponentKnowledgeService" interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" name="DistributedComponentKnowledgeService"/>
+   <reference bind="addPermissionMatrixChangeListener" cardinality="0..n" interface="de.rcenvironment.core.component.management.api.PermissionMatrixChangeListener" name="PermissionMatrixChangeListener" policy="dynamic" unbind="removePermissionMatrixChangeListener"/>
+   <reference bind="bindPermissionStorage" interface="de.rcenvironment.core.component.management.internal.ComponentPermissionStorage" name="PermissionStorage"/>
+   <reference bind="bindUserComponentIdMappingService" interface="de.rcenvironment.core.component.api.UserComponentIdMappingService" name="UserComponentIdMappingService"/>
+   <implementation class="de.rcenvironment.core.component.management.internal.LocalComponentRegistrationServiceImpl"/>
+</scr:component>

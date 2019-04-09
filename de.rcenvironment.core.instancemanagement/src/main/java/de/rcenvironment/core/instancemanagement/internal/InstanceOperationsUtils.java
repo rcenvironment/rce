@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,7 +23,7 @@ import java.nio.file.WatchService;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import de.rcenvironment.core.configuration.bootstrap.profile.BaseProfile;
+import de.rcenvironment.core.configuration.bootstrap.profile.CommonProfile;
 
 /**
  * 
@@ -130,7 +130,7 @@ public final class InstanceOperationsUtils {
             throw new IOException("Profile directory " + profileDir.getAbsolutePath() + " can not be created or is not a directory");
         }
 
-        File lockfile = new File(profileDir, BaseProfile.PROFILE_DIR_LOCK_FILE_NAME);
+        File lockfile = new File(profileDir, CommonProfile.PROFILE_DIR_LOCK_FILE_NAME);
         FileLock lock = null;
         if (!lockfile.isFile()) {
             return false;
@@ -159,7 +159,7 @@ public final class InstanceOperationsUtils {
      */
     public static boolean detectShutdownFile(final String path) throws IOException {
         WatchService watcher = FileSystems.getDefault().newWatchService();
-        Path shutdownFile = Paths.get(path + SLASH + BaseProfile.PROFILE_INTERNAL_DATA_SUBDIR + "/" + SHUTDOWN_FILE_NAME);
+        Path shutdownFile = Paths.get(path + SLASH + CommonProfile.PROFILE_INTERNAL_DATA_SUBDIR + "/" + SHUTDOWN_FILE_NAME);
         Path shutdownFileDir = shutdownFile.getParent();
         File file = new File(shutdownFileDir.toString());
         final int maxWaitingTime = 200;
@@ -216,7 +216,7 @@ public final class InstanceOperationsUtils {
     public static void deleteInstanceLockFromProfileFolder(File profileDir) {
         for (File fileInProfileDir : profileDir.listFiles()) {
             if (fileInProfileDir.isFile()
-                && BaseProfile.PROFILE_DIR_LOCK_FILE_NAME.equals(fileInProfileDir.getName())) {
+                && CommonProfile.PROFILE_DIR_LOCK_FILE_NAME.equals(fileInProfileDir.getName())) {
                 fileInProfileDir.delete();
                 break;
             }

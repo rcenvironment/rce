@@ -20,9 +20,9 @@
 	</parent>
 
 	<properties>
-		<!-- retention policy of release R20140114142710: "infinite" -->
-		<mirror.sourceUrl>http://download.eclipse.org/tools/orbit/downloads/drops/R20140114142710/repository/</mirror.sourceUrl>
-		<mirror.outputDir>${project.basedir}/../../../p2/eclipse.org/orbit</mirror.outputDir>
+		<!-- Official Photon Orbit release -->
+		<mirror.sourceUrl>http://download.eclipse.org/tools/orbit/downloads/drops/R20180606145124/repository/</mirror.sourceUrl>
+		<mirror.outputDir>${project.basedir}/../../../p2-mirrored/eclipse.org/orbit</mirror.outputDir>
 	</properties>
 
 	<build>
@@ -37,19 +37,9 @@
 					<ius>
 						<iu>
 							<id>org.apache.commons.io</id>
-							<version>2.0.1.v201105210651</version>
-						</iu>
-						<iu>
-							<id>org.junit</id>
-							<version>4.8.2.v4_8_2_v20130308-0413</version>
-						</iu>
-						<iu>
-							<id>org.hamcrest.core</id>
-							<version>1.3.0.v201303031735</version>
 						</iu>
 						<iu>
 							<id>org.swtchart</id>
-							<version>0.7.0.v201201201914</version>
 						</iu>
 					</ius>
 				</configuration>

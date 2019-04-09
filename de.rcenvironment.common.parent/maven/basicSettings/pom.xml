@@ -5,17 +5,17 @@
 	<groupId>de.rcenvironment</groupId>
 	<artifactId>de.rcenvironment.common.parent.basicSettings</artifactId>
 	<name>RCE Common Parent POMs - Basic Settings</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<properties>
-		<internal.java.sourceLevel>1.7</internal.java.sourceLevel>
-		<internal.java.targetLevel>1.7</internal.java.targetLevel>
+		<internal.java.sourceLevel>1.8</internal.java.sourceLevel>
+		<internal.java.targetLevel>1.8</internal.java.targetLevel>
 		<internal.java.encoding>UTF8</internal.java.encoding>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<internal.tycho.version>1.0.0</internal.tycho.version>
+		<internal.tycho.version>1.2.0</internal.tycho.version>
 
 		<!-- default artifact naming; overridden in RC and Release builds -->
 		<internal.qualifier.prefix>'0'</internal.qualifier.prefix>

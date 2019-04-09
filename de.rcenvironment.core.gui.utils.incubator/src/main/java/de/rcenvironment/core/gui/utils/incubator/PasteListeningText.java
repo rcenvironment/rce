@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -48,9 +48,9 @@ public class PasteListeningText extends Text implements ModifyListener {
     }
 
     @Override
-    public void setText(String string) {
+    public void setText(String text) {
         listenerActive = false;
-        super.setText(string);
+        super.setText(text);
         listenerActive = true;
     }
 
@@ -79,7 +79,6 @@ public class PasteListeningText extends Text implements ModifyListener {
     @Override
     public void modifyText(ModifyEvent arg0) {
         if (listenerActive) {
-
             // Necessary to distinguish between modification and pasting
             // Pasting will trigger an automatic host+port detection, a modification won't
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,9 +24,6 @@ public class AbstractLoginTest extends TestCase {
     private LoginNoInput loginNoInput;
     
     /**Inherited class of the abstract class under test. */
-    private LoginWithCertificateInput loginWithCertificateInput;
-    
-    /**Inherited class of the abstract class under test. */
     private LoginWithLdapInput loginWithLdapInput;
     
     /** Inherited class of the abstract class under test. */
@@ -40,7 +37,6 @@ public class AbstractLoginTest extends TestCase {
         serviceHandler.bindNotificationService(LoginMockFactory.getInstance().getNotificationServiceMock());
         serviceHandler.activate(LoginMockFactory.getInstance().getBundleContextMock());
         loginNoInput = new LoginNoInput();
-        loginWithCertificateInput = new LoginWithCertificateInput();
         loginWithLdapInput = new LoginWithLdapInput();
         loginWithException = new LoginWithException();
     }
@@ -51,8 +47,6 @@ public class AbstractLoginTest extends TestCase {
     public void testLogin() {
         loginNoInput.login();
         loginWithException.login();
-        loginWithCertificateInput.login();
-        
     }
     
     /**
@@ -106,23 +100,6 @@ class LoginNoInput extends AbstractLogin {
     
 }
 
-/**
- * Sub class of the abstract class under test.
- * 
- * @author Doreen Seider
- */
-class LoginWithCertificateInput extends AbstractLogin {
-    
-    @Override
-    protected LoginInput getLoginInput() throws AuthenticationException {
-        return LoginInputFactory.getLoginInputForCertificate();
-    }
-
-    @Override
-    protected void informUserAboutError(String errorMessage, Throwable e) {
-    }
-    
-}
 
 /**
  * Sub class of the abstract class under test.

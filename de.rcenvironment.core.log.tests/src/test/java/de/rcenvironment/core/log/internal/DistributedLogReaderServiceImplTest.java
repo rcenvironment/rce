@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,8 +21,8 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.log.RemotableLogReaderService;
 import de.rcenvironment.core.log.SerializableLogEntry;
@@ -116,7 +116,7 @@ public class DistributedLogReaderServiceImplTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) {
             T service = null;
             if (iface == RemotableLogReaderService.class && instanceIdLocal.equals(nodeId)) {
                 service = (T) new DummyLocalSerializableLogReaderService();

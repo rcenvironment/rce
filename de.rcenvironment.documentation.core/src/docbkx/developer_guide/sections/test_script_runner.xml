@@ -9,35 +9,24 @@
         feature called "Instance Management" (IM), which is still under development, and therefore
         not fully documented yet. However, the instructions below should be sufficient to configure
         this feature as needed for the TSR.</para>
+    <para>As of RCE 9.0.0, the Test Script Runner is included in the standard application release,
+        as well as the standard Eclipse checkout. Therefore, very little configuration is required
+        to use it.</para>
     <sect2>
-        <title>Setup and Configuration</title>
-        <para>The most common way of using the TSR is simply running it from Eclipse. (It is also
-            intended to be installable into a standalone RCE product; however, this requires certain
-            APIs to be available in the standalone Eclipse, which makes this approach not feasible
-            yet.) Using it from Eclipse is fairly simple, as the project containing it
-                (<code>de.rcenvironment.supplemental.testscriptrunner</code>) is part of the
-            standard RCE checkout, and should therefore be present in your development workspace
-            already. You can verify this by starting RCE from Eclipse and executing the command
-                "<code>run-test</code>" in the RCE command console. If it prints usage information,
-            the extension is available as it should.</para>
-        <para>The only manual setup that is required is adding an Instance Management configuration
-            to the RCE instance launched from Eclipse. This configuration defines the root directory
-            where work files and directories will be stored, and the URLs that standalone RCE build
-            will be downloaded from. Locate the profile directory that is being launched and edit
-            its <code>configuration.json</code> file. In this file, add this configuration block on
-            the root JSON level, and adjust the settings as necessary:</para>
+        <title>Configuration</title>
+        <para>The only configuration that is required for using the TSR is adding an Instance
+            Management configuration to the RCE instance that will execute the test scripts. This
+            defines the root directory where work files and directories of managed RCE test
+            installations will be stored. Locate the profile directory that is being launched and
+            edit its <code>configuration.json</code> file. In this file, add this configuration
+            block on the root JSON level, and adjust the settings as necessary:</para>
         <para>
             <literallayout><code>"instanceManagement": {
-  "dataRootDirectory": "<phrase os="windows">C:\\ExampleWorkdir\\rce-im</phrase><phrase os="linux">/exampleWorkdir/rce-im</phrase>",
-  "downloadSourceFolderUrlPattern":
-      "https://software.dlr.de/updates/rce/8.x/products/
-                                       standard/*/zip/",
-  "downloadFilenamePattern": "rce-*-standard-<phrase os="windows">win32.</phrase><phrase os="linux">linux.</phrase>x86_64.zip"
+  "dataRootDirectory": "<phrase os="windows">C:\\MyWorkdir\\rce-im-dat</phrase><phrase os="linux">/tmp/rce-im-dat</phrase>"
 }</code></literallayout>
         </para>
-        <para>The asterisks in the URL patterns mark the locations where the specified "build id"
-            (see below) and the automatically determined qualified build number will be
-            inserted.</para>
+        <para>Note that there are additional Instance Management configuration parameters available;
+            however, these are not usually needed for using the TSR.</para>
         <note>
             <para>It is <emphasis>strongly</emphasis> recommended to use a short full filesystem
                 path as the <code>dataRootDirectory</code>, as RCE installations will be placed
@@ -48,10 +37,60 @@
     </sect2>
     <sect2>
         <title>Usage</title>
-        <para>The TSR is invoked by a single console command (<code>run-test</code>), with an alias
-            for readability (<code>run-tests</code>). The general syntax is:</para>
+        <para>The TSR is invoked by a single RCE console command (<code>run-test</code>), with an
+            alias for readability (<code>run-tests</code>). The general syntax is:</para>
         <para><code>run-test[s] &lt;comma-separated list of test ids>|--all &lt;build
             id></code></para>
+        <para>There are three typical scenarios for calling this command: <itemizedlist>
+                <listitem>
+                    <para>from within an RCE instance launched from Eclipse during development,
+                        usually using the GUI workflow console</para>
+                </listitem>
+                <listitem>
+                    <para>from within a standalone RCE instance, also usually using the GUI workflow
+                        console</para>
+                </listitem>
+                <listitem>
+                    <para>as a CLI batch run (<code>rce --batch "...")</code> using a standalone
+                        instance.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>The RCE installation to be tested is defined by the <replaceable>&lt;build
+                id></replaceable> parameter in the above command. One important aspect to understand
+            is that this installation is generally independent of the installation being used to
+            execute the TSR command. The latter is, in a sense, only the "host" of test scripts.
+            There are three ways of specifying the build to test: <orderedlist>
+                <listitem>
+                    <para>A  build download id, which corresponds to a certain part of the standard
+                        download URL, for example <code>snapshots/trunk</code> or
+                            <code>releases/9.0.0</code>. The structure should be self-explanatory.
+                        (The major release tree to use for snapshot builds is one of the optional
+                        Instance Management settings mentioned above; the default is to use the
+                        current major version, ie 9.x.)</para>
+                </listitem>
+                <listitem>
+                    <para>A path to an <emphasis>unpacked</emphasis> local standalone (product)
+                        build, which can, for example, result from a local build run or from
+                        unpacking a downloaded product zip file. The syntax for this is
+                                <code>local:<replaceable>&lt;local installation
+                            path></replaceable></code>. This directory can be either writable or
+                        read-only. For example, it is also possible to test a (read-only) .deb or
+                        .rpm package installation this way.</para>
+                    <para>Note that this path must point to an already-unpacked RCE build, unlike
+                        the first approach, which downloads zipped release packages and unpacks them
+                        automatically.</para>
+                </listitem>
+                <listitem>
+                    <para>As it is a frequent use case when testing standalone builds to execute the
+                        test command the installation itself, there is a convenient shortcut for
+                        this. By specifying <code>:self</code> as the build id, the test scripts are
+                        executed on the installation of the instance used to run the test
+                        command.</para>
+                    <para>Note that due to technical limitations, however, this shortcut is not
+                        possible when launching RCE from Eclipse, as the test scripts require a
+                        standard product build to execute.</para>
+                </listitem>
+            </orderedlist></para>
         <para>The actual test scripts are located in <code>*.feature</code> files in the
                 <code>/de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts</code>
             directory. The "test ids" in the command description are the annotation-like tags above
@@ -59,18 +98,30 @@
             or without the "@" character. "<code>--all</code>" executes all available test
             scenarios. The reserved "<code>@Disabled</code>" and "<code>@disabled</code>" tags can
             be used to mark tests as excluded in the <code>*.feature</code> files.</para>
-        <para>The &lt;build id> is usually the part of the configured download URL marked by an
-            asterisk ("*"); for example, <code>snapshots/trunk</code> or
-            <code>releases/8.1.1</code>. This id is used within the test scripts as part of certain
-            test steps. For example, the test step "Given instances ... using the default build"
-            sets up one or more test instances to run with the build specified in the command, which
-            allows test scripts to be executed on different builds instead of hardcoding the release
-            or snapshot version to test.</para>
-        <para>Example: <code>run-test Test04 snapshots/trunk</code></para>
-        <para>To support running test scripts on locally generated builds, a special form of build
-            id is supported as well: By prefixing it with "<code>local:"</code>, a local path to a
-            build can be specified. This build is then executed from that location without copying
-            it. Note that the given path must point to an unpacked RCE build, unlike the standard
-            download URL, which points to zipped release packages.</para>
+    </sect2>
+    <sect2>
+        <title>Examples</title>
+    </sect2>
+    <sect2>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><code>run-test Test02,Test04 snapshots/trunk</code> - runs two specific
+                        tests on the latest snapshot build</para>
+                </listitem>
+                <listitem>
+                    <para><code>run-test DefaultTestSuite :self</code> - runs the default collection
+                        of tests on the current installation</para>
+                </listitem>
+                <listitem>
+                    <para><code>run-test --all local:/tmp/local-rce-build</code> - runs all
+                        available tests on a local build</para>
+                </listitem>
+                <listitem>
+                    <para><code>rce --batch "run-test DefaultTestSuite :self"</code> - the full
+                        command line for the standard self-test of an installation</para>
+                </listitem>
+            </itemizedlist>
+        </para>
     </sect2>
 </sect1>

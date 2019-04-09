@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -27,6 +27,7 @@ import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 
@@ -40,7 +41,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionControllerImpl.class);
 
-    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(WorkflowExecutionControllerImpl.class);
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled("WorkflowExecution");
 
     private static DistributedNotificationService notificationService;
 
@@ -56,16 +57,20 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
     private ComponentsConsoleLogFileWriter compConsoleLogFileWriter;
 
-    private ComponentLostWatcher compLostWatcher;
+    private ComponentDisconnectWatcher compLostWatcher;
 
     private AsyncOrderedExecutionQueue notifSendingAsyncExecQueue =
         ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
+    private NodeRestartWatcher nodeRestartWatcher;
+
     @Deprecated
     public WorkflowExecutionControllerImpl() {}
 
-    public WorkflowExecutionControllerImpl(WorkflowExecutionContext wfContext) {
+    public WorkflowExecutionControllerImpl(WorkflowExecutionContext wfContext, ServiceRegistryAccess serviceRegistryAccess) {
         this.wfExeCtx = wfContext;
+
+        // TODO why not move all this initialization into the WorkflowStateMachineContext constructor? -- misc_ro
 
         wfExeStorageBridge = wfExeInstancesFactory.createWorkflowExecutionStorageBridge(wfContext);
 
@@ -77,8 +82,13 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         compLostWatcher = wfExeInstancesFactory.createComponentLostWatcher(wfExeCtx, compStatesEntirelyChangedVerifier);
 
-        wfStateMachine = wfExeInstancesFactory.createWorkflowStateMachine(new WorkflowStateMachineContext(wfExeCtx, wfExeStorageBridge,
-            compStatesEntirelyChangedVerifier, compConsoleLogFileWriter, compLostWatcher));
+        nodeRestartWatcher =
+            wfExeInstancesFactory.createNodeRestartWatcher(wfExeCtx, compStatesEntirelyChangedVerifier, serviceRegistryAccess);
+
+        final WorkflowStateMachineContext wfStateMachineCtx = new WorkflowStateMachineContext(wfExeCtx, wfExeStorageBridge,
+            compStatesEntirelyChangedVerifier, compConsoleLogFileWriter, compLostWatcher, nodeRestartWatcher, serviceRegistryAccess);
+
+        wfStateMachine = wfExeInstancesFactory.createWorkflowStateMachine(wfStateMachineCtx);
 
         compStatesEntirelyChangedVerifier.addListener(wfStateMachine);
     }
@@ -196,7 +206,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         }
         compLostWatcher.announceComponentHeartbeat(compExecutionId);
     }
-    
+
     private void checkForLifecycleInfoEndConsoleRow(ConsoleRow row) {
         if (row.getType() == ConsoleRow.Type.LIFE_CYCLE_EVENT
             && row.getPayload().startsWith(ConsoleRow.WorkflowLifecyleEventType.COMPONENT_TERMINATED.name())) {

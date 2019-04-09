@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,17 +12,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.parametricstudy.common.ParametricStudyComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -157,7 +157,7 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
         JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
         for (JsonNode outputEndpoint : staticOutputs) {
             ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
-            if (outputEndpoint.get(OUTPUT_NAME).getTextValue().equals(DESIGN_VARIABLE)) {
+            if (outputEndpoint.get(OUTPUT_NAME).textValue().equals(DESIGN_VARIABLE)) {
                 ((ObjectNode) outputEndpoint).put(OUTPUT_NAME, ParametricStudyComponentConstants.OUTPUT_NAME_DV);
             }
         }
@@ -177,10 +177,10 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
         if (staticOutputs != null) {
             for (JsonNode outputEndpoint : staticOutputs) {
                 ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
-                if (outputEndpoint.get(OUTPUT_NAME).getTextValue().equals("DesignVariable")) {
+                if (outputEndpoint.get(OUTPUT_NAME).textValue().equals("DesignVariable")) {
                     ((ObjectNode) outputEndpoint).put(OUTPUT_NAME, DESIGN_VARIABLE);
                     ObjectNode metadata = createStaticOutputMetaData(node);
-                    ((ObjectNode) outputEndpoint).put("metadata", metadata);
+                    ((ObjectNode) outputEndpoint).set("metadata", metadata);
                     ((ObjectNode) outputEndpoint).put("datatype", "Float");
                 }
             }
@@ -189,15 +189,15 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
             ArrayNode statOutputs = JsonNodeFactory.instance.arrayNode();
             ObjectNode output =
                 JsonNodeFactory.instance.objectNode();
-            output.put("identifier",
+            output.set("identifier",
                 TextNode.valueOf(UUID.randomUUID().toString()));
-            output.put(OUTPUT_NAME,
+            output.set(OUTPUT_NAME,
                 TextNode.valueOf(DESIGN_VARIABLE));
-            output.put("datatype", TextNode.valueOf("Float"));
+            output.set("datatype", TextNode.valueOf("Float"));
             ObjectNode metadata = createStaticOutputMetaData(node);
-            output.put("metadata", metadata);
+            output.set("metadata", metadata);
             statOutputs.add(output);
-            ((ObjectNode) node).put(STATIC_OUTPUTS, statOutputs);
+            ((ObjectNode) node).set(STATIC_OUTPUTS, statOutputs);
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -209,9 +209,9 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
     private ObjectNode createStaticOutputMetaData(JsonNode node) {
         ObjectNode metadata = JsonNodeFactory.instance.objectNode();
         ObjectNode config = (ObjectNode) node.get("configuration");
-        metadata.put("FromValue", TextNode.valueOf(config.get("FromValue").getTextValue()));
-        metadata.put("StepSize", TextNode.valueOf(config.get("StepSize").getTextValue()));
-        metadata.put("ToValue", TextNode.valueOf(config.get("ToValue").getTextValue()));
+        metadata.set("FromValue", TextNode.valueOf(config.get("FromValue").textValue()));
+        metadata.set("StepSize", TextNode.valueOf(config.get("StepSize").textValue()));
+        metadata.set("ToValue", TextNode.valueOf(config.get("ToValue").textValue()));
         return metadata;
     }
 
@@ -240,16 +240,16 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
 
     private PersistentComponentDescription updateToV10(PersistentComponentDescription description) throws JsonParseException, IOException {
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
         jsonParser.close();
         JsonNode dynamicInputsNode = rootNode.findPath(STATIC_OUTPUTS);
-        Iterator<JsonNode> it = dynamicInputsNode.getElements();
+        Iterator<JsonNode> it = dynamicInputsNode.elements();
         while (it.hasNext()) {
             JsonNode inputNode = it.next();
             ((ObjectNode) inputNode).remove(OUTPUT_NAME);
-            ((ObjectNode) inputNode).put(OUTPUT_NAME, TextNode.valueOf(ParametricStudyComponentConstants.OUTPUT_NAME_DV));
+            ((ObjectNode) inputNode).set(OUTPUT_NAME, TextNode.valueOf(ParametricStudyComponentConstants.OUTPUT_NAME_DV));
         }
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));

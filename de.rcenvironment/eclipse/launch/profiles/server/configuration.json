@@ -18,23 +18,6 @@
             ]
         }
     },
-    "publishing": {
-        "components": [
-            "de.rcenvironment.cluster",
-            "de.rcenvironment.cpacswriter",
-            "de.rcenvironment.converger",
-            "de.rcenvironment.excel",
-            "de.rcenvironment.inputprovider",
-            "de.rcenvironment.joiner",
-            "de.rcenvironment.optimizer",
-            "de.rcenvironment.outputwriter",
-            "de.rcenvironment.parametricstudy",
-            "de.rcenvironment.script",
-            "de.rcenvironment.vampzeroinitializer",
-            "de.rcenvironment.xmlloader",
-            "de.rcenvironment.xmlmerger"
-        ]
-    },
     "sshServer" : {
         "enabled" : true,
         "ip": "127.0.0.1",

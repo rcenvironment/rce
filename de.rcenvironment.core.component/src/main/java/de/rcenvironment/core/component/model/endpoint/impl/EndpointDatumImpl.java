@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,6 +9,7 @@
 package de.rcenvironment.core.component.model.endpoint.impl;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -18,7 +19,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Implementation of {@link EndpointDatum}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (8.0.0 id adaptations)
+ * @author Robert Mischke
  */
 public class EndpointDatumImpl implements EndpointDatum {
 
@@ -57,8 +58,12 @@ public class EndpointDatumImpl implements EndpointDatum {
     }
 
     @Override
-    public LogicalNodeId getInputsNodeId() {
-        return endpointDatumRecipient.getInputsNodeId();
+    public LogicalNodeId getDestinationNodeId() {
+        return endpointDatumRecipient.getDestinationNodeId();
+    }
+
+    public NetworkDestination getNetworkDestination() {
+        return endpointDatumRecipient.getNetworkDestination();
     }
 
     @Override
@@ -77,7 +82,7 @@ public class EndpointDatumImpl implements EndpointDatum {
     }
 
     @Override
-    public LogicalNodeId getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowControllerLocation() {
         return workflowNode;
     }
 
@@ -123,7 +128,7 @@ public class EndpointDatumImpl implements EndpointDatum {
     public String toString() {
         return StringUtils.format("'%s' (%s @ %s -> %s @ %s (%s) at %s)", getValue().toString(),
             getOutputsComponentExecutionIdentifier(), getOutputsNodeId(),
-            getInputName(), getInputsComponentInstanceName(), getInputsComponentExecutionIdentifier(), getInputsNodeId());
+            getInputName(), getInputsComponentInstanceName(), getInputsComponentExecutionIdentifier(), getDestinationNodeId());
     }
 
 }

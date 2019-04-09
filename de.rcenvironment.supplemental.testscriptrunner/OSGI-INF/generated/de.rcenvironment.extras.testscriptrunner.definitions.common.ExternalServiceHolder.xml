@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.extras.testscriptrunner.definitions.common.ExternalServiceHolder">
+   <reference bind="bindInstanceManagementService" interface="de.rcenvironment.core.instancemanagement.InstanceManagementService" name="InstanceManagementService"/>
+   <implementation class="de.rcenvironment.extras.testscriptrunner.definitions.common.ExternalServiceHolder"/>
+</scr:component>

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,10 +10,10 @@ package de.rcenvironment.core.component.integration.cpacs;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
@@ -121,23 +121,23 @@ public class CpacsIntegrationHistoryDataItem extends IntegrationHistoryDataItem 
         }
         if (((ObjectNode) rootNode).get(KEY_CPACS_WITH_VARIABLES_FILE_REFERENCE) != null) {
             historyDataItem.cpacsWithVariablesFileReference =
-                ((ObjectNode) rootNode).get(KEY_CPACS_WITH_VARIABLES_FILE_REFERENCE).getTextValue();
+                ((ObjectNode) rootNode).get(KEY_CPACS_WITH_VARIABLES_FILE_REFERENCE).textValue();
         }
         if (((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILE_REFERENCE) != null) {
-            historyDataItem.tIFileReference = ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILE_REFERENCE).getTextValue();
+            historyDataItem.tIFileReference = ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILE_REFERENCE).textValue();
         }
         if (((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILENAME) != null) {
-            historyDataItem.tIFilename = ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILENAME).getTextValue();
+            historyDataItem.tIFilename = ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_FILENAME).textValue();
         }
         if (((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILE_REFERENCE) != null) {
-            historyDataItem.tOFileReference = ((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILE_REFERENCE).getTextValue();
+            historyDataItem.tOFileReference = ((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILE_REFERENCE).textValue();
         }
         if (((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILENAME) != null) {
-            historyDataItem.tOFilename = ((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILENAME).getTextValue();
+            historyDataItem.tOFilename = ((ObjectNode) rootNode).get(KEY_TOOL_OUTPUT_FILENAME).textValue();
         }
         if (((ObjectNode) rootNode).get(KEY_TOOL_INPUT_WITHOUT_TOOLSPECIFIC_FILE_REFERENCE) != null) {
             historyDataItem.toolInputWithoutToolspecificFileReference =
-                ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_WITHOUT_TOOLSPECIFIC_FILE_REFERENCE).getTextValue();
+                ((ObjectNode) rootNode).get(KEY_TOOL_INPUT_WITHOUT_TOOLSPECIFIC_FILE_REFERENCE).textValue();
         }
     }
 

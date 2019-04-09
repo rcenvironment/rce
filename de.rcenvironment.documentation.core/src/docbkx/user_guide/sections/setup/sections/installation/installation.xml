@@ -5,18 +5,22 @@
     <sect2>
         <title>Prerequisites</title>
         <para>To run RCE on a system, the only prerequisite is an installed Java Runtime Environment
-            (JRE), version 7 or above. If you don't already have one on your machine, <phrase
+            (JRE), version 8u161 or above. If you don't already have one on your machine, <phrase
                 os="linux">use your system's package manager to install it; the most common choice
                 is the OpenJDK JRE.</phrase><phrase os="windows">you can download it from
                 <programlisting><uri>http://www.java.com/download/</uri></programlisting>and install
                 it. Starting with RCE 8.x only 64 bit packages of RCE are made available. Therefore,
-                please make sure to install the 64 bit version of the JRE.</phrase></para>
+                please make sure to install the 64 bit version of the JRE.</phrase><note>
+                <para>Some pre-installed components of RCE have additional dependencies. Please
+                    refer to <link linkend="workflow_components">Section 2.3 (Workflow
+                        Components)</link> for more details.</para>
+            </note></para>
     </sect2>
     <sect2>
         <title> Installation</title>
         <para os="windows">On Windows, a single zip file is provided to set up client and server
             installations, which can be downloaded
-            from<programlisting><uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/zip/</uri></programlisting>Simply
+            from<programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/zip/</uri></programlisting>Simply
             extract the zip file to a location on your file system.<note>
                 <para>IMPORTANT: Please note that due to restrictions of the standard Windows file
                     system (NTFS), you should choose a destination path that is as short as
@@ -94,35 +98,11 @@
             <title>Debian/Ubuntu/Mint - Installing from the Package Repository (recommended)</title>
             <para>To register the RCE .deb package repository in your system, you have to add the
                 repository location, and add the RCE signing key. Then, you can install RCE like any
-                other software package. There are three different ways to do this, all leading to
-                the the same result.</para>
+                other software package. There are two different ways to do this, both leading to the
+                the same result.</para>
             <itemizedlist>
                 <listitem>
-                    <para>(Option 1) The simplest way is to use a shell script provided since RCE
-                        7.x. It takes care of all installation steps (with confirmation prompts
-                        before executing them).</para>
-                    <itemizedlist>
-                        <listitem>
-                            <para>Download the script by
-                                opening<programlisting><uri>https://github.com/rcenvironment/rce-signing/blob/master/register_rce_8.x_deb_repository.sh</uri></programlisting></para>
-                            <para>in your browser, clicking "Raw" in the top right, and then
-                                pressing Ctrl-S (or using the "Save As" option of your browser). <note>
-                                    <para>If you prefer to download the script using
-                                            <code>wget</code>, you need to use the URL behind the
-                                        "Raw" button as well, not the page link above.</para>
-                                    <para>If you already use <code>git</code>, you can also simply
-                                        clone
-                                            <code>https://github.com/rcenvironment/rce-signing.git</code>.</para>
-                                </note></para>
-                        </listitem>
-                        <listitem>
-                            <para>Execute the script as "root" and follow the confirmation
-                                messages.</para>
-                        </listitem>
-                    </itemizedlist>
-                </listitem>
-                <listitem>
-                    <para>(Option 2) If you prefer to use graphical tools, start the program
+                    <para>(Option 1) If you prefer to use graphical tools, start the program
                         "Synaptic"; if it is not available, install if from your Software Center -
                         or similar - first. Please note that this option might not be available on
                         all systems. If this is the case for you, you can still install the package
@@ -135,14 +115,14 @@
                                     key...". Copy the text
                                     <programlisting>258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>into
                                     the dialog that appears and click "Ok". The list of keys should
-                                    now contain an entry "RCE 6.x-8.x Automatic Signing Key
+                                    now contain an entry "RCE 6.x-9.x Automatic Signing Key
                                     &lt;rcenvironment-builds@lists.sourceforge.net>".</para>
                             </listitem>
                             <listitem>
                                 <para>Click on a section named "Additional Repositories", "Other
                                     Sources" or similar. Select the "Add..." or "Add new..." option.
                                     Copy the text
-                                    <programlisting>deb https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/deb/ /</programlisting>into
+                                    <programlisting>deb https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/ /</programlisting>into
                                     the dialog that appears and click "Ok".</para>
                             </listitem>
                             <listitem>
@@ -150,22 +130,22 @@
                                     list of available software. After this, you should find an entry
                                     "rce" in this list (for example, using the "quick search" box),
                                     which you can install like any other software. You will also
-                                    receive automatic notifications when a newer version of RCE 8.x
+                                    receive automatic notifications when a newer version of RCE 9.x
                                     is available.</para>
                             </listitem>
                         </itemizedlist></para>
                 </listitem>
                 <listitem>
-                    <para>(Option 3) If you prefer to execute all step manually using the command
+                    <para>(Option 2) If you prefer to execute all steps manually using the command
                         line, enter the following commands as "root" (or with the "sudo" prefix).
                         Obviously, this is the most complicated way.</para>
                     <itemizedlist>
                         <listitem>
                             <para>
-                                <programlisting>apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
+                                <programlisting>apt-key adv --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
                                 <note>
                                     <para>If you see a message containing the text <code>"RCE
-                                            6.x-8.x Automatic Signing Key
+                                            6.x-9.x Automatic Signing Key
                                             &lt;rcenvironment-builds@lists.sourceforge.net>"</code>,
                                         the key import was successful. Sometimes, this step fails
                                         with the message "<code>key [...] not found on keyserver;
@@ -173,21 +153,31 @@
                                         happens, just repeat the command a few times until it works.
                                         This issue may also be caused by an outdated gpg version
                                         (gpg version 2.0.9 on SUSE Linux Enterprise Desktop 11 is
-                                        known to be problematic, while gpg version 2.0.22 works). If
-                                        you cannot access keyservers at all for some reason, you can
-                                        also download the key manually from
-                                        <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_8.x_signing_key.asc</programlisting>
-                                        After the download has completed, you can import the key by executing 
-                                        <programlisting>apt-key adv --import rce_8.x_signing_key.asc</programlisting>
-                                        from the command line.
-                                    </para>
+                                        known to be problematic, while gpg version 2.0.22
+                                        works).</para>
+                                    <para>The RCE signing key is published on the keyserver
+                                            <code>pool.sks-keyservers.net</code>, which is the
+                                        default keyserver for most distributions of gpg. If your
+                                        installation does not default to that keyserver, you may try
+                                        to explicitly specify the keyserver at
+                                            <code>hkps://hkps.pool.sks-keyservers.net</code> or at
+                                            <code>hkp://pool.sks-keyservers.net</code>. Please
+                                        consult the documentation of your installation of gpg to
+                                        determine how to specify the keyserver.</para>
+                                    <para>If you cannot access keyservers at all for some reason,
+                                        you can also download the key manually from
+                                        <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_9.x_signing_key.asc</programlisting>
+                                        After the download has completed, you can import the key by
+                                        executing
+                                        <programlisting>apt-key adv --import rce_9.x_signing_key.asc</programlisting>
+                                        from the command line. </para>
                                 </note>
                             </para>
                         </listitem>
                         <listitem>
                             <para>
-                                <programlisting>echo "deb https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/deb/ /"
-  >/etc/apt/sources.list.d/dlr_rce_8_releases.list</programlisting>
+                                <programlisting>echo "deb https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/ /"
+  >/etc/apt/sources.list.d/dlr_rce_9_releases.list</programlisting>
                                 <note>
                                     <para>Although it may be split across lines here, this command
                                         must be executed as a single line.</para>
@@ -207,20 +197,32 @@
                     </itemizedlist>
                 </listitem>
             </itemizedlist>
-            <para>Once you have installed RCE using either of these approaches, any RCE 8.x upgrade
-                will automatically show up in you operating system's update mechanism. Depending on
-                the upgrade settings of your system, they may be installed automatically, or be
-                presented to you for selection.<note>
-                    <para>Although technically possible, RCE 8.x will not auto-upgrade to 9.x (or
-                        higher) to maintain compatibility within networks of RCE 8.x instances. You
-                        will need to install the 9.x repository location to upgrade.</para>
+            <para><note>
+                    <para>For previous versions of RCE there existed a script that imported the
+                        signing key from github and added the software repository to the system
+                        repositories automatically. Due to recent changes to our workflow for
+                        producing RCE releases, we are currently improving and adapting these
+                        scripts. Once they are available, you can find them
+                        at<programlisting> https://github.com/rcenvironment/rce-signing</programlisting></para>
+                    <para>Executing the script
+                        <programlisting>register_rce_9.x_deb_repository.sh</programlisting> will
+                        import the signing key onto your system and subsequently register the
+                        repository with your package manager.</para>
+                </note>Once you have installed RCE using either of these approaches, any RCE 9.x
+                upgrade will automatically show up via the update mechanism of your operating
+                system. Depending on the upgrade settings of your system, they may be installed
+                automatically, or be presented to you for selection.<note>
+                    <para>Although technically possible, RCE 9.x will not auto-upgrade to 10.x (or
+                        higher) to maintain compatibility within networks of RCE 9.x instances. You
+                        will need to manually install the 10.x repository location in order to
+                        upgrade.</para>
                 </note></para>
         </sect3>
         <sect3 os="linux">
             <title>Debian/Ubuntu/Mint - Installation of the .deb Package (alternative)</title>
             <para>To install the .deb file manually, download the latest version from
-                <programlisting><uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/deb/</uri></programlisting>You
-                can either install it with the graphical package management tools of your
+                <programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/</uri></programlisting>You
+                can either install it using the graphical package management tools of your
                 distribution (double-clicking the .deb should start them), or by running <code>sudo
                     dpkg -i &lt;filename></code> from a terminal. To upgrade an existing
                 installation, simply install the newer package. The package manager will detect the
@@ -229,7 +231,7 @@
         <sect3 os="linux">
             <title>CentOS/Red Hat - Installation of the .rpm Package (recommended)</title>
             <para>To install the .rpm file, download the latest version from
-                <programlisting><uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/rpm/</uri></programlisting>You
+                <programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/rpm/</uri></programlisting>You
                 can either install it with the graphical package management tools of your
                 distribution (double-clicking the .deb should start them), or by running the
                 appropriate installation command as the "root" user. On CentOS or Red Hat, the
@@ -242,16 +244,16 @@
             <title>All Distributions - Running from the .zip File (alternative)</title>
             <para>If none of the previous installation options fits your needs, you can also extract
                 RCE from a zip file downloaded
-                from<programlisting><uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/latest/zip/</uri></programlisting></para>
+                from<programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/zip/</uri></programlisting></para>
             <itemizedlist>
                 <listitem>
                     <para>If you prefer graphical tools, double-click the .zip file to open it with
                         your distribution's archive manager. Extract it to a location of your
                         choice, and open that location in your file-system explorer. Typically,
-                        double-clicking the "rce" executable will work out of the box to start RCE.
-                        If it doesn't, right-click the executable, open its "properties" section (or
-                        similar), and look for an option to mark it as executable. Confirm the
-                        dialog, then double-click it again.</para>
+                        double-clicking the "rce" executable will work out of the box and start RCE.
+                        If this does not happen, right-click the executable, open its "properties"
+                        section (or similar), and look for an option to mark it as executable.
+                        Confirm the dialog, then double-click it again.</para>
                 </listitem>
             </itemizedlist>
             <itemizedlist>
@@ -260,8 +262,8 @@
                         to extract the zip file to a location of your choice. In the location where
                         you unpacked the files to, you can usually simply
                         enter<programlisting>./rce</programlisting> to start RCE. In same cases, you
-                        may need to make it executable first with the
-                        <programlisting>chmod +x rce</programlisting> command.</para>
+                        may first need to make it executable using the
+                        command<programlisting>chmod +x rce</programlisting></para>
                 </listitem>
             </itemizedlist>
                 <note>
@@ -282,7 +284,7 @@
         <para>For each type of release files (.zip, .deb, and .rpm files), a
                 <code>SHA256SUM.asc</code> file is provided next to the actual files. This file
             contains checksums for each release file, and these checksums are signed with our
-            release key. It is named "RCE 6.x-8.x Automatic Signing Key", has the id 9DC1CE34, and
+            release key. It is named "RCE 6.x-9.x Automatic Signing Key", has the id 9DC1CE34, and
             is valid until Nov 25, 2018. Its full fingerprint is <code>258B C129 EDA2 389D 3ECD 2DE6
                 BA88 0CB3 9DC1 CE34</code>.</para>
         <para><phrase os="windows">On Windows, you need to install gpg4win
@@ -293,14 +295,14 @@
                 8.1) or can manually be installed (Windows Server 2008 R2, Windows Server 2012,
                 Windows 7). </phrase><phrase os="linux">On Linux, the required command-line tools to
                 verify these signatures (gpg and shasum/sha1sum/sha256sum) are usually already
-                installed as part of your distribution. If not, use your system's package manager to
-                install them. </phrase>To perform the actual verification:<itemizedlist>
+                installed as part of your distribution. If they are not, use your system's package
+                manager to install them. </phrase>To perform the actual verification:<itemizedlist>
                 <listitem>
                     <para>Execute
-                        <programlisting>gpg --keyserver hkp://pgp.mit.edu:80 --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
+                        <programlisting>gpg --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
                         to import the signing key. This only needs to be done once per key, e.g.
-                        once for all RCE 8.x releases.<note>
-                            <para>If you see a message containing the text <code>"RCE 6.x-8.x
+                        once for all RCE 9.x releases.<note>
+                            <para>If you see a message containing the text <code>"RCE 6.x-9.x
                                     Automatic Signing Key
                                     &lt;rcenvironment-builds@lists.sourceforge.net>"</code>, the key
                                 import was successful. Sometimes, this step fails with the message
@@ -309,24 +311,35 @@
                                 few times until it works. This issue may also be caused by an
                                 outdated gpg version (gpg version 2.0.9 on SUSE Linux Enterprise
                                 Desktop 11 is known to be problematic, while gpg version 2.0.22
-                                works). If you cannot access keyservers at all for some reason, you
-                                can also download the key manually from
-                                <programlisting><uri>https://github.com/rcenvironment/rce-signing/blob/master/rce_8.x_signing_key.asc</uri></programlisting>
+                                works).</para>
+                            <para>The RCE signing key is published on the keyserver
+                                    <code>pool.sks-keyservers.net</code>, which is the default
+                                keyserver for most distributions of gpg. If your installation does
+                                not default to that keyserver, you may try to explicitly specify the
+                                keyserver at <code>hkps://hkps.pool.sks-keyservers.net</code> or at
+                                    <code>hkp://pool.sks-keyservers.net</code>. Please consult the
+                                documentation of your installation of gpg to determine how to
+                                specify the keyserver.</para>
+                            <para>If you cannot access keyservers at all for some reason, you can
+                                also download the key manually from
+                                <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_9.x_signing_key.asc</programlisting>
                                 After the download has completed, you can import the key by
                                 executing
-                                <programlisting>gpg --import rce_8.x_signing_key.asc</programlisting>
-                                from the command line.</para>
+                                <programlisting>apt-key adv --import rce_9.x_signing_key.asc</programlisting>
+                                from the command line. </para>
                         </note></para>
                 </listitem>
                 <listitem>
                     <para>Download the <code>SHA256SUMS.asc</code> file from the same location as
-                        the installation package. Run
+                        the installation package and place it in the same folder as the downloaded
+                        .zip-file. Run
                         <programlisting>gpg -v --yes SHA256SUMS.asc</programlisting>in the location
                         where you saved it to; this verifies the digital signature. Inspect the
                         output to see if it is correct; you should find the text "Good signature
-                        from "RCE 6.x-8.x Automatic Signing Key
-                        &lt;rcenvironment-builds@lists.sourceforge.net>" (or a similar
-                        translation).</para>
+                        from "RCE 6.x-9.x Automatic Signing Key
+                        &lt;rcenvironment-builds@lists.sourceforge.net>" (or a similar translation).
+                        Once the command has terminated, you should find a file
+                            <code>SHA256SUMS</code> in the current folder.</para>
                     <note>
                         <para>When following these steps, it is normal to receive a warning about
                             the fact that the owner of this key cannot be verified. If you have
@@ -334,7 +347,7 @@
                             project site secured with HTTPS), you can assume that the key is
                             correct, as the command used to import the key has already verified the
                             key's integrity. Alternatively, you can fetch the key's fingerprint from
-                            a trustworthy source (e.g. a secure intranet page, or the official
+                            a trustworthy source (e.g. from a secure intranet page, or the official
                             @rcenvironment Twitter feed accessed via HTTPS) and compare it with the
                             one shown in the command's output. If they match, you can trust that you
                             are using the authentic key.</para>

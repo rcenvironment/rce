@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.configuration.samples.feature</artifactId>
 	<name>RCE File Sets - Configuration Samples</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

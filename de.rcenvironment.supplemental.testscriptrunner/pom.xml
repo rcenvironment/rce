@@ -13,23 +13,4 @@
 		<relativePath>../de.rcenvironment.extensions.testscriptrunner/maven/parent/default/</relativePath>
 	</parent>
 
-	<dependencies>
-		<dependency>
-			<groupId>info.cukes</groupId>
-			<artifactId>cucumber-osgi</artifactId>
-			<version>1.2.5</version>
-		</dependency>
-		<dependency>
-			<groupId>info.cukes</groupId>
-			<artifactId>cucumber-picocontainer</artifactId>
-			<version>1.2.5</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>picocontainer</artifactId>
-					<groupId>org.picocontainer</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-	</dependencies>
-
 </project>

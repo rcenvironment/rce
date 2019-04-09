@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -52,7 +52,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
     private static final int DEFAULT_REQUEST_TIMEOUT = 10000;
 
     // test size 5 for fast/standard testing, 10 for extended testing
-    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(5, 10);
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(4, 10);
 
     private static final String CONNECTION_ID_1 = "#1";
 
@@ -118,7 +118,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
      * @throws Exception on uncaught exceptions
      */
     @Test
-    public void testStartAndStopp() throws Exception {
+    public void testStartAndStop() throws Exception {
 
         VirtualInstance.setRememberRuntimePeersAfterRestarts(true);
 

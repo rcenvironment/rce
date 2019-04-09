@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "6302a8e5-768a-419b-a17c-6027cd24ba1b",
     "name" : "Input",
-    "location" : "531:403",
+    "location" : "644:344",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -63,7 +63,7 @@
   }, {
     "identifier" : "016a5a96-dd97-4f54-84f2-7c71e4779808",
     "name" : "Input Provider",
-    "location" : "346:386",
+    "location" : "459:327",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -86,7 +86,7 @@
   }, {
     "identifier" : "57236a47-cdf9-4f44-a35e-b3af469f9f78",
     "name" : "Output",
-    "location" : "327:441",
+    "location" : "440:382",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -119,5 +119,5 @@
     "target" : "6302a8e5-768a-419b-a17c-6027cd24ba1b",
     "input" : "935ff8d3-a217-4638-8238-20737fa411bc"
   } ],
-  "labels" : "[{\"identifier\":\"5eec48bf-e723-4a56-b6ca-eadac3d6f3af\",\"headerText\":\"\",\"text\":\"Example workflow: \\\"Component_Execution_Scheduling\\\"\\r\\nObjective: Introducing execution scheduling of workflow components\\r\\n(See section \\\"Workflows\\\" in the user guide for details.)\\r\\n\\r\\nThere are different attributes which can be assigned to inputs of workflow components to define certain workflow execution logic.\\r\\n\\r\\nInput handling (How to handle values at the input?): Constant, Single (Consumed), Queue (Consumed) Execution constraint (Is a value at the input required to execute the workflow component?): Required, Required if connected, Not required\\r\\n\\r\\nThis workflow example consists of workflow components that demonstrate different input attributes and introduces the execution scheduling of workflow components. The \\\"Output\\\" workflow component sends two values to its output. The handling of the receiving input of the \\\"Input\\\" workflow component is set to \\\"Queue\\\" (otherwise an error will occur during workflow execution). The \\\"Input Provider\\\" workflow component sends one value to its output. The handling of the receiving input of the \\\"Input\\\" workflow component is set to \\\"Constant\\\". Execute the workflow. The \\\"Output\\\" workflow component will run once. The \\\"Input\\\" workflow component will run two times. The first time if a value at both of the inputs was received. The second time if a value at the input with handling \\\"Queue\\\" is received (the previously received value at the other input will be re-used). Note: If you change the handling from \\\"Constant\\\" to \\\"Single\\\", the workflow won't terminate as the \\\"Input\\\" workflow component doesn't re-use any value anymore and waits indefinitely for the second value at both of its input after the first run was performed.\\r\\n\",\"location\":\"37:13\",\"size\":\"1091:352\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"5eec48bf-e723-4a56-b6ca-eadac3d6f3af\",\"headerText\":\"Introducing execution scheduling of workflow components\",\"text\":\"There are different attributes which can be assigned to inputs of workflow components to define certain workflow execution logic.\\r\\n\\r\\nInput handling (How to handle values at the input?): Constant, Single (Consumed), Queue (Consumed) \\r\\nExecution constraint (Is a value at the input required to execute the workflow component?): Required, Required if connected, Not required\\r\\n\\r\\nThis workflow example consists of workflow components that demonstrate different input attributes and introduces the execution scheduling of workflow components. The \\\"Output\\\" workflow component sends two values to its output. The handling of the receiving input of the \\\"Input\\\" workflow component is set to \\\"Queue\\\" (otherwise an error will occur during workflow execution). The \\\"Input Provider\\\" workflow component sends one value to its output. The handling of the receiving input of the \\\"Input\\\" workflow component is set to \\\"Constant\\\". Execute the workflow. The \\\"Output\\\" workflow component will run once. The \\\"Input\\\" workflow component will run two times. The first time if a value at both of the inputs was received. The second time if a value at the input with handling \\\"Queue\\\" is received (the previously received value at the other input will be re-used).\",\"location\":\"37:13\",\"size\":\"1091:290\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"c4e9bb76-2116-4b27-8e1e-76f59e514e16\",\"headerText\":\"See section \\\"Workflows\\\" in the user guide for details.\",\"text\":\"\",\"location\":\"696:578\",\"size\":\"432:39\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"9\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"e8157b9b-caa1-43e7-b3ef-3919edf90cab\",\"headerText\":\"Note\",\"text\":\"If you change the handling from \\\"Constant\\\" to \\\"Single\\\", the workflow won't terminate as the \\\"Input\\\" workflow component doesn't re-use any value anymore and waits indefinitely for the second value at both of its input after the first run was performed.\\r\\n\",\"location\":\"37:477\",\"size\":\"1091:89\",\"alpha\":\"127\",\"colorHeader\":\"255:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"LEFT\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
 }

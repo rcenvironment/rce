@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,13 +9,13 @@ package de.rcenvironment.components.cpacs.writer.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.cpacs.writer.common.CpacsWriterComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -113,12 +113,12 @@ public class CpacsWriterPersistentComponentDescriptionUpdater implements Persist
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configuration = (ObjectNode) node.get("configuration");
         final String saveModeConfig = "saveMode";
-        String saveMode = configuration.get(saveModeConfig).getTextValue();
+        String saveMode = configuration.get(saveModeConfig).textValue();
         configuration.remove(saveModeConfig);
         if (saveMode.equals("OverwriteAtEachRun")) {
-            configuration.put(saveModeConfig, TextNode.valueOf("true"));
+            configuration.set(saveModeConfig, TextNode.valueOf("true"));
         } else {
-            configuration.put(saveModeConfig, TextNode.valueOf("false"));
+            configuration.set(saveModeConfig, TextNode.valueOf("false"));
         }
         
         

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -57,7 +57,7 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorAction;
-import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -96,8 +96,6 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
     private final WorkflowStateNotificationSubscriber workflowStateChangeListener =
         new WorkflowStateNotificationSubscriber(this);
 
-    private final SimpleNotificationService sns = new SimpleNotificationService();
-
     private TableViewer viewer;
 
     private Table table;
@@ -118,6 +116,8 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
     private WorkflowExecutionService workflowExecutionService;
 
+    private DistributedNotificationService notificationService;
+
     private Object syncUpdateLock = new Object();
 
     private final BatchAggregator<Set<WorkflowExecutionInformation>> batchAggregator;
@@ -125,6 +125,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
     public WorkflowListView() {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
+        notificationService = serviceRegistryAccess.getService(DistributedNotificationService.class);
         serviceRegistryPublisherAccess = ServiceRegistry.createPublisherAccessFor(this);
 
         BatchProcessor<Set<WorkflowExecutionInformation>> batchProcessor = new BatchProcessor<Set<WorkflowExecutionInformation>>() {
@@ -283,7 +284,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                     monitor.beginTask(Messages.fetchingWorkflows, 7);
                     // subscribe to all state notifications of the local node
                     try {
-                        sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + ".*", workflowStateChangeListener, null);
+                        notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + ".*", workflowStateChangeListener, null);
                     } catch (RemoteOperationException e) {
                         LogFactory.getLog(getClass()).error(
                             "Failed to set up remote subscriptions; the workflow list will not update properly: " + e.getMessage());
@@ -381,7 +382,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                         @Override
                         @TaskDescription("Subscribe to new workflow")
                         public Void call() throws Exception {
-                            sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + executionId,
+                            notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + executionId,
                                 workflowStateChangeListener, wi.getNodeId());
                             WorkflowStateModel.getInstance().setState(wi.getExecutionIdentifier(), wi.getWorkflowState());
 
@@ -416,7 +417,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
             @Override
             protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
                 RemoteOperationException {
-                workflowExecutionService.pause(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.pause(wfExeInfo.getWorkflowExecutionHandle());
             }
 
             @Override
@@ -432,7 +433,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
             @Override
             protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
                 RemoteOperationException {
-                workflowExecutionService.resume(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.resume(wfExeInfo.getWorkflowExecutionHandle());
             }
 
             @Override
@@ -447,7 +448,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
             @Override
             protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
                 RemoteOperationException {
-                workflowExecutionService.cancel(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.cancel(wfExeInfo.getWorkflowExecutionHandle());
             }
 
             @Override
@@ -462,7 +463,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
             @Override
             protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
                 RemoteOperationException {
-                workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                workflowExecutionService.dispose(wfExeInfo.getWorkflowExecutionHandle());
             }
 
             @Override
@@ -552,7 +553,8 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                         @Override
                         @TaskDescription("Distributed subscriptions for newly created workflow notifications")
                         public InstanceNodeSessionId call() throws Exception {
-                            sns.subscribe(WorkflowConstants.NEW_WORKFLOW_NOTIFICATION_ID, workflowStateChangeListener, node);
+                            notificationService.subscribe(WorkflowConstants.NEW_WORKFLOW_NOTIFICATION_ID, workflowStateChangeListener,
+                                node);
                             return node;
                         }
                     });

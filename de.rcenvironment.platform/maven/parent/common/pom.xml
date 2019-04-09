@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>8.2.3-SNAPSHOT</version>
+		<version>9.0.0-SNAPSHOT</version>
 		<relativePath >../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
 	</parent>
 
@@ -18,14 +18,14 @@
 		<!-- default Eclipse repository; can be overridden to use another mirror, 
 			or in case it is not available anymore -->
 		<rce.maven.eclipseRepositoryUrl>
-			<!-- Indigo SR2 -->
-			http://download.eclipse.org/releases/indigo/201202240900/
+			<!-- Photon -->
+			http://download.eclipse.org/releases/photon/201806271001/
 		</rce.maven.eclipseRepositoryUrl>
 		<!-- default Eclipse Orbit repository; can be overridden to use another 
 			mirror, or in case it is not available anymore -->
 		<rce.maven.eclipseOrbitRepositoryUrl>
 			<!-- retention policy of release R20140114142710: "infinite" -->
-			http://download.eclipse.org/tools/orbit/downloads/drops/R20140114142710/repository/
+			http://download.eclipse.org/tools/orbit/downloads/drops/R20180606145124/repository/
 		</rce.maven.eclipseOrbitRepositoryUrl>
 		<!-- default Eclipse Nebula repository; can be overridden to use another 
 			mirror, or in case it is not available anymore -->

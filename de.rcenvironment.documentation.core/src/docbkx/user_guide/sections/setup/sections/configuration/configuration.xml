@@ -3,7 +3,7 @@
 	<title>Configuration</title>
 	<para>This section describes the configuration of RCE. Configuration is done within one single
 		configuration file. It is located in the profile directory. From the graphical user
-		interface, you can easily access it from the tool bar or <emphasis role="italic"
+		interface, you can easily access it from the tool bar or the  <emphasis role="italic"
 			>Help</emphasis> menu. Note: To apply changes you need to restart RCE. The format of the
 		configuration file is JSON. See <ulink url="http://www.json.org/"><emphasis role="underline"
 				>http://www.json.org/</emphasis></ulink> for the format definition. Also refer to
@@ -21,16 +21,16 @@
 					options to see hidden files and directories.</para>
 			</note></para>
 		<para>All manual configuration takes place in the profile's central configuration file,
-			"configuration.json". As of RCE 8.0.0, most configuration settings only take effect on
+			"configuration.json". As of RCE 9.0.0, most configuration settings only take effect on
 			startup, so you need to restart RCE after editing it. (This will be changed in a future
 			release.) This applies to all types of installations.</para>
 	</sect2>
 	<sect2>
 		<title>Configuration Parameters</title>
-		<para>Configuration parameters are grouped within the configuration file. Below are lists of the
-			configuration parameters. There is one list per group.</para>
+		<para>Configuration parameters are grouped within the configuration file. Below are lists of
+			the configuration parameters. There is one list per JSON configuration group. You can find example configurations in "configuration_reference_sample" in the installation data directory or by opening the configuration information in RCE.</para>
 		<table width="100%">
-			<title>General</title>
+			<title>"general"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -44,11 +44,11 @@
 							<emphasis role="italic">Default value </emphasis></entry>
 					</row>
 				</thead>
-			<tbody>
+				<tbody>
 					<row>
 						<entry>instanceName</entry>
-						<entry>The name of the instance that will be shown to all users in the RCE network. The
-							following placeholders can be used within the instance name:<itemizedlist>
+						<entry>The name of the instance that will be shown to all users in the RCE
+							network. The following placeholders can be used within the instance name:<itemizedlist>
 								<listitem>
 									<para>${hostName} is resolved to the local system's host
 										name.</para>
@@ -68,14 +68,14 @@
 								\"${systemUser}\" on ${hostName}".</para></entry>
 						<entry>"&lt;unnamed instance>"</entry>
 					</row>
-				<row>
-					<entry>isWorkflowHost </entry>
-					<entry>If set to <emphasis role="italic">true</emphasis>, the local instance can be used as a
-								<emphasis role="italic">workflow host</emphasis> by other RCE
-							instances. I.e., the workflow controller can be set to this instance and
-							the workflow data is stored there as well.</entry>
-					<entry>false</entry>
-				</row>
+					<row>
+						<entry>isWorkflowHost </entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the local instance
+							can be used as a <emphasis role="italic">workflow host</emphasis> by
+							other RCE instances. I.e., the workflow controller can be set to this
+							instance and the workflow data is stored there as well.</entry>
+						<entry>false</entry>
+					</row>
 					<row>
 						<entry>isRelay</entry>
 						<entry>
@@ -90,27 +90,31 @@
 						</entry>
 						<entry>false</entry>
 					</row>
-				<row>
-					<entry>tempDirectory </entry>
-					<entry>Can be used to override the default path where RCE stores temporary files. Useful if
-							there is little space in the default temp file location. Must be an
-							absolute path to an existing directory, and the path must not contain
-							spaces (to prevent problems with tools accessing such directories). The
-							placeholder <emphasis role="italic">${systemUser}</emphasis> can be used
-							for path construction, e.g.
+					<row>
+						<entry>tempDirectory </entry>
+						<entry>Can be used to override the default path where RCE stores temporary
+							files. Useful if there is little space in the default temp file
+							location. Must be an absolute path to an existing directory, and the
+							path must not contain spaces (to prevent problems with tools accessing
+							such directories). The placeholder <emphasis role="italic"
+								>${systemUser}</emphasis> can be used for path construction, e.g.
 							"/tmp/custom-temp-directory/${systemUser}"</entry>
-					<entry>An "rce-temp" subdirectory within the user or system temp directory.</entry>
-				</row>
-				<row>
-					<entry>enableDeprecatedInputTab </entry>
-					<entry>If set to <emphasis>true</emphasis> the tab 'Inputs' is enabled again in the properties view of running workflows. It is disabled by default to due robustness and memory issues. It is recommended to use the 'Workflow Data Broswer' to see inputs received and outputs sent.</entry>
-					<entry>false</entry>
-				</row>
-			</tbody>
+						<entry>An "rce-temp" subdirectory within the user or system temp
+							directory.</entry>
+					</row>
+					<row>
+						<entry>enableDeprecatedInputTab </entry>
+						<entry>If set to <emphasis>true</emphasis> the tab 'Inputs' is enabled again
+							in the properties view of running workflows. It is disabled by default
+							due to robustness and memory issues. It is recommended to use the
+							'Workflow Data Browser' to see inputs received and outputs sent.</entry>
+						<entry>false</entry>
+					</row>
+				</tbody>
 			</tgroup>
 		</table>
 		<table width="100%">
-			<title>BackgroundMonitoring</title>
+			<title>"backgroundMonitoring"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -124,11 +128,13 @@
 							<emphasis role="italic">Default value </emphasis></entry>
 					</row>
 				</thead>
-			<tbody>
+				<tbody>
 					<row>
 						<entry>enabledIds</entry>
-						<entry>Comma-separated list of identifiers referring to certain kind of monitoring data that should be logged continuously in the background. Currently, only 'basic_system_data' is supported.</entry>
-						<entry></entry>
+						<entry>Comma-separated list of identifiers referring to certain kind of
+							monitoring data that should be logged continuously in the background.
+							Currently, only 'basic_system_data' is supported.</entry>
+						<entry/>
 					</row>
 					<row>
 						<entry>intervalSeconds</entry>
@@ -139,9 +145,9 @@
 			</tgroup>
 		</table>
 		<note>
-			<para>IMPORTANT: When setting up a network of RCE instances, keep in mind that the RCE network
-				traffic is currently <emphasis>not encrypted</emphasis>. This means that it is
-					<emphasis>not secure</emphasis> to expose RCE server ports to untrusted networks
+			<para>IMPORTANT: When setting up a network of RCE instances, keep in mind that the RCE
+				network traffic is currently <emphasis>not encrypted</emphasis>. This means that it
+				is <emphasis>not secure</emphasis> to expose RCE server ports to untrusted networks
 				like the internet. When setting up RCE connections between different locations, make
 				sure that they either connect across a secure network (e.g. your institution's
 				internal network), or that the connection is secured by other means, like SSH
@@ -149,7 +155,7 @@
 				the standard RCE connections.</para>
 		</note>
 		<table frame="all" width="100%">
-			<title>Network</title>
+			<title>"network"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -265,122 +271,9 @@
 					</row>
 				</tbody>
 			</tgroup>
-			</table>
-			<table width="100%">
-			<title>Publishing</title>
-			<tgroup cols="3">
-				<colspec colnum="1" colwidth="1*"/>
-				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
-				<thead>
-					<row>
-						<entry><emphasis role="italic">Configuration key </emphasis></entry>
-						<entry>
-							<emphasis role="italic">Comment </emphasis></entry>
-						<entry>
-							<emphasis role="italic">Default value </emphasis></entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>components </entry>
-						<entry>List of workflow components, which are made available to other instances within the RCE
-							network. Workflow components are represented by their identifiers (see
-							table below). Note: That doesn't affect integrated tools.</entry>
-						<entry>[] (an empty list in JSON format)</entry>
-					</row>
-				</tbody>
-			</tgroup>
-			</table>
-		<table frame="all">
-			<title>Component identifiers used in configuration group 'publishing'</title>
-			<tgroup cols="2">
-				<colspec colname="c1" colnum="1" colwidth="1.0*"/>
-				<colspec colname="c2" colnum="2" colwidth="1.0*"/>
-				<thead>
-					<row>
-						<entry>Component name</entry>
-						<entry>Component identifier</entry>
-					</row>
-				</thead>
-				<tbody>
-					<row>
-						<entry>Cluster</entry>
-						<entry>de.rcenvironment.cluster</entry>
-					</row>
-					<row>
-						<entry>Converger</entry>
-						<entry>de.rcenvironment.converger</entry>
-					</row>
-					<row>
-						<entry>CPACS VampZero Initializer</entry>
-						<entry>de.rcenvironment.vampzeroinitializer</entry>
-					</row>
-					<row>
-						<entry>CPACS Writer</entry>
-						<entry>de.rcenvironment.cpacswriter</entry>
-					</row>
-					<row>
-						<entry>Database</entry>
-						<entry>de.rcenvironment.database</entry>
-					</row>
-					<row>
-						<entry>Design of Experiments</entry>
-						<entry>de.rcenvironment.doe.v2</entry>
-					</row>
-					<row>
-						<entry>Evaluation Memory</entry>
-						<entry>de.rcenvironment.evaluationmemory</entry>
-					</row>
-					<row>
-						<entry>Excel</entry>
-						<entry>de.rcenvironment.excel</entry>
-					</row>
-					<row>
-						<entry>Input Provider</entry>
-						<entry>de.rcenvironment.inputprovider</entry>
-					</row>
-					<row>
-						<entry>Joiner</entry>
-						<entry>de.rcenvironment.joiner</entry>
-					</row>
-					<row>
-						<entry>Optimizer</entry>
-						<entry>de.rcenvironment.optimizer</entry>
-					</row>
-					<row>
-						<entry>Output Writer</entry>
-						<entry>de.rcenvironment.outputwriter</entry>
-					</row>
-					<row>
-						<entry>Parametric Study</entry>
-						<entry>de.rcenvironment.parametricstudy</entry>
-					</row>
-					<row>
-						<entry>Script</entry>
-						<entry>de.rcenvironment.script</entry>
-					</row>
-					<row>
-						<entry>Switch</entry>
-						<entry>de.rcenvironment.switchcmp</entry>
-					</row>
-					<row>
-						<entry>TiGL Viewer</entry>
-						<entry>de.rcenvironment.tiglviewer</entry>
-					</row>
-					<row>
-						<entry>XML Loader</entry>
-						<entry>de.rcenvironment.xmlloader</entry>
-					</row>
-					<row>
-						<entry>XML Merger</entry>
-						<entry>de.rcenvironment.xmlmerger</entry>
-					</row>
-				</tbody>
-			</tgroup>
 		</table>
 		<table width="100%">
-			<title>ComponentSettings</title>
+			<title>"componentSettings"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -408,9 +301,9 @@
 					</row>
 				</tbody>
 			</tgroup>
-			</table>
-			<table width="100%">
-			<title>sshServer</title>
+		</table>
+		<table width="100%">
+			<title>"sshServer"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1.02*"/>
 				<colspec colnum="2" colwidth="2.06*"/>
@@ -436,8 +329,8 @@
 						<entry>The host's ip address to bind to. If you want to make the SSH server
 							accessible from remote, you should set this to the IP of the machine's
 							external network interface. Alternatively, you can set this to "0.0.0.0"
-							to listen on all available IPv4 addresses, if this is appropriate in your
-							network setup.</entry>
+							to listen on all available IPv4 addresses, if this is appropriate in
+							your network setup.</entry>
 						<entry>127.0.0.1</entry>
 					</row>
 					<row>
@@ -461,9 +354,9 @@
 					</row>
 					<row>
 						<entry>[account name]/passwordHash</entry>
-						<entry>The hashed password for the account, if password authentication is used. If the SSH
-							account is configured using the configuration UI, the hash is
-							automatically computed and stored here.</entry>
+						<entry>The hashed password for the account, if password authentication is
+							used. If the SSH account is configured using the configuration UI, the
+							hash is automatically computed and stored here.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -479,16 +372,17 @@
 					</row>
 					<row>
 						<entry>[account name]/publicKey</entry>
-						<entry>The public key for the account, if keyfile authentication is used. Only RSA keys in the
-							OpenSSH format are supported. The public key has to be entered here in
-							the OpenSSH format (a string starting with "ssh-rsa", like it is used
-							for example in authorized_keys files). Only applicable on RCE version
-							7.1 or newer.</entry>
+						<entry>The public key for the account, if keyfile authentication is used.
+							Only RSA keys in the OpenSSH format are supported. The public key has to
+							be entered here in the OpenSSH format (a string starting with "ssh-rsa",
+							like it is used for example in authorized_keys files). Only applicable
+							on RCE version 7.1 or newer.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
 						<entry>[account name]/role</entry>
-						<entry>The role of the account. See next table for a list of the possible roles.</entry>
+						<entry>The role of the account. See next table for a list of the possible
+							roles.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -499,8 +393,8 @@
 					</row>
 				</tbody>
 			</tgroup>
-			</table>
-		<table width="100%">
+		</table>
+		<table width="100%" id="table_ssh_roles">
 			<title>Possible roles for SSH accounts</title>
 			<tgroup cols="2">
 				<colspec colnum="1" colwidth="1.3*"/>
@@ -514,8 +408,8 @@
 				</thead>
 				<tbody>
 					<row>
-						<entry>remote_access_user (Standard role for using SSH remote access tools and
-							workflows)</entry>
+						<entry>remote_access_user (Standard role for using SSH remote access tools
+							and workflows)</entry>
 						<entry>ra|sysmon</entry>
 					</row>
 					<row>
@@ -554,8 +448,14 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<para>
+			<note>
+				<para>The command <emphasis role="italic">wf open</emphasis> is only accessible to
+					the role developer, as it influences the GUI of the server-instance.</para>
+			</note>
+		</para>
 		<table width="100%">
-			<title>sshRemoteAccess</title>
+			<title>"sshRemoteAccess"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -574,7 +474,7 @@
 						<entry>sshConnections</entry>
 						<entry>A map of SSH connections.This allows the local instance to act as a
 							SSH remote access client. For each connection a unique identifier (id)
-							must be given.     </entry>
+							must be given. </entry>
 						<entry>{} (an empty map in JSON format)</entry>
 					</row>
 					<row>
@@ -585,8 +485,8 @@
 					</row>
 					<row>
 						<entry>sshConnections/[id]/host </entry>
-						<entry>The remote RCE instance to connect to. Host names and IPv4 addresses are
-							permitted.</entry>
+						<entry>The remote RCE instance to connect to. Host names and IPv4 addresses
+							are permitted.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -601,8 +501,8 @@
 					</row>
 					<row>
 						<entry>sshConnections/[id]/keyfileLocation</entry>
-						<entry>Path to the private key file, if keyfile authentication is used. Only RSA keys in the
-							OpenSSH format are supported.</entry>
+						<entry>Path to the private key file, if keyfile authentication is used. Only
+							RSA keys in the OpenSSH format are supported.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -613,11 +513,28 @@
 							connecting.</entry>
 						<entry>false</entry>
 					</row>
+					<row>
+						<entry>sshConnections/[id]/connectOnStartup</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the connection is
+							immediately established on startup. (Only possible when the password is
+							stored in the secure store, which currently only works on Windows
+							machines.)</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>sshConnections/[id]/autoRetry</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, RCE will try to
+							automatically reconnect the connection (every 10 seconds) if it can not
+							be established or is lost of a network error. (Only possible when the
+							password is stored in the secure store, which currently only works on
+							Windows machines.) </entry>
+						<entry>false</entry>
+					</row>
 				</tbody>
 			</tgroup>
 		</table>
 		<table width="100%" id="smtpServerParameterTable">
-			<title>smtpServer</title>
+			<title>"smtpServer"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
@@ -634,7 +551,8 @@
 				<tbody>
 					<row>
 						<entry>host</entry>
-						<entry>The IP address or hostname of the SMTP server, which should be used for mail delivery. </entry>
+						<entry>The IP address or hostname of the SMTP server, which should be used
+							for mail delivery. </entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -644,10 +562,10 @@
 					</row>
 					<row>
 						<entry>encryption</entry>
-						<entry>Can either be "explicit" or "implicit". Select "implicit" if you want to connect to the
-							SMTP server using SSL/TLS. Select "explicit" if you want to connect to
-							the SMTP server using STARTTLS. Unencrypted connections are not
-							permitted.</entry>
+						<entry>Can either be "explicit" or "implicit". Select "implicit" if you want
+							to connect to the SMTP server using SSL/TLS. Select "explicit" if you
+							want to connect to the SMTP server using STARTTLS. Unencrypted
+							connections are not permitted.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -657,21 +575,25 @@
 					</row>
 					<row>
 						<entry>password</entry>
-						<entry>The obfuscated password for authentication. Plaintext password cannot be used here. To
-							create the obfuscated password from the plaintext password, you need to
-							use the Configuration UI described in <xref linkend="configuration_ui"/></entry>
+						<entry>The obfuscated password for authentication. Plaintext password cannot
+							be used here. To create the obfuscated password from the plaintext
+							password, you need to use the Configuration UI described in <xref
+								linkend="configuration_ui"/></entry>
 						<entry>-</entry>
 					</row>
 					<row>
 						<entry>sender</entry>
-						<entry>Email address, which should be displayed as the sender in the sent email.</entry>
+						<entry>Email address, which should be displayed as the sender in the sent
+							email.</entry>
 						<entry>-</entry>
 					</row>
 				</tbody>
 			</tgroup>
 		</table>
 		<note>
-			<para>The used SMTP server needs to be configured using the Configuration UI described in <xref linkend="configuration_ui_smtp"/>, since the password needs to be obfuscated.</para>
+			<para>The used SMTP server needs to be configured using the Configuration UI described
+				in <xref linkend="configuration_ui_smtp"/>, since the password needs to be
+				obfuscated.</para>
 		</note>
 	</sect2>
 	<sect2 id="configuration_ui">
@@ -703,20 +625,21 @@
 				<para>All SSH accounts configured with this tool initially have the role "remote_access_user",
 					which allows to execute commands needed for remote access on tools and
 					workflows. If you want to change the role of an SSH account, you can do this by
-					editing the configuration file manually (see table "Possible roles for SSH
-					accounts"). </para>
+					editing the configuration file manually (see <xref linkend="table_ssh_roles"/>
+					). </para>
 			</note>
 		</sect3>
 		<sect3 id="configuration_ui_smtp">
 			<title>Mail: SMTP server configuration</title>		
 			
-			<para>
-				If you want to send e-mails from a RCE instance, you need to configure an SMTP server. RCE 
-				does not send e-mails directly to the recipient, but instead sends the e-mails to an SMTP
-				server, which delivers them to the recipient. You need to use the Configuration UI to configure
-				such an SMTP server, since the password used for authentication needs to be obfuscated before it 
-				is stored in the configuration file. The SMTP server parameters that need to be configured are
-				described in more detail in <xref linkend="smtpServerParameterTable"/>
+			<para>If you use the tool output verification (cf. <xref linkend="tool_result_verification"/>)
+				and want RCE to send the verification key via email, you need to configure an SMTP
+				server. RCE does not send e-mails directly to the recipient, but instead sends the
+				e-mails to an SMTP server, which delivers them to the recipient. You need to use the
+				Configuration UI to configure such an SMTP server, since the password used for
+				authentication needs to be obfuscated before it is stored in the configuration file.
+				The SMTP server parameters that need to be configured are described in more detail
+				in <xref linkend="smtpServerParameterTable"/>
 			</para>
 			<note>
 				<para>Due to a known bug on Windows system with a German keyboard layout, the Configuration UI

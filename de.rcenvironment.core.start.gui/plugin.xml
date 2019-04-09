@@ -100,6 +100,12 @@
 	            style="push">
 	        </command>
 	    </menuContribution>
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=de.rcenvironment.integration.menu">
+            <menu id="de.rcenvironment.configuration.menu"
+            	label="Configuration" />
+      </menuContribution>
 	</extension>
+	
 	
 </plugin>

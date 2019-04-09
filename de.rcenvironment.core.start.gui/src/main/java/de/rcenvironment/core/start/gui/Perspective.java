@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -27,6 +27,17 @@ public class Perspective implements IPerspectiveFactory {
         // relative positions of the views.
         final float leftRatio = 0.2f;
         final float bottomRatio = 0.7f;
+        
+        layout.addPerspectiveShortcut("de.rcenvironment.core");
+        layout.addShowViewShortcut("de.rcenvironment.gui.workflowList");
+        layout.addShowViewShortcut("de.rcenvironment.gui.WorkflowComponentConsole");
+        layout.addShowViewShortcut("de.rcenvironment.rce.gui.datamanagement.browser.DataManagementBrowser");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.log.LogView");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.cluster.view.ClusterJobMonitorView");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.command.CommandConsoleViewer");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.communication.views.NetworkView");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.authorization.ComponentPublishingView");
         
         String editorArea = layout.getEditorArea();
         IFolderLayout left = layout.createFolder("de.rcenvironment.core.Perspective.left", IPageLayout.LEFT, leftRatio, editorArea);

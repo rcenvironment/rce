@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,8 +23,7 @@ import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
-import org.codehaus.jackson.annotate.JsonIgnore;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 
 /**

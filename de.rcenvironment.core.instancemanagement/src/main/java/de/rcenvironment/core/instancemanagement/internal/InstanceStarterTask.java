@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -86,7 +86,7 @@ public class InstanceStarterTask implements Runnable {
             return;
         }
 
-        // if there is a .metadata/.log file in the default workspace, delete it 
+        // if there is a .metadata/.log file in the default workspace, delete it
         final Path metadataLogFile = new File(profile, "workspace/.metadata/.log").toPath();
         try {
             Files.deleteIfExists(metadataLogFile);
@@ -173,8 +173,8 @@ public class InstanceStarterTask implements Runnable {
 
             @Override
             public void addOutput(String line) {
-                log.debug("Stdout of instance with id: " + profileName + " : " + line);
-                if (line.contains("complete")) {
+                log.debug("Stdout of instance '" + profileName + "': " + line);
+                if (line.contains("startup complete")) {
                     startupOutputDetected.countDown();
                     globalLatch.countDown();
                     userOutputReceiver.addOutput("Successfully started instance " + profileName);
@@ -190,7 +190,7 @@ public class InstanceStarterTask implements Runnable {
 
             @Override
             public void addOutput(String line) {
-                log.debug("Stderr of instance with id: " + profileName + " : " + line);
+                log.debug("Stderr of instance '" + profileName + "': " + line);
                 // TODO check whether this actually overrides the success check above
                 if (line.contains("Failed to lock profile with id " + profileName)) {
                     // TODO capture fallback location? (and maybe shut it down immediately?)

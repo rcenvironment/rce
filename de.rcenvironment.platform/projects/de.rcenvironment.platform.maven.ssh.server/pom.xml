@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.ssh.server</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - SSH Server</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -16,16 +16,11 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.mina</groupId>
-			<artifactId>mina-core</artifactId>
-			<!-- latest as of 2017-12-22 bode_br -->
-			<version>2.0.16</version>
-		</dependency>
-		<dependency>
+			<!-- last updated: 2019-01-30, misc_ro; only upgraded to 1.7.0 for now, 
+				although 2.1.0 (released Sep 2018) is also available -->
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-core</artifactId>
-			<!-- released 2017-06-29; latest as of 2018-01-17 bode_br -->
-			<version>1.6.0</version>
+			<version>1.7.0</version> <!-- released Jan 2018 -->
 		</dependency>
 	</dependencies>
 

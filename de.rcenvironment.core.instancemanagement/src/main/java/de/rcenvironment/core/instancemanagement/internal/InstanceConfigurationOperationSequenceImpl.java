@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +58,15 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     }
 
     @Override
+    public InstanceConfigurationOperationSequence applyTemplateFile(File templateFilePath) {
+        if (!entries.isEmpty()) {
+            throw new IllegalStateException("The 'apply template file' operation can only be added as the first configuration step");
+        }
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE, templateFilePath));
+        return this;
+    }
+
+    @Override
     public InstanceConfigurationOperationSequence setName(String name) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_NAME, name));
         return this;
@@ -77,6 +87,12 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     @Override
     public InstanceConfigurationOperationSequence setRelayFlag(boolean value) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION, value));
+        return this;
+    }
+    
+    @Override
+    public InstanceConfigurationOperationSequence setCustomNodeId(String value) {
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID, value));
         return this;
     }
 
@@ -130,7 +146,7 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
 
     @Override
     public InstanceConfigurationOperationSequence setIpFilterEnabled(boolean ipFilterState) {
-        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION, 
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION,
             ipFilterState));
         return this;
     }

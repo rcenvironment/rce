@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -98,13 +99,13 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
     private DirectMessagingSender directMessagingSender;
 
-    private InstanceNodeSessionId localNodeId;
+    private InstanceNodeSessionId localNodeSessionId;
 
     private NodeConfigurationService nodeConfigurationService;
 
     private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
-    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled("NodeProperties");
 
     private final BatchAggregator<UpdateDeltaForBroadcasting> deltaBroadcastAggregator;
 
@@ -113,6 +114,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     private boolean localNodeIsRelay;
 
     private NodeIdentifierService nodeIdentifierService;
+
+    private String localInstanceNodeId;
 
     /**
      * Represents the parsed form of a received update.
@@ -143,9 +146,14 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     // log.info(" Message type: " + subtype);
                     continue;
                 }
-                // log.info(" extracted node property entry: " + part);
+                // log.debug("Parsed incoming node property entry: " + part);
                 try {
                     NodePropertyImpl entry = new NodePropertyImpl(part, nodeIdentifierService);
+                    if (entry.getInstanceNodeSessionIdString().startsWith(localInstanceNodeId)) {
+                        // TODO 9.0.0 (p1): consider disabling this log message for release
+                        log.debug("Ignoring incoming node property update for the local node: " + part);
+                        continue;
+                    }
                     entries.add(entry);
                 } catch (IdentifierException e) {
                     log.error(StringUtils.format(
@@ -246,7 +254,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     int i = 1;
                     for (NodeProperty property : newProperties) {
                         log.debug(StringUtils.format("Raw node property change (%d/%d) received by %s, published by %s: '%s' := '%s' [%d]",
-                            i++, newProperties.size(), localNodeId.getInstanceNodeSessionIdString(),
+                            i++, newProperties.size(), localNodeSessionId.getInstanceNodeSessionIdString(),
                             property.getInstanceNodeSessionIdString(), property.getKey(), property.getValue(), property.getSequenceNo()));
                     }
                 }
@@ -258,10 +266,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        localNodeId = nodeConfigurationService.getInstanceNodeSessionId();
-        if (localNodeId == null) {
-            throw new NullPointerException();
-        }
+        localNodeSessionId = nodeConfigurationService.getInstanceNodeSessionId();
+        localInstanceNodeId = localNodeSessionId.getInstanceNodeIdString();
         localNodeIsRelay = nodeConfigurationService.isRelay();
         connectionService.addChannelLifecycleListener(new MessageChannelLifecycleListenerAdapter() {
 
@@ -275,7 +281,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
             @Override
             public void onOutgoingChannelEstablished(MessageChannel channel) {
-                log.debug(localNodeId + ": established channel (" + channel.getInitiatedByRemote()
+                log.debug(localNodeSessionId + ": established channel (" + channel.getInitiatedByRemote()
                     + "), sending initial node property to " + channel.getRemoteNodeInformation().getInstanceNodeSessionId());
                 if (channel.getState() == MessageChannelState.ESTABLISHED) {
                     // consistency check
@@ -329,12 +335,21 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 new IllegalArgumentException());
             return;
         }
+        if (verboseLogging) {
+            StringBuilder buffer = new StringBuilder();
+            buffer.append("Applying update delta to published node properties:");
+            for (Entry<String, String> e : data.entrySet()) {
+                final String value = Optional.ofNullable(e.getValue()).orElse("<null>");
+                buffer.append(StringUtils.format("\n  %s := %s", e.getKey(), value));
+            }
+            log.debug(buffer.toString());
+        }
         synchronized (knowledgeLock) {
             // create set of NodeProperty entries
             long newSequenceNo = timeKeeper.invalidateAndGet();
-            List<NodePropertyImpl> newDelta = new ArrayList<NodePropertyImpl>();
+            List<NodePropertyImpl> newDelta = new ArrayList<>();
             for (Entry<String, String> entry : data.entrySet()) {
-                newDelta.add(new NodePropertyImpl(localNodeId, entry.getKey(), newSequenceNo, entry.getValue()));
+                newDelta.add(new NodePropertyImpl(localNodeSessionId, entry.getKey(), newSequenceNo, entry.getValue()));
             }
             // all entries are new, so the merging can be kept simple
             completeKnowledgeRegistry.mergeUnchecked(newDelta);
@@ -527,9 +542,9 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     private Map<String, String> checkForPropertiesToRepublishOrCancel(List<NodePropertyImpl> entries) {
         Map<String, String> result = new HashMap<String, String>();
         for (NodePropertyImpl receivedProperty : entries) {
-            if (localNodeId.isSameInstanceNodeSessionAs(receivedProperty.getInstanceNodeSessionId())) {
+            if (localNodeSessionId.isSameInstanceNodeSessionAs(receivedProperty.getInstanceNodeSessionId())) {
                 final String key = receivedProperty.getKey();
-                final NodeProperty existingProperty = locallyPublishedKnowledgeRegistry.getNodeProperty(localNodeId, key);
+                final NodeProperty existingProperty = locallyPublishedKnowledgeRegistry.getNodeProperty(localNodeSessionId, key);
                 if (existingProperty == null) {
                     log.debug("Received a node property for the local node with no local counterpart (a canceling "
                         + "update will be published): " + receivedProperty);
@@ -569,7 +584,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             // broadcastToAllNeighboursExcept(MESSAGE_SUBTYPE_INCREMENTAL, effectiveSubset, sender, -1);
             deltaBroadcastAggregator.enqueue(new UpdateDeltaForBroadcasting(effectiveSubset, sender)); // exclude sender
         } else {
-            log.debug(localNodeId + ": node property update did not result in a local change; not forwarding)");
+            log.debug(localNodeSessionId + ": node property update did not result in a local change; not forwarding)");
         }
     }
 
@@ -684,7 +699,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     private NetworkRequest constructNetworkRequest(String updateType, Collection<NodePropertyImpl> entries) {
         byte[] contentBytes = constructMessageBody(updateType, entries);
         NetworkRequest request = NetworkRequestFactory.createNetworkRequest(contentBytes,
-            ProtocolConstants.VALUE_MESSAGE_TYPE_NODE_PROPERTIES_UPDATE, localNodeId, null);
+            ProtocolConstants.VALUE_MESSAGE_TYPE_NODE_PROPERTIES_UPDATE, localNodeSessionId, null);
         return request;
     }
 

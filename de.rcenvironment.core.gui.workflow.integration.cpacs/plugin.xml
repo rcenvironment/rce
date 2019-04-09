@@ -135,10 +135,4 @@
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsIntegrationHistoryDataItemSubtreeBuilder"/>
    </extension> 
-   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator 
-      		class="de.rcenvironment.core.gui.workflow.editor.validator.DefaultWorkflowNodeValidator"
-            filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter">
-      </validator>
-   </extension>
 </plugin>

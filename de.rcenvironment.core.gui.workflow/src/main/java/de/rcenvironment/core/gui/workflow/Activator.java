@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,9 +22,13 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.component.execution.api.ComponentState;
+import de.rcenvironment.core.component.workflow.command.api.WorkflowExecutionDisplayService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.workflow.view.WorkflowExecutionDisplayServiceImpl;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
 /**
  * 
@@ -72,16 +76,27 @@ public class Activator extends AbstractUIPlugin {
     
     private ActiveWorkflowShutdownListener undisposedWorkflowShutdownListener = null;
 
+    private ServiceRegistryPublisherAccess serviceRegistryAccess = null;
+
     @Override
     public void start(BundleContext context) throws Exception {
         super.start(context);
         instance = this;
+
+        // We only register the workflow execution display service in the activation-method instead of using the annotation-based mechanism
+        // (i.e., instead of labeling the implementation as a ``Component'') since we only want to register this service if the GUI is
+        // actually started. Using the annotation-based mechanism would cause OSGI to activate this bundle regardless of whether a GUI is
+        // actually present.
+        serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
+        serviceRegistryAccess.registerService(WorkflowExecutionDisplayService.class, new WorkflowExecutionDisplayServiceImpl());
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
         super.stop(context);
         instance = null;
+
+        serviceRegistryAccess.dispose();
     }
     
     /**

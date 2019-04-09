@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -53,24 +53,19 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
 
     @Override
     protected void dispatchMessage(final Message message, final Connection jmsConnection) {
-        threadPool.execute(new Runnable() {
-
-            @Override
-            @TaskDescription("JMS Network Transport: Dispatch incoming request")
-            public void run() {
+        threadPool.execute("JMS Network Transport: Dispatch incoming request", () -> {
+            try {
+                Session responseSession = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 try {
-                    Session responseSession = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                    try {
-                        dispatchMessageInternal(message, responseSession);
-                    } finally {
-                        if (responseSession != null) {
-                            responseSession.close();
-                        }
+                    dispatchMessageInternal(message, responseSession);
+                } finally {
+                    if (responseSession != null) {
+                        responseSession.close();
                     }
-                } catch (JMSException e) {
-                    // do not log stacktrace, as it contains no additional information
-                    log.error("JMS exception in response session for request from queue " + queueName + ": " + e.toString());
                 }
+            } catch (JMSException e) {
+                // do not log stacktrace, as it contains no additional information
+                log.error("JMS exception in response session for request from queue " + queueName + ": " + e.toString());
             }
         });
     }

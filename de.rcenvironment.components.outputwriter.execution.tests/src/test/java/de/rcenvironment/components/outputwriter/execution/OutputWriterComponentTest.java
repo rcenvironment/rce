@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,14 +25,15 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -57,6 +58,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Integration test for OutputWriter Components.
  *
  * @author Brigitte Boden
+ * @author Dominik Schneider
+ * @author Alexander Weinert
  */
 public class OutputWriterComponentTest {
 
@@ -66,11 +69,13 @@ public class OutputWriterComponentTest {
 
     private static final String ENDPOINT_ID_TEXT = "textInput_id";
 
-    private static final String ENDPOINT_NAME_TEXT = "textInput";
+    private static final String ENDPOINT_PH_TEXT = "textI\\]nput";
+    private static final String ENDPOINT_NAME_TEXT = "textI]nput";
 
     private static final String ENDPOINT_ID_BOOLEAN = "booleanInput_id";
 
-    private static final String ENDPOINT_NAME_BOOLEAN = "booleanInput";
+    private static final String ENDPOINT_PH_BOOLEAN = "bool\\[ean\\]Input";
+    private static final String ENDPOINT_NAME_BOOLEAN = "bool[ean]Input";
 
     private static final String ENDPOINT_ID_INT = "intInput_id";
 
@@ -78,7 +83,8 @@ public class OutputWriterComponentTest {
 
     private static final String ENDPOINT_ID_FLOAT = "floatInput_id";
 
-    private static final String ENDPOINT_NAME_FLOAT = "floatInput";
+    private static final String ENDPOINT_PH_FLOAT = "float\\[Input";
+    private static final String ENDPOINT_NAME_FLOAT = "float[Input";
 
     private static final String EXCEPTION_MESSAGE = "Exception while setting up componentDataManagementServiceMock";
 
@@ -99,6 +105,8 @@ public class OutputWriterComponentTest {
     private static final String INPUT_DIRECTORY = "inputDirectory";
 
     private static final String INPUT_FILENAME = "inputFile";
+
+    private static final String COLON = ":";
 
     private TempFileService tempFileService;
 
@@ -209,9 +217,9 @@ public class OutputWriterComponentTest {
         context.setConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT, testRootDir.getAbsolutePath());
 
         mapper = JsonUtils.getDefaultObjectMapper();
-        mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
     }
-    
+
     /**
      * Clean up temp files.
      * 
@@ -221,7 +229,6 @@ public class OutputWriterComponentTest {
     public void cleanup() throws IOException {
         tempFileService.disposeManagedTempDirOrFile(testRootDir);
     }
-
 
     /**
      * Test with no input.
@@ -599,26 +606,27 @@ public class OutputWriterComponentTest {
         context.addSimulatedInput(ENDPOINT_NAME_TEXT, ENDPOINT_ID_TEXT, DataType.Float, true, null);
 
         String header1 =
-            OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
-                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_FLOAT + OutputWriterComponentConstants.PH_SUFFIX + INDENT
-                + OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
-                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_INT + OutputWriterComponentConstants.PH_SUFFIX;
+            OutputWriterComponentConstants.PH_TIMESTAMP
+                + INDENT
+                + OutputWriterComponentConstants.PH_EXECUTION_COUNT + COLON;
 
         String header2 =
-            OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
-                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX + INDENT
-                + OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
-                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_TEXT + OutputWriterComponentConstants.PH_SUFFIX;
+            OutputWriterComponentConstants.PH_TIMESTAMP
+                + OutputWriterComponentConstants.PH_LINEBREAK
+                + COLON;
 
         String format1 =
-            OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_FLOAT + OutputWriterComponentConstants.PH_SUFFIX + INDENT
+            OutputWriterComponentConstants.PH_PREFIX + escapeSquaredBrackets(ENDPOINT_NAME_FLOAT) + OutputWriterComponentConstants.PH_SUFFIX
+                + INDENT
                 + OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_INT
-                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK;
+                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK
+                + OutputWriterComponentConstants.PH_TIMESTAMP;
 
         String format2 =
-            OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX
-                + INDENT + OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_TEXT
-                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK;
+            OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_PH_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX
+                + INDENT + OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_PH_TEXT
+                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK
+                + OutputWriterComponentConstants.PH_TIMESTAMP;
 
         List<String> inputs1 = new ArrayList<String>();
         inputs1.add(ENDPOINT_NAME_FLOAT);
@@ -651,9 +659,42 @@ public class OutputWriterComponentTest {
         if (content.isEmpty()) {
             fail("Output file " + output.getName() + " is empty.");
         } else {
-            if (content.contains(OutputWriterComponentConstants.PH_PREFIX) && content.contains(OutputWriterComponentConstants.PH_SUFFIX)) {
-                fail("In output file " + output.getName() + ", not all placeholders were resolved.");
+            List<String> inputList = new ArrayList<String>();
+            inputList
+                .add(OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX);
+            inputList.add(OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_INT + OutputWriterComponentConstants.PH_SUFFIX);
+            inputList.add(OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_TEXT + OutputWriterComponentConstants.PH_SUFFIX);
+            inputList.add(OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_FLOAT + OutputWriterComponentConstants.PH_SUFFIX);
+
+            List<String> classicPlaceholderList = new ArrayList<String>();
+
+            classicPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
+            classicPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+            classicPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
+
+            int split = content.indexOf(COLON);
+
+            String header = content.substring(0, split);
+            String format = content.substring(split + 1, content.length());
+
+            for (String placeholder : classicPlaceholderList) {
+                if (header.contains(placeholder)) {
+                    fail("In output file " + output.getName() + ", not all placeholders in header were resolved.");
+                }
             }
+
+            for (String placeholder : inputList) {
+                if (format.contains(placeholder)) {
+                    fail("In output file " + output.getName() + ", not all placeholders in value(s) format  were resolved.");
+                }
+            }
+
         }
+    }
+
+    private String escapeSquaredBrackets(String text) {
+        text = text.replaceAll("\\[", "\\\\[");
+        text = text.replaceAll("\\]", "\\\\]");
+        return text;
     }
 }

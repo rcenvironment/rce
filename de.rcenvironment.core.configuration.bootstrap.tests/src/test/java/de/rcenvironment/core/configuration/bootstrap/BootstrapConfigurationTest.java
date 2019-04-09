@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -328,11 +329,17 @@ public class BootstrapConfigurationTest {
     public void testInvalidProfileVersionAndFallbackDisabled() throws ParameterException, IOException, ProfileException {
         System.setProperty(BootstrapConfiguration.DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE, "");
 
-        // create an invalid profile dir
+        // create a profile directory with a future version
         File tempProfileDir = tempFileService.createManagedTempDir();
-        Profile tempProfile = new Profile(tempProfileDir, Profile.PROFILE_VERSION_NUMBER + 1, true);
-        assertFalse(tempProfile.hasValidVersion());
-
+        final File internalDir = tempProfileDir.toPath().resolve("internal").toFile();
+        internalDir.mkdir();
+        final File versionFile = internalDir.toPath().resolve("profile.version").toFile();
+        versionFile.createNewFile();
+        
+        try (final FileWriter fw = new FileWriter(versionFile)) {
+            fw.write(String.valueOf(Profile.PROFILE_VERSION_NUMBER + 1));
+        }
+        
         LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, tempProfileDir.getAbsolutePath());
 
         try {

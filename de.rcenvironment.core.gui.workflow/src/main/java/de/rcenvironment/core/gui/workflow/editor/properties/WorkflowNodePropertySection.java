@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -319,7 +319,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         return new DefaultSynchronizer();
     }
 
-    protected final Updater getUpdater() {
+    protected Updater getUpdater() {
         return updater;
     }
 
@@ -396,16 +396,108 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         }
     }
 
+    /**
+     * 
+     * Use this method to set a configuration value, that can be undone via undo mechanism.
+     * 
+     * @param key configuration key
+     * @param value new configuration value
+     * 
+     * @see #setProperty(String, String, String)
+     * 
+     */
     protected void setProperty(final String key, final String value) {
-        final String newValue = WorkflowNodeUtil.getConfigurationValue(node, key);
-        setProperty(key, newValue, value);
+        final String oldValue = WorkflowNodeUtil.getConfigurationValue(node, key);
+        setProperty(key, oldValue, value);
     }
 
+    /**
+     * 
+     * Use this method to set a configuration value, that can be undone via undo mechanism.
+     * 
+     * @param key configuration key
+     * @param oldValue current configuration value
+     * @param newValue new configuration value
+     */
     protected void setProperty(final String key, final String oldValue, final String newValue) {
         if ((oldValue != null && !oldValue.equals(newValue))
             || (oldValue == null && oldValue != newValue)) {
             final WorkflowNodeCommand command = new SetConfigurationValueCommand(key, oldValue, newValue);
             execute(command);
+        }
+    }
+
+    /**
+     * 
+     * Use this method to set a configuration value, that cannot be undone via undo mechanism.
+     * 
+     * @param key configuration key
+     * @param value new configuration value
+     * 
+     * @see #setPropertyNotUndoable(String, String, String)
+     */
+    protected void setPropertyNotUndoable(final String key, final String value) {
+        final String oldValue = WorkflowNodeUtil.getConfigurationValue(node, key);
+        setPropertyNotUndoable(key, oldValue, value);
+    }
+
+    /**
+     * 
+     * Use this method to set a configuration value, that cannot be undone via undo mechanism.
+     * 
+     * @param key configuration key
+     * @param oldValue current configuration value
+     * @param newValue new configuration value
+     */
+    protected void setPropertyNotUndoable(final String key, final String oldValue, final String newValue) {
+        if ((oldValue != null && !oldValue.equals(newValue))
+            || (oldValue == null && oldValue != newValue)) {
+            final WorkflowNodeCommand command = new SetConfigurationValueCommand(key, oldValue, newValue);
+            command.setCommandStack(getCommandStack());
+            command.setWorkflowNode(node);
+            command.initialize();
+            command.execute();
+        }
+    }
+
+    /**
+     * Use this method to set two configuration values at the same time.
+     */
+    protected void setProperties(final String key1, final String newValue1,
+        final String key2, final String newValue2) {
+
+        WorkflowNodeCommand command1 = null;
+        WorkflowNodeCommand command2 = null;
+
+        final String oldValue1 = WorkflowNodeUtil.getConfigurationValue(node, key1);
+        final String oldValue2 = WorkflowNodeUtil.getConfigurationValue(node, key2);
+
+        if ((newValue1 != null && !newValue1.equals(oldValue1))
+            || (newValue1 == null && newValue1 != oldValue1)) {
+            command1 = new SetConfigurationValueCommand(key1, oldValue1, newValue1);
+        }
+        if ((newValue2 != null && !newValue2.equals(oldValue2))
+            || (newValue2 == null && newValue2 != oldValue2)) {
+            command2 = new SetConfigurationValueCommand(key2, oldValue2, newValue2);
+        }
+
+        if (command1 != null) {
+            if (command2 != null) {
+                final CompositeCommand compositeCommand = new CompositeCommand(command1, command2);
+                compositeCommand.setCommandStack(getCommandStack());
+                command1.setWorkflowNode(node);
+                command2.setWorkflowNode(node);
+                compositeCommand.initialize();
+                if (compositeCommand.canExecute()) {
+                    getCommandStack().execute(new CommandWrapper(compositeCommand));
+                }
+            } else {
+                execute(command1);
+            }
+        } else {
+            if (command2 != null) {
+                execute(command2);
+            }
         }
     }
 
@@ -537,7 +629,6 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
             ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
             configDesc.setConfigurationValue(key, oldValue);
         }
-
     }
 
     /**

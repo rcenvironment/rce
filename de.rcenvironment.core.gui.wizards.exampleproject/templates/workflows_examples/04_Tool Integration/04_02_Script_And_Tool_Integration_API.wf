@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
     "name" : "API Python",
-    "location" : "301:203",
+    "location" : "634:277",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -54,7 +54,7 @@
   }, {
     "identifier" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "name" : "Parametric Study API Jython",
-    "location" : "142:203",
+    "location" : "474:277",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -110,7 +110,7 @@
   }, {
     "identifier" : "f3c59e17-0d2a-4c2c-829d-52828f34b32c",
     "name" : "Parametric Study SUM Jython",
-    "location" : "142:312",
+    "location" : "474:389",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -145,7 +145,7 @@
   }, {
     "identifier" : "c3fc7e6f-14eb-43a8-b223-1777986a29a8",
     "name" : "SUM Python",
-    "location" : "301:312",
+    "location" : "634:389",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -204,5 +204,5 @@
     "target" : "c3fc7e6f-14eb-43a8-b223-1777986a29a8",
     "input" : "4305c542-b0a9-489b-94bb-09bc0f1b7908"
   } ],
-  "labels" : "[{\"identifier\":\"28ded08d-8a30-4212-a1d7-bfb965b13e45\",\"headerText\":\"\",\"text\":\"Example workflow: 'Script and Tool Integration API'\\r\\nObjective: Introducing RCE's Python API\\r\\n\\r\\nThis workflow demonstrates all Python API methods available in the Script workflow component. They are also available in the pre and post scripts of integrated tools. In the context help (\\\"F1\\\") of the Script workflow component, you will also find a list of all methods including documentation.\",\"location\":\"56:19\",\"size\":\"405:163\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"28ded08d-8a30-4212-a1d7-bfb965b13e45\",\"headerText\":\"Introducing RCE's Python API\",\"text\":\"This workflow demonstrates all Python API methods available in the Script workflow component. They are also available in the pre and post scripts of integrated tools. In the context help (\\\"F1\\\") of the Script workflow component, you will also find a list of all methods including documentation.\",\"location\":\"315:72\",\"size\":\"598:143\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

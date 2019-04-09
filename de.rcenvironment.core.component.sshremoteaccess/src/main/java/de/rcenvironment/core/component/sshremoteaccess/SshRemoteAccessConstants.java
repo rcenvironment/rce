@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -67,17 +67,6 @@ public final class SshRemoteAccessConstants {
      */
     public static final String OUTPUT_NAME = "output";
     
-    /**
-     * Name of the group for SSH components.
-     */
-    public static final String GROUP_NAME_TOOLS = "SSH Remote Access Tools";
-    
-    /**
-     * Name of the group for SSH workflow components.
-     */
-    public static final String GROUP_NAME_WFS = "SSH Remote Access Workflows";
-    
-    
     //Keys for endpoint definitions
     /**
      * Key for endpoint definitions.
@@ -87,12 +76,7 @@ public final class SshRemoteAccessConstants {
     /**
      * Key for endpoint definitions.
      */
-    public static final String KEY_ENDPOINT_DATA_TYPE = "defaultDataType";
-    
-    /**
-     * Key for endpoint definitions.
-     */
-    public static final String KEY_ENDPOINT_DATA_TYPES = "dataTypes";
+    public static final String KEY_ENDPOINT_DATA_TYPE = "dataType";
     
     /**
      * Kes for key handling options.
@@ -114,7 +98,10 @@ public final class SshRemoteAccessConstants {
      */
     public static final String KEY_DEFAULT_INPUT_EXEC_CONSTRAINT = "defaultInputExecutionConstraint";
     
-    
+    /**
+     * Key for endpoint meta data.
+     */
+    public static final String KEY_ENDPOINT_META_DATA = "metaData";
     
     private SshRemoteAccessConstants(){}
 

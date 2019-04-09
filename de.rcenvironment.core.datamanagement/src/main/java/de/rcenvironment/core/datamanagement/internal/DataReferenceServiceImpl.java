@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,7 +16,7 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
@@ -54,7 +54,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
     }
 
     @Override
-    public DataReference getReference(String dataReferenceKey, ResolvableNodeId platform)
+    public DataReference getReference(String dataReferenceKey, NetworkDestination platform)
         throws CommunicationException {
 
         if (platform == null) {
@@ -75,7 +75,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
     }
 
     @Override
-    public DataReference getReference(String dataReferenceKey, Collection<? extends ResolvableNodeId> platforms)
+    public DataReference getReference(String dataReferenceKey, Collection<? extends NetworkDestination> platforms)
         throws CommunicationException {
         DataReference reference = null;
 
@@ -95,7 +95,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
         return reference;
     }
 
-    private RemotableMetaDataService getRemoteMetaDataBackendService(ResolvableNodeId nodeId) throws RemoteOperationException {
+    private RemotableMetaDataService getRemoteMetaDataBackendService(NetworkDestination nodeId) throws RemoteOperationException {
         return (RemotableMetaDataService) communicationService.getRemotableService(RemotableMetaDataService.class, nodeId);
     }
 }

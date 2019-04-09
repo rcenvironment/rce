@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
@@ -87,9 +88,10 @@ public class ServiceRemoteFileConnectionTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId2) throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, NetworkDestination dest) throws IllegalStateException {
+            ResolvableNodeId nodeId = (ResolvableNodeId) dest;
             // TODO could be improved; uses unnecessary conversions
-            if (nodeId2.isSameInstanceNodeAs(NodeIdentifierUtils
+            if (nodeId.isSameInstanceNodeAs(NodeIdentifierUtils
                 .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(TEST_INSTANCE_ID_STRING))
                 && iface == RemotableFileStreamAccessService.class) {
                 return (T) new MockRemotableFileStreamAccessService();

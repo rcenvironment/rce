@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch GUI
 Bundle-SymbolicName: de.rcenvironment.components.switch.gui;singleton:=true
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.switchcmp.common,
  de.rcenvironment.core.component.api,

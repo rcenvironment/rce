@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,6 +22,8 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.api.ServiceCallContextUtils;
@@ -55,6 +57,7 @@ import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
  * @author Doreen Seider
  * @author Robert Mischke
  */
+@Component
 public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerService {
 
     // the callback that verifies the presence of @AllowRemoteCall annotations
@@ -89,6 +92,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindLocalServiceResolver(LocalServiceResolver newInstance) {
         this.serviceResolver = newInstance;
     }
@@ -98,6 +102,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindPlatformService(PlatformService newInstance) {
         platformService = newInstance;
     }
@@ -107,6 +112,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindCallbackService(CallbackService newInstance) {
         callbackService = newInstance;
     }
@@ -116,18 +122,18 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindCallbackProxyService(CallbackProxyService newInstance) {
         callbackProxyService = newInstance;
     }
 
     @Override
-    public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
+    public ServiceCallResult dispatchToLocalService(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
+        Assertions.isDefined(serviceCallRequest, "The parameter \"serviceCallRequest\" must not be null.");
 
         if (!platformService.matchesLocalInstance(serviceCallRequest.getTargetNodeId())) {
             throw new IllegalStateException("Internal consistency error: called to handle a ServiceCallResult for another node");
         }
-
-        Assertions.isDefined(serviceCallRequest, "The parameter \"serviceCallRequest\" must not be null.");
 
         final ThreadContextMemento previousThreadContext =
             ServiceCallContextUtils.attachServiceCallDataToThreadContext(serviceCallRequest.getCallerNodeId(),
@@ -146,7 +152,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
      * @return The {@link ServiceCallResult} with the result of the service call.
      * @throws CommunicationException Thrown if the call failed.
      */
-    private ServiceCallResult invokeLocalService(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
+    protected ServiceCallResult invokeLocalService(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
 
         Object[] parameters = serviceCallRequest.getParameterList().toArray();
         List<Serializable> parameterList = new ArrayList<>();

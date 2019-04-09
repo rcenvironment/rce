@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,11 +10,14 @@ package de.rcenvironment.core.component.execution.api;
 
 import java.util.Set;
 
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Manages component executions.
+ * 
+ * This service allows to use any node in the network that is resolvable.
  * 
  * @author Doreen Seider
  */
@@ -41,7 +44,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void prepare(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void prepare(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Starts a component.
@@ -51,7 +54,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void start(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void start(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Pauses a component.
@@ -61,7 +64,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void pause(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Resumes a component.
@@ -71,7 +74,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void resume(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Cancels a component.
@@ -81,7 +84,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void cancel(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Disposes a component.
@@ -91,7 +94,7 @@ public interface ComponentExecutionService {
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
+    void dispose(String executionId, NetworkDestination node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * @param verificationToken verification token used to verify results of a certain component run

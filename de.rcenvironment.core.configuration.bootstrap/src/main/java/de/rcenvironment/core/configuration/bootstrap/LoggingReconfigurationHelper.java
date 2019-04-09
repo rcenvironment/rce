@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -82,11 +82,17 @@ public final class LoggingReconfigurationHelper {
 
             // use the ConfigurationAdmin to reconfigure the logging
             Configuration configuration = configurationAdmin.getConfiguration("org.ops4j.pax.logging");
-            @SuppressWarnings("unchecked") Dictionary<String, String> properties = configuration.getProperties();
+            @SuppressWarnings("unchecked") Dictionary<String, Object> properties = configuration.getProperties();
 
             // determine the location of the startup/early logs for attempting to delete them
             String earlyDebugLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_DEBUG_LOG_DESTINATION));
             String earlyWarningsLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_WARNINGS_LOG_DESTINATION));
+
+            if (earlyDebugLogLocation == null || earlyWarningsLogLocation == null) {
+                // prevent follow-up errors if console-only logging is configured by deleting the log file entries
+                LOG.info("Standard debug and/or warning log file writing is disabled");
+                return;
+            }
 
             // determine the location of the final logs
             String logfilesBasePath = basePath.getAbsolutePath();

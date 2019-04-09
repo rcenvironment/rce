@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Notification
 Bundle-SymbolicName: de.rcenvironment.core.notification;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Import-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,14 +20,15 @@ import de.rcenvironment.core.communication.rpc.ServiceCallResult;
  * @author Doreen Seider
  * @author Robert Mischke
  */
+// TODO rename to ServiceCallHandlerService for clarity
 public interface RemoteServiceCallHandlerService {
 
     /**
-     * Handles the incoming service call requests. It checks if it has to be done local or will be forwarded.
+     * Dispatches the service call to the appropriate local service.
      * 
      * @param serviceCallRequest {@link ServiceCallRequest} with all information about the method to call.
      * @return The {@link ServiceCallResult} with the result of the method call.
      * @throws InternalMessagingException on unhandled internal exceptions
      */
-    ServiceCallResult handle(ServiceCallRequest serviceCallRequest) throws InternalMessagingException;
+    ServiceCallResult dispatchToLocalService(ServiceCallRequest serviceCallRequest) throws InternalMessagingException;
 }

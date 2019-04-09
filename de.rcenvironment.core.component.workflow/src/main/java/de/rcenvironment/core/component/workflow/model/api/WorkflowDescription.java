@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -250,9 +250,26 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
      * @return the {@link WorkflowNode} with the given identifier
      * @throws IllegalArgumentException if no {@link WorkflowNode} with the given identifier exists
      */
+    @Deprecated
     public WorkflowNode getWorkflowNode(final String nodeId) throws IllegalArgumentException {
         for (WorkflowNode node : nodes) {
             if (node.getIdentifier().equals(nodeId)) {
+                return node;
+            }
+        }
+        throw new IllegalArgumentException(StringUtils.format("No node with identifier %s found", nodeId));
+    }
+    
+    /**
+     * Returns the {@link WorkflowNode} with the given identifier.
+     * 
+     * @param nodeId the identifier of the desired {@link WorkflowNode}
+     * @return the {@link WorkflowNode} with the given identifier
+     * @throws IllegalArgumentException if no {@link WorkflowNode} with the given identifier exists
+     */
+    public WorkflowNode getWorkflowNode(final WorkflowNodeIdentifier nodeId) throws IllegalArgumentException {
+        for (WorkflowNode node : nodes) {
+            if (node.getIdentifierAsObject().equals(nodeId)) {
                 return node;
             }
         }
@@ -490,9 +507,9 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         EndpointDescription output = connection.getOutput();
         EndpointDescription input = connection.getInput();
 
-        getWorkflowNode(connection.getSourceNode().getIdentifier()).getOutputDescriptionsManager()
+        getWorkflowNode(connection.getSourceNode().getIdentifierAsObject()).getOutputDescriptionsManager()
             .addConnectedDataType(output.getName(), input.getDataType());
-        getWorkflowNode(connection.getTargetNode().getIdentifier()).getInputDescriptionsManager()
+        getWorkflowNode(connection.getTargetNode().getIdentifierAsObject()).getInputDescriptionsManager()
             .addConnectedDataType(input.getName(), output.getDataType());
     }
 
@@ -533,9 +550,9 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         connection.getSourceNode().setValid(false);
         connection.getTargetNode().setValid(false);
 
-        getWorkflowNode(connection.getSourceNode().getIdentifier()).getOutputDescriptionsManager()
+        getWorkflowNode(connection.getSourceNode().getIdentifierAsObject()).getOutputDescriptionsManager()
             .removeConnectedDataType(output.getName(), input.getDataType());
-        getWorkflowNode(connection.getTargetNode().getIdentifier()).getInputDescriptionsManager()
+        getWorkflowNode(connection.getTargetNode().getIdentifierAsObject()).getInputDescriptionsManager()
             .removeConnectedDataType(input.getName(), output.getDataType());
 
         return connections.remove(connection);
@@ -572,15 +589,15 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         setControllerNode(wd.getControllerNode());
         setAdditionalInformation(wd.getAdditionalInformation());
         for (WorkflowNode node : getWorkflowNodes()) {
-            if (wd.getWorkflowNode(node.getIdentifier()) != null) {
+            if (wd.getWorkflowNode(node.getIdentifierAsObject()) != null) {
                 node.getComponentDescription().setComponentInstallation(
-                    wd.getWorkflowNode(node.getIdentifier()).getComponentDescription().getComponentInstallation());
+                    wd.getWorkflowNode(node.getIdentifierAsObject()).getComponentDescription().getComponentInstallation());
             }
         }
     }
 
     /**
-     * Clones a given {@link WorkflowDescription}. Note that this requires a {@link NodeIdentifierService} instance to be avilable to the
+     * Clones a given {@link WorkflowDescription}. Note that this requires a {@link NodeIdentifierService} instance to be available to the
      * current {@link Thread}; see {@link NodeIdentifierContextHolder} for how to set it.
      * 
      * @return the cloned {@link WorkflowDescription}.

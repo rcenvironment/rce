@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -29,6 +29,7 @@ import org.junit.Test;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.component.execution.internal.ComponentExecutionScheduler.State;
 import de.rcenvironment.core.component.execution.internal.InternalTDImpl.InternalTDType;
@@ -221,7 +222,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, "AndSingle", CONNECTED));
 
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
-        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
 
@@ -388,7 +389,7 @@ public class ComponentExecutionSchedulerTest {
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
-        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -451,7 +452,8 @@ public class ComponentExecutionSchedulerTest {
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
         Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
-        EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(UUID.randomUUID().toString()).anyTimes();
+        EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier())
+            .andReturn(new ComponentExecutionIdentifier(UUID.randomUUID().toString())).anyTimes();
         EasyMock.replay(workflowGraphHopMock);
         resetCycleHops.add(workflowGraphHopMock);
         InternalTDImpl resetTD = new InternalTDImpl(InternalTDType.NestedLoopReset, resetCycleHops);
@@ -485,7 +487,7 @@ public class ComponentExecutionSchedulerTest {
         inputGroupMockInfos.add(new InputGroupMockInformation(AND_GROUP, EndpointGroupDefinition.LogicOperation.And, OR_GROUP));
 
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
-        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
 
@@ -579,7 +581,7 @@ public class ComponentExecutionSchedulerTest {
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
-        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -619,7 +621,7 @@ public class ComponentExecutionSchedulerTest {
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
-        String executionId = UUID.randomUUID().toString();
+        ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
 
@@ -916,39 +918,43 @@ public class ComponentExecutionSchedulerTest {
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent)
         throws ComponentExecutionException {
-        return setUpExecutionScheduler(inputMockInfos, capturedEvent, UUID.randomUUID().toString());
+        return setUpExecutionScheduler(inputMockInfos, capturedEvent, new ComponentExecutionIdentifier(UUID.randomUUID().toString()));
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent, boolean isLoopDriver, boolean isNestedLoopDriver)
         throws ComponentExecutionException {
-        return setUpExecutionScheduler(inputMockInfos, capturedEvent, UUID.randomUUID().toString(), isLoopDriver, isNestedLoopDriver);
+        return setUpExecutionScheduler(inputMockInfos, capturedEvent, new ComponentExecutionIdentifier(UUID.randomUUID().toString()),
+            isLoopDriver, isNestedLoopDriver);
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent)
         throws ComponentExecutionException {
-        return setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, UUID.randomUUID().toString());
+        return setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent,
+            new ComponentExecutionIdentifier(UUID.randomUUID().toString()));
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
-        Capture<ComponentStateMachineEvent> capturedEvent, String executionId, boolean isLoopDriver, boolean isNestedLoopDriver)
+        Capture<ComponentStateMachineEvent> capturedEvent, ComponentExecutionIdentifier executionId, boolean isLoopDriver,
+        boolean isNestedLoopDriver)
         throws ComponentExecutionException {
         return setUpExecutionScheduler(inputMockInfos, new ArrayList<InputGroupMockInformation>(), capturedEvent, executionId, isLoopDriver,
             isNestedLoopDriver);
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
-        Capture<ComponentStateMachineEvent> capturedEvent, String executionId)
+        Capture<ComponentStateMachineEvent> capturedEvent, ComponentExecutionIdentifier executionId)
         throws ComponentExecutionException {
         return setUpExecutionScheduler(inputMockInfos, new ArrayList<InputGroupMockInformation>(), capturedEvent, executionId);
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
-        List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent, String executionId)
+        List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent,
+        ComponentExecutionIdentifier executionId)
         throws ComponentExecutionException {
         ExecutionSpecificComponentExecutionContextMock compExeCtxMock =
-            new ExecutionSpecificComponentExecutionContextMock(executionId, inputMockInfos, inputGroupMockInfos);
+            new ExecutionSpecificComponentExecutionContextMock(executionId.toString(), inputMockInfos, inputGroupMockInfos);
         ComponentExecutionScheduler compExeScheduler =
             new ComponentExecutionScheduler(
                 createCompExeRelatedInstancesStub(compExeCtxMock, createComponentStateMachineMock(capturedEvent)));
@@ -959,10 +965,11 @@ public class ComponentExecutionSchedulerTest {
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
-        List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent, String executionId,
+        List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent,
+        ComponentExecutionIdentifier executionId,
         boolean isLoopDriver, boolean isNestedLoopDriver) throws ComponentExecutionException {
         ExecutionSpecificComponentExecutionContextMock compExeCtxMock = new ExecutionSpecificComponentExecutionContextMock(
-            executionId, inputMockInfos, inputGroupMockInfos, isLoopDriver, isNestedLoopDriver);
+            executionId.toString(), inputMockInfos, inputGroupMockInfos, isLoopDriver, isNestedLoopDriver);
         ComponentExecutionScheduler compExeScheduler =
             new ComponentExecutionScheduler(
                 createCompExeRelatedInstancesStub(compExeCtxMock, createComponentStateMachineMock(capturedEvent)));

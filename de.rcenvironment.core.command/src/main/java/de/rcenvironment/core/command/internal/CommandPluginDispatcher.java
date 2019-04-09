@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.command.spi.SingleCommandHandler;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Dispatches a single command to the appropriate {@link CommandPlugin}, or generates an error message if no matching {@link CommandPlugin}
@@ -68,9 +69,10 @@ public class CommandPluginDispatcher implements SingleCommandHandler {
         Set<String> topLevelCommands = determineTopLevelCommands(plugin);
         synchronized (pluginsByTopLevelCommand) {
             for (String command : topLevelCommands) {
-                if (pluginsByTopLevelCommand.get(command) != null) {
-                    LogFactory.getLog(getClass()).warn(
-                        "Ignoring new command plugin registration as another plugin already handles the command " + command);
+                final CommandPlugin registeredPlugin = pluginsByTopLevelCommand.get(command);
+                if (registeredPlugin != null) {
+                    LogFactory.getLog(getClass()).warn(StringUtils.format(
+                        "Ignoring new command plugin %s as plugin %s already handles command %s", plugin, registeredPlugin, command));
                     continue;
                 }
                 pluginsByTopLevelCommand.put(command, plugin);
@@ -87,9 +89,10 @@ public class CommandPluginDispatcher implements SingleCommandHandler {
         Set<String> topLevelCommands = determineTopLevelCommands(plugin);
         synchronized (pluginsByTopLevelCommand) {
             for (String command : topLevelCommands) {
-                if (pluginsByTopLevelCommand.get(command) != plugin) {
-                    LogFactory.getLog(getClass()).warn(
-                        "Another plugin is handling the command " + command);
+                final CommandPlugin registeredPlugin = pluginsByTopLevelCommand.get(command);
+                if (registeredPlugin != plugin) {
+                    LogFactory.getLog(getClass()).warn(StringUtils.format("Processing shutdown of command plugin %s, "
+                        + "but the provided command %s is registered as being provided by plugin %s", plugin, command, registeredPlugin));
                     continue;
                 }
                 pluginsByTopLevelCommand.remove(command);

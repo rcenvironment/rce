@@ -1,14 +1,15 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.impl;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 
@@ -16,40 +17,41 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionInformati
  * Implementation of {@link ComponentExecutionInformation}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ComponentExecutionInformationImpl implements ComponentExecutionInformation {
 
     private static final long serialVersionUID = -35637831085899098L;
 
     private String identifier;
-    
+
     private String instanceName;
-    
+
     private LogicalNodeId nodeId;
-    
+
     private String componentIdentifier;
-    
-    private LogicalNodeId defaultStorageNodeId;
-    
+
+    private NetworkDestination storageNetworkDestination;
+
     private String workflowInstanceName;
-    
+
     private String workflowExecutionIdentifier;
-    
+
     private LogicalNodeId workflowNodeId;
-    
+
     public ComponentExecutionInformationImpl() {}
-    
+
     public ComponentExecutionInformationImpl(ComponentExecutionContext compExeCtx) {
         identifier = compExeCtx.getExecutionIdentifier();
         instanceName = compExeCtx.getInstanceName();
         nodeId = compExeCtx.getNodeId();
         componentIdentifier = compExeCtx.getComponentDescription().getIdentifier();
-        defaultStorageNodeId = compExeCtx.getDefaultStorageNodeId();
+        storageNetworkDestination = compExeCtx.getStorageNetworkDestination();
         workflowInstanceName = compExeCtx.getWorkflowInstanceName();
         workflowExecutionIdentifier = compExeCtx.getWorkflowExecutionIdentifier();
         workflowNodeId = compExeCtx.getWorkflowNodeId();
     }
-    
+
     @Override
     public String getExecutionIdentifier() {
         return identifier;
@@ -64,20 +66,20 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     public LogicalNodeId getNodeId() {
         return nodeId;
     }
-    
+
     @Override
     public String getComponentIdentifier() {
         return componentIdentifier;
     }
-    
+
     public void setNodeId(LogicalNodeId nodeId) {
         this.nodeId = nodeId;
     }
-    
+
     public void setIdentifier(String executionIdentifier) {
         this.identifier = executionIdentifier;
     }
-    
+
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
     }
@@ -87,12 +89,12 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     }
 
     @Override
-    public LogicalNodeId getDefaultStorageNodeId() {
-        return defaultStorageNodeId;
+    public NetworkDestination getStorageNetworkDestination() {
+        return storageNetworkDestination;
     }
-    
-    public void setDefaultStorageNodeId(LogicalNodeId defaultStorageNodeId) {
-        this.defaultStorageNodeId = defaultStorageNodeId;
+
+    public void setStorageNetworkDestination(NetworkDestination networkDestination) {
+        this.storageNetworkDestination = networkDestination;
     }
 
     @Override
@@ -103,12 +105,12 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     public void setWorkflowInstanceName(String workflowInstanceName) {
         this.workflowInstanceName = workflowInstanceName;
     }
-    
+
     @Override
     public String getWorkflowExecutionIdentifier() {
         return workflowExecutionIdentifier;
     }
-    
+
     public void setWorkflowExecutionIdentifier(String workflowExecutionIdentifier) {
         this.workflowExecutionIdentifier = workflowExecutionIdentifier;
     }
@@ -121,5 +123,5 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     public void setWorkflowNodeId(LogicalNodeId workflowNodeId) {
         this.workflowNodeId = workflowNodeId;
     }
-    
+
 }

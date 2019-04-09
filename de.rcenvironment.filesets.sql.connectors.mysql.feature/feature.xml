@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.sql.connectors.mysql.feature"
       label="RCE File Sets - MySQL JDBC Connector"
-      version="8.2.3.qualifier"
+      version="9.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

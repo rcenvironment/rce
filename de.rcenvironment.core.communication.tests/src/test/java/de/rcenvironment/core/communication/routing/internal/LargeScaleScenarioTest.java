@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,8 +21,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.testutils.TestNetworkRequestHandler;
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
@@ -40,11 +40,10 @@ public class LargeScaleScenarioTest extends AbstractLargeScaleTest {
 
     private static final int DEFAULT_REQUEST_TIMEOUT = 10000;
 
-    // FIXME the tests testTwoRingsAndOneChainTopology() and testMergingNetworks() fail with any test size
-    // except 10; review and fix (or remove) them - misc_ro
-    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(10, 10);
+    // set to a minimum of 6 instances to keep scenarios like "two rings with a chain" reasonable
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(6, 10);
 
-    private static final int EPOCHS = 3;
+    private static final int EPOCHS = CommonTestOptions.selectStandardOrExtendedValue(2, 3);
 
     /**
      * @throws Exception on uncaught exceptions
@@ -64,7 +63,7 @@ public class LargeScaleScenarioTest extends AbstractLargeScaleTest {
 
         prepareWaitForNextMessage();
 
-        int chainSize = testSize / 4;
+        int chainSize = 2; // used to be testSize / 4, which caused problems with test sizes != 10
         instanceUtils.connectToDoubleRingTopology(allInstances, 0, testSize / 2 - chainSize / 2);
         instanceUtils.connectToDoubleChainTopology(allInstances, testSize / 2 - (chainSize / 2 - 1), testSize / 2 + (chainSize / 2 - 1));
         instanceUtils.connectToDoubleRingTopology(allInstances, testSize / 2 + chainSize / 2, testSize - 1);

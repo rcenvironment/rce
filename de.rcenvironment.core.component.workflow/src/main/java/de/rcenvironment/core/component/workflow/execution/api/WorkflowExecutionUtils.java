@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,6 +24,7 @@ import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -179,7 +180,7 @@ public final class WorkflowExecutionUtils {
             // replace null (representing localhost) with the actual host name
             // TODO review: can this actually still be null at this point?
             if (node.getComponentDescription().getNode() == null) {
-                Collection<ComponentInstallation> installations = compKnowledge.getLocalInstallations();
+                Collection<DistributedComponentEntry> installations = compKnowledge.getAllLocalInstallations();
                 final String componentIdentifier = node.getComponentDescription().getIdentifier();
                 ComponentInstallation installation = ComponentUtils.getExactMatchingComponentInstallationForNode(
                     componentIdentifier, installations, localNodeId);

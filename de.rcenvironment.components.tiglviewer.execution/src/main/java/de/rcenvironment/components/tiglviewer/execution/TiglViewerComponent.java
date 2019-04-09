@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,7 +10,9 @@ package de.rcenvironment.components.tiglviewer.execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.Platform;
@@ -24,6 +26,8 @@ import de.rcenvironment.core.component.model.api.LocalExecutionOnly;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.gui.tiglviewer.TiglViewerConstants;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -80,14 +84,20 @@ public class TiglViewerComponent extends DefaultComponent {
                 // firstTime logic cannot be done in prepare() because only on this stage filename for temp file is available.
                 // TiGLViewer is aware of incoming filename.
                 try {
+                    String fileSuffix = FilenameUtils.getExtension(inputFile.getFileName());
+                    if (fileSuffix.isEmpty()
+                        || !Arrays.asList(TiglViewerConstants.SUPPORTED_FILE_EXTENSIONS).contains(fileSuffix.toLowerCase())) {
+                        throw new ComponentException(StringUtils.format("Only files with the extensions %s are supported by TiGL Viewer.",
+                            Arrays.toString(TiglViewerConstants.SUPPORTED_FILE_EXTENSIONS)));
+                    }
                     // since the filename doesn't matter here,  we create a random file name
-                    tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("*.xml");
-                } catch (IOException e) {
+                    tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("*." + fileSuffix);
+                } catch (IOException | StringIndexOutOfBoundsException e) {
                     throw new ComponentException("Failed to create temporary geometry file required by TiGL Viewer", e);
                 }
                 try {
                     dataManagementService.copyReferenceToLocalFile(inputFile.getFileReference(), tempFile,
-                        componentContext.getDefaultStorageNodeId());
+                        componentContext.getStorageNetworkDestination());
                 } catch (IOException e) {
                     throw new ComponentException("Failed to load geometry file into temporary file used by TiGL Viewer", e);
                 }
@@ -102,7 +112,7 @@ public class TiglViewerComponent extends DefaultComponent {
             } else {
                 try {
                     dataManagementService.copyReferenceToLocalFile(inputFile.getFileReference(), tempFile,
-                        componentContext.getDefaultStorageNodeId());
+                        componentContext.getStorageNetworkDestination());
                 } catch (IOException e) {
                     throw new ComponentException("Failed to update geometry in temporary file used by TiGL Viewer", e);
                 }

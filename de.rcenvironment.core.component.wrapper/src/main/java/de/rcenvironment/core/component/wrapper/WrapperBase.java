@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -30,14 +30,6 @@ import de.rcenvironment.core.utils.common.textstream.receivers.AbstractTextOutpu
 import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutReceiver;
 import de.rcenvironment.core.utils.common.validation.ValidationFailureException;
 import de.rcenvironment.core.utils.executor.CommandLineExecutor;
-
-/*
- * Copyright (C) 2006-2011 DLR, Germany
- * 
- * All rights reserved
- * 
- * http://www.rcenvironment.de/
- */
 
 /**
  * An abstract base class for wrappers of command-line tools.
@@ -195,7 +187,7 @@ public abstract class WrapperBase<C, R> {
         File tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("upload." + filename + "-*.tmp");
         tempFile.deleteOnExit(); // safeguard
         try {
-            getDataManagementService().copyReferenceToLocalFile(reference, tempFile, componentContext.getDefaultStorageNodeId());
+            getDataManagementService().copyReferenceToLocalFile(reference, tempFile, componentContext.getStorageNetworkDestination());
 
             // monitoringListener.appendUserInformation("Uploading " + filename);
             executor.uploadFileToWorkdir(tempFile, filename);

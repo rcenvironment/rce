@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,8 +23,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageInputStream;
@@ -36,19 +38,26 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.integration.RemoteToolIntegrationService;
+import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
+import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager.Builder;
+import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
@@ -63,9 +72,10 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
-import de.rcenvironment.core.component.registration.api.ComponentRegistry;
+import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.FileCompressionFormat;
 import de.rcenvironment.core.utils.common.FileCompressionService;
@@ -74,19 +84,23 @@ import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.ImageResize;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ToolIntegrationService}.
  * 
  * @author Sascha Zur
- * @author Robert Mischke (minor fix)
+ * @author Robert Mischke (disabled legacy component publishing; cleaned up start process and threading)
  * @author Thorsten Sommer (integration of {@link FileCompressionService})
  */
-public class ToolIntegrationServiceImpl implements ToolIntegrationService, RemoteToolIntegrationService {
+@Component(immediate = true)
+public class ToolIntegrationServiceImpl implements ToolIntegrationService {
+
+    private static final String WARNING_INVALID_TOOL = "Tool Integration: Tool %s has been disabled. Reason: Invalid %s. %s.";
 
     private static final String IDENTIFIER = "identifier";
 
@@ -120,30 +134,37 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     private static final String ERROR_WRITING_TOOL_INTEGRATION_CONFIG_FILE = "Error writing tool integration config file: ";
 
-    private static final BigInteger DOCU_DIRECTORY_MAXIMUM_SIZE = new BigInteger("52428800"); // max.
-                                                                                              // 50
-                                                                                              // mb.
+    private static final BigInteger DOCU_DIRECTORY_MAXIMUM_SIZE = new BigInteger("52428800"); // max 50 MB
 
-    private static final Log LOGGER = LogFactory.getLog(ToolIntegrationServiceImpl.class);
+    private final Map<String, String> toolNameToPath = Collections.synchronizedMap(new HashMap<>());
 
-    private static Map<String, String> toolNameToPath = Collections.synchronizedMap(new HashMap<String, String>());
+    private final Map<String, Map<String, Object>> integratedConfiguration = Collections.synchronizedMap(new HashMap<>());
 
-    private static ComponentRegistry registry;
+    @Deprecated
+    private final Set<String> publishedComponents = Collections.synchronizedSet(new HashSet<>());
 
-    private final Map<String, Map<String, Object>> integratedConfiguration = Collections
-        .synchronizedMap(new HashMap<String, Map<String, Object>>());
-
-    private Set<String> publishedComponents = Collections.synchronizedSet(new HashSet<String>());
+    private final Semaphore sequentialToolInitializationSemaphore = new Semaphore(1);
 
     private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
+    // We explicitly do not mark the watchManager as a Reference, as it requires a ToolIntegrationService to be constructed. Hence, OSGI
+    // would be unable to instantiate the class during construction of ToolIntegrationService. Hence, we obtain an instance of this class
+    // only after all dependencies have been injected, i.e., during the activation-method.
     private ToolIntegrationFileWatcherManager watchManager;
+
+    private ToolIntegrationContextRegistry toolIntegrationContextRegistry;
+
+    private LocalComponentRegistrationService localComponentRegistry;
 
     private LogicalNodeId localLogicalNodeId;
 
-    public ToolIntegrationServiceImpl() {
-        this.watchManager = new ToolIntegrationFileWatcherManager(this);
-    }
+    private AuthorizationService authorizationService;
+
+    private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
+
+    private final Log log = LogFactory.getLog(ToolIntegrationServiceImpl.class);
+
+    private Builder fileWatcherManagerBuilder;
 
     @Override
     public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context) {
@@ -156,19 +177,30 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         byte[] icon16 = readIcons(ICONSIZE16, configurationMap, context);
         byte[] icon32 = readIcons(ICONSIZE32, configurationMap, context);
         String docuHash = createDocumentationHash(configurationMap, context);
+        String toolName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
         String toolComponentID = context.getPrefixForComponentId()
-            + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+            + toolName;
         String toolClassName = context.getImplementingComponentClassName();
+        String version = ((Map<String, String>) ((List<Object>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+            .get(ToolIntegrationConstants.KEY_VERSION);
+        String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
+
+        if (!areConfigurationIdsValide(toolName, version, groupName)) {
+            removeTool(toolComponentID, context);
+            return;
+        }
+
         EndpointDefinitionsProvider inputProvider;
         EndpointDefinitionsProvider outputProvider;
-        boolean isPublished = false;
-        readPublishedComponents(context);
-        if ((publishedComponents.contains(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)) || publishedComponents
-            .contains(context.getRootPathToToolIntegrationDirectory() + File.separator
-                + context.getNameOfToolIntegrationDirectory()
-                + File.separator + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
-            isPublished = true;
-        }
+        // tool publication mixed into tool integration is deprecated; see Mantis #16044
+        // boolean isPublished = false;
+        // readPublishedComponents(context);
+        // if ((publishedComponents.contains(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)) || publishedComponents
+        // .contains(context.getRootPathToToolIntegrationDirectory() + File.separator
+        // + context.getNameOfToolIntegrationDirectory()
+        // + File.separator + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
+        // isPublished = true;
+        // }
         ConfigurationDefinition configuration;
         try {
             Set<EndpointDefinition> inputs = createInputs(configurationMap);
@@ -179,14 +211,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
             configuration = generateConfiguration(configurationMap);
         } catch (IllegalArgumentException e) {
-            LOGGER.warn("Could not read endpoints from " + toolComponentID + ": ", e);
+            log.warn("Could not read endpoints from " + toolComponentID + ": ", e);
             inputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
             outputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
             configuration =
                 ComponentConfigurationModelFactory.createConfigurationDefinition(new LinkedList<>(), new LinkedList<>(),
                     new LinkedList<>(), new HashMap<String, String>());
         }
-        String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
         if (groupName == null || groupName.isEmpty()) {
             groupName = context.getComponentGroupId();
         }
@@ -203,9 +234,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 .setIcon16(icon16)
                 .setIcon32(icon32)
                 .setDocumentationHash(docuHash)
-                .setVersion(
-                    ((Map<String, String>) ((List<Object>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
-                        .get(ToolIntegrationConstants.KEY_VERSION))
+                .setVersion(version)
                 .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
                 .setConfigurationDefinition(configuration)
                 .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
@@ -232,7 +261,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             && !maxParallelCountString.equals("")) {
             maxParallelCount = Integer.parseInt(maxParallelCountString);
             if (maxParallelCount < 1) {
-                LOGGER.error(StringUtils.format(
+                log.error(StringUtils.format(
                     "A maximum count of parallel executions of %d is invalid, it must be >= 1; a maximum count of 1 is used instead",
                     maxParallelCount));
                 maxParallelCount = 1;
@@ -245,19 +274,48 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                         .setComponentInterface(componentInterface)
                         .setClassName(toolClassName).build())
                 .setNodeId(localLogicalNodeId)
-                .setInstallationId(componentInterface.getIdentifier())
-                .setIsPublished(isPublished)
+                // For testing purposes:
+                // .setNodeId(platformService.createTransientLocalLogicalNodeId())
+                .setInstallationId(componentInterface.getIdentifierAndVersion())
                 .setMaximumCountOfParallelInstances(maxParallelCount)
                 .build();
         if (configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) == null
             || (Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE)) {
-            registry.addComponent(ci);
+            // not setting any publication permissions here; this will be handled by the registration service
+            localComponentRegistry.registerOrUpdateLocalComponentInstallation(ci);
         }
 
         synchronized (integratedConfiguration) {
             integratedConfiguration.put(toolComponentID, configurationMap);
         }
-        LOGGER.debug("ToolIntegration: Registered new Component " + toolComponentID);
+        log.debug("ToolIntegration: Registered new Component " + toolComponentID);
+    }
+
+    private boolean areConfigurationIdsValide(String toolName, String version, String groupName) {
+        boolean valid = true;
+        Optional<String> toolNameValidation = ComponentIdRules.validateComponentIdRules(toolName);
+        if (toolNameValidation.isPresent()) {
+            log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "tool name",
+                toolNameValidation.get()));
+            valid = false;
+        }
+        if (version != null) {
+            Optional<String> versionValidation = ComponentIdRules.validateComponentVersionRules(version);
+            if (versionValidation.isPresent()) {
+                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "version",
+                    versionValidation.get()));
+                valid = false;
+            }
+        }
+        if (groupName != null && !groupName.isEmpty()) {
+            Optional<String> groupValidation = ComponentIdRules.validateComponentGroupNameRules(groupName);
+            if (groupValidation.isPresent()) {
+                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "group name",
+                    groupValidation.get()));
+                valid = false;
+            }
+        }
+        return valid;
     }
 
     private String createDocumentationHash(final Map<String, Object> configurationMap, final ToolIntegrationContext context) {
@@ -272,7 +330,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     FileCompressionFormat.ZIP, false);
 
                 if (zippedByteArray == null) {
-                    LOGGER.error("Was not able to create hash for documentation due to an issue with the compression.");
+                    log.error("Was not able to create hash for documentation due to an issue with the compression.");
                     return "";
                 }
 
@@ -286,12 +344,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         boolean valid = true;
         BigInteger directorySize = FileUtils.sizeOfDirectoryAsBigInteger(docDir);
         if (DOCU_DIRECTORY_MAXIMUM_SIZE.compareTo(directorySize) < 0) {
-            LOGGER.error(StringUtils.format("Size of documentation directory %s too big (max. 50 Mb).", docDir.getAbsolutePath()));
+            log.error(StringUtils.format("Size of documentation directory %s too big (max. 50 Mb).", docDir.getAbsolutePath()));
             valid = false;
         }
         for (File f : docDir.listFiles()) {
             if (f.isDirectory()) {
-                LOGGER.error(StringUtils.format("Directories not allowed in documentation directory %s.", docDir.getAbsolutePath()));
+                log.error(StringUtils.format("Directories not allowed in documentation directory %s.", docDir.getAbsolutePath()));
                 valid = false;
             } else if (!ArrayUtils.contains(
                 ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, FilenameUtils.getExtension(f.getName()))) {
@@ -301,7 +359,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     continue;
                 }
 
-                LOGGER.error(
+                log.error(
                     StringUtils.format("Invalid filetype of %s in documentation directory %s. (Valid filetypes: %s)", f.getName(),
                         docDir.getAbsolutePath(),
                         Arrays.toString(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS).replaceAll("\\[", "").replaceAll("\\]",
@@ -349,7 +407,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                         }
                     }
                 } catch (IOException e) {
-                    LOGGER.debug("Could not load icon, use default icon");
+                    log.debug("Could not load icon, use default icon");
                 }
             }
         }
@@ -382,9 +440,9 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             synchronized (integratedConfiguration) {
                 integratedConfiguration.remove(toolComponentID);
             }
-            registry.removeComponent(toolIDAndVersion);
+            localComponentRegistry.unregisterLocalComponentInstallation(toolIDAndVersion);
         }
-        LOGGER.debug("ToolIntegration: Removed Component " + toolComponentID);
+        log.debug("ToolIntegration: Removed Component " + toolComponentID);
     }
 
     private ConfigurationDefinition generateConfiguration(Map<String, Object> configurationMap) {
@@ -621,51 +679,59 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         return inputs;
     }
 
-    @Override
-    public void readAndIntegratePersistentTools(ToolIntegrationContext context) {
+    /**
+     * Reads all previously added {@link ComponentInterface}s.
+     * 
+     * @param information about the tools to be integrated.
+     */
+    private void initializeExistingToolsInContext(ToolIntegrationContext context) {
         String configFolder = context.getRootPathToToolIntegrationDirectory();
         File toolIntegrationFile = new File(configFolder, context.getNameOfToolIntegrationDirectory());
         readPublishedComponents(context);
         if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles().length > 0) {
-            LOGGER.debug("Reading integration tool directory :" + toolIntegrationFile.getAbsolutePath());
+            log.debug("Initializing tool integration root directory " + toolIntegrationFile.getAbsolutePath());
             for (File toolFolder : toolIntegrationFile.listFiles()) {
-                if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) {
+                if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) { // to review: why is this "null" check needed?
+                    log.debug("Initializing tool directory " + toolFolder.getAbsolutePath());
                     readToolDirectory(toolFolder, context);
                 }
             }
         }
-        watchManager.createWatcherForToolRootDirectory(context);
-        updatePublishedComponents(context);
     }
 
-    @Override
+    /**
+     * Reads the given configuration file and integrated it as a tool.
+     * 
+     * @param toolFolder the configuration folder
+     * @param context used for integration
+     */
     @SuppressWarnings("unchecked")
-    public void readToolDirectory(File toolFolder, ToolIntegrationContext information) {
-        File configFile = new File(toolFolder, information.getConfigurationFilename());
+    private void readToolDirectory(File toolFolder, ToolIntegrationContext context) {
+        File configFile = new File(toolFolder, context.getConfigurationFilename());
         if (configFile.exists() && configFile.isFile()) {
             try {
                 Map<String, Object> configurationMap =
                     mapper.readValue(configFile,
                         new HashMap<String, Object>().getClass());
-                if (!integratedConfiguration.containsKey(information.getPrefixForComponentId()
+                if (!integratedConfiguration.containsKey(context.getPrefixForComponentId()
                     + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
                     toolNameToPath.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), toolFolder.getAbsolutePath());
 
                     checkIcon(toolFolder, configurationMap);
 
-                    if (!isToolIntegrated(configurationMap, information)) {
-                        integrateTool(configurationMap, information);
+                    if (!isToolIntegrated(configurationMap, context)) {
+                        integrateTool(configurationMap, context);
                     }
 
                 } else {
-                    LOGGER.warn("Tool with foldername already exists:  " + toolFolder.getName());
+                    log.warn("Tool with foldername already exists:  " + toolFolder.getName());
                 }
             } catch (JsonParseException e) {
-                LOGGER.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
+                log.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
             } catch (JsonMappingException e) {
-                LOGGER.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
+                log.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
             } catch (IOException e) {
-                LOGGER.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
+                log.error(COULD_NOT_READ_TOOL_CONFIGURATION, e);
             }
         }
     }
@@ -701,7 +767,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         toolConfigFile.mkdirs();
         handleToolIcon(configurationMap, toolConfigFile);
         handleDoc(configurationMap, toolConfigFile);
-        configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
+        // deprecated, remove when done; see Mantis #16044
+        // configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
         Map<String, Object> sortedMap = new TreeMap<>();
         sortedMap.putAll(configurationMap);
         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(toolConfigFile, information.getConfigurationFilename()),
@@ -722,7 +789,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                         try {
                             FileUtils.forceDelete(f);
                         } catch (IOException e) {
-                            LOGGER.error("Could not delete old documentation file: " + f.getAbsolutePath() + ": " + e.getMessage());
+                            log.error("Could not delete old documentation file: " + f.getAbsolutePath() + ": " + e.getMessage());
                         }
                     }
                 }
@@ -732,7 +799,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                         FileUtils.copyFile(docfile, destination);
                         configurationMap.put(ToolIntegrationConstants.KEY_DOC_FILE_PATH, docfile.getName());
                     } catch (IOException e) {
-                        LOGGER.error("Could not copy documentation to tool directory: ", e);
+                        log.error("Could not copy documentation to tool directory: ", e);
                     }
                 }
             }
@@ -753,7 +820,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                             configurationMap.remove(ToolIntegrationConstants.KEY_UPLOAD_ICON);
                             configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getName());
                         } catch (IOException e) {
-                            LOGGER.warn("Could not copy icon to tool directory: ", e);
+                            log.warn("Could not copy icon to tool directory: ", e);
                         }
                     }
                 }
@@ -767,71 +834,30 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         writeToolIntegrationFileToSpecifiedFolder(configFolder, configurationMap, information);
     }
 
-    @Override
-    public void savePublishedComponents(ToolIntegrationContext context) {
-        File toolsfolder = new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
-        if (!toolsfolder.exists()) {
-            toolsfolder.mkdirs();
-        }
-
-        try {
-            File publishedComponentsFile = new File(toolsfolder, ToolIntegrationConstants.PUBLISHED_COMPONENTS_FILENAME);
-            if (!publishedComponentsFile.exists()) {
-                publishedComponentsFile.createNewFile();
-            }
-            synchronized (publishedComponents) {
-                if (publishedComponents != null) {
-                    Set<String> componentsToWrite = new HashSet<>();
-                    for (String component : publishedComponents) {
-                        if (component.startsWith(toolsfolder.getAbsolutePath())) {
-                            componentsToWrite.add(component);
-                        }
-                    }
-                    FileUtils.writeLines(publishedComponentsFile, componentsToWrite);
-                }
-            }
-
-        } catch (IOException e) {
-            LOGGER.error(ERROR_WRITING_TOOL_INTEGRATION_CONFIG_FILE, e);
-        }
-    }
-
     private void readPublishedComponents(ToolIntegrationContext context) {
         File toolsfolder = new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
-        if (publishedComponents == null) {
-            //FIXME: Field 'publishedComponents' re-assigned while holding an intrinsic lock on its value. - rode_to, Dec 2016
-            publishedComponents = Collections.synchronizedSet(new HashSet<String>());
-        }
         if (toolsfolder.exists()) {
             try {
                 File publishedComponentsFile = new File(toolsfolder, ToolIntegrationConstants.PUBLISHED_COMPONENTS_FILENAME);
-                if (!publishedComponentsFile.exists()) {
-                    publishedComponentsFile.createNewFile();
-                    publishedComponentsFile.setReadable(true);
-                    publishedComponentsFile.setWritable(true);
-                }
-                if (publishedComponentsFile.canWrite()) {
-
+                // deprecated mechanism - the file is only checked to log backwards compatibility warnings; see Mantis #16044
+                if (publishedComponentsFile.isFile()) {
                     Set<String> newPublishedComponents = new HashSet<>(FileUtils.readLines(publishedComponentsFile));
                     for (String newComp : newPublishedComponents) {
                         String comp = newComp.trim();
-                        if (!new File(newComp).isAbsolute()) {
-                            comp = new File(toolsfolder, comp).getAbsolutePath();
+                        if (comp.isEmpty()) {
+                            continue;
                         }
-                        if (!newComp.isEmpty() && new File(comp).exists()) {
-                            publishedComponents.add(comp);
-                        }
+                        // log a deprecation warning for existing entries; see Mantis #16044
+                        log.warn("Read the deprecated component publication entry \"" + comp
+                            + "\" from configuration file " + publishedComponentsFile.getAbsolutePath()
+                            + ", but it will not be applied; use the component authorization system to publish integrated tools. "
+                            + "Delete this file to get rid of this warning.");
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error(ERROR_WRITING_TOOL_INTEGRATION_CONFIG_FILE, e);
+                log.error(ERROR_WRITING_TOOL_INTEGRATION_CONFIG_FILE, e);
             }
         }
-    }
-
-    @Override
-    public synchronized Set<String> getPublishedComponents() {
-        return publishedComponents;
     }
 
     @Override
@@ -861,24 +887,66 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
      * 
      * @param context of the bundle
      */
-    public void activate(final BundleContext context) {}
+    @Activate
+    protected void activate() {
+        watchManager = fileWatcherManagerBuilder.build(this);
 
-    protected void bindComponentRegistry(ComponentRegistry newRegistry) {
-        registry = newRegistry;
+        asyncTaskService.execute(new Runnable() {
+
+            @Override
+            @TaskDescription("Initialize all provided ToolIntegrationContexts")
+            public void run() {
+                ToolIntegrationContext context;
+                while ((context = toolIntegrationContextRegistry.fetchNextUninitializedToolIntegrationContext()) != null) {
+                    if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
+                        log.debug("Registering " + ToolIntegrationContext.class.getSimpleName() + " " + context.getContextId());
+                        integrateToolIntegrationContext(context);
+                    }
+                }
+                log.debug("Received termination signal from " + ToolIntegrationContext.class.getSimpleName() + " queue");
+                localComponentRegistry.reportToolIntegrationRegistrationComplete();
+            }
+        });
+
     }
 
-    protected void unbindComponentRegistry(ComponentRegistry newRegistry) {
-        registry = ServiceUtils.createFailingServiceProxy(ComponentRegistry.class);
+    /**
+     * Deactivate the service (e.g. unregister watcher).
+     */
+    @Deactivate
+    protected void deactivateIntegrationService() {
+        watchManager.shutdown();
     }
 
+    @Reference
+    protected void bindAuthorizationService(AuthorizationService newInstance) {
+        this.authorizationService = newInstance;
+    }
+
+    @Reference
+    protected void bindToolIntegrationContextRegistry(ToolIntegrationContextRegistry newInstance) {
+        this.toolIntegrationContextRegistry = newInstance;
+    }
+
+    @Reference
+    protected void bindFileWatcherManagerBuilder(Builder newInstance) {
+        this.fileWatcherManagerBuilder = newInstance;
+    }
+
+    @Reference(unbind = "unbindComponentRegistry")
+    protected void bindComponentRegistry(LocalComponentRegistrationService newRegistry) {
+        localComponentRegistry = newRegistry;
+    }
+
+    protected void unbindComponentRegistry(LocalComponentRegistrationService newRegistry) {
+        localComponentRegistry = ServiceUtils.createFailingServiceProxy(LocalComponentRegistrationService.class);
+    }
+
+    @Reference
     protected void bindPlatformService(PlatformService newService) {
-        // fetch and store the node id; decoupling this from the service also guards it 
+        // fetch and store the node id; decoupling this from the service also guards it
         // against access from asynchronous task runs after this service was shut down
         localLogicalNodeId = newService.getLocalDefaultLogicalNodeId();
-    }
-
-    protected void unbindPlatformService(PlatformService newService) {
-        // TODO (p3) remove unneeded method
     }
 
     @Override
@@ -913,6 +981,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @Override
     public void updatePublishedComponents(ToolIntegrationContext context) {
+        // note: this code is still left in place to prevent side effects, but no publication settings are loaded anymore;
+        // see see Mantis #16044
         Set<String> oldPublishedComponents = new HashSet<>();
         synchronized (publishedComponents) {
             oldPublishedComponents.addAll(publishedComponents);
@@ -962,17 +1032,6 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     }
 
     @Override
-    public synchronized void addPublishedTool(String toolPath) {
-        publishedComponents.add(toolPath);
-    }
-
-    @Override
-    public synchronized void unpublishTool(String toolPath) {
-        publishedComponents.remove(toolPath);
-    }
-
-    @Override
-    @AllowRemoteAccess
     public byte[] getToolDocumentation(final String identifier) throws RemoteOperationException {
         final ToolIntegrationContext context = getContextForIdentifier(identifier);
         if (context == null) {
@@ -989,7 +1048,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             FileCompressionService.compressDirectoryToByteArray(sourceDirectory, FileCompressionFormat.ZIP, false);
 
         if (resultData == null) {
-            LOGGER.error("Was not able to create an archive for documentation due to a compression issue.");
+            log.error("Was not able to create an archive for documentation due to a compression issue.");
             return null;
         }
 
@@ -1024,9 +1083,26 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     }
 
-    @Override
-    public void deactivateIntegrationService() {
-        watchManager.shutdown();
+    private void integrateToolIntegrationContext(ToolIntegrationContext context) {
+        try {
+            sequentialToolInitializationSemaphore.acquire();
+            try {
+                log.debug("Initializing existing tools for context " + context.getContextType());
+                initializeExistingToolsInContext(context);
+
+                log.debug("Creating tool watcher for context " + context.getContextType());
+                watchManager.createWatcherForToolRootDirectory(context);
+                updatePublishedComponents(context);
+
+                log.debug("Finished initialization of context " + context.getContextType());
+            } finally {
+                sequentialToolInitializationSemaphore.release();
+            }
+        } catch (InterruptedException e) {
+            log.debug("Interrupted during tool integration");
+            Thread.currentThread().interrupt();
+            return;
+        }
     }
 
 }

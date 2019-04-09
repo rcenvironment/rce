@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,20 +18,23 @@ import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
  */
 public class InstanceValidationResultImpl implements InstanceValidationResult {
     
-    private String validatorDisplayName;
+    private final String validatorDisplayName;
     
-    private InstanceValidationResultType type;
+    private final InstanceValidationResultType type;
     
-    private String guiDialogMessage;
+    private final String guiDialogMessage;
     
-    private String logMessage;
+    private final String logMessage;
+    
+    private final Callback callback;
 
     public InstanceValidationResultImpl(String validatorDisplayName, InstanceValidationResultType type,
-        String logMessage, String guiDialogMessage) {
+        String logMessage, String guiDialogMessage, Callback callback) {
         this.validatorDisplayName = validatorDisplayName;
         this.type = type;
         this.logMessage = logMessage;
         this.guiDialogMessage = guiDialogMessage;
+        this.callback = callback;
     }
 
     @Override
@@ -52,6 +55,10 @@ public class InstanceValidationResultImpl implements InstanceValidationResult {
     @Override
     public String getLogMessage() {
         return logMessage;
+    }
+    
+    public Callback getCallback() {
+        return callback;
     }
 
 }

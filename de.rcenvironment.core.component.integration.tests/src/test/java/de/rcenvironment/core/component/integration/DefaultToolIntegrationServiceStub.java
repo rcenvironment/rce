@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,40 +19,26 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Default implementation of {@link ToolIntegrationService} for tests.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke
  */
 public class DefaultToolIntegrationServiceStub implements ToolIntegrationService {
 
     @Override
-    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context) {
-
-    }
+    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context) {}
 
     @Override
-    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context, boolean savePublished) {
-
-    }
+    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context, boolean savePublished) {}
 
     @Override
-    public void removeTool(String toolName, ToolIntegrationContext information) {
-
-    }
-
-    @Override
-    public void readAndIntegratePersistentTools(ToolIntegrationContext information) {
-
-    }
+    public void removeTool(String toolName, ToolIntegrationContext information) {}
 
     @Override
     public void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation)
-        throws IOException {
-
-    }
+        throws IOException {}
 
     @Override
     public void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
-        ToolIntegrationContext integrationInformation) throws IOException {
-
-    }
+        ToolIntegrationContext integrationInformation) throws IOException {}
 
     @Override
     public Map<String, Object> getToolConfiguration(String toolId) {
@@ -61,11 +47,6 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
 
     @Override
     public Set<String> getIntegratedComponentIds() {
-        return null;
-    }
-
-    @Override
-    public Set<String> getPublishedComponents() {
         return null;
     }
 
@@ -85,11 +66,6 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public void readToolDirectory(File parentFile, ToolIntegrationContext context) {
-
-    }
-
-    @Override
     public String getToolNameToPath(String path) {
         return null;
     }
@@ -105,44 +81,17 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public void savePublishedComponents(ToolIntegrationContext context) {
-
-    }
-
-    @Override
-    public void addPublishedTool(String toolName) {
-
-    }
-
-    @Override
-    public void unpublishTool(String toolPath) {
-
-    }
-
-    @Override
     public byte[] getToolDocumentation(String identifier) throws RemoteOperationException {
         return null;
     }
 
     @Override
-    public void setFileWatcherActive(boolean value) {
-
-    }
+    public void setFileWatcherActive(boolean value) {}
 
     @Override
-    public void unregisterIntegration(String previousToolName, ToolIntegrationContext integrationContext) {
-
-    }
+    public void unregisterIntegration(String previousToolName, ToolIntegrationContext integrationContext) {}
 
     @Override
-    public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {
-
-    }
-
-    @Override
-    public void deactivateIntegrationService() {
-        // TODO Auto-generated method stub
-
-    }
+    public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {}
 
 }

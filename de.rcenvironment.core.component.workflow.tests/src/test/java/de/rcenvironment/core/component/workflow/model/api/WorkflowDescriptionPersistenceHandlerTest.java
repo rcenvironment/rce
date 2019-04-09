@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -35,7 +35,6 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.ComponentInstallationMockFactory;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
@@ -46,6 +45,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.testutils.ComponentDescriptionFactoryServiceDefaultStub;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
 import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeServiceDefaultStub;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -160,10 +160,11 @@ public class WorkflowDescriptionPersistenceHandlerTest {
     private void assertWorkflowNodes(WorkflowDescription wd, Map<String, ComponentInstallation> wfNodeIdToCompInstMapping) {
         assertEquals(3, wd.getWorkflowNodes().size());
         for (WorkflowNode wfNode : wd.getWorkflowNodes()) {
-            assertTrue(wfNode.getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-                .getIdentifier().equals(wfNodeIdToCompInstMapping.get(wfNode.getIdentifier())
-                    .getComponentRevision().getComponentInterface().getIdentifier()));
-            final String logicalNodeIdStringOfComponent = wfNode.getComponentDescription().getComponentInstallation().getNodeId();
+            assertTrue(wfNode.getComponentDescription().getComponentInstallation().getComponentInterface()
+                .getIdentifierAndVersion().equals(wfNodeIdToCompInstMapping.get(wfNode.getIdentifier())
+                    .getComponentInterface().getIdentifierAndVersion()));
+            final String logicalNodeIdStringOfComponent =
+                wfNode.getComponentDescription().getComponentInstallation().getNodeId();
             assertEquals(logicalNodeIdStringOfComponent,
                 wfNodeIdToCompInstMapping.get(wfNode.getIdentifier()).getNodeId());
         }
@@ -243,7 +244,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
     private DistributedComponentKnowledgeService createComponentKnowledgeServiceMock(
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledgeService compKnowledgeService = EasyMock.createStrictMock(DistributedComponentKnowledgeService.class);
-        EasyMock.expect(compKnowledgeService.getCurrentComponentKnowledge())
+        EasyMock.expect(compKnowledgeService.getCurrentSnapshot())
             .andStubReturn(createComponentKnowledgeMock(compInstToCompDescMapping));
         EasyMock.replay(compKnowledgeService);
         return compKnowledgeService;
@@ -252,7 +253,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
     private DistributedComponentKnowledge createComponentKnowledgeMock(
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledge compKnowledge = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
-        EasyMock.expect(compKnowledge.getAllInstallations()).andStubReturn(compInstToCompDescMapping.keySet());
+        EasyMock.expect(compKnowledge.getAllInstallations()).andStubReturn(
+            ComponentTestUtils.convertToListOfDistributedComponentEntries(compInstToCompDescMapping.keySet()));
         EasyMock.replay(compKnowledge);
         return compKnowledge;
     }
@@ -269,7 +271,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
             ComponentDescription compDesc = EasyMock.createNiceMock(ComponentDescription.class);
             EasyMock.expect(compDesc.getComponentInstallation()).andStubReturn(compInst);
             EasyMock.expect(compDesc.getIdentifier())
-                .andStubReturn(compInst.getComponentRevision().getComponentInterface().getIdentifier());
+                .andStubReturn(compInst.getComponentInterface().getIdentifierAndVersion());
             EasyMock.expect(compDesc.getConfigurationDescription()).andStubReturn(confDesc);
             EasyMock.expect(compDesc.getInputDescriptionsManager()).andStubReturn(inpDescManager);
             EasyMock.expect(compDesc.getOutputDescriptionsManager()).andStubReturn(outpDescManager);
@@ -282,13 +284,13 @@ public class WorkflowDescriptionPersistenceHandlerTest {
     private Map<String, ComponentInstallation> createWfNodeIdToCompInstMapping(Set<ComponentInstallation> compInstallations) {
         Map<String, ComponentInstallation> wfNodeIdToCompInstMapping = new HashMap<>();
         for (ComponentInstallation compInst : compInstallations) {
-            if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_INPUT_PROVIDER)
+            if (compInst.getComponentInterface().getIdentifierAndVersion().equals(COMP_ID_INPUT_PROVIDER)
                 && (compInst.getNodeId() == null || isComponentInstallationLocatedOnInstance(compInst, LOCAL_INSTANCE_ID))) {
                 wfNodeIdToCompInstMapping.put("fbfcc614-b0e9-4a97-81db-26dd40964e15", compInst);
-            } else if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_SCRIPT)
+            } else if (compInst.getComponentInterface().getIdentifierAndVersion().equals(COMP_ID_SCRIPT)
                 && isComponentInstallationLocatedOnInstance(compInst, REMOTE_INSTANCE_ID)) {
                 wfNodeIdToCompInstMapping.put("c5aa840d-68a8-456f-943b-569a1875933d", compInst);
-            } else if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_OUTPUT_WRITER)
+            } else if (compInst.getComponentInterface().getIdentifierAndVersion().equals(COMP_ID_OUTPUT_WRITER)
                 && (compInst.getNodeId() == null || isComponentInstallationLocatedOnInstance(compInst, LOCAL_INSTANCE_ID))) {
                 wfNodeIdToCompInstMapping.put("361ff68d-04c7-4ef1-a1b7-aba1292b339d", compInst);
             }
@@ -420,7 +422,6 @@ public class WorkflowDescriptionPersistenceHandlerTest {
 
     private boolean isComponentInstallationLocatedOnInstance(ComponentInstallation compInst, String instanceId) {
         // encapsulate comparison until component installations use id objects natively
-        return NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(compInst.getNodeId()).getInstanceNodeIdString()
-            .equals(instanceId);
+        return compInst.getNodeIdObject().getInstanceNodeIdString().equals(instanceId);
     }
 }

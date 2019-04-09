@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,26 +14,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.ServiceCallContext;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipientFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link ComponentExecutionContext}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ComponentExecutionContextImpl implements ComponentExecutionContext {
 
     private static final long serialVersionUID = -6480792333241604054L;
 
-    private String executionIdentifier;
+    private ComponentExecutionIdentifier executionIdentifier;
 
     private String instanceName;
 
@@ -42,8 +48,6 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     private String workflowExecutionIdentifier;
 
     private String workflowInstanceName;
-
-    private LogicalNodeId defaultStorageNodeId;
 
     private ComponentDescription componentDescription;
 
@@ -64,10 +68,22 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
 
     private Map<String, Long> outputDataManagementIds;
 
-    private Map<String, List<EndpointDatumRecipient>> cachedEndpointDatumRecipients;
+    private Map<String, List<EndpointDatumRecipient>> endpointDatumRecipients;
 
+    private NetworkDestination workflowStorageNetworkDestination;
+
+    private NetworkDestination workflowControllerNetworkDestination;
+
+    private LogicalNodeId storageNodeId;
+
+    @Deprecated
     @Override
     public String getExecutionIdentifier() {
+        return executionIdentifier.toString();
+    }
+
+    @Override
+    public ComponentExecutionIdentifier getExecutionIdentifierAsObject() {
         return executionIdentifier;
     }
 
@@ -92,8 +108,13 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     }
 
     @Override
-    public LogicalNodeId getDefaultStorageNodeId() {
-        return defaultStorageNodeId;
+    public LogicalNodeId getStorageNodeId() {
+        return storageNodeId;
+    }
+
+    @Override
+    public NetworkDestination getStorageNetworkDestination() {
+        return workflowStorageNetworkDestination;
     }
 
     @Override
@@ -113,21 +134,42 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     }
 
     @Override
-    public Map<String, List<EndpointDatumRecipient>> getEndpointDatumRecipients() {
-        if (cachedEndpointDatumRecipients == null) {
-            Map<String, List<EndpointDatumRecipient>> edrs = new HashMap<>();
-            for (String output : serializedEndpointDatumRecipients.keySet()) {
-                edrs.put(output, new ArrayList<EndpointDatumRecipient>());
-                for (String sedr : serializedEndpointDatumRecipients.get(output)) {
-                    String[] parts = StringUtils.splitAndUnescape(sedr);
-                    edrs.get(output).add(
-                        EndpointDatumRecipientFactory.createEndpointDatumRecipient(parts[0], parts[1], parts[2],
-                            NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[3])));
-                }
-            }
-            cachedEndpointDatumRecipients = edrs;
+    public synchronized Map<String, List<EndpointDatumRecipient>> getEndpointDatumRecipients() {
+        if (endpointDatumRecipients == null) {
+            throw new IllegalStateException("EndpointDatumRecipients have not been initialized");
         }
-        return cachedEndpointDatumRecipients;
+        return endpointDatumRecipients;
+    }
+
+    /**
+     * Initializes the point-to-point reliable RPC streams for passing {@link EndpointDatum}s. Called as part of the local
+     * createExecutionController() setup.
+     * 
+     * @param communicationService the {@link CommunicationService} to set up the reliable RPC streams
+     * @return a list of all deserialized {@link EndpointDatumRecipient} instances for external processing
+     * @throws RemoteOperationException on setup failure
+     */
+    // TODO decide: make part of interface?
+    public synchronized List<EndpointDatumRecipient> deserializeEndpointDatumRecipients(CommunicationService communicationService)
+        throws RemoteOperationException {
+        endpointDatumRecipients = new HashMap<>();
+        List<EndpointDatumRecipient> allCreatedRecipients = new ArrayList<>();
+        for (String output : serializedEndpointDatumRecipients.keySet()) {
+            endpointDatumRecipients.put(output, new ArrayList<EndpointDatumRecipient>());
+            for (String sedr : serializedEndpointDatumRecipients.get(output)) {
+                String[] parts = StringUtils.splitAndUnescape(sedr);
+                final String inputIdentifier = parts[0];
+                final String componentExecutionIdentifier = parts[1];
+                final String componentInstanceName = parts[2];
+                // TODO (p2) use more specific parsing method; the id type should be known
+                final LogicalNodeId targetNodeId = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[3]);
+                EndpointDatumRecipient endpointDatumRecipient = EndpointDatumRecipientFactory.createEndpointDatumRecipient(inputIdentifier,
+                    componentExecutionIdentifier, componentInstanceName, targetNodeId);
+                endpointDatumRecipients.get(output).add(endpointDatumRecipient);
+                allCreatedRecipients.add(endpointDatumRecipient);
+            }
+        }
+        return allCreatedRecipients;
     }
 
     @Override
@@ -160,7 +202,12 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
         return outputDataManagementIds;
     }
 
+    @Deprecated
     public void setExecutionIdentifier(String executionIdentifier) {
+        this.executionIdentifier = new ComponentExecutionIdentifier(executionIdentifier);
+    }
+
+    public void setExecutionIdentifier(ComponentExecutionIdentifier executionIdentifier) {
         this.executionIdentifier = executionIdentifier;
     }
 
@@ -184,8 +231,12 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
         this.controllerNode = wfNodeId;
     }
 
-    public void setDefaultStorageNode(LogicalNodeId defaultStorageNode) {
-        this.defaultStorageNodeId = defaultStorageNode;
+    public void setStorageNodeId(LogicalNodeId defaultStorageNode) {
+        this.storageNodeId = defaultStorageNode;
+    }
+
+    public void setStorageNetworkDestination(NetworkDestination storageNetworkDestination) {
+        this.workflowStorageNetworkDestination = storageNetworkDestination;
     }
 
     public void setComponentDescription(ComponentDescription componentDescription) {
@@ -203,7 +254,7 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
             for (EndpointDatumRecipient edr : endpointDatumRecipients.get(output)) {
                 serializedEndpointDatumRecipients.get(output).add(StringUtils.escapeAndConcat(
                     new String[] { edr.getInputName(), edr.getInputsComponentExecutionIdentifier(),
-                        edr.getInputsComponentInstanceName(), edr.getInputsNodeId().getLogicalNodeIdString() }));
+                        edr.getInputsComponentInstanceName(), edr.getDestinationNodeId().getLogicalNodeIdString() }));
             }
         }
     }
@@ -236,4 +287,5 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public ServiceCallContext getServiceCallContext() {
         return null;
     }
+
 }

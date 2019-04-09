@@ -1,15 +1,13 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.components.optimizer.gui.properties;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,13 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.PaintEvent;
-import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -31,6 +24,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -38,10 +32,13 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerFileLoader;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -53,16 +50,6 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Sascha Zur
  */
 public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySection {
-
-    /**
-     * Red for warning color.
-     */
-    public static final int RED = 232;
-
-    /**
-     * Blue for warning color.
-     */
-    public static final int BLUE = 170;
 
     private static final String COMMA = ",";
 
@@ -126,6 +113,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         comboMainAlgorithmSelection = new Combo(firstAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboMainAlgorithmSelection.setItems(methods);
         comboMainAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
+        comboMainAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonProperties = new Button(firstAlgo, SWT.PUSH);
         buttonProperties.setText(Messages.algorithmProperties);
         SelectionAdapter buttonListener = new MethodSelectionAdapter(parent, comboMainAlgorithmSelection);
@@ -140,6 +128,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         comboSecondAlgorithmSelection = new Combo(secondAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboSecondAlgorithmSelection.setItems(methods);
         comboSecondAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
+        comboSecondAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonSecondProperties = new Button(secondAlgo, SWT.PUSH);
         buttonSecondProperties.setText(Messages.algorithmProperties);
         SelectionAdapter buttonListenerSecond = new MethodSelectionAdapter(parent, comboSecondAlgorithmSelection);
@@ -154,6 +143,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         comboThirdAlgorithmSelection = new Combo(thirdAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboThirdAlgorithmSelection.setItems(methods);
         comboThirdAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
+        comboThirdAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonThirdProperties = new Button(thirdAlgo, SWT.PUSH);
         buttonThirdProperties.setText(Messages.algorithmProperties);
         SelectionAdapter buttonListenerThird = new MethodSelectionAdapter(parent, comboThirdAlgorithmSelection);
@@ -176,17 +166,31 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         // useRestartFileButton = new Button(firstAlgo, SWT.CHECK);
         // useRestartFileButton.setText("Use precalculated values for optimization (select file at workflow start)");
         // useRestartFileButton.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.USE_RESTART_FILE);
-
-        sectionAlgorithm.addPaintListener(new PaintListener() {
-
-            @Override
-            public void paintControl(PaintEvent arg0) {
-                refreshSection();
-            }
-        });
-
     }
 
+    @Override
+    protected AlgorithmSectionUpdater createUpdater() {
+        return new AlgorithmSectionUpdater();
+    }
+
+    /**
+     * Algorithm Section {@link DefaultUpdater} implementation of the handler to update the Algorithm Section UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class AlgorithmSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            if (propertyName.equals(OptimizerComponentConstants.ALGORITHMS)) {
+                aboutToBeShown();
+                refreshAlgorithmSection();
+            }
+        }
+    }
+    
     @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
@@ -197,7 +201,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             try {
                 allConfiguredDescriptions = OptimizerFileLoader.getAllMethodDescriptions(getAlgorithmFolder());
                 if (allConfiguredDescriptions != null) {
-                    setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
+                    setPropertyNotUndoable(OptimizerComponentConstants.METHODCONFIGURATIONS,
                         mapper.writerWithDefaultPrettyPrinter().writeValueAsString(allConfiguredDescriptions));
                 }
             } catch (JsonParseException e) {
@@ -210,15 +214,16 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         }
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public void refreshSection() {
-        super.refreshSection();
-        aboutToBeShown();
-
+    /**
+     * Refreshes the {@link AlgorithmSection} UI.
+     */
+    public void refreshAlgorithmSection() {
         String algorithm =
             getConfiguration().getConfigurationDescription()
                 .getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
+        if (comboMainAlgorithmSelection.isDisposed()) {
+            return;
+        }
         // LHS is not a optimizer method but a DoE. Although it is needed for the Surrogate Based
         // optimizer method
         if (comboMainAlgorithmSelection != null
@@ -238,11 +243,12 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                     }
                 }
                 if (!ok) {
-                    comboMainAlgorithmSelection.clearSelection();
+                    comboMainAlgorithmSelection.deselectAll();
+                    secondAlgo.setVisible(false);
+                    thirdAlgo.setVisible(false);
                     setProperty(OptimizerComponentConstants.ALGORITHMS, "");
                 }
             }
-
             refreshShownAlgorithms();
             if (secondAlgo.isVisible() && selectedAlgorithm != null && selectedAlgorithm.length > 1 && selectedAlgorithm[1] != null) {
                 boolean ok = false;
@@ -273,7 +279,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             if (configString == null || configString.equals("")) {
                 try {
                     setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
-                        mapper.defaultPrettyPrintingWriter().writeValueAsString(methodDescriptions));
+                        mapper.writer().writeValueAsString(methodDescriptions));
                 } catch (JsonParseException e) {
                     logger.error(COULD_NOT_PARSE_METHOD_FILE, e);
                 } catch (JsonMappingException e) {
@@ -440,18 +446,6 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
     @Override
     protected void setWorkflowNode(WorkflowNode workflowNode) {
         super.setWorkflowNode(workflowNode);
-
-        addPropertyChangeListener(new PropertyChangeListener() {
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getPropertyName().contains(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)) {
-                    if (Boolean.parseBoolean((String) evt.getNewValue())) {
-                        setProperty(OptimizerComponentConstants.USE_RESTART_FILE, String.valueOf(false));
-                    }
-                }
-            }
-        });
     }
 
     /**
@@ -501,8 +495,8 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             if (thirdAlgo.isVisible() && comboThirdAlgorithmSelection.getSelectionIndex() >= 0) {
                 key += COMMA + comboThirdAlgorithmSelection.getItem(comboThirdAlgorithmSelection.getSelectionIndex());
             }
-            setProperty(OptimizerComponentConstants.ALGORITHMS, key);
-            setProperty(OptimizerComponentConstants.OPTIMIZER_PACKAGE,
+
+            setProperties(OptimizerComponentConstants.ALGORITHMS, key, OptimizerComponentConstants.OPTIMIZER_PACKAGE,
                 methodDescriptions.get(comboMainAlgorithmSelection.getText()).getOptimizerPackage());
         }
     }

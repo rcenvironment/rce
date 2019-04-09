@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -68,19 +68,20 @@ import de.rcenvironment.toolkit.utils.common.IdGenerator;
 /**
  * Component-specific implementation of {@link AbstractStateMachine}.
  * 
+ * Note: The component state transition graph created with the definition of the valid state transition seems to have some flaws. I wouldn't
+ * trust it to be rock-solid. Nevertheless, it works right now and I wouldn't touch it except the workflow engine I gets a re-design instead
+ * of replacing it with a workflow engine II. --seid_do
+ * 
  * @author Doreen Seider
- * @author Robert Mischke (tweaked error handling)
- * 
- *         Note: The component state transition graph created with the definition of the valid state transition seems to have some flaws. I
- *         wouldn't trust it to be rock-solid. Nevertheless, it works right now and I wouldn't touch it except the workflow engine I gets a
- *         re-design instead of replacing it with a workflow engine II. --seid_do
- * 
+ * @author Robert Mischke (tweaked error handling; some cleanup)
  */
 public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<ComponentState, ComponentStateMachineEvent> {
 
     private static final Log LOG = LogFactory.getLog(ComponentStateMachine.class);
 
-    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(ComponentStateMachine.class);
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled("WorkflowExecution");
+
+    private static final int MAX_INITIAL_HEARTBEAT_SEND_DELAY_MSEC = 10 * 1000;
 
     private static final int HEARTBEAT_SEND_INTERVAL_MSEC = 30 * 1000;
 
@@ -207,7 +208,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private Runnable heartbeatRunnable = new Runnable() {
 
         @Override
-        @TaskDescription("Send heartbeat for component")
+        @TaskDescription("Send component heartbeat to workflow controller")
         public void run() {
             if (VERBOSE_LOGGING) {
                 LOG.debug("Sending component heartbeat: " + compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
@@ -239,8 +240,9 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         compExeRelatedInstances.consoleRowsSender = compExeInstancesFactory.createConsoleRowsSender(compExeRelatedInstances);
         compExeRelatedInstances.compCtxBridge = compExeInstancesFactory.createComponentContextBridge(compExeRelatedInstances);
 
-        heartbeatFuture = threadPool.scheduleAtFixedRateAfterDelay(heartbeatRunnable, Math.round(Math.random() * 10),
-            HEARTBEAT_SEND_INTERVAL_MSEC);
+        heartbeatFuture =
+            threadPool.scheduleAtFixedRateAfterDelay(heartbeatRunnable, Math.round(Math.random() * MAX_INITIAL_HEARTBEAT_SEND_DELAY_MSEC),
+                HEARTBEAT_SEND_INTERVAL_MSEC);
 
         initializeEventProcessors();
     }
@@ -577,7 +579,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 compExeRelatedInstances.component.set(createNewComponentInstance());
                 ((ComponentExecutionContextImpl) compExeRelatedInstances.compExeCtx)
                     .setWorkingDirectory(createWorkingDirectory());
-                componentContext = new ComponentContextImpl(compExeRelatedInstances.compExeCtx, compExeRelatedInstances.compCtxBridge);
+                componentContext = new ComponentContextImpl(compExeRelatedInstances.compExeCtx, compExeRelatedInstances.compCtxBridge,
+                    compExeRelatedInstances.compExeStorageBridge);
                 synchronized (compExeRelatedInstances.component) {
                     compExeRelatedInstances.component.get().setComponentContext(componentContext);
                 }
@@ -1185,7 +1188,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             case PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA:
                 ComponentInterface compInterface =
                     compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
-                        .getComponentRevision().getComponentInterface();
+                        .getComponentInterface();
                 Map<String, EndpointDatum> endpointDatums = compExeRelatedInstances.compExeScheduler.fetchEndpointDatums();
 
                 // In an earlier version of this code it was assumed that all loop driver can handle NotAValue data types. Now, we
@@ -1249,7 +1252,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             WorkflowGraphHop currentHop = hopsToTraverse.poll();
             compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(
                 currentHop.getHopOuputName(), internalTD,
-                currentHop.getTargetExecutionIdentifier(), currentHop.getTargetInputName());
+                currentHop.getTargetExecutionIdentifier().toString(), currentHop.getTargetInputName());
         }
 
         private void forwardFinishToNonClosedOutputs() {
@@ -1265,7 +1268,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         private void forwardNotAValueData(EndpointDatum nAVEndpointDatum) {
             ComponentInterface compInterface =
                 compExeRelatedInstances.compExeCtx.getComponentDescription().getComponentInstallation()
-                    .getComponentRevision().getComponentInterface();
+                    .getComponentInterface();
             for (EndpointDescription output : compExeRelatedInstances.compExeCtx.getComponentDescription()
                 .getOutputDescriptionsManager().getEndpointDescriptions()) {
                 if (!compInterface.getIsLoopDriver()

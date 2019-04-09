@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,18 +9,20 @@
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * Default implementation of {@link WorkflowExecutionRelatedInstancesFactory}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class WorkflowExecutionRelatedInstancesFactoryImpl implements WorkflowExecutionRelatedInstancesFactory {
 
     @Override
-    public ComponentLostWatcher createComponentLostWatcher(WorkflowExecutionContext wfExeCtx,
+    public ComponentDisconnectWatcher createComponentLostWatcher(WorkflowExecutionContext wfExeCtx,
         ComponentStatesChangedEntirelyVerifier compStatesEntirelyChangedVerifier) {
-        return new ComponentLostWatcher(compStatesEntirelyChangedVerifier, wfExeCtx);
+        return new ComponentDisconnectWatcher(compStatesEntirelyChangedVerifier, wfExeCtx);
     }
 
     @Override
@@ -41,6 +43,12 @@ public class WorkflowExecutionRelatedInstancesFactoryImpl implements WorkflowExe
     @Override
     public WorkflowStateMachine createWorkflowStateMachine(WorkflowStateMachineContext wfStateMachineCtx) {
         return new WorkflowStateMachine(wfStateMachineCtx);
+    }
+
+    @Override
+    public NodeRestartWatcher createNodeRestartWatcher(WorkflowExecutionContext wfExeCtx,
+        ComponentStatesChangedEntirelyVerifier compStatesEntirelyChangedVerifier, ServiceRegistryAccess serviceRegistryAccess) {
+        return new NodeRestartWatcher(compStatesEntirelyChangedVerifier, wfExeCtx, serviceRegistryAccess);
     }
 
 }

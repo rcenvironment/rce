@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,7 +22,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.FileDataService;
@@ -63,21 +63,29 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData,
-        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        NetworkDestination nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (!CrossPlatformFilenameUtils.isFilenameValid(file.getName())) {
             LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, file.getName()));
         }
-        return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId);
+        return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId, false);
+    }
+
+    @Override
+    public String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData,
+        NetworkDestination nodeId, boolean alreadyCompressed) throws IOException, AuthorizationException, InterruptedException,
+        CommunicationException {
+        return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId, alreadyCompressed);
     }
 
     private String createReferenceFromStream(InputStream inputStream, MetaDataSet additionalMetaData,
-        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        NetworkDestination nodeId, boolean alreadyCompressed) throws IOException, AuthorizationException, InterruptedException,
+        CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
 
         try {
-            DataReference dataRef = fileDataService.newReferenceFromStream(inputStream, additionalMetaData, nodeId);
+            DataReference dataRef = fileDataService.newReferenceFromStream(inputStream, additionalMetaData, nodeId, alreadyCompressed);
             return dataRef.getDataReferenceKey().toString();
         } finally {
             // FIXME: replace with try-with-resources statement after release 7.0.0
@@ -86,7 +94,7 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, ResolvableNodeId nodeId)
+    public String createReferenceFromLocalDirectory(final File dir, final MetaDataSet additionalMetaData, final NetworkDestination nodeId)
         throws IOException, AuthorizationException, InterruptedException, CommunicationException {
 
         final File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
@@ -101,7 +109,7 @@ public class DataManagementServiceImpl implements DataManagementService {
             }
 
             try (FileInputStream fileInputStream = new FileInputStream(archive)) {
-                return createReferenceFromStream(fileInputStream, additionalMetaData, nodeId);
+                return createReferenceFromStream(fileInputStream, additionalMetaData, nodeId, false);
             }
         } finally {
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
@@ -110,7 +118,7 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public String createReferenceFromString(String object, MetaDataSet additionalMetaData, // CheckStyle
-        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        NetworkDestination nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
@@ -127,10 +135,17 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        ResolvableNodeId nodeId) throws IOException, CommunicationException {
+        NetworkDestination nodeId) throws IOException, CommunicationException {
+        copyReferenceToLocalFile(reference, targetFile, nodeId, true);
+    }
 
+    @Override
+    public void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination nodeId, boolean decompress)
+        throws IOException,
+        CommunicationException {
         DataReference dataRef;
         if (nodeId == null) {
+            // TODO can this still be reached? null nodeIds should not be in use anymore -- misc_ro
             dataRef = dataReferenceService.getReference(reference);
         } else {
             dataRef = dataReferenceService.getReference(reference, nodeId);
@@ -145,11 +160,13 @@ public class DataManagementServiceImpl implements DataManagementService {
             // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(dataMgmtStream);
         }
+
     }
 
     @Override
+    @Deprecated // undefined storage locations are not used anymore; remove from code base
     public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        Collection<? extends ResolvableNodeId> platforms) throws IOException, AuthorizationException, CommunicationException {
+        Collection<? extends NetworkDestination> platforms) throws IOException, AuthorizationException, CommunicationException {
 
         DataReference dataRef;
         if ((platforms == null) || (platforms.size() == 0)) {
@@ -170,7 +187,8 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public void copyReferenceToLocalDirectory(String reference, File targetDir, ResolvableNodeId node) throws IOException,
+    public void copyReferenceToLocalDirectory(final String reference, final File targetDir, final NetworkDestination node)
+        throws IOException,
         CommunicationException {
 
         final File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
@@ -190,11 +208,12 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException,
+    public String retrieveStringFromReference(String reference, NetworkDestination nodeId) throws IOException,
         AuthorizationException, CommunicationException {
         // TODO extract reference to stream resolution into separate method?
         DataReference dataRef;
         if (nodeId == null) {
+            // TODO can this still be reached? null nodeIds should not be in use anymore -- misc_ro
             dataRef = dataReferenceService.getReference(reference);
         } else {
             dataRef = dataReferenceService.getReference(reference, nodeId);

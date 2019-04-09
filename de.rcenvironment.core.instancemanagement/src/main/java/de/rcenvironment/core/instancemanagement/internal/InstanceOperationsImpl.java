@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides the actual operations to interact with external installations and profiles. Separated from the coordinating service for
@@ -221,6 +222,7 @@ public class InstanceOperationsImpl {
         }
 
         @Override
+        @TaskDescription("IM start/stop execution")
         public void run() {
 
             while (true) {

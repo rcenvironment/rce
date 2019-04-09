@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.p2.eclipse.feature"
       label="RCE Platform - p2 Bridge Feature - Eclipse Artifacts"
-      version="8.2.3.qualifier"
+      version="9.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -117,6 +117,10 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <discovery label="Eclipse" url="http://www.eclipse.org"/>
    </url>
 
+   <includes
+         id="org.eclipse.equinox.p2.user.ui"
+         version="0.0.0"/>
+
    <plugin
          id="org.eclipse.ui.views.log"
          download-size="0"
@@ -131,7 +135,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          version="0.0.0"
          unpack="false"/>
 
-   <!-- Eclipse Nebula xygraph bundle -->
    <plugin
          id="org.eclipse.nebula.visualization.xygraph"
          download-size="0"

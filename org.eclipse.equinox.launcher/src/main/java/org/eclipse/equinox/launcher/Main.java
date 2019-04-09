@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright 2016-2019 DLR, Germany
+ *  
+ * SPDX-License-Identifier: EPL-1.0
+ * 
+ * http://www.rcenvironment.de/
+ */
+
 // CHECKSTYLE:DISABLE (e)
 /*******************************************************************************
 
@@ -17,14 +26,46 @@
  *******************************************************************************/
 package org.eclipse.equinox.launcher;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.*;
-import java.security.*;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLStreamHandlerFactory;
+import java.nio.charset.StandardCharsets;
+import java.security.AllPermission;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
 import org.eclipse.equinox.internal.launcher.Constants;
 
 /**
@@ -113,6 +154,7 @@ public class Main {
 	protected boolean splashDown = false;
 
 	public final class SplashHandler extends Thread {
+		@Override
 		public void run() {
 			takeDownSplash();
 		}
@@ -342,25 +384,13 @@ public class Main {
 		if (osName.equals(Constants.OS_MACOSX))
 			return Constants.WS_COCOA;
 		if (osName.equals(Constants.OS_HPUX))
-			return Constants.WS_MOTIF;
+			return Constants.WS_GTK;
 		if (osName.equals(Constants.OS_AIX))
-			return Constants.WS_MOTIF;
+			return Constants.WS_GTK;
 		if (osName.equals(Constants.OS_SOLARIS))
 			return Constants.WS_GTK;
 		if (osName.equals(Constants.OS_QNX))
 			return Constants.WS_PHOTON;
-		return Constants.WS_UNKNOWN;
-	}
-
-	private String getAlternateWS(String defaultWS) {
-		// We'll have already tried the default, so we only need to map
-		// in one direction. (default -> alternate)
-		if (Constants.WS_COCOA.equals(defaultWS))
-			return Constants.WS_CARBON;
-		if (Constants.WS_GTK.equals(defaultWS))
-			return Constants.WS_MOTIF;
-		if (Constants.WS_WIN32.equals(defaultWS))
-			return Constants.WS_WPF;
 		return Constants.WS_UNKNOWN;
 	}
 
@@ -454,14 +484,6 @@ public class Main {
 			String fragmentArch = getArch();
 
 			libPath = getLibraryPath(getFragmentString(fragmentOS, fragmentWS, fragmentArch), defaultPath);
-			if (libPath == null && ws == null) {
-				// no ws was specified and we didn't find the default fragment, try an alternate ws
-				String alternateWS = getAlternateWS(fragmentWS);
-				libPath = getLibraryPath(getFragmentString(fragmentOS, alternateWS, fragmentArch), defaultPath);
-				if (libPath != null) {
-					System.getProperties().put(PROP_WS, alternateWS);
-				}
-			}
 		}
 		library = libPath;
 		if (library != null)
@@ -520,33 +542,39 @@ public class Main {
      * new service does not provide in this way. Secondly, the data found is not extracted to the file system, so the zip slip vulnerability
      * does not apply here.
      * 
-     * @param fragment a JAR archive
+     * @param A JAR archive
      * @return
      */
-	private String getLibraryFromFragment(String fragment) {
-		if (fragment.startsWith(FILE_SCHEME))
-			fragment = fragment.substring(5);
+    private String getLibraryFromFragment(final String fragment) {
+        final String desiredFragment;
+        if (fragment.startsWith(FILE_SCHEME)) {
+            desiredFragment = fragment.substring(5);
+        } else {
+            desiredFragment = fragment;
+        }
 
-		File frag = new File(fragment);
-		if (!frag.exists())
+        final File frag = new File(desiredFragment);
+        if (!frag.exists()) {
 			return null;
+        }
 
-		if (frag.isDirectory())
-			return searchFor("eclipse", fragment); //$NON-NLS-1$;
+        if (frag.isDirectory()) {
+            return searchFor("eclipse", desiredFragment); //$NON-NLS-1$ ;
+        }
 
-		ZipFile fragmentJar = null;
+        final ZipFile fragmentJar;
 		try {
 			fragmentJar = new ZipFile(frag);
 		} catch (IOException e) {
-			log("Exception opening JAR file: " + fragment); //$NON-NLS-1$
+            log("Exception opening JAR file: " + desiredFragment); //$NON-NLS-1$
 			log(e);
 			return null;
 		}
 
-		Enumeration entries = fragmentJar.entries();
+        final Enumeration entries = fragmentJar.entries();
 		String entry = null;
 		while (entries.hasMoreElements()) {
-			ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+            final ZipEntry zipEntry = (ZipEntry) entries.nextElement();
 			if (zipEntry.getName().startsWith("eclipse_")) { //$NON-NLS-1$
 				entry = zipEntry.getName();
 				try {
@@ -558,7 +586,7 @@ public class Main {
 			}
 		}
 		if (entry != null) {
-			String lib = extractFromJAR(fragment, entry);
+            final String lib = extractFromJAR(desiredFragment, entry);
 			if (!getOS().equals("win32")) { //$NON-NLS-1$
 				try {
 					Runtime.getRuntime().exec(new String[] {"chmod", "755", lib}).waitFor(); //$NON-NLS-1$ //$NON-NLS-2$
@@ -681,11 +709,12 @@ public class Main {
 				parent = appCL.getParent();
 		} else if (PARENT_CLASSLOADER_CURRENT.equalsIgnoreCase(type))
 			parent = this.getClass().getClassLoader();
+		@SuppressWarnings("resource")
 		URLClassLoader loader = new StartupClassLoader(bootPath, parent);
-		Class clazz = loader.loadClass(STARTER);
-		Method method = clazz.getDeclaredMethod("run", new Class[] {String[].class, Runnable.class}); //$NON-NLS-1$
+		Class<?> clazz = loader.loadClass(STARTER);
+		Method method = clazz.getDeclaredMethod("run", String[].class, Runnable.class); //$NON-NLS-1$
 		try {
-			method.invoke(clazz, new Object[] {passThruArgs, splashHandler});
+			method.invoke(clazz, passThruArgs, splashHandler);
 		} catch (InvocationTargetException e) {
 			if (e.getTargetException() instanceof Error)
 				throw (Error) e.getTargetException();
@@ -772,8 +801,8 @@ public class Main {
 	protected String decode(String urlString) {
 		//try to use Java 1.4 method if available
 		try {
-			Class clazz = URLDecoder.class;
-			Method method = clazz.getDeclaredMethod("decode", new Class[] {String.class, String.class}); //$NON-NLS-1$
+			Class<URLDecoder> clazz = URLDecoder.class;
+			Method method = clazz.getDeclaredMethod("decode", String.class, String.class); //$NON-NLS-1$
 			//first encode '+' characters, because URLDecoder incorrectly converts 
 			//them to spaces on certain class library implementations.
 			if (urlString.indexOf('+') >= 0) {
@@ -788,7 +817,7 @@ public class Main {
 				}
 				urlString = buf.toString();
 			}
-			Object result = method.invoke(null, new Object[] {urlString, "UTF-8"}); //$NON-NLS-1$
+			Object result = method.invoke(null, urlString, "UTF-8"); //$NON-NLS-1$
 			if (result != null)
 				return (String) result;
 		} catch (Exception e) {
@@ -814,12 +843,8 @@ public class Main {
 		}
 		if (!replaced)
 			return urlString;
-		try {
-			return new String(decodedBytes, 0, decodedLength, "UTF-8"); //$NON-NLS-1$
-		} catch (UnsupportedEncodingException e) {
-			//use default encoding
-			return new String(decodedBytes, 0, decodedLength);
-		}
+		
+		return new String(decodedBytes, 0, decodedLength, StandardCharsets.UTF_8); //$NON-NLS-1$
 	}
 
 	/**
@@ -831,14 +856,14 @@ public class Main {
 	protected String[] getArrayFromList(String prop) {
 		if (prop == null || prop.trim().equals("")) //$NON-NLS-1$
 			return new String[0];
-		Vector list = new Vector();
+		Vector<String> list = new Vector<>();
 		StringTokenizer tokens = new StringTokenizer(prop, ","); //$NON-NLS-1$
 		while (tokens.hasMoreTokens()) {
 			String token = tokens.nextToken().trim();
 			if (!token.equals("")) //$NON-NLS-1$
 				list.addElement(token);
 		}
-		return list.isEmpty() ? new String[0] : (String[]) list.toArray(new String[list.size()]);
+		return list.isEmpty() ? new String[0] : list.toArray(new String[list.size()]);
 	}
 
 	/**
@@ -850,12 +875,12 @@ public class Main {
 	 * @exception MalformedURLException if a problem occurs computing the class path
 	 */
 	private URL[] getDevPath(URL base) throws IOException {
-		ArrayList result = new ArrayList(5);
+		ArrayList<URL> result = new ArrayList<>(5);
 		if (inDevelopmentMode)
 			addDevEntries(base, result, OSGI);
 		//The jars from the base always need to be added, even when running in dev mode (bug 46772)
 		addBaseJars(base, result);
-		return (URL[]) result.toArray(new URL[result.size()]);
+		return result.toArray(new URL[result.size()]);
 	}
 
 	URL constructURL(URL url, String name) {
@@ -880,10 +905,10 @@ public class Main {
 		}
 	}
 
-	private void readFrameworkExtensions(URL base, ArrayList result) throws IOException {
+	private void readFrameworkExtensions(URL base, ArrayList<URL> result) throws IOException {
 		String[] extensions = getArrayFromList(System.getProperties().getProperty(PROP_EXTENSIONS));
 		String parent = new File(base.getFile()).getParent().toString();
-		ArrayList extensionResults = new ArrayList(extensions.length);
+		ArrayList<String> extensionResults = new ArrayList<>(extensions.length);
 		for (int i = 0; i < extensions.length; i++) {
 			//Search the extension relatively to the osgi plugin 
 			String path = searchForBundle(extensions[i], parent);
@@ -939,10 +964,10 @@ public class Main {
 				addDevEntries(extensionURL, result, name);
 			}
 		}
-		extensionPaths = (String[]) extensionResults.toArray(new String[extensionResults.size()]);
+		extensionPaths = extensionResults.toArray(new String[extensionResults.size()]);
 	}
 
-	private void addBaseJars(URL base, ArrayList result) throws IOException {
+	private void addBaseJars(URL base, ArrayList<URL> result) throws IOException {
 		String baseJarList = System.getProperty(PROP_CLASSPATH);
 		if (baseJarList == null) {
 			readFrameworkExtensions(base, result);
@@ -994,12 +1019,12 @@ public class Main {
 		}
 	}
 
-	protected void addEntry(URL url, List result) {
+	protected void addEntry(URL url, List<URL> result) {
 		if (new File(url.getFile()).exists())
 			result.add(url);
 	}
 
-	private void addDevEntries(URL base, List result, String symbolicName) throws MalformedURLException {
+	private void addDevEntries(URL base, List<URL> result, String symbolicName) throws MalformedURLException {
 		if (devClassPathProps == null)
 			return; // do nothing
 		String devPathList = devClassPathProps.getProperty(symbolicName);
@@ -1081,12 +1106,12 @@ public class Main {
 		if (candidates == null)
 			return null;
 
-		ArrayList matches = new ArrayList(2);
+		ArrayList<String> matches = new ArrayList<>(2);
 		for (int i = 0; i < candidates.length; i++) {
 			if (isMatchingCandidate(target, candidates[i], root))
 				matches.add(candidates[i]);
 		}
-		String[] names = (String[]) matches.toArray(new String[matches.size()]);
+		String[] names = matches.toArray(new String[matches.size()]);
 		int result = findMax(target, names);
 		if (result == -1)
 			return null;
@@ -1365,7 +1390,7 @@ public class Main {
 		try {
 			// we use the .dll suffix to properly test on Vista virtual directories
 			// on Vista you are not allowed to write executable files on virtual directories like "Program Files"
-			fileTest = File.createTempFile("writtableArea", ".dll", installDir); //$NON-NLS-1$ //$NON-NLS-2$
+			fileTest = File.createTempFile("writableArea", ".dll", installDir); //$NON-NLS-1$ //$NON-NLS-2$
 		} catch (IOException e) {
 			//If an exception occured while trying to create the file, it means that it is not writtable
 			return false;
@@ -1480,10 +1505,10 @@ public class Main {
 	 * @param argString the arguments string
 	 */
 	public static void main(String argString) {
-		Vector list = new Vector(5);
+		Vector<String> list = new Vector<>(5);
 		for (StringTokenizer tokens = new StringTokenizer(argString, " "); tokens.hasMoreElements();) //$NON-NLS-1$
-			list.addElement(tokens.nextElement());
-		main((String[]) list.toArray(new String[list.size()]));
+			list.addElement(tokens.nextToken());
+		main(list.toArray(new String[list.size()]));
 	}
 
 	/**
@@ -1772,6 +1797,7 @@ public class Main {
 			if (args[i - 1].equalsIgnoreCase(LAUNCHER)) {
 				//not doing anything with this right now, but still consume it
 				//launcher = arg;
+				System.getProperties().put(PROP_LAUNCHER, arg);
 				found = true;
 			}
 
@@ -2161,7 +2187,7 @@ public class Main {
 		Properties props = new Properties();
 		InputStream is = null;
 		try {
-			is = url.openStream();
+			is = getStream(url);
 			props.load(is);
 		} finally {
 			if (is != null)
@@ -2172,6 +2198,17 @@ public class Main {
 				}
 		}
 		return props;
+	}
+	
+	private InputStream getStream(URL location) throws IOException {
+		if ("file".equalsIgnoreCase(location.getProtocol())) { //$NON-NLS-1$
+			// this is done to handle URLs with invalid syntax in the path
+			File f = new File(location.getPath());
+			if (f.exists()) {
+				return new FileInputStream(f);
+			}
+		}
+		return location.openStream();
 	}
 
 	/*
@@ -2275,7 +2312,7 @@ public class Main {
 		String splashPath = System.getProperty(PROP_SPLASHPATH);
 		if (splashPath != null) {
 			String[] entries = getArrayFromList(splashPath);
-			ArrayList path = new ArrayList(entries.length);
+			ArrayList<String> path = new ArrayList<>(entries.length);
 			for (int i = 0; i < entries.length; i++) {
 				String entry = resolve(entries[i]);
 				if (entry != null && entry.startsWith(FILE_SCHEME)) {
@@ -2287,7 +2324,7 @@ public class Main {
 					log("Invalid splash path entry: " + entries[i]); //$NON-NLS-1$
 			}
 			// see if we can get a splash given the splash path
-			result = searchForSplash((String[]) path.toArray(new String[path.size()]));
+			result = searchForSplash(path.toArray(new String[path.size()]));
 			if (result != null) {
 				System.getProperties().put(PROP_SPLASHLOCATION, result);
 				return result;
@@ -2413,39 +2450,43 @@ public class Main {
 			if (!clean)
 				return splash.getAbsolutePath();
 		}
-		ZipFile file;
-		try {
-			file = new ZipFile(jarPath);
+		
+		try (ZipFile file = new ZipFile(jarPath)) {
+			ZipEntry entry = file.getEntry(jarEntry.replace(File.separatorChar, '/'));
+			if (entry == null)
+				return null;
+			InputStream input = null;
+			try {
+				input = file.getInputStream(entry);
+			} catch (IOException e) {
+				log("Exception opening splash: " + entry.getName() + " in JAR file: " + jarPath); //$NON-NLS-1$ //$NON-NLS-2$
+				log(e);
+				return null;
+			}
+			new File(splash.getParent()).mkdirs();
+			OutputStream output;
+			try {
+				output = new BufferedOutputStream(new FileOutputStream(splash));
+			} catch (FileNotFoundException e) {
+				try {
+					input.close();
+				} catch (IOException e1) {
+					// ignore
+				}
+				return null;
+			}
+			transferStreams(input, output);
+			try {
+				file.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return splash.exists() ? splash.getAbsolutePath() : null;
 		} catch (IOException e) {
 			log("Exception looking for " + jarEntry + " in JAR file: " + jarPath); //$NON-NLS-1$ //$NON-NLS-2$
 			log(e);
 			return null;
 		}
-		ZipEntry entry = file.getEntry(jarEntry.replace(File.separatorChar, '/'));
-		if (entry == null)
-			return null;
-		InputStream input = null;
-		try {
-			input = file.getInputStream(entry);
-		} catch (IOException e) {
-			log("Exception opening splash: " + entry.getName() + " in JAR file: " + jarPath); //$NON-NLS-1$ //$NON-NLS-2$
-			log(e);
-			return null;
-		}
-		new File(splash.getParent()).mkdirs();
-		OutputStream output;
-		try {
-			output = new BufferedOutputStream(new FileOutputStream(splash));
-		} catch (FileNotFoundException e) {
-			try {
-				input.close();
-			} catch (IOException e1) {
-				// ignore
-			}
-			return null;
-		}
-		transferStreams(input, output);
-		return splash.exists() ? splash.getAbsolutePath() : null;
 	}
 
 	/*
@@ -2466,7 +2507,7 @@ public class Main {
 	private static String[] buildNLVariants(String locale) {
 		//build list of suffixes for loading resource bundles
 		String nl = locale;
-		ArrayList result = new ArrayList(4);
+		ArrayList<String> result = new ArrayList<>(4);
 		int lastSeparator;
 		while (true) {
 			result.add("nl" + File.separatorChar + nl.replace('_', File.separatorChar) + File.separatorChar + SPLASH_IMAGE); //$NON-NLS-1$
@@ -2477,7 +2518,7 @@ public class Main {
 		}
 		//add the empty suffix last (most general)
 		result.add(SPLASH_IMAGE);
-		return (String[]) result.toArray(new String[result.size()]);
+		return result.toArray(new String[result.size()]);
 	}
 
 	/*
@@ -2668,7 +2709,7 @@ public class Main {
 	private void openLogFile() throws IOException {
 		computeLogFileLocation();
 		try {
-			log = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile.getAbsolutePath(), true), "UTF-8")); //$NON-NLS-1$
+			log = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile.getAbsolutePath(), true), StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			logFile = null;
 			throw e;
@@ -2676,11 +2717,7 @@ public class Main {
 	}
 
 	private BufferedWriter logForStream(OutputStream output) {
-		try {
-			return new BufferedWriter(new OutputStreamWriter(output, "UTF-8")); //$NON-NLS-1$
-		} catch (UnsupportedEncodingException e) {
-			return new BufferedWriter(new OutputStreamWriter(output));
-		}
+		return new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
 	}
 
 	private void closeLogFile() throws IOException {
@@ -2698,7 +2735,7 @@ public class Main {
 		final String EXT_OVERRIDE_USER = ".override.user"; //$NON-NLS-1$
 		if (destination == null || source == null)
 			return;
-		for (Enumeration e = source.keys(); e.hasMoreElements();) {
+		for (Enumeration<?> e = source.keys(); e.hasMoreElements();) {
 			String key = (String) e.nextElement();
 			if (key.equals(PROP_CLASSPATH)) {
 				String destinationClasspath = destination.getProperty(PROP_CLASSPATH);
@@ -2786,23 +2823,28 @@ public class Main {
 				private static final long serialVersionUID = 3258131349494708277L;
 
 				// A simple PermissionCollection that only has AllPermission
+				@Override
 				public void add(Permission permission) {
 					//no adding to this policy
 				}
 
+				@Override
 				public boolean implies(Permission permission) {
 					return true;
 				}
 
-				public Enumeration elements() {
-					return new Enumeration() {
+				@Override
+				public Enumeration<Permission> elements() {
+					return new Enumeration<Permission>() {
 						int cur = 0;
 
+						@Override
 						public boolean hasMoreElements() {
 							return cur < 1;
 						}
 
-						public Object nextElement() {
+						@Override
+						public Permission nextElement() {
 							if (cur == 0) {
 								cur = 1;
 								return allPermission;
@@ -2814,24 +2856,28 @@ public class Main {
 			};
 		}
 
+		@Override
 		public PermissionCollection getPermissions(CodeSource codesource) {
 			if (contains(codesource))
 				return allPermissions;
 			return policy == null ? allPermissions : policy.getPermissions(codesource);
 		}
 
+		@Override
 		public PermissionCollection getPermissions(ProtectionDomain domain) {
 			if (contains(domain.getCodeSource()))
 				return allPermissions;
 			return policy == null ? allPermissions : policy.getPermissions(domain);
 		}
 
+		@Override
 		public boolean implies(ProtectionDomain domain, Permission permission) {
 			if (contains(domain.getCodeSource()))
 				return true;
 			return policy == null ? true : policy.implies(domain, permission);
 		}
 
+		@Override
 		public void refresh() {
 			if (policy != null)
 				policy.refresh();
@@ -2853,7 +2899,7 @@ public class Main {
 		}
 	}
 
-	private class StartupClassLoader extends URLClassLoader {
+	public class StartupClassLoader extends URLClassLoader {
 
 		public StartupClassLoader(URL[] urls) {
 			super(urls);
@@ -2867,6 +2913,7 @@ public class Main {
 			super(urls, parent, factory);
 		}
 
+		@Override
 		protected String findLibrary(String name) {
 			if (extensionPaths == null)
 				return super.findLibrary(name);
@@ -2878,6 +2925,29 @@ public class Main {
 			}
 			return super.findLibrary(name);
 		}
+		
+		/**
+		 * Must override addURL to make it public so the framework can
+		 * do deep reflection to add URLs on Java 9.
+		 */
+		@Override
+		public void addURL(URL url) {
+			super.addURL(url);
+		}
+
+		// preparing for Java 9
+		protected URL findResource(String moduleName, String name) {
+			return findResource(name);
+		}
+
+		// preparing for Java 9
+		protected Class<?> findClass(String moduleName, String name) {
+			try {
+				return findClass(name);
+			} catch (ClassNotFoundException e) {
+				return null;
+			}
+		}
 	}
 
 	private Properties substituteVars(Properties result) {
@@ -2885,7 +2955,7 @@ public class Main {
 			//nothing todo.
 			return null;
 		}
-		for (Enumeration eKeys = result.keys(); eKeys.hasMoreElements();) {
+		for (Enumeration<?> eKeys = result.keys(); eKeys.hasMoreElements();) {
 			Object key = eKeys.nextElement();
 			if (key instanceof String) {
 				String value = result.getProperty((String) key);

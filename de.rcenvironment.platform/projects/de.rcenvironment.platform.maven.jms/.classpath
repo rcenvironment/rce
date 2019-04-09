@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-broker-5.12.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-client-5.12.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-openwire-legacy-5.12.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/geronimo-jms_1.1_spec-1.1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/hawtbuf-1.11.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-broker-5.15.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-client-5.15.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-openwire-legacy-5.15.8.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

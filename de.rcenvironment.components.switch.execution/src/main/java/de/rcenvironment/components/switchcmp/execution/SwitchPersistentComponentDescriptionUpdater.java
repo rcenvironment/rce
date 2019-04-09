@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,11 +10,11 @@ package de.rcenvironment.components.switchcmp.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.components.switchcmp.common.SwitchComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
@@ -100,7 +100,7 @@ public class SwitchPersistentComponentDescriptionUpdater implements PersistentCo
         if (dynamicInputs != null) {
             for (JsonNode endpoint : dynamicInputs) {
                 ObjectNode metaData = (ObjectNode) endpoint.get("metadata");
-                String currentConstraint = metaData.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).getTextValue();
+                String currentConstraint = metaData.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).textValue();
                 if (currentConstraint.equals(NOT_REQUIRED)){
                     metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT, REQUIRED_IF_CONNCECTED);
                 }

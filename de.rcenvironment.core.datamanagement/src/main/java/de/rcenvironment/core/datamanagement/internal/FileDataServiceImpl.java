@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,6 +24,7 @@ import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.RemotableFileDataService;
@@ -248,10 +249,15 @@ public class FileDataServiceImpl implements FileDataService {
     @Override
     public InputStream getStreamFromDataReference(DataReference dataReference)
         throws AuthorizationException, CommunicationException {
+        return getStreamFromDataReference(dataReference, true);
+    }
 
+    @Override
+    public InputStream getStreamFromDataReference(DataReference dataReference, boolean decompress) throws AuthorizationException,
+        CommunicationException {
         try {
             InputStream rawStream = getRemoteFileDataService(dataReference.getStorageNodeId()).getStreamFromDataReference(dataReference,
-                !platformService.matchesLocalInstance(dataReference.getStorageNodeId()));
+                !platformService.matchesLocalInstance(dataReference.getStorageNodeId()), decompress);
             return new BufferedInputStream(rawStream, DOWNLOAD_STREAM_BUFFER_SIZE);
         } catch (RemoteOperationException e) {
             throw new CommunicationException(StringUtils.format("Failed to get stream from data reference from remote node %s: ",
@@ -260,7 +266,15 @@ public class FileDataServiceImpl implements FileDataService {
     }
 
     @Override
-    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, ResolvableNodeId platform)
+    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, NetworkDestination platform)
+        throws AuthorizationException, IOException, InterruptedException, CommunicationException {
+
+        return newReferenceFromStream(inputStream, metaDataSet, platform, false);
+    }
+
+    @Override
+    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, NetworkDestination platform,
+        boolean alreadyCompressed)
         throws AuthorizationException, IOException, InterruptedException, CommunicationException {
 
         if (platform == null) {
@@ -268,21 +282,21 @@ public class FileDataServiceImpl implements FileDataService {
         }
 
         // local case: upload to local data store and return reference
-        if (platformService.matchesLocalInstance(platform)) {
+        if (platform instanceof ResolvableNodeId && platformService.matchesLocalInstance((ResolvableNodeId) platform)) {
             try {
-                return getRemoteFileDataService(platform).newReferenceFromStream(inputStream, metaDataSet);
+                return getRemoteFileDataService(platform).newReferenceFromStream(inputStream, metaDataSet, alreadyCompressed);
             } catch (RemoteOperationException e) {
                 throw new CommunicationException(StringUtils.format(
                     "Failed to create new data reference from stream from remote node @%s: ", platform)
                     + e.getMessage());
             }
         } else {
-            return performRemoteUpload(inputStream, metaDataSet, platform);
+            return performRemoteUpload(inputStream, metaDataSet, platform, alreadyCompressed);
         }
     }
 
     private DataReference performRemoteUpload(InputStream inputStream, MetaDataSet metaDataSet,
-        final ResolvableNodeId remoteNodeId) throws InterruptedException, IOException, CommunicationException {
+        final NetworkDestination remoteNodeId, boolean alreadyCompressed) throws InterruptedException, IOException, CommunicationException {
         final RemotableFileDataService remoteDataService =
             (RemotableFileDataService) communicationService.getRemotableService(RemotableFileDataService.class, remoteNodeId);
         try {
@@ -292,7 +306,7 @@ public class FileDataServiceImpl implements FileDataService {
             if (!System.getProperties().containsKey(DRCE_DEACTIVATE_SINGLE_STEP_UPDATE) && readBuffer.getContentSize() < uploadChunkSize) {
                 log.debug("Data to upload is smaller than chunk size: performing upload in single step.");
                 DataReference reference =
-                    remoteDataService.uploadInSingleStep(readBuffer.getContentSizeBuffer(), metaDataSet);
+                    remoteDataService.uploadInSingleStep(readBuffer.getContentSizeBuffer(), metaDataSet, alreadyCompressed);
                 return reference;
             } else {
 
@@ -346,7 +360,7 @@ public class FileDataServiceImpl implements FileDataService {
                     readBuffer = asyncUploader.swapBuffersWhenReady(readBuffer);
                 }
                 asyncUploader.shutDown();
-                remoteDataService.finishUpload(uploadId, metaDataSet);
+                remoteDataService.finishUpload(uploadId, metaDataSet, alreadyCompressed);
                 log.debug(StringUtils.format("Finished uploading %d bytes for upload id %s; polling for remote data reference", totalRead2,
                     uploadId));
 
@@ -382,7 +396,7 @@ public class FileDataServiceImpl implements FileDataService {
         }
     }
 
-    private RemotableFileDataService getRemoteFileDataService(ResolvableNodeId nodeId) throws RemoteOperationException {
+    private RemotableFileDataService getRemoteFileDataService(NetworkDestination nodeId) throws RemoteOperationException {
         return (RemotableFileDataService) communicationService.getRemotableService(RemotableFileDataService.class, nodeId);
     }
 

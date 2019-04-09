@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.auth</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - Authentication</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -16,14 +16,10 @@
 
 	<dependencies>
 		<dependency>
+			<!-- last updated: 2019-01-30, misc_ro -->
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.51</version> <!-- last updated: 2014-10-16, misc_ro -->
-		</dependency>
-		<dependency>
-			<groupId>org.jglobus</groupId>
-			<artifactId>JGlobus-Core</artifactId>
-			<version>2.0.4</version> <!-- last updated: 2014-10-16, misc_ro -->
+			<version>1.60</version> <!-- released Jul 2018 -->
 		</dependency>
 	</dependencies>
 

@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "132b42c8-f602-4b31-ba4e-1b428b5dca88",
     "name" : "Analysis",
-    "location" : "278:392",
+    "location" : "458:421",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -39,7 +39,7 @@
   }, {
     "identifier" : "731dcfd9-c324-4fad-82fb-3e2fdefaee45",
     "name" : "Design of Experiments",
-    "location" : "278:253",
+    "location" : "458:282",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -128,7 +128,7 @@
   }, {
     "identifier" : "dca69140-7963-4583-998d-251bee132d7a",
     "name" : "Input Provider",
-    "location" : "139:272",
+    "location" : "319:301",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -151,7 +151,7 @@
   }, {
     "identifier" : "aa57be13-04a4-4be2-9aa2-45fc799e1bf9",
     "name" : "Preparing",
-    "location" : "478:253",
+    "location" : "658:282",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -211,7 +211,7 @@
   }, {
     "identifier" : "62f0f1f6-1e6e-43dc-b9a1-dd4147365c61",
     "name" : "Simulation",
-    "location" : "478:392",
+    "location" : "658:421",
     "zIndex" : "4",
     "active" : "true",
     "component" : {
@@ -285,5 +285,5 @@
     "target" : "132b42c8-f602-4b31-ba4e-1b428b5dca88",
     "input" : "7bca39ff-d773-40b6-9594-89f42da3d534"
   } ],
-  "labels" : "[{\"identifier\":\"be0c0ba3-c70c-441d-b003-bfbd7f01e031\",\"headerText\":\"\",\"text\":\"Example workflow: 'Forwarding Values'\\r\\nObjective: Introducing the concept of forwarding values\\r\\n\\r\\nAll of the driver workflow components (see example workflow '02_02_Evaluation_Drivers') support forwarding of values. Those values are received at inputs as any other value, but instead of being processed they are just forwarded to an output. An important use case are nested loops, which are introduced in the following workflow example '03_03_Nested_Loop'.\\r\\n\\r\\nIn this workflow, a forwarding value is added to the DOE component. It waits until a value arrived at the related input. Afterwards, the loop is executed like before (see previous example workflow '03_01_Simple_Loop') but always \\\"carrying\\\" the forwarding value between the DOE and the \\\"Preparing\\\" workflow component.\",\"location\":\"25:-1\",\"size\":\"707:247\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"be0c0ba3-c70c-441d-b003-bfbd7f01e031\",\"headerText\":\"Introducing the concept of forwarding values\",\"text\":\"All of the driver workflow components (see example workflow '02_02_Evaluation_Drivers') support forwarding of values. Those values are received at inputs as any other value, but instead of being processed they are just forwarded to an output. An important use case are nested loops, which are introduced in the following workflow example '03_03_Nested_Loop'.\\r\\n\\r\\nIn this workflow, a forwarding value is added to the DOE component. It waits until a value arrived at the related input. Afterwards, the loop is executed like before (see previous example workflow '03_01_Simple_Loop') but always \\\"carrying\\\" the forwarding value between the DOE and the \\\"Preparing\\\" workflow component.\",\"location\":\"113:44\",\"size\":\"938:218\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

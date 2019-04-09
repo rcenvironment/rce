@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,6 +14,7 @@ import java.util.List;
 import org.easymock.EasyMock;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
@@ -51,11 +52,13 @@ public final class ComponentInstallationMockFactory {
      */
     public static ComponentInstallation createComponentInstallationMock(String identifier, String version, String nodeId) {
         ComponentInterface compInterface = EasyMock.createStrictMock(ComponentInterface.class);
-        EasyMock.expect(compInterface.getIdentifier()).andStubReturn(identifier);
+        EasyMock.expect(compInterface.getDisplayName()).andStubReturn(identifier);
+        EasyMock.expect(compInterface.getIdentifierAndVersion()).andStubReturn(identifier);
         List<String> identifiers = new ArrayList<>();
         identifiers.add(identifier);
         EasyMock.expect(compInterface.getIdentifiers()).andStubReturn(identifiers);
         EasyMock.expect(compInterface.getVersion()).andStubReturn(version);
+        EasyMock.expect(compInterface.getLocalExecutionOnly()).andStubReturn(false);
         EasyMock.replay(compInterface);
 
         ComponentRevision compRevision = EasyMock.createStrictMock(ComponentRevision.class);
@@ -64,6 +67,9 @@ public final class ComponentInstallationMockFactory {
 
         ComponentInstallation compInstallation = EasyMock.createStrictMock(ComponentInstallation.class);
         EasyMock.expect(compInstallation.getComponentRevision()).andStubReturn(compRevision);
+        EasyMock.expect(compInstallation.getComponentInterface()).andStubReturn(compInterface);
+        EasyMock.expect(compInstallation.getNodeIdObject())
+            .andStubReturn(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId));
         EasyMock.expect(compInstallation.getNodeId()).andStubReturn(nodeId);
         EasyMock.replay(compInstallation);
 

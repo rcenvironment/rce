@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -69,7 +69,7 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
         }
         
         // skip self connections
-        if (!wrapper.getSource().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
+        if (!wrapper.getSource().getIdentifierAsObject().equals(wrapper.getTarget().getIdentifierAsObject())) {
             ConnectionLocator connectionLocator = new ConnectionLocator(connection, ConnectionLocator.MIDDLE);
             
             connectionLocator.setRelativePosition(PositionConstants.NSEW);
@@ -114,8 +114,8 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             ConnectionWrapper connectionWrapper = (ConnectionWrapper) getModel();
             
             for (Connection connection : workflowDescription.getConnections()) {
-                if ((connectionWrapper.getSource().getIdentifier().equals(connection.getSourceNode().getIdentifier())
-                    && connectionWrapper.getTarget().getIdentifier().equals(connection.getTargetNode().getIdentifier()))
+                if ((connectionWrapper.getSource().getIdentifierAsObject().equals(connection.getSourceNode().getIdentifierAsObject())
+                    && connectionWrapper.getTarget().getIdentifierAsObject().equals(connection.getTargetNode().getIdentifierAsObject()))
                     ) {
                     addBendpointsFromModelToGraphics(connection);
                     return;

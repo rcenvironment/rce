@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -58,8 +58,10 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * @author Adrian Stock
  */
 public class InputProviderEndpointEditDialog extends EndpointEditDialog implements SelectionListener {
-    
-    private static final int[] NOTETEXTSIZE = {75, 10};
+
+    private static final int[] NOTETEXTSIZE = { 75, 10 };
+
+    private static final int SHORTTEXT_MAXLENGTH = 140;
 
     private Label label;
 
@@ -70,11 +72,11 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     private Button selectFromFileSystemButton;
 
     private Composite confContainer;
-    
+
     private Composite warningComposite;
-    
+
     private Boolean warningCompositeCreated = false;
-    
+
     private NumericalTextConstraintListener floatListener;
 
     private NumericalTextConstraintListener integerListener;
@@ -85,9 +87,9 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
 
     private boolean isInProject;
 
-    public InputProviderEndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
-        EndpointType direction, String id, boolean isStatic, Image icon, EndpointMetaDataDefinition metaData,
-        Map<String, String> metadataValues) {
+    public InputProviderEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
+            ComponentInstanceProperties configuration, EndpointType direction, String id, boolean isStatic, Image icon,
+            EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
         super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
     }
 
@@ -98,7 +100,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     }
 
     @Override
-    public void widgetDefaultSelected(SelectionEvent event) {}
+    public void widgetDefaultSelected(SelectionEvent event) {
+    }
 
     @Override
     public void widgetSelected(SelectionEvent event) {
@@ -127,8 +130,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
 
     private void initializeWithValue(String value) {
         if (metadataValues.containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
-            && metadataValues.get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
+                && metadataValues.get(InputProviderComponentConstants.META_FILESOURCETYPE)
+                        .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
             selectAtStartCheckbox.setSelection(true);
             setSelectedAtStart();
         } else {
@@ -165,7 +168,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         } else if (dataType.equals(DataType.Float.getDisplayName())) {
             textField.addVerifyListener(floatListener);
         } else if (dataType.equals(DataType.FileReference.getDisplayName())
-            || dataType.equals(DataType.DirectoryReference.getDisplayName())) {
+                || dataType.equals(DataType.DirectoryReference.getDisplayName())) {
             if (!selectAtStartCheckbox.getSelection()) {
                 setFileOrDirectorySelected(true);
             }
@@ -198,9 +201,9 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     }
 
     private void createFileSelectionArea() {
-        
-        if ((PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-            .getActiveEditor().getEditorInput().toString().split("/")).length == 1) {
+
+        if ((PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getEditorInput()
+                .toString().split("/")).length == 1) {
             isInProject = false;
         } else {
             isInProject = true;
@@ -228,7 +231,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {}
+            public void widgetDefaultSelected(SelectionEvent event) {
+            }
         });
 
         selectFromProjectButton = new Button(fileSelectionComposite, SWT.PUSH);
@@ -243,10 +247,10 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 IResource resource = null;
                 if (comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName())) {
                     resource = PropertyTabGuiHelper.selectDirectoryFromActiveProject(confContainer.getShell(),
-                        Messages.selectDirectory, Messages.selectDirectoryFromProject);
+                            Messages.selectDirectory, Messages.selectDirectoryFromProject);
                 } else if (isInProject) {
                     resource = PropertyTabGuiHelper.selectFileFromActiveProject(confContainer.getShell(),
-                        Messages.selectFile, Messages.selectFileFromProject);
+                            Messages.selectFile, Messages.selectFileFromProject);
                 }
                 if (resource != null) {
                     textField.setText(resource.getFullPath().makeRelative().toPortableString());
@@ -254,7 +258,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {}
+            public void widgetDefaultSelected(SelectionEvent event) {
+            }
         });
         selectFromFileSystemButton = new Button(fileSelectionComposite, SWT.PUSH);
         selectFromFileSystemButton.setText(Messages.selectFromFileSystem);
@@ -294,7 +299,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                             ((FileDialog) dialog).setFilterPath(isThisPathExisting.getParent().toString());
 
                         } else {
-                            // The path value is empty. This would open the last opened FileDialog if we not set the root path.
+                            // The path value is empty. This would open the last opened FileDialog if we not
+                            // set the root path.
                             File[] paths = File.listRoots();
                             if (paths[0].getPath() != null) {
                                 ((FileDialog) dialog).setFilterPath(paths[0].getPath());
@@ -318,15 +324,16 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {}
+            public void widgetDefaultSelected(SelectionEvent event) {
+            }
         });
         setFileOrDirectorySelected(false);
-        
+
         if (!isInProject) {
             createWorkflowNotInRCEWarning();
         }
     }
-    
+
     private void createWorkflowNotInRCEWarning() {
 
         warningComposite = new Composite(confContainer, SWT.NONE);
@@ -335,24 +342,25 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         GridData g = new GridData(GridData.FILL, GridData.VERTICAL_ALIGN_BEGINNING, true, true);
         g.horizontalSpan = 2;
         warningComposite.setLayoutData(g);
-        
+
         Label noteLabel = new Label(warningComposite, SWT.TOP);
         noteLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16));
         noteLabel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
-        
+
         g = new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING);
         g.horizontalAlignment = GridData.FILL;
         g.widthHint = NOTETEXTSIZE[1];
         g.heightHint = NOTETEXTSIZE[0];
         g.grabExcessHorizontalSpace = true;
-        
+
         Text noteText = new Text(warningComposite, SWT.WRAP | SWT.READ_ONLY);
         noteText.setEditable(false);
         noteText.setEnabled(false);
         noteText.setLayoutData(g);
         noteText.setCursor(Display.getCurrent().getSystemCursor(SWT.CURSOR_ARROW));
-        noteText.setText("Select from project is not available because the component is in a workflow outside your current workspace.");
-        
+        noteText.setText(
+                "Select from project is not available because the component is in a workflow outside your current workspace.");
+
         warningCompositeCreated = true;
     }
 
@@ -366,7 +374,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
         String dataType = comboDataType.getText();
         if (dataType.equals(DataType.FileReference.toString())
-            || dataType.equals(DataType.DirectoryReference.toString())) {
+                || dataType.equals(DataType.DirectoryReference.toString())) {
             if (isInProject) {
                 selectFromProjectButton.setEnabled(!selectAtStart);
             } else {
@@ -382,7 +390,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
         if (selectAtStart) {
             metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE,
-                InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART);
+                    InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART);
         } else {
             metadataValues.remove(InputProviderComponentConstants.META_FILESOURCETYPE);
         }
@@ -451,11 +459,13 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
             String dataType = metaData.getDataType(key);
             String validation = metaData.getValidation(key);
-            if (!dataType.equals(EndpointMetaDataConstants.TYPE_BOOL)
-                && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
-                if (((Text) widget).getText().equals("") && (validation != null
-                    && (validation.contains(ComponentConstants.INPUT_USAGE_TYPE_REQUIRED)))
-                    && !(comboDataType.getText().equalsIgnoreCase(DataType.ShortText.getDisplayName()))) {
+            boolean datatypeIsNotBoolean = !dataType.equals(EndpointMetaDataConstants.TYPE_BOOL);
+            if (datatypeIsNotBoolean
+                    && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
+                boolean inputIsRequired = validation != null
+                        && (validation.contains(ComponentConstants.INPUT_USAGE_TYPE_REQUIRED));
+                if (((Text) widget).getText().equals("") && inputIsRequired
+                        && !(comboDataType.getText().equalsIgnoreCase(DataType.ShortText.getDisplayName()))) {
                     isValid = false;
                 } else if (!((Text) widget).getText().equals("")) {
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_INT)) {
@@ -464,26 +474,31 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                             value = Integer.parseInt(((Text) widget).getText());
                             isValid &= checkValidation(value, validation);
                         } catch (NumberFormatException e) {
-                            value = Integer.MAX_VALUE;
                             isValid &= false;
                         }
-                    }
-                    if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_BOOL)) {
+                    } else if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_BOOL)) {
                         double value = Double.MAX_VALUE;
                         try {
                             value = Double.parseDouble(((Text) widget).getText());
                             isValid &= checkValidation(value, validation);
                         } catch (NumberFormatException e) {
-                            value = Double.MAX_VALUE;
+                            isValid &= false;
+                        }
+                    } else if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_TEXT)) {
+                        String value = ((Text) widget).getText();
+                        if (value.length() <= SHORTTEXT_MAXLENGTH) {
+                            isValid &= true;
+                        } else {
                             isValid &= false;
                         }
                     }
                 }
             }
         }
-        if (!isValid && (comboDataType.getText().equalsIgnoreCase(DataType.FileReference.getDisplayName())
-            || comboDataType.getText().equalsIgnoreCase(DataType.DirectoryReference.getDisplayName()))
-            && selectAtStartCheckbox.getSelection()) {
+        if (!isValid
+                && (comboDataType.getText().equalsIgnoreCase(DataType.FileReference.getDisplayName())
+                        || comboDataType.getText().equalsIgnoreCase(DataType.DirectoryReference.getDisplayName()))
+                && selectAtStartCheckbox.getSelection()) {
             isValid = true;
         }
         return isValid;

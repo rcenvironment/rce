@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -85,6 +85,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         spanHorizontal(failRadioButtonNAV);
         failRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV, LoopBehaviorInCaseOfFailure.Fail);
         failRadioButtonNAV.addSelectionListener(listenerNAV);
+        failRadioButtonNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV);
 
         discardAndContinueRadioButtonNAV = factory.createButton(compositeNAV, TEXT_DISCARD, SWT.RADIO);
         spanHorizontal(discardAndContinueRadioButtonNAV);
@@ -150,6 +151,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         failRadioButtonCmpFlr.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE,
             LoopBehaviorInCaseOfFailure.Fail);
         failRadioButtonCmpFlr.addSelectionListener(listenerCmpFlr);
+        failRadioButtonCmpFlr.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE);
 
         discardAndContinueRadioButtonCmpFlr = factory.createButton(compositeCmpFlr, TEXT_DISCARD, SWT.RADIO);
         spanHorizontal(discardAndContinueRadioButtonCmpFlr);
@@ -273,5 +275,39 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         }
 
     }
+
+    /**
+     * Refreshes the {@link FaultTolerantLoopSection} UI.
+     * 
+     * @author Kathrin Schaffert
+     */
+    public void refreshFaultToleranceSection() {
+        if (discardAndContinueRadioButtonNAV.isDisposed()) {
+            return;
+        }
+        setWorkflowNode(node);
+    }
+
+    @Override
+    protected FaultToleranceUpdater createUpdater() {
+        return new FaultToleranceUpdater();
+    }
+    
+    /**
+     * Fault Tolerance {@link DefaultUpdater} implementation of the handler to update the Fault Tolerance UI.
+     * 
+     * @author scha_kn
+     *
+     */
+    protected class FaultToleranceUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            refreshFaultToleranceSection();
+        }
+
+    }
+
 
 }

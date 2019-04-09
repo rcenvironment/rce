@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.api.ComponentColor;
@@ -192,6 +193,10 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
 
     @Override
     public String getIdentifier() {
+        return identifier;
+    }
+    @Override
+    public String getIdentifierAndVersion() {
         if (version != null && !identifier.endsWith(ComponentConstants.ID_SEPARATOR + version)) {
             return identifier + ComponentConstants.ID_SEPARATOR + version;
         }
@@ -320,7 +325,7 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
 
     @Override
     public String toString() {
-        return StringUtils.format("ComponentInterface(id=%s)", getIdentifier());
+        return StringUtils.format("ComponentInterface(id=%s)", getIdentifierAndVersion());
     }
 
     private void updateIconHash() {

@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "9886cb0b-9f84-4b4d-a505-23f9a707a610",
     "name" : "Analysis",
-    "location" : "243:418",
+    "location" : "398:444",
     "zIndex" : "4",
     "active" : "true",
     "component" : {
@@ -39,7 +39,7 @@
   }, {
     "identifier" : "1290a1e6-f472-44d1-93c0-3fd63c3a972e",
     "name" : "Design of Experiments",
-    "location" : "243:279",
+    "location" : "398:305",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -103,7 +103,7 @@
   }, {
     "identifier" : "8ccce3b6-f7f8-4703-8a1b-971336cb134d",
     "name" : "Optimizer",
-    "location" : "443:418",
+    "location" : "598:444",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -198,7 +198,7 @@
   }, {
     "identifier" : "d00d9752-c9e7-457e-a03e-42381408f1fc",
     "name" : "Preparing",
-    "location" : "443:279",
+    "location" : "598:305",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -243,7 +243,7 @@
   }, {
     "identifier" : "ad030734-0d12-44f4-9c22-42580ad887d4",
     "name" : "Simulation",
-    "location" : "568:418",
+    "location" : "723:444",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -312,5 +312,5 @@
     "target" : "8ccce3b6-f7f8-4703-8a1b-971336cb134d",
     "input" : "2ee0ecd8-a3ee-4a4b-a6ac-51a20e8db536"
   } ],
-  "labels" : "[{\"identifier\":\"0be6a63a-3f58-4fad-8915-276e4a2f6a88\",\"headerText\":\"\",\"text\":\"Example workflow: 'Fault-tolerant Loops'\\r\\nObjective: Introducing the concept behind fault-tolerant loops.\\r\\n\\r\\nA fault-tolerant loop (either simple or nested) is capable to deal with failed execution of workflow components in different, fault-tolerant ways. Fault-tolerance behaviour is defined in the Properties tab \\\"Fault Tolerance\\\" of the loop's driver component.\\r\\n\\r\\nThis workflow is the same one used in the example workflow \\\"03_02_Nested_Loops\\\" beside slight configuration changes. \\r\\n\\r\\nTo make this workflow fault-tolerant go to the tab \\\"Fault Tolerance\\\" of the DOE and Optimizer workflow components and switch options. \\\"Discard\\\" means, that the last run is considered failed, but the loop continues. \\\"Re-run\\\" means, that the last run is simply repeated and not considered.\",\"location\":\"56:19\",\"size\":\"726:233\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"0be6a63a-3f58-4fad-8915-276e4a2f6a88\",\"headerText\":\"Introducing the concept behind fault-tolerant loops\",\"text\":\"A fault-tolerant loop (either simple or nested) is capable to deal with failed execution of workflow components in different, fault-tolerant ways. Fault-tolerance behaviour is defined in the Properties tab \\\"Fault Tolerance\\\" of the loop's driver component.\\r\\n\\r\\nThis workflow is the same one used in the example workflow \\\"03_02_Nested_Loops\\\" beside slight configuration changes. \\r\\n\\r\\nTo make this workflow fault-tolerant go to the tab \\\"Fault Tolerance\\\" of the DOE and Optimizer workflow components and switch options. \\\"Discard\\\" means, that the last run is considered failed, but the loop continues. \\\"Re-run\\\" means, that the last run is simply repeated and not considered.\",\"location\":\"77:57\",\"size\":\"983:231\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

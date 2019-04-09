@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -53,7 +53,7 @@ public class WorkflowEditorHelpContextProvider implements IContextProvider {
             // contexts.xml are adapted and version suffix is added)
             // as a consequence, context help can only be provided per component and not per version
             // - seid_do, Dec 2013
-            if (toolIntegrationRegistry.hasId(componentIdentifier)) {
+            if (toolIntegrationRegistry.hasTIContextMatchingPrefix(componentIdentifier)) {
                 return HelpSystem.getContext(ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
             } else if (componentIdentifier.contains("de.rcenvironment.remoteaccess")) {
                 return HelpSystem.getContext("de.rcenvironment.remoteaccess.*");

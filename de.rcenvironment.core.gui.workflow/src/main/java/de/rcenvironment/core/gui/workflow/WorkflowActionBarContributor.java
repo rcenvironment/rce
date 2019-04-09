@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,6 +13,7 @@ import org.eclipse.gef.ui.actions.GEFActionConstants;
 import org.eclipse.gef.ui.actions.ZoomComboContributionItem;
 import org.eclipse.gef.ui.actions.ZoomInRetargetAction;
 import org.eclipse.gef.ui.actions.ZoomOutRetargetAction;
+import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -30,6 +31,7 @@ public class WorkflowActionBarContributor extends ActionBarContributor {
 
     @Override
     public void contributeToToolBar(IToolBarManager toolBarManager) {
+        toolBarManager.add(new GroupMarker("de.rcenvironment.editor.toolbar"));
         toolBarManager.add(getAction(GEFActionConstants.ZOOM_IN));
         toolBarManager.add(getAction(GEFActionConstants.ZOOM_OUT));
         toolBarManager.add(new ZoomComboContributionItem(getPage()));

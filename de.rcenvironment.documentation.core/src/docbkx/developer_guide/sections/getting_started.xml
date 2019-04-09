@@ -12,16 +12,24 @@
                 <listitem>
                     <para>Make sure you have a <ulink
                             url="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
-                            >Java Development Kit</ulink>, Version 8, installed on your system. <note>
+                            >Java Development Kit</ulink>, Version 8u161 or higher, installed on
+                        your system.<note>
                             <para>If you are installing a JDK on a centrally administered computer
                                 that already has Java installed, it is usually a good idea to
                                     <emphasis>uncheck</emphasis> the "Install public JRE" option
                                 during installation.</para>
                         </note></para>
+                    <para>Currently, Oracle JDK 8.x is the reference development platform. In the
+                        near future, however, this will most likely be replaced by OpenJDK on both
+                        Windows and Linux to simplify licensing issues. OpenJDK has already been
+                        successfully tested in version 8 and 11, on Windows and Linux, for
+                        development and building. Note that automated JUnit test execution as part
+                        of the build process is currently only possible with 8.x versions of the
+                        JDK; this will be extended to JDK 11 soon.</para>
                 </listitem>
                 <listitem>
-                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Mars.2
-                        (4.5.2)" or later from <ulink url="https://www.eclipse.org/downloads/"
+                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Photon
+                        (4.8.x)" or later from <ulink url="https://www.eclipse.org/downloads/"
                             >https://www.eclipse.org/downloads/</ulink>. Using the latest Eclipse
                         release instead is usually fine; however, there may be slight differences
                         between this guide and that version's UI.</para>
@@ -223,10 +231,12 @@
                     </para>
                 </listitem>
                 <listitem>
-                    <para>It is currently necessary to set the global compiler compliance level to
-                        1.7. To apply this, select "Window > Preferences" from the menu, and
-                        navigate to the "Java > Compiler" tab. (This step will become unnecessary in
-                        the upcoming 9.0.0 release.)</para>
+                    <para>If you previously changed the global Java compiler compliance level to 1.7
+                        for previous RCE releases, it is recommended to revert this setting to
+                        default, or explicitly set it to 1.8. This setting can be accessed by
+                        opening "Window > Preferences" from the menu, and then navigating to the
+                        "Java > Compiler" tab. If you never actively changed this setting, no action
+                        is required.</para>
                 </listitem>
                 <listitem>
                     <para>Enable "Project > Build Automatically". Eclipse will start building all

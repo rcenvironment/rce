@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,9 +24,9 @@ public class SshRemoteAccessEndpointPropertySection extends EndpointPropertySect
     public SshRemoteAccessEndpointPropertySection() {
         super();
         EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.inputs,
-            EndpointType.INPUT, null, new String[] {}, null, this, true);
+            EndpointType.INPUT, "default", null, null, this, false);
         EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, null, new String[] {}, null, this, true);
+            EndpointType.OUTPUT, "default", null, null, this, false);
         setColumns(2);
         setPanes(inputPane, outputPane);
     }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -102,7 +102,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     }
 
     public String getIdentifier() {
-        return componentInterface.getIdentifier();
+        return componentInterface.getIdentifierAndVersion();
     }
 
     /**
@@ -205,8 +205,8 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
         Map<String, String> placeholders = configurationDescription.getPlaceholders();
 
         configurationDescription = new ConfigurationDescription(
-                installation.getComponentRevision().getComponentInterface().getConfigurationDefinition(),
-                installation.getComponentRevision().getComponentInterface().getConfigurationExtensionDefinitions());
+                installation.getComponentInterface().getConfigurationDefinition(),
+                installation.getComponentInterface().getConfigurationExtensionDefinitions());
         configurationDescription.setConfiguration(config);
         configurationDescription.setPlaceholders(placeholders);
     }
@@ -222,14 +222,14 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
      *            component installation with execution information to copy
      */
     public void setComponentInstallation(ComponentInstallation installation) {
-        String interfaceId = componentInterface.getIdentifier();
-        String newInterfaceId = installation.getComponentRevision().getComponentInterface().getIdentifier();
+        String interfaceId = componentInterface.getIdentifierAndVersion();
+        String newInterfaceId = installation.getComponentInterface().getIdentifierAndVersion();
         if (!newInterfaceId.equals(interfaceId) && !(newInterfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
                 && newInterfaceId.endsWith(interfaceId)
                 && !(interfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
                 && interfaceId.endsWith(newInterfaceId)) {
             throw new IllegalArgumentException(
-                    "Component installation doesn't refer to the interface: " + componentInterface.getIdentifier());
+                    "Component installation doesn't refer to the interface: " + componentInterface.getIdentifierAndVersion());
         }
 
         this.componentInstallation = installation;
@@ -239,7 +239,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
 
     @Override
     public String toString() {
-        return getNode() + ":" + componentInterface.getIdentifier();
+        return getNode() + ":" + componentInterface.getIdentifierAndVersion();
     }
 
     @Override

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,6 +16,7 @@ import java.util.Queue;
 
 import org.junit.Test;
 
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -61,7 +62,8 @@ public class InternalTDImplTest {
         assertEquals(internalTD.getHopsToTraverse(), deSerializedInternal.getHopsToTraverse());
 
         type = InternalTDImpl.InternalTDType.NestedLoopReset;
-        WorkflowGraphHop graphHop = new WorkflowGraphHop(HOP_EXE_ID, HOP_OUTPUT_NAME, TARGET_EXE_ID, TARGET_OUTPUT_NAME);
+        WorkflowGraphHop graphHop = new WorkflowGraphHop(new ComponentExecutionIdentifier(HOP_EXE_ID), HOP_OUTPUT_NAME,
+            new ComponentExecutionIdentifier(TARGET_EXE_ID), TARGET_OUTPUT_NAME);
         Queue<WorkflowGraphHop> graphHops = new LinkedList<>();
         graphHops.add(graphHop);
         internalTD = new InternalTDImpl(type, INTERNAL_TD_ID, graphHops);

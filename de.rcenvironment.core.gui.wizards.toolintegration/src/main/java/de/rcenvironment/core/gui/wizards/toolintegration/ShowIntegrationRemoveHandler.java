@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,10 +16,11 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
@@ -52,23 +53,16 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                 Map<String, Object> configuration = integrationService.getToolConfiguration(selectedTool);
                 ToolIntegrationContext context = null;
                 if (configuration != null) {
-                    if (configuration.get(ToolIntegrationConstants.INTEGRATION_TYPE) == null) {
-                        context = registry.getToolIntegrationContext(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
+                    Object integrationTypeProperty = configuration.get(ToolIntegrationConstants.INTEGRATION_TYPE);
+                    if (integrationTypeProperty == null) {
+                        context = registry.getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
                     } else {
-                        for (ToolIntegrationContext currContext : registry.getAllIntegrationContexts()) {
-                            if (currContext.getContextType().equals(configuration.get(ToolIntegrationConstants.INTEGRATION_TYPE))) {
-                                context = currContext;
-                            }
-                        }
+                        context = registry.getToolIntegrationContextByType(integrationTypeProperty.toString());
                     }
                     if (context != null) {
                         String toolname = selectedTool.substring(context.getPrefixForComponentId().length());
                         integrationService.unregisterIntegration(toolname, context);
                         integrationService.removeTool(selectedTool, context);
-                        integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator
-                            + context.getNameOfToolIntegrationDirectory() + File.separator + context.getToolDirectoryPrefix()
-                            + selectedTool);
-                        integrationService.updatePublishedComponents(context);
                         File remove =
                             new File(integrationService.getPathOfComponentID(selectedTool, context));
                         removeOrDeactive(integrationService, dialog, context, remove);

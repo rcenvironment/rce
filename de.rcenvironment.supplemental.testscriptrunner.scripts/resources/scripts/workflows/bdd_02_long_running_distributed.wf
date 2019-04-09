@@ -1,0 +1,124 @@
+{
+  "identifier" : "82c2bf24-cad1-4b6b-9346-542862181396",
+  "workflowVersion" : "5",
+  "name" : "bdd_02_long_running_distributed",
+  "nodes" : [ {
+    "identifier" : "a3c28eb3-510b-451f-9c9a-858764d4f172",
+    "name" : "Parametric Study",
+    "location" : "200:260",
+    "zIndex" : "2",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "4",
+      "name" : "Parametric Study"
+    },
+    "configuration" : {
+      "failLoopOnly-NAV_5e0ed1cd" : "false",
+      "faultTolerance-NAV_5e0ed1cd" : "Fail",
+      "finallyFailIfDiscarded-NAV_5e0ed1cd" : "false",
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "storeComponentHistoryData" : "true"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "273df7fc-c0b0-4868-b4e3-db2d0f081f8f",
+      "name" : "Design variable",
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "0",
+        "StepSize" : "1",
+        "ToValue" : "10",
+        "UseInputAsFromValue" : "false",
+        "UseInputAsStepSizeValue" : "false",
+        "UseInputAsToValue" : "false",
+        "fitStepSizeToBounds" : "true"
+      }
+    }, {
+      "identifier" : "cc6367ac-39dd-40c1-9c44-7ac4f475ba8d",
+      "name" : "Done",
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "e3d866aa-41db-4d5d-9085-cb2b9461bb8a",
+    "name" : "Script 1",
+    "location" : "360:260",
+    "zIndex" : "1",
+    "active" : "true",
+    "platform" : "00000000000000000000000000000002:0",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "import time\r\n\r\nRCE.write_output(\"value\", RCE.read_input(\"value\"))\r\ntime.sleep(1)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c7a2e2a9-5ef6-40f7-86ab-dc6946cca076",
+      "name" : "value",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "e1c2d664-24e2-441c-8332-ebdfb2059647",
+      "name" : "value",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "4eebb2f2-c0cb-4a73-ba5c-ed32a9b66781",
+    "name" : "Script 2",
+    "location" : "520:260",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "import time\r\n\r\nRCE.write_output(\"value\", RCE.read_input(\"value\"))\r\ntime.sleep(1)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "ac3fc0a7-25e7-42f6-a085-9703d911893b",
+      "name" : "value",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "74aed0fa-33b1-462e-a1a6-57ee9adc8325",
+      "name" : "value",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "a3c28eb3-510b-451f-9c9a-858764d4f172",
+    "output" : "273df7fc-c0b0-4868-b4e3-db2d0f081f8f",
+    "target" : "e3d866aa-41db-4d5d-9085-cb2b9461bb8a",
+    "input" : "c7a2e2a9-5ef6-40f7-86ab-dc6946cca076"
+  }, {
+    "source" : "e3d866aa-41db-4d5d-9085-cb2b9461bb8a",
+    "output" : "e1c2d664-24e2-441c-8332-ebdfb2059647",
+    "target" : "4eebb2f2-c0cb-4a73-ba5c-ed32a9b66781",
+    "input" : "ac3fc0a7-25e7-42f6-a085-9703d911893b"
+  } ]
+}

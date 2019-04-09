@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,7 +12,7 @@ import java.util.Collection;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 
 /**
@@ -34,7 +34,7 @@ public interface DataReferenceService {
      * @return the found {@link DataReference} as a clone.
      * @throws CommunicationException in case of communication error
      */
-    DataReference getReference(String dataReferenceKey, ResolvableNodeId platform) throws CommunicationException;
+    DataReference getReference(String dataReferenceKey, NetworkDestination platform) throws CommunicationException;
 
     /**
      * Retrieves a {@link DataReference} for a given key by querying the Catalogs of the statically configured "known" platforms.
@@ -43,6 +43,7 @@ public interface DataReferenceService {
      * @return the found {@link DataReference} as a clone.
      * @throws CommunicationException in case of communication error
      */
+    @Deprecated // undefined storage locations are not used anymore; remove from code base
     DataReference getReference(String dataReferenceKey) throws CommunicationException;
 
     /**
@@ -53,5 +54,6 @@ public interface DataReferenceService {
      * @return the found {@link DataReference} as a clone.
      * @throws CommunicationException in case of communication error
      */
-    DataReference getReference(String dataReferenceKey, Collection<? extends ResolvableNodeId> platforms) throws CommunicationException;
+    @Deprecated // undefined storage locations are not used anymore; remove from code base
+    DataReference getReference(String dataReferenceKey, Collection<? extends NetworkDestination> platforms) throws CommunicationException;
 }

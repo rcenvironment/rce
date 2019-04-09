@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Command
 Bundle-SymbolicName: de.rcenvironment.core.gui.command;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.command.api,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.component.api,

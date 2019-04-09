@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,6 +18,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
@@ -25,11 +26,9 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
-import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
-import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Abstract component for the ScriptSection.
@@ -56,13 +55,8 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     private final String scriptName;
 
-    private final PersistentSettingsService persistentSettingsService;
-
     public AbstractScriptSection(String scriptName) {
         this.scriptName = scriptName;
-        this.persistentSettingsService =
-            ServiceRegistry.createAccessFor(this).getService(PersistentSettingsService.class);
-
     }
 
     /**
@@ -76,23 +70,23 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         parent.setLayout(new GridLayout(1, true));
-        
+
         final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         composite.setLayout(new GridLayout(1, true));
-        
+
         final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
         scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         scriptSection.setText(Messages.configureScript);
-        
+
         Composite scriptComposite = getWidgetFactory().createFlatFormComposite(scriptSection);
         scriptComposite.setLayout(new GridLayout(1, false));
         scriptComposite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
 
         scriptSection.setClient(scriptComposite);
-        
+
         createCompositeContentAtVeryTop(scriptComposite, getWidgetFactory());
-        
+
         openInEditorButton = getWidgetFactory().createButton(scriptComposite, Messages.openInEditor, SWT.PUSH);
         checkBoxWhitespace = getWidgetFactory().createButton(scriptComposite, Messages.showWhitespace, SWT.CHECK);
 
@@ -124,7 +118,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         scriptingText.setLayoutData(gridData);
         scriptingText.setData(CONTROL_PROPERTY_KEY, SshExecutorConstants.CONFIG_KEY_SCRIPT);
         scriptingText.addKeyListener(new KeyAdapter() {
-            
+
             @Override
             public void keyPressed(KeyEvent e) {
                 updateEditor(node);
@@ -137,7 +131,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         checkBoxWhitespace.addSelectionListener(new SelectionAdapter() {
 
             @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+            public void widgetSelected(SelectionEvent e) {
                 boolean selected = checkBoxWhitespace.getSelection();
                 if (selected) {
                     whitespaceListener.setEnabled(true);
@@ -148,12 +142,10 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
                     whitespaceListener.setEnabled(false);
                     whitespaceListener.redrawAll();
                 }
-                persistentSettingsService.saveStringValue(KEY_SCRIPT_WHITESPACE_BOX, String.valueOf(checkBoxWhitespace.getSelection()));
+                setProperty(KEY_SCRIPT_WHITESPACE_BOX, WorkflowNodeUtil.getConfigurationValue(node, KEY_SCRIPT_WHITESPACE_BOX));
             }
         });
-
-
-        
+        checkBoxWhitespace.setData(CONTROL_PROPERTY_KEY, KEY_SCRIPT_WHITESPACE_BOX);
     }
 
     private void updateEditor(WorkflowNode node) {
@@ -166,21 +158,8 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
     public void aboutToBeShown() {
         super.aboutToBeShown();
         refresh();
-        String whitespaceBoxSelection = persistentSettingsService.readStringValue(KEY_SCRIPT_WHITESPACE_BOX);
-        if (whitespaceBoxSelection == null || !Boolean.parseBoolean(whitespaceBoxSelection)) {
-            checkBoxWhitespace.setSelection(false);
-            whitespaceListener.setEnabled(false);
-            whitespaceListener.redrawAll();
-        } else {
-            checkBoxWhitespace.setSelection(true);
-            whitespaceListener.setEnabled(true);
-            whitespaceListener.drawStyledText();
-            updateEditor(node);
-        }
     }
 
-   
-    
     /**
      * Implementation of {@link AbstractEditScriptRunnable}.
      * 
@@ -233,5 +212,29 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
                 new SetConfigurationValueCommand(SshExecutorConstants.CONFIG_KEY_SCRIPT, oldValue, newValue);
             execute(node, command);
         }
+    }
+
+    @Override
+    protected Updater createUpdater() {
+        return new DefaultUpdater() {
+
+            @Override
+            public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+                super.updateControl(control, propertyName, newValue, oldValue);
+                if (propertyName.equals(KEY_SCRIPT_WHITESPACE_BOX)) {
+                    checkBoxWhitespace.getSelection();
+                    if (!checkBoxWhitespace.getSelection()) {
+                        checkBoxWhitespace.setSelection(false);
+                        whitespaceListener.setEnabled(false);
+                        whitespaceListener.redrawAll();
+                    } else {
+                        checkBoxWhitespace.setSelection(true);
+                        whitespaceListener.setEnabled(true);
+                        whitespaceListener.drawStyledText();
+                        updateEditor(node);
+                    }
+                }
+            }
+        };
     }
 }

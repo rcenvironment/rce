@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,9 +21,6 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonLocation;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -32,6 +29,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessage;
@@ -42,8 +43,6 @@ import de.rcenvironment.core.configuration.bootstrap.ParameterException;
 import de.rcenvironment.core.configuration.bootstrap.SystemExitException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
-import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
-import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -367,12 +366,18 @@ public class ConfigurationServiceImplTest {
         final CachingListener listener = new CachingListener();
         service.addErrorListener(listener);
         // test parsing error
-        service.setExceptionToThrow(new JsonParseException("parsing error", null));
+        // Although the constructor used for constructing a JsonParseException here is deprecated, the Jackson-documentation offers no
+        // alternative. Thus, we keep this construction.
+        @SuppressWarnings("deprecation") final JsonParseException parseException = new JsonParseException("parsing error", null);
+        service.setExceptionToThrow(parseException);
         service.getConfiguration("dummy", Object.class);
         Assert.assertNotNull(listener.lastErrorMessage);
         Assert.assertTrue(!listener.lastErrorMessage.isEmpty());
         // test mapping error
-        service.setExceptionToThrow(new JsonMappingException("mapping error", (JsonLocation) null));
+        // Deprecated constructor, see above.
+        @SuppressWarnings("deprecation") final JsonMappingException mappingException =
+            new JsonMappingException("mapping error", (JsonLocation) null);
+        service.setExceptionToThrow(mappingException);
         service.getConfiguration("dummy", Object.class);
         Assert.assertTrue(!listener.lastErrorMessage.isEmpty());
     }
@@ -427,12 +432,9 @@ public class ConfigurationServiceImplTest {
      * @throws IOException on I/O errors
      */
     @Test
+    @Ignore // broken since removing the discovery mechanism
+    // TODO (p2) this uses and tests a deprecated method only used by other tests; needs review whether it should be removed completely
     public void testGetPropertySubstitution() throws IOException {
-
-        if (!ConfigurationServiceImpl.PROPERTY_SUBSTITUTION_MECHANISM_ENABLED) {
-            log.debug("Compiled with property subsctitution mechanism disabled; skipping test");
-            return;
-        }
 
         String configFileBasename = "temp.unittest";
         String testNamespace = "testns";
@@ -546,16 +548,9 @@ public class ConfigurationServiceImplTest {
             }
             bootstrapSettingsInitialized = true;
         }
-        DiscoveryBootstrapService discoveryBootstrapService = EasyMock.createMock(DiscoveryBootstrapService.class);
-        EasyMock.expect(discoveryBootstrapService.getSymbolicBundleName()).andReturn("de.rcenvironment.rce.configuration.discovery");
-        EasyMock.expect(discoveryBootstrapService.initializeDiscovery((DiscoveryConfiguration) EasyMock.anyObject())).andReturn(
-            substitutionProperties);
-        EasyMock.replay(discoveryBootstrapService);
-
         System.setProperty(ConfigurationService.SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE,
             installationDir.getAbsolutePath());
         ConfigurationServiceImpl service = new ConfigurationServiceImpl();
-        service.bindDiscoveryBootstrapService(discoveryBootstrapService);
         service.mockActivate();
         return service;
     }

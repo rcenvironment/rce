@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -28,7 +28,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.SimpleExcelService;
+import de.rcenvironment.components.excel.common.ExcelServiceAccess;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -136,7 +136,7 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
             @Override
             @TaskDescription("Browses the given excel file for macros")
             public void run() {
-                ExcelService excelService = new SimpleExcelService();
+                ExcelService excelService = ExcelServiceAccess.get();
                 File xlFile = ExcelUtils.getAbsoluteFile(getProperty(ExcelComponentConstants.XL_FILENAME));
                 if (xlFile != null) {
                     final String[] macrosAvailable;

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,23 +9,26 @@
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * Creates instances used when executing a workflow.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public interface WorkflowExecutionRelatedInstancesFactory {
 
     /**
-     * Creates new instance of {@link ComponentLostWatcher}.
+     * Creates new instance of {@link ComponentDisconnectWatcher}.
      * 
-     * @param wfExeCtx {@link WorkflowExecutionContext} of the workflow the new {@link ComponentLostWatcher} instance is associated with
+     * @param wfExeCtx {@link WorkflowExecutionContext} of the workflow the new {@link ComponentDisconnectWatcher} instance is associated
+     *        with
      * @param compStatesEntirelyChangedVerifier {@link ComponentStatesChangedEntirelyVerifier} of the workflow the new
-     *        {@link ComponentLostWatcher} instance is associated with
-     * @return new instance of {@link ComponentLostWatcher}
+     *        {@link ComponentDisconnectWatcher} instance is associated with
+     * @return new instance of {@link ComponentDisconnectWatcher}
      */
-    ComponentLostWatcher createComponentLostWatcher(WorkflowExecutionContext wfExeCtx,
+    ComponentDisconnectWatcher createComponentLostWatcher(WorkflowExecutionContext wfExeCtx,
         ComponentStatesChangedEntirelyVerifier compStatesEntirelyChangedVerifier);
 
     /**
@@ -61,4 +64,16 @@ public interface WorkflowExecutionRelatedInstancesFactory {
      * @return new instance of {@link WorkflowStateMachine}
      */
     WorkflowStateMachine createWorkflowStateMachine(WorkflowStateMachineContext wfStateMachineCtx);
+
+    /**
+     * Creates a new {@link NodeRestartWatcher} instance.
+     * 
+     * @param wfExeCtx the {@link WorkflowExecutionContext}
+     * @param compStatesEntirelyChangedVerifier the {@link ComponentStatesChangedEntirelyVerifier} to notify when components become
+     *        permanently unavailable
+     * @param serviceRegistryAccess the registry to fetch required services from
+     * @return the new instance
+     */
+    NodeRestartWatcher createNodeRestartWatcher(WorkflowExecutionContext wfExeCtx,
+        ComponentStatesChangedEntirelyVerifier compStatesEntirelyChangedVerifier, ServiceRegistryAccess serviceRegistryAccess);
 }

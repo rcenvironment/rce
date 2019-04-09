@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -87,8 +87,8 @@ public abstract class WorkbenchAdvisorDelegate {
             false);
         declareWorkbenchImage(configurer, ideBundle, IDEInternalWorkbenchImages.IMG_DLGBAN_QUICKFIX_DLG, pathWizban + "quick_fix.png",
             false);
-        declareWorkbenchImage(configurer, ideBundle, IDE.SharedImages.IMG_OBJ_PROJECT, pathObject + "prj_obj.gif", true);
-        declareWorkbenchImage(configurer, ideBundle, IDE.SharedImages.IMG_OBJ_PROJECT_CLOSED, pathObject + "cprj_obj.gif", true);
+        declareWorkbenchImage(configurer, ideBundle, IDE.SharedImages.IMG_OBJ_PROJECT, pathObject + "prj_obj.png", true);
+        declareWorkbenchImage(configurer, ideBundle, IDE.SharedImages.IMG_OBJ_PROJECT_CLOSED, pathObject + "cprj_obj.png", true);
         declareWorkbenchImage(configurer, ideBundle, IDE.SharedImages.IMG_OPEN_MARKER, pathELocalTool + "gotoobj_tsk.gif", true);
         declareWorkbenchImage(configurer, ideBundle, IDEInternalWorkbenchImages.IMG_ELCL_QUICK_FIX_ENABLED, pathELocalTool
             + "smartmode_co.gif", true);

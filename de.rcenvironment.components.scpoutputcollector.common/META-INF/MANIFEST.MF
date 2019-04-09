@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE ScpOutputCollector Component Common
+Bundle-SymbolicName: de.rcenvironment.components.scpoutputcollector.common
+Bundle-Version: 8.2.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: de.rcenvironment.components.scpoutputcollector.common
+Import-Package: de.rcenvironment.core.component.api

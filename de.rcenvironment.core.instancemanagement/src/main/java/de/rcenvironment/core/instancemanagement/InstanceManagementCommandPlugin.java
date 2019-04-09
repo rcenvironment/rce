@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -226,7 +226,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 "downloads and installs a new RCE installation",
                 "--if-missing - download and install if and only if an installation with the same version is not present",
                 "--force-download - forces the download and reinstallation of the installation files even if they are present in the "
-                + "current cache",
+                    + "current cache",
                 "--force-reinstall - forces reinstallation even if the same version is already installed",
                 TIMEOUT_DESCRIPTION));
 
@@ -237,7 +237,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 "stops all instances running the given installation id, downloads and installs the new RCE installation, and starts the "
                     + "instances again with the new installation",
                 "--force-download - forces the download and reinstallation of the installation files even if they are present in the "
-                + "current cache",
+                    + "current cache",
                 "--force-reinstall - forces reinstallation even if the same version is already installed",
                 TIMEOUT_DESCRIPTION));
 
@@ -257,6 +257,8 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 InstanceManagementConstants.SUBCOMMAND_SET_COMMENT + " <comment> - sets a general comment",
                 InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION + " [<true/false>] - sets or clears the workflow host flag",
                 InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION + " [<true/false>] - sets or clears the relay flag",
+                InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID
+                    + " <node id> - adds an override value for the node's network id; use with caution!",
                 InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH
                     + " <path> - sets the root path for RCE's temporary files directory",
 
@@ -318,7 +320,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         contributions.add(new CommandDescription(ROOT_COMMAND + " start all",
             "[--timeout <value>] <installation id>",
             true,
-            "starts all available instances with the desired installation; "
+            "starts all available instances. Uses the given installation; "
                 + "use \"" + InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID
                 + "\" to use the current \"master\" installation",
             TIMEOUT_DESCRIPTION));
@@ -581,6 +583,10 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             // TODO merge derived configuration keys?
             changeSequence.setWorkflowHostFlag(parseSingleBooleanParameter(parameters, false));
             break;
+        case InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.setCustomNodeId(parameters.get(0));
+            break;
         case InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH:
             assertParameterCount(parameters, 1, token);
             final String tempPath = parameters.get(0);
@@ -782,7 +788,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             } catch (IOException e) {
                 throw CommandException.executionError(e.toString(), context);
             }
-            context.getOutputReceiver().addOutput("Instance with id: " + instanceId + " disposed");
+            context.getOutputReceiver().addOutput("Instance '" + instanceId + "' disposed");
         }
     }
 

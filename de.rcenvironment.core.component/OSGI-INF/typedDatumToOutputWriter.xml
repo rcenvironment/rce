@@ -3,7 +3,7 @@
 	<implementation class="de.rcenvironment.core.component.execution.internal.TypedDatumToOutputWriter"/>
 
 	<reference name="Endpoint Datum Dispatcher"
-		interface="de.rcenvironment.core.component.execution.internal.EndpointDatumDispatcher"
+		interface="de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService"
 		cardinality="1..1"
 		bind="bindEndpointDatumDispatcher"
 		policy="dynamic"

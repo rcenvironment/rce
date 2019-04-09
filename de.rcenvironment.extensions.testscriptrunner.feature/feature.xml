@@ -6,7 +6,12 @@
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
-      Workflow components for RCE (Remote Component Environment) that allow to use BRICS in workflows to request remote tool execution as well as to upload/download input/output files.
+      An extension that provides the &quot;run-test&quot;/&quot;run-tests&quot; console command
+that executes BDD (Behavior-Driven Development) test scripts.
+
+Unlike standard unit and integration tests, BDD test scripts are 
+designed to be intuitively readable and adaptable, which makes them 
+especially suited for system and acceptance testing.
    </description>
 
    <copyright url="http://www.rcenvironment.de">

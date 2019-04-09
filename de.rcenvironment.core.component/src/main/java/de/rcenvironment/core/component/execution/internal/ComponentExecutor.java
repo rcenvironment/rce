@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -32,6 +32,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
@@ -416,7 +417,7 @@ public class ComponentExecutor {
             compExeRelatedInstances.compExeRelatedStates.executionCount.get());
 
         WorkflowGraphNode loopDriver = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
-            .getLoopDriver(compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
+            .getLoopDriver(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()));
         if (loopDriver != null && loopDriver.isDrivingFaultTolerantLoop()) {
             writeFailureOutputData();
         } else {
@@ -427,7 +428,7 @@ public class ComponentExecutor {
     private void writeFailureOutputData() throws ComponentExecutionException {
         Map<String, Set<Deque<WorkflowGraphHop>>> hopsToTraverseOnFailure =
             compExeRelatedInstances.compExeCtx.getWorkflowGraph()
-                .getHopsToTraverseOnFailure(compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
+                .getHopsToTraverseOnFailure(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()));
         for (String outputName : hopsToTraverseOnFailure.keySet()) {
             for (Queue<WorkflowGraphHop> hops : hopsToTraverseOnFailure.get(outputName)) {
                 WorkflowGraphHop firstHop = hops.poll();
@@ -440,7 +441,7 @@ public class ComponentExecutor {
                     notAValue.getIdentifier(), hops, String.valueOf(outputDmId));
                 compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(outputName,
                     failureDatum,
-                    firstHop.getTargetExecutionIdentifier(), firstHop.getTargetInputName());
+                    firstHop.getTargetExecutionIdentifier().toString(), firstHop.getTargetInputName());
             }
         }
 

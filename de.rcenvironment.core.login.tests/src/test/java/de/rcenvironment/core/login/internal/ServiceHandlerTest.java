@@ -1,24 +1,18 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.login.internal;
 
-import java.security.cert.X509Certificate;
-
-import junit.framework.TestCase;
-
-import org.easymock.EasyMock;
-
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
 import de.rcenvironment.core.login.LoginConfiguration;
 import de.rcenvironment.core.login.LoginMockFactory;
-import de.rcenvironment.core.login.LoginTestConstants;
+import junit.framework.TestCase;
 
 /**
  * 
@@ -65,13 +59,6 @@ public class ServiceHandlerTest extends TestCase {
         assertNotNull(ServiceHandler.getConfigurationService());
 
         try {
-            ServiceHandler.getAuthenticationService().createUser(EasyMock.createNiceMock(X509Certificate.class), VALIDITY_IN_DAYS);
-            fail();
-        } catch (IllegalStateException e) {
-            assertTrue(true);
-        }
-
-        try {
             ServiceHandler.getNotificationService().send("kabumm", "peng");
             fail();
         } catch (IllegalStateException e) {
@@ -103,8 +90,8 @@ public class ServiceHandlerTest extends TestCase {
                 LoginConfiguration config = new LoginConfiguration();
                 config.setAutoLogin(true);
                 config.setAutoLoginPassword(LoginMockFactory.PASSWORD);
-                config.setCertificateFile(LoginTestConstants.USER_1_CERTIFICATE_FILENAME);
-                config.setKeyFile(LoginTestConstants.USER_1_KEY_FILENAME);
+                // config.setCertificateFile(LoginTestConstants.USER_1_CERTIFICATE_FILENAME);
+                // config.setKeyFile(LoginTestConstants.USER_1_KEY_FILENAME);
                 return (T) config;
             }
             return null;

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,8 +20,8 @@ public class GetDocumentationWorkflowEditorAction extends WorkflowEditorAction {
 
     @Override
     public void run() {
-        String identifier = workflowNode.getComponentDescription().getComponentInterface().getIdentifier();
-        ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier);
+        String identifier = workflowNode.getComponentDescription().getComponentInstallation().getInstallationId();
+        ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier, false);
     }
 
 }

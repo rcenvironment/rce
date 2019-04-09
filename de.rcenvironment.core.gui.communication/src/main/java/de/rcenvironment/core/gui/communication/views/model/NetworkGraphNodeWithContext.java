@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,6 +13,7 @@ import java.util.Map;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
 import de.rcenvironment.core.communication.common.WorkflowHostUtils;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNode;
 import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
@@ -24,6 +25,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  */
 public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeWithContext>, ContributedNetworkViewNode {
+
+    // These constants are only used in our implementation of compareTo. They are moved to class-wide constants in order to stop checkstyle
+    // complaining about magic numbers.
+    private static final int THIS_SMALLER_THAN_OTHER = -1;
+
+    private static final int THIS_GREATER_THAN_OTHER = 1;
 
     /**
      * This context defines what information aspect of a {@link NetworkGraphNode} is represented by this tree node, or the subtree below it.
@@ -67,6 +74,9 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
 
     // the (optional) contributor of this node, which is also used for fetching its children
     private final NetworkViewContributor contributor;
+
+    // The optional ComponentEntry containing additional information about the publication of this component on the remote instance.
+    private DistributedComponentEntry distributedComponentEntry;
 
     public NetworkGraphNodeWithContext(NetworkGraphNodeWithContext parent, Context context, NetworkViewContributor contributor) {
         this.parent = parent;
@@ -124,6 +134,14 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
         return contributor;
     }
 
+    public void setDistributedComponentEntry(DistributedComponentEntry entry) {
+        this.distributedComponentEntry = entry;
+    }
+
+    public DistributedComponentEntry getDistributedComponentEntry() {
+        return distributedComponentEntry;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof NetworkGraphNodeWithContext)) {
@@ -136,19 +154,22 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
         }
         // note: context is known to be the same, so it is not checked for equality again
         if (context == Context.COMPONENT_INSTALLATION) {
-            if (componentInstallation == null) {
-                throw new IllegalStateException("Own ComponentInstallation is 'null'");
+            if (this.componentInstallation == null && other.componentInstallation == null) {
+                return this == other;
+            } else if (this.componentInstallation == null || other.componentInstallation == null) {
+                // Since we did not enter the previous branch of the if-statement, we know at this point that one of the component
+                // installations is not null. Hence, the two network nodes must represent different objects.
+                return false;
+            } else {
+                if (componentInstallation.getInstallationId() == null) {
+                    throw new IllegalStateException("ComponentInstallation has a 'null' id: " + componentInstallation.toString());
+                }
+                if (other.componentInstallation.getInstallationId() == null) {
+                    throw new IllegalStateException(
+                        "Other componentInstallation has a 'null' id: " + other.componentInstallation.toString());
+                }
+                return componentInstallation.getInstallationId().equals(other.componentInstallation.getInstallationId());
             }
-            if (other.componentInstallation == null) {
-                throw new IllegalStateException("Other ComponentInstallation is 'null'");
-            }
-            if (componentInstallation.getInstallationId() == null) {
-                throw new IllegalStateException("ComponentInstallation has a 'null' id: " + componentInstallation.toString());
-            }
-            if (other.componentInstallation.getInstallationId() == null) {
-                throw new IllegalStateException("Other componentInstallation has a 'null' id: " + other.componentInstallation.toString());
-            }
-            return componentInstallation.getInstallationId().equals(other.componentInstallation.getInstallationId());
         }
         if (context == Context.RAW_NODE_PROPERTY) {
             return displayText.equals(other.displayText);
@@ -177,8 +198,26 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
         case ROOT:
             return getDisplayNameOfNode().compareTo(other.getDisplayNameOfNode());
         case COMPONENT_INSTALLATION:
-            return componentInstallation.getComponentRevision().getComponentInterface().getDisplayName()
-                .compareTo(other.componentInstallation.getComponentRevision().getComponentInterface().getDisplayName());
+            // We want to sort the component installations first by accessibility (where accessible components precede inaccessible ones),
+            // and by their display name as a secondary criterion.
+            if (this.componentInstallation != null && other.componentInstallation != null) {
+                return this.componentInstallation.getComponentInterface().getDisplayName()
+                    .compareTo(other.componentInstallation.getComponentInterface().getDisplayName());
+            } else if (this.componentInstallation == null && other.componentInstallation != null) {
+                return THIS_GREATER_THAN_OTHER;
+            } else if (this.componentInstallation != null && other.componentInstallation == null) {
+                return THIS_SMALLER_THAN_OTHER;
+            } else {
+                final int thisHashCode = this.getDistributedComponentEntry().hashCode();
+                final int otherHashCode = other.getDistributedComponentEntry().hashCode();
+                if (thisHashCode < otherHashCode) {
+                    return THIS_SMALLER_THAN_OTHER;
+                } else if (thisHashCode == otherHashCode) {
+                    return 0;
+                } else {
+                    return THIS_GREATER_THAN_OTHER;
+                }
+            }
         case RAW_NODE_PROPERTY:
             return displayText.compareTo(other.displayText);
         default:

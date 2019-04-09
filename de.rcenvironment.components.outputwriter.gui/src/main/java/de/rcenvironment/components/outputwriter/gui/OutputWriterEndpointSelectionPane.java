@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,12 +19,13 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -54,7 +55,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
 
         jsonMapper = JsonUtils.getDefaultObjectMapper();
-        jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        jsonMapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
     }
 
     @Override

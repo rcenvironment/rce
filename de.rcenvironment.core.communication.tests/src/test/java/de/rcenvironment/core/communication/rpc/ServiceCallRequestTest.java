@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,8 +17,8 @@ import static de.rcenvironment.core.communication.testutils.CommunicationTestHel
 import java.io.Serializable;
 import java.util.List;
 
-import junit.framework.TestCase;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import junit.framework.TestCase;
 
 /**
  * Unit test for the <code>ServiceCallRequest</code> class.
@@ -37,7 +37,7 @@ public class ServiceCallRequestTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         myCommunicationRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID,
-            SERVICE, METHOD, PARAMETER_LIST);
+            SERVICE, METHOD, PARAMETER_LIST, null);
     }
 
     @Override
@@ -53,8 +53,8 @@ public class ServiceCallRequestTest extends TestCase {
      * Test Constructor for success.
      */
     public void testForSuccess() {
-        new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST);
-        new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, null);
+        new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST, null);
+        new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, null, null);
     }
 
     /*
@@ -66,42 +66,42 @@ public class ServiceCallRequestTest extends TestCase {
      */
     public void testForFailure() {
         try {
-            new ServiceCallRequest(null, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(null, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, null, SERVICE, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, null, SERVICE, METHOD, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, null, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, null, METHOD, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, "", METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, "", METHOD, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, null, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, null, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, null, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID, SERVICE, null, PARAMETER_LIST, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);

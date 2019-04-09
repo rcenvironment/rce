@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -85,6 +86,8 @@ public class PlaceholderPage extends WizardPage {
     private static final int HUNDRED = 100;
 
     private static final Log LOGGER = LogFactory.getLog(PlaceholderPage.class);
+
+    private static final int SHORTTEXT_MAXLENGTH = 140;
 
     protected final WorkflowDescription workflowDescription;
 
@@ -180,7 +183,7 @@ public class PlaceholderPage extends WizardPage {
         componentPlaceholderTree.setLayoutData(gridData);
         componentPlaceholderTree.setHeaderVisible(true);
         componentPlaceholderTree.setLinesVisible(true);
-        
+
         // resize the row height using a MeasureItem listener
         componentPlaceholderTree.addListener(SWT.MeasureItem, new Listener() {
 
@@ -254,9 +257,6 @@ public class PlaceholderPage extends WizardPage {
                         // branch, if it
                         // should
                         // only open when nothing is in it
-                        if ((current.getText().equals("") || current.getText() == null)) {
-                            current.setBackground(COLOR_RED);
-                        }
                     }
                 } else {
                     for (TreeItem thirdLevel : secondLevel.getItems()) {
@@ -267,18 +267,10 @@ public class PlaceholderPage extends WizardPage {
                                                       // into if branch, if it
                             // should only open when nothing is in it
                             secondLevel.setExpanded(true);
-                            if (current.getText().equals("")
-                                || current.getText() == null) {
-                                current.setBackground(COLOR_RED);
-                            }
                         } else if (control instanceof Combo) {
                             Combo current = (Combo) control;
                             parent.setExpanded(true);
                             secondLevel.setExpanded(true);
-                            if (current.getText().equals("")
-                                || current.getText() == null) {
-                                current.setBackground(COLOR_RED);
-                            }
                         }
                     }
                 }
@@ -342,7 +334,7 @@ public class PlaceholderPage extends WizardPage {
             for (String compInstances : instancesWithPlaceholder) {
                 ConfigurationDescription configDesc = workflowDescription.getWorkflowNode(compInstances).getComponentDescription()
                     .getConfigurationDescription();
-                
+
                 boolean hasPlaceholderWithGUIName = false;
                 for (String instancePlaceholder : placeholderHelper.getPlaceholderNameSetOfComponentInstance(compInstances)) {
                     boolean isActivePlaceholder = WorkflowPlaceholderHandler.isActivePlaceholder(instancePlaceholder, configDesc);
@@ -424,7 +416,7 @@ public class PlaceholderPage extends WizardPage {
         String finalProposal = null;
         textEditor.horizontalAlignment = SWT.LEFT;
         textEditor.grabHorizontal = true;
-        int style = SWT.BORDER;
+        int style = SWT.BORDER | SWT.SINGLE;
         boolean isPathField = false;
         boolean isBoolean = false;
         boolean isInteger = false;
@@ -449,12 +441,15 @@ public class PlaceholderPage extends WizardPage {
             style |= SWT.PASSWORD;
         }
         final Text placeholderText = new Text(item.getParent(), style);
-        placeholderText.setMessage("No value entered.");
+        boolean isShorttext = !(isFloat || isInteger || isBoolean || isPathField);
+        if (!isShorttext) {
+            placeholderText.setMessage("No value entered.");
+        }
         ModifyListener modifyListener = new ModifyListener() {
 
             @Override
             public void modifyText(ModifyEvent e) {
-                validateInput((Text) e.getSource(), componentName, guiName);
+                validateInput((Text) e.getSource(), componentName, guiName, isShorttext);
             }
         };
         placeholderText.addModifyListener(modifyListener);
@@ -536,22 +531,13 @@ public class PlaceholderPage extends WizardPage {
             textEditor.setEditor(booleanCombo, item, 1);
             return booleanCombo;
         }
-        if (isTextEmpty(placeholderText)) {
+        if (isTextEmpty(placeholderText) && !isShorttext) {
             addPlaceholderValidator(componentName, guiName);
+            placeholderText.setBackground(COLOR_RED);
         }
         textEditor.setEditor(placeholderText, item, 1);
         if (isEncrypted) {
-            TreeEditor checkButton = new TreeEditor(item.getParent());
-            checkButton.horizontalAlignment = SWT.LEFT;
-            checkButton.grabHorizontal = true;
-            Button checkForSaveButton = new Button(item.getParent(), SWT.CHECK);
-            checkForSaveButton.setText("Save");
-            checkButton.minimumWidth = checkForSaveButton.getSize().x;
-            checkButton.setEditor(checkForSaveButton, item, 2);
-            saveButtonMap.put(item.hashCode(), checkForSaveButton);
-            if (placeholderText.getText() != null && !placeholderText.getText().equals("")) {
-                checkForSaveButton.setSelection(true);
-            }
+            addSaveButton(item, placeholderText);
         }
         // componentPlaceholderCount.get(placeholderName) > 1
         if (isFloat) {
@@ -567,45 +553,62 @@ public class PlaceholderPage extends WizardPage {
         return placeholderText;
     }
 
-    private void placeApplyToAllButtonsWhereNecessary(Tree baseTree) {
-        // put all Items of one ComponentID in one List
+    private void addSaveButton(TreeItem item, final Text placeholderText) {
+        TreeEditor checkButton = new TreeEditor(item.getParent());
+        checkButton.horizontalAlignment = SWT.LEFT;
+        checkButton.grabHorizontal = true;
+        Button checkForSaveButton = new Button(item.getParent(), SWT.CHECK);
+        checkForSaveButton.setText("Save");
+        checkButton.minimumWidth = checkForSaveButton.getSize().x;
+        checkButton.setEditor(checkForSaveButton, item, 2);
+        saveButtonMap.put(item.hashCode(), checkForSaveButton);
+        if (placeholderText.getText() != null && !placeholderText.getText().equals("")) {
+            checkForSaveButton.setSelection(true);
+        }
+    }
 
-        Map<String, String> placeholderDataTypes = placeholderHelper.getPlaceholdersDataType();
+    /**
+     * Adds an "apply to all" button to those tree items that represent a placeholder that satisfies the following conditions: 1) There
+     * exists another instance of the same component that expects a value for a placeholder of the same name and 2) That placeholder has the
+     * same datatype as the former one.
+     * 
+     * @param The main tree shown on the placeholder page
+     */
+    private void placeApplyToAllButtonsWhereNecessary(Tree baseTree) {
+        final Map<String, String> placeholderDataTypes = placeholderHelper.getPlaceholdersDataType();
 
         for (TreeItem componentTree : baseTree.getItems()) {
-            List<ExtendedTreeItem> componentKeyValues = new ArrayList<>();
-            List<ExtendedTreeItem> fullComponentKeyValues = new ArrayList<>();
+
+            // First, we construct a list of all tree items that represent placeholders (i.e., all tree items on the third level of the
+            // tree) together with their respective extended datatype, e.g., int, float, file, etc.
+            final List<ExtendedTreeItem> componentKeyValues = new ArrayList<>();
             for (TreeItem instanceItem : componentTree.getItems()) {
                 for (TreeItem keyValue : instanceItem.getItems()) {
-                    String dataType = placeholderDataTypes.get(instanceItem.getText() + "."
-                        + treeItemNameToPlaceholder.get(keyValue.hashCode()));
+                    String dataType = placeholderDataTypes.get(
+                        instanceItem.getText() + "." + treeItemNameToPlaceholder.get(keyValue.hashCode()));
                     componentKeyValues.add(new ExtendedTreeItem(keyValue, dataType));
-                    fullComponentKeyValues.add(new ExtendedTreeItem(keyValue, dataType));
                 }
             }
 
-            for (int i = 0; i < componentKeyValues.size(); i++) {
-                boolean buttonForIElementCreated = false;
-                for (int j = i + 1; j < componentKeyValues.size(); j++) {
+            // Intuitively, we now determine the equivalence classes of ExtendedTreeItems, where two ExtendedTreeItems are equivalent if
+            // they represent placeholders of the same name and of the same datatype. To this end, we leverage streams in order to group the
+            // list of ExtendedTreeItems constructed above first by the names of the represented placeholders, and then by their datatypes/.
+            // This use of the stream-API is adapted form examples 2.4 and 2.5 from https://www.baeldung.com/java-groupingby-collector
+            final Map<String, Map<String, Set<ExtendedTreeItem>>> groupedTreeItems =
+                componentKeyValues.stream()
+                    .collect(Collectors.groupingBy(extendedItem -> extendedItem.treeItem.getText(),
+                        Collectors.groupingBy(extendedItem -> extendedItem.dataType,
+                            Collectors.toSet())));
 
-                    if (componentKeyValues.get(i).treeItem.getText().equals(componentKeyValues.get(j).treeItem.getText())) {
-                        if (componentKeyValues.get(i).dataType == null || componentKeyValues.get(j).dataType == null) {
-                            if (componentKeyValues.get(i).dataType == null && componentKeyValues.get(i).dataType == null) {
-                                if (!buttonForIElementCreated) {
-                                    addApplyToAllButton(componentKeyValues.get(i), fullComponentKeyValues);
-                                    buttonForIElementCreated = true;
-                                }
-                                addApplyToAllButton(componentKeyValues.get(j), fullComponentKeyValues);
-                            }
-
-                        } else if (componentKeyValues.get(i).dataType.equals(componentKeyValues.get(j).dataType)) {
-                            if (!buttonForIElementCreated) {
-                                addApplyToAllButton(componentKeyValues.get(i), fullComponentKeyValues);
-                                buttonForIElementCreated = true;
-                            }
-                            addApplyToAllButton(componentKeyValues.get(j), fullComponentKeyValues);
+            // Finally, we check all equivalence classes obtained above. Due to the use of grouping above, no equivalence class is empty or
+            // even null. However, we still have to check whether an equivalence class contains more than one placeholder, since we do not
+            // want to add an "apply to all" button if "all" just refers to a single placeholder.
+            for (Map<String, Set<ExtendedTreeItem>> treeItemGroupByPlaceholderName : groupedTreeItems.values()) {
+                for (Set<ExtendedTreeItem> treeItemGroup : treeItemGroupByPlaceholderName.values()) {
+                    if (treeItemGroup.size() > 1) {
+                        for (ExtendedTreeItem equivalentTreeItem : treeItemGroup) {
+                            addApplyToAllButton(equivalentTreeItem, componentKeyValues);
                         }
-
                     }
                 }
             }
@@ -657,8 +660,7 @@ public class PlaceholderPage extends WizardPage {
         placeholderButton.setToolTipText(Messages.applyToAllToolTip);
         placeholderButton.setText(Messages.applyToAll);
         placeholderButton.setSize(placeholderButton.getText().length() * 6, 0);
-        placeholderButton.computeSize(SWT.DEFAULT, extendedTreeItem.treeItem.getParent()
-            .getItemHeight());
+        placeholderButton.computeSize(SWT.DEFAULT, extendedTreeItem.treeItem.getParent().getItemHeight());
         placeholderButton.addSelectionListener(new ButtonListener(extendedTreeItem, allItems));
         buttonEditor.minimumWidth = placeholderButton.getSize().x;
         buttonEditor.setEditor(placeholderButton, extendedTreeItem.treeItem, 3);
@@ -744,8 +746,8 @@ public class PlaceholderPage extends WizardPage {
     }
 
     protected void validateInput(Text source, String componentName,
-        String placeholderName) {
-        if (!isTextEmpty(source)) {
+        String placeholderName, boolean isShorttext) {
+        if ((!isTextEmpty(source) || isShorttext) && source.getText().length() <= SHORTTEXT_MAXLENGTH) {
             if (source.getBackground().equals(COLOR_RED)) {
                 source.setBackground(COLOR_WHITE);
                 removePlaceholderValidator(componentName, placeholderName);

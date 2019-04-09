@@ -2,16 +2,17 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Gui Workflow Integration Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow.integration;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.integration,
+ de.rcenvironment.core.component.management.api,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,

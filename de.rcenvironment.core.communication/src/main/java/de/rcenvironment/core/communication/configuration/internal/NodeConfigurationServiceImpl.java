@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -223,15 +223,21 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     }
 
     private String getStoredOrOverriddenInstanceId() {
-        // check if a node id override is defined
+        // check if a node id override property is defined; this takes precedence over any profile setting
         String nodeId = System.getProperty(SYSTEM_PROPERTY_OVERRIDE_NODE_ID);
         if (nodeId != null) {
             // no need to validate the value; this will be done below anyway
-            log.info("Overriding node id: " + nodeId);
+            log.info("Using custom node id defined by system property: " + nodeId);
         }
-        // standard procedure
+        // check if a node id override property is defined in the profile
         if (nodeId == null) {
-            // check for existing persistent node id
+            nodeId = configuration.getNodeIdOverrideValue();
+            if (nodeId != null) {
+                log.info("Using custom node id defined by profile setting: " + nodeId);
+            }
+        }
+        // otherwise, check for an existing persistent node id
+        if (nodeId == null) {
             nodeId = persistentSettingsService.readStringValue(PERSISTENT_SETTINGS_KEY_PLATFORM_ID);
         }
         return nodeId;

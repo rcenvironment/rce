@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.authorization.internal.AuthorizationServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.authorization.api.AuthorizationService"/>
+   </service>
+   <reference bind="addAuthorizationAccessGroupListener" cardinality="0..n" interface="de.rcenvironment.core.authorization.api.AuthorizationAccessGroupListener" name="AuthorizationAccessGroupListener" policy="dynamic" unbind="removeAuthorizationAccessGroupListener"/>
+   <reference bind="bindCryptographyOperationsProvider" interface="de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider" name="CryptographyOperationsProvider"/>
+   <reference bind="bindObjectBindingsService" interface="de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService" name="ObjectBindingsService"/>
+   <reference bind="bindSecureStorageService" interface="de.rcenvironment.core.configuration.SecureStorageService" name="SecureStorageService"/>
+   <implementation class="de.rcenvironment.core.authorization.internal.AuthorizationServiceImpl"/>
+</scr:component>

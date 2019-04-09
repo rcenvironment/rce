@@ -2,13 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common
 Bundle-SymbolicName: de.rcenvironment.core.utils.common;singleton:=true
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.common.excel.legacy,
+ de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.common.legacy,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
@@ -21,13 +22,16 @@ Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.common.xml.api,
  de.rcenvironment.core.utils.common.xml.impl
-Import-Package: de.rcenvironment.toolkit.modules.concurrency.api,
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.modules.concurrency.utils,
  de.rcenvironment.toolkit.modules.statistics.api,
  de.rcenvironment.toolkit.modules.statistics.utils,
  de.rcenvironment.toolkit.utils.text,
  net.sf.saxon;version="9.4.0.1",
  org.apache.commons.compress.archivers;version="1.18.0",
+ org.apache.commons.compress.archivers.tar;version="1.18.0",
  org.apache.commons.compress.archivers.zip;version="1.18.0",
  org.apache.commons.compress.utils;version="1.18.0",
  org.apache.commons.io;version="2.0.1",
@@ -39,13 +43,8 @@ Import-Package: de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.poi.hssf.usermodel;version="3.8.0",
  org.apache.poi.ss.usermodel;version="3.8.0",
  org.apache.poi.xssf.usermodel;version="3.8.0",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.io;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.util;version="1.9.13",
  org.osgi.framework;version="1.5.0"
-Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4",
- org.apache.servicemix.bundles.saxon
+Require-Bundle: org.apache.servicemix.bundles.saxon
 Service-Component: OSGI-INF/*.xml
 
 

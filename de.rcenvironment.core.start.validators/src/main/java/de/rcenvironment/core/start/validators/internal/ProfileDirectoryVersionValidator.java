@@ -1,119 +1,170 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.profile.CommonProfile;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
 
 /**
- * Validator to prevent to use a profile that has been used with a newer version of RCE with an older one. Uses {@link ConfigurationService}
- * implementation to retrieve the profile's location.
+ * Validator to prevent using a profile that has a version other than the current one. If the profile can be upgraded, ask the user whether
+ * they want to do so. Otherwise, abort startup. Uses {@link ConfigurationService} implementation to retrieve the profile's location.
  * 
  * @author Oliver Seebach
+ * @author Alexander Weinert (Validation failure with user confirmation)
  */
+@Component
 public class ProfileDirectoryVersionValidator implements InstanceValidator {
 
     private static final String PROFILE_VALIDATION_FAILED = "Profile directory version";
 
     private static ConfigurationService configService;
 
+    private final Log log = LogFactory.getLog(getClass());
+
     @Override
     public InstanceValidationResult validate() {
 
-        //TODO this error message is contained in the BootstrapConfiguration class, deduplicate this!
+        // TODO this error message is contained in the BootstrapConfiguration class, deduplicate this!
+        final CommonProfile commonProfile;
+        try {
+            final File commonProfileDirectory = ProfileUtils.getProfilesParentDirectory().toPath().resolve("common").toFile();
+            commonProfile = new Profile.Builder(commonProfileDirectory).create(false).migrate(false).buildCommonProfile();
+        } catch (ProfileException e) {
+            final String errorMessage = String.format("Could not open profile at \"%s\".", configService.getProfileDirectory());
+            return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(PROFILE_VALIDATION_FAILED,
+                errorMessage);
+        }
+        final InstanceValidationResult commonProfileResult = validateProfile(commonProfile);
         
-        if (!configService.hasIntendedProfileDirectoryValidVersion()) {
-            // error and shutdown
-            String errorText1 =
-                "The required version of the profile directory is " + Profile.PROFILE_VERSION_NUMBER
-                    + " but the profile directory's current version is newer. Most likely reason: It was used with"
-                    + " a newer version of RCE before.";
-            String errorText2 =
-                "As downgrade is not supported, the configured profile directory cannot be used with this RCE version. "
-                    + "Use a newer version of RCE or choose another profile directory."
-                    + " (See the user guide for more information about the profile directory.)";
-            return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(
-                PROFILE_VALIDATION_FAILED,
-                errorText1 + " " + errorText2, errorText1 + "\n\n" + errorText2);
-        } else {
-            // valid profile in use
-            return InstanceValidationResultFactory.createResultForPassed("Profile directory has valid version.");
+        if (!InstanceValidationResultType.PASSED.equals(commonProfileResult.getType())) {
+            return commonProfileResult;
         }
 
-        // Note: this code is outcommented but might be reused if profile version checking becomes more elaborated;
-        // -- seeb_ol, October 2015
-        
-//        File internalFolder = new File(configService.getProfileDirectory(), PROFILE_INTERNAL_DATA_SUBDIR);
-//        if (internalFolder != null && internalFolder.isDirectory()) {
-//            File profileVersionNumberFile = new File(internalFolder, BootstrapConfiguration.PROFILE_VERSION_FILE_NAME);
-//            if (profileVersionNumberFile.exists() && profileVersionNumberFile.isFile()) {
-//                try {
-//                    int currentProfilesVersionNumber = Integer.parseInt(FileUtils.readFileToString(profileVersionNumberFile));
-//                    if (currentProfilesVersionNumber == BootstrapConfiguration.PROFILE_VERSION_NUMBER) {
-//                        // equals
-//                        return InstanceValidationResultFactory.createResultForPassed("Current and required profile version are equal.");
-//                    } else if (currentProfilesVersionNumber < BootstrapConfiguration.PROFILE_VERSION_NUMBER) {
-//                        // warning and go on
-//                        String warningText =
-//                            "The required profile version is "
-//                                + BootstrapConfiguration.PROFILE_VERSION_NUMBER
-//                                + " but the profile's current version is "
-//                                + currentProfilesVersionNumber
-//                                + ". The profile version will be updated. "
-//                                + "Note that you cannot use this profile with an older RCE version anymore.";
-//                        return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(PROFILE_VALIDATION_FAILED,
-//                            warningText, warningText);
-//                    } else if (currentProfilesVersionNumber > BootstrapConfiguration.PROFILE_VERSION_NUMBER) {
-//                        // error and shutdown
-//                        String errorText =
-//                            "The required profile version is "
-//                                + BootstrapConfiguration.PROFILE_VERSION_NUMBER
-//                                + " but the profile's current version is "
-//                                + currentProfilesVersionNumber
-//                                + ". The profile cannot be used with this RCE version. "
-//                                + "A newer version is required.";
-//                        return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(
-//                            PROFILE_VALIDATION_FAILED,
-//                            errorText, errorText);
-//                    }
-//                } catch (IOException | NumberFormatException e) {
-//                    return InstanceValidationResultFactory
-//                        .createResultForFailureWhichAllowesToProceed(
-//                            PROFILE_VALIDATION_FAILED,
-//                            "Error reading profile version file "
-//                                + profileVersionNumberFile.getAbsolutePath()
-//                                + ". A new profile version file will be created. "
-//                                + "Please not that you cannot use this profile with an older version of RCE anymore.");
-//                }
-//            } else {
-//                return InstanceValidationResultFactory.createResultForPassed("No profile version file found.");
-//            }
-//        }
-//        return InstanceValidationResultFactory.createResultForPassed("Could not determine profile version.");
+        final Profile userProfile;
+        try {
+            userProfile = new Profile.Builder(configService.getProfileDirectory()).create(false).migrate(false).buildUserProfile();
+        } catch (ProfileException e) {
+            final String errorMessage = String.format("Could not open profile at \"%s\".", configService.getProfileDirectory());
+            return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(PROFILE_VALIDATION_FAILED,
+                errorMessage);
+        }
+
+        return validateProfile(userProfile);
     }
 
+    private InstanceValidationResult validateProfile(final CommonProfile profile) {
+        final boolean profileHasCurrentVersion;
+        try {
+            profileHasCurrentVersion = profile.hasCurrentVersion();
+        } catch (ProfileException e) {
+            return onProfileException(profile, e);
+        }
+
+        if (!profileHasCurrentVersion) {
+            final boolean profileHasUpgradeableVersion;
+            try {
+                profileHasUpgradeableVersion = profile.hasUpgradeableVersion();
+            } catch (ProfileException e) {
+                return onProfileException(profile, e);
+            }
+            if (profileHasUpgradeableVersion) {
+                final int profileVersion;
+                try {
+                    profileVersion = profile.getVersion();
+                } catch (ProfileException e) {
+                    return onProfileException(profile, e);
+                }
+                final String queryMessage = String.format(
+                    "Your \"%s\" profile is out of date. A version upgrade is required to start RCE. \n"
+                        + "Do you wish to upgrade to current version? \n"
+                        + "    \n"
+                        + "Note: "
+                        + "Upgrading causes the profile to be unusable for older versions of RCE. \n"
+                        + "You might want to backup the profile folder located at "
+                        + "\"%s\".",
+                    profile.getName(), profile.getProfileDirectory().getAbsolutePath());
+                final String logMessage =
+                    String.format("Profile \"%s\" at \"%s\" has outdated version %d, queried user for upgrade confirmation.",
+                        profile.getName(), profile.getProfileDirectory().getAbsolutePath(), profileVersion);
+                return InstanceValidationResultFactory.createResultForFailureWhichRequiresUserConfirmation(PROFILE_VALIDATION_FAILED,
+                    logMessage, queryMessage, () -> {
+                        try {
+                            profile.upgradeToCurrentVersion();
+                        } catch (IOException e) {
+                            final String errorMessage =
+                                String.format("Could not upgrade profile \"%s\" located at \"%s\" to current version.", profile.getName(),
+                                    profile.getProfileDirectory().getAbsolutePath());
+                            throw new InstanceValidationResult.CallbackException(errorMessage, e);
+                        }
+                    });
+            } else {
+                final int profileVersion;
+                try {
+                    profileVersion = profile.getVersion();
+                } catch (ProfileException e) {
+                    return onProfileException(profile, e);
+                }
+                final String errorMessage = String.format("Profile \"%s\" has version %d, which cannot be upgraded to the current version.",
+                    profile.getName(), profileVersion);
+                return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(PROFILE_VALIDATION_FAILED,
+                    errorMessage);
+            }
+        }
+
+        // valid profile in use
+        return InstanceValidationResultFactory.createResultForPassed("Profile directory has valid version.");
+    }
+
+    /**
+     * To be called if a profile exception occurs, prints the relevant details to the log and returns an object denoting the failed
+     * validation.
+     * 
+     * @param profile The profile that caused the exception
+     * @param exception The exception thrown by the profile
+     * @return An {@link InstanceValidationResult} denoting a failed validation which requires shutdown.
+     */
+    private InstanceValidationResult onProfileException(final CommonProfile profile, ProfileException exception) {
+        final String errorMessage = String.format(
+            "Could not determine version of profile \"%s\" due to exception. Refer to the log for more details.", profile.getName());
+        log.error(errorMessage, exception);
+        return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(PROFILE_VALIDATION_FAILED,
+            errorMessage, errorMessage);
+    }
+
+    @Reference
     protected void bindConfigurationService(ConfigurationService configIn) {
         configService = configIn;
     }
 
     @Override
     public List<Class<? extends InstanceValidator>> getNecessaryPredecessors() {
-        ArrayList<Class<? extends InstanceValidator>> predecessors = new ArrayList<Class<? extends InstanceValidator>>();
+        ArrayList<Class<? extends InstanceValidator>> predecessors = new ArrayList<>();
         // we need to make sure that the original profile directory is accessible, since the fallback profile does not contain a version
         // number.
-        predecessors.add(OriginalProfileDirectoryAccessibleValidator.class);
+        predecessors.add(ProfileDirectoriesAccessibleValidator.class);
         return predecessors;
     }
 

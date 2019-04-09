@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,6 +11,8 @@ package org.eclipse.equinox.launcher;
 import java.io.File;
 import java.util.Random;
 
+import de.rcenvironment.core.launcher.integration.RCELauncherIntegration;
+
 /**
  * As we want to minimize the code changes which have to be performed in the copied org.eclipse.equinox.launcher code, this class is
  * intended to contain as much of the functionality as possible to patch the org.eclipse.equinox.launcher.Main.
@@ -18,23 +20,6 @@ import java.util.Random;
  * @author Tobias Rodehutskors
  */
 public final class RCELauncherHelper {
-
-    /**
-     * Indicates the semantic version of the RCE launcher. This number should only be updated if the code within the launcher changes.
-     * 
-     * This version number may be necessary during an update of RCE. After the update, RCE needs to be restarted. During the restart
-     * process, the rce.ini is not reevaluated and therefore, the new launcher is not used. This might be a problem, if later code assumes
-     * that the launcher guarantees certain preconditions.
-     * 
-     * If this version number is increased, additional code needs to be added to the LauncherVersionValidator class to handle the update
-     * case.
-     */
-    public static final int LAUNCHER_VERSION = 810;
-
-    /**
-     * System property for the launcher version.
-     */
-    public static final String PROP_RCE_LAUNCHER_VERSION = "de.rcenvironment.launcher.version";
 
     static final String PROP_BUNDLE_CONFIGURATION_LOCATION = "bundles.configuration.location";
 
@@ -96,7 +81,8 @@ public final class RCELauncherHelper {
     public static void setSystemPropertyToIdentifyLauncher() {
         // We need to store this property as a String, since PAX Logging crashes if there is a single property that cannot be cast to
         // String.
-        System.getProperties().put(PROP_RCE_LAUNCHER_VERSION, Integer.toString(LAUNCHER_VERSION));
+        System.getProperties().put(RCELauncherIntegration.PROP_RCE_LAUNCHER_VERSION,
+            Integer.toString(RCELauncherIntegration.LAUNCHER_VERSION));
     }
 
     /**

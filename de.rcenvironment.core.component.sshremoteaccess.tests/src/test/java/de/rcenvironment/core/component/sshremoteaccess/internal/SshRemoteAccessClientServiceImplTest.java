@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -40,13 +40,15 @@ import org.junit.Test;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
+import de.rcenvironment.core.authorization.testutils.AuthorizationTestUtils;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
+import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.component.registration.api.ComponentRegistry;
-import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessConstants;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
@@ -58,6 +60,10 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
  */
 public class SshRemoteAccessClientServiceImplTest {
 
+    protected static final Object GROUP_NAME_TOOLS = "groupForTools";
+
+    protected static final Object GROUP_NAME_WFS = "groupForWfs";
+
     private SshServer sshServer;
 
     private SshConnectionService connectionService;
@@ -66,7 +72,7 @@ public class SshRemoteAccessClientServiceImplTest {
 
     private final InstanceNodeSessionId dummyNodeId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("dummy");
 
-    private ComponentRegistry mockRegistry;
+    private LocalComponentRegistrationService mockRegistry;
 
     /**
      * Set up a dummy ssh server to connect to and setup mock connection service.
@@ -107,7 +113,7 @@ public class SshRemoteAccessClientServiceImplTest {
                         CSVFormat csvFormat = CSVFormat.newFormat(' ').withQuote('"').withQuoteMode(QuoteMode.ALL);
                         stdout = csvFormat.format(SshRemoteAccessClientTestConstants.TOOL_NAME,
                             SshRemoteAccessClientTestConstants.TOOL_VERSION, SshRemoteAccessClientTestConstants.HOST_ID,
-                            SshRemoteAccessClientTestConstants.HOST_NAME);
+                            SshRemoteAccessClientTestConstants.HOST_NAME, "", "", GROUP_NAME_TOOLS, "");
                     } else {
                         stdout =
                             "1\n4\n" + SshRemoteAccessClientTestConstants.WF_NAME + "\n" + SshRemoteAccessClientTestConstants.WF_VERSION
@@ -192,27 +198,33 @@ public class SshRemoteAccessClientServiceImplTest {
             }
         });
 
-        mockRegistry = EasyMock.createNiceMock(ComponentRegistry.class);
+        mockRegistry = EasyMock.createNiceMock(LocalComponentRegistrationService.class);
         remoteAccessService.bindComponentRegistry(mockRegistry);
+
+        // needed to fetch default permission groups
+        remoteAccessService.bindAuthorizationService(AuthorizationTestUtils.createAuthorizationServiceStub());
     }
 
     /**
      * Test updating ssh remote access components.
      * 
+     * @throws OperationFailureException if registering the component failed for some reason
+     * 
      */
     @Test(timeout = SshRemoteAccessClientTestConstants.TIMEOUT)
-    public void testUpdatingRemoteAccessComponents() {
+    public void testUpdatingRemoteAccessComponents() throws OperationFailureException {
         EasyMock.reset(mockRegistry);
-        mockRegistry.addComponent(notNull(ComponentInstallation.class));
+        mockRegistry.registerOrUpdateSingleVersionLocalComponentInstallation(notNull(ComponentInstallation.class),
+            notNull(AuthorizationPermissionSet.class));
         EasyMock.expectLastCall().andAnswer(new IAnswer<Void>() {
 
             @Override
             public Void answer() throws Throwable {
                 ComponentInstallation ci = (ComponentInstallation) EasyMock.getCurrentArguments()[0];
                 assertNotNull(ci);
-                assertEquals(SshRemoteAccessClientTestConstants.TOOL_VERSION, ci.getComponentRevision().getComponentInterface()
+                assertEquals(SshRemoteAccessClientTestConstants.TOOL_VERSION, ci.getComponentInterface()
                     .getVersion());
-                assertEquals(SshRemoteAccessConstants.GROUP_NAME_TOOLS, ci.getComponentRevision().getComponentInterface()
+                assertEquals(GROUP_NAME_TOOLS, ci.getComponentInterface()
                     .getGroupName());
                 return null;
             }
@@ -223,9 +235,9 @@ public class SshRemoteAccessClientServiceImplTest {
             public Void answer() throws Throwable {
                 ComponentInstallation ci = (ComponentInstallation) EasyMock.getCurrentArguments()[0];
                 assertNotNull(ci);
-                assertEquals(SshRemoteAccessClientTestConstants.WF_VERSION, ci.getComponentRevision().getComponentInterface()
+                assertEquals(SshRemoteAccessClientTestConstants.WF_VERSION, ci.getComponentInterface()
                     .getVersion());
-                assertEquals(SshRemoteAccessConstants.GROUP_NAME_WFS, ci.getComponentRevision().getComponentInterface()
+                assertEquals(GROUP_NAME_WFS, ci.getComponentInterface()
                     .getGroupName());
                 return null;
             }

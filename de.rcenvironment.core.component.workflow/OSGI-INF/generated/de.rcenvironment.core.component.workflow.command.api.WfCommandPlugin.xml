@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.component.workflow.command.api.WfCommandPlugin">
+   <service>
+      <provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+   </service>
+   <reference bind="bindMetaDataService" interface="de.rcenvironment.core.datamanagement.MetaDataService" name="MetaDataService"/>
+   <reference bind="bindWorkflowExecutionDisplayService" cardinality="0..1" interface="de.rcenvironment.core.component.workflow.command.api.WorkflowExecutionDisplayService" name="WorkflowExecutionDisplayService" policy="dynamic" unbind="unbindWorkflowExecutionDisplayService"/>
+   <reference bind="bindWorkflowExecutionService" interface="de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService" name="WorkflowExecutionService"/>
+   <implementation class="de.rcenvironment.core.component.workflow.command.api.WfCommandPlugin"/>
+</scr:component>

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -29,7 +29,6 @@ import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
@@ -57,6 +56,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
@@ -68,6 +68,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;
@@ -168,6 +170,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         GridData selectionData = new GridData(GridData.FILL_BOTH);
         selectionData.horizontalSpan = 2;
         algorithmSelection.setLayoutData(selectionData);
+        algorithmSelection.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_METHOD);
         seedLabel = new Label(algorithmComposite, SWT.None);
         seedLabel.setText(Messages.seedLabel);
         seedSpinner = new Spinner(algorithmComposite, SWT.BORDER);
@@ -911,5 +914,26 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             }
         }
         return outputs;
+    }
+
+    @Override
+    protected DOESectionUpdater createUpdater() {
+        return new DOESectionUpdater();
+    }
+
+    /**
+     * DOE Section {@link DefaultUpdater} implementation of the handler to update the UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class DOESectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            aboutToBeShown();
+        }
+
     }
 }

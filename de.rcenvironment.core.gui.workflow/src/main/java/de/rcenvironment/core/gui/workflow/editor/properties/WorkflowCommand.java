@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,7 +20,7 @@ public abstract class WorkflowCommand {
 
     protected CommandStack commandStack;
 
-    public final void setCommandStack(final CommandStack commandStack) {
+    public void setCommandStack(final CommandStack commandStack) {
         this.commandStack = commandStack;
     }
 

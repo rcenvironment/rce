@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,7 +20,7 @@ public final class XPathParser {
 
     private static final String SEP = "/";
     private static final String START = "[A-Za-z_:]";
-    private static final String NAME = "[A-Za-z0-9$ง%\\.,;\\-_:]*";
+    private static final String NAME = "[A-Za-z0-9$ยง%\\.,;\\-_:]*";
     private static final String QNAME = START + NAME;
     private static final String QVAL = "\"?[^<&\"]+\"?";
     private static final String OPT_VAL = "(=" + QVAL + ")?";

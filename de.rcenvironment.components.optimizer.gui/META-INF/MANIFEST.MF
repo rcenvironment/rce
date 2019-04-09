@@ -1,15 +1,17 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Name: RCE Optimizer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.gui;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,
  org.eclipse.core.runtime,
  de.rcenvironment.core.component
-Import-Package: de.rcenvironment.components.optimizer.common,
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ de.rcenvironment.components.optimizer.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.model.api,
@@ -42,8 +44,6 @@ Import-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
  org.eclipse.draw2d,
  org.eclipse.nebula.visualization.xygraph.dataprovider,
  org.eclipse.nebula.visualization.xygraph.figures,

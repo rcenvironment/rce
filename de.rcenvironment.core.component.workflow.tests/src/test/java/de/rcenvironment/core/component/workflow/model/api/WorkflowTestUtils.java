@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import org.easymock.EasyMock;
+import org.junit.Assert;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
@@ -20,11 +21,10 @@ import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.testutils.ComponentDescriptionFactoryServiceDefaultStub;
 import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeServiceDefaultStub;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
-import junit.framework.Assert;
 
 /**
  * Utils class for the workflow tests.
@@ -105,10 +105,10 @@ public final class WorkflowTestUtils {
         @Override
         protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newService) {
             DistributedComponentKnowledge knowledge = EasyMock.createNiceMock(DistributedComponentKnowledge.class);
-            EasyMock.expect(knowledge.getAllInstallations()).andReturn(new ArrayList<ComponentInstallation>()).anyTimes();
+            EasyMock.expect(knowledge.getAllInstallations()).andReturn(new ArrayList<DistributedComponentEntry>()).anyTimes();
             EasyMock.replay(knowledge);
             componentKnowledgeService = EasyMock.createNiceMock(DistributedComponentKnowledgeService.class);
-            EasyMock.expect(componentKnowledgeService.getCurrentComponentKnowledge()).andReturn(knowledge).anyTimes();
+            EasyMock.expect(componentKnowledgeService.getCurrentSnapshot()).andReturn(knowledge).anyTimes();
             EasyMock.replay(componentKnowledgeService);
 
         }

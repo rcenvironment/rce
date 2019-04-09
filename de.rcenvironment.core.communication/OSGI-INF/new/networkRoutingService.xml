@@ -6,6 +6,7 @@
 		<provide interface="de.rcenvironment.core.communication.routing.NetworkRoutingService"/>
 		<provide interface="de.rcenvironment.core.communication.routing.MessageRoutingService"/>
 		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider"/>
+		<provide interface="de.rcenvironment.core.communication.routing.InstanceRestartAndPresenceService"/>
 	</service>
 	
 	<reference

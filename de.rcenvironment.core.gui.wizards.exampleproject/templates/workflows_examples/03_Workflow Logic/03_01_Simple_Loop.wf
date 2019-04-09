@@ -4,7 +4,7 @@
   "nodes" : [ {
     "identifier" : "0f55eebe-2c5f-4b5e-a631-83478336efe1",
     "name" : "Analysis",
-    "location" : "215:461",
+    "location" : "414:297",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -39,7 +39,7 @@
   }, {
     "identifier" : "73800f5f-e181-4c74-84ed-7c462289373f",
     "name" : "Design of Experiments",
-    "location" : "215:322",
+    "location" : "414:158",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -103,7 +103,7 @@
   }, {
     "identifier" : "57b989e8-4236-4434-96e9-dfd02d6f07b1",
     "name" : "Preparing",
-    "location" : "415:322",
+    "location" : "614:158",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -148,7 +148,7 @@
   }, {
     "identifier" : "bd3c4441-d47f-49a5-8284-48308b8a787a",
     "name" : "Simulation",
-    "location" : "415:461",
+    "location" : "614:297",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -207,5 +207,5 @@
     "target" : "0f55eebe-2c5f-4b5e-a631-83478336efe1",
     "input" : "7bca39ff-d773-40b6-9594-89f42da3d534"
   } ],
-  "labels" : "[{\"identifier\":\"98a9138e-60d8-4408-b6fe-365acee01993\",\"headerText\":\"\",\"text\":\"Example workflow: 'Simple Loops'\\r\\nObjective: Introducing loops in workflows\\r\\n\\r\\nSee example workflow '02_02_Evaluation_Drivers' for details about workflow components that are required to drive a loop in a workflow.\\r\\n\\r\\nIn this example, the driver is the \\\"Design of Experiments\\\" (short: DOE) workflow component. It sends two values (outputs: x and y) as pre-defined in the table.  It waits until it receives the result values at its inputs and sends the the next values. As soon as all values of the table are sent, it finishes the loop.\\r\\n\\r\\nThe Script workflow components represent different tools that can be used in such a loop. For example: The \\\"Preparing\\\" Script workflow component could prepare some template input file with the values received at \\\"x\\\" and \\\"y\\\". Afterwards, the \\\"Simulation\\\" Script workflow component does some calculations with those values and sends the result to \\\"Analysis\\\". It could  extract relevant values as result and feeds it back to the DOE workflow component.\",\"location\":\"30:3\",\"size\":\"715:310\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"95aed198-ce60-416c-8c15-6dd39105f6a6\",\"headerText\":\"\",\"text\":\"In this example, the driver is the \\\"Design of Experiments\\\" (short: DOE) workflow component. It sends two values (outputs: x and y) as pre-defined in the table.  It waits until it receives the result values at its inputs and sends the the next values. As soon as all values of the table are sent, it finishes the loop.\\r\\n\\r\\nThe Script workflow components represent different tools that can be used in such a loop. For example: The \\\"Preparing\\\" Script workflow component could prepare some template input file with the values received at \\\"x\\\" and \\\"y\\\". Afterwards, the \\\"Simulation\\\" Script workflow component does some calculations with those values and sends the result to \\\"Analysis\\\". It could extract relevant values as result and feeds it back to the DOE workflow component.\",\"location\":\"107:406\",\"size\":\"953:192\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"98a9138e-60d8-4408-b6fe-365acee01993\",\"headerText\":\"Introducing loops in workflows\",\"text\":\"See example workflow '02_02_Evaluation_Drivers' for details about workflow components that are required to drive a loop in a workflow.\",\"location\":\"107:16\",\"size\":\"953:93\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

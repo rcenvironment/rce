@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -60,6 +60,11 @@ public final class InstanceManagementConstants {
      * 
      */
     public static final String SUBCOMMAND_SET_WORKFLOW_HOST_OPTION = "--set-workflow-host-option";
+
+    /**
+     * Sets a node id override value; typically used for automated testing.
+     */
+    public static final String SUBCOMMAND_SET_CUSTOM_NODE_ID = "--set-custom-node-id";
 
     /**
      * 

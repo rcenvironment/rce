@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -68,15 +68,14 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
      */
     private static final int CONNECTION_OPERATION_WAIT_MSEC = 5000;
 
-    // simulated number of clients for concurrent connection setups testing; 5 for standard, 20 for extended testing
-    private static final int CONCURRENT_CS_TEST_NUM_CLIENTS = CommonTestOptions.selectStandardOrExtendedValue(5, 20);
+    // simulated number of clients for concurrent connection setups testing
+    private static final int CONCURRENT_CS_TEST_NUM_CLIENTS = CommonTestOptions.selectStandardOrExtendedValue(3, 20);
 
     private static final int CONCURRENT_CS_TEST_TIMEOUT_MSEC = 10000;
 
     private static final String MESSAGE_INSTANCES_DID_NOT_CONVERGE_AT_ITERATION = "Instances did not converge at iteration index ";
 
-    // test size 5 for fast/standard testing, 10 for extended testing
-    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(5, 10);
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(3, 10);
 
     protected final Random randomGenerator = new Random();
 

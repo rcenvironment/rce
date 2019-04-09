@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,6 +24,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -455,7 +456,8 @@ public class ComponentExecutionScheduler {
             if (internalDatum.getHopsToTraverse().isEmpty()) { // final component
                 handleNonInternalEndpointDatumAdded(convertEndpointDatum(endpointDatum, Long.valueOf(internalDatum.getPayload())));
             } else if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier()
-                .equals(compExeRelatedInstances.compExeCtx.getExecutionIdentifier())) { // sanity check
+                // TODO remove new
+                .equals(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()))) { // sanity check
                 throw new ComponentExecutionException("Internal error: Received failure datum, but component is not the recipient,"
                     + " , there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
             } else {
@@ -488,7 +490,9 @@ public class ComponentExecutionScheduler {
                     throw new ComponentExecutionException("Internal error: Received reset datum and component is the final recipient,"
                         + " but no loop reset was requested");
                 } else if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier()
-                    .equals(compExeRelatedInstances.compExeCtx.getExecutionIdentifier())) { // sanity check
+                    // TODO remove new
+                    .equals(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()))) { // sanity
+                                                                                                                              // check,
                     throw new ComponentExecutionException("Internal error: Received reset datum, but component is not the final"
                         + " recipient; there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
                 } else {
@@ -507,7 +511,7 @@ public class ComponentExecutionScheduler {
         endpointDatumToAdd.setValue(typedDatumFactory.createNotAValue(
             ((InternalTDImpl) endpointDatumToConvert.getValue()).getIdentifier(), NotAValueTD.Cause.Failure));
         endpointDatumToAdd.setDataManagementId(dmId);
-        endpointDatumToAdd.setWorkflowNodeId(endpointDatumToConvert.getWorkflowNodeId());
+        endpointDatumToAdd.setWorkflowNodeId(endpointDatumToConvert.getWorkflowControllerLocation());
         endpointDatumToAdd.setOutputsComponentExecutionIdentifier(endpointDatumToConvert.getOutputsComponentExecutionIdentifier());
         endpointDatumToAdd.setOutputsNodeId(endpointDatumToConvert.getOutputsNodeId());
         endpointDatumToAdd.setWorkflowExecutionIdentifier(endpointDatumToConvert.getWorkflowExecutionIdentifier());

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,12 +12,13 @@ import java.io.File;
 import java.io.IOException;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementUtil;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
@@ -27,8 +28,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
 /**
  * Implementation of {@link ComponentDataManagemenService}.
  * 
+ * TODO This class has conceptual overlap with ComponentExecutionStorageBridge - consider whether it makes sense to merge them. -- misc_ro
+ * 
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Brigitte Boden
+ * @author Robert Mischke
  */
 public class ComponentDataManagementServiceImpl implements ComponentDataManagementService {
 
@@ -56,7 +61,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
 
         try {
             return dataManagementService.createReferenceFromLocalFile(file, mds,
-                componentContext.getDefaultStorageNodeId());
+                getStorageNetworkDestination(componentContext));
         } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
@@ -70,7 +75,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
 
         try {
             return dataManagementService.createReferenceFromString(stringValue, mds,
-                componentContext.getDefaultStorageNodeId());
+                getStorageNetworkDestination(componentContext));
         } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
@@ -78,7 +83,13 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId nodeId) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination nodeId) throws IOException {
+        copyReferenceToLocalFile(reference, targetFile, nodeId, true);
+    }
+
+    @Override
+    public void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination nodeId,
+        boolean decompress) throws IOException {
         try {
             dataManagementService.copyReferenceToLocalFile(reference, targetFile, nodeId);
         } catch (CommunicationException e) {
@@ -89,7 +100,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException {
+    public String retrieveStringFromReference(String reference, NetworkDestination nodeId) throws IOException {
         try {
             return dataManagementService.retrieveStringFromReference(reference, nodeId);
         } catch (CommunicationException e) {
@@ -110,7 +121,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
             MetaDataSet mds = new MetaDataSet();
             ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
             reference = dataManagementService.createReferenceFromLocalFile(file, mds,
-                componentContext.getDefaultStorageNodeId());
+                getStorageNetworkDestination(componentContext));
         } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
@@ -132,8 +143,8 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
             MetaDataSet mds = new MetaDataSet();
             ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
             reference = dataManagementService.createReferenceFromLocalDirectory(dir, mds,
-                componentContext.getDefaultStorageNodeId());
-        } catch (InterruptedException | CommunicationException e) {
+                getStorageNetworkDestination(componentContext));
+        } catch (InterruptedException | IOException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -143,7 +154,20 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     @Override
     public void copyFileReferenceTDToLocalFile(ComponentContext componentContext, FileReferenceTD fileReference, File targetFile)
         throws IOException {
-        copyReferenceToLocalFile(fileReference.getFileReference(), targetFile, componentContext.getDefaultStorageNodeId());
+        copyReferenceToLocalFile(fileReference.getFileReference(), targetFile, getStorageNetworkDestination(componentContext));
+    }
+
+    @Override
+    public void copyReferenceTDToLocalCompressedFile(ComponentContext componentContext, TypedDatum fileReference, File targetFile)
+        throws IOException {
+        if (fileReference instanceof FileReferenceTD) {
+            copyReferenceToLocalFile(((FileReferenceTD) fileReference).getFileReference(), targetFile,
+                getStorageNetworkDestination(componentContext), false);
+        } else if (fileReference instanceof DirectoryReferenceTD) {
+            copyReferenceToLocalFile(((DirectoryReferenceTD) fileReference).getDirectoryReference(), targetFile,
+                getStorageNetworkDestination(componentContext), false);
+        }
+
     }
 
     @Override
@@ -151,7 +175,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         File targetDir) throws IOException {
         try {
             dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir,
-                componentContext.getDefaultStorageNodeId());
+                getStorageNetworkDestination(componentContext));
         } catch (CommunicationException e) {
             throw new RuntimeException(StringUtils.format(
                 "Failed to copy directory reference from remote node @%s to local directory: ",
@@ -161,9 +185,10 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, ResolvableNodeId node)
+    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NetworkDestination node)
         throws IOException {
         try {
+            // performs a direct single-attempt RPC to the given node
             dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir, node);
         } catch (CommunicationException e) {
             throw new RuntimeException(StringUtils.format(
@@ -171,6 +196,44 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
                 node)
                 + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public FileReferenceTD createFileReferenceTDFromLocalCompressedFile(ComponentContext componentContext, File file, String filename)
+        throws IOException {
+        if (!file.exists()) {
+            throw new IOException("File doesn't exist: " + file.getAbsolutePath());
+        }
+        String reference;
+        try {
+            MetaDataSet mds = new MetaDataSet();
+            ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
+            reference = dataManagementService.createReferenceFromLocalFile(file, mds,
+                getStorageNetworkDestination(componentContext), true);
+        } catch (InterruptedException | CommunicationException e) {
+            // reduce exception types
+            throw new IOException(e);
+        }
+        return typedDatumFactory.createFileReference(reference, filename);
+    }
+
+    @Override
+    public DirectoryReferenceTD createDirectoryReferenceTDFromLocalCompressedFile(ComponentContext componentContext, File dir,
+        String dirname) throws IOException {
+        if (!dir.exists()) {
+            throw new IOException("Directory doesn't exist: " + dir.getAbsolutePath());
+        }
+        String reference;
+        try {
+            MetaDataSet mds = new MetaDataSet();
+            ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
+            reference = dataManagementService.createReferenceFromLocalFile(dir, mds,
+                getStorageNetworkDestination(componentContext), true);
+        } catch (InterruptedException | CommunicationException e) {
+            // reduce exception types
+            throw new IOException(e);
+        }
+        return typedDatumFactory.createDirectoryReference(reference, dirname);
     }
 
     protected void bindTypedDatumService(TypedDatumService typedDatumService) {
@@ -181,4 +244,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         dataManagementService = newDataManagementService;
     }
 
+    private NetworkDestination getStorageNetworkDestination(ComponentContext componentContext) {
+        return componentContext.getStorageNetworkDestination();
+    }
 }

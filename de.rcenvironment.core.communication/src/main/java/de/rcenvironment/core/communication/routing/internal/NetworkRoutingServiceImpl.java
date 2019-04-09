@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,9 +21,9 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
@@ -37,8 +37,11 @@ import de.rcenvironment.core.communication.model.internal.NetworkGraphLinkImpl;
 import de.rcenvironment.core.communication.protocol.MessageMetaData;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
+import de.rcenvironment.core.communication.routing.InstanceRestartAndPresenceService;
+import de.rcenvironment.core.communication.routing.InstanceSessionNetworkStatus;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
+import de.rcenvironment.core.communication.routing.InstanceSessionNetworkStatus.State;
 import de.rcenvironment.core.communication.routing.internal.v2.Link;
 import de.rcenvironment.core.communication.routing.internal.v2.LinkState;
 import de.rcenvironment.core.communication.routing.internal.v2.LinkStateKnowledgeChangeListener;
@@ -57,7 +60,8 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  * @author Phillip Kroll
  * @author Robert Mischke
  */
-public class NetworkRoutingServiceImpl implements NetworkRoutingService, MessageRoutingService, AdditionalServicesProvider {
+public class NetworkRoutingServiceImpl
+    implements NetworkRoutingService, MessageRoutingService, InstanceRestartAndPresenceService, AdditionalServicesProvider {
 
     /**
      * Keeps track of of distributed link state changes to adapt the local graph knowledge.
@@ -361,6 +365,11 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         throw new IllegalArgumentException("Invalid type: " + type);
     }
 
+    @Override
+    public InstanceSessionNetworkStatus queryInstanceSessionNetworkStatus(InstanceNodeSessionId lookupId) {
+        return topologyChangeTracker.queryInstanceSessionNetworkStatus(lookupId);
+    }
+
     protected synchronized void updateFromRawNetworkGraph(NetworkGraphImpl rawNetworkGraph) {
 
         cachedRawNetworkGraph = rawNetworkGraph;
@@ -444,12 +453,47 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             log.debug(StringUtils.format("Found no route for a request from %s to %s (type=%s, trace=%s)",
                 sender, receiver, request.getMessageType(), request.accessMetaData().getTrace()));
 
-            // generate failure response
             final NetworkResponse response;
-            if (localInstanceSessionId.equals(sender)) {
-                response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localInstanceSessionId);
-            } else {
-                response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localInstanceSessionId);
+
+            InstanceSessionNetworkStatus instanceSessionState = topologyChangeTracker.queryInstanceSessionNetworkStatus(receiver);
+            final State state = instanceSessionState.getState();
+            switch (state) {
+            case NOT_PRESENT:
+                // not present
+                if (localInstanceSessionId.equals(sender)) {
+                    response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localInstanceSessionId);
+                } else {
+                    response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localInstanceSessionId);
+                }
+                break;
+            case PRESENT:
+                // present -> assume general network error
+                log.warn("Unusual situation: a network request failed because no route to the "
+                    + "target node was found, but it is considered visible in the current network");
+                if (localInstanceSessionId.equals(sender)) {
+                    response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localInstanceSessionId);
+                } else {
+                    response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localInstanceSessionId);
+                }
+                break;
+            case PRESENT_WITH_DIFFERENT_SESSION:
+                // the target node was restarted and has reconnected
+                log.warn("Attempting for forward a network message to " + receiver
+                    + ", but the remote node was restarted; its new session id is " + instanceSessionState.getOtherId());
+                response =
+                    NetworkResponseFactory.generateResponseForTargetNodeWasRestarted(request, localInstanceSessionId);
+                break;
+            case ID_COLLISION:
+                log.error(
+                    "There is more than one node with the same instance id within the network; this is not allowed. "
+                        + "A typical cause for this is when entire profiles are copied (including their internal storage), "
+                        + "and the copies are being used at the same time. Node 1: " + instanceSessionState.getQueriedId() + ", Node 2: "
+                        + instanceSessionState.getOtherId());
+                response =
+                    NetworkResponseFactory.generateResponseForInstanceIdCollision(request, localInstanceSessionId);
+                break;
+            default:
+                throw new IllegalArgumentException();
             }
 
             // send to result handler

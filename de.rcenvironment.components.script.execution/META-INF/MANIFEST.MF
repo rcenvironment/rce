@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.execution
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
  de.rcenvironment.core.component.api,
@@ -30,9 +30,9 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.collections4.map;version="4.0.0",
  org.apache.commons.logging;provider=paxlogging,
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
+ com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.fasterxml.jackson.databind.node;version="2.9.8",
  org.eclipse.osgi.util;version="1.1.0",
  org.osgi.framework;version="1.6.0",
  org.osgi.service.component;version="1.1.0"

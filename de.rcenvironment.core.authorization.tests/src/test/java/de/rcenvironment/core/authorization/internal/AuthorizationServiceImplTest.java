@@ -1,336 +1,139 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.internal;
 
-import java.util.HashSet;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import junit.framework.TestCase;
-import de.rcenvironment.core.authorization.rbac.Permission;
-import de.rcenvironment.core.authorization.rbac.Role;
-import de.rcenvironment.core.authorization.rbac.Subject;
+import org.apache.commons.logging.LogFactory;
+import org.junit.Before;
+import org.junit.Test;
+
+import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
+import de.rcenvironment.core.authorization.api.AuthorizationAccessGroupKeyData;
+import de.rcenvironment.core.authorization.api.AuthorizationService;
+import de.rcenvironment.core.authorization.api.DefaultAuthorizationObjects;
+import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
+import de.rcenvironment.core.authorization.cryptography.internal.BCCryptographyOperationsProviderImpl;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
- * 
- * Test cases for <code>AuthorizationServiceImpl</code>.
- * 
- * @author Doreen Seider
+ * Test for {@link AuthorizationServiceImpl}.
+ *
+ * @author Robert Mischke
  */
-public class AuthorizationServiceImplTest extends TestCase {
+public class AuthorizationServiceImplTest {
+
+    private AuthorizationServiceImpl service;
 
     /**
-     * Class under test.
+     * Common test setup.
      */
-    private AuthorizationServiceImpl myService = null;
-
-    @Override
-    public void setUp() throws Exception {
-        myService = new AuthorizationServiceImpl();
-        myService.bindConfigurationService(AuthorizationMockFactory.getConfigurationService());
-        myService.activate(AuthorizationMockFactory.getBundleContextMock());
-    }
-     
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetPermissionForSuccess() throws Exception {
-        myService.getPermission(AuthorizationStoreDummy.PERMISSION_ID);
-
+    @Before
+    public void setup() {
+        service = new AuthorizationServiceImpl();
+        service.bindCryptographyOperationsProvider(new BCCryptographyOperationsProviderImpl());
     }
 
     /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
+     * Tests default objects like the "public" access group and the "public" permission set (which should only contain the "public" access
+     * group).
      */
-    public void testGetPermissionsForSuccess() throws Exception {
-        myService.getPermissions(AuthorizationStoreDummy.SUBJECT_ID);
+    @Test
+    public void defaultPermissionSets() {
+        final DefaultAuthorizationObjects defaultObjects = service.getDefaultAuthorizationObjects();
 
+        final AuthorizationAccessGroup publicAccessGroup = defaultObjects.accessGroupPublicInLocalNetwork();
+        assertThat(publicAccessGroup.getFullId(), is("public"));
+        assertThat(publicAccessGroup.getName(), is("public"));
+        assertThat(publicAccessGroup.getIdPart(), nullValue());
+
+        // note: the list of groups is current hard-coded to the "public" group
+        assertThat(service.listAccessibleGroups(false).size(), is(0));
+        assertThat(service.listAccessibleGroups(true).size(), is(1));
+        assertThat(service.listAccessibleGroups(true), hasItems(publicAccessGroup));
+
+        assertThat(defaultObjects.permissionSetLocalOnly().getAccessGroups().size(), is(0));
+        assertThat(defaultObjects.permissionSetPublicInLocalNetwork().getAccessGroups().size(), is(1));
+
+        assertThat(defaultObjects.permissionSetLocalOnly().includesAccessGroup(publicAccessGroup), is(false));
+        assertThat(defaultObjects.permissionSetPublicInLocalNetwork().includesAccessGroup(publicAccessGroup), is(true));
     }
 
     /**
+     * Tests group operations.
      * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
+     * @throws OperationFailureException on failure
      */
-    public void testGetRoleForSuccess() throws Exception {
-        myService.getRole(AuthorizationStoreDummy.ROLE_ID);
+    @Test
+    public void groupHandling() throws OperationFailureException {
+        final String test1Name = "Test1";
+        final AuthorizationAccessGroup test1Group = service.createLocalGroup(test1Name);
+        assertThat(test1Group.getName(), is(test1Name));
+        assertThat(test1Group.getIdPart().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH));
+        assertThat(test1Group.getFullId().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH + test1Name.length() + 1));
 
+        assertThat(service.isGroupAccessible(test1Group), is(true));
+        final AuthorizationAccessGroupKeyData originalKeyData = service.getKeyDataForGroup(test1Group);
+        assertThat(originalKeyData, notNullValue());
+        final int expectedEncodedKeyLength = CryptographyOperationsProvider.SYMMETRIC_KEY_EXPECTED_ENCODED_LENGTH;
+        assertThat(originalKeyData.getEncodedStringForm().length(), is(expectedEncodedKeyLength));
+
+        String exported = service.exportToString(test1Group);
+        assertThat(exported, notNullValue());
+
+        LogFactory.getLog(getClass()).debug(exported);
+
+        service.deleteLocalGroupData(test1Group);
+        assertThat(service.isGroupAccessible(test1Group), is(false));
+        assertThat(service.getKeyDataForGroup(test1Group), nullValue());
+
+        final AuthorizationAccessGroup imported = service.importFromString(exported);
+
+        assertThat(service.isGroupAccessible(test1Group), is(true));
+
+        assertThat(imported.getName(), is(test1Name));
+        assertThat(imported.getIdPart().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH));
+        assertThat(imported.getFullId().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH + test1Name.length() + 1));
+
+        final AuthorizationAccessGroupKeyData importedKeyData = service.getKeyDataForGroup(imported);
+        assertThat("old and new key data holders are not the same object", originalKeyData != importedKeyData);
+        assertThat(importedKeyData.getEncodedStringForm().length(), is(expectedEncodedKeyLength));
+        assertThat(importedKeyData.getEncodedStringForm(),
+            equalTo(originalKeyData.getEncodedStringForm()));
     }
 
     /**
+     * Tests group operations.
      * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
+     * @throws OperationFailureException on failure
      */
-    public void testGetRolesForSuccess() throws Exception {
-        myService.getRoles(AuthorizationStoreDummy.SUBJECT_ID);
+    @Test
+    public void externalGroupRepresentation() throws OperationFailureException {
+        final String testGroupName = "Ext";
+        final String testIdPart = "0123456789abcdef";
+        final String extFullId = testGroupName + AuthorizationService.ID_SEPARATOR + testIdPart;
+        final AuthorizationAccessGroup represented = service.representRemoteGroupId(extFullId);
+        assertThat(represented.getName(), is(testGroupName));
+        assertThat(represented.getIdPart().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH));
+        assertThat(represented.getFullId().length(), is(AuthorizationService.GROUP_ID_SUFFIX_LENGTH + testGroupName.length() + 1));
+        // TODO test displayName, too?
 
+        assertThat(service.isGroupAccessible(represented), is(false));
+        assertThat(service.getKeyDataForGroup(represented), nullValue());
+
+        // service.exportToString(represented); // TODO test; should throw an exception
     }
 
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetSubjectForSuccess() throws Exception {
-        myService.getSubject(AuthorizationStoreDummy.SUBJECT_ID);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasPermissionForSuccess() throws Exception {
-        myService.hasPermission(AuthorizationStoreDummy.SUBJECT_ID, AuthorizationStoreDummy.PERMISSION);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasRoleForSuccess() throws Exception {
-        myService.hasRole(AuthorizationStoreDummy.SUBJECT_ID, AuthorizationStoreDummy.ROLE);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception if the test fails.
-     */
-    public void testGetPermissionForSanity() throws Exception {
-        Permission permission = myService.getPermission(AuthorizationStoreDummy.PERMISSION_ID);
-        assertEquals(AuthorizationStoreDummy.PERMISSION, permission);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetPermissionsForSanity() throws Exception {
-        myService.getPermissions(AuthorizationStoreDummy.SUBJECT_ID);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetRoleForSanity() throws Exception {
-        Role role = myService.getRole(AuthorizationStoreDummy.ROLE_ID);
-        assertEquals(AuthorizationStoreDummy.ROLE, role);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetRolesForSanity() throws Exception {
-        myService.getRoles(AuthorizationStoreDummy.SUBJECT_ID);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetSubjectForSanity() throws Exception {
-        Subject subject = myService.getSubject(AuthorizationStoreDummy.SUBJECT_ID);
-        assertEquals(AuthorizationStoreDummy.SUBJECT, subject);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasPermissionForSanity() throws Exception {
-        boolean hasPermission = myService.hasPermission(AuthorizationStoreDummy.SUBJECT_ID, AuthorizationStoreDummy.PERMISSION);
-        assertTrue(hasPermission);
-        hasPermission = myService.hasPermission(AuthorizationStoreDummy.SUBJECT_ID, new Permission(AuthorizationStoreDummy.PERMISSION_ID
-                + "sjak"));
-        assertFalse(hasPermission);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasRoleForSanity() throws Exception {
-        boolean hasRole = myService.hasRole(AuthorizationStoreDummy.SUBJECT_ID, AuthorizationStoreDummy.ROLE);
-        assertTrue(hasRole);
-        hasRole = myService.hasRole(AuthorizationStoreDummy.SUBJECT_ID, new Role("unknown.role", new HashSet<Permission>()));
-        assertFalse(hasRole);
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetPermissionForFailure() throws Exception {
-        Permission permission = myService.getPermission(AuthorizationStoreDummy.PERMISSION_ID);
-        assertEquals(AuthorizationStoreDummy.PERMISSION, permission);
-
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetPermissionsForFailure() throws Exception {
-        try {
-            myService.getPermissions(null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetRoleForFailure() throws Exception {
-        try {
-            myService.getRole(null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetRolesForFailure() throws Exception {
-        try {
-            myService.getRoles(null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testGetSubjectForFailure() throws Exception {
-        try {
-            myService.getSubject(null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasPermissionForFailure() throws Exception {
-        try {
-            myService.hasPermission(null, AuthorizationStoreDummy.PERMISSION);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-
-        try {
-            myService.hasPermission(AuthorizationStoreDummy.SUBJECT_ID, null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * 
-     * Test.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    public void testHasRoleForFailure() throws Exception {
-        try {
-            myService.hasRole(null, AuthorizationStoreDummy.ROLE);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-
-        try {
-            myService.hasRole(AuthorizationStoreDummy.SUBJECT_ID, null);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
+    // TODO add test for various findLocalGroupById() cases
 }

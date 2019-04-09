@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,7 +15,7 @@ package de.rcenvironment.core.communication.common;
  * 
  * @author Robert Mischke
  */
-public interface ResolvableNodeId {
+public interface ResolvableNodeId extends NetworkDestination {
 
     /**
      * @return the {@link IdType} of this generic id

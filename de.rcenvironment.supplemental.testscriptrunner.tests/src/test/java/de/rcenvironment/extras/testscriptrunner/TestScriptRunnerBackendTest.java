@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,8 +21,10 @@ import org.junit.Test;
 
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutReceiver;
-import de.rcenvironment.extras.testscriptrunner.definitions.RceTestLifeCycleHooks;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.ExternalServiceHolder;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.RceTestLifeCycleHooks;
 import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceManagementStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.WorkflowStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ExecutionResult;
 
@@ -44,6 +46,7 @@ public class TestScriptRunnerBackendTest {
         testFrameworkAdapter = new CucumberTestFrameworkAdapter(
             RceTestLifeCycleHooks.class,
             InstanceManagementStepDefinitions.class,
+            WorkflowStepDefinitions.class,
             SelfTestSteps.class);
     }
 
@@ -56,7 +59,7 @@ public class TestScriptRunnerBackendTest {
     public void executeSelfTestScripts() throws IOException {
         final File scriptDir = new File("src/test/resources/scripts/");
 
-        new InstanceManagementStepDefinitions().bindInstanceManagementService(EasyMock.createNiceMock(InstanceManagementService.class));
+        new ExternalServiceHolder().bindInstanceManagementService(EasyMock.createNiceMock(InstanceManagementService.class));
 
         final String systemTempPath = System.getProperty("java.io.tmpdir");
         final File reportDir = new File(systemTempPath, "testscriptrunner-selftest");

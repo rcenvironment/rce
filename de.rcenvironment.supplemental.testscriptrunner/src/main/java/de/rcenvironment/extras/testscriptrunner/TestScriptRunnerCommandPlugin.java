@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,8 +25,10 @@ import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.extras.testscriptrunner.definitions.RceTestLifeCycleHooks;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.RceTestLifeCycleHooks;
 import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceManagementStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.WorkflowStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ExecutionResult;
 
@@ -50,10 +52,14 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    public TestScriptRunnerCommandPlugin() {
+    private final File reportsRootDir;
+
+    public TestScriptRunnerCommandPlugin() throws IOException {
         testFrameworkAdapter = new CucumberTestFrameworkAdapter(
             RceTestLifeCycleHooks.class,
-            InstanceManagementStepDefinitions.class);
+            InstanceManagementStepDefinitions.class,
+            WorkflowStepDefinitions.class);
+        reportsRootDir = TempFileServiceAccess.getInstance().createManagedTempDir("tsr_reports");
     }
 
     protected void bindConfigurationService(ConfigurationService configurationService) {
@@ -108,10 +114,8 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
         String buildUnderTestId = context.consumeNextToken();
 
-        File reportDir = new File(scriptLocationRoot, "reports");
-
         final ExecutionResult result = testFrameworkAdapter.executeTestScripts(scriptLocationRoot, tagNameFilter,
-            context.getOutputReceiver(), buildUnderTestId, reportDir);
+            context.getOutputReceiver(), buildUnderTestId, reportsRootDir);
 
         List<String> reportLines = result.getReportFileLines();
         if (reportLines != null) {

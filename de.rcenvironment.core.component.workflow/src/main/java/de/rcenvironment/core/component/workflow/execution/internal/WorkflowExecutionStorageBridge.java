@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -22,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
@@ -68,11 +70,11 @@ public class WorkflowExecutionStorageBridge {
     // widely in this class -seid_do
     private volatile long workflowDmId;
 
-    private Map<String, Long> compInstDmIds;
+    private Map<ComponentExecutionIdentifier, Long> compInstDmIds;
 
-    private Map<String, Map<String, Long>> inputDmIds = new HashMap<String, Map<String, Long>>();
+    private Map<ComponentExecutionIdentifier, Map<String, Long>> inputDmIds = new HashMap<>();
 
-    private Map<String, Map<String, Long>> outputDmIds = new HashMap<String, Map<String, Long>>();
+    private Map<ComponentExecutionIdentifier, Map<String, Long>> outputDmIds = new HashMap<>();
 
     private Map<String, Long> intervalTypeDmIds = Collections.synchronizedMap(new HashMap<String, Long>());
 
@@ -84,14 +86,16 @@ public class WorkflowExecutionStorageBridge {
      */
     class DataManagementIdsHolder {
 
-        public final Map<String, Long> compInstDmIds;
+        public final Map<ComponentExecutionIdentifier, Long> compInstDmIds;
 
-        public final Map<String, Map<String, Long>> inputDmIds;
+        public final Map<ComponentExecutionIdentifier, Map<String, Long>> inputDmIds; // TODO what are the inner string representing?
 
-        public final Map<String, Map<String, Long>> outputDmIds;
+        public final Map<ComponentExecutionIdentifier, Map<String, Long>> outputDmIds; // TODO what are the inner string representing?
 
-        DataManagementIdsHolder(Map<String, Long> compInstDmIds, Map<String, Map<String, Long>> inputDmIds,
-            Map<String, Map<String, Long>> outputDmIds) {
+        DataManagementIdsHolder(Map<ComponentExecutionIdentifier, Long> compInstDmIds,
+            Map<ComponentExecutionIdentifier, Map<String, Long>> inputDmIds,
+            Map<ComponentExecutionIdentifier, Map<String, Long>> outputDmIds) {
+
             this.compInstDmIds = compInstDmIds;
             this.inputDmIds = inputDmIds;
             this.outputDmIds = outputDmIds;
@@ -112,7 +116,8 @@ public class WorkflowExecutionStorageBridge {
             workflowDmId =
                 metaDataBackendService.addWorkflowRun(wfExeCtx.getInstanceName(),
                     DataManagementIdMapping.mapLogicalNodeIdToDbString(wfExeCtx.getNodeId()), DataManagementIdMapping
-                        .mapLogicalNodeIdToDbString(wfExeCtx.getDefaultStorageNodeId()), System.currentTimeMillis());
+                        .mapLogicalNodeIdToDbString(wfExeCtx.getStorageNodeId()),
+                    System.currentTimeMillis());
             // Store additional information in the data management, if it is provided.
             if (wfExeCtx.getAdditionalInformationProvidedAtStart() != null) {
                 Map<String, String> properties = new HashMap<>();
@@ -136,6 +141,7 @@ public class WorkflowExecutionStorageBridge {
                 String wfFileReference = dataManagementService.createReferenceFromLocalFile(wfFile, mds, wfExeCtx.getNodeId());
                 TypedDatum fileRefTD = typedDatumService.getFactory().createFileReference(wfFileReference, wfFile.getName());
                 metaDataBackendService.addWorkflowFileToWorkflowRun(workflowDmId, typedDatumService.getSerializer().serialize(fileRefTD));
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(wfFile);
             } catch (IOException | InterruptedException | CommunicationException e) {
                 throw new WorkflowExecutionException("Failed to store workflow file" + errorMessageSuffix, e);
             }
@@ -143,13 +149,14 @@ public class WorkflowExecutionStorageBridge {
         } catch (RemoteOperationException | RuntimeException e) {
             throw new WorkflowExecutionException("Failed to store workflow execution" + errorMessageSuffix, e);
         }
-        Map<String, Set<EndpointInstance>> compInputInstances = new HashMap<>();
-        Map<String, Set<EndpointInstance>> compOutputInstances = new HashMap<>();
+        Map<ComponentExecutionIdentifier, Set<EndpointInstance>> compInputInstances = new HashMap<>();
+        Map<ComponentExecutionIdentifier, Set<EndpointInstance>> compOutputInstances = new HashMap<>();
         Set<ComponentInstance> componentInstances = new HashSet<>();
         for (WorkflowNode wn : wfExeCtx.getWorkflowDescription().getWorkflowNodes()) {
             Set<EndpointInstance> endpointInstances = new HashSet<>();
-            String compExeId = wfExeCtx.getCompExeIdByWfNodeId(wn.getIdentifier());
-            componentInstances.add(new ComponentInstance(compExeId, wn.getComponentDescription().getIdentifier(), wn.getName(), null));
+            ComponentExecutionIdentifier compExeId = wfExeCtx.getCompExeIdByWfNode(wn);
+            componentInstances
+                .add(new ComponentInstance(compExeId.toString(), wn.getComponentDescription().getIdentifier(), wn.getName(), null));
             for (EndpointDescription ep : wn.getComponentDescription().getInputDescriptionsManager().getEndpointDescriptions()) {
                 Map<String, String> metaData = new HashMap<String, String>();
                 metaData.put(MetaDataKeys.DATA_TYPE, ep.getDataType().getShortName());
@@ -165,20 +172,25 @@ public class WorkflowExecutionStorageBridge {
             compOutputInstances.put(compExeId, endpointInstances);
         }
         try {
-            compInstDmIds = metaDataBackendService.addComponentInstances(workflowDmId, componentInstances);
+            compInstDmIds = new HashMap<>();
+            // TODO adapt the metaDataBackendService to remove this copy step from one data structure to another!
+            for (Entry<String, Long> entry : metaDataBackendService.addComponentInstances(workflowDmId, componentInstances).entrySet()) {
+                compInstDmIds.put(new ComponentExecutionIdentifier(entry.getKey()), entry.getValue());
+            }
             // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
         } catch (RemoteOperationException | RuntimeException e) {
             throw new WorkflowExecutionException("Failed to store component instances" + errorMessageSuffix, e);
         }
-        for (String dmId : compInputInstances.keySet()) {
+        for (ComponentExecutionIdentifier compExeId : compInputInstances.keySet()) {
             try {
-                inputDmIds.put(dmId, metaDataBackendService.addEndpointInstances(compInstDmIds.get(dmId), compInputInstances.get(dmId)));
+                inputDmIds.put(compExeId,
+                    metaDataBackendService.addEndpointInstances(compInstDmIds.get(compExeId), compInputInstances.get(compExeId)));
                 // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
             } catch (RemoteOperationException | RuntimeException e) {
                 throw new WorkflowExecutionException("Failed to store component input instances" + errorMessageSuffix, e);
             }
         }
-        for (String compExeId : compOutputInstances.keySet()) {
+        for (ComponentExecutionIdentifier compExeId : compOutputInstances.keySet()) {
             try {
                 outputDmIds.put(compExeId, metaDataBackendService.addEndpointInstances(compInstDmIds.get(compExeId),
                     compOutputInstances.get(compExeId)));
@@ -190,7 +202,7 @@ public class WorkflowExecutionStorageBridge {
 
         // Store metadata for endpoints
         for (WorkflowNode wn : wfExeCtx.getWorkflowDescription().getWorkflowNodes()) {
-            String compExeId = wfExeCtx.getCompExeIdByWfNodeId(wn.getIdentifier());
+            ComponentExecutionIdentifier compExeId = wfExeCtx.getCompExeIdByWfNode(wn);
             try {
                 for (EndpointDescription ep : wn.getComponentDescription().getInputDescriptionsManager().getEndpointDescriptions()) {
                     metaDataBackendService.addEndpointInstanceProperties(inputDmIds.get(compExeId).get(ep.getName()),

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2011 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import javax.script.ScriptEngineManager;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;

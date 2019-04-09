@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamodel.internal;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -38,6 +38,8 @@ public class DefaultTypedDatumConverterTest {
     private static DefaultTypedDatumFactory factory;
 
     private static DefaultTypedDatumConverter converter;
+    
+    private static final double DELTA = 0.000001;
 
     /**
      * JUnit rule declaration for checking exceptions. Must be public.
@@ -70,10 +72,10 @@ public class DefaultTypedDatumConverterTest {
         Assert.assertEquals(factory.createInteger(1).getIntValue(), integer1.getIntValue());
 
         FloatTD float0 = converter.castOrConvert(integer0, FloatTD.class);
-        Assert.assertEquals(factory.createFloat(0.0).getFloatValue(), float0.getFloatValue());
+        Assert.assertEquals(factory.createFloat(0.0).getFloatValue(), float0.getFloatValue(), DELTA);
 
         FloatTD float1 = converter.castOrConvert(integer1, FloatTD.class);
-        Assert.assertEquals(factory.createFloat(1.0).getFloatValue(), float1.getFloatValue());
+        Assert.assertEquals(factory.createFloat(1.0).getFloatValue(), float1.getFloatValue(), DELTA);
 
     }
 
@@ -97,10 +99,10 @@ public class DefaultTypedDatumConverterTest {
 
         // IntegerTD --> FloatTD
         FloatTD float0 = (FloatTD) converter.castOrConvert(integer0, DataType.Float);
-        Assert.assertEquals(factory.createFloat(0.0).getFloatValue(), float0.getFloatValue());
+        Assert.assertEquals(factory.createFloat(0.0).getFloatValue(), float0.getFloatValue(), DELTA);
 
         FloatTD float1 = (FloatTD) converter.castOrConvert(integer1, DataType.Float);
-        Assert.assertEquals(factory.createFloat(1.0).getFloatValue(), float1.getFloatValue());
+        Assert.assertEquals(factory.createFloat(1.0).getFloatValue(), float1.getFloatValue(), DELTA);
 
         // FloatTD --> VectorTD
         VectorTD vector0 = (VectorTD) converter.castOrConvert(float0, DataType.Vector);
@@ -152,7 +154,7 @@ public class DefaultTypedDatumConverterTest {
         // DateTimeTD --> MatrixTD
         dateTime = factory.createDateTime(0);
         MatrixTD convertedToMatrix = converter.castOrConvert(dateTime, MatrixTD.class);
-        Assert.assertEquals(0.0, convertedToMatrix.getFloatTDOfElement(0, 0).getFloatValue());
+        Assert.assertEquals(0.0, convertedToMatrix.getFloatTDOfElement(0, 0).getFloatValue(), DELTA);
 
         // DateTimeTD --> SmallTableTD
         dateTime = factory.createDateTime(0);

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -56,6 +56,7 @@ import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSe
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
+import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -75,6 +76,12 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.JSchRCECommandLineExecutor;
  * @author Brigitte Boden
  */
 public class InstanceManagementServiceImpl implements InstanceManagementService {
+
+    private static final String DEFAULT_DOWNLOAD_URL_PATTERN = "https://software.dlr.de/updates/rce/9.x/products/standard/*/zip/";
+
+    private static final String DEFAULT_DOWNLOAD_FILENAME_PATTERN_WINDOWS = "rce-*-standard-win32.x86_64.zip";
+
+    private static final String DEFAULT_DOWNLOAD_FILENAME_PATTERN_LINUX = "rce-*-standard-linux.x86_64.zip";
 
     private static final String INSTANCE_MANAGEMENT_DISABLED =
         "Local instance management is disabled due to missing or invalid configuration: ";
@@ -107,6 +114,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private static final String DATA_ROOT_DIRECTORY_PROPERTY = "dataRootDirectory";
 
     private static final String INSTALLATIONS_ROOT_DIR_PROPERTY = "installationsRootDirectory";
+
+    private static final String INSTALLATIONS_ROOT_DIR_DEFAULT_SUBDIR_PATH = "inst"; // kept short due to Windows filesystem length issues
 
     private static final Map<String, InstanceConfigurationImpl> CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP = new HashMap<>();
 
@@ -298,6 +307,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         validateConfiguration(true, false);
         final File destinationConfigFile = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
+
+        // TODO this seems redundant with the creation steps below
         createProfileWithEmptyConfigFileIfNotPresent(destinationConfigFile);
 
         List<InstanceConfigurationOperationDescriptor> changeEntries =
@@ -311,17 +322,27 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         InstanceConfigurationOperationDescriptor firstEntry = changeEntries.get(0);
         switch (firstEntry.getFlag()) {
         case InstanceManagementConstants.SUBCOMMAND_RESET:
-            // FIXME backup?!
+            // TODO (p2) review: create a backup first?
             writeEmptyConfigFile(destinationConfigFile);
+            addProfileVersionInformationUnlessPresent(instanceId);
             userOutputReceiver.addOutput("Clearing/resetting the configuration" + OF_INSTANCE + instanceId);
             break;
         case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
-            // FIXME backup?!
+            final Object templateParameter = firstEntry.getSingleParameter();
             userOutputReceiver
-                .addOutput("Replacing configuration" + OF_INSTANCE + instanceId + " with template " + firstEntry.getSingleParameter());
-            File template = resolveAndCheckTemplateDir(firstEntry.getSingleParameter() + SLASH + CONFIGURATION_FILENAME);
-            Path src = template.toPath();
+                .addOutput("Replacing configuration" + OF_INSTANCE + instanceId + " with template " + templateParameter);
+            final File templateConfigurationFile;
+            if (templateParameter instanceof String) {
+                templateConfigurationFile = resolveAndCheckTemplateDir(firstEntry.getSingleParameter() + SLASH + CONFIGURATION_FILENAME);
+            } else if (templateParameter instanceof File) {
+                templateConfigurationFile = (File) templateParameter;
+            } else {
+                throw new IllegalArgumentException();
+            }
+            Path src = templateConfigurationFile.toPath();
+            // TODO (p2) review: create a backup first?
             Files.copy(src, destinationConfigFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            addProfileVersionInformationUnlessPresent(instanceId); // TODO this should be made optional to allow testing version upgrades
             break;
         default:
             // ignore standard commands here
@@ -391,6 +412,10 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             case InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION:
                 configOperations.setWorkflowHostFlag((Boolean) entry.getSingleParameter());
                 userOutputReceiver.addOutput("Set workflow host flag" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID:
+                configOperations.setCustomNodeId((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Set custom node id" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
                 break;
             case InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH:
                 configOperations.setTempDirectory((String) entry.getSingleParameter());
@@ -479,6 +504,16 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
+    private void addProfileVersionInformationUnlessPresent(String instanceId) throws IOException {
+        File versionInfoFile = resolveRelativePathWithinProfileDirectory(instanceId, "internal/profile.version");
+        if (!versionInfoFile.exists()) {
+            FileUtils.write(versionInfoFile, Profile.PROFILE_VERSION_NUMBER.toString());
+        }
+        if (!versionInfoFile.isFile()) {
+            throw new IOException("Profile version file " + versionInfoFile.getAbsolutePath() + " could not be written");
+        }
+    }
+
     /**
      * The IM master uses the same passphrase for all instances. This method retreives the passphrase from the persistent settings. If no
      * passphrase is stored yet, it is created randomly.
@@ -506,7 +541,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         // the list may be modified, so replace it with a local copy
         instanceIdList = new ArrayList<>(instanceIdList);
 
-        if (installationId == null || instanceIdList == null || installationId.isEmpty() || instanceIdList.isEmpty()) {
+        if (installationId == null || installationId.isEmpty() || instanceIdList.isEmpty()) {
             throw new IOException("Malformed command: either no installation id or instance id defined.");
         }
 
@@ -833,16 +868,21 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             hasValidLocalConfiguration = false;
 
             this.dataRootDir = getConfiguredDirectory(configuration, DATA_ROOT_DIRECTORY_PROPERTY);
-            this.installationsRootDir = getConfiguredDirectory(configuration, INSTALLATIONS_ROOT_DIR_PROPERTY);
-
-            if (dataRootDir == null || installationsRootDir == null) {
-                throw new IOException("Data or installation root directory (or both) unspecified");
+            if (dataRootDir == null) {
+                throw new IOException("No data root directory specified (option '" + DATA_ROOT_DIRECTORY_PROPERTY + "')");
             }
+
+            // check for explicit installation directory override; otherwise, use the default subdir
+            this.installationsRootDir = getConfiguredDirectory(configuration, INSTALLATIONS_ROOT_DIR_PROPERTY);
+            if (installationsRootDir == null) {
+                installationsRootDir = new File(dataRootDir, INSTALLATIONS_ROOT_DIR_DEFAULT_SUBDIR_PATH);
+            }
+
             this.templatesRootDir = new File(dataRootDir, TEMPLATES);
             this.profilesRootDir = new File(dataRootDir, "profiles");
             this.downloadsCacheDir = new File(dataRootDir, "downloads");
 
-            // TODO add new combinations
+            // TODO improve this check to find all possible collisions (add string forms to a Set, check resulting size)
             if (installationsRootDir.equals(templatesRootDir) || installationsRootDir.equals(profilesRootDir)
                 || templatesRootDir.equals(profilesRootDir)) {
                 throw new IOException("Two or more configured directory are equal, but they must be unique");
@@ -850,7 +890,12 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
             // TODO run this check on Windows only?
             if (installationsRootDir.getPath().length() > MAX_INSTALLATION_ROOT_PATH_LENGTH) {
-                throw new IOException("Installation root path is too long: " + installationsRootDir.getPath());
+                final String errorMessage = String.format(
+                    "The configured IM installation root path (%s) is too long; the maxium allowed length is %d characters. "
+                        + "Change or set the " + INSTALLATIONS_ROOT_DIR_PROPERTY + " option to change it.",
+                    installationsRootDir.getPath(),
+                    MAX_INSTALLATION_ROOT_PATH_LENGTH);
+                throw new IOException(errorMessage);
             }
 
             prepareAndValidateDirectory(DATA_ROOT_DIRECTORY_PROPERTY, dataRootDir);
@@ -866,13 +911,19 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 INSTANCE_MANAGEMENT_DISABLED + e.getMessage();
         }
 
-        // note: these settings use an empty string as "undefined" markers
-        this.downloadSourceFolderUrlPattern = configuration.getString("downloadSourceFolderUrlPattern", "");
+        this.downloadSourceFolderUrlPattern = configuration.getString("downloadSourceFolderUrlPattern", DEFAULT_DOWNLOAD_URL_PATTERN);
         // normalize URL pattern to end with "/"
         if (downloadSourceFolderUrlPattern.length() > 0 && !downloadSourceFolderUrlPattern.endsWith(SLASH)) {
             downloadSourceFolderUrlPattern = downloadSourceFolderUrlPattern + SLASH;
         }
-        this.downloadFilenamePattern = configuration.getString("downloadFilenamePattern", "");
+
+        final String defaultFilenamePattern;
+        if (OSFamily.isWindows()) {
+            defaultFilenamePattern = DEFAULT_DOWNLOAD_FILENAME_PATTERN_WINDOWS;
+        } else {
+            defaultFilenamePattern = DEFAULT_DOWNLOAD_FILENAME_PATTERN_LINUX;
+        }
+        this.downloadFilenamePattern = configuration.getString("downloadFilenamePattern", defaultFilenamePattern);
 
         try {
             hasValidDownloadConfiguration = false;
@@ -1087,7 +1138,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private File resolveAndCheckProfileDir(String instanceId) throws IOException {
         final File profileDir = new File(profilesRootDir, instanceId);
-        prepareAndValidateDirectory("instance " + instanceId, profileDir);
+        prepareAndValidateDirectory("profile " + instanceId, profileDir);
         return profileDir;
     }
 
@@ -1107,7 +1158,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         if (absolutePath.contains("\"")) {
             throw new IOException("The directory path '" + absolutePath + "' contains illegal characters");
         }
-        log.debug("Final path for id '" + id + "' " + absolutePath);
+        log.debug("Set up directory '" + id + "' at " + absolutePath);
     }
 
     private TextOutputReceiver ensureUserOutputReceiverDefined(TextOutputReceiver userOutputReceiver) {
@@ -1234,7 +1285,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private File getConfiguredDirectory(final ConfigurationSegment configuration, String id) throws IOException {
         String configuredPath = configuration.getString(id);
         log.debug("Configuration value for property '" + id + "': " + configuredPath);
-        if (configuredPath != null) {
+        if (configuredPath != null && !configuredPath.trim().isEmpty()) {
             return new File(configuredPath).getAbsoluteFile();
         } else {
             return null;

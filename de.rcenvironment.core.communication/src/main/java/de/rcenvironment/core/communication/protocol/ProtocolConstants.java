@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -27,7 +27,7 @@ public final class ProtocolConstants {
      * Note that there are no "higher/lower version" semantics for the content of this string. On a connection attempt, the strings provided
      * by both nodes are only checked for equality, and possibly displayed as part of the error message if they do not match.
      */
-    public static final String PROTOCOL_COMPATIBILITY_VERSION = "8.0.0-final";
+    public static final String PROTOCOL_COMPATIBILITY_VERSION = "9.0.0-final";
 
     /**
      * Represents possible return codes contained in {@link NetworkResponse}s.
@@ -88,6 +88,20 @@ public final class ProtocolConstants {
          */
         TIMEOUT_WAITING_FOR_RESPONSE(108,
             "The destination instance for this request did not answer in time, or the response got lost because of a network error"),
+
+        /**
+         * This error occurs when a request was directed at a certain instance session id, but a different instance session for the same
+         * persistent instance id is present within the network (but not at the same time as the expected session). This typically occurs
+         * when a node was restarted and has reconnected to the network.
+         */
+        TARGET_NODE_RESTARTED(109, "The destination instance for this request was restarted"),
+
+        /**
+         * Represents more than one session for the same instance id within the network at the same time.
+         */
+        INSTANCE_ID_COLLISION(110, "There is more than one node with the same instance id within the network; this is not allowed. "
+            + "A typical cause for this is when entire profiles are copied, including their internal storage, "
+            + "and both copies are being used at the same time"),
 
         /**
          * A placeholder result code if an invalid code was passed in for conversion via {@link #fromCode(int)}.

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -79,6 +79,8 @@ public class CommunicationConfiguration {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private String nodeIdOverrideValue;
+
     /**
      * Default constructor for bean mapping and tests.
      */
@@ -115,6 +117,8 @@ public class CommunicationConfiguration {
                 }
             }
         }
+
+        nodeIdOverrideValue = configuration.getString("customNodeId"); // usually null
     }
 
     private String parseConnectionEntry(ConfigurationSegment connectionPart) throws ConfigurationException {
@@ -204,4 +208,7 @@ public class CommunicationConfiguration {
         this.forwardingTimeoutMsec = forwardingTimeoutMsec;
     }
 
+    public String getNodeIdOverrideValue() {
+        return nodeIdOverrideValue;
+    }
 }

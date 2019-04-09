@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -36,17 +36,21 @@ public final class CustomPasteHandler {
      * 
      */
     public static void paste(String text, Text host, Text port) {
-        if (text.indexOf(COLON) != MINUS_ONE) {
-
-            String portString = text.substring(text.indexOf(COLON) + 1);
-
-            if (isValidPort(portString)) {
-                port.setText(portString);
-                host.setText(text.substring(0, text.length() - portString.length() - 1));
-                port.setFocus();
-                port.setSelection(portString.length());
-            }
+        String portString = "";
+        String hostString = host.getText().trim();
+        if (text.indexOf(COLON) != MINUS_ONE && isValidPort((text.substring(text.indexOf(COLON) + 1)).trim())) {
+            portString = (text.substring(text.indexOf(COLON) + 1)).trim();
+            hostString = (text.substring(0, text.indexOf(COLON))).trim();
         }
+
+        host.setText(hostString);
+        if (!portString.isEmpty()) {
+            port.setText(portString);
+        }
+
+        port.setFocus();
+        port.setSelection(portString.length());
+
     }
 
     /**

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,11 +11,13 @@ package de.rcenvironment.core.component.model.impl;
 import java.io.Serializable;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -25,30 +27,31 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Doreen Seider
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ComponentInstallationImpl implements ComponentInstallation, Serializable {
 
     private static final long serialVersionUID = 3895539478658080757L;
 
-    private String nodeId;
+    // TODO review 9.0.0: it would probably be beneficial to use a LogicalNodeSessionId here - misc_ro
+    private LogicalNodeId nodeId;
 
     private ComponentRevisionImpl componentRevision;
 
-    private String installationId;
-
-    private boolean isPublished = false;
+    private String installationId; // component interface id and version
 
     private Integer maximumCountOfParallelInstances = null;
 
     @Override
     public String getNodeId() {
-        return nodeId;
+        if (nodeId == null) {
+            return null;
+        }
+        return nodeId.getLogicalNodeIdString();
     }
 
     @Override
-    // TODO >=8.0 only *not* a getter to prevent default Jackson serialization; define a convention for/against this - misc_ro
-    public LogicalNodeId fetchNodeIdAsObject() {
-        return NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId);
+    @JsonIgnore
+    public LogicalNodeId getNodeIdObject() {
+        return nodeId;
     }
 
     /**
@@ -57,7 +60,11 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
      * @param idString the string form of the id to set
      */
     public void setNodeId(String idString) {
-        this.nodeId = idString;
+        if (idString != null) {
+            this.nodeId = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(idString);
+        } else {
+            this.nodeId = null;
+        }
     }
 
     /**
@@ -65,21 +72,29 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
      * 
      * @param nodeIdObject the id object to set
      */
-    public void setNodeIdFromObject(LogicalNodeId nodeIdObject) {
-        if (nodeIdObject != null) {
-            this.nodeId = nodeIdObject.getLogicalNodeIdString();
-        } else {
-            this.nodeId = null;
-        }
-
+    @JsonIgnore
+    public void setNodeIdObject(LogicalNodeId nodeIdObject) {
+        this.nodeId = nodeIdObject;
     }
 
     @Override
     public ComponentRevision getComponentRevision() {
-        if (installationId == null) {
+        if (componentRevision == null) {
+            // TODO fail instead? there should be no actual case where this is expected
             LogFactory.getLog(getClass()).warn("Undefined component revision");
         }
         return componentRevision;
+    }
+
+    @Override
+    @JsonIgnore // convenience method without a corresponding field, so do not serialize it
+    public ComponentInterface getComponentInterface() {
+        if (componentRevision == null) {
+            // TODO fail instead? there should be no actual case where this is expected
+            LogFactory.getLog(getClass()).warn("Undefined component revision; returning null ComponentInterface");
+            return null;
+        }
+        return componentRevision.getComponentInterface();
     }
 
     public void setComponentRevision(ComponentRevisionImpl componentRevision) {
@@ -96,15 +111,6 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
 
     public void setInstallationId(String installationId) {
         this.installationId = installationId;
-    }
-
-    @Override
-    public boolean getIsPublished() {
-        return isPublished;
-    }
-
-    public void setIsPublished(boolean isPublished) {
-        this.isPublished = isPublished;
     }
 
     @Override
@@ -137,8 +143,8 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
 
     @Override
     public int compareTo(ComponentInstallation o) {
-        return getComponentRevision().getComponentInterface().getDisplayName()
-            .compareTo(o.getComponentRevision().getComponentInterface().getDisplayName());
+        return getComponentInterface().getDisplayName()
+            .compareTo(o.getComponentInterface().getDisplayName());
     }
 
 }

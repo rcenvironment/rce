@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,6 +13,7 @@ import java.io.Serializable;
 import de.rcenvironment.core.communication.api.ServiceCallContext;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 
 /**
  * Provides information about the execution of a workflow or component.
@@ -25,6 +26,7 @@ public interface ExecutionContext extends Serializable {
     /**
      * @return identifier of the workflow/component executed
      */
+    // TODO deprecate this once a type-safe id object is available; consider moving this into subinterfaces for type safety
     String getExecutionIdentifier();
 
     /**
@@ -38,9 +40,15 @@ public interface ExecutionContext extends Serializable {
     LogicalNodeId getNodeId();
 
     /**
-     * @return default storage node of the workflow/component executed
+     * @return the storage node location of the workflow/component being executed; intended for log/metadata generation, not for performing
+     *         remote calls; use {@link #getStorageNetworkDestination()} for this instead!
      */
-    LogicalNodeId getDefaultStorageNodeId();
+    LogicalNodeId getStorageNodeId();
+
+    /**
+     * @return the {@link NetworkDestination} to use for data management operations
+     */
+    NetworkDestination getStorageNetworkDestination();
 
     /**
      * @return the current {@link ServiceCallContext}; can be used to determine the caller that triggered the current method's invocation,

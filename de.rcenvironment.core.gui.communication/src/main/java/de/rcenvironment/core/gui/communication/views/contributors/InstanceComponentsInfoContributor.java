@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,12 +15,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 
+import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
+import de.rcenvironment.core.authorization.api.AuthorizationService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
@@ -30,6 +35,7 @@ import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Contributes instance subtrees showing the local and published components of a node.
@@ -37,10 +43,15 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Sascha Zur (original component image handling)
  * @author Doreen Seider (original component image handling)
+ * @author Alexander Weinert (display of associated authorization groups)
  */
 public class InstanceComponentsInfoContributor extends NetworkViewContributorBase {
 
     private static final int INSTANCE_ELEMENTS_PRIORITY = 10;
+
+    private final Log log = LogFactory.getLog(getClass());
+
+    private final AuthorizationService authorizationService;
 
     /**
      * A tree node containing node representing published or local component.
@@ -124,8 +135,9 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
         ImageManager imageManager = ImageManager.getInstance();
         folderImage = imageManager.getSharedImage(StandardImages.FOLDER_16);
         componentFallbackImage = imageManager.getSharedImage(StandardImages.RCE_LOGO_16);
-        componentIconCache = new HashMap<String, Image>();
+        componentIconCache = new HashMap<>();
 
+        authorizationService = ServiceRegistry.createAccessFor(this).getService(AuthorizationService.class);
     }
 
     @Override
@@ -148,9 +160,9 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
         List<Object> result = new ArrayList<>(2); // max. expected number
         if (currentModel.componentKnowledge != null) {
             // only show the "published" folder when there are published components
-            Collection<ComponentInstallation> publishedInstallations =
-                currentModel.componentKnowledge.getPublishedInstallationsOnNode(parentNode.getNode().getNodeId());
-            if (publishedInstallations != null && publishedInstallations.size() != 0) {
+            Collection<DistributedComponentEntry> publishedInstallations =
+                currentModel.componentKnowledge.getKnownSharedInstallationsOnNode(parentNode.getNode().getNodeId(), true);
+            if (publishedInstallations != null && !publishedInstallations.isEmpty()) {
                 result.add(new ComponentFolderNode(parentNode, true));
             }
             if (parentNode.isLocalNode()) {
@@ -167,7 +179,7 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
             if (typedNode.getTypeIsPublic()) {
                 return true; // otherwise, the folder wouldn't exist
             } else {
-                Collection<ComponentInstallation> localInstallations = determineLocalComponents(typedNode.getInstanceNode());
+                Collection<DistributedComponentEntry> localInstallations = currentModel.componentKnowledge.getLocalAccessInstallations();
                 return !localInstallations.isEmpty();
             }
         }
@@ -186,13 +198,14 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
         final NetworkGraphNodeWithContext instanceNode = typedParentNode.getInstanceNode();
 
         if (typedParentNode.getTypeIsPublic()) {
-            Collection<ComponentInstallation> publishedInstallations =
-                currentModel.componentKnowledge.getPublishedInstallationsOnNode(instanceNode.getNode().getNodeId());
+            Collection<DistributedComponentEntry> publishedInstallations =
+                currentModel.componentKnowledge.getKnownSharedInstallationsOnNode(instanceNode.getNode().getNodeId(), true);
             // note: the parent node is only created if the list is defined and not empty
             return createNodesForComponentInstallations(instanceNode, publishedInstallations);
         } else {
-            Collection<ComponentInstallation> localInstallations = determineLocalComponents(instanceNode);
-            return createNodesForComponentInstallations(instanceNode, localInstallations);
+            Collection<DistributedComponentEntry> componentEntries = currentModel.componentKnowledge.getLocalAccessInstallations();
+            // note: the parent node is only created if the list is defined and not empty
+            return createNodesForComponentInstallations(instanceNode, componentEntries);
         }
     }
 
@@ -220,18 +233,50 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
         if (node instanceof NetworkGraphNodeWithContext) {
             NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) node;
             assertIsComponentNode(typedNode); // consistency check
-            ComponentInterface componentInterface = typedNode.getComponentInstallation().getComponentRevision().getComponentInterface();
-            // Should be improved because using plain ids here is weird.
-            // Plain ids are used to not introduce a new dependency to core.component.integration as this is not good from a (kind of)
-            // communication bundle. But as the network view is not showing only communication stuff anymore, this dependency thing is
-            // probably obsolete -- seid_do, Aug 2014
-            if (componentInterface.getVersion() != null
-                && componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.common.")
-                || componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.cpacs.")) {
-                return StringUtils.format("%s (%s)", componentInterface.getDisplayName(), componentInterface.getVersion());
+            final StringBuilder returnValueBuilder = new StringBuilder();
+
+            if (typedNode.getComponentInstallation() != null) {
+                final ComponentInterface componentInterface = typedNode.getComponentInstallation().getComponentInterface();
+
+                returnValueBuilder.append(componentInterface.getDisplayName());
+                // Should be improved because using plain ids here is weird.
+                // Plain ids are used to not introduce a new dependency to core.component.integration as this is not good from a (kind of)
+                // communication bundle. But as the network view is not showing only communication stuff anymore, this dependency thing is
+                // probably obsolete -- seid_do, Aug 2014
+                if (componentInterface.getVersion() != null
+                    && componentInterface.getIdentifierAndVersion().startsWith("de.rcenvironment.integration.common.")
+                    || componentInterface.getIdentifierAndVersion().startsWith("de.rcenvironment.integration.cpacs.")) {
+                    returnValueBuilder.append(StringUtils.format(" (%s)", componentInterface.getVersion()));
+                }
             } else {
-                return StringUtils.format("%s", componentInterface.getDisplayName());
+                returnValueBuilder.append(typedNode.getDisplayText());
             }
+
+            final Collection<AuthorizationAccessGroup> permissionSet =
+                typedNode.getDistributedComponentEntry().getDeclaredPermissionSet().getAccessGroups();
+
+            // If the permission set of a component that is shown in the network view is empty, it is a local unpublished component. In this
+            // case it does not make sense to display information about the accessibility of the component, hence we omit the complete
+            // suffix displaying this information.
+            if (!permissionSet.isEmpty()) {
+                returnValueBuilder.append(" <");
+
+                final boolean componentIsPublic =
+                    (permissionSet.size() == 1)
+                        && authorizationService.isPublicAccessGroup(permissionSet.iterator().next());
+
+                if (componentIsPublic) {
+                    returnValueBuilder.append("public");
+                } else {
+                    returnValueBuilder.append("available via ");
+                    returnValueBuilder.append(
+                        // Map the access groups to their name and join the resulting strings with the separator ", "
+                        permissionSet.stream().map(AuthorizationAccessGroup::getName).collect(Collectors.joining(", ")));
+                }
+                returnValueBuilder.append(">");
+            }
+
+            return returnValueBuilder.toString();
         }
         throw newUnexpectedCallException();
     }
@@ -251,21 +296,34 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
                 Image image = componentIconCache.get(cacheKey);
                 if (image == null) {
                     try {
-                        byte[] iconData = installation.getComponentRevision().getComponentInterface().getIcon16();
-                        // TODO review: dispose Image instance? or cache Image instance instead?
-                        ImageDescriptor iDescr =
-                            ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(iconData)));
-                        image = iDescr.createImage();
+                        byte[] iconData = installation.getComponentInterface().getIcon16();
+                        if (iconData != null) {
+                            // TODO review: dispose Image instance? or cache Image instance instead?
+                            ImageDescriptor iDescr =
+                                ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(iconData)));
+                            image = iDescr.createImage();
+                        } else {
+                            log.debug(
+                                "Using fallback image for component \"" + installation.getInstallationId() + "\" as the icon data is null");
+                            image = componentFallbackImage;
+                        }
                     } catch (RuntimeException e) {
+                        log.warn(
+                            "Using fallback image for component \"" + installation.getInstallationId()
+                                + "\" as an error occurred while parsing the image data: " + e.toString());
                         image = componentFallbackImage; // set fallback in case of errors
                     }
                     componentIconCache.put(cacheKey, image);
                 }
                 return image;
             } else {
-                // fallback; should never happen
-                LogFactory.getLog(getClass()).warn(
-                    "Found a network view component node without a component installation: " + typedNode.getDisplayNameOfNode());
+                // This case occurs if we display a component installation that is inaccessible due to publication groups. Previously, the
+                // following warning was logged:
+                // 
+                //      "Found a network view component node without a component installation: " + typedNode.getDisplayNameOfNode()
+                // 
+                // We retain this warning in this comment in order to allow future developers to find the point where this message was
+                // issued in case they need to debug user-supplied logs that contain this warning message.
                 return componentFallbackImage;
             }
         }
@@ -284,32 +342,19 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
     }
 
     private Object[] createNodesForComponentInstallations(NetworkGraphNodeWithContext node,
-        Collection<ComponentInstallation> installations) {
-        Object[] result = new Object[installations.size()];
-        int i = 0;
-        for (ComponentInstallation installation : installations) {
-            if (installation == null) {
-                LogFactory.getLog(getClass()).warn("Skipping 'null' component installation for node " + node.getNode().getNodeId());
-                continue;
-            }
+        Collection<DistributedComponentEntry> installations) {
+        List<Object> result = new ArrayList<>();
+        for (DistributedComponentEntry entry : installations) {
+            ComponentInstallation installation = entry.getComponentInstallation();
             NetworkGraphNodeWithContext newChild = new NetworkGraphNodeWithContext(node, Context.COMPONENT_INSTALLATION, this);
             newChild.setComponentInstallation(installation);
-            result[i++] = newChild;
+            newChild.setDisplayText(entry.getDisplayName());
+            newChild.setDistributedComponentEntry(entry);
+            result.add(newChild);
         }
-        Arrays.sort(result);
-        return result;
-    }
-
-    private Collection<ComponentInstallation> determineLocalComponents(NetworkGraphNodeWithContext typedParentNode) {
-        Collection<ComponentInstallation> localInstallations = currentModel.componentKnowledge.getLocalInstallations();
-        // hide all published local components from "local components" list
-        Collection<ComponentInstallation> publishedLocalInstallations =
-            currentModel.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-        if (publishedLocalInstallations != null) {
-            localInstallations = new ArrayList<ComponentInstallation>(localInstallations);
-            localInstallations.removeAll(publishedLocalInstallations);
-        }
-        return localInstallations;
+        final Object[] resultArray = result.toArray();
+        Arrays.sort(resultArray);
+        return resultArray;
     }
 
     private void assertIsComponentNode(NetworkGraphNodeWithContext typedNode) {

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,14 +9,12 @@
 package de.rcenvironment.core.gui.wizards.toolintegration;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import org.apache.commons.io.FileUtils;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -30,9 +28,13 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A dialog for editing a single endpoint configuration.
@@ -42,7 +44,15 @@ import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener
 // TODO Out commented code is for SSH execution
 public class WizardToolConfigurationDialog extends Dialog {
 
+    private static final int VALIDATION_MESSAGE_HEIGHT_HINT = 55;
+
+    private static final String STRING_INVALID_TOOL_DIRECTORY = "The chosen tool directory is not valid.";
+
+    private static final String STRING_INVALID_WORKING_DIRECTORY = "Invalid path to working directory.";
+
     // private Text hostText;
+
+    private static final String STRING_INVALID_VERSION = "The chosen version is not valid.\n%s.";
 
     private Text toolDirectoryText;
 
@@ -68,13 +78,9 @@ public class WizardToolConfigurationDialog extends Dialog {
 
     private Button defaultTempDirButton;
 
-    private final List<Map<String, String>> allConfigs;
-
     // private Label tempLabel;
 
     private Map<String, String> oldConfig;
-
-    private boolean isEdit;
 
     private final ToolIntegrationContext context;
 
@@ -82,37 +88,35 @@ public class WizardToolConfigurationDialog extends Dialog {
 
     private Text limitInstancesText;
 
+    private Label message;
+
+    private Composite messageContainer;
+
     /**
      * Dialog for creating or editing an endpoint.
      * 
      * @param parentShell parent Shell
      * @param title
-     * @param configs
-     * @param configuration the containing endpoint manager
      * @param context current {@link ToolIntegrationContext}
+     * @param configuration the containing endpoint manager
      */
-    public WizardToolConfigurationDialog(Shell parentShell, String title, List<Map<String, String>> configs,
-        ToolIntegrationContext context) {
+    public WizardToolConfigurationDialog(Shell parentShell, String title, ToolIntegrationContext context) {
         super(parentShell);
-        config = new HashMap<String, String>();
+        config = new HashMap<>();
         config.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES, "true");
         config.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT, "10");
         this.title = title;
-        allConfigs = configs;
         this.context = context;
 
         setShellStyle(SWT.RESIZE | SWT.MAX | SWT.APPLICATION_MODAL);
     }
 
-    public WizardToolConfigurationDialog(Shell parentShell, String title, Map<String, String> config, List<Map<String, String>> configs,
-        ToolIntegrationContext context, boolean isEdit) {
+    public WizardToolConfigurationDialog(Shell parentShell, String title, Map<String, String> config, ToolIntegrationContext context) {
         super(parentShell);
         this.config = config;
-        oldConfig = new HashMap<String, String>();
+        oldConfig = new HashMap<>();
         oldConfig.putAll(config);
         this.title = title;
-        allConfigs = configs;
-        this.isEdit = isEdit;
         this.context = context;
         if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) == null
             && config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD) == null) {
@@ -125,8 +129,7 @@ public class WizardToolConfigurationDialog extends Dialog {
     @Override
     protected Point getInitialSize() {
         final int width = 600;
-        final int height = 300;
-        return new Point(width, height);
+        return new Point(width, super.getInitialSize().y);
     }
 
     @Override
@@ -139,9 +142,11 @@ public class WizardToolConfigurationDialog extends Dialog {
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
         container.setLayout(new GridLayout(1, true));
-        GridData g = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
+        GridData g =
+            new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.VERTICAL_ALIGN_BEGINNING);
         container.setLayoutData(g);
         createPropertySettings(container);
+        createMessageComposite(container);
         updateInitValues();
         return container;
     }
@@ -203,16 +208,34 @@ public class WizardToolConfigurationDialog extends Dialog {
         }
     }
 
-    protected void createPropertySettings(Composite parent) {
-        Composite container2 = new Composite(parent, SWT.NONE);
-        container2.setLayout(new GridLayout(1, false));
-        GridData g2 = new GridData(GridData.FILL, GridData.FILL, true, true);
-        container2.setLayoutData(g2);
-        Composite propertyContainer = new Composite(container2, SWT.None);
-        propertyContainer.setLayout(new GridLayout(3, false));
-        GridData g3 = new GridData(GridData.FILL, GridData.FILL,
+    private void createMessageComposite(Composite parent) {
+        messageContainer = new Composite(parent, SWT.None);
+        messageContainer.setLayout(new GridLayout(2, false));
+        GridData gridData = new GridData(GridData.FILL, GridData.FILL,
             true, true);
-        propertyContainer.setLayoutData(g3);
+        messageContainer.setLayoutData(gridData);
+        Label icon = new Label(messageContainer, SWT.NONE);
+        icon.setLayoutData(new GridData(GridData.BEGINNING, GridData.BEGINNING, false, true));
+        icon.setImage(ImageManager.getInstance().getSharedImage(StandardImages.ERROR_16));
+        message = new Label(messageContainer, SWT.FILL | SWT.WRAP);
+        GridData messageGridData = new GridData(GridData.FILL, GridData.FILL, true, true);
+        messageGridData.heightHint = VALIDATION_MESSAGE_HEIGHT_HINT;
+        message.setLayoutData(messageGridData);
+        message.setText("Validation Message");
+
+    }
+
+    private void setMessage(String text) {
+        message.setText(text);
+        messageContainer.setVisible(!message.getText().isEmpty());
+    }
+
+    protected void createPropertySettings(Composite parent) {
+        Composite propertyContainer = new Composite(parent, SWT.None);
+        propertyContainer.setLayout(new GridLayout(3, false));
+        GridData gridData = new GridData(GridData.FILL, GridData.FILL,
+            true, true);
+        propertyContainer.setLayoutData(gridData);
         // localhostButton = new Button(propertyContainer, SWT.RADIO);
         // localhostButton.setText(Messages.localHostButtonText);
 
@@ -311,6 +334,7 @@ public class WizardToolConfigurationDialog extends Dialog {
 
             }
         });
+
     }
 
     @Override
@@ -351,13 +375,9 @@ public class WizardToolConfigurationDialog extends Dialog {
     }
 
     private void installListeners() {
-        ModifyListener ml = new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                saveAllConfig();
-                validateInput();
-            }
+        ModifyListener ml = arg0 -> {
+            saveAllConfig();
+            validateInput();
         };
 
         /* hostText.addModifyListener(ml); */
@@ -414,49 +434,45 @@ public class WizardToolConfigurationDialog extends Dialog {
     }
 
     protected void validateInput() {
+        boolean isValidToolDirectory = false;
+        boolean isValidVersion = false;
+        boolean isValidWorkingDirectory = false;
+        boolean isValidLimitation = false;
+        setMessage("");
+        Optional<String> versionResult = ComponentIdRules.validateComponentVersionRules(versionText.getText());
 
-        boolean isValid = true;
-        /*
-         * if (hostButton.getSelection()) { if (hostText.getText() == null || hostText.getText().isEmpty()) { isValid = false; } if
-         * (portText.getText() == null || portText.getText().isEmpty()) { isValid = false; } else { try {
-         * Integer.parseInt(portText.getText()); } catch (NumberFormatException e) { isValid = false; } } }
-         */
-        if (toolDirectoryText.getText() == null || toolDirectoryText.getText().trim().isEmpty()) {
-            isValid = false;
-        }
-        if (limitInstancesButton.getSelection() && (limitInstancesText.getText().trim().isEmpty()
-            || !limitInstancesText.getText().matches("\\d+"))) {
-            isValid = false;
-        }
-        if (versionText.getText() == null || versionText.getText().trim().isEmpty()) {
-            isValid = false;
-        }
-        if (isValid && !(isEdit && oldConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(toolDirectoryText.getText()))) {
-            for (Map<String, String> otherConfig : allConfigs) {
+        isValidToolDirectory = toolDirectoryText.getText() != null && !toolDirectoryText.getText().isEmpty();
 
-                if (otherConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(toolDirectoryText.getText())
-                /*
-                 * && ((localhostButton.getSelection() && otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals(
-                 * ToolIntegrationConstants.VALUE_LOCALHOST))
-                 */
-                /*
-                 * || (!localhostButton.getSelection() && otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals( hostText.getText() +
-                 * HOST_SEPARATOR + portText.getText())) )
-                 */) {
-                    isValid = false;
-                }
-            }
+        if (versionText.getText() != null && !versionText.getText().isEmpty()) {
+            isValidVersion = !versionResult.isPresent();
         }
-        
-        if (!defaultTempDirButton.getSelection() && (rootWorkingDirText.getText() == null 
-            || rootWorkingDirText.getText().trim().isEmpty() 
-            || !(FileUtils.getFile(rootWorkingDirText.getText()).isAbsolute()))) {
-            isValid = false;
+
+        if (defaultTempDirButton.getSelection()) {
+            isValidWorkingDirectory = true;
+        } else {
+            isValidWorkingDirectory = rootWorkingDirText.getText() != null && !rootWorkingDirText.getText().isEmpty();
         }
-        
-        
-        
-        getButton(IDialogConstants.OK_ID).setEnabled(isValid);
+        if (!limitInstancesButton.getSelection()) {
+            isValidLimitation = true;
+        } else {
+            isValidLimitation = limitInstancesText.getText().matches("\\d+");
+        }
+
+        if (!isValidLimitation) {
+            setMessage("Invalid limitation value.");
+        }
+        if (!isValidWorkingDirectory) {
+            setMessage(STRING_INVALID_WORKING_DIRECTORY);
+        }
+        if (!isValidVersion) {
+            setMessage(StringUtils.format(STRING_INVALID_VERSION, versionResult.get().replaceAll("&", "&&")));
+        }
+        if (!isValidToolDirectory) {
+            setMessage(STRING_INVALID_TOOL_DIRECTORY);
+        }
+        getButton(IDialogConstants.OK_ID)
+            .setEnabled(isValidToolDirectory && isValidVersion && isValidWorkingDirectory && isValidLimitation);
+
     }
 
     public Map<String, String> getConfig() {

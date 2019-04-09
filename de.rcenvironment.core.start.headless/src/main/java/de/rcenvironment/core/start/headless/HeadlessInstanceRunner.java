@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,7 +9,6 @@
 package de.rcenvironment.core.start.headless;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,12 +18,13 @@ import org.eclipse.equinox.app.IApplication;
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.configuration.bootstrap.ui.ErrorTextUI;
+import de.rcenvironment.core.configuration.ui.LanternaUtils;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
 import de.rcenvironment.core.mail.SMTPServerConfigurationService;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
-import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.CallbackException;
 import de.rcenvironment.core.start.headless.textui.ConfigurationTextUI;
 import de.rcenvironment.core.start.headless.textui.QuestionDialogTextUI;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -91,20 +91,41 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
     }
 
     @Override
-    public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
+    public void onShutdownRequired(List<InstanceValidationResult> validationResults) {
+        InstanceValidationResult result = validationResults.get(0);
+        final String errorMessage =
+            String.format("Instance validation failure: %s%n%nRCE will be shut down.", result.getGuiDialogMessage());
+        new ErrorTextUI(LanternaUtils.applyWordWrapping(errorMessage)).run();
+    }
 
-        if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
-            InstanceValidationResult result = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).get(0);
-            new ErrorTextUI("Instance validation failure: " + result.getGuiDialogMessage() + "\n\nRCE will be shut down.").run();
-            return false;
-        }
-
-        if (validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size() > 0) {
-            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
-                if (!new QuestionDialogTextUI("Instance validation failure",
-                    result.getGuiDialogMessage() + "\n\nDo you like to proceed anyway?").run()) {
+    @Override
+    public boolean onRecoveryRequired(List<InstanceValidationResult> validationResults) {
+        for (InstanceValidationResult result : validationResults) {
+            final String dialogQuestion = result.getGuiDialogMessage();
+            final boolean attemptRecovery =
+                new QuestionDialogTextUI("Instance validation failure", LanternaUtils.applyWordWrapping(dialogQuestion)).run();
+            if (attemptRecovery) {
+                try {
+                    result.getCallback().onConfirmation();
+                } catch (CallbackException e) {
+                    new ErrorTextUI(String.format("Error during recovery from instance validation error: %s. See log for more details.",
+                        e.getMessage()));
+                    log.error("Exception thrown during recovery from instance validation failure", e);
                     return false;
                 }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onConfirmationRequired(List<InstanceValidationResult> validationResults) {
+        for (InstanceValidationResult result : validationResults) {
+            if (!new QuestionDialogTextUI("Instance validation failure",
+                result.getGuiDialogMessage() + "\n\nDo you like to proceed anyway?").run()) {
+                return false;
             }
         }
         return true;

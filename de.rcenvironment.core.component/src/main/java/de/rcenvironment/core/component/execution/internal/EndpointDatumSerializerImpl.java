@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -42,11 +42,11 @@ public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
         }
         parts[2] = endpoint.getInputsComponentExecutionIdentifier();
         parts[3] = endpoint.getInputsComponentInstanceName();
-        parts[4] = endpoint.getInputsNodeId().getLogicalNodeIdString();
+        parts[4] = endpoint.getDestinationNodeId().getLogicalNodeIdString();
         parts[5] = endpoint.getOutputsComponentExecutionIdentifier();
         parts[6] = endpoint.getOutputsNodeId().getLogicalNodeIdString();
         parts[7] = endpoint.getWorkflowExecutionIdentifier();
-        parts[8] = endpoint.getWorkflowNodeId().getLogicalNodeIdString();
+        parts[8] = endpoint.getWorkflowControllerLocation().getLogicalNodeIdString();
         if (endpoint.getDataManagementId() == null) {
             parts[9] = "";
         } else {

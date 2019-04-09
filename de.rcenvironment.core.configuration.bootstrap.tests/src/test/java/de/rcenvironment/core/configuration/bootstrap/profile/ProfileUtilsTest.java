@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -146,7 +146,8 @@ public class ProfileUtilsTest {
             TestUtils.setSystemPropertyToTempFolder(BootstrapConfiguration.SYSTEM_PROPERTY_OSGI_INSTALL_AREA, tempFileService);
 
         File profileParentDirectory = ProfileUtils.getProfilesParentDirectory();
-        Profile profile = new Profile(new File(profileParentDirectory, "someProfile"));
+        Profile profile =
+            new Profile.Builder(new File(profileParentDirectory, "someProfile")).create(true).migrate(true).buildUserProfile();
         profile.markAsDefaultProfile();
 
         // execution
@@ -176,7 +177,8 @@ public class ProfileUtilsTest {
             TestUtils.setSystemPropertyToTempFolder(BootstrapConfiguration.SYSTEM_PROPERTY_OSGI_INSTALL_AREA, tempFileService);
 
         File profileParentDirectory = ProfileUtils.getProfilesParentDirectory();
-        Profile profile = new Profile(new File(profileParentDirectory, "someProfile"));
+        Profile profile =
+            new Profile.Builder(new File(profileParentDirectory, "someProfile")).create(true).migrate(true).buildUserProfile();
         profile.markAsDefaultProfile();
 
         FileUtils.deleteDirectory(profile.getProfileDirectory());

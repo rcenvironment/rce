@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Display;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.gui.workflow.Activator;
 
 /**
@@ -119,11 +120,11 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
 
     void handleSelection(CCombo combo, WorkflowNode workflowNode) {
 
-        String identifier = null;
+        WorkflowNodeIdentifier identifier = null;
         for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
-            if (node.getIdentifier().equals(
-                workflowNode.getIdentifier())) {
-                identifier = node.getIdentifier();
+            if (node.getIdentifierAsObject().equals(
+                workflowNode.getIdentifierAsObject())) {
+                identifier = node.getIdentifierAsObject();
             }
         }
 

@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.combined.feature"
       label="RCE Platform - Combined Feature"
-      version="8.2.3.qualifier"
+      version="9.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -118,38 +118,38 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <includes
          id="org.eclipse.platform"
-         version="3.7.2.v20120207-1839-9gF7UHPDFxGjd-PqDr2jX_4yKaumkoHTz04_q-q"/>
+         version="0.0.0"/>
 
    <includes
          id="org.eclipse.rcp"
-         version="3.7.2.v20120120-1424-9DB5FmnFq5JCf1UA38R-kz0S0272"/>
+         version="0.0.0"/>
          
    <includes
          id="org.eclipse.gef"
-         version="3.7.2.v20110927-2020-777D381B4Bz0755B465D34242"/>
+         version="0.0.0"/>
          
    <includes
          id="org.eclipse.wst.xml_ui.feature"
-         version="3.3.2.v201112072049-7H7EFZ7DxumTmce4khcSkIiqoD8eDMKlT8Oz011P"/>
+         version="0.0.0"/>
 
    <includes
          id="org.eclipse.equinox.executable"
-         version="3.5.1.v20111216-1653-7P7NFUIFIbaUcU77s0KQWHw5HZTZ"/>
+         version="0.0.0"/>
 
    <includes
          id="de.rcenvironment.platform.maven.native.feature"
          version="0.0.0"/>
 
    <includes
-         id="de.rcenvironment.platform.maven.all.feature"
+         id="de.rcenvironment.platform.maven_common.feature"
          version="0.0.0"/>
 
    <includes
-         id="de.rcenvironment.platform.maven-osgi.other.feature"
+         id="de.rcenvironment.platform.maven_osgi.other.feature"
          version="0.0.0"/>
 
    <includes
-         id="de.rcenvironment.platform.maven-osgi.paxlogging.feature"
+         id="de.rcenvironment.platform.maven_osgi.paxlogging.feature"
          version="0.0.0"/>
 
    <includes

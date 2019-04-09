@@ -1,13 +1,12 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor;
-
 
 import java.io.File;
 
@@ -42,25 +41,25 @@ import org.eclipse.ui.views.properties.tabbed.ITabSelectionListener;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
-import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowEditorEditPartFactory;
 
-
 /**
  * WorkflowEditor operating in read-only mode.
+ * 
  * @author Martin Misiak
  */
 public class ReadOnlyWorkflowEditor extends WorkflowEditor {
 
     private static final Log LOGGER = LogFactory.getLog(ReadOnlyWorkflowEditor.class);
+
     private TabbedPropertySheetPage tabbedPropertySheetPage;
-    
+
     public ReadOnlyWorkflowEditor() {
         super();
     }
-    
+
     @Override
     public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
         if (type == IPropertySheetPage.class) {
@@ -73,16 +72,15 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
             return super.getAdapter(type);
         }
     }
-    
+
     /**
-     * ReadOnlyTabbedPropertySheetPage hooks the "disable property editing" functionality
-     * into a TabbedPropertySheetPage.
+     * ReadOnlyTabbedPropertySheetPage hooks the "disable property editing" functionality into a TabbedPropertySheetPage.
      */
     private class ReadOnlyTabbedPropertySheetPage extends TabbedPropertySheetPage {
 
         ReadOnlyTabbedPropertySheetPage(ITabbedPropertySheetPageContributor tabbedPropertySheetPageContributor) {
             super(tabbedPropertySheetPageContributor);
-            super.addTabSelectionListener(new ITabSelectionListener(){
+            super.addTabSelectionListener(new ITabSelectionListener() {
 
                 @Override
                 public void tabSelected(ITabDescriptor arg0) {
@@ -90,15 +88,14 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
                 }
             });
         }
-        
+
         @Override
-        public void selectionChanged(IWorkbenchPart part, ISelection selection){
+        public void selectionChanged(IWorkbenchPart part, ISelection selection) {
             super.selectionChanged(part, selection);
             disableCurrentPropertySection(tabbedPropertySheetPage);
-        } 
+        }
     }
 
-    
     @Override
     protected void initializeGraphicalViewer() {
         super.initializeGraphicalViewer();
@@ -107,27 +104,27 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
         viewer.setContents(super.getWorkflowDescription());
         viewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
         viewer.setContextMenu(new MenuManager()); // removes context menu
-        
+
         int[] eventTypes = { SWT.MouseDoubleClick, SWT.DragDetect };
         removeListeners(viewer.getControl(), eventTypes);
-        
+
         tabbedPropertySheetPage = new ReadOnlyTabbedPropertySheetPage(this);
     }
-    
+
     /**
      * Effectively disables hit-testing of the visual components of the tool palette.
      */
     @Override
     protected PaletteViewerProvider createPaletteViewerProvider() {
         return new PaletteViewerProvider(getEditDomain()) {
-   
+
             @Override
-            public PaletteViewer createPaletteViewer(Composite parent){
+            public PaletteViewer createPaletteViewer(Composite parent) {
                 PaletteViewer pv = super.createPaletteViewer(parent);
                 pv.getVisualPartMap().clear();
                 return pv;
             }
-            
+
         };
     }
 
@@ -140,10 +137,10 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
         prefs.setPaletteState(8);
         return prefs;
     }
-    
+
     @Override
     protected void loadWorkflowFromFile(final File wfFile, final GUIWorkflowDescriptionLoaderCallback wfdc) {
-        
+
         if (wfFile != null) {
             Job job = new Job(Messages.openWorkflow) {
 
@@ -152,8 +149,6 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
                     try {
                         monitor.beginTask(Messages.loadingComponents, 2);
                         monitor.worked(1);
-                        WorkflowExecutionService workflowExecutionService =
-                            serviceRegistryAccess.getService(WorkflowExecutionService.class);
                         workflowDescription = workflowExecutionService
                             .loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, wfdc, true);
                         initializeWorkflowDescriptionListener();
@@ -196,29 +191,28 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
             job.setUser(true);
             job.schedule();
         }
-        
+
         String fileName = getPartName();
         if (fileName != null) {
             String fileNameRO = fileName + " - Read only";
             setPartName(fileNameRO);
         }
-        
+
     }
-    
 
     /**
-     * Identify towards the TabbedPropertySheetPage as a "WorkflowEditor" to receive
-     * all component properties, which are registered for this Editor.
-     * TODO : Find a better way, than a hard-coded string.
+     * Identify towards the TabbedPropertySheetPage as a "WorkflowEditor" to receive all component properties, which are registered for this
+     * Editor. TODO : Find a better way, than a hard-coded string.
+     * 
      * @return The contributor ID of the WorkflowEditor.
      */
-    
+
     @Override
     public String getContributorId() {
         return "de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor";
     }
 
-    public boolean isSaveOnCloseNeeded(){
+    public boolean isSaveOnCloseNeeded() {
         return false;
     }
 
@@ -226,126 +220,129 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
     public boolean isSaveAsAllowed() {
         return false;
     }
-   
+
     @Override
     public boolean isDirty() {
-        return false;    
+        return false;
     }
 
     @Override
-    public void doSave(IProgressMonitor arg0) {} 
+    public void doSave(IProgressMonitor arg0) {}
 
     /**
-     * Disables the controls in the currently selected tab of the TabbedPropertySheetPage,
-     * making the Properties of a selected Component non-editable.
+     * Disables the controls in the currently selected tab of the TabbedPropertySheetPage, making the Properties of a selected Component
+     * non-editable.
+     * 
      * @param tpsp TabbedPropertySheetPage responsible for holding the properties
      */
-    private void disableCurrentPropertySection(TabbedPropertySheetPage tpsp){
-        if (tpsp instanceof TabbedPropertySheetPage){
+    private void disableCurrentPropertySection(TabbedPropertySheetPage tpsp) {
+        if (tpsp instanceof TabbedPropertySheetPage) {
             Control swtControls = tpsp.getControl();
-            if (swtControls instanceof TabbedPropertyComposite){
+            if (swtControls instanceof TabbedPropertyComposite) {
                 TabbedPropertyComposite propComposite = (TabbedPropertyComposite) swtControls;
-                Composite tabComposite                = propComposite.getTabComposite();
-                recursiveSetDisabled(tabComposite);    
+                Composite tabComposite = propComposite.getTabComposite();
+                recursiveSetDisabled(tabComposite);
             }
         }
-        
+
     }
-    
+
     /**
-     * Recursively iterates an Composite until it reaches its leaf Controls, or it does not 
-     * contain any more children, and sets them to disabled. Some Composites/Controls
-     * receive a special treatment( Labels, StyledText, Tree ) instead of being set to disabled.
-     * Special treatment is also applied for Object of different types than Composite/Control. 
+     * Recursively iterates an Composite until it reaches its leaf Controls, or it does not contain any more children, and sets them to
+     * disabled. Some Composites/Controls receive a special treatment( Labels, StyledText, Tree ) instead of being set to disabled. Special
+     * treatment is also applied for Object of different types than Composite/Control.
+     * 
      * @param ctrl Input Control/Composite
      */
     private void recursiveSetDisabled(Object obj) {
-        
-        if (obj instanceof Composite){
+
+        if (obj instanceof Composite) {
             Composite comp = (Composite) obj;
-            for (Control c : comp.getChildren()){
+            for (Control c : comp.getChildren()) {
                 recursiveSetDisabled(c);
             }
-            // For composites which do not have children( Like CCombo, StyledText etc...) 
-            if (comp.getChildren().length == 0){
+            // For composites which do not have children( Like CCombo, StyledText etc...)
+            if (comp.getChildren().length == 0) {
                 comp.setEnabled(false);
             }
 
-        // No composite, must be a Control leaf
-        } else if (obj instanceof Control){
+            // No composite, must be a Control leaf
+        } else if (obj instanceof Control) {
             Control ctrl = (Control) obj;
             ctrl.setEnabled(false);
         }
-        
+
         // Apply special treatment for specific Composites/Controls and different Objects
         specialTreatment(obj);
-        return; 
+        return;
     }
-    
+
     /**
-     * Provides special treatment of specific Composites/Controls
-     * for the Method recursiveSetDisabled(Control).
+     * Provides special treatment of specific Composites/Controls for the Method recursiveSetDisabled(Control).
+     * 
      * @param ctrl Input Control/Composite
      */
-    private void specialTreatment(Object obj){
-        
+    private void specialTreatment(Object obj) {
+
         // Special Treatment of Composites
-        if (obj instanceof Composite){
-            
+        if (obj instanceof Composite) {
+
             Composite comp = (Composite) obj;
-            
+
             // Treatment: Tree
-            if (comp instanceof Tree){
-                Tree t               = (Tree) comp;
+            if (comp instanceof Tree) {
+                Tree t = (Tree) comp;
                 int[] eventTypes = { SWT.DragDetect, SWT.Selection };
                 removeListeners(t, eventTypes);
-//                t.getItems()[0].
+                // t.getItems()[0].
                 t.setEnabled(true);
             }
-           
+
             // Treatment: StyledText
-            if (comp instanceof StyledText){
-                StyledText text      = (StyledText) comp;
+            if (comp instanceof StyledText) {
+                StyledText text = (StyledText) comp;
                 text.setEnabled(true);
                 text.setEditable(false);
             }
-            
+
             // Treatment: CTabFolder
-            if (comp instanceof CTabFolder){
+            if (comp instanceof CTabFolder) {
                 CTabFolder folder = (CTabFolder) comp;
                 CTabItem[] folderItems = folder.getItems();
-                for (CTabItem cItem : folderItems){
-                    //Identify the "add new folder" button on the absence of SWT.CLOSE style                    
-                    if (cItem.getStyle() != SWT.CLOSE){
+                for (CTabItem cItem : folderItems) {
+                    // Identify the "add new folder" button on the absence of SWT.CLOSE style
+                    if (cItem.getStyle() != SWT.CLOSE) {
                         cItem.dispose();
                     } else {
                         cItem.setShowClose(false);
                     }
-                    
+
                 }
-                 
+
             }
-            
-        // Special Treatment of Controls
-        } else if (obj instanceof Control){
+
+            // Special Treatment of Controls
+        } else if (obj instanceof Control) {
             Control ctrl = (Control) obj;
             // Treatment: Label
-            if (ctrl instanceof Label){
+            if (ctrl instanceof Label) {
                 ctrl.setEnabled(true);
                 int[] eventTypes = { SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick };
                 removeListeners(ctrl, eventTypes);
             }
             // Treatment Controls: ...add more here
-        } 
-        
-        return; 
+        }
+
+        return;
     }
+
     /**
      * Removes all listeners of a SWT Widget which listen to specific eventTypes.
+     * 
      * @param ctrl Control who's listeners are to be removed
      * @param eventTypes Listeners who listen to the events specified in this array get removed
      */
-    public static void removeListeners(Widget ctrl, int[] eventTypes) {        
+    public static void removeListeners(Widget ctrl, int[] eventTypes) {
 
         for (int eventType : eventTypes) {
             Listener[] listeners = ctrl.getListeners(eventType);
@@ -354,8 +351,5 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
             }
         }
     }
-   
+
 }
-        
-
-

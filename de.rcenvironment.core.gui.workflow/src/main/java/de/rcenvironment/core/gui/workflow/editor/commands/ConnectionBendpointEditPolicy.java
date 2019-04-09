@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -47,16 +47,18 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
 
         // Custom bendpoint tracker required to enable snap to grid for bendpoints
         for (Object selectionHandle : listOfHandles) {
-            if (selectionHandle instanceof BendpointCreationHandle){
+            if (selectionHandle instanceof BendpointCreationHandle) {
                 BendpointCreationHandle bendpointCreationHandle = (BendpointCreationHandle) selectionHandle;
                 int index = bendpointCreationHandle.getIndex();
-                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker((ConnectionEditPart) getHost(), index);
+                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker(
+                        (ConnectionEditPart) getHost(), index);
                 tracker.setType(RequestConstants.REQ_CREATE_BENDPOINT);
                 bendpointCreationHandle.setDragTracker(tracker);
-            } else if (selectionHandle instanceof BendpointMoveHandle){
+            } else if (selectionHandle instanceof BendpointMoveHandle) {
                 BendpointMoveHandle bendpointMoveHandle = (BendpointMoveHandle) selectionHandle;
                 int index = bendpointMoveHandle.getIndex();
-                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker((ConnectionEditPart) getHost(), index);
+                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker(
+                        (ConnectionEditPart) getHost(), index);
                 tracker.setType(RequestConstants.REQ_MOVE_BENDPOINT);
                 bendpointMoveHandle.setDragTracker(tracker);
             }
@@ -66,17 +68,17 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
     }
 
     @Override
-    protected Command getCreateBendpointCommand(BendpointRequest request) {      
+    protected Command getCreateBendpointCommand(BendpointRequest request) {
         EditPart parent = request.getSource().getParent();
         if (parent == null) {
             return null;
         }
         Object model = ((ScalableFreeformRootEditPart) parent).getContents().getModel();
         if (model instanceof WorkflowDescription) {
-            List<Connection> connections =
-                getMatchingConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
-            List<Connection> connectionsInverse =
-                getMatchingInverseConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connections = getMatchingConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connectionsInverse = getMatchingInverseConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
             BendpointCreateCommand command = new BendpointCreateCommand();
             Point translatedPoint = getTranslatedPointByViewersOffset(request);
             command.setConnectionsInModel(connections);
@@ -100,10 +102,10 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         }
         Object model = ((ScalableFreeformRootEditPart) parent).getContents().getModel();
         if (model instanceof WorkflowDescription) {
-            List<Connection> connections =
-                getMatchingConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
-            List<Connection> connectionsInverse =
-                getMatchingInverseConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connections = getMatchingConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connectionsInverse = getMatchingInverseConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
             BendpointDeleteCommand command = new BendpointDeleteCommand();
             command.setConnectionsInModel(connections);
             command.setConnectionsInModelInverse(connectionsInverse);
@@ -116,10 +118,6 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         }
     }
 
-
-
-
-    
     @Override
     protected Command getMoveBendpointCommand(BendpointRequest request) {
         EditPart parent = request.getSource().getParent();
@@ -128,10 +126,10 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         }
         Object model = ((ScalableFreeformRootEditPart) parent).getContents().getModel();
         if (model instanceof WorkflowDescription) {
-            List<Connection> connections =
-                getMatchingConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
-            List<Connection> connectionsInverse =
-                getMatchingInverseConnectionModelsForConnectionWrapper((ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connections = getMatchingConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
+            List<Connection> connectionsInverse = getMatchingInverseConnectionModelsForConnectionWrapper(
+                    (ConnectionWrapper) request.getSource().getModel());
             BendpointMoveCommand command = new BendpointMoveCommand();
             Point translatedPoint = getTranslatedPointByViewersOffset(request);
             command.setConnectionsInModel(connections);
@@ -146,7 +144,8 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         }
     }
 
-    // Returns the connection within a connection wrapper that lead from connection wrappers source to target
+    // Returns the connection within a connection wrapper that lead from connection
+    // wrappers source to target
     private List<Connection> getMatchingConnectionModelsForConnectionWrapper(ConnectionWrapper connectionWrapper) {
         List<Connection> connections = new ArrayList<>();
         Object parent = getHost().getParent().getViewer().getContents().getModel();
@@ -154,8 +153,10 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         if (parent instanceof WorkflowDescription) {
             description = (WorkflowDescription) parent;
             for (Connection connectionInModel : description.getConnections()) {
-                if (connectionWrapper.getSource().getIdentifier().equals(connectionInModel.getSourceNode().getIdentifier())
-                    && connectionWrapper.getTarget().getIdentifier().equals(connectionInModel.getTargetNode().getIdentifier())) {
+                if (connectionWrapper.getSource().getIdentifierAsObject()
+                        .equals(connectionInModel.getSourceNode().getIdentifierAsObject())
+                        && connectionWrapper.getTarget().getIdentifierAsObject()
+                                .equals(connectionInModel.getTargetNode().getIdentifierAsObject())) {
                     connections.add(connectionInModel);
                 }
             }
@@ -165,16 +166,20 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         return connections;
     }
 
-    // Returns the connection within a connection wrapper that lead from connection wrappers target to source (thus called inverse)
-    private List<Connection> getMatchingInverseConnectionModelsForConnectionWrapper(ConnectionWrapper connectionWrapper) {
+    // Returns the connection within a connection wrapper that lead from connection
+    // wrappers target to source (thus called inverse)
+    private List<Connection> getMatchingInverseConnectionModelsForConnectionWrapper(
+            ConnectionWrapper connectionWrapper) {
         List<Connection> connections = new ArrayList<>();
         Object parent = getHost().getParent().getViewer().getContents().getModel();
         WorkflowDescription description = null;
         if (parent instanceof WorkflowDescription) {
             description = (WorkflowDescription) parent;
             for (Connection connectionInModel : description.getConnections()) {
-                if (connectionWrapper.getSource().getIdentifier().equals(connectionInModel.getTargetNode().getIdentifier())
-                    && connectionWrapper.getTarget().getIdentifier().equals(connectionInModel.getSourceNode().getIdentifier())) {
+                if (connectionWrapper.getSource().getIdentifierAsObject()
+                        .equals(connectionInModel.getTargetNode().getIdentifierAsObject())
+                        && connectionWrapper.getTarget().getIdentifierAsObject()
+                                .equals(connectionInModel.getSourceNode().getIdentifierAsObject())) {
                     connections.add(connectionInModel);
                 }
             }
@@ -184,10 +189,11 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
         return connections;
     }
 
-    // Return the location for a request translated by the offset of the viewer caused by scrollbars
+    // Return the location for a request translated by the offset of the viewer
+    // caused by scrollbars
     private Point getTranslatedPointByViewersOffset(BendpointRequest request) {
         Point offsetPoint = ((FigureCanvas) ((ScalableFreeformRootEditPart) request.getSource().getParent())
-            .getContents().getViewer().getControl()).getViewport().getViewLocation();
+                .getContents().getViewer().getControl()).getViewport().getViewLocation();
         double zoomLevel = ((ScalableFreeformRootEditPart) request.getSource().getParent()).getZoomManager().getZoom();
         int coordinateWithOffsetAndZoomX = (int) ((request.getLocation().x + offsetPoint.x) / zoomLevel);
         int coordinateWithOffsetAndZoomY = (int) ((request.getLocation().y + offsetPoint.y) / zoomLevel);

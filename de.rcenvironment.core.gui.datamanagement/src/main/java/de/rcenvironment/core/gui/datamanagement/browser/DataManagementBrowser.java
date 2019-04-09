@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -113,6 +113,7 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
 import de.rcenvironment.core.gui.datamanagement.commons.DataManagementWorkbenchUtils;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.tiglviewer.TiglViewerConstants;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.view.timeline.TimelineView;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -692,8 +693,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class OpenInTiglAction extends SelectionProviderAction {
 
-        private final String[] supportedFileExtensions = new String[] { "xml", "brep", "step", "stp", "iges", "igs", "stl", "mesh" };
-
         private OpenInTiglAction(ISelectionProvider provider, String text) {
             super(provider, text);
         }
@@ -705,8 +704,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 DMBrowserNode node = (DMBrowserNode) obj;
 
                 if (node.isEnabled() && node.getType() == DMBrowserNodeType.DMFileResource
-                    && Arrays.asList(supportedFileExtensions)
-                        .contains(FilenameUtils.getExtension(node.getAssociatedFilename()))) {
+                    && Arrays.asList(TiglViewerConstants.SUPPORTED_FILE_EXTENSIONS)
+                        .contains(FilenameUtils.getExtension(node.getAssociatedFilename()).toLowerCase())) {
                     setEnabled(true);
                     return;
                 }

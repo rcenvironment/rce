@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,7 +21,7 @@ import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelException;
 import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.SimpleExcelService;
+import de.rcenvironment.components.excel.common.ExcelServiceAccess;
 import de.rcenvironment.components.excel.execution.Messages;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -59,7 +59,7 @@ public class ExcelComponentValidator extends AbstractComponentValidator {
     }
 
     private List<ComponentValidationMessage> validateExcelPart(ComponentDescription componentDescription) {
-        ExcelService excelService = new SimpleExcelService();
+        ExcelService excelService = ExcelServiceAccess.get();
 
         final List<ComponentValidationMessage> messages = new ArrayList<ComponentValidationMessage>();
 
@@ -117,7 +117,7 @@ public class ExcelComponentValidator extends AbstractComponentValidator {
     }
 
     private List<ComponentValidationMessage> validateMacroPart(ComponentDescription componentDescription) {
-        ExcelService excelService = new SimpleExcelService();
+        ExcelService excelService = ExcelServiceAccess.get();
 
         final List<ComponentValidationMessage> messages = new ArrayList<ComponentValidationMessage>();
 

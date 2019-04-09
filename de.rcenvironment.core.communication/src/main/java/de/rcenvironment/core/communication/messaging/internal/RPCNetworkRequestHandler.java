@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.messaging.internal;
+
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,6 +21,7 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
+import de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamService;
 import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
 import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -45,11 +48,11 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    public RPCNetworkRequestHandler(RemoteServiceCallHandlerService serviceCallHandler) {
-        if (serviceCallHandler == null) {
-            throw new NullPointerException("Service call handler cannot be null");
-        }
-        this.serviceCallHandler = serviceCallHandler;
+    private ReliableRPCStreamService reliableRPCStreamService;
+
+    public RPCNetworkRequestHandler(RemoteServiceCallHandlerService serviceCallHandler, ReliableRPCStreamService reliableRPCStreamService) {
+        this.serviceCallHandler = Objects.requireNonNull(serviceCallHandler);
+        this.reliableRPCStreamService = Objects.requireNonNull(reliableRPCStreamService);
 
         // not injecting this via OSGi-DS as this service is planned to move to the toolkit layer anyway - misc_ro
         final StatisticsTrackerService statisticsService =
@@ -93,7 +96,15 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
 
     private ServiceCallResult handleInternal(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
         long startTime = System.currentTimeMillis();
-        ServiceCallResult scResult = serviceCallHandler.handle(serviceCallRequest);
+
+        final ServiceCallResult scResult;
+        String reliableRPCStreamId = serviceCallRequest.getReliableRPCStreamId();
+        if (reliableRPCStreamId != null) {
+            return reliableRPCStreamService.handleIncomingRequest(serviceCallRequest);
+        } else {
+            scResult = serviceCallHandler.dispatchToLocalService(serviceCallRequest);
+        }
+
         if (scResult == null) {
             // create synthetic exception for the stacktrace; do not actually throw it
             log.warn("ServiceCallResult result was null immediately after dispatching an RPC request to "

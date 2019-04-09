@@ -1,17 +1,16 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.api;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.utils.common.rpc.RemotableService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-
 
 /**
  * Dispatches {@link EndpointDatum}s. There is one {@link RemotableEndpointDatumDispatcher} per node.
@@ -19,6 +18,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * @author Doreen Seider
  */
 @RemotableService
+// TODO this should be renamed to ...Service for clarity -- misc_ro
 public interface RemotableEndpointDatumDispatcher {
 
     /**

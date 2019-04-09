@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,369 +10,87 @@ package de.rcenvironment.core.component.integration;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.nio.file.Path;
 
-import org.apache.commons.exec.OS;
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.easymock.EasyMock;
 import org.junit.Test;
 
+import de.rcenvironment.core.component.integration.internal.FileService;
+import de.rcenvironment.core.component.integration.internal.RunnerService;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager;
-import de.rcenvironment.core.utils.common.FileCompressionFormat;
-import de.rcenvironment.core.utils.common.FileCompressionService;
-import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager.Builder;
 
 /**
- * Test the {@link ToolIntegrationFileWatcherManager} and the {@link ToolIntegrationFileWatcher}.
+ * Test the {@link ToolIntegrationFileWatcherManager}.
  * 
- * @author Sascha Zur
- * @author Thorsten Sommer (integration of {@link FileCompressionService})
+ * @author Alexander Weinert
  */
 public class ToolIntegrationFileWatcherManagerTest {
 
-    private static final int TEST_TIMEOUT = 10000;
-
-    private static File toolDirectory = null;
-
-    private final Object lockObject = new Object();
-
-    private File testDirectory;
-
-    private MockToolIntegrationContext mockContext;
-
-    private File integrationDir;
-
-    private CountDownLatch latch;
-
-    private String currentToolName;
-
-    private int methodCount = 0;
-
-    private ToolIntegrationFileWatcherManager manager;
-
     /**
-     * Copy test resources to a temp dir, for a better access (copy dir to dir).
-     */
-    @BeforeClass
-    public static void setupTestDirectories() {
-        if (toolDirectory == null) {
-            TempFileServiceAccess.setupUnitTestEnvironment();
-            try {
-                toolDirectory = TempFileServiceAccess.getInstance().createManagedTempDir();
-
-                final InputStream inputStream =
-                    ToolIntegrationFileWatcherManagerTest.class.getResourceAsStream("/TestTools.zip");
-
-                if (!FileCompressionService.expandCompressedDirectoryFromInputStream(inputStream, toolDirectory,
-                    FileCompressionFormat.ZIP)) {
-                    Assert.fail("Was not able to set up the test directories due to an archive issue.");
-                }
-
-            } catch (IOException e) {
-                Assert.fail(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Clean up temp dir.
-     */
-    @AfterClass
-    public static void cleanUpTestDirectories() {
-
-        if (toolDirectory != null) {
-            try {
-                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(toolDirectory);
-            } catch (IOException e) {
-                Assert.fail(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Set up the environment.
-     */
-    @Before
-    public void setup() {
-        try {
-            testDirectory = TempFileServiceAccess.getInstance().createManagedTempDir();
-        } catch (IOException e) {
-            Assert.fail("Could not set up test directory: " + e.getMessage());
-        }
-        currentToolName = null;
-        methodCount = 0;
-        mockContext = new MockToolIntegrationContext();
-        integrationDir = new File(mockContext.getRootPathToToolIntegrationDirectory(), mockContext.getContextType());
-        ToolIntegrationService integrationServiceMock = new ToolIntegrationServiceMock();
-        manager = new ToolIntegrationFileWatcherManager(integrationServiceMock);
-        manager.createWatcherForToolRootDirectory(mockContext);
-    }
-
-    /**
-     * Clean up.
-     */
-    @After
-    public void tearDown() {
-        manager.unregisterRootDirectory(mockContext);
-        if (integrationDir.exists()) {
-            integrationDir.delete();
-        }
-
-        if (testDirectory.exists()) {
-            try {
-                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(testDirectory);
-            } catch (IOException e) {
-                Assert.fail(e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
-     */
-    @Test
-    public void testCopyToolDirIntoFolder() {
-        latch = new CountDownLatch(2);
-        currentToolName = "TestDirectoryValidConfiguration";
-        try {
-            FileUtils.copyDirectoryToDirectory(new File(toolDirectory, currentToolName), integrationDir);
-            latch.await(TEST_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (IOException | InterruptedException e) {
-            Assert.fail(e.getMessage());
-        }
-        manager.unregister(currentToolName, mockContext);
-        Assert.assertEquals(2, getMethodCount());
-
-    }
-
-    /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
-     */
-    @Test
-    public void testCopyToolDirWithDocsIntoFolder() {
-        if (OS.isFamilyWindows()) {
-            latch = new CountDownLatch(10);
-        } else {
-            latch = new CountDownLatch(2);
-        }
-        currentToolName = "TestDirectoryWithDocs";
-        try {
-            FileUtils.copyDirectoryToDirectory(new File(toolDirectory, currentToolName), integrationDir);
-            latch.await(TEST_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (IOException | InterruptedException e) {
-            Assert.fail(e.getMessage());
-        }
-        manager.unregister(currentToolName, mockContext);
-        if (OS.isFamilyWindows()) {
-            Assert.assertEquals(10, getMethodCount());
-        } else {
-            Assert.assertEquals(2, getMethodCount());
-        }
-
-    }
-
-    /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
-     */
-    @Test
-    public void testCopyToolDirWithEmptyDocsIntoFolder() {
-        if (OS.isFamilyWindows()) {
-            latch = new CountDownLatch(4);
-        } else {
-            latch = new CountDownLatch(2);
-        }
-        currentToolName = "TestDirectoryWithEmptyDocs";
-        try {
-            FileUtils.copyDirectoryToDirectory(new File(toolDirectory, currentToolName), integrationDir);
-            latch.await(TEST_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (IOException | InterruptedException e) {
-            Assert.fail(e.getMessage());
-        }
-        manager.unregister(currentToolName, mockContext);
-        if (OS.isFamilyWindows()) {
-            Assert.assertTrue(getMethodCount() >= 4);
-        } else {
-            Assert.assertEquals(2, getMethodCount());
-        }
-    }
-
-    /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if an empty directory is pasted.
-     */
-    @Test
-    public void testFillUpEmptyDirectory() {
-        currentToolName = "Tool";
-        new File(integrationDir, currentToolName).mkdir();
-        if (OS.isFamilyWindows()) {
-            latch = new CountDownLatch(6);
-        } else {
-            latch = new CountDownLatch(2);
-        }
-        try {
-            FileUtils.copyFileToDirectory(new File(toolDirectory, "configuration.json"), new File(integrationDir, currentToolName));
-            latch.await(TEST_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (IOException | InterruptedException e) {
-            Assert.fail(e.getMessage());
-        }
-        if (OS.isFamilyWindows()) {
-            Assert.assertEquals(6, getMethodCount());
-        } else {
-            Assert.assertEquals(2, getMethodCount());
-        }
-
-    }
-
-    /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if an empty directory is pasted.
-     */
-    @Test
-    public void testEmptyDirectoryPasted() {
-        currentToolName = "Empty";
-        new File(integrationDir, currentToolName).mkdir();
-        // Since the file watcher is in another thread and there is no way of flagging if it was
-        // triggered yet, the test waits a bit hoping that the file watcher is done.
-        manager.unregister(currentToolName, mockContext);
-        Assert.assertEquals(0, getMethodCount());
-    }
-
-    public File getTempDirectory() {
-        return testDirectory;
-    }
-
-    private String getCurrentToolName() {
-        return currentToolName;
-    }
-
-    private int getMethodCount() {
-        int result = 0;
-        synchronized (lockObject) {
-            result = methodCount;
-        }
-        return result;
-    }
-
-    private void increaseMethodCount() {
-        synchronized (lockObject) {
-            methodCount++;
-        }
-    }
-
-    /**
-     * Mock for {@link ToolIntegrationService} to count down if file watcher was activated.
+     * Tests that createWatcherForRootDirectory works as expected.
      * 
-     * @author Sascha Zur
+     * @throws IOException Is not thrown, since we only call methods that may throw this exception on mocked objects.
      */
-    private class ToolIntegrationServiceMock extends DefaultToolIntegrationServiceStub {
+    @Test
+    public void testCreateWatcher() throws IOException {
+        final Builder managerBuilder = new ToolIntegrationFileWatcherManager.Builder();
 
-        private Map<String, String> toolNameToPath = new HashMap<>();
+        final FileService fileService = EasyMock.createMock(FileService.class);
 
-        @Override
-        public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context) {
-            Assert.assertEquals(context, mockContext);
-            increaseMethodCount();
-            latch.countDown();
-        }
+        final ToolIntegrationFileWatcher.Factory fileWatcherFactory = EasyMock.createMock(ToolIntegrationFileWatcher.Factory.class);
+        final ToolIntegrationService integrationService = EasyMock.createMock(ToolIntegrationService.class);
 
-        @Override
-        public void putToolNameToPath(String toolName, File parentFile) {
-            Assert.assertEquals(getCurrentToolName(), toolName);
-            toolNameToPath.put(parentFile.getAbsolutePath(), toolName);
-            increaseMethodCount();
-            latch.countDown();
-        }
+        final RunnerService runnerService = EasyMock.createMock(RunnerService.class);
 
-        @Override
-        public void updatePublishedComponents(ToolIntegrationContext context) {
-            Assert.assertEquals(context, mockContext);
-            increaseMethodCount();
-            latch.countDown();
-        }
+        managerBuilder.bindFileService(fileService);
+        managerBuilder.bindRunnerService(runnerService);
+        managerBuilder.bindFileWatcherFactory(fileWatcherFactory);
+        
+        fileWatcherFactory.setToolIntegrationService(integrationService);
+        EasyMock.expectLastCall();
+        EasyMock.replay(fileWatcherFactory);
 
-        @Override
-        public String getToolNameToPath(String path) {
-            increaseMethodCount();
-            latch.countDown();
-            return toolNameToPath.get(path);
-        }
+        final ToolIntegrationFileWatcherManager manager = managerBuilder.build(integrationService);
 
-        @Override
-        public void removeTool(String toolName, ToolIntegrationContext context) {
-            Assert.assertEquals(context, mockContext);
-            increaseMethodCount();
-            latch.countDown();
-        }
+        EasyMock.reset(fileWatcherFactory);
+
+        final String rootpath = "rootpath";
+        final String toolIntegrationDir1 = "toolIntegrationDir";
+        final String absolutePath1 = String.format("/%s/%s", rootpath, toolIntegrationDir1);
+        final Path integrationRootFolderPath1 = EasyMock.createMock(Path.class);
+
+        EasyMock.expect(fileService.getPath(absolutePath1)).andStubReturn(integrationRootFolderPath1);
+
+        final ToolIntegrationContext context = EasyMock.createMock("context", ToolIntegrationContext.class);
+        EasyMock.expect(context.getRootPathToToolIntegrationDirectory()).andStubReturn(rootpath);
+        EasyMock.expect(context.getNameOfToolIntegrationDirectory()).andStubReturn(toolIntegrationDir1);
+        EasyMock.expect(context.getContextId()).andStubReturn("context");
+        EasyMock.expect(context.getContextType()).andStubReturn("test context");
+        EasyMock.replay(context);
+
+        final File integrationRootFolderFile = EasyMock.createMock(File.class);
+        EasyMock.expect(fileService.createFile(rootpath, toolIntegrationDir1)).andReturn(integrationRootFolderFile);
+        EasyMock.expect(integrationRootFolderFile.exists()).andStubReturn(Boolean.TRUE);
+        EasyMock.expect(integrationRootFolderFile.getAbsolutePath()).andStubReturn(absolutePath1);
+        EasyMock.replay(fileService, integrationRootFolderFile);
+
+        final ToolIntegrationFileWatcher watcher = EasyMock.createMock("watcher", ToolIntegrationFileWatcher.class);
+        EasyMock.expect(fileWatcherFactory.create(context)).andStubReturn(watcher);
+        EasyMock.replay(fileWatcherFactory);
+
+        watcher.registerRecursive(integrationRootFolderPath1);
+        EasyMock.expectLastCall();
+        EasyMock.replay(watcher);
+
+        runnerService.execute(watcher, "FileWatcher context");
+        EasyMock.expectLastCall();
+        EasyMock.replay(runnerService);
+
+        manager.createWatcherForToolRootDirectory(context);
+        
+        EasyMock.verify(watcher, fileWatcherFactory, integrationRootFolderFile, context, fileService, runnerService);
     }
 
-    /**
-     * Mock of a {@link ToolIntegrationContext} to test the {@link ToolIntegrationFileWatcher}.
-     * 
-     * @author Sascha Zur
-     */
-    private class MockToolIntegrationContext implements ToolIntegrationContext {
-
-        @Override
-        public String getContextId() {
-            return "Mock";
-        }
-
-        @Override
-        public String getContextType() {
-            return "Mock";
-        }
-
-        @Override
-        public String getRootPathToToolIntegrationDirectory() {
-            return getTempDirectory().getAbsolutePath();
-        }
-
-        @Override
-        public String getNameOfToolIntegrationDirectory() {
-            return getContextType();
-        }
-
-        @Override
-        public String getToolDirectoryPrefix() {
-            return "";
-        }
-
-        @Override
-        public String getConfigurationFilename() {
-            return "configuration.json";
-        }
-
-        @Override
-        public String getImplementingComponentClassName() {
-            return null;
-        }
-
-        @Override
-        public String getPrefixForComponentId() {
-            return null;
-        }
-
-        @Override
-        public String getComponentGroupId() {
-            return null;
-        }
-
-        @Override
-        public String[] getDisabledIntegrationKeys() {
-            return null;
-        }
-
-        @Override
-        public File[] getReadOnlyPathsList() {
-            return null;
-        }
-
-    }
 }

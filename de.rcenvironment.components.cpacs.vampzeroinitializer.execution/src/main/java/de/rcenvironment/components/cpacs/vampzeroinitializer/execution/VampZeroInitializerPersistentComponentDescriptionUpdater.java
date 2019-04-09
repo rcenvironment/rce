@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,7 +9,7 @@ package de.rcenvironment.components.cpacs.vampzeroinitializer.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonParseException;
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.components.cpacs.vampzeroinitializer.common.VampZeroInitializerComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;

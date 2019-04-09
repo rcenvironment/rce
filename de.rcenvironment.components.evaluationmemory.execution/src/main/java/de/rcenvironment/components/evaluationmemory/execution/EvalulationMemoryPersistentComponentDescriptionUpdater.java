@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,11 +10,11 @@ package de.rcenvironment.components.evaluationmemory.execution;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -74,10 +74,10 @@ public class EvalulationMemoryPersistentComponentDescriptionUpdater implements P
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         if (node.has(STATIC_INPUTS)) {
             ArrayNode endpointsJsonNode = (ArrayNode) node.get(STATIC_INPUTS);
-            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 ObjectNode endpointJsonNode = (ObjectNode) elements.next();
-                if (endpointJsonNode.get("name").getTextValue().equals("Loop done")) {
+                if (endpointJsonNode.get("name").textValue().equals("Loop done")) {
                     elements.remove();
                     break;
                 }

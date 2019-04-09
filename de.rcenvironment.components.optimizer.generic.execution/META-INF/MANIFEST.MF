@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Optimizer Generic Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.generic.execution
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.components.optimizer.execution
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.optimizer.common.execution,
  de.rcenvironment.components.optimizer.execution.algorithms.registry,
  de.rcenvironment.core.component.execution.api,
@@ -18,3 +18,4 @@ Import-Package: de.rcenvironment.components.optimizer.common.execution,
 Export-Package: de.rcenvironment.components.optimizer.generic.execution,
  de.rcenvironment.components.optimizer.generic.execution.internal
 RCE-ComponentExtension-Configuration: /resources/configuration_generic.json
+Bundle-Vendor: DLR

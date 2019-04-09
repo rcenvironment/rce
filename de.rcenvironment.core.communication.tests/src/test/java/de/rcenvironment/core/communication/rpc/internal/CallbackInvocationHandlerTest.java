@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -93,7 +93,7 @@ public class CallbackInvocationHandlerTest {
         final MessageEndpointHandlerImpl scrHandler =
             new MessageEndpointHandlerImpl(NodeIdentifierTestUtils.getTestNodeIdentifierService());
         scrHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
-            new SimulatingServiceCallHandler()));
+            new SimulatingServiceCallHandler(), EasyMock.createNiceMock(ReliableRPCStreamService.class)));
 
         // create the network layer mock
         MessageRoutingService messageRoutingServiceMock = EasyMock.createMock(MessageRoutingService.class);
@@ -131,7 +131,7 @@ public class CallbackInvocationHandlerTest {
 
         // note that this approach only works for unit tests; the (currently unavoidable) singleton
         // nature of the holder would lead to erratic behaviour in multi-node tests - misc_ro
-        CallbackInvocationHandler.RemoteServiceCallServiceHolder.bindRemoteServiceCallService(remoteServiceCallService);
+        new CallbackInvocationHandler.RemoteServiceCallServiceHolder().bindRemoteServiceCallService(remoteServiceCallService);
 
         EasyMock.replay(messageRoutingServiceMock);
         CallbackInvocationHandler handler =
@@ -172,7 +172,7 @@ public class CallbackInvocationHandlerTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) {
+        public ServiceCallResult dispatchToLocalService(ServiceCallRequest serviceCallRequest) {
             if (serviceCallRequest.getTargetNodeId().isSameInstanceNodeSessionAs(instanceSessionIdLocal)
                 && serviceCallRequest.getServiceName().equals(RemotableCallbackService.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("callback")
@@ -195,6 +195,7 @@ public class CallbackInvocationHandlerTest {
             return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, "Test error: no service call match in "
                 + SimulatingServiceCallHandler.class.getName());
         }
+
     }
 
     /**

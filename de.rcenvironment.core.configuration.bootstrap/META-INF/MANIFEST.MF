@@ -2,9 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Bootstrap Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration.bootstrap;singleton:=true
-Bundle-Version: 8.2.3.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Import-Package: com.googlecode.lanterna;version="2.1.9",
+Bundle-Version: 9.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: com.fasterxml.jackson.core;version="2.9.8",
+ com.fasterxml.jackson.core.type;version="2.9.8",
+ com.fasterxml.jackson.databind;version="2.9.8",
+ com.googlecode.lanterna;version="2.1.9",
  com.googlecode.lanterna.gui;version="2.1.9",
  com.googlecode.lanterna.gui.component;version="2.1.9",
  com.googlecode.lanterna.gui.dialog;version="2.1.9",
@@ -18,9 +21,6 @@ Import-Package: com.googlecode.lanterna;version="2.1.9",
  de.rcenvironment.core.utils.incubator,
  org.apache.commons.lang3.text;version="3.1.0",
  org.apache.commons.logging;version="1.0.4",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
  org.osgi.framework,
  org.osgi.service.cm;version="1.3.0"
 Bundle-Activator: de.rcenvironment.core.configuration.bootstrap.internal.Activator

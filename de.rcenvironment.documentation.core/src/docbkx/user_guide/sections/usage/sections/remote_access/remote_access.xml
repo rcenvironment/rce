@@ -36,7 +36,7 @@
 					<para>Setting RCE up as a "Remote Access Server".</para>
 					<itemizedlist>
 						<listitem>
-							<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
+							<para>Download and unpack/install an RCE distribution.</para>
 						</listitem>
 						<listitem>
 							<para>Start RCE and select the "Help > Configuration
@@ -68,34 +68,14 @@
 							<para>Select the "File > Integrate Tool" menu option.</para>
 						</listitem>
 						<listitem>
-							<para>In the dialog that has opened, select "Create a new configuration from a template" and
-								choose "Remote Tool Access" from the list. Click "Next >".</para>
+							<para>Follow the tool integration wizard to integrate your tool (more
+								information can be found using the help function in RCE and in the
+								chapter "Integration of External Tools" of this user guide. </para>
 						</listitem>
 						<listitem>
-							<para>On the "Tool Description" page, enter a name for the example tool
-								(e.g. "test"). Click "Next >".</para>
-						</listitem>
-						<listitem>
-							<para>You can leave the next two wizard pages as they are. Skip them by
-								clicking "Next >" twice.</para>
-						</listitem>
-						<listitem>
-							<para>You should be on the "Launch Settings" page now. Click "Add" on the right-hand side. On
-								the dialog that opens, you normally enter a version number
-								describing your tool's release number and the path where it is
-								installed. For this example, just enter an arbitrary version and
-								select an arbitrary directory (for example, a temporary files
-								directory on your computer). Click "Ok", check "Publish component after integration" and then "Next >" to proceed.<note>
-									<para>After completing this Remote Access example, refer to the
-										"Tool Integration" section on how to integrate your actual
-										tools.</para>
-								</note></para>
-						</listitem>
-						<listitem>
-							<para>On the "Execution" page, enable the command section that matches
-								your operating system. This is where you define the commands that
-								execute your tool. For this example, just leave the commands as they
-								are. Click "Save and Activate" to complete the wizard.</para>
+							<para>Publish your tool in the "public" group (cf. <xref
+									linkend="publishing_authorization"/> ) to make the tool
+								available via Remote Access. </para>
 						</listitem>
 					</itemizedlist>
 				</listitem>
@@ -125,7 +105,8 @@
 									uploaded content of the input folder, the generated output
 									folder, any generated text output (in the "Execution Log"
 									folder), and the exit code of the tool process (also in the
-									"Execution Log" folder).</para>
+									"Execution Log" folder). It will disappear automatically if the
+									tool finishes successfully</para>
 							</listitem>
 						</itemizedlist></para>
 				</listitem>
@@ -139,7 +120,7 @@
 		<para>
 			<itemizedlist>
 				<listitem>
-					<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
+					<para>Download and unpack/install an RCE distribution.</para>
 				</listitem>
 				<listitem>
 					<para>Run RCE and select the "Help > Open Configuration Information" menu option. From the list
@@ -168,12 +149,12 @@
 						Project Explorer on the left side, and choose "New > Workflow Examples
 						Project", and choose a name for it. The template file is contained within
 						the project folder. To get an impression of the basic setup, open the
-						template workflow file. You will see an Input Provider on the left side with
-						two outputs: one Directory and one ShortText. On the right side, there is an
-						Output Provider with a single Directory input. These are the points where
-						the Remote Workflow Access feature sends the provided input files (as a
-						Directory) and parameters (as a ShortText) into your workflow, and collects
-						the final output files (as a Directory). </para>
+						template workflow file. You will see an SCP Input Loader on the left side
+						with two outputs. On the right side, there is an SCP Output Collector with
+						one input (these two are helper components that are only used for remote
+						access workflows). These are the points where the Remote Workflow Access
+						feature sends the provided inputs into your workflow, and collects the final
+						outputs. </para>
 				</listitem>
 				<listitem>
 					<para>As a security measure, you need to explicitly publish your workflow to allow remote
@@ -184,10 +165,8 @@
 						double-clicking "Command Console" in the "RCE" section.</para>
 				</listitem>
 				<listitem>
-					<para>Right-click your workflow file in the "Project Explorer" and select the
-						"Properties" entry at the bottom of the popup menu. Mark the value of the
-						"location" entry with the mouse, and press Ctrl+C to copy the full path to
-						the workflow file to the clipboard.<note>
+					<para>Right-click your workflow file in the "Project Explorer" and select the "Copy full path"
+						entry in the popup menu to copy the full path to the workflow file to the clipboard.<note>
 							<para>This step demonstrates how the get the path of a workflow file in
 								the current workspace, but you can use workflow files that are
 								located anywhere on your system.</para>
@@ -262,28 +241,26 @@
 		<title>Building Your Own Remote Access Workflow</title>
 		<para>After running the example/template workflow as described in the previous section, you
 			can proceed to building your own actual workflow.</para>
-		<para>As described above, open the "Remote_Workflow_Access_Template" workflow file. You will
-			see an Input Provider on the left side with two outputs: one Directory and one
-			ShortText. On the right side, there is an Output Provider with a single Directory input.
-			These are the points where the Remote Workflow Access feature sends the provided input
-			files (as a Directory) and parameters (as a ShortText) into your workflow, and collects
-			the final output files (as a Directory). You should leave these two components
-			unchanged, and place your workflow logic between them. The Script component in the
-			middle is just a placeholder - unless you need a Script component anyway, you can just
-			delete it.</para>
+		<para>As described above, open the "Remote_Workflow_Access_Template" workflow file. You will see
+			an SCP Input Loader on the left side with two outputs. On the right side, there is an
+			SCP Output Collector with one input (these two are helper components that are only used
+			for remote access workflows). These are the points where the Remote Workflow Access
+			feature sends the provided inputs into your workflow, and collects the final outputs.
+			You can change the data types or add/delete inputs/outputs in the properties view of the
+			input loader/output collector. The Script component in the middle is just a placeholder
+			- unless you need a Script component anyway, you can just delete it.</para>
 		<para>There are two basic approaches to building your workflow:<itemizedlist>
 				<listitem>
-					<para>Either you start with the template, and build your workflow between the
-						two standard components. This is straight-forward, but means that you cannot
-						test run the workflow from the RCE GUI (as the Input Provider will fail),
-						but have to use the Remote Access feature to test it.</para>
+					<para>Either you start with the template, and build your workflow between the two standard
+						components. This is straight-forward, but means that you cannot test run the
+						workflow from the RCE GUI (as the Input Loader will fail), but have to use
+						the Remote Access feature to test it.</para>
 				</listitem>
 				<listitem>
-					<para>The other approach is to build your workflow normally, where you add an
-						Input Provider and Output Writer with the same outputs and inputs as the
-						ones in the template (but with standard configuration values). You can then
+					<para>The other approach is to build your workflow normally, where you add an SCP Input Loader
+						and SCP Output Collector with the outputs and inputs you need. You can then
 						test (and if needed, modify) your workflow from the GUI until it behaves as
-						it should. Then, mark all components <emphasis>except</emphasis>  the Input
+						it should. Then, mark all components <emphasis>except</emphasis> the Input
 						Provider and Output writer in your workflow, and select "Copy" from the
 						right-click menu. Switch to the template file, click an empty area, and
 						select "Paste" from the right-click menu. Then, connect the two template

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -41,6 +41,8 @@ import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService;
 import de.rcenvironment.core.communication.rpc.internal.CallbackProxyServiceImpl;
+import de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamService;
+import de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamServiceImpl;
 import de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallSenderServiceImpl;
 import de.rcenvironment.core.communication.rpc.internal.ServiceCallHandlerServiceImpl;
 import de.rcenvironment.core.communication.rpc.internal.ServiceProxyFactoryImpl;
@@ -111,8 +113,10 @@ public final class VirtualCommunicationBundleFactory {
 
             serviceRegistry.registerManagedService(new PlatformServiceImpl(), PlatformService.class);
 
+            serviceRegistry.registerManagedService(new ReliableRPCStreamServiceImpl(), false, ReliableRPCStreamService.class);
+
             serviceRegistry.registerManagedService(new LiveNetworkIdResolutionServiceImpl(), false, LiveNetworkIdResolutionService.class);
-            
+
             serviceRegistry.registerManagedService(new RemoteServiceCallSenderServiceImpl(), false, RemoteServiceCallSenderService.class);
 
             // register stubs; replace when RPC callbacks should be made testable
@@ -153,20 +157,20 @@ public final class VirtualCommunicationBundleFactory {
             serviceRegistry.bindAndActivateServices();
 
             // connect dynamic listeners
-            for (NetworkTopologyChangeListener listener : listenerRegistrationService.
-                getListeners(NetworkTopologyChangeListener.class)) {
+            for (NetworkTopologyChangeListener listener : listenerRegistrationService
+                .getListeners(NetworkTopologyChangeListener.class)) {
                 routingService.addNetworkTopologyChangeListener(listener);
             }
-            for (RawNodePropertiesChangeListener listener : listenerRegistrationService.
-                getListeners(RawNodePropertiesChangeListener.class)) {
+            for (RawNodePropertiesChangeListener listener : listenerRegistrationService
+                .getListeners(RawNodePropertiesChangeListener.class)) {
                 nodePropertiesService.addRawNodePropertiesChangeListener(listener);
             }
-            for (MessageChannelLifecycleListener listener : listenerRegistrationService.
-                getListeners(MessageChannelLifecycleListener.class)) {
+            for (MessageChannelLifecycleListener listener : listenerRegistrationService
+                .getListeners(MessageChannelLifecycleListener.class)) {
                 messageChannelService.addChannelLifecycleListener(listener);
             }
-            for (LinkStateKnowledgeChangeListener listener : listenerRegistrationService.
-                getListeners(LinkStateKnowledgeChangeListener.class)) {
+            for (LinkStateKnowledgeChangeListener listener : listenerRegistrationService
+                .getListeners(LinkStateKnowledgeChangeListener.class)) {
                 distributedLinkStateManager.addLinkStateKnowledgeChangeListener(listener);
             }
 

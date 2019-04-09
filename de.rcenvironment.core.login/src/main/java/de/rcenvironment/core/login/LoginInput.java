@@ -1,16 +1,12 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.login;
-
-import java.security.cert.X509Certificate;
-
-import org.globus.gsi.OpenSSLKey;
 
 import de.rcenvironment.core.authentication.User.Type;
 import de.rcenvironment.core.login.internal.Messages;
@@ -30,16 +26,6 @@ public class LoginInput {
     private static final String ASSERTIONS_STRING_EMPTY = Messages.assertionsStringEmpty;
 
     /**
-     * The certificate (public key).
-     */
-    private X509Certificate certificate;
-
-    /**
-     * The key (private key).
-     */
-    private OpenSSLKey key;
-
-    /**
      * The password the is encrypted with.
      */
     private String password;
@@ -54,22 +40,6 @@ public class LoginInput {
     private final Type type;
     
 
-    /**
-     * Constructor.
-     * @param certificate The certificate (public key).
-     * @param key The key (private key).
-     * @param password The password the private key is encrypted with.
-     */
-    public LoginInput(X509Certificate certificate, OpenSSLKey key, String password) {
-        Assertions.isDefined(certificate, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.certificate));
-        Assertions.isDefined(key, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.key));
-
-        type = Type.certificate;
-        this.certificate = certificate;
-        this.key = key;
-        this.password = password;
-    }
-    
     /**
      * Constructor.
      * @param usernameLDAP The username for the LDAP login.
@@ -87,24 +57,6 @@ public class LoginInput {
 
     public LoginInput(boolean anonymousLogin) {
         type = Type.single;
-    }
-
-    /**
-     * Getter.
-     * 
-     * @return The certificate (public key).
-     */
-    public X509Certificate getCertificate() {
-        return certificate;
-    }
-
-    /**
-     * Getter.
-     * 
-     * @return The key (private key).
-     */
-    public OpenSSLKey getKey() {
-        return key;
     }
 
     /**

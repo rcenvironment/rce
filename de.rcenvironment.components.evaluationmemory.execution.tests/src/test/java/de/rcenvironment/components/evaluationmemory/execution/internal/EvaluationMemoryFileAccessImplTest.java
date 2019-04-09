@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,13 +16,18 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IArgumentMatcher;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,6 +46,73 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  *
  */
 public class EvaluationMemoryFileAccessImplTest {
+
+    private static final double VALUE01 = 0.1;
+
+    private static final double VALUE11 = 1.1;
+
+    /**
+     * Throughout this test suite, we often check input and output vectors returned from the class under test. These values have, however,
+     * often been serialized and deserialized in the meantime, i.e., the vectors we compare against contain actual instances of TypedDatum.
+     * The expected values, in contrast, contain mainly mocked versions of TypedDatum. Hence, the standard equality testing via .equals does
+     * not work in this case. Instead, we use this custom matcher to compare TypedDatums to mocks via their interface.
+     *
+     * @author Alexander Weinert
+     */
+    private static class FloatVectorMatcher implements IArgumentMatcher {
+
+        private final SortedMap<String, TypedDatum> expected;
+
+        FloatVectorMatcher(SortedMap<String, TypedDatum> expected) {
+            this.expected = expected;
+        }
+
+        @Override
+        public boolean matches(Object someOther) {
+            if (!(someOther instanceof SortedMap<?, ?>)) {
+                return false;
+            }
+            
+            final SortedMap<String, TypedDatum> other = (SortedMap<String, TypedDatum>) someOther;
+            if (other.size() != expected.size()) {
+                return false;
+            }
+            for (Entry<String, TypedDatum> otherEntry : other.entrySet()) {
+                final String otherKey = otherEntry.getKey();
+                if (!expected.containsKey(otherKey)) {
+                    return false;
+                }
+                final double expectedValue = ((FloatTD) expected.get(otherKey)).getFloatValue();
+                final double otherValue = ((FloatTD) otherEntry.getValue()).getFloatValue();
+                if (expectedValue != otherValue) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public void appendTo(StringBuffer stringBuffer) {
+            stringBuffer.append("vecEq({");
+            final Iterator<Entry<String, TypedDatum>> it = expected.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, TypedDatum> entry = it.next();
+                stringBuffer.append(entry.getKey());
+                stringBuffer.append(" -> ");
+                stringBuffer.append(entry.getValue().getDataType().toString());
+                if (it.hasNext()) {
+                    stringBuffer.append(", ");
+                }
+            }
+            stringBuffer.append("})");
+        }
+
+        public static SortedMap<String, TypedDatum> eqVec(SortedMap<String, TypedDatum> expected) {
+            EasyMock.reportMatcher(new FloatVectorMatcher(expected));
+            return null;
+        }
+    }
 
     private static final String DON_T_MATCH = "don't match";
 
@@ -74,6 +146,8 @@ public class EvaluationMemoryFileAccessImplTest {
         }
     }
 
+
+
     /**
      * Tests adding and getting values.
      * 
@@ -94,6 +168,10 @@ public class EvaluationMemoryFileAccessImplTest {
         values1.put(X1, 1.0);
         values1.put(X2, 2.0);
 
+        SortedMap<String, Double> tolerances = new TreeMap<>();
+        tolerances.put(X1, null);
+        tolerances.put(X2, null);
+
         SortedMap<String, Double> values2 = new TreeMap<>();
         values2.put(Y, 3.0);
         
@@ -102,13 +180,15 @@ public class EvaluationMemoryFileAccessImplTest {
         
         // add and get values
         fileAccess.addEvaluationValues(inputValues1, outputValues1);
-        SortedMap<String, TypedDatum> result = fileAccess.getEvaluationResult(inputValues1, outputs);
+        ToleranceHandling toleranceHandling = EasyMock.createStrictMock(ToleranceHandling.class);
+        EasyMock.replay(toleranceHandling);
+        SortedMap<String, TypedDatum> result = fileAccess.getEvaluationResult(inputValues1, outputs, tolerances, toleranceHandling);
         assertEquals(1, result.size());
         assertEquals(((FloatTD) outputValues1.get(outputValues1.firstKey())).getFloatValue(), 
             ((FloatTD) result.get(result.firstKey())).getFloatValue(), 0);
         
         SortedMap<String, Double> values3 = new TreeMap<>();
-        values3.put(X1, 3.0);
+        values3.put(X1, VALUE11);
         values3.put(X2, 2.0);
 
         SortedMap<String, Double> values4 = new TreeMap<>();
@@ -118,10 +198,47 @@ public class EvaluationMemoryFileAccessImplTest {
         SortedMap<String, TypedDatum> outputValues2 = createEndpointValues(values4);
         
         // request tuple for key, which first does not exist 
-        result = fileAccess.getEvaluationResult(inputValues2, outputs);
+        toleranceHandling = EasyMock.createStrictMock(ToleranceHandling.class);
+        EasyMock
+            .expect(toleranceHandling.isInToleranceInterval(EasyMock.eq(inputValues2), EasyMock.eq(tolerances),
+                FloatVectorMatcher.eqVec(inputValues1)))
+            .andReturn(false);
+        Capture<Collection<SortedMap<String, TypedDatum>>> toleratedInputsCapture = new Capture<>();
+        EasyMock.expect(toleranceHandling.pickMostToleratedInputs(EasyMock.capture(toleratedInputsCapture), EasyMock.eq(inputValues2)))
+            .andReturn(null);
+        EasyMock.replay(toleranceHandling);
+        result = fileAccess.getEvaluationResult(inputValues2, outputs, tolerances, toleranceHandling);
+        assertTrue(toleratedInputsCapture.getValue().isEmpty());
         assertNull(result);
+        EasyMock.verify(toleranceHandling);
+
+        // request tuple for key with some tolerance
+        tolerances.put(X1, new Double(VALUE01));
+        toleranceHandling = EasyMock.createStrictMock(ToleranceHandling.class);
+        EasyMock
+            .expect(toleranceHandling.isInToleranceInterval(EasyMock.eq(inputValues2), EasyMock.eq(tolerances),
+                FloatVectorMatcher.eqVec(inputValues1)))
+            .andReturn(true);
+        toleratedInputsCapture = new Capture<>();
+        EasyMock.expect(toleranceHandling.pickMostToleratedInputs(EasyMock.capture(toleratedInputsCapture), EasyMock.eq(inputValues2)))
+            .andReturn(inputValues1);
+        EasyMock.replay(toleranceHandling);
+
+        result = fileAccess.getEvaluationResult(inputValues2, outputs, tolerances, toleranceHandling);
+        EasyMock.verify(toleranceHandling);
+
+        assertEquals(1, toleratedInputsCapture.getValue().size());
+        assertTrue(new FloatVectorMatcher(inputValues1).matches(toleratedInputsCapture.getValue().iterator().next()));
+
+        assertEquals(1, result.size());
+        assertEquals(((FloatTD) outputValues1.get(outputValues1.firstKey())).getFloatValue(),
+            ((FloatTD) result.get(result.firstKey())).getFloatValue(), 0);
+
+        // Add precise evaluation results, fetch them, and check that even in the presence of tolerance the precise value is returned
         fileAccess.addEvaluationValues(inputValues2, outputValues2);
-        result = fileAccess.getEvaluationResult(inputValues2, outputs);
+        toleranceHandling = EasyMock.createStrictMock(ToleranceHandling.class);
+        EasyMock.replay(toleranceHandling);
+        result = fileAccess.getEvaluationResult(inputValues2, outputs, tolerances, toleranceHandling);
         assertEquals(1, result.size());
         assertEquals(((FloatTD) outputValues2.get(outputValues2.firstKey())).getFloatValue(), 
             ((FloatTD) result.get(result.firstKey())).getFloatValue(), 0);
@@ -191,8 +308,11 @@ public class EvaluationMemoryFileAccessImplTest {
         values.put(X1, 1.0);
         SortedMap<String, TypedDatum> inputValues = createEndpointValues(values);
         
+        SortedMap<String, Double> tolerances = new TreeMap<>();
+        tolerances.put(X1, null);
+
         try {
-            fileAccess.getEvaluationResult(inputValues, outputs1);
+            fileAccess.getEvaluationResult(inputValues, outputs1, tolerances, createToleranceHandlingMock());
             fail();
         } catch (IOException e) {
             assertTrue(e.getMessage().contains(DON_T_MATCH));
@@ -202,7 +322,7 @@ public class EvaluationMemoryFileAccessImplTest {
         
         SortedMap<String, DataType> outputs2 = createEndpointsDefinition(Y, "Z");
         try {
-            fileAccess.getEvaluationResult(inputValues, outputs2);
+            fileAccess.getEvaluationResult(inputValues, outputs2, tolerances, createToleranceHandlingMock());
             fail();
         } catch (IOException e) {
             assertTrue(e.getMessage().contains(DON_T_MATCH));
@@ -266,4 +386,18 @@ public class EvaluationMemoryFileAccessImplTest {
         EasyMock.replay(typedDatum);
         return typedDatum;
     }
+
+    private ToleranceHandling createToleranceHandlingMock() {
+        ToleranceHandling toleranceHandling = EasyMock.createNiceMock(ToleranceHandling.class);
+        EasyMock.expect(toleranceHandling.isInToleranceInterval(EasyMock.anyObject(SortedMap.class), EasyMock.anyObject(SortedMap.class),
+            EasyMock.anyObject(SortedMap.class))).andStubReturn(false);
+
+        EasyMock
+            .expect(toleranceHandling.pickMostToleratedInputs(EasyMock.anyObject(Collection.class), EasyMock.anyObject(SortedMap.class)))
+            .andStubReturn(null);
+
+        EasyMock.replay(toleranceHandling);
+        return toleranceHandling;
+    }
+
 }

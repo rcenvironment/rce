@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -19,14 +19,15 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.osgi.framework.BundleContext;
+
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
@@ -84,7 +85,7 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
         JsonFactory f = new JsonFactory();
         JsonParser jp;
         try {
-            jp = f.createJsonParser(new File(storageDirectory, filename));
+            jp = f.createParser(new File(storageDirectory, filename));
             jp.nextToken();
             while (jp.hasCurrentToken() && jp.nextToken() != JsonToken.END_OBJECT) {
                 String fieldname = jp.getCurrentName();
@@ -209,7 +210,7 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
 
         // write JSON to a file
         try {
-            JsonGenerator jsonGenerator = new JsonFactory().createJsonGenerator(f, JsonEncoding.UTF8);
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(f, JsonEncoding.UTF8);
             JsonUtils.getDefaultObjectMapper().writeValue(jsonGenerator, content);
         } catch (IOException e) {
             // TODO >6.0.0: this should probably do more than just log a message

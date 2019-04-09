@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,7 +15,7 @@ import java.io.PrintStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.configuration.bootstrap.profile.BaseProfile;
+import de.rcenvironment.core.configuration.bootstrap.profile.CommonProfile;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
@@ -91,7 +91,7 @@ public final class BootstrapConfiguration {
      * @throws SystemExitException
      * @throws BootstrapException
      * 
-     * @throws IOException on bootstrap profile path errors
+     * @throws IOException         on bootstrap profile path errors
      */
     private BootstrapConfiguration() throws ProfileException, ParameterException, SystemExitException {
 
@@ -102,7 +102,7 @@ public final class BootstrapConfiguration {
 
         LaunchParameters launchParameters = LaunchParameters.getInstance();
 
-        originalProfile = determineOriginalProfileDir(launchParameters);
+        originalProfile = openOriginalProfileDir(launchParameters);
 
         Profile preliminaryProfile = originalProfile;
 
@@ -111,10 +111,28 @@ public final class BootstrapConfiguration {
             System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
                 || launchParameters.containsToken("--batch");
 
+        final boolean profileUpgradeRequested = launchParameters.containsToken("--upgradeprofile");
+
         // In case of error either start in fallback profile or don't start
-        if (!originalProfile.hasValidVersion()) {
-            if (fallbackProfileDisabled) {
-                // fail if the fallback profile is disabled
+        if (!preliminaryProfile.hasCurrentVersion()) {
+            if (preliminaryProfile.hasUpgradeableVersion()) {
+                if (profileUpgradeRequested) {
+                    try {
+                        preliminaryProfile.upgradeToCurrentVersion();
+                    } catch (IOException e) {
+                        final String errorMessage =
+                            String.format("Could not upgrade profile \"%s\" to current version.", originalProfile.getName());
+                        throw new ProfileException(errorMessage, e);
+                    }
+                }
+                // We omit the else-block here since, in this case, we have a profile that can be potentially upgraded, but the user did not
+                // request an upgrade via the command line. Hence, we proceed with the outdated profile for the time being. During
+                // validation, this will be recognized by a validator that will subsequently query the user, if possible, on whether or not
+                // to upgrade. We defer the user query to the validator since at this point, i.e., during bootstrapping, we do not yet know
+                // how to best do so (e.g., via a Lanterna dialog, a modal popup window, or something else)
+            } else if (fallbackProfileDisabled) {
+                // The profile is not current and the user did not request an upgrade of the profile. Moreover, they do not want to use the
+                // fallback profile. Hence, we have no choice but to abort the startup
                 log.error(StringUtils.format(NEWER_PROFILE_VERSION_TEMPLATE, Profile.PROFILE_VERSION_NUMBER));
                 stderr.println(StringUtils.format(NEWER_PROFILE_VERSION_TEMPLATE, Profile.PROFILE_VERSION_NUMBER));
                 throw new SystemExitException(0);
@@ -128,7 +146,8 @@ public final class BootstrapConfiguration {
         shutdownRequested = launchParameters.containsToken("--shutdown");
         if (shutdownRequested) {
             // the stub profile location for the process sending the shutdown signal is located in the data sub-directory
-            preliminaryProfile = new Profile(new File(originalProfile.getInternalDirectory(), "shutdown"), true, true);
+            preliminaryProfile = new CommonProfile.Builder(new File(originalProfile.getInternalDirectory(), "shutdown"))
+                .create(true).migrate(true).buildUserProfile();
             stdout.println(USING_SHUTDOWN_PROFILE);
         }
 
@@ -176,8 +195,8 @@ public final class BootstrapConfiguration {
     /**
      * Initializes the singleton instance from system properties and launch parameters.
      * 
-     * @throws ParameterException re-thrown
-     * @throws ProfileException re-thrown
+     * @throws ParameterException  re-thrown
+     * @throws ProfileException    re-thrown
      * @throws SystemExitException re-thrown
      */
     public static void initialize() throws ProfileException, ParameterException, SystemExitException {
@@ -189,8 +208,15 @@ public final class BootstrapConfiguration {
      */
     public static BootstrapConfiguration getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("No " + BootstrapConfiguration.class.getSimpleName()
-                + " instance available - most likely, its containing bundle has not been properly initialized");
+            try {
+                instance = new BootstrapConfiguration();
+            } catch (ProfileException | ParameterException | SystemExitException e) {
+                throw new RuntimeException("No " + BootstrapConfiguration.class.getSimpleName()
+                    + " instance available, and creating an implicit instance failed as well; aborting", e);
+            }
+            LogFactory.getLog(BootstrapConfiguration.class).error("No " + BootstrapConfiguration.class.getSimpleName()
+                + " instance available - most likely, its containing bundle has not been properly initialized, "
+                + "or the instance is not accessible due to a classloading issue; created an implicit one to proceed");
         }
         return instance;
     }
@@ -206,7 +232,7 @@ public final class BootstrapConfiguration {
      * 
      * @throws SystemExitException Thrown if the Profile Selection Dialog was exited without a selection.
      */
-    private Profile determineOriginalProfileDir(LaunchParameters launchParams)
+    private Profile openOriginalProfileDir(LaunchParameters launchParams)
         throws ProfileException, ParameterException, SystemExitException {
 
         String profilePath = null;
@@ -249,7 +275,7 @@ public final class BootstrapConfiguration {
             profileDir = new File(profilesRootDirectory, profilePath).getAbsoluteFile();
         }
 
-        return new Profile(profileDir, true, true);
+        return new Profile.Builder(profileDir).create(true).migrate(false).buildUserProfile();
     }
 
     /**
@@ -297,7 +323,7 @@ public final class BootstrapConfiguration {
         // handled here.
 
         // delete the profile.version file within the internal data directory, this should be the only file in there
-        new File(getInternalDataDirectory(), BaseProfile.PROFILE_VERSION_FILE_NAME).delete();
+        new File(getInternalDataDirectory(), CommonProfile.PROFILE_VERSION_FILE_NAME).delete();
 
         return this.getInternalDataDirectory().delete();
     }

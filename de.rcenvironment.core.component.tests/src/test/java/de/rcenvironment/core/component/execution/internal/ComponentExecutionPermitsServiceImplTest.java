@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -28,6 +28,8 @@ import org.junit.Test;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.testutils.ComponentTestUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
@@ -56,7 +58,7 @@ public class ComponentExecutionPermitsServiceImplTest {
     @Test(timeout = TEST_TIMEOUT)
     public void testAcquireAndReleasePermits() throws InterruptedException, ExecutionException {
 
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
                 new String[] { COMPONENT_IDENTIFIER_1, COMPONENT_IDENTIFIER_2 }, new int[] { 2, 1 })));
 
@@ -111,7 +113,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
     }
-    
+
     /**
      * Tests if permits for component execution can be acquired and released as expected.
      * 
@@ -120,22 +122,22 @@ public class ComponentExecutionPermitsServiceImplTest {
      */
     @Test(timeout = TEST_TIMEOUT)
     public void testCancelAcquiringPermits() throws InterruptedException, ExecutionException {
-        
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
                 new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 })));
 
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
         componentExecutionPermitsService.bindDistributedComponentKnowledgeService(componentKnowledgeServiceMock);
-        
+
         assertTrue(componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get());
-        
+
         Future<Boolean> acquireTask = componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString());
         acquireTask.cancel(true);
-        
+
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         assertTrue(componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get());
-        
+
     }
 
     /**
@@ -148,11 +150,11 @@ public class ComponentExecutionPermitsServiceImplTest {
      */
     @Test(timeout = TEST_TIMEOUT)
     public void testIfMaxParallelExecutionParamIsIncreasedConcurrently() throws InterruptedException, ExecutionException {
-        
+
         DistributedComponentKnowledge componentKnowledgeMock = createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
             new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 }));
 
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(componentKnowledgeMock);
 
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
@@ -181,17 +183,19 @@ public class ComponentExecutionPermitsServiceImplTest {
         }
         Thread.sleep(WAIT_INTERVAL);
         DistributedComponentKnowledge updatedComponentKnowledgeMock = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
-        EasyMock.expect(updatedComponentKnowledgeMock.getAllInstallations()).andReturn(createSetOfComponentInstallations(
-            new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 2 })).anyTimes();
+        final Set<ComponentInstallation> mockInstallations = createSetOfComponentInstallations(
+            new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 2 });
+        EasyMock.expect(updatedComponentKnowledgeMock.getAllInstallations())
+            .andReturn(ComponentTestUtils.convertToListOfDistributedComponentEntries(mockInstallations)).anyTimes();
         EasyMock.replay(updatedComponentKnowledgeMock);
-        
+
         synchronized (order) {
             componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
             order.incrementAndGet();
         }
         assertEquals(3, acquireTask.get().intValue());
     }
-    
+
     /**
      * Tests if parameter for maximum parallel executions allowed is decreased concurrently. That means, if permit request (
      * {@link ComponentExecutionPermitsService#acquire(String, String)}) is blocked and the maximum parallel executions allowed are
@@ -202,11 +206,11 @@ public class ComponentExecutionPermitsServiceImplTest {
      */
     @Test(timeout = TEST_TIMEOUT)
     public void testIfMaxParallelExecutionParamIsDecreasedConcurrently() throws InterruptedException, ExecutionException {
-        
+
         DistributedComponentKnowledge componentKnowledgeMock = createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
             new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 2 }));
-        
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(componentKnowledgeMock);
 
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
@@ -216,7 +220,7 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
-        
+
         AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
@@ -236,8 +240,10 @@ public class ComponentExecutionPermitsServiceImplTest {
         }
         Thread.sleep(WAIT_INTERVAL);
         DistributedComponentKnowledge updatedComponentKnowledgeMock = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
-        EasyMock.expect(updatedComponentKnowledgeMock.getAllInstallations()).andReturn(createSetOfComponentInstallations(
-            new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 })).anyTimes();
+        final Set<ComponentInstallation> mockInstallations = createSetOfComponentInstallations(
+            new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 });
+        EasyMock.expect(updatedComponentKnowledgeMock.getAllInstallations())
+            .andReturn(ComponentTestUtils.convertToListOfDistributedComponentEntries(mockInstallations)).anyTimes();
         EasyMock.replay(updatedComponentKnowledgeMock);
         synchronized (order) {
             componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
@@ -264,7 +270,7 @@ public class ComponentExecutionPermitsServiceImplTest {
      */
     @Test(timeout = TEST_TIMEOUT)
     public void testIfMultipleReleasesDoesNotIncreaseTheMaximumAmountsOfPermitsAllowed() throws InterruptedException, ExecutionException {
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
                 new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 })));
 
@@ -277,7 +283,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
-        
+
         AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
@@ -296,7 +302,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         }
         assertEquals(2, acquireTask.get().intValue());
     }
-    
+
     /**
      * Sets the maximum parallel execution allowed to 0 and awaits that no permit is granted when
      * {@link ComponentExecutionPermitsService#acquire(String, String)} is called.
@@ -308,7 +314,7 @@ public class ComponentExecutionPermitsServiceImplTest {
     public void testIfNoPermitIsGrantedMaximumAmountOfParallelExecutionsIsLeesOrEqualZero()
         throws InterruptedException, ExecutionException {
         final int minusFive = -5;
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
                 new String[] { COMPONENT_IDENTIFIER_1, COMPONENT_IDENTIFIER_2 }, new int[] { 0, minusFive })));
 
@@ -332,7 +338,7 @@ public class ComponentExecutionPermitsServiceImplTest {
                 return null;
             }
         });
-        
+
         final int timeoutInMillis = 200;
         try {
             acquireTask1.get(timeoutInMillis, TimeUnit.MILLISECONDS);
@@ -347,7 +353,7 @@ public class ComponentExecutionPermitsServiceImplTest {
             assertTrue(true);
         }
     }
-    
+
     /**
      * Performs more releases than acquires and checks if this doesn't affect the maximum amounts of execution permits allowed.
      * 
@@ -357,37 +363,43 @@ public class ComponentExecutionPermitsServiceImplTest {
     @Test(timeout = TEST_TIMEOUT)
     public void testUnlimitedParallelExecutionByDefiningNoParamForMaximumParallelExecution()
         throws InterruptedException, ExecutionException {
-        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock =
             createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
-                new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { })));
+                new String[] { COMPONENT_IDENTIFIER_1 }, new int[] {})));
 
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
         componentExecutionPermitsService.bindDistributedComponentKnowledgeService(componentKnowledgeServiceMock);
 
         final int amountOfAcquires = 100;
         for (int i = 0; i < amountOfAcquires; i++) {
-            componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();            
+            componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         }
     }
-    
+
     private DistributedComponentKnowledgeService createDistributedComponentKnowledgeServiceMock(
         DistributedComponentKnowledge componentKnowledge) {
         DistributedComponentKnowledgeService componentKnowledgeServiceMock = EasyMock.createNiceMock(
             DistributedComponentKnowledgeService.class);
-        EasyMock.expect(componentKnowledgeServiceMock.getCurrentComponentKnowledge()).andReturn(componentKnowledge).anyTimes();
+        EasyMock.expect(componentKnowledgeServiceMock.getCurrentSnapshot()).andReturn(componentKnowledge).anyTimes();
         EasyMock.replay(componentKnowledgeServiceMock);
         return componentKnowledgeServiceMock;
     }
-    
+
     private DistributedComponentKnowledge createDistributedComponentKnowledgeMock(Set<ComponentInstallation> componentInstallations) {
         DistributedComponentKnowledge componentKnowledgeMock = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
-        EasyMock.expect(componentKnowledgeMock.getAllInstallations()).andReturn(componentInstallations).anyTimes();
+        EasyMock.expect(componentKnowledgeMock.getAllInstallations())
+            .andReturn(ComponentTestUtils.convertToListOfDistributedComponentEntries(componentInstallations))
+            .anyTimes();
         EasyMock.replay(componentKnowledgeMock);
         return componentKnowledgeMock;
     }
-    
+
     private ComponentInstallation createComponentInstallationMock(String compId, Integer maxParallelExecutions) {
         ComponentInstallation componentInstallationMock = EasyMock.createNiceMock(ComponentInstallation.class);
+        ComponentInterface componentInterfaceMock = EasyMock.createNiceMock(ComponentInterface.class);
+        EasyMock.expect(componentInterfaceMock.getDisplayName()).andReturn(compId).anyTimes();
+        EasyMock.replay(componentInterfaceMock);
+        EasyMock.expect(componentInstallationMock.getComponentInterface()).andReturn(componentInterfaceMock).anyTimes();
         EasyMock.expect(componentInstallationMock.getInstallationId()).andReturn(compId).anyTimes();
         EasyMock.expect(componentInstallationMock.getMaximumCountOfParallelInstances()).andReturn(maxParallelExecutions).anyTimes();
         EasyMock.replay(componentInstallationMock);
@@ -398,7 +410,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         Set<ComponentInstallation> componentInstallations = new HashSet<>();
         for (int i = 0; i < compIds.length; i++) {
             if (i < maxParallelExecutions.length) {
-                componentInstallations.add(createComponentInstallationMock(compIds[i], maxParallelExecutions[i]));                
+                componentInstallations.add(createComponentInstallationMock(compIds[i], maxParallelExecutions[i]));
             } else {
                 componentInstallations.add(createComponentInstallationMock(compIds[i], null));
             }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,14 +16,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import org.eclipse.gef.tools.AbstractTool.Input;
+
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionManager;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
@@ -59,9 +63,11 @@ public final class InputModel {
             initialSubscriptionLatch = new CountDownLatch(1);
             allInputs = new ConcurrentHashMap<String, Map<String, Map<String, Deque<EndpointDatum>>>>();
             eventProcessor = new InputSubscriptionEventProcessor(instance);
+            final ServiceRegistryAccess serviceRegistry = ServiceRegistry.createAccessFor(instance);
             currentInputManager = new GenericSubscriptionManager(eventProcessor,
-                ServiceRegistry.createAccessFor(instance).getService(CommunicationService.class),
-                ServiceRegistry.createAccessFor(instance).getService(WorkflowHostService.class));
+                serviceRegistry.getService(CommunicationService.class),
+                serviceRegistry.getService(WorkflowHostService.class),
+                serviceRegistry.getService(DistributedNotificationService.class));
             ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override

@@ -23,6 +23,10 @@
 
 <module name="Checker">
 
+  <!-- Override/ignore the local machine's language settings -->
+  <property name="localeCountry" value="US"/>
+  <property name="localeLanguage" value="en"/>
+
   <module name="TreeWalker">
   
     <!-- Annotations -->
@@ -82,7 +86,11 @@
       <property name="illegalClassNames"
         value="java.lang.Exception, java.lang.Throwable" />
     </module>
-    <module name="IllegalType"/>
+    <module name="IllegalType">
+      <!-- a temporary fix to avoid CI failures due to issues that do not show up in Eclipse-CS (see issue #16637); 
+      this should be set back to "error" once that inconsistency is fixed - misc_ro, Mar 2019 -->
+      <property name="severity" value="warning" />
+    </module>
     <module name="DeclarationOrder" />
     <module name="DefaultComesLast" />
     <module name="MultipleStringLiterals">
@@ -173,6 +181,22 @@
       <property name="tokens" value="METHOD_DEF" />
     </module>
     
+    <!-- Cyclomatic Complexity -->
+    <module name="CyclomaticComplexity">
+      <property name="severity" value="warning"/>
+      <!-- Provide warnings for a relatively low threshold, but do not consider them as errors. -->
+      <property name="max" value="20"/>
+      <property name="switchBlockAsSingleDecisionPoint" value="true"/>
+    </module> 
+
+    <!-- Cyclomatic Complexity -->
+    <module name="CyclomaticComplexity">
+      <property name="severity" value="error"/>
+      <!-- This value should be continuously lowered as we eliminate/refactor the worst methods. -->
+      <property name="max" value="45"/>
+      <property name="switchBlockAsSingleDecisionPoint" value="true"/>
+    </module> 
+    
     <!-- Whitespaces -->
     <!--  TODO: NoWhitespaceAfter, NoWhitespaceBefore -->
     <module name="EmptyForIteratorPad" />
@@ -213,9 +237,12 @@
     <property name="fileExtensions" value="java,properties,pom,MF"/>
   </module>
   
-  <module name="Header">
-    <property name="header" value="/*\n * Copyright (C) 2006-20xx DLR, Germany\n * \n * All rights reserved\n * \n * http://www.rcenvironment.de/\n */"/>
-    <property name="ignoreLines" value="2"/> <!-- ignore the line containing year information -->
+  <module name="RegexpHeader">
+    <property name="header" value="^/\*\n \* Copyright (\([cC]\) )?\d\d\d\d[\-, ][\w\d\s,\.\-]+\n \* Copyright (\([cC]\) )?\d\d\d\d[\-, ][\w\d\s,\.\-]+\n \* \n \* (All rights reserved|SPDX-License-Identifier: \S+)\n \* \n \* https?://www.rcenvironment.de/\n \*/"/>
+    <!-- Allow multiple copyright lines; this approach is required as apparently, the Checkstyle parser splits the pattern into lines first, 
+         then performs matching per line. Note that to enforce at least one copyright line being present, the line pattern must be duplicated 
+         in the regexp, as the multiLines option is interpreted as "zero or more occurrences". - misc_ro -->
+    <property name="multiLines" value="3"/> 
     <property name="fileExtensions" value="java"/>
   </module>
 

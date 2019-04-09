@@ -13,8 +13,4 @@
 		name="ConfigurationServiceMessageEventListener" policy="dynamic"
 		unbind="removeErrorListener" />
 		
-	<reference bind="bindDiscoveryBootstrapService" cardinality="1..1"
-		interface="de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService"
-		name="DiscoveryBootstrapService" policy="static" />
-		
 </scr:component>

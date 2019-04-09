@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,8 +23,6 @@ import java.util.regex.Matcher;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.equinox.security.storage.StorageException;
 
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
@@ -32,13 +30,16 @@ import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaD
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
-import de.rcenvironment.core.configuration.SecurePreferencesFactory;
+import de.rcenvironment.core.configuration.SecureStorageService;
+import de.rcenvironment.core.configuration.SecureStorageSection;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
  * 
  * Class for placeholder management and parsing. Here, all information about the placeholders are stored.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke (secure storage adaptation)
  */
 public class WorkflowPlaceholderHandler implements Serializable {
 
@@ -50,7 +51,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private static final String WORKFLOW_PLACEHOLDER_PATH = "placeholderHistory" + File.separator
         + "Workflow_Placeholder_";
 
-    private static final String COULD_NOT_LOAD_PASSWORD_FROM_STORE = "Could not load password from store!";
+    private static final String COULD_NOT_LOAD_PASSWORD_FROM_STORAGE = "Could not load password from secure storage!";
 
     private static final Log LOGGER = LogFactory.getLog(WorkflowPlaceholderHandler.class);
 
@@ -61,6 +62,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private static final String PLACEHOLDERINSTANCE_HISTORYFILE = "placeholderInstanceHistory.json";
 
     private static PersistentSettingsService persistentSettingsService;
+
+    private static SecureStorageSection secureStorageSection;
 
     private static List<String> encryptedPlaceholder;
 
@@ -81,7 +84,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     private Map<String, List<String>> componentInstancesOfType;
 
-    private final String dot = ".";
+    private final String dot = "."; // TODO convert to constant
 
     @Deprecated
     /**
@@ -154,19 +157,14 @@ public class WorkflowPlaceholderHandler implements Serializable {
         for (String key : componentHistory.keySet()) {
             List<String> currentList = componentHistory.get(key);
             if (!currentList.isEmpty() && currentList.get(0).equals(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL)) {
-                ISecurePreferences prefs;
                 try {
-                    prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-                    ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
                     String path = key;
-                    String value = placeholderNode.get(path, "");
+                    String value = secureStorageSection.read(path, "");
                     List<String> list = new LinkedList<String>();
                     list.add(value);
                     componentHistory.put(key, list);
-                } catch (IOException e) {
-                    LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORE, e);
-                } catch (StorageException e) {
-                    LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORE, e);
+                } catch (OperationFailureException e) {
+                    LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORAGE, e);
                 }
             }
         }
@@ -202,7 +200,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
             if ((matcher.group(ComponentUtils.ATTRIBUTE1) != null
                 && matcher.group(ComponentUtils.ATTRIBUTE1).equals(ComponentUtils.ENCODEDATTRIBUTE))
                 || (matcher.group(ComponentUtils.ATTRIBUTE2) != null
-                && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
+                    && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
                 encryptedPlaceholder.add(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME));
             }
         }
@@ -211,9 +209,10 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     private boolean isGlobalPlaceholder(Matcher matcherOfPlaceholder) {
         return (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1)
-            .equals(ComponentUtils.GLOBALATTRIBUTE) || (matcherOfPlaceholder
-            .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
-            .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
+            .equals(ComponentUtils.GLOBALATTRIBUTE)
+            || (matcherOfPlaceholder
+                .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
+                    .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
     }
 
     private void addPlaceholderKeyToMap(Map<String, Map<String, String>> map, String key, String placeholderName) {
@@ -258,11 +257,11 @@ public class WorkflowPlaceholderHandler implements Serializable {
                     componentInstancePlaceholders.get(componentUUID).put(matcher.group(ComponentUtils.PLACEHOLDERNAME), value);
                 }
             }
-            
+
             String tail = dot + matcher.group(ComponentUtils.PLACEHOLDERNAME);
             if (addToHistory) {
                 // do save -> add to history
-                
+
                 // placeholder component history
                 String placeholderCompHistory = wfID + dot + componentID + tail;
                 List<String> placeholderCompHistoryList = null;
@@ -283,7 +282,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 if (componentTypeHistory != null) {
                     componentTypeHistory.put(placeholderCompHistory, placeholderCompHistoryList);
                 }
-                
+
                 // placeholder instance history
                 String placeholderInstanceHistory = componentUUID + tail;
                 List<String> placeholderHistoryList = null;
@@ -337,7 +336,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                     encryptedPlaceholder)) {
                     clearPassword(componentUUID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderHistoryList);
-                } 
+                }
             }
         }
     }
@@ -345,11 +344,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private void clearPassword(String componentID, String placeholderName, List<String> placeholderList) {
         placeholderList.clear();
         try {
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
             String path = componentID + dot + placeholderName;
-            placeholderNode.remove(path);
-        } catch (IOException e) {
+            secureStorageSection.delete(path);
+        } catch (OperationFailureException e) {
             LOGGER.warn("Could not remove password", e);
         }
     }
@@ -357,17 +354,12 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private void storePassword(Serializable value, String componentID, String placeholderName, List<String> placeholderList) {
         placeholderList.clear();
         try {
-            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
             String path = componentID + dot + placeholderName;
-            placeholderNode.put(path, value.toString(), true);
+            secureStorageSection.store(path, value.toString());
             placeholderList.add(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL);
-        } catch (StorageException e) {
-            LOGGER.warn("Could not store password", e);
-        } catch (IOException e) {
+        } catch (OperationFailureException e) {
             LOGGER.warn("Could not store password", e);
         }
-
     }
 
     /**
@@ -636,6 +628,15 @@ public class WorkflowPlaceholderHandler implements Serializable {
         persistentSettingsService = newPersistentSettingsService;
     }
 
+    protected void bindSecureStorageService(SecureStorageService secureStorageService) {
+        try {
+            secureStorageSection = secureStorageService.getSecureStorageSection(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
+        } catch (IOException e) {
+            LOGGER.error("Failed to initialize the secure storage for placeholder data: " + e.toString());
+            // TODO specify further handling
+        }
+    }
+
     public static List<String> getEncryptedPlaceholder() {
         return encryptedPlaceholder;
     }
@@ -702,12 +703,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
         for (String key : setToDelete) {
             if (!componentInstanceHistory.get(key).isEmpty()
                 && !componentInstanceHistory.get(key).get(0).equals(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL)) {
-                ISecurePreferences prefs;
                 try {
-                    prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-                    ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
-                    placeholderNode.remove(key);
-                } catch (IOException e) {
+                    secureStorageSection.delete(key);
+                } catch (OperationFailureException e) {
                     LOGGER.warn("Could not remove from storage", e);
                 }
             }
@@ -722,12 +720,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
         for (String key : setToDelete) {
             if (!componentTypeHistory.get(key).isEmpty()
                 && !componentTypeHistory.get(key).get(0).equals(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL)) {
-                ISecurePreferences prefs;
                 try {
-                    prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-                    ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
-                    placeholderNode.remove(key);
-                } catch (IOException e) {
+                    secureStorageSection.delete(key);
+                } catch (OperationFailureException e) {
                     LOGGER.warn("Could not remove from storage", e);
                 }
             }
@@ -779,17 +774,13 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * 
      */
     public void deleteAllPasswordHistories() {
-        ISecurePreferences prefs;
         try {
-            prefs = SecurePreferencesFactory.getSecurePreferencesStore();
-            ISecurePreferences node = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
-            node.removeNode();
-        } catch (IOException e) {
-            LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORE, e);
+            for (String key : secureStorageSection.listKeys()) {
+                secureStorageSection.delete(key);
+            }
+        } catch (OperationFailureException e) {
+            LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORAGE, e);
         }
-        // catch (StorageException e) {
-        // LOGGER.error(COULD_NOT_LOAD_PASSWORD_FROM_STORE, e);
-        // }
     }
 
     protected static void setPersistentSettingsService(PersistentSettingsService incPersistentSettingsService) {
@@ -854,7 +845,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     /**
      * Checks if the placeholder is active, i.e. it has to be filled before running the workflow.
-     *  
+     * 
      * @param instancePlaceholder the placeholder to check
      * @param configDesc configuration description of the component.
      * @return true, iff the placeholder is active.

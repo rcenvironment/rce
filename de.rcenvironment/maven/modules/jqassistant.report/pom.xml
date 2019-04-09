@@ -21,6 +21,8 @@
 		<relativePath>../../../../de.rcenvironment.core/maven/coreParent.pom</relativePath>
 	</parent>
 
-
+	<properties>
+		<projects-root>../../../..</projects-root>
+	</properties>
 
 </project>

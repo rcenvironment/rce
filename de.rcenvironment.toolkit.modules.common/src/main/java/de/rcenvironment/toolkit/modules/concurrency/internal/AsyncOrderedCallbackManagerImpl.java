@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -10,6 +10,7 @@ package de.rcenvironment.toolkit.modules.concurrency.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,8 +89,9 @@ public class AsyncOrderedCallbackManagerImpl<T> implements AsyncOrderedCallbackM
      */
     @Override
     public void addListener(T listener) {
+        Objects.requireNonNull(listener);
         synchronized (listenerMap) {
-            // TODO check if already present?
+            checkForDuplicateRegistration(listener);
             listenerMap.put(listener, new InternalAsyncOrderedCallbackQueue(listener, exceptionPolicy));
         }
     }
@@ -103,9 +105,12 @@ public class AsyncOrderedCallbackManagerImpl<T> implements AsyncOrderedCallbackM
      */
     @Override
     public void addListenerAndEnqueueCallback(T listener, AsyncCallback<T> callback) {
+        Objects.requireNonNull(listener);
+        Objects.requireNonNull(callback);
         synchronized (listenerMap) {
             InternalAsyncOrderedCallbackQueue singleListenerQueue =
                 new InternalAsyncOrderedCallbackQueue(listener, exceptionPolicy);
+            checkForDuplicateRegistration(listener);
             listenerMap.put(listener, singleListenerQueue);
             singleListenerQueue.enqueue(callback);
         }
@@ -118,7 +123,8 @@ public class AsyncOrderedCallbackManagerImpl<T> implements AsyncOrderedCallbackM
      */
     @Override
     public void enqueueCallback(AsyncCallback<T> callback) {
-        // TODO lock contention could probably be reduced; keep it simple for now - misc_ro
+        Objects.requireNonNull(callback);
+        // TODO lock contention could probably be reduced; but keep it simple for now - misc_ro
         synchronized (listenerMap) {
             for (InternalAsyncOrderedCallbackQueue wrappedListener : listenerMap.values()) {
                 wrappedListener.enqueue(callback);
@@ -133,9 +139,27 @@ public class AsyncOrderedCallbackManagerImpl<T> implements AsyncOrderedCallbackM
      */
     @Override
     public void removeListener(T listener) {
+        Objects.requireNonNull(listener);
         // TODO review: cancel already-enqueued callbacks?
         synchronized (listenerMap) {
-            listenerMap.remove(listener);
+            if (listenerMap.remove(listener) == null) {
+                log.warn("Requested removal of a listener that is not currently registered; listener class: " + listener.getClass());
+            }
+        }
+    }
+
+    @Override
+    public int getListenerCount() {
+        synchronized (listenerMap) {
+            return listenerMap.size();
+        }
+    }
+
+    private void checkForDuplicateRegistration(T listener) {
+        if (listenerMap.containsKey(listener)) {
+            log.warn("Registering a listener that is already present in the internal listener map - "
+                + "either it was already registered, or its equals() method matches other listeners; listener class: "
+                + listener.getClass());
         }
     }
 

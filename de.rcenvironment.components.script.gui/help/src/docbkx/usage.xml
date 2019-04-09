@@ -18,16 +18,17 @@
     </sect1>
     <sect1>
         <title>Rationale</title>
-        <para>Based on the selection, the component uses a natively installed Python version or the
-            Java implementation Jython. This approach was selected on purpose because many users use
-            their own specific modules and want to use Python for this, others are satisfied with
-            the standard Python operations and need a faster implementation which is Jython.</para>
+        <para>Based on the selection, the component uses either a natively installed Python version
+            or the Java implementation Jython. This approach was selected on purpose because many
+            users use their own specific modules and want to use Python for this, others are
+            satisfied with the standard Python operations and need a faster implementation which is
+            Jython.</para>
         <para>Limitations:</para>
         <para>Only single file scripts are allowed, because the user's script contents are converted
-            into a temporary "wrapped" script, executed in the executor’s temporary directory. It's
+            into a temporary "wrapped" script, executed in the executor’s temporary directory. It is
             currently not possible to copy satellite files like modules or input data files to the
-            directory, where the script is residing.</para>
-        <para>The execution speed of the Python implementation is limited by the initial start-up
+            directory where the script is residing.</para>
+        <para>The execution speed of the Python implementation is dominated by the initial start-up
             time of the Python interpreter (or virtual machine, just-in-time compiler). Each script
             execution first wraps the user script into a temporary script file, then starts the
             Python executable in a new process and after that, processes the output bindings.</para>
@@ -47,7 +48,7 @@
                         used</para>
                 </listitem>
                 <listitem>
-                    <para>- No problems with library indexing as e.g. in Jython</para>
+                    <para>No problems with library indexing as e.g. in Jython</para>
                 </listitem>
             </itemizedlist></para>
     </sect1>
@@ -78,7 +79,7 @@
             <para>Examples:</para>
             <para>If you like to double an incoming value (x is an input of type Integer and y an
                 output of type
-                Integer):<programlisting>RCE.write_output("y", RCE.read_input(2 * x))</programlisting>If
+                Integer):<programlisting>RCE.write_output("y", RCE.read_input("x")*2)</programlisting>If
                 you like to access an incoming file (f_in is an input of type
                 File):<programlisting>file = open(RCE.read_input("f_in"),"r")</programlisting>If you
                 like to send a file to an output (f_out is an output of type
@@ -89,33 +90,34 @@ RCE.write_output("f_out", absolute_file_path)</programlisting>
                 command:<programlisting>RCE.close_output(String output_name)</programlisting>Example:<programlisting>RCE.close_output(“y”)</programlisting>The
                 following components will get the finished signal.</para>
             <para>If a script fails because of some invalid parameters sent by a Parametric Study or
-                Optimizer component, you can send a "not a value" signal to your output(s). It
-                indicates, that the script failed because of invalid parameters and did not fail at
-                all. This signal is ignored by most of the components, only the Parametric Study and
-                the Optimizer component handle this signal. For sending it, use
+                Optimizer component, you can send a "not a value" signal to your output(s). This
+                signal indicates that the script failed because of invalid parameters and did not
+                fail at all. This signal is ignored by most of the components, only the Parametric
+                Study and the Optimizer component handle this signal. For sending it, use
                 <programlisting>RCE.write_not_a_value_output(String outputname)</programlisting>For
                 the other API methods refer to the example workflow "Script_with_all_API_methods.wf"
-                from the workflow examples project.</para>
+                from the workflow examples project or to the script reference found <link
+                    linkend="scriptApiReference">below</link> and in the user guide.</para>
             </sect2>
         <sect2>
             <title>Script component states</title>
-            <para>The Script component can keep its state from one run to another. Use the API to
+            <para>The Script component is able to keep its state from one run to another. Use the API to
                 write and read state variables. The values are stored in a Python dictionary. They
                 must be compatible with the RCE data types. Script components of nested loops are
-                resetted if the nested loop has been terminated. Resetting a script component in a
+                reset if the nested loop has been terminated. Resetting a script component in a
                 nested loop also resets its state map.</para>
         </sect2>
         <sect2>
             <title>Python Executable</title>
             <para>If Python was chosen as script language, the path to the Python executable must be
-                chosen before as workflow start (in the second page of the workflow execution
-                dialog). It must be done for every Script component of the workflow. If they all
-                should use the same Python interpreter, the “Apply to all” button helps.</para>
+                chosen at workflow start (in the second page of the workflow execution
+                dialog). This must be done for every Script component of the workflow. If all components
+                shall use the same Python interpreter, the “Apply to all” button helps.</para>
         </sect2>
     </sect1>
     <sect1>
         <title><anchor id="scriptApiReference"/>Script API Reference</title>
-        <informaltable frame="none">
+        <informaltable frame="none" id="apiReferenceTable">
             <tgroup cols="2">
                 <colspec colname="c1" colnum="1" colwidth="1.0*"/>
                 <colspec colname="c2" colnum="2" colwidth="1.0*"/>

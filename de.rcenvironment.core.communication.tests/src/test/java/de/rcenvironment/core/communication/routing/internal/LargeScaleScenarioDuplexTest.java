@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,8 +21,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.testutils.TestConfiguration;
 import de.rcenvironment.core.communication.testutils.TestNetworkRequestHandler;
@@ -45,10 +45,9 @@ public class LargeScaleScenarioDuplexTest extends AbstractLargeScaleTest {
 
     private static final int DEFAULT_REQUEST_TIMEOUT = 10000;
 
-    // test size 5 for fast/standard testing, 10 for extended testing
-    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(5, 10);
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(3, 10);
 
-    private static final int EPOCHS = 3;
+    private static final int EPOCHS = CommonTestOptions.selectStandardOrExtendedValue(2, 3);
 
     /**
      * @throws Exception on uncaught exceptions

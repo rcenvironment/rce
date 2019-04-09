@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,11 +23,12 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.osgi.framework.BundleContext;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -38,8 +39,7 @@ import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListe
 import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
-import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
-import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -67,8 +67,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     protected static final String RELATIVE_PATH_TO_OUTPUT_ROOT = "output";
 
-    protected static final boolean PROPERTY_SUBSTITUTION_MECHANISM_ENABLED = false;
-
     protected static final String MAIN_CONFIGURATION_FILENAME = "configuration.json";
 
     protected static final String JDBC_SUBDIRECTORY_PATH = "extras/database_connectors";
@@ -94,9 +92,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     // injected listeners
     private final List<ConfigurationServiceMessageEventListener> errorListeners = new LinkedList<>();
-
-    // injected service (if used)
-    private DiscoveryBootstrapService discoveryBootstrapService;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -147,10 +142,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         initializeParentTempDirectoryRoot(generalSettings.getTempDirectoryOverride());
 
         initializeInstanceTempDirectoryRoot();
-
-        if (PROPERTY_SUBSTITUTION_MECHANISM_ENABLED) {
-            initializePropertySubstitution();
-        }
 
         unpackedFilesDirectoryResolver =
             new UnpackedFilesDirectoryResolver(context, getConfigurablePath(ConfigurablePathId.INSTALLATION_DATA_ROOT));
@@ -232,7 +223,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public boolean hasIntendedProfileDirectoryValidVersion() {
-        return bootstrapSettings.getOriginalProfile().hasValidVersion();
+        final Profile originalProfile = bootstrapSettings.getOriginalProfile();
+        try {
+            return originalProfile.hasCurrentVersion();
+        } catch (ProfileException e) {
+            log.error(String.format("Could not determine version of profile \"%s\".", originalProfile.getName()), e);
+            return false;
+        }
     }
 
     private void initializeProfileDirFromBootstrapSettings() {
@@ -336,9 +333,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         T configObject;
         if (configFile.exists()) {
             String fileContent = FileUtils.readFileToString(configFile);
-            if (PROPERTY_SUBSTITUTION_MECHANISM_ENABLED) {
-                fileContent = performSubstitutions(fileContent, configFile);
-            }
             if (fileContent.equals("")) {
                 return null;
             }
@@ -471,10 +465,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         if (exception != null) {
             throw exception;
         }
-    }
-
-    protected void bindDiscoveryBootstrapService(DiscoveryBootstrapService newService) {
-        this.discoveryBootstrapService = newService;
     }
 
     private void initializeParentTempDirectoryRoot(String parentTempDirectoryOverride) {
@@ -666,26 +656,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             throw new RuntimeException("Unexpected state: Failed to initialize profile sub-directory " + subDir.getAbsolutePath());
         }
         configurablePathMap.put(key, subDir);
-    }
-
-    private void initializePropertySubstitution() {
-        // TODO >6.0.0: review, then remove or rework
-        // add "platformProperties" as substitution values with a "platform:" prefix
-        // this.addSubstitutionProperties("platform",
-        // instanceConfiguration.getPlatformProperties());
-
-        // load the discovery configuration (may use "platform:" substitutions internally);
-        // bootstrapping this from the "outside" is necessary to prevent a cyclic dependency
-        // while making sure the discovery properties are injected before other bundles activate
-        log.debug("Initializing property substitution");
-        String discoveryBundleName = discoveryBootstrapService.getSymbolicBundleName();
-        DiscoveryConfiguration discoveryConfiguration = getConfiguration(discoveryBundleName, DiscoveryConfiguration.class);
-
-        // initialize discovery; may start a local discovery server and/or query existing servers
-        Map<String, String> discoveryProperties = discoveryBootstrapService.initializeDiscovery(discoveryConfiguration);
-
-        // register the properties learned from discovery (if any) under the "discovery" namespace
-        this.addSubstitutionProperties("discovery", discoveryProperties);
     }
 
     private File locateConfigurationFile(String fileName) {

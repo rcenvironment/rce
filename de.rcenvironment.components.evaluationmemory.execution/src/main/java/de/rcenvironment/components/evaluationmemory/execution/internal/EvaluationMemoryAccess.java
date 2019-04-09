@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -36,11 +36,13 @@ public interface EvaluationMemoryAccess {
      * 
      * @param inputValues values to evaluate
      * @param outputs outputs for evaluation results
-     * @return evaluation results if, <code>null</code> if no one exists for the given values
+     * @param tolerances The tolerances specifying the tolerance intervals around the inputs
+     * @param toleranceHandling an object specifying how tolerance intervals around input values should be handled
+     * @return evaluation results if they have been stored, <code>null</code> if none exist for the given values
      * @throws IOException if reading values from the memory file failed or values don't match the ones in the memory file
      */
     SortedMap<String, TypedDatum> getEvaluationResult(SortedMap<String, TypedDatum> inputValues,
-        SortedMap<String, DataType> outputs) throws IOException;
+        SortedMap<String, DataType> outputs, SortedMap<String, Double> tolerances, ToleranceHandling toleranceHandling) throws IOException;
 
     /**
      * 

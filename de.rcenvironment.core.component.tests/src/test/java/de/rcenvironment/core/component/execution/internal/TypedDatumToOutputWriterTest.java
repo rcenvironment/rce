@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
+import de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -75,7 +76,7 @@ public class TypedDatumToOutputWriterTest {
     @Test
     public void testWritingTypedDatumToNotConnectedOutput() {
 
-        EndpointDatumDispatcher epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatcher.class);
+        EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
         EasyMock.replay(epDispatcherMock);
 
         TypedDatumToOutputWriter outputWriter = createTypedDatumToOutputWriterTestInstance(epDispatcherMock);
@@ -97,7 +98,7 @@ public class TypedDatumToOutputWriterTest {
 
     private void testWritingTypedDatumToOutput(Long dmId) {
 
-        EndpointDatumDispatcher epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatcher.class);
+        EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
         Capture<EndpointDatum> epCapture1 = new Capture<>();
         epDispatcherMock.dispatchEndpointDatum(EasyMock.capture(epCapture1));
         Capture<EndpointDatum> epCapture2 = new Capture<>();
@@ -123,7 +124,7 @@ public class TypedDatumToOutputWriterTest {
         assertEquals(OUTP_COMP_EXE_ID, epCapture1.getValue().getOutputsComponentExecutionIdentifier());
         assertEquals(OUTP_COMP_LOGICAL_NODE_ID, epCapture1.getValue().getOutputsNodeId());
         assertEquals(WF_CTRL_EXE_ID, epCapture1.getValue().getWorkflowExecutionIdentifier());
-        assertEquals(WF_CTRL_LOGICAL_NODE_ID, epCapture1.getValue().getWorkflowNodeId());
+        assertEquals(WF_CTRL_LOGICAL_NODE_ID, epCapture1.getValue().getWorkflowControllerLocation());
         assertEquals(dmId, epCapture1.getValue().getDataManagementId());
     }
 
@@ -134,7 +135,7 @@ public class TypedDatumToOutputWriterTest {
     @Test
     public void testWritingTypedDatumToNotConnectedOutputConsideringTargetInput() {
 
-        EndpointDatumDispatcher epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatcher.class);
+        EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
         EasyMock.replay(epDispatcherMock);
 
         TypedDatumToOutputWriter outputWriter = createTypedDatumToOutputWriterTestInstance(epDispatcherMock);
@@ -156,7 +157,7 @@ public class TypedDatumToOutputWriterTest {
     @Test
     public void testWritingTypedDatumToConnectedOutputConsideringTargetInput() {
 
-        EndpointDatumDispatcher epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatcher.class);
+        EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
         Capture<EndpointDatum> epCapture = new Capture<>();
         epDispatcherMock.dispatchEndpointDatum(EasyMock.capture(epCapture));
         EasyMock.replay(epDispatcherMock);
@@ -175,12 +176,12 @@ public class TypedDatumToOutputWriterTest {
         assertEquals(OUTP_COMP_EXE_ID, epCapture.getValue().getOutputsComponentExecutionIdentifier());
         assertEquals(OUTP_COMP_LOGICAL_NODE_ID, epCapture.getValue().getOutputsNodeId());
         assertEquals(WF_CTRL_EXE_ID, epCapture.getValue().getWorkflowExecutionIdentifier());
-        assertEquals(WF_CTRL_LOGICAL_NODE_ID, epCapture.getValue().getWorkflowNodeId());
+        assertEquals(WF_CTRL_LOGICAL_NODE_ID, epCapture.getValue().getWorkflowControllerLocation());
         assertNull(epCapture.getValue().getDataManagementId());
 
     }
 
-    private TypedDatumToOutputWriter createTypedDatumToOutputWriterTestInstance(EndpointDatumDispatcher epDispatcherMock) {
+    private TypedDatumToOutputWriter createTypedDatumToOutputWriterTestInstance(EndpointDatumDispatchService epDispatcherMock) {
         ComponentExecutionRelatedInstances compExeRelatedInstances = new ComponentExecutionRelatedInstances();
         compExeRelatedInstances.compExeCtx = createComponentExecutionContextMock();
         TypedDatumToOutputWriter outputWriter = new TypedDatumToOutputWriter(compExeRelatedInstances);

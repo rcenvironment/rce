@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -37,24 +37,6 @@ public class LoginConfigurationTest extends TestCase {
     @Override
     public void tearDown() throws Exception {
         loginConfiguration = null;
-    }
-
-    /**
-     * Tests getting the certificate authorities set for success.
-     */
-    public void testGetCertificatePathForSuccess() {
-        String certificatePath = loginConfiguration.getCertificateFile();
-        assertNotNull(certificatePath);
-        assertTrue(certificatePath.equals(LoginTestConstants.USER_1_CERTIFICATE_FILENAME));
-    }
-
-    /**
-     * Tests getting the certificate revocation lists set for success.
-     */
-    public void testGetKeyPathForSuccess() {
-        String keyPath = loginConfiguration.getKeyFile();
-        assertNotNull(keyPath);
-        assertTrue(keyPath.equals(LoginTestConstants.USER_1_KEY_FILENAME));
     }
 
     /**

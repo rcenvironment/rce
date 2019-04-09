@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -101,7 +101,7 @@ public class ToolIntegrationDocumentationChooserDialog extends Dialog {
 
         DistributedComponentKnowledgeService componentKnowledgeService =
             serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class);
-        componentKnowledgeService.getCurrentComponentKnowledge().getAllInstallations();
+        componentKnowledgeService.getCurrentSnapshot().getAllInstallations();
 
         table = new Table(container, SWT.BORDER | SWT.FULL_SELECTION);
         table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -100,7 +100,7 @@ public class EncrypterComponent extends DefaultComponent {
                         // file
                         File incFile = new File(workingDirectory, "temp-file-" + UUID.randomUUID().toString());
                         dataManagementService.copyReferenceToLocalFile(((FileReferenceTD) input).getFileReference(),
-                            incFile, componentContext.getDefaultStorageNodeId());
+                            incFile, componentContext.getStorageNetworkDestination());
                         // read a file to a string using FileUtils
                         textToEncrypt += FileUtils.readFileToString(incFile) + "\n";
                     } catch (IOException e) {

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -33,6 +33,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ThreadHandler;
@@ -843,7 +844,7 @@ public class ComponentExecutorTest {
 
     private WorkflowGraph createWorkflowGraphMock() throws ComponentExecutionException {
         WorkflowGraph wfGraphMock = EasyMock.createStrictMock(WorkflowGraph.class);
-        EasyMock.expect(wfGraphMock.getLoopDriver(COMP_EXE_ID)).andReturn(null);
+        EasyMock.expect(wfGraphMock.getLoopDriver(new ComponentExecutionIdentifier(COMP_EXE_ID))).andReturn(null);
         EasyMock.replay(wfGraphMock);
         return wfGraphMock;
     }

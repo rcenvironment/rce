@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -29,12 +29,11 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Table;
@@ -53,6 +52,7 @@ import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart.ComponentStateFigureImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -190,7 +190,7 @@ public class ConsoleView extends ViewPart {
             // update dropdown boxes if needed
             if (snapshot.hasWorkflowListChanged()) {
                 String oldSelection = getWorkflowSelection();
-                String[] newList = convertToDisplayArray(snapshot.getWorkflowList());
+                String[] newList = convertToDisplayArray(snapshot.getWorkflowList(), "Workflows");
                 workflowCombo.setItems(newList);
                 // restore selection to same value, if possible
                 workflowCombo.select(INITIAL_SELECTION);
@@ -204,7 +204,7 @@ public class ConsoleView extends ViewPart {
             }
             if (snapshot.hasComponentListChanged()) {
                 String oldSelection = getComponentSelection();
-                String[] newList = convertToDisplayArray(snapshot.getComponentList());
+                String[] newList = convertToDisplayArray(snapshot.getComponentList(), "Components");
                 componentCombo.setItems(newList);
                 // restore selection to same value, if possible
                 componentCombo.select(INITIAL_SELECTION);
@@ -230,9 +230,9 @@ public class ConsoleView extends ViewPart {
             }
         }
 
-        private String[] convertToDisplayArray(Collection<String> input) {
+        private String[] convertToDisplayArray(Collection<String> input, String firstEntry) {
             String[] result = new String[input.size() + 1];
-            result[0] = Messages.all;
+            result[0] = StringUtils.format("[All %s]", firstEntry);
             int i = 1;
             for (String wf : input) {
                 result[i] = wf;
@@ -260,26 +260,15 @@ public class ConsoleView extends ViewPart {
 
     @Override
     public void createPartControl(Composite parent) {
-        parent.setLayout(new GridLayout(1, false));
-
         display = parent.getShell().getDisplay();
 
-        // filter = level selection, platform selection, and search text field
-        Composite filterComposite = new Composite(parent, SWT.NONE);
-        filterComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        filterComposite.setLayout(new RowLayout());
+        parent.setLayout(new GridLayout(3, false));
 
-        createLevelArrangement(filterComposite);
-        createWorkflowListingArrangement(filterComposite);
-        createComponentListingArrangement(filterComposite);
-        createSearchArrangement(filterComposite);
-
-        // sash = table and text display
-        Composite sashComposite = new Composite(parent, SWT.NONE);
-        sashComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        sashComposite.setLayout(new GridLayout(1, false));
-
-        createTableArrangement(sashComposite);
+        createWorkflowListingArrangement(parent);
+        createComponentListingArrangement(parent);
+        createSearchArrangement(parent);
+        createLevelArrangement(parent);
+        createTableArrangement(parent);
 
         // Triggers if the copy functions in context menu are enabled
         consoleRowTableViewer.getTable().addMenuDetectListener(new MenuDetectListener() {
@@ -298,11 +287,7 @@ public class ConsoleView extends ViewPart {
             public void keyReleased(KeyEvent arg0) {
                 rowFilter.setSearchTerm(searchTextField.getText());
                 applyNewRowFilter(true);
-                if (searchTextField.getText().equals("")) {
-                    deleteSearchButton.setEnabled(false);
-                } else {
-                    deleteSearchButton.setEnabled(true);
-                }
+                deleteSearchButton.setEnabled(!searchTextField.getText().equals(""));
             }
         });
 
@@ -462,10 +447,15 @@ public class ConsoleView extends ViewPart {
      * 
      * @param filterComposite Parent composite for the level selection options.
      */
-    private void createLevelArrangement(Composite filterComposite) {
-        RowLayout rowLayout = new RowLayout();
-        rowLayout.spacing = NO_SPACE;
-        filterComposite.setLayout(rowLayout);
+    private void createLevelArrangement(Composite parentComposite) {
+        Composite filterComposite = new Composite(parentComposite, SWT.NONE);
+        filterComposite.setLayout(new GridLayout(4, false));
+        GridData gd = new GridData(SWT.FILL, SWT.FILL, true, false);
+        gd.horizontalSpan = 3;
+        filterComposite.setLayoutData(gd);
+
+        Label label = new Label(filterComposite, SWT.NONE);
+        label.setText("Message Types: ");
 
         // meta info checkbox
         checkboxMetaInfo = new Button(filterComposite, SWT.CHECK);
@@ -488,15 +478,18 @@ public class ConsoleView extends ViewPart {
      * 
      * @param workflowComposite Parent composite for the platform selection options.
      */
-    private void createWorkflowListingArrangement(Composite workflowComposite) {
-        RowLayout rowLayout = new RowLayout();
-        rowLayout.spacing = NO_SPACE;
-        workflowComposite.setLayout(rowLayout);
+    private void createWorkflowListingArrangement(Composite parentComposite) {
+        Composite workflowComposite = new Composite(parentComposite, SWT.NONE);
+        workflowComposite.setLayout(new GridLayout());
 
         // workflow listing combo box
         workflowCombo = new Combo(workflowComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
         workflowCombo.select(INITIAL_SELECTION);
-        workflowCombo.setLayoutData(new RowData(WORKFLOW_WIDTH, SWT.DEFAULT));
+        GridData gd = new GridData();
+        gd.widthHint = WORKFLOW_WIDTH;
+        gd.horizontalIndent = 0;
+        gd.verticalIndent = 0;
+        workflowCombo.setLayoutData(gd);
     }
 
     /**
@@ -504,15 +497,18 @@ public class ConsoleView extends ViewPart {
      * 
      * @param componentComposite Parent composite for the platform selection options.
      */
-    private void createComponentListingArrangement(Composite componentComposite) {
-        RowLayout rowLayout = new RowLayout();
-        rowLayout.spacing = NO_SPACE;
-        componentComposite.setLayout(rowLayout);
+    private void createComponentListingArrangement(Composite parentComposite) {
+        Composite componentComposite = new Composite(parentComposite, SWT.NONE);
+        componentComposite.setLayout(new GridLayout());
 
         // compoenent listing combo box
         componentCombo = new Combo(componentComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
         componentCombo.select(INITIAL_SELECTION);
-        componentCombo.setLayoutData(new RowData(COMPONENT_WIDTH, SWT.DEFAULT));
+        GridData gd = new GridData();
+        gd.widthHint = COMPONENT_WIDTH;
+        gd.horizontalIndent = 0;
+        gd.verticalIndent = 0;
+        componentCombo.setLayoutData(gd);
     }
 
     /**
@@ -520,16 +516,19 @@ public class ConsoleView extends ViewPart {
      * 
      * @param searchComposite Parent composite for the search options.
      */
-    private void createSearchArrangement(Composite searchComposite) {
-        RowLayout rowLayout = new RowLayout();
-        rowLayout.spacing = 7;
-        searchComposite.setLayout(rowLayout);
+    private void createSearchArrangement(Composite parentComposite) {
+        Composite searchComposite = new Composite(parentComposite, SWT.NONE);
+        searchComposite.setLayout(new GridLayout(2, false));
 
         // search text field
         searchTextField = new Text(searchComposite, SWT.SEARCH);
         searchTextField.setMessage(Messages.search);
+        GridData gd = new GridData(SWT.FILL, SWT.FILL, false, false);
+        gd.widthHint = TEXT_WIDTH;
+        gd.horizontalIndent = 0;
+        gd.verticalIndent = 0;
+        searchTextField.setLayoutData(gd);
         searchTextField.setSize(TEXT_WIDTH, SWT.DEFAULT);
-        searchTextField.setLayoutData(new RowData(TEXT_WIDTH, SWT.DEFAULT));
 
         deleteSearchButton = new Button(searchComposite, SWT.BUTTON1);
         deleteSearchButton.setText(Messages.resetSearch);
@@ -543,13 +542,18 @@ public class ConsoleView extends ViewPart {
      * 
      * @param platformComposite Parent composite for log display and selection options.
      */
-    private void createTableArrangement(Composite tableComposite) {
+    private void createTableArrangement(Composite parent) {
+
+        Composite tableComposite = new Composite(parent, SWT.None);
         tableComposite.setLayout(new GridLayout());
+        GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+        gd.horizontalSpan = 3;
+        gd.horizontalIndent = 0;
+        gd.verticalIndent = 0;
+        tableComposite.setLayoutData(gd);
 
         // create table viewer
         consoleRowTableViewer = new TableViewer(tableComposite, SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.MULTI | SWT.VIRTUAL);
-        consoleRowTableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
         // create table header and column styles
         String[] titles = new String[] {
             Messages.type,
@@ -610,10 +614,10 @@ public class ConsoleView extends ViewPart {
 
         // set font & color
         table.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
-        table.setForeground(tableComposite.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+        table.setForeground(parent.getDisplay().getSystemColor(SWT.COLOR_BLACK));
 
         // create copy context menu
-        Menu contextMenu = new Menu(tableComposite);
+        Menu contextMenu = new Menu(parent);
         copyLineItem = new MenuItem(contextMenu, SWT.PUSH);
         copyMessageItem = new MenuItem(contextMenu, SWT.PUSH);
         copyMessageItem.setText(Messages.copyMessage + "\tCtrl+Alt+C");

@@ -319,6 +319,12 @@
 							<entry>Shows details about one workflow.</entry>
 						</row>
 						<row>
+							<entry>wf open &lt;workflow execution id></entry>
+							<entry>Opens a runtime viewer of a workflow. Requires GUI. When using SSH, this command is
+								only available to users with the role <emphasis role="italic"
+									>developer</emphasis>.</entry>
+						</row>
+						<row>
 							<entry>wf cancel &lt;workflow execution id></entry>
 							<entry>Cancels a running or paused workflow.</entry>
 						</row>
@@ -342,13 +348,17 @@
 									completed. Workflow file paths containing spaces must be
 									enclosed in double quotes ("...").</para>
 								<para>The "--delete" option defines the deletion behavior after workflow completion.
-									Deleting a workflow deletes all files in the data management of
-									it and releases certain resources that may or may not be used
-									after it has finished, for example data to be visualized in
+									Deleting a workflow deletes all of its files in the data
+									management and releases certain resources that may or may not be
+									used after it has finished, for example data to be visualized in
 									component's runtime views. The default of this setting is
 									"onfinished": The workflow is deleted if it terminates in state
 									"Finished" (which means normal completion without errors),
 									otherwise it is left unchanged for inspection.</para>
+								<para>The "--dispose" option defines the deletion behavior from the
+									workflow list. Disposing a workflow does not delete its data
+									from the data management. The default of this setting is
+									"onfinished".</para>
 								<para>The "--compact-output" option reduces this command's output as
 									much as possible, which is intended to simplify scripted calls
 									of this command. The first line printed will either be the
@@ -367,15 +377,15 @@
 								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
 								value file>] --basedir &lt;directory> &lt;workflow file>
 								[&lt;workflow file> ...]</entry>
-							<entry>Runs several workflows and creates a summary of which ones failed
-								and succeeded.<para>The "--pr" option defines how often the workflow
+							<entry>Runs several workflows and creates a summary of which ones failed and
+									succeeded.<para>The "--pr" option defines how often the workflow
 									is started in parallel. The "--sr" options defines how often the
 									workflow is started in serial. E.g. "--pr 5 --sr 3" starts the
 									workflow three times with five in parallel. If "*" is used with
 									the "--basedir" option or multiple workflow filenames are
 									passed, "--pr" and "--sr" are applied for each of the
-									workflows.</para><para>For the "--delete" and "-p" options
-									refer to "wf run" above.</para><para>The "--basedir
+									workflows.</para><para>For the "--delete", "dispose" and "-p"
+									options refer to "wf run" above.</para><para>The "--basedir
 									&lt;directory>" parameter specifies the directory containing the
 									workflow files. File paths containing spaces must be enclosed in
 									double quotes ("...").</para><para>The second parameter defines

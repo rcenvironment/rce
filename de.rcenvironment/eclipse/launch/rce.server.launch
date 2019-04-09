@@ -14,10 +14,10 @@
 <booleanAttribute key="default" value="true"/>
 <booleanAttribute key="includeOptional" value="true"/>
 <stringAttribute key="location" value="${workspace_loc}/../workspace-rce/server"/>
-<stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl en -consoleLog -console -clean -noSplash --launcher.XXMaxPermSize 256m --headless -p server"/>
+<stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-os ${target.os} -ws ${target.ws} -arch ${target.arch} -nl en -consoleLog -console -clean -noSplash --headless -p server"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.pde.ui.workbenchClasspathProvider"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Drce.profiles.parentDir=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/profiles}&quot;&#13;&#10;-Drce.installationData.rootDir=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/installation_data}&quot;&#13;&#10;-Dbundles.configuration.location=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/installation_data}&quot;&#13;&#10;-Declipse.vm=&quot;${system_property:eclipse.vm}&quot;&#13;&#10;-Xms512m&#10;&#13;&#10;-Xmx2048m&#10;&#13;&#10;-XX:MaxPermSize=256m&#13;&#10;&#10;-XX:+HeapDumpOnOutOfMemoryError&#13;&#10;&#10;-XX:ErrorFile=rce_error%p.log"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Drce.profiles.parentDir=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/profiles}&quot;&#13;&#10;-Drce.installationData.rootDir=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/installation_data}&quot;&#13;&#10;-Dbundles.configuration.location=&quot;${workspace_loc:de.rcenvironment/eclipse/launch/installation_data}&quot;&#13;&#10;-Declipse.vm=&quot;${system_property:eclipse.vm}&quot;&#13;&#10;-Xms512m&#10;&#13;&#10;-Xmx2048m&#10;&#13;&#10;&#10;&#10;-XX:+HeapDumpOnOutOfMemoryError&#13;&#10;&#10;-XX:ErrorFile=rce_error%p.log"/>
 <stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="${workspace_loc}/../workspace-rce/server"/>
 <stringAttribute key="pde.version" value="3.3"/>
 <stringAttribute key="product" value="de.rcenvironment.core.gui.start.product"/>

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -27,10 +27,13 @@ public class Messages extends NLS {
     public static String missingInput;
 
     /** Warning if placeholder cannot be matched. */
-    public static String unmatchedPlaceholder;
+    public static String unmatchedFormatPlaceholder;
 
     /** Warning if header placeholder cannot be matched. */
     public static String unmatchedHeaderPlaceholder;
+    
+    /** Warning if a syntax error has been found. */
+    public static String syntaxError;
 
     /** Warning if input is connected to no output. */
     public static String noOutputForInput;

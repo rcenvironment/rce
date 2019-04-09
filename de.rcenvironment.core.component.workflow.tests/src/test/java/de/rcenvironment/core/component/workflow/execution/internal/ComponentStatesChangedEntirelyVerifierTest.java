@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,7 +14,7 @@ import org.easymock.EasyMock;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.execution.api.ComponentState;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 /**
  * Tests for {@link ComponentStatesChangedEntirelyVerifier}.

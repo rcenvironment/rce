@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -86,7 +86,7 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 String identifier = getConfiguration().getComponentIdentifierWithVersion();
-                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier);
+                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier, false);
             }
 
             @Override

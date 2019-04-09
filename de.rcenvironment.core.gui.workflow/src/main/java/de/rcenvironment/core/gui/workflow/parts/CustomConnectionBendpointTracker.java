@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
- * 
- * All rights reserved
- * 
+ * Copyright (c) 2007 IBM Corporation and others
+ * Copyright 2016-2019 DLR, Germany
+ *  
+ * SPDX-License-Identifier: EPL-1.0
+ *   
  * http://www.rcenvironment.de/
  */
+
+package de.rcenvironment.core.gui.workflow.parts;
 
 /******************************************************************************
  * Code adapted from Graphical Modeling Framework's
  * org.eclipse.gmf.runtime.gef.ui.internal.tools.ConnectionBendpointTrackerEx
- * Downloaded: Feburary, 2016
+ * Downloaded: February, 2016
  * 
  * Copyright (c) 2007 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -20,8 +23,6 @@
  * Contributors:
  *    IBM Corporation - initial API and implementation 
  ****************************************************************************/
-
-package de.rcenvironment.core.gui.workflow.parts;
 
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
@@ -40,7 +41,8 @@ import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 /**
  * A derived ConnectionBendpointTracker that overrides the updateSourceRequest method allowing bendpoints to snap to grid.
  * 
-// * @author carson_li // Name commented out as checkstyle won't accept otherwise
+ * // * @author carson_li // Name commented out as checkstyle won't accept it otherwise
+ * 
  * @author Oliver Seebach
  */
 public class CustomConnectionBendpointTracker extends ConnectionBendpointTracker {

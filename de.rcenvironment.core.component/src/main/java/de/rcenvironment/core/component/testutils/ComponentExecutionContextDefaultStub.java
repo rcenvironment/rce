@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -15,6 +15,7 @@ import java.util.Map;
 import de.rcenvironment.core.communication.api.ServiceCallContext;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
@@ -30,27 +31,32 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
      * Default execution identifier.
      */
     public static final String COMP_EXE_ID = "comp-exe-id";
-    
+
     /**
      * Default workflow execution identifier.
      */
     public static final String WF_EXE_ID = "wf-exe-id";
-    
+
     /**
      * Default component instance name.
      */
     public static final String COMP_INSTANCE_NAME = "comp instance name";
-    
+
     /**
      * Default workflow instance name.
      */
     public static final String WF_INSTANCE_NAME = "wf instance name";
-    
+
     private static final long serialVersionUID = -984226139258729791L;
 
     @Override
     public String getExecutionIdentifier() {
         return COMP_EXE_ID;
+    }
+
+    @Override
+    public ComponentExecutionIdentifier getExecutionIdentifierAsObject() {
+        return new ComponentExecutionIdentifier(COMP_EXE_ID);
     }
 
     @Override
@@ -64,7 +70,12 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
     }
 
     @Override
-    public LogicalNodeId getDefaultStorageNodeId() {
+    public LogicalNodeId getStorageNodeId() {
+        return null;
+    }
+
+    @Override
+    public LogicalNodeId getStorageNetworkDestination() {
         return null;
     }
 

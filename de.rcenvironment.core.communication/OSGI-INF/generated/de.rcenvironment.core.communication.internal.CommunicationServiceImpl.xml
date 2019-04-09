@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" name="de.rcenvironment.core.communication.internal.CommunicationServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.communication.api.CommunicationService"/>
+      <provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider"/>
+   </service>
+   <reference bind="bindCommunicationManagementService" interface="de.rcenvironment.core.communication.management.CommunicationManagementService" name="CommunicationManagementService"/>
+   <reference bind="bindLiveNetworkIdResolutionService" interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService" name="LiveNetworkIdResolutionService"/>
+   <reference bind="bindLocalServiceResolver" interface="de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver" name="LocalServiceResolver"/>
+   <reference bind="bindNetworkRoutingService" interface="de.rcenvironment.core.communication.routing.NetworkRoutingService" name="NetworkRoutingService"/>
+   <reference bind="bindPlatformService" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService"/>
+   <reference bind="bindReliableRPCStreamService" interface="de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamService" name="ReliableRPCStreamService"/>
+   <reference bind="bindServiceProxyFactory" interface="de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory" name="ServiceProxyFactory"/>
+   <implementation class="de.rcenvironment.core.communication.internal.CommunicationServiceImpl"/>
+</scr:component>

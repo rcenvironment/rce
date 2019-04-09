@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -23,9 +23,9 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
-import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -37,11 +37,11 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 /**
  * Handles the connection to the subscription service and the retrieval of "missed" notifications.
  * 
+ * Note: Consider this broken. Not because of the code here but because of the {@link NotificationService} and lack of a reliable concept
+ * for event streams. --seid_do
+ * 
  * @author Doreen Seider
  * @author Robert Mischke
- * 
- * Note: Consider it as broken. Not because of the code here but because of the {@link NotificationService} and a missing, reliable
- * concept for event streams. --seid_do
  */
 public class GenericSubscriptionManager {
 
@@ -52,6 +52,8 @@ public class GenericSubscriptionManager {
     private final WorkflowHostService workflowHostService;
 
     private final CommunicationService communicationService;
+
+    private final DistributedNotificationService notificationService;
 
     private final Set<String> subscribedIds = new HashSet<String>();
 
@@ -64,12 +66,14 @@ public class GenericSubscriptionManager {
      * 
      * @param model the {@link WorkflowStateModel} to apply received events on
      * @param communicationService the {@link CommunicationService} instance to use
+     * @param notificationService the {@link DistributedNotificationService} instance to use
      */
     public GenericSubscriptionManager(GenericSubscriptionEventProcessor eventProcessor, CommunicationService communicationService,
-        WorkflowHostService workflowHostService) {
+        WorkflowHostService workflowHostService, DistributedNotificationService notificationService) {
         this.eventProcessor = eventProcessor;
         this.communicationService = communicationService;
         this.workflowHostService = workflowHostService;
+        this.notificationService = notificationService;
     }
 
     private Set<String> updateSubscribedIds() {
@@ -100,9 +104,6 @@ public class GenericSubscriptionManager {
 
         final Set<String> missingSubscribedIds = updateSubscribedIds();
 
-        // TODO (p2) deprecated
-        final SimpleNotificationService sns = new SimpleNotificationService();
-
         final CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
 
         for (final String missingId : missingSubscribedIds) {
@@ -114,11 +115,11 @@ public class GenericSubscriptionManager {
                     @Override
                     @TaskDescription("Distributed console/input model notification subscriptions")
                     public Void call() throws Exception {
-                        Map<String, Long> lastMissedNumbers = sns.subscribe(
+                        Map<String, Long> lastMissedNumbers = notificationService.subscribe(
                             StringUtils.format("%s%s:" + NOTIFICATION_PATTERN_WILDCARD, notificationIdPrefix,
                                 targetWorkflowHostNode.getInstanceNodeIdString()),
                             eventProcessor, targetWorkflowHostNode);
-                        retrieveMissedNotifications(sns, targetWorkflowHostNode, lastMissedNumbers);
+                        retrieveMissedNotifications(targetWorkflowHostNode, lastMissedNumbers);
                         synchronized (subscribedIds) {
                             subscribedIds.add(missingId);
                         }
@@ -152,8 +153,8 @@ public class GenericSubscriptionManager {
         });
     }
 
-    private void retrieveMissedNotifications(SimpleNotificationService sns,
-        InstanceNodeSessionId targetNode, Map<String, Long> lastMissedNumbers) throws RemoteOperationException {
+    private void retrieveMissedNotifications(InstanceNodeSessionId targetNode, Map<String, Long> lastMissedNumbers)
+        throws RemoteOperationException {
 
         for (String notifId : lastMissedNumbers.keySet()) {
             Long lastMissedNumber = lastMissedNumbers.get(notifId);
@@ -162,7 +163,7 @@ public class GenericSubscriptionManager {
                 if (verboseLogging) {
                     log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, targetNode));
                 }
-                Map<String, List<Notification>> storedNotifications = sns.getNotifications(notifId, targetNode);
+                Map<String, List<Notification>> storedNotifications = notificationService.getNotifications(notifId, targetNode);
                 if (verboseLogging) {
                     log.debug(StringUtils.format("Received %d stored notification entries for id %s from node %s",
                         storedNotifications.size(), notifId, targetNode));

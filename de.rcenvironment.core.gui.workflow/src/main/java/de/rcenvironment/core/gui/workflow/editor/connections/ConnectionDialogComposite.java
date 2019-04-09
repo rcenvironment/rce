@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -52,6 +52,7 @@ import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
@@ -303,19 +304,19 @@ public class ConnectionDialogComposite extends Composite {
         }
     }
 
-    private static String getDataString(String nodeId, String endpointName) {
-        return nodeId + SLASH + endpointName;
+    private static String getDataString(WorkflowNodeIdentifier nodeId, String endpointName) {
+        return nodeId.toString() + SLASH + endpointName;
     }
 
     private static String getDataString(Endpoint endpoint) {
-        return getDataString(endpoint.getWorkflowNode().getIdentifier(), endpoint.getEndpointDescription().getName());
+        return getDataString(endpoint.getWorkflowNode().getIdentifierAsObject(), endpoint.getEndpointDescription().getName());
     }
 
     private static String getDataString(WorkflowNode workflowNode) {
         StringBuffer data = new StringBuffer();
         for (EndpointDescription endpointDesc : workflowNode.getComponentDescription().getOutputDescriptionsManager()
             .getEndpointDescriptions()) {
-            data.append(getDataString(workflowNode.getIdentifier(), endpointDesc.getName()) + SEMICOLON);
+            data.append(getDataString(workflowNode.getIdentifierAsObject(), endpointDesc.getName()) + SEMICOLON);
         }
         return new String(data);
     }
@@ -323,7 +324,7 @@ public class ConnectionDialogComposite extends Composite {
     private boolean performEndpointDrop(String sourceNodeId, String sourceEndpointName, Object targetObject) {
         WorkflowNode sourceNode = null;
         for (final WorkflowNode node : workflowDescription.getWorkflowNodes()) {
-            if (node.getIdentifier().equals(sourceNodeId)) {
+            if (node.getIdentifierAsObject().toString().equals(sourceNodeId)) {
                 sourceNode = node;
                 break;
             }
@@ -380,8 +381,8 @@ public class ConnectionDialogComposite extends Composite {
         // check connections for already existent bendpoints between the two nodes
         List<Location> alreadyExistentBendpoints = new ArrayList<>();
         for (Connection connection : workflowDescription.getConnections()) {
-            if ((connection.getSourceNode().getIdentifier().equals(sourceNode.getIdentifier())
-                && connection.getTargetNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier()))) {
+            if ((connection.getSourceNode().getIdentifierAsObject().equals(sourceNode.getIdentifierAsObject())
+                && connection.getTargetNode().getIdentifierAsObject().equals(targetEndpoint.getWorkflowNode().getIdentifierAsObject()))) {
                 alreadyExistentBendpoints = connection.getBendpoints();
                 break;
             } 
@@ -918,7 +919,7 @@ public class ConnectionDialogComposite extends Composite {
                 String sourceComponent = candidate.split(SLASH)[0];
                 String sourceEndpoint = candidate.split(SLASH)[1];
                 DataType sourceDataType =
-                    workflowDescription.getWorkflowNode(sourceComponent).getOutputDescriptionsManager()
+                    workflowDescription.getWorkflowNode(new WorkflowNodeIdentifier(sourceComponent)).getOutputDescriptionsManager()
                         .getEndpointDescription(sourceEndpoint).getDataType();
                 DataType targetDataType = targetEndpoint.getDataType();
                 boolean typeCompatible = (datumConverter.isConvertibleTo(sourceDataType, targetDataType))

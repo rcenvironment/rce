@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,8 +11,10 @@ package de.rcenvironment.core.communication.testutils;
 import java.util.Set;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 
 /**
@@ -38,9 +40,17 @@ public class CommunicationServiceDefaultStub implements CommunicationService {
     }
 
     @Override
-    public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
+    public <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) {
         return null;
     }
+
+    @Override
+    public ReliableRPCStreamHandle createReliableRPCStream(ResolvableNodeId targetNodeId) {
+        return null;
+    }
+
+    @Override
+    public void closeReliableRPCStream(ReliableRPCStreamHandle session) {}
 
     @Override
     public String getFormattedNetworkInformation(String type) {

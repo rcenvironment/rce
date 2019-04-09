@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -38,7 +38,7 @@ import de.rcenvironment.components.excel.common.ExcelAddress;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.SimpleExcelService;
+import de.rcenvironment.components.excel.common.ExcelServiceAccess;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -99,7 +99,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                             try {
                                 monitor.beginTask("Starting", IProgressMonitor.UNKNOWN);
 
-                                ExcelService excelService = new SimpleExcelService();
+                                ExcelService excelService = ExcelServiceAccess.get();
 
                                 String excelFile =
                                     getConfiguration().getConfigurationDescription()
@@ -224,7 +224,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                 .getConfigurationValue(ExcelComponentConstants.XL_FILENAME);
         final File xlFile = ExcelUtils.getAbsoluteFile(excelFile);
 
-        ExcelService excelService = new SimpleExcelService();
+        ExcelService excelService = ExcelServiceAccess.get();
         if (excelFile != null && !excelFile.isEmpty() && excelService.isValidExcelFile(xlFile)) {
             EndpointEditDialog dialog =
                 new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
@@ -282,7 +282,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         public void paintControl(PaintEvent event) {
             String excelFile = getConfiguration().getConfigurationDescription()
                 .getConfigurationValue(ExcelComponentConstants.XL_FILENAME);
-            ExcelService excelService = new SimpleExcelService();
+            ExcelService excelService = ExcelServiceAccess.get();
             File xlFile = ExcelUtils.getAbsoluteFile(excelFile);
             if (excelFile == null || excelFile.isEmpty() || !excelService.isValidExcelFile(xlFile)) {
                 buttonToEnable.setEnabled(false);

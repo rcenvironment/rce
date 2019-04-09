@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,7 +9,6 @@
 package de.rcenvironment.core.component.model.api;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 
@@ -39,10 +38,9 @@ public class ComponentInstallationBuilder {
         ComponentInstallationBuilder componentInstallationBuilder = new ComponentInstallationBuilder();
         componentInstallationBuilder.setInstallationId(templateComponentInstallation.getInstallationId());
         componentInstallationBuilder.setComponentRevision((ComponentRevisionImpl) templateComponentInstallation.getComponentRevision());
-        componentInstallationBuilder.setIsPublished(templateComponentInstallation.getIsPublished());
         componentInstallationBuilder.setMaximumCountOfParallelInstances(templateComponentInstallation.getMaximumCountOfParallelInstances());
-        componentInstallationBuilder
-            .setNodeId(NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(templateComponentInstallation.getNodeId()));
+        // note: id objects are immutable, so it is safe to copy them
+        componentInstallationBuilder.setNodeId(templateComponentInstallation.getNodeIdObject());
         return componentInstallationBuilder;
     }
 
@@ -70,11 +68,7 @@ public class ComponentInstallationBuilder {
      */
     public ComponentInstallationBuilder setNodeId(LogicalNodeId nodeId) {
         // Can be null in case of local node.
-        if (nodeId != null) {
-            componentInstallation.setNodeIdFromObject(nodeId);
-        } else {
-            componentInstallation.setNodeId((String) null);
-        }
+        componentInstallation.setNodeIdObject(nodeId);
         return this;
     }
 
@@ -84,16 +78,6 @@ public class ComponentInstallationBuilder {
      */
     public ComponentInstallationBuilder setMaximumCountOfParallelInstances(Integer maximumCountOfParallelInstances) {
         componentInstallation.setMaximumCountOfParallelInstances(maximumCountOfParallelInstances);
-        return this;
-    }
-
-    /**
-     * @param isPublished <code>true</code> if {@link ComponentInstallation} is published (is made available for remote nodes), otherwise
-     *        <code>false</code>
-     * @return builder object for method chaining purposes
-     */
-    public ComponentInstallationBuilder setIsPublished(boolean isPublished) {
-        componentInstallation.setIsPublished(isPublished);
         return this;
     }
 

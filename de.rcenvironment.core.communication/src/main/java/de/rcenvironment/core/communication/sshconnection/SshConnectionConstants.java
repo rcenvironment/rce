@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,14 +17,19 @@ package de.rcenvironment.core.communication.sshconnection;
 public final class SshConnectionConstants {
 
     /**
-     * Name of the node for SSH passwords in the secure store.
+     * Name of the node for SSH passwords in the secure storage.
      */
     public static final String SSH_CONNECTIONS_PASSWORDS_NODE = "SSHConnectionsPasswords";
     
     /**
      * Required protocol version, for compatibility checking.
      */
-    public static final String REQUIRED_PROTOCOL_VERSION = "8.0.0";
+    public static final String REQUIRED_PROTOCOL_VERSION = "9.0.0";
+    
+    /**
+     * Delay before retrying to connect SSH connection.
+     */
+    public static final int DELAY_BEFORE_RETRY = 5000;
 
     private SshConnectionConstants(){}
 }

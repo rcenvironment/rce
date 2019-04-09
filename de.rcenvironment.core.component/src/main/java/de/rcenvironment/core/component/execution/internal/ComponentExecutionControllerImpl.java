@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.execution.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionController;
@@ -26,26 +27,28 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  * Implementation of {@link ComponentExecutionController}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ComponentExecutionControllerImpl implements ComponentExecutionController {
 
     private static final Log LOG = LogFactory.getLog(ComponentExecutionControllerImpl.class);
 
-    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(ComponentExecutionControllerImpl.class);
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled("WorkflowExecution");
 
     private static ComponentExecutionRelatedInstancesFactory compExeInstancesFactory;
 
     private ComponentExecutionRelatedInstances compExeRelatedInstances;
 
     private String compInstanceName;
-    
+
     private Object verifyLock = new Object();
 
-    @Deprecated
+    @Deprecated // only for use by test code
     public ComponentExecutionControllerImpl() {}
 
     public ComponentExecutionControllerImpl(ComponentExecutionContext compExeCtx,
-        WorkflowExecutionControllerCallbackService wfExeCtrlBridge, long currentTimestampOffWorkflowNode) {
+        WorkflowExecutionControllerCallbackService wfExeCtrlBridge, NetworkDestination wfStorageNetworkDestination,
+        long currentTimestampOffWorkflowNode) {
         this.compInstanceName = compExeCtx.getInstanceName();
         int timestampOffsetToWorkfowNode = (int) (currentTimestampOffWorkflowNode - System.currentTimeMillis());
 
@@ -53,12 +56,12 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         compExeRelatedInstances.compExeCtx = compExeCtx;
         compExeRelatedInstances.timestampOffsetToWorkfowNode = timestampOffsetToWorkfowNode;
         compExeRelatedInstances.wfExeCtrlBridge = wfExeCtrlBridge;
+        compExeRelatedInstances.wfStorageNetworkDestination = wfStorageNetworkDestination;
 
         compExeRelatedInstances.compExeStorageBridge =
             compExeInstancesFactory.createComponentExecutionStorageBridge(compExeRelatedInstances);
         compExeRelatedInstances.compStateMachine = compExeInstancesFactory.createComponentStateMachine(compExeRelatedInstances);
         compExeRelatedInstances.compExeScheduler = compExeInstancesFactory.createComponentExecutionScheduler(compExeRelatedInstances);
-
     }
 
     @Override
@@ -127,7 +130,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED,
                 new ComponentExecutionException(StringUtils.format("Failed to send output value to input '%s' of '%s' at %s",
                     endpointDatum.getInputName(), endpointDatum.getInputsComponentInstanceName(),
-                    endpointDatum.getInputsNodeId()), e)));
+                    endpointDatum.getDestinationNodeId()), e)));
     }
 
     @Override
@@ -167,7 +170,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     protected void bindComponentExecutionRelatedInstancesFactory(ComponentExecutionRelatedInstancesFactory newService) {
         ComponentExecutionControllerImpl.compExeInstancesFactory = newService;
     }
-    
+
     protected ComponentExecutionRelatedInstances geComponentExecutionRelatedInstances() {
         return compExeRelatedInstances;
     }

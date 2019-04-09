@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -49,7 +49,7 @@ public class InputSection extends AbstractInputSection {
         componentNameToIdMapping = new HashMap<String, String>();
         for (WorkflowNode workflowNode : wfExeInfo.getWorkflowDescription().getWorkflowNodes()) {
             ComponentExecutionInformation componentExecutionInformation =
-                wfExeInfo.getComponentExecutionInformation(workflowNode.getIdentifier());
+                wfExeInfo.getComponentExecutionInformation(workflowNode.getIdentifierAsObject());
             componentNameToIdMapping.put(componentExecutionInformation.getInstanceName(),
                 componentExecutionInformation.getExecutionIdentifier());
         }

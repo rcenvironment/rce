@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -36,6 +36,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
@@ -53,6 +54,8 @@ public class NotificationServiceImpl implements NotificationService {
     private static final boolean TOPIC_STATISTICS_ENABLED = false;
 
     private static final boolean FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING = false;
+
+    private static final String VERBOSE_LOG_OUTPUT_SEPARATOR = " / ";
 
     /**
      * Helper class to hold local information about subscribers. This includes a set of the subscribed topics, and a {@link BatchAggregator}
@@ -142,6 +145,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private static final Log LOGGER = LogFactory.getLog(NotificationServiceImpl.class);
 
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled("Notifications");
+
     /** Local topics. */
     private Map<String, NotificationTopic> topics = Collections.synchronizedMap(new HashMap<String, NotificationTopic>());
 
@@ -204,6 +209,10 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public <T extends Serializable> void send(final String notificationId, final T notificationBody) {
+
+        if (verboseLogging) {
+            LOGGER.debug("send(): " + notificationId + VERBOSE_LOG_OUTPUT_SEPARATOR + notificationBody);
+        }
 
         if (FEATURE_FLAG_USE_ASYNCHRONOUS_SENDING) {
 
@@ -288,8 +297,11 @@ public class NotificationServiceImpl implements NotificationService {
     @AllowRemoteAccess
     public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber) {
 
-        Map<String, Long> lastNumbers = new HashMap<String, Long>();
+        if (verboseLogging) {
+            LOGGER.debug("incoming subscribe(): " + notificationId + VERBOSE_LOG_OUTPUT_SEPARATOR + subscriber);
+        }
 
+        Map<String, Long> lastNumbers = new HashMap<String, Long>();
         NotificationTopic topic;
 
         synchronized (topics) {
@@ -320,6 +332,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @AllowRemoteAccess
     public void unsubscribe(String notificationId, NotificationSubscriber subscriber) {
+
+        if (verboseLogging) {
+            LOGGER.debug("incoming unsubscribe(): " + notificationId + VERBOSE_LOG_OUTPUT_SEPARATOR + subscriber);
+        }
 
         synchronized (topics) {
             NotificationTopic topic = getNotificationTopic(notificationId);

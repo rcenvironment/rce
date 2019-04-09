@@ -2,9 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Instance Management Tests
 Bundle-SymbolicName: de.rcenvironment.core.instancemanagement.tests
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.instancemanagement
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.configuration.testutils,
  de.rcenvironment.core.utils.common
 Require-Bundle: de.rcenvironment.core.utils.testing;bundle-version="6.2.0"
+Bundle-Vendor: DLR

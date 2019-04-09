@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import static org.junit.Assert.assertEquals;
@@ -22,12 +22,14 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionC
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccessStub;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
 
 /**
  * Tests for {@link WorkflowStateMachine} (uncompleted).
  *
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class WorkflowStateMachineTest {
 
@@ -57,19 +59,20 @@ public class WorkflowStateMachineTest {
         EasyMock.replay(wfExeCtxMock);
         WorkflowStateMachineContext wfStateMachineCtxMock = EasyMock.createStrictMock(WorkflowStateMachineContext.class);
         EasyMock.expect(wfStateMachineCtxMock.getWorkflowExecutionContext()).andStubReturn(wfExeCtxMock);
+        EasyMock.expect(wfStateMachineCtxMock.getServiceRegistryAccess()).andReturn(new ServiceRegistryAccessStub(false));
         EasyMock.replay(wfStateMachineCtxMock);
         WorkflowStateMachine machine = new WorkflowStateMachine(wfStateMachineCtxMock);
         assertEquals(WorkflowState.INIT, machine.getState());
     }
-    
+
     /**
      * Tests if each {@link WorkflowStateMachineEvent} is covered by an {@link WorkflowStateMachine.EventProcessorEventProcessor}.
+     * 
      * @throws StateChangeException on unexpected error
      */
     @Test
     public void testEventProcessorsInitialization() throws StateChangeException {
-        @SuppressWarnings("deprecation")
-        WorkflowStateMachine wfStateMachine = new WorkflowStateMachine();
+        @SuppressWarnings("deprecation") WorkflowStateMachine wfStateMachine = new WorkflowStateMachine();
         wfStateMachine.initializeEventProcessors();
         for (WorkflowStateMachineEventType eventType : EnumUtils.getEnumList(WorkflowStateMachineEventType.class)) {
             assertTrue(wfStateMachine.eventProcessors.containsKey(eventType));

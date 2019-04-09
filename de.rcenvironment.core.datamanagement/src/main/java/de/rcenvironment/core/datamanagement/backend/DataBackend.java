@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,6 +16,7 @@ import java.util.UUID;
  * 
  * @author Sandra Schroedter
  * @author Juergen Klein
+ * @author Brigitte Boden
  */
 public interface DataBackend {
 
@@ -47,6 +48,16 @@ public interface DataBackend {
     long put(URI location, Object object);
 
     /**
+     * Stores the given {@link Object} at the given location.
+     * 
+     * @param location Location where object is stored.
+     * @param object Object to store.
+     * @param alreadyCompressed if the object is already a compressed file (no compression will be applied)
+     * @return size of the stored object.
+     */
+    long put(URI location, Object object, boolean alreadyCompressed);
+
+    /**
      * Deletes the object at the given location.
      * 
      * @param location Location of object to delete.
@@ -58,7 +69,19 @@ public interface DataBackend {
      * Returns the object saved at the given location.
      * 
      * @param location Location if object to return.
+     * is stored in compressed form.
      * @return object at location.
      */
     Object get(URI location);
+
+    /**
+     * Returns the object saved at the given location.
+     * 
+     * @param location Location if object to return.
+     * @param decompress if set to true (default), the decompressed version of the object will be returned, if it 
+     * is stored in compressed form.
+     * @return object at location.
+     */
+    Object get(URI location, boolean decompress);
+    
 }

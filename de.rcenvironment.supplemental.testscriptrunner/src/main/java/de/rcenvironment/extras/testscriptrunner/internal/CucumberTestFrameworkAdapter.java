@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -45,6 +45,7 @@ import cucumber.runtime.java.picocontainer.PicoFactory;
 import cucumber.runtime.model.CucumberFeature;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioExecutionContext;
 
 /**
  * A wrapper around the Cucumber BDD test framework to encapsulate various setup, classloader and file location issues. It is intended to
@@ -150,8 +151,8 @@ public class CucumberTestFrameworkAdapter {
     public ExecutionResult executeTestScripts(File scriptLocationRoot, String tagNameSelection, TextOutputReceiver outputReceiver,
         String buildUnderTestId, File reportDir) throws IOException {
 
+        // TODO (p2) check whether this can be reworked to use an individual file per run; this would enable parallel runs
         final String reportDirUriString = reportDir.toURI().toASCIIString();
-
         File reportFile = new File(reportDir, "plain.txt");
         if (reportFile.isFile()) {
             reportFile.delete(); // ignore return value; result is checked below, along with potential existence as directory
@@ -221,7 +222,7 @@ public class CucumberTestFrameworkAdapter {
         final PrintStream outputWriter = new PrintStream(outputBuffer, false, "UTF-8");
         System.setOut(outputWriter);
 
-        TestScenarioExecutionContext.setThreadLocalParameters(outputReceiver, buildUnderTestId);
+        TestScenarioExecutionContext.setThreadLocalParameters(outputReceiver, buildUnderTestId, scriptLocationRoot);
         try {
             runtime.run();
         } finally {

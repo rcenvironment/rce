@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -275,23 +275,17 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     private void spawnBlockingRequestResponseTask(final NetworkRequest request, final MessageChannelResponseHandler responseHandler,
         final int timeoutMsec) {
         // note: old approach
-        threadPool.execute(new Runnable() {
-
-            @Override
-            @TaskDescription("JMS Network Transport: blocking request/response")
-            public void run() {
-                // check if channel was closed or marked as broken in the meantime
-                if (!isReadyToUse()) {
-                    NetworkResponse response =
-                        NetworkResponseFactory.generateResponseForCloseOrBrokenChannelDuringRequestDelivery(request, localNodeId, null);
-                    responseHandler.onResponseAvailable(response);
-                    return;
-                }
-
-                performBlockingRequestResponse(request, responseHandler, timeoutMsec);
+        threadPool.execute("JMS Network Transport: blocking request/response", () -> {
+            // check if channel was closed or marked as broken in the meantime
+            if (!isReadyToUse()) {
+                NetworkResponse response =
+                    NetworkResponseFactory.generateResponseForCloseOrBrokenChannelDuringRequestDelivery(request, localNodeId, null);
+                responseHandler.onResponseAvailable(response);
+                return;
             }
 
-        }, request.getRequestId());
+            performBlockingRequestResponse(request, responseHandler, timeoutMsec);
+        });
     }
 
     private void performBlockingRequestResponse(final NetworkRequest request, final MessageChannelResponseHandler responseHandler,

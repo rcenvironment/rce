@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -94,7 +94,7 @@ public final class NodeIdentifierContextHolder {
      * 
      * @param newInstance the new service instance
      */
-    public static synchronized void bindNodeIdentifierService(NodeIdentifierService newInstance) {
+    public synchronized void bindNodeIdentifierService(NodeIdentifierService newInstance) {
         if (defaultNodeIdentifierService != null) {
             // ensure only one static service is ever called for consistency
             throw new IllegalStateException("Tried to set a NodeIdentifierService instance, but it was already defined");

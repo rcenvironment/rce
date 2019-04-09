@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -51,19 +51,29 @@ public class WorkflowGraph implements Serializable {
 
     private static final long serialVersionUID = -2028814913500870207L;
 
-    // execution identifier of node -> WorkflowGraphNode
-    private final Map<String, WorkflowGraphNode> nodes;
+    private final Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes;
 
     // identifier created by WorkflowGraph#createEdgeIdentifier -> set of WorkflowGraphEdge
-    private final Map<String, Set<WorkflowGraphEdge>> edges;
+    // All Edges which have the same source component and the same output belong to the same set, even if they have different target nodes.
+    // map from an created edge key to its WorkflowGraphEdge
+    private final Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
 
-    private final Map<String, Map<String, Set<Deque<WorkflowGraphHop>>>> determinedHopsToDriverOnFailure = new HashMap<>();
+    private final Map<ComponentExecutionIdentifier, Map<String, Set<Deque<WorkflowGraphHop>>>> determinedHopsToDriverOnFailure =
+        new HashMap<>();
 
-    private final Map<String, WorkflowGraphNode> determinedDriverNodes = new HashMap<>();
+    private final Map<ComponentExecutionIdentifier, WorkflowGraphNode> determinedDriverNodes = new HashMap<>();
 
-    public WorkflowGraph(Map<String, WorkflowGraphNode> nodes, Map<String, Set<WorkflowGraphEdge>> edges) {
+    // TODO this internal map should be created within the constructor and not handed into the constructor
+    public WorkflowGraph(Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes, Set<WorkflowGraphEdge> edgeSet) {
         this.nodes = nodes;
-        this.edges = edges;
+
+        for (WorkflowGraphEdge edge : edgeSet) {
+            String edgeKey = WorkflowGraph.createEdgeKey(edge);
+            if (!edges.containsKey(edgeKey)) {
+                edges.put(edgeKey, new HashSet<WorkflowGraphEdge>());
+            }
+            edges.get(edgeKey).add(edge);
+        }
     }
 
     /**
@@ -75,7 +85,7 @@ public class WorkflowGraph implements Serializable {
      * @param startNodeExecutionId execution identifier of the node that need to reset its loop
      * @return {@link Deque}s of {@link WorkflowGraphHop}s to traverse for each output of the node that need to reset its loop
      */
-    public synchronized Set<Deque<WorkflowGraphHop>> getHopsToTraverseWhenResetting(String startNodeExecutionId) {
+    public synchronized Set<Deque<WorkflowGraphHop>> getHopsToTraverseWhenResetting(ComponentExecutionIdentifier startNodeExecutionId) {
         // A set of node that stores all visited nodes during the recursive calculation of the hops to traverse for resetting a nested loop.
         Set<WorkflowGraphNode> alreadyVisitedNodes = new HashSet<>();
 
@@ -105,15 +115,16 @@ public class WorkflowGraph implements Serializable {
 
             // check if the first node and the last node in the queue are the same. if this is not the case we need to add a dummy hop with
             // an unreachable target node, to work around a sanity check in ComponentExecutionScheduler.handleInternalEndpointDatumAdded()
-            String firstExeId = edgeList.get(0).getSourceExecutionIdentifier();
-            String lastExeId = edgeList.get(edgeList.size() - 1).getTargetExecutionIdentifier();
+            ComponentExecutionIdentifier firstExeId = edgeList.get(0).getSourceExecutionIdentifier();
+            ComponentExecutionIdentifier lastExeId = edgeList.get(edgeList.size() - 1).getTargetExecutionIdentifier();
             if (firstExeId.equals(lastExeId)) {
                 hopsDequesSnapshot.add(deque);
             } else {
 
                 // hopOutputName must not be a existing outputName!
                 String dummyHopOuputName = DUMMY + UUID.randomUUID().toString();
-                String dummyTargetExecutionIdentifier = DUMMY + UUID.randomUUID().toString();
+                ComponentExecutionIdentifier dummyTargetExecutionIdentifier =
+                    new ComponentExecutionIdentifier(DUMMY + UUID.randomUUID().toString());
                 String dummyTargetInputName = DUMMY + UUID.randomUUID().toString();
 
                 WorkflowGraphHop nextHop =
@@ -207,7 +218,7 @@ public class WorkflowGraph implements Serializable {
      * 
      * @throws ComponentExecutionException if searching for driver node fails (might be an user error)
      */
-    public Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseOnFailure(String startNodeEecutionId)
+    public Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseOnFailure(ComponentExecutionIdentifier startNodeEecutionId)
         throws ComponentExecutionException {
 
         Map<String, Set<Deque<WorkflowGraphHop>>> hopsDequesPerOutput;
@@ -250,7 +261,7 @@ public class WorkflowGraph implements Serializable {
      * @throws ComponentExecutionException if searching for driver node fails (might be an user error)
      */
     // TODO review the kind of exception: when is it thrown? is it caused by an user or only a developer error?
-    public WorkflowGraphNode getLoopDriver(String executionIdentifier) throws ComponentExecutionException {
+    public WorkflowGraphNode getLoopDriver(ComponentExecutionIdentifier executionIdentifier) throws ComponentExecutionException {
 
         if (!determinedDriverNodes.containsKey(executionIdentifier)) {
             getHopsToTraverseOnFailure(executionIdentifier);
@@ -259,8 +270,9 @@ public class WorkflowGraph implements Serializable {
         return determinedDriverNodes.get(executionIdentifier);
     }
 
-    private Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseToGetToLoopDriver(String startNodeExecutionId,
-        EndpointCharacter startEnpointCharacter, Map<String, Map<String, Set<Deque<WorkflowGraphHop>>>> alreadyDeterminedHops,
+    private Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseToGetToLoopDriver(ComponentExecutionIdentifier startNodeExecutionId,
+        EndpointCharacter startEnpointCharacter,
+        Map<ComponentExecutionIdentifier, Map<String, Set<Deque<WorkflowGraphHop>>>> alreadyDeterminedHops,
         boolean isResetSearch) throws ComponentExecutionException {
 
         synchronized (alreadyDeterminedHops) {
@@ -487,15 +499,15 @@ public class WorkflowGraph implements Serializable {
         DotFileBuilder builder = GraphvizUtils.createDotFileBuilder("wf_graph");
         // TODO properties should be set more efficiently (e.g., by defining shape, font size etc. as global properties of the digraph)
         for (WorkflowGraphNode node : nodes.values()) {
-            builder.addVertex(node.getExecutionIdentifier(), node.getName());
+            builder.addVertex(node.getExecutionIdentifier().toString(), node.getName());
             if (node.isDriver()) {
-                builder.addVertexProperty(node.getExecutionIdentifier(), propNameColor, "#AA3939");
+                builder.addVertexProperty(node.getExecutionIdentifier().toString(), propNameColor, "#AA3939");
             } else if (hasNodeOppositeOutputCharacters(node)) {
-                builder.addVertexProperty(node.getExecutionIdentifier(), propNameColor, "#D4AA6A");
+                builder.addVertexProperty(node.getExecutionIdentifier().toString(), propNameColor, "#D4AA6A");
             }
-            builder.addVertexProperty(node.getExecutionIdentifier(), "shape", "rectangle");
-            builder.addVertexProperty(node.getExecutionIdentifier(), "fontsize", "10");
-            builder.addVertexProperty(node.getExecutionIdentifier(), "fontname", "Consolas");
+            builder.addVertexProperty(node.getExecutionIdentifier().toString(), "shape", "rectangle");
+            builder.addVertexProperty(node.getExecutionIdentifier().toString(), "fontsize", "10");
+            builder.addVertexProperty(node.getExecutionIdentifier().toString(), "fontname", "Consolas");
         }
 
         for (Set<WorkflowGraphEdge> edgesSet : edges.values()) {
@@ -512,7 +524,8 @@ public class WorkflowGraph implements Serializable {
                 String label = StringUtils.format("%s > %s", nodes.get(edge.getSourceExecutionIdentifier())
                     .getEndpointName(edge.getOutputIdentifier()), nodes.get(edge.getTargetExecutionIdentifier())
                         .getEndpointName(edge.getInputIdentifier()));
-                builder.addEdge(edge.getSourceExecutionIdentifier(), edge.getTargetExecutionIdentifier(), label, edgeProps);
+                builder.addEdge(edge.getSourceExecutionIdentifier().toString(), edge.getTargetExecutionIdentifier().toString(), label,
+                    edgeProps);
             }
 
         }
@@ -525,8 +538,8 @@ public class WorkflowGraph implements Serializable {
      * @param edge {@link WorkflowGraphEdge} to get the identifier for
      * @return key for the {@link WorkflowGraphEdge}
      */
-    public static String createEdgeKey(WorkflowGraphEdge edge) {
-        return StringUtils.escapeAndConcat(edge.getSourceExecutionIdentifier(), edge.getOutputIdentifier());
+    private static String createEdgeKey(WorkflowGraphEdge edge) {
+        return StringUtils.escapeAndConcat(edge.getSourceExecutionIdentifier().toString(), edge.getOutputIdentifier());
     }
 
     /**
@@ -536,8 +549,8 @@ public class WorkflowGraph implements Serializable {
      * @param outputIdentifier source endpoint of the edge to get the identifier for
      * @return key for the {@link WorkflowGraphEdge}
      */
-    public static String createEdgeKey(WorkflowGraphNode node, String outputIdentifier) {
-        return StringUtils.escapeAndConcat(node.getExecutionIdentifier(), outputIdentifier);
+    private static String createEdgeKey(WorkflowGraphNode node, String outputIdentifier) {
+        return StringUtils.escapeAndConcat(node.getExecutionIdentifier().toString(), outputIdentifier);
     }
 
 }

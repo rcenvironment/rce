@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -31,7 +31,7 @@ public class WorkflowExecutionControllerBridgeDelegator implements WorkflowExecu
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionControllerBridgeDelegator.class);
 
-    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(WorkflowExecutionControllerBridgeDelegator.class);
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled("WorkflowExecution");
 
     private static final int MAX_CALLBACK_FAILURES = 5;
 

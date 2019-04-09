@@ -22,6 +22,7 @@
 		<module>${modules-root}/cpacs.nonComponent</module>
 		<module>${modules-root}/product.versionInfo</module>
 		<module>${modules-root}/product.binaries</module>
+		<module>${modules-root}/extensions.testscriptrunner</module>
 		<module>${modules-root}/repository.mainProduct</module>
 	</modules>
 

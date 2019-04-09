@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -56,7 +56,7 @@ import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorHelpContextProvid
 import de.rcenvironment.core.gui.workflow.editor.WorkflowScalableFreeformRootEditPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowRunEditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.view.outline.OutlineView;
-import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -74,7 +74,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
 
     private static final Log LOG = LogFactory.getLog(WorkflowRunEditor.class);
 
-    private SimpleNotificationService sns = new SimpleNotificationService();
+    private final DistributedNotificationService notificationService;
 
     private WorkflowStateNotificationSubscriber workflowStateChangeSubscriber;
 
@@ -89,6 +89,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
     public WorkflowRunEditor() {
         setEditDomain(new DefaultEditDomain(this));
         registerWorkbenchListener();
+        notificationService = ServiceRegistry.createAccessFor(this).getService(DistributedNotificationService.class);
     }
 
     private void registerWorkbenchListener() {
@@ -176,7 +177,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
         if ((!wfExeInfo.getWorkflowDescription().getConnections().isEmpty()
             && wfExeInfo.getWorkflowDescription().getConnections().get(0).getBendpoints() == null)
             || (!wfExeInfo.getWorkflowDescription().getWorkflowLabels().isEmpty()
-            && wfExeInfo.getWorkflowDescription().getWorkflowLabels().get(0).getLabelPosition() == null)) {
+                && wfExeInfo.getWorkflowDescription().getWorkflowLabels().get(0).getLabelPosition() == null)) {
             wfExeInfo.getWorkflowDescription().setWorkflowLabels(new ArrayList<WorkflowLabel>());
             for (Connection connection : wfExeInfo.getWorkflowDescription().getConnections()) {
                 connection.setBendpoints(new ArrayList<Location>());
@@ -196,7 +197,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 try {
-                    sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
+                    notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
                         workflowStateChangeSubscriber, wfExeInfo.getNodeId());
                 } catch (RemoteOperationException e1) {
                     // TODO review: how to react on this?
@@ -208,8 +209,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
                     WorkflowExecutionService wfExecutionService = ServiceRegistry.createAccessFor(WorkflowRunEditor.this)
                         .getService(WorkflowExecutionService.class);
                     try {
-                        WorkflowState workflowState = wfExecutionService.getWorkflowState(
-                            wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                        WorkflowState workflowState = wfExecutionService.getWorkflowState(wfExeInfo.getWorkflowExecutionHandle());
                         synchronized (WorkflowRunEditor.this) {
                             if (!initialWorkflowStateSet.get()) {
                                 onWorkflowStateChanged(workflowState);
@@ -237,7 +237,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
             protected IStatus run(IProgressMonitor monitor) {
                 if (wfExeInfo != null) {
                     try {
-                        sns.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
+                        notificationService.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
                             workflowStateChangeSubscriber, wfExeInfo.getNodeId());
                     } catch (RemoteOperationException e) {
                         LOG.error("Failed to unsubscribe workflow execution view from workflow host: " + e.getMessage());
@@ -271,10 +271,10 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
         getActionRegistry().registerAction(new ZoomInAction(zoomManager));
         getActionRegistry().registerAction(new ZoomOutAction(zoomManager));
         viewer.setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
-        
+
         viewer.getEditDomain().setDefaultTool(new PanningSelectionTool());
         viewer.getEditDomain().loadDefaultTool();
-        
+
         setTitleImage(Activator.getInstance().getImageRegistry().get(WorkflowState.UNKNOWN.name()));
     }
 

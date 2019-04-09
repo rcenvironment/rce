@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -9,24 +9,16 @@
 package de.rcenvironment.core.authentication.internal;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.cert.X509Certificate;
 
-import org.globus.gsi.CertUtil;
-import org.globus.gsi.OpenSSLKey;
-import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.authentication.AuthenticationService.LDAPAuthenticationResult;
-import de.rcenvironment.core.authentication.AuthenticationService.X509AuthenticationResult;
-import de.rcenvironment.core.authentication.AuthenticationTestConstants;
 import de.rcenvironment.core.authentication.User;
 
 /**
@@ -50,135 +42,6 @@ public class AuthenticationServiceImplTest {
     }
 
     /**
-     * Tests authentication for success.
-     * 
-     * Tests fail due to expired test certificates. As the code is currently not used and probably won't be used in the future, the tests
-     * are ignored to reduce the maintenance effort. The related methods in are deprecated.
-     * 
-     * @throws Exception in error
-     */
-    @Test
-    @Ignore
-    public void testAuthenticateForSuccess() throws Exception {
-
-        X509Certificate certificate = CertUtil.loadCertificate(getClass()
-            .getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-        OpenSSLKey key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.USERKEY_RCE_ENGINEER_PEM));
-
-        X509AuthenticationResult result = authService.authenticate(certificate, key, AuthenticationTestConstants
-            .PASSWORD_RCE_ENGINEER);
-        assertEquals(X509AuthenticationResult.AUTHENTICATED, result);
-
-    }
-
-    /**
-     * Tests authentication for failure.
-     * 
-     * Tests fail due to expired test certificates. As the code is currently not used and probably won't be used in the future, the tests
-     * are ignored to reduce the maintenance effort. The related methods in are deprecated.
-     * 
-     * @throws Exception on error
-     */
-    @Test
-    @Ignore
-    public void testAuthenticateForSanity() throws Exception {
-
-        // incorrect password
-
-        X509Certificate certificate = CertUtil.loadCertificate(getClass()
-            .getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-        OpenSSLKey key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.USERKEY_RCE_ENGINEER_PEM));
-
-        X509AuthenticationResult result = authService
-            .authenticate(certificate, key, AuthenticationTestConstants.PASSWORD_RCE_ENEMY);
-        assertEquals(X509AuthenticationResult.PASSWORD_INCORRECT, result);
-
-        // private and public key do not belong together
-
-        certificate = CertUtil.loadCertificate(getClass().getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-        key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.KEY_RCE_ENEMY_PEM));
-
-        result = authService.authenticate(certificate, key, AuthenticationTestConstants.PASSWORD_RCE_ENEMY);
-        assertEquals(X509AuthenticationResult.PRIVATE_KEY_NOT_BELONGS_TO_PUBLIC_KEY, result);
-
-        // not signed by trusted CA
-
-        certificate = CertUtil.loadCertificate(getClass().getResourceAsStream(AuthenticationTestConstants.CERT_UNKNOWN_USER_PEM));
-        key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.KEY_UNKNOWN_USER_PEM));
-
-        result = authService.authenticate(certificate, key, AuthenticationTestConstants.PASSWORD_UNKNOWN_USER);
-        assertEquals(X509AuthenticationResult.NOT_SIGNED_BY_TRUSTED_CA, result);
-
-        // revoked
-
-        certificate = CertUtil.loadCertificate(getClass().getResourceAsStream(AuthenticationTestConstants.CERT_RCE_ENEMY_PEM));
-        key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.KEY_RCE_ENEMY_PEM));
-
-        result = authService.authenticate(certificate, key, AuthenticationTestConstants.PASSWORD_RCE_ENEMY);
-        assertEquals(X509AuthenticationResult.CERTIFICATE_REVOKED, result);
-
-        // no password, but encrypted key
-
-        certificate = CertUtil.loadCertificate(getClass().getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-        key = new BouncyCastleOpenSSLKey(getClass().getResourceAsStream(AuthenticationTestConstants.USERKEY_RCE_ENGINEER_PEM));
-
-        result = authService.authenticate(certificate, key, null);
-        assertEquals(X509AuthenticationResult.PASSWORD_REQUIRED, result);
-
-    }
-
-    /**
-     * Tests authentication for failure.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    @Ignore
-    public void testAuthenticateForFailure() throws Exception {
-
-        // no certificate
-        try {
-            OpenSSLKey key = new BouncyCastleOpenSSLKey(getClass()
-                .getResourceAsStream(AuthenticationTestConstants.USERKEY_RCE_ENGINEER_PEM));
-            authService.authenticate(null, key, AuthenticationTestConstants.PASSWORD_RCE_ENEMY);
-            fail();
-
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-
-        // no private key
-        try {
-            X509Certificate certificate = CertUtil.loadCertificate(getClass()
-                .getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-
-            authService.authenticate(certificate, null, AuthenticationTestConstants.PASSWORD_RCE_ENEMY);
-
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-
-    }
-
-    /**
-     * Tests getting a CertificateUser for success.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testGetCertificateUserForSuccess() throws Exception {
-
-        X509Certificate certificate = CertUtil.loadCertificate(getClass()
-            .getResourceAsStream(AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM));
-        User certificateUser = authService.createUser(certificate, validityInDays);
-
-        assertTrue(certificateUser.isValid());
-    }
-    
-    /**
      * Tests getting an LDAPUser for success.
      * 
      * @throws Exception if the test fails.
@@ -189,94 +52,6 @@ public class AuthenticationServiceImplTest {
         assertTrue(ldapUser.isValid());
     }
 
-    /**
-     * Tests getting a proxy certificate for failure.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testGetProxyCertificateForFailure() throws Exception {
-
-        // no certificate
-        try {
-            authService.createUser((X509Certificate) null, validityInDays);
-
-            fail();
-
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-
-    }
-
-    /**
-     * Tests getting a proxy certificate for success.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testLoadCertificateForSuccess() throws Exception {
-
-        X509Certificate certificate = authService.loadCertificate(System.getProperty(AuthenticationTestConstants.USER_DIR)
-            + AuthenticationTestConstants.TESTRESOURCES_DIR + AuthenticationTestConstants.USERCERT_RCE_ENGINEER_PEM);
-
-        assertNotNull(certificate);
-
-    }
-
-    /**
-     * Tests getting a proxy certificate for failure.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testLoadCertificateForFailure() throws Exception {
-        try {
-            authService.loadCertificate(null);
-
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-
-    /**
-     * Tests getting a proxy certificate for success.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testLoadCertificateRevocationListsForSuccess() throws Exception {
-
-        OpenSSLKey key = authService.loadKey(System.getProperty(AuthenticationTestConstants.USER_DIR)
-            + AuthenticationTestConstants.TESTRESOURCES_DIR + AuthenticationTestConstants.USERKEY_RCE_ENGINEER_PEM);
-
-        assertNotNull(key);
-
-    }
-
-    /**
-     * Tests getting a proxy certificate for failure.
-     * 
-     * @throws Exception
-     *             if the test fails.
-     */
-    @Test
-    public void testLoadCertificateRevocationListsForFailure() throws Exception {
-
-        try {
-            authService.loadKey(null);
-
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(true);
-        }
-    }
-    
     /**
      * Tests arguments of password and user id for failure.
      */

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,16 +25,20 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.type.TypeReference;
 import org.eclipse.core.runtime.Platform;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkUtil;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
@@ -59,7 +63,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
- * 
+ * @author Robert Mischke
  */
 public final class ComponentUtils {
 
@@ -127,11 +131,12 @@ public final class ComponentUtils {
      * @param compInstallations given list of available {@link ComponentInstallation}s
      * @return List of nodes the component is installed on.
      */
-    public static Map<LogicalNodeId, Integer> getNodesForComponent(Collection<ComponentInstallation> compInstallations,
+    // TODO 9.0.0: replace with LogicalNodeSessionId?
+    public static Map<LogicalNodeId, Integer> getNodesForComponent(Collection<DistributedComponentEntry> compInstallations,
         ComponentDescription compDesc) {
 
-        ComponentInterface compInterface = compDesc.getComponentInstallation().getComponentRevision().getComponentInterface();
-        String temp = getComponentInterfaceIdentifierWithoutVersion(compInterface.getIdentifier());
+        ComponentInterface compInterface = compDesc.getComponentInstallation().getComponentInterface();
+        String temp = getComponentInterfaceIdentifierWithoutVersion(compInterface.getIdentifierAndVersion());
 
         String compInterfaceIdWithoutVersion;
 
@@ -142,11 +147,12 @@ public final class ComponentUtils {
         }
 
         Map<LogicalNodeId, Integer> identifiers = new HashMap<LogicalNodeId, Integer>();
-        for (ComponentInstallation compInstallation : compInstallations) {
+        for (DistributedComponentEntry entry : compInstallations) {
+            ComponentInstallation compInstallation = entry.getComponentInstallation();
 
-            ComponentInterface compInterfaceToCheck = compInstallation.getComponentRevision().getComponentInterface();
+            ComponentInterface compInterfaceToCheck = compInstallation.getComponentInterface();
             String compInterfaceIdToCheckWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(
-                compInterfaceToCheck.getIdentifier());
+                compInterfaceToCheck.getIdentifierAndVersion());
 
             if (compInterfaceIdWithoutVersion.equals(compInterfaceIdToCheckWithoutVersion)) {
 
@@ -185,11 +191,10 @@ public final class ComponentUtils {
      * @param installations given list of available {@link ComponentDescription}s
      * @return Whether the given component is available on the given platform.
      */
-    public static boolean hasComponent(Collection<ComponentInstallation> installations, String componentId, LogicalNodeId node) {
-        for (ComponentInstallation installation : installations) {
-
-            if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(componentId)
-                && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
+    public static boolean hasComponent(Collection<DistributedComponentEntry> installations, String componentId, LogicalNodeId node) {
+        for (DistributedComponentEntry entry : installations) {
+            if (entry.getComponentInterface().getIdentifierAndVersion().equals(componentId)
+                && entry.getNodeId().equals(node.getLogicalNodeIdString())) {
                 return true;
             }
         }
@@ -203,21 +208,24 @@ public final class ComponentUtils {
      * @param localNode loca node
      * @return Whether the given component is available on the given platform.
      */
-    public static List<ComponentInstallation> eliminateComponentInterfaceDuplicates(Collection<ComponentInstallation> compInstallations,
-        LogicalNodeId localNode) {
-        List<ComponentInstallation> filteredInstallations = new ArrayList<ComponentInstallation>();
+    public static List<DistributedComponentEntry> eliminateComponentInterfaceDuplicates(
+        Collection<DistributedComponentEntry> compInstallations, LogicalNodeId localNode) {
+        List<DistributedComponentEntry> filteredInstallations = new ArrayList<>();
+
+        // TODO (p2) review: couldn't this be solved much simpler using a Set? -- misc_ro, Feb 2018
 
         // eliminate duplicates
-        for (ComponentInstallation compInstallation : compInstallations) {
-
-            String compInterfaceId = compInstallation.getComponentRevision().getComponentInterface().getIdentifier();
+        for (DistributedComponentEntry entry : compInstallations) {
+            ComponentInstallation compInstallation = entry.getComponentInstallation();
+            String compInterfaceId = compInstallation.getComponentInterface().getIdentifierAndVersion();
             String compInterfaceIdWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(compInterfaceId);
 
             boolean contained = false;
-            Iterator<ComponentInstallation> iterator = filteredInstallations.iterator();
+            Iterator<DistributedComponentEntry> iterator = filteredInstallations.iterator();
 
             while (iterator.hasNext()) {
-                String filteredCompInterfaceId = iterator.next().getComponentRevision().getComponentInterface().getIdentifier();
+                String filteredCompInterfaceId =
+                    iterator.next().getComponentInstallation().getComponentInterface().getIdentifierAndVersion();
                 String filteredCompInterfaceIdWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(filteredCompInterfaceId);
 
                 if (compInterfaceIdWithoutVersion.equals(filteredCompInterfaceIdWithoutVersion)) {
@@ -230,7 +238,7 @@ public final class ComponentUtils {
                 }
             }
             if (!contained) {
-                filteredInstallations.add(compInstallation);
+                filteredInstallations.add(entry);
             }
         }
 
@@ -252,9 +260,10 @@ public final class ComponentUtils {
      * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
      */
     public static ComponentInstallation getExactMatchingComponentInstallationForNode(String compInterfaceId,
-        Collection<ComponentInstallation> installations, LogicalNodeId node) {
-        for (ComponentInstallation installation : installations) {
-            if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(compInterfaceId)
+        Collection<DistributedComponentEntry> installations, LogicalNodeId node) {
+        for (DistributedComponentEntry entry : installations) {
+            ComponentInstallation installation = entry.getComponentInstallation();
+            if (installation.getComponentInterface().getIdentifierAndVersion().equals(compInterfaceId)
                 && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
                 LogFactory.getLog(ComponentUtils.class).debug(
                     StringUtils.format("Resolved undefined component location for '%s' with installation on '%s'", compInterfaceId,
@@ -272,13 +281,15 @@ public final class ComponentUtils {
      * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
      */
     public static ComponentInstallation getComponentInstallationForNode(String compInterfaceId,
-        Collection<ComponentInstallation> installations, LogicalNodeId node) {
+        Collection<DistributedComponentEntry> installations, LogicalNodeId node) {
         if (installations == null) {
             return null;
         }
-        for (ComponentInstallation installation : installations) {
-            if (getComponentInterfaceIdentifierWithoutVersion(installation.getComponentRevision().getComponentInterface().getIdentifier())
-                .equals(getComponentInterfaceIdentifierWithoutVersion(compInterfaceId))
+        for (DistributedComponentEntry entry : installations) {
+            ComponentInstallation installation = entry.getComponentInstallation();
+            if (getComponentInterfaceIdentifierWithoutVersion(
+                installation.getComponentInterface().getIdentifierAndVersion())
+                    .equals(getComponentInterfaceIdentifierWithoutVersion(compInterfaceId))
                 && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
                 return installation;
             }
@@ -291,11 +302,10 @@ public final class ComponentUtils {
      * @param componentInstallations {@link ComponentInstallation}s to consider
      * @return {@link ComponentInstallation}, which matches the given component interface id first
      */
-    public static ComponentInstallation getComponentInstallation(String componentInterfaceId,
-        Collection<ComponentInstallation> componentInstallations) {
-        for (ComponentInstallation currentComponentInstallation : componentInstallations) {
-            String currentComponentInterfaceId = currentComponentInstallation.getComponentRevision()
-                .getComponentInterface().getIdentifier();
+    public static DistributedComponentEntry getComponentInstallation(String componentInterfaceId,
+        Collection<DistributedComponentEntry> componentInstallations) {
+        for (DistributedComponentEntry currentComponentInstallation : componentInstallations) {
+            String currentComponentInterfaceId = currentComponentInstallation.getComponentInterface().getIdentifierAndVersion();
             if (currentComponentInterfaceId.equals(componentInterfaceId)) {
                 return currentComponentInstallation;
             }
@@ -338,8 +348,8 @@ public final class ComponentUtils {
         componentRevision.setComponentInterface(componentInterface);
 
         ComponentInstallationImpl componentInstallation = new ComponentInstallationImpl();
-        componentInstallation.setInstallationId(componentInterface.getIdentifier());
-        componentInstallation.setNodeIdFromObject(nodeId);
+        componentInstallation.setInstallationId(componentInterface.getIdentifierAndVersion());
+        componentInstallation.setNodeIdObject(nodeId);
         componentInstallation.setComponentRevision(componentRevision);
 
         return componentInstallation;
@@ -354,8 +364,9 @@ public final class ComponentUtils {
     public static boolean isGlobalPlaceholder(String placeholder) {
         Matcher matcherOfPlaceholder = getMatcherForPlaceholder(placeholder);
         return (matcherOfPlaceholder.group(ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ATTRIBUTE1)
-            .equals(GLOBALATTRIBUTE) | (matcherOfPlaceholder
-            .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
+            .equals(GLOBALATTRIBUTE)
+            | (matcherOfPlaceholder
+                .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
     }
 
     /**
@@ -745,21 +756,44 @@ public final class ComponentUtils {
      * @return correct url, or null, if icon can't be found
      */
     public static URL readIconURL(String bundleName, String iconName) {
-        URL url = null;
+
+        // note: instead of the retry mechanism below, this may also work, but I don't have time right now to verify it -- misc_ro
+        // Bundle bundle = FrameworkUtil.getBundle(ComponentUtils.class).getBundleContext().getBundle(bundleName)
+
         Bundle bundle = Platform.getBundle(bundleName);
-        if (bundle != null) {
-            Enumeration<URL> result = Platform.getBundle(bundleName).findEntries("/", iconName, true);
-            if (result != null) {
-                if (result.hasMoreElements()) {
-                    url = result.nextElement();
-                } else {
-                    url = null;
+
+        if (bundle == null) {
+
+            // attempt to start/activate the bundle, then try again; fix for #16095
+            for (Bundle bundleToStart : FrameworkUtil.getBundle(ComponentUtils.class).getBundleContext().getBundles()) {
+                if (bundleToStart.getSymbolicName().equals(bundleName)) {
+                    LOGGER.debug("Actively starting bundle " + bundleName + " which is supposed to contain icon " + iconName
+                        + " but is not available yet");
+                    try {
+                        bundleToStart.start();
+                        // Platform.getBundle() can still return null after actively starting the bundle, so use this acquired reference
+                        bundle = bundleToStart;
+                    } catch (BundleException e) {
+                        LOGGER.error("Failed to start bundle " + bundleName, e);
+                        return null;
+                    }
+                    break;
                 }
             }
-        } else {
-            LOGGER.warn("Bundle for loading icons could not be found: " + bundleName);
+
+            if (bundle == null) {
+                LOGGER.error("Failed to find bundle " + bundleName + " which is supposed to contain icon " + iconName);
+                return null;
+            }
         }
-        return url;
+
+        Enumeration<URL> result = bundle.findEntries("/", iconName, true);
+        if (result != null && result.hasMoreElements()) {
+            return result.nextElement();
+        }
+
+        LOGGER.error("Searched bundle " + bundleName + " but did not find the expeected icon " + iconName);
+        return null;
     }
 
 }

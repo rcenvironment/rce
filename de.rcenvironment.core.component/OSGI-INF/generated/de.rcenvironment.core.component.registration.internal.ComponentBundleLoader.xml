@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="de.rcenvironment.core.component.registration.internal.ComponentBundleLoader">
+   <reference bind="registerXmlComponentDeclaration" cardinality="0..n" interface="org.osgi.service.component.ComponentFactory" name="Component Factory" policy="dynamic" target="(component.factory=de.rcenvironment.rce.component)" unbind="unregisterXmlComponentDeclaration"/>
+   <reference bind="bindComponentAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="ComponentAuthorizationService"/>
+   <reference bind="bindComponentRegistrationService" interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService" name="ComponentRegistrationService"/>
+   <reference bind="bindConfigurationService" interface="de.rcenvironment.core.configuration.ConfigurationService" name="ConfigurationService"/>
+   <reference bind="bindPackageAdminService" interface="org.osgi.service.packageadmin.PackageAdmin" name="PackageAdminService"/>
+   <reference bind="bindPlatformService" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService"/>
+   <reference bind="bindUserComponentIdMappingService" interface="de.rcenvironment.core.component.api.UserComponentIdMappingService" name="UserComponentIdMappingService"/>
+   <implementation class="de.rcenvironment.core.component.registration.internal.ComponentBundleLoader"/>
+</scr:component>

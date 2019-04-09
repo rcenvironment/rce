@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2017 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -20,11 +20,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -39,8 +38,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public final class CommonProfileUtils {
 
-    private static final int COMMON_PROFILE_VERSION = 1;
-
     private static final int MILLIS_BETWEEN_LOCKING_ATTEMPTS = 500;
 
     private static final String SAVED_DEFAULT_PROFILE_ERROR_TEMPLATE = "Unable to read the default profile path from %s.";
@@ -49,7 +46,7 @@ public final class CommonProfileUtils {
 
     private static CommonProfileUtils instance;
 
-    private BaseProfile commonProfile;
+    private CommonProfile commonProfile;
 
     private File profilesInformationDirectory;
 
@@ -70,7 +67,7 @@ public final class CommonProfileUtils {
         File commonProfileDirectory = Paths.get(profileParent.getAbsolutePath(), "common").toFile();
 
         try {
-            commonProfile = new BaseProfile(commonProfileDirectory, COMMON_PROFILE_VERSION, true);
+            commonProfile = new CommonProfile.Builder(commonProfileDirectory).create(true).migrate(false).buildCommonProfile();
         } catch (ProfileException e) {
             throw new CommonProfileException("The common profile cannot be initialized.", e);
         }
@@ -153,7 +150,7 @@ public final class CommonProfileUtils {
             @Override
             public List<Profile> execute() throws CommonProfileException {
 
-                List<Profile> recentlyUsedProfiles = new LinkedList<Profile>();
+                List<Profile> recentlyUsedProfiles = new LinkedList<>();
 
                 if (instance.recentlyUsedProfilesFile.exists()) {
                     List<String> lines;
@@ -166,7 +163,8 @@ public final class CommonProfileUtils {
 
                     for (String line : lines) {
                         try {
-                            Profile recentlyUsedProfile = new Profile(new File(line), false);
+                            Profile recentlyUsedProfile =
+                                new Profile.Builder(new File(line)).create(false).migrate(false).buildUserProfile();
                             recentlyUsedProfiles.add(recentlyUsedProfile);
                         } catch (ProfileException e) {
                             // Ignore, profileDirectory was not a valid profileDirectory. Do not delete the profile from the
@@ -314,7 +312,11 @@ public final class CommonProfileUtils {
                         } else if (savedDefaultPath.isAbsolute()) {
 
                             try {
-                                new Profile(savedDefaultPath, false);
+                                // Check if the profile at the stored location is actually a valid profile. This should be done in a more
+                                // elegant way, but for now, we try to construct an instance of Profile and see if that succeeds. Since
+                                // Profile performs a number of validity checks in its constructor, a successful instantiation implies
+                                // validity of the profile on the file system.
+                                new Profile.Builder(savedDefaultPath).create(false).migrate(false).build();
                                 return savedDefaultPath;
                             } catch (ProfileException e) {
                                 // if the path does not point to a valid profile this call will throw a ProfileException

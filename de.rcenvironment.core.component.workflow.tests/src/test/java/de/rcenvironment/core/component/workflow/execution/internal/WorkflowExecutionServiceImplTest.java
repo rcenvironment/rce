@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -37,6 +37,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Test cases for {@link WorkflowExecutionServiceImpl}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (minor fix)
  */
 public class WorkflowExecutionServiceImplTest {
 
@@ -92,8 +93,9 @@ public class WorkflowExecutionServiceImplTest {
         EasyMock.replay(platformServiceMock);
 
         WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
-        
+
         WorkflowExecutionServiceImpl wfExeService = new WorkflowExecutionServiceImpl();
+        wfExeService.bindPersistentWorkflowDescriptionLoaderService(new PersistentWorkflowDescriptionLoaderServiceImpl());
 
         File wfFileOrigin = new File(tempDir, "test_origin.wf");
         File wfFile = new File(tempDir, "test.wf");

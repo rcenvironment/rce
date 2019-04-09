@@ -5,7 +5,7 @@
   "nodes" : [ {
     "identifier" : "47d4ce3c-7cae-469e-a21d-130482c8214a",
     "name" : "Input Provider",
-    "location" : "20:180",
+    "location" : "130:180",
     "zIndex" : "3",
     "active" : "true",
     "component" : {
@@ -52,7 +52,7 @@
   }, {
     "identifier" : "dbc0ca7b-255b-4e47-be4f-0e96d99d1016",
     "name" : "Output Writer",
-    "location" : "20:320",
+    "location" : "130:320",
     "zIndex" : "0",
     "active" : "true",
     "component" : {
@@ -99,7 +99,7 @@
   }, {
     "identifier" : "47fa0e1b-7ffc-42bd-a26e-0291b0919882",
     "name" : "XML Merger",
-    "location" : "140:180",
+    "location" : "250:180",
     "zIndex" : "2",
     "active" : "true",
     "component" : {
@@ -135,7 +135,7 @@
   }, {
     "identifier" : "8129fc39-97ef-4a13-ab10-cd168082af9f",
     "name" : "XML Values",
-    "location" : "140:320",
+    "location" : "250:320",
     "zIndex" : "1",
     "active" : "true",
     "component" : {
@@ -213,5 +213,5 @@
     "target" : "dbc0ca7b-255b-4e47-be4f-0e96d99d1016",
     "input" : "3c74a9c9-7774-4673-af55-e96efe43043c"
   } ],
-  "labels" : "[{\"identifier\":\"1429f260-f54c-4fd4-a598-8b2909815321\",\"headerText\":\"\",\"text\":\"Example workflow: 'XML Components'\\r\\nObjective: Introducing the XML components\\r\\n\\r\\nXML is a file format that is often used for exchanging data between different tools.\",\"location\":\"20:20\",\"size\":\"741:101\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTERLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"},{\"identifier\":\"4528469c-12f3-4002-a122-ee0597066ec8\",\"headerText\":\"\",\"text\":\"The XML Values component's purpose is to change or extract certain entries of an XML file. Although other XML components can do so aswell, the XML Values component is the most simple way. In this case the new version number has been extracted from the XML file (XPath: \\\"/cpacs/header/version\\\").\\r\\nNote: The version number is changed and extracted after the files were merged.\",\"location\":\"201:280\",\"size\":\"560:121\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"2\"},{\"identifier\":\"61ea23a4-3f82-4f26-bf0b-6ce515b8a5a9\",\"headerText\":\"\",\"text\":\"The XML merger component is used to integrate the contents of one XML file (input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this integration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). \\r\\nIn this example, the content of the XPath \\\"/cpacs/header\\\" from the file \\\"CPACS.xml\\\" is replaced by the same XPath from the file \\\"XMLMerger_Integrate.xml\\\".\",\"location\":\"201:140\",\"size\":\"560:121\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"1\"},{\"identifier\":\"b9ab6f74-0184-4e99-80c7-d54ac3a4f479\",\"headerText\":\"\",\"text\":\"In order to better understand how every component affects the XML file, run the workflow and go to the Workflow Data Browser View. Choose this workflowrun and go to the section Timeline. All components are listed and their in- and output values are shown.\",\"location\":\"20:420\",\"size\":\"741:81\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"3\"}]"
+  "labels" : "[{\"identifier\":\"1429f260-f54c-4fd4-a598-8b2909815321\",\"headerText\":\"Introducing the XML components\",\"text\":\"XML is a file format that is often used for exchanging data between different tools.\",\"location\":\"130:27\",\"size\":\"928:92\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTERLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"RIGHT\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"},{\"identifier\":\"4528469c-12f3-4002-a122-ee0597066ec8\",\"headerText\":\"\",\"text\":\"The XML Values component's purpose is to change or extract certain entries of an XML file. Although other XML components can do so aswell, the XML Values component is the most simple way. In this case the new version number has been extracted from the XML file (XPath: \\\"/cpacs/header/version\\\").\\r\\nNote: The version number is changed and extracted after the files were merged.\",\"location\":\"311:280\",\"size\":\"747:121\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"61ea23a4-3f82-4f26-bf0b-6ce515b8a5a9\",\"headerText\":\"\",\"text\":\"The XML merger component is used to integrate the contents of one XML file (input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this integration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). \\r\\nIn this example, the content of the XPath \\\"/cpacs/header\\\" from the file \\\"CPACS.xml\\\" is replaced by the same XPath from the file \\\"XMLMerger_Integrate.xml\\\".\",\"location\":\"310:140\",\"size\":\"747:121\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"b9ab6f74-0184-4e99-80c7-d54ac3a4f479\",\"headerText\":\"\",\"text\":\"In order to better understand how every component affects the XML file, run the workflow and go to the Workflow Data Browser View. Choose this workflowrun and go to the section Timeline. All components are listed and their in- and output values are shown.\",\"location\":\"130:420\",\"size\":\"928:81\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"3\"},{\"identifier\":\"fe095cf9-b35b-49cc-bcda-f9b4209b27f5\",\"headerText\":\"Note\",\"text\":\"The values for the realtive file paths in the Input Provider component only work reliably if the project keeps its default name \\\"Workflow Examples Project\\\". Since paths are relative to the workspace location, the file paths need to be adjusted in all other cases.\",\"location\":\"130:520\",\"size\":\"928:92\",\"alpha\":\"127\",\"colorHeader\":\"255:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"CENTERLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"LEFT\",\"border\":\"false\",\"headerSize\":\"10\",\"textSize\":\"9\",\"zIndex\":\"4\"}]"
 }

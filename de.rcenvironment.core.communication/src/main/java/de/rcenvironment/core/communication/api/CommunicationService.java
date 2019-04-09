@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,15 +13,14 @@ import java.util.Set;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
-import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.utils.common.rpc.RemotableService;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Convenient service serving as a distribute abstraction layer for the services of the communication bundle: {@link PlatformService},
- * {@link ServiceProxyFactory}.
+ * Provides methods for inspecting the current network state and creating RPC service proxies to method perform calls on remote nodes.
  * 
- * @author Doreen Seider
  * @author Robert Mischke
  */
 public interface CommunicationService {
@@ -45,6 +44,27 @@ public interface CommunicationService {
     // NetworkGraph getCurrentNetworkSnapshot();
 
     /**
+     * Creates a Reliable RPC Stream on the target node and returns a local handle for it. This handle can be used as a
+     * {@link NetworkDestination} in methods that support it to enable reliable RPC handling for the service calls invoked using it.
+     * 
+     * @param targetNodeId the remote node to create the reliable RPC stream to
+     * @return the handle of the created stream (which can be used to fetch remotable service proxies as with plain node ids)
+     * @throws RemoteOperationException if establishing the stream with the remote node fails
+     */
+    ReliableRPCStreamHandle createReliableRPCStream(ResolvableNodeId targetNodeId) throws RemoteOperationException;
+
+    /**
+     * Closes/disposes the Reliable RPC Stream identified by the given handle. If the remote node is currently unreachable, then the stream
+     * can not actually be closed/disposed on the remote side, but it will still be closed at the local node, discarding any future or
+     * pending request attempts.
+     * 
+     * @param streamHandle the handle of the stream to close
+     * @throws RemoteOperationException if the remote node could not be reached for a clean stream shutdown; if this happens, the stream has
+     *         still been closed locally
+     */
+    void closeReliableRPCStream(ReliableRPCStreamHandle streamHandle) throws RemoteOperationException;
+
+    /**
      * Returns an instance of a remote service registered with the given interface at the local OSGi registry or a proxy of a remote
      * service.
      * 
@@ -55,7 +75,7 @@ public interface CommunicationService {
      * @return An instance of the service if local or a proxy of a service of remote.
      * @throws IllegalArgumentException if the given service is not a {@link RemotableService}
      */
-    <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) throws IllegalArgumentException;
+    <T> T getRemotableService(Class<T> iface, NetworkDestination nodeId) throws IllegalArgumentException;
 
     /**
      * @param type string identifier defining the desired output

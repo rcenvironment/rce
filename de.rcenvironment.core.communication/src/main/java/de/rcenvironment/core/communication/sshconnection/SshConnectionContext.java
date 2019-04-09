@@ -1,16 +1,15 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.communication.sshconnection;
 
 /**
- * A class containing the parameters for an SSH connection.
- * (Introduced to avoid methods with too many parameters.)
+ * A class containing the parameters for an SSH connection. (Introduced to avoid methods with too many parameters.)
  *
  * @author Brigitte Boden
  */
@@ -29,11 +28,13 @@ public class SshConnectionContext {
     private String keyfileLocation;
 
     private boolean usePassphrase;
-    
+
     private boolean connectImmediately;
-    
+
+    private boolean autoRetry;
+
     public SshConnectionContext(String id, String displayName, String destinationHost, int port, String sshAuthUser,
-        String keyfileLocation, boolean usePassphrase, boolean connectImmediately) {
+        String keyfileLocation, boolean usePassphrase, boolean connectImmediately, boolean autoRetry) {
         this.id = id;
         this.displayName = displayName;
         this.destinationHost = destinationHost;
@@ -42,32 +43,29 @@ public class SshConnectionContext {
         this.keyfileLocation = keyfileLocation;
         this.usePassphrase = usePassphrase;
         this.connectImmediately = connectImmediately;
+        this.autoRetry = autoRetry;
     }
-    
+
     public String getId() {
         return id;
     }
-    
-    
+
     public String getDisplayName() {
         return displayName;
     }
-    
-    
+
     public String getDestinationHost() {
         return destinationHost;
     }
-    
-    
+
     public int getPort() {
         return port;
     }
-    
-    
+
     public String getSshAuthUser() {
         return sshAuthUser;
     }
-    
+
     public boolean isConnectImmediately() {
         return connectImmediately;
     }
@@ -75,10 +73,12 @@ public class SshConnectionContext {
     public String getKeyfileLocation() {
         return keyfileLocation;
     }
-    
-    
+
     public boolean isUsePassphrase() {
         return usePassphrase;
     }
 
+    public boolean isAutoRetry() {
+        return autoRetry;
+    }
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,9 +18,9 @@ import java.util.TreeSet;
 
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphWithProperties;
-import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRoutingInformation;
 import edu.uci.ics.jung.algorithms.filters.FilterUtils;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;

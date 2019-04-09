@@ -19,7 +19,16 @@
                 "Required",
                 "RequiredIfConnected"
             ],
-            "defaultInputExecutionConstraint":"Required"
+            "defaultInputExecutionConstraint":"Required",
+            "metaData":{
+                "tolerance":{
+                    "guiName":"Tolerance",
+                    "guiPosition":"0",
+                    "guiGroup":"",
+                    "defaultValue":"",
+                    "visibility":"shown"
+                }
+            }
         },
         {
             "identifier": "evaluation_results",

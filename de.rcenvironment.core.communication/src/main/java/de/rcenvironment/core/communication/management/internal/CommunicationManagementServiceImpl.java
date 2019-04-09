@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -21,6 +21,10 @@ import java.util.concurrent.ScheduledFuture;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Version;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
@@ -40,6 +44,7 @@ import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
+import de.rcenvironment.core.communication.rpc.internal.ReliableRPCStreamService;
 import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
@@ -54,6 +59,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * 
  * @author Robert Mischke
  */
+@Component
 public class CommunicationManagementServiceImpl implements CommunicationManagementService {
 
     /**
@@ -74,6 +80,8 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     private ScheduledFuture<?> connectionHealthCheckTaskHandle;
 
     private RemoteServiceCallHandlerService serviceCallHandler;
+
+    private ReliableRPCStreamService reliableRPCStreamService;
 
     private NodePropertiesService nodePropertiesService;
 
@@ -136,18 +144,14 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
             }
         }
 
-        connectionHealthCheckTaskHandle = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            @TaskDescription("Communication Layer: Connection health check (trigger task)")
-            public void run() {
+        connectionHealthCheckTaskHandle = ConcurrencyUtils.getAsyncTaskService()
+            .scheduleAtFixedInterval("Communication Layer: Connection health check (trigger task)", () -> {
                 try {
                     connectionService.triggerHealthCheckForAllChannels();
                 } catch (RuntimeException e) {
                     log.error("Uncaught exception during connection health check", e);
                 }
-            }
-        }, CommunicationConfiguration.CONNECTION_HEALTH_CHECK_INTERVAL_MSEC);
+            }, CommunicationConfiguration.CONNECTION_HEALTH_CHECK_INTERVAL_MSEC);
 
         started = true;
     }
@@ -158,9 +162,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         Future<MessageChannel> future = connectionService.connect(ncp, true);
         try {
             return future.get();
-        } catch (ExecutionException e) {
-            throw new CommunicationException(e);
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             throw new CommunicationException(e);
         }
     }
@@ -244,6 +246,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newService the service to bind
      */
+    @Reference
     public void bindMessageChannelService(MessageChannelService newService) {
         // do not allow rebinding for now
         if (connectionService != null) {
@@ -257,6 +260,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newService the service to bind
      */
+    @Reference
     public void bindNetworkRoutingService(NetworkRoutingService newService) {
         // do not allow rebinding for now
         if (networkRoutingService != null) {
@@ -270,6 +274,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newService the service to bind
      */
+    @Reference
     public void bindNodeConfigurationService(NodeConfigurationService newService) {
         // do not allow rebinding for now
         if (this.nodeConfigurationService != null) {
@@ -283,6 +288,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newInstance the {@link RemoteServiceCallHandlerService} to use
      */
+    @Reference
     public void bindServiceCallHandler(RemoteServiceCallHandlerService newInstance) {
         serviceCallHandler = newInstance;
     }
@@ -292,6 +298,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newInstance the new service instance to bind
      */
+    @Reference
     public void bindNodePropertiesService(NodePropertiesService newInstance) {
         this.nodePropertiesService = newInstance;
     }
@@ -301,20 +308,32 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * 
      * @param newInstance the new service instance to bind
      */
+    @Reference
     public void bindConnectionSetupService(ConnectionSetupService newInstance) {
         this.connectionSetupService = newInstance;
     }
 
     /**
+     * OSGi-DS bind method; public for integration testing.
+     *
+     * @param newInstance the new service instance to bind
+     */
+    @Reference
+    public void bindReliableRPCStreamService(ReliableRPCStreamService newInstance) {
+        reliableRPCStreamService = newInstance;
+    }
+
+    /**
      * OSGi-DS lifecycle method.
      */
+    @Activate
     public void activate() {
         ownNodeInformation = nodeConfigurationService.getInitialNodeInformation();
 
         MessageEndpointHandler messageEndpointHandler = new MessageEndpointHandlerImpl(nodeConfigurationService.getNodeIdentifierService());
 
         messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
-            serviceCallHandler));
+            serviceCallHandler, reliableRPCStreamService));
         messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
             new HealthCheckNetworkRequestHandler());
 
@@ -344,6 +363,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     /**
      * OSGi-DS lifecycle method.
      */
+    @Deactivate
     public void deactivate() {}
 
     /**

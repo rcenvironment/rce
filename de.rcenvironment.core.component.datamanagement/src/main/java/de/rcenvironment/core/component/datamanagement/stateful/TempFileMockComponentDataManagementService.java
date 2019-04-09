@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,7 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
-import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.common.NetworkDestination;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileService;
@@ -39,7 +39,7 @@ public class TempFileMockComponentDataManagementService implements StatefulCompo
     // method does not make sense in this context, because this method implementation is only
     // intended to work locally
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, Collection<ResolvableNodeId> platforms) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, Collection<NetworkDestination> platforms) throws IOException {
         // false = do not preserve timestamp
         FileUtils.copyFile(new File(reference), targetFile, false);
     }
@@ -47,7 +47,7 @@ public class TempFileMockComponentDataManagementService implements StatefulCompo
     // method does not make sense in this context, because this method implementation is only
     // intended to work locally
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId platform) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, NetworkDestination platform) throws IOException {
         // false = do not preserve timestamp
         FileUtils.copyFile(new File(reference), targetFile, false);
     }

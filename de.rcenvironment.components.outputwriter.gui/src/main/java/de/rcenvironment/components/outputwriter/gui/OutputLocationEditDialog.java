@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -14,14 +14,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -39,6 +40,7 @@ import org.eclipse.swt.widgets.Text;
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants.HandleExistingFile;
+import de.rcenvironment.components.outputwriter.common.OutputWriterValidatorHelper;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.workflow.executor.properties.WhitespaceShowListener;
 
@@ -47,15 +49,24 @@ import de.rcenvironment.core.gui.workflow.executor.properties.WhitespaceShowList
  * Edit Dialog for an OutputLocation.
  *
  * @author Brigitte Boden
+ * @author Dominik Schneider
  */
 
 public class OutputLocationEditDialog extends Dialog {
+
+    private static final char SPACE = ' ';
+
+    private static final String SEMICOLON = ";";
+
+    private static final String LINE_SEP = System.getProperty("line.separator");
 
     private static final int GROUPS_MIN_WIDTH = 550;
 
     private static final int HEADER_HEIGHT = 30;
 
     private static final int FORMAT_HEIGHT = 50;
+
+    private static final int WARNING_HEIGHT = 70;
 
     private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
         '*', '?', '\"', '>', '<', '|' };
@@ -86,14 +97,20 @@ public class OutputLocationEditDialog extends Dialog {
 
     private final List<String> otherOutputLocationFileNamesWithPaths;
 
+    private List<String> generalHeaderPlaceholderList;
+
+    private List<String> generalFormatPlaceholderList;
+
     private Combo formatPlaceholderCombo;
 
     private Combo headerPlaceholderCombo;
 
+    private WarningErrorLabel warningLabel;
+
     /**
      * Dialog for creating or editing an endpoint.
      * 
-     * @param parentShell parent Shell
+     * @param parentShell   parent Shell
      * @param title
      * @param configuration the containing endpoint manager
      */
@@ -112,9 +129,16 @@ public class OutputLocationEditDialog extends Dialog {
         chosenFilename = "";
         chosenFolderForSaving = OutputWriterComponentConstants.ROOT_DISPLAY_NAME;
         chosenHandle = OutputWriterComponentConstants.DEFAULT_HANDLE_EXISTING_FILE;
-        chosenInputSet = new ArrayList<String>();
+        chosenInputSet = new ArrayList<>();
         chosenHeader = "";
         chosenFormatString = "";
+
+        generalHeaderPlaceholderList = new ArrayList<>();
+        generalFormatPlaceholderList = new ArrayList<>();
+        generalHeaderPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
+        generalHeaderPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+        generalHeaderPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
+
     }
 
     public String getChosenFilename() {
@@ -182,6 +206,8 @@ public class OutputLocationEditDialog extends Dialog {
                         }
                         validateInput();
                         refreshPlaceholders();
+                        refreshFormatPlaceholderList();
+                        updateWarningLabel();
                     }
 
                     @Override
@@ -221,13 +247,9 @@ public class OutputLocationEditDialog extends Dialog {
         fileName.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         fileName.setText(chosenFilename);
         fileName.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
-        fileName.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                chosenFilename = fileName.getText();
-                validateInput();
-            }
+        fileName.addModifyListener(ignoredEvent -> {
+            chosenFilename = fileName.getText();
+            validateInput();
         });
 
         new Label(configGroup, SWT.NONE).setText("");
@@ -264,18 +286,14 @@ public class OutputLocationEditDialog extends Dialog {
         final Text additionalFolder = new Text(configGroup, SWT.SINGLE | SWT.BORDER);
         additionalFolder.setMessage(Messages.optionalMessage);
         additionalFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        additionalFolder.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                if (!((Text) arg0.getSource()).getText().isEmpty()) {
-                    chosenFolderForSaving =
-                        OutputWriterComponentConstants.ROOT_DISPLAY_NAME + File.separator + ((Text) arg0.getSource()).getText();
-                } else {
-                    chosenFolderForSaving = OutputWriterComponentConstants.ROOT_DISPLAY_NAME;
-                }
-                validateInput();
+        additionalFolder.addModifyListener(event -> {
+            if (!((Text) event.getSource()).getText().isEmpty()) {
+                chosenFolderForSaving =
+                    OutputWriterComponentConstants.ROOT_DISPLAY_NAME + File.separator + ((Text) event.getSource()).getText();
+            } else {
+                chosenFolderForSaving = OutputWriterComponentConstants.ROOT_DISPLAY_NAME;
             }
+            validateInput();
         });
 
         new Label(configGroup, SWT.NONE).setText("");
@@ -306,6 +324,7 @@ public class OutputLocationEditDialog extends Dialog {
                     .equals(OutputWriterComponentConstants.ROOT_DISPLAY_NAME));
                 dirInsertButton.setEnabled(((Combo) arg0.getSource()).getText().equals(OutputWriterComponentConstants.ROOT_DISPLAY_NAME));
                 validateInput();
+
             }
 
             @Override
@@ -335,12 +354,23 @@ public class OutputLocationEditDialog extends Dialog {
         headerGridData.heightHint = HEADER_HEIGHT;
         header.setLayoutData(headerGridData);
         header.setText(chosenHeader);
-        header.addModifyListener(new ModifyListener() {
+        header.addModifyListener(event -> {
+            chosenHeader = header.getText();
+            validateInput();
+            updateWarningLabel();
+        });
+
+        // prevents adding linebreaks via enter
+        header.addKeyListener(new KeyAdapter() {
 
             @Override
-            public void modifyText(ModifyEvent arg0) {
-                chosenHeader = header.getText();
-                validateInput();
+            public void keyPressed(KeyEvent e) {
+                if (!header.getText().isEmpty()) {
+                    if (e.keyCode == SWT.CR || e.keyCode == SWT.LF) {
+                        header.setText(cleanCarriageReturn(header.getText()));
+                        header.setSelection(header.getText().length());
+                    }
+                }
             }
         });
 
@@ -365,13 +395,23 @@ public class OutputLocationEditDialog extends Dialog {
         formatGridData.heightHint = FORMAT_HEIGHT;
         formatString.setLayoutData(formatGridData);
         formatString.setText(chosenFormatString);
-        // formatString.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
-        formatString.addModifyListener(new ModifyListener() {
+        formatString.addModifyListener(ignoredEvent -> {
+            chosenFormatString = formatString.getText();
+            validateInput();
+            updateWarningLabel();
+        });
+
+        // prevents adding linebreaks via enter
+        formatString.addKeyListener(new KeyAdapter() {
 
             @Override
-            public void modifyText(ModifyEvent arg0) {
-                chosenFormatString = formatString.getText();
-                validateInput();
+            public void keyPressed(KeyEvent e) {
+                if (formatString.getText().length() > 0) {
+                    if (e.keyCode == SWT.CR || e.keyCode == SWT.LF) {
+                        formatString.setText(cleanCarriageReturn(formatString.getText()));
+                        formatString.setSelection(formatString.getText().length());
+                    }
+                }
             }
         });
 
@@ -385,11 +425,11 @@ public class OutputLocationEditDialog extends Dialog {
         final Composite formatPlaceholderComp = new Composite(configGroup, SWT.NONE);
         formatPlaceholderComp.setLayout(new GridLayout(2, false));
         formatPlaceholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-
         formatPlaceholderCombo = OutputWriterGuiUtils.createPlaceholderCombo(formatPlaceholderComp, new String[0]);
         OutputWriterGuiUtils.createPlaceholderInsertButton(formatPlaceholderComp, formatPlaceholderCombo, formatString);
 
         refreshPlaceholders();
+        refreshFormatPlaceholderList();
 
         new Label(configGroup, SWT.NONE).setText(Messages.handleExisting + COLON);
         final Combo existingFileCombo = new Combo(configGroup, SWT.READ_ONLY);
@@ -437,12 +477,8 @@ public class OutputLocationEditDialog extends Dialog {
 
         new Label(configGroup, SWT.NONE).setText("");
         new Label(configGroup, SWT.NONE).setText(Messages.previousIterationMessage);
-        new Label(configGroup, SWT.NONE).setText("");
-    }
 
-    @Override
-    protected void okPressed() {
-        super.okPressed();
+        createWarningLabel(configGroup);
     }
 
     @Override
@@ -452,6 +488,7 @@ public class OutputLocationEditDialog extends Dialog {
         getShell().setText(title);
 
         validateInput();
+        updateWarningLabel();
     }
 
     protected void validateInput() {
@@ -474,8 +511,8 @@ public class OutputLocationEditDialog extends Dialog {
      *
      */
     protected void refreshPlaceholders() {
-        List<String> placeholderList = new ArrayList<String>();
-        List<String> headerPlaceholderList = new ArrayList<String>();
+        List<String> placeholderList = new ArrayList<>();
+        List<String> headerPlaceholderList = new ArrayList<>();
 
         headerPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
         headerPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
@@ -515,11 +552,92 @@ public class OutputLocationEditDialog extends Dialog {
         chosenFilename = out.getFilename();
         chosenFolderForSaving = out.getFolderForSaving();
         chosenFormatString = out.getFormatString();
-        //Copy list to prevent side effects.
-        chosenInputSet = new ArrayList<String>(out.getInputs());
+        // Copy list to prevent side effects.
+        chosenInputSet = new ArrayList<>(out.getInputs());
         chosenHandle = out.getHandleExistingFile();
         chosenHeader = out.getHeader();
 
+    }
+
+    private String cleanCarriageReturn(String tmp) {
+        tmp = tmp.replaceAll("\r", "");
+        tmp = tmp.replaceAll("\n", "");
+        tmp = tmp.replace(Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK),
+            Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK + LINE_SEP));
+        return tmp;
+    }
+
+    private void refreshFormatPlaceholderList() {
+        generalFormatPlaceholderList = new ArrayList<String>();
+        generalFormatPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
+        generalFormatPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+        generalFormatPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
+
+        for (String input : chosenInputSet) {
+            String inputPlaceholder = OutputWriterComponentConstants.PH_PREFIX + input + OutputWriterComponentConstants.PH_SUFFIX;
+            if (!generalFormatPlaceholderList.contains(inputPlaceholder)) {
+                generalFormatPlaceholderList.add(inputPlaceholder);
+            }
+        }
+
+    }
+
+    private void updateWarningLabel() {
+        warningLabel.clearWarnings();
+        warningLabel.clearErrors();
+
+        final List<String> headerValidationErrors = OutputWriterValidatorHelper.getValidationErrors(chosenHeader);
+        final List<String> formatValidationErrors = OutputWriterValidatorHelper.getValidationErrors(chosenFormatString);
+
+        final boolean headerValidationFailed = !headerValidationErrors.isEmpty();
+        final boolean formatValidationFailed = !formatValidationErrors.isEmpty();
+        final boolean validationFailed = headerValidationFailed || formatValidationFailed;
+        final Button okButton = getButton(OK);
+        okButton.setEnabled(!validationFailed);
+
+        if (!headerValidationFailed) {
+            final List<String> headerValidationWarnings =
+                OutputWriterValidatorHelper.getValidationWarnings(chosenHeader, generalHeaderPlaceholderList);
+
+            if (!headerValidationWarnings.isEmpty()) {
+                final StringBuilder warningMessageBuilder = new StringBuilder();
+                warningMessageBuilder.append("Header section:\n");
+                warningMessageBuilder.append(String.join(SEMICOLON + SPACE, headerValidationWarnings));
+
+                warningLabel.addWarning(warningMessageBuilder.toString());
+            }
+        } else {
+            final StringBuilder errorMessageBuilder = new StringBuilder();
+            errorMessageBuilder.append("Header section:\n");
+            errorMessageBuilder.append(String.join(SEMICOLON + SPACE, headerValidationErrors));
+
+            warningLabel.addError(errorMessageBuilder.toString());
+        }
+
+        if (!formatValidationFailed) {
+            final List<String> formatValidationWarnings =
+                OutputWriterValidatorHelper.getValidationWarnings(chosenFormatString, generalFormatPlaceholderList);
+
+            if (!formatValidationWarnings.isEmpty()) {
+                final StringBuilder warningMessageBuilder = new StringBuilder();
+                warningMessageBuilder.append("Format section:\n");
+                warningMessageBuilder.append(String.join(SEMICOLON + SPACE, formatValidationWarnings));
+
+                warningLabel.addWarning(warningMessageBuilder.toString());
+            }
+        } else {
+            final StringBuilder errorMessageBuilder = new StringBuilder();
+            errorMessageBuilder.append("Format section:\n");
+            errorMessageBuilder.append(String.join(SEMICOLON + SPACE, formatValidationErrors));
+            warningLabel.addError(errorMessageBuilder.toString());
+        }
+    }
+
+    private void createWarningLabel(Group configGroup) {
+        GridData gridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        gridData.horizontalSpan = 2;
+        gridData.heightHint = WARNING_HEIGHT;
+        warningLabel = new WarningErrorLabel(configGroup, SWT.SHADOW_NONE);
     }
 
 }

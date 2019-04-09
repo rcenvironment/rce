@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -36,8 +36,8 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
-import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -67,7 +67,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
     /**
      * Notification service to get notified on new history objects.
      */
-    protected SimpleNotificationService notificationService = new SimpleNotificationService();
+    protected DistributedNotificationService notificationService;
 
     /**
      * The simplified version for DM reference accesses.
@@ -87,11 +87,6 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
 
     private Button mappedB;
 
-    @Deprecated
-    public AbstractCpacsRuntimeView() {
-        super();
-    }
-
     @Override
     public void initializeData(ComponentExecutionInformation componentExecutionInformation) {
         componentInstanceDescriptor = componentExecutionInformation;
@@ -104,6 +99,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
         }
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         dataManagementService = serviceRegistryAccess.getService(DataManagementService.class);
+        notificationService = serviceRegistryAccess.getService(DistributedNotificationService.class);
         final String tempFileReference = getFileReference();
         if (tempFileReference != null) {
             try {
@@ -113,7 +109,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
                     // anew. As the view won't be re-opened very often and won't be executed an a remote node very often, this behavior
                     // is acceptable for now. Will be changed if temp file clean up on RCE shutdown is improved -seid_do
                     dataManagementService.copyReferenceToLocalFile(
-                        tempFileReference, cpacsFile, componentInstanceDescriptor.getDefaultStorageNodeId());
+                        tempFileReference, cpacsFile, componentInstanceDescriptor.getStorageNetworkDestination());
                 }
             } catch (final IOException | CommunicationException e) {
                 log.error("Fetching CPACS file failed", e);

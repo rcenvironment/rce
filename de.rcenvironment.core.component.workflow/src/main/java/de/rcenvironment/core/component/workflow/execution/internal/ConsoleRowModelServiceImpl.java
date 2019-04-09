@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -16,6 +16,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
@@ -25,6 +29,7 @@ import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowLogServi
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionManager;
 import de.rcenvironment.core.component.workflow.execution.impl.ConsoleSubscriptionEventProcessor;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
@@ -34,6 +39,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Doreen Seider (initial version)
  * @author Robert Mischke (current)
  */
+@Component(immediate = true)
 public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, ConsoleRowProcessor {
 
     /**
@@ -47,11 +53,9 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
      */
     private static final int MAX_SNAPSHOT_SIZE = 25000;
 
-    // TODO make non-static
-    private static GenericSubscriptionManager subscriptionManager;
+    private GenericSubscriptionManager subscriptionManager;
 
-    // TODO make non-static
-    private static CountDownLatch initialSubscriptionLatch;
+    private final CountDownLatch initialSubscriptionLatch;
 
     private Deque<ConsoleRow> allRows;
 
@@ -84,8 +88,10 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     private ConsoleRowLogService consoleRowLogService;
 
     private WorkflowHostService workflowHostService;
-    
+
     private CommunicationService communicationService;
+
+    private DistributedNotificationService notificationService;
 
     public ConsoleRowModelServiceImpl() {
         // initialize internal model
@@ -98,6 +104,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     /**
      * OSGi-DS lifecycle method.
      */
+    @Activate
     public void activate() {
         ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
@@ -105,7 +112,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
             @TaskDescription("Initial ConsoleRow model subscriptions")
             public void run() {
                 subscriptionManager = new GenericSubscriptionManager(new ConsoleSubscriptionEventProcessor(
-                    ConsoleRowModelServiceImpl.this, consoleRowLogService), communicationService, workflowHostService);
+                    ConsoleRowModelServiceImpl.this, consoleRowLogService), communicationService, workflowHostService, notificationService);
                 subscriptionManager.updateSubscriptionsForPrefixes(new String[] { ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT });
                 initialSubscriptionLatch.countDown();
             }
@@ -240,15 +247,6 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
         trimFilteredList();
     }
 
-    /**
-     * OSGi-DS bind method.
-     * 
-     * @param newInstance the new service instance
-     */
-    public void bindConsoleRowLogService(ConsoleRowLogService newInstance) {
-        this.consoleRowLogService = newInstance;
-    }
-
     private void resetModel() {
         allRows = new LinkedList<ConsoleRow>();
         filteredRows = new LinkedList<ConsoleRow>();
@@ -281,23 +279,45 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
         sequenceIdCounter++;
         resetModel();
     }
-    
+
     /**
      * OSGi-DS bind method.
      * 
      * @param newInstance the new service instance
      */
-    public void bindCommunicationService(CommunicationService newInstance) {
+    @Reference
+    protected void bindConsoleRowLogService(ConsoleRowLogService newInstance) {
+        this.consoleRowLogService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    @Reference
+    protected void bindCommunicationService(CommunicationService newInstance) {
         this.communicationService = newInstance;
     }
-    
+
     /**
      * OSGi-DS bind method.
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     protected void bindWorkflowHostService(WorkflowHostService newWorkflowHostService) {
         workflowHostService = newWorkflowHostService;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    @Reference
+    protected void bindNotificationService(DistributedNotificationService newInstance) {
+        this.notificationService = newInstance;
     }
 
 }

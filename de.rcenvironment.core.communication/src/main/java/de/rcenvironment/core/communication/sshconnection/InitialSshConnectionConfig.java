@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,6 +22,8 @@ public class InitialSshConnectionConfig {
     private String displayName;
     private String keyFileLocation;
     private boolean usePassphrase;
+    private boolean connectOnStartup;
+    private boolean autoRetry;
     
     public String getHost() {
         return host;
@@ -81,4 +83,19 @@ public class InitialSshConnectionConfig {
         this.usePassphrase = usePassphrase;
     }
     
+    public boolean getConnectOnStartup() {
+        return connectOnStartup;
+    }
+
+    public void setConnectOnStartup(boolean connectOnStartup) {
+        this.connectOnStartup = connectOnStartup;
+    }
+    
+    public boolean getAutoRetry() {
+        return autoRetry;
+    }
+
+    public void setAutoRetry(boolean autoRetry) {
+        this.autoRetry = autoRetry;
+    }
 }

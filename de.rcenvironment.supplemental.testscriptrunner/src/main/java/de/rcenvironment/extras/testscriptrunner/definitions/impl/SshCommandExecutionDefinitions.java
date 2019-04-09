@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -72,20 +72,21 @@ public class SshCommandExecutionDefinitions {
 
         log.info(StringUtils.format("Opening SSH connection to %s@%s:%d", loginName, host, port));
         currentConnection =
-            new SshConnectionSetupImpl("default", "", host, port, loginName, null, false, false, false, new SshConnectionListenerAdapter() {
+            new SshConnectionSetupImpl("default", "", host, port, loginName, null, false, false, false, false,
+                new SshConnectionListenerAdapter() {
 
-                @Override
-                public void onConnected(SshConnectionSetup setup) {
-                    connectResult = true;
-                }
+                    @Override
+                    public void onConnected(SshConnectionSetup setup) {
+                        connectResult = true;
+                    }
 
-                @Override
-                public void onConnectionAttemptFailed(SshConnectionSetup setup, String reason, boolean firstConsecutiveFailure,
-                    boolean willAutoRetry) {
-                    log.error("Failed to open SSH connection: " + reason);
-                    connectResult = false;
-                }
-            });
+                    @Override
+                    public void onConnectionAttemptFailed(SshConnectionSetup setup, String reason, boolean firstConsecutiveFailure,
+                        boolean willAutoRetry) {
+                        log.error("Failed to open SSH connection: " + reason);
+                        connectResult = false;
+                    }
+                });
         Session session = currentConnection.connect(loginPassphrase);
         Objects.requireNonNull(connectResult, "Unknown connection result");
         if (!connectResult) {

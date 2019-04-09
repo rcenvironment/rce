@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -11,8 +11,14 @@ package de.rcenvironment.core.gui.workflow.execute;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,6 +46,7 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowDescriptionValidationResult;
@@ -53,11 +60,13 @@ import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowDescriptionValidationUtils;
 import de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorAction;
 import de.rcenvironment.core.gui.workflow.view.properties.InputModel;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -73,6 +82,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Robert Mischke
  */
 public class WorkflowExecutionWizard extends Wizard implements DistributedComponentKnowledgeListener {
+
+    private static final int UI_EVENT_DISPATCH_INTERVAL_DURING_BLOCKING_REMOTE_CALL = 200;
 
     private static final int MINIMUM_HEIGHT = 250;
 
@@ -169,10 +180,17 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
             return false;
         }
 
-        if (!validateWorkflowAndPlaceholders() && !requestConfirmationForValidationErrorsWarnings()) {
+        messageStore.emptyMessageStore(); // Delete all old messages
+
+        // check both before the if statement to avoid short circuiting on the first check
+        boolean workflowControllerVisibilityValid = validateWorkflowControllerVisibility(); // run first for error message ordering
+        boolean workflowAndPlaceholdersValid = validateWorkflowAndPlaceholders();
+
+        if (!(workflowAndPlaceholdersValid && workflowControllerVisibilityValid)
+            && !requestConfirmationForValidationErrorsWarnings()) {
             return false;
         } else {
-            //Only save placeholders to persistent settings if the user does not cancel the run dialog.
+            // Only save placeholders to persistent settings if the user does not cancel the run dialog.
             placeholdersPage.savePlaceholdersToPersistentSettings();
         }
 
@@ -213,7 +231,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
      */
     public synchronized boolean performValidations() {
         WorkflowDescriptionValidationResult validationResult = workflowExecutionService
-            .validateWorkflowDescription(wfDescription);
+            .validateAvailabilityOfNodesAndComponentsFromLocalKnowledge(wfDescription);
         workflowPage.getWorkflowComposite().refreshContent();
 
         if (getContainer().getCurrentPage() == placeholdersPage) {
@@ -239,20 +257,15 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         }
 
-        if (validationResult.isSucceeded()) {
-            return true;
-        }
-
-        return false;
-
+        return validationResult.isSucceeded();
     }
 
     private void grabDataFromWorkflowPage() {
         wfDescription.setName(workflowPage.getWorkflowName());
         wfDescription.setControllerNode(workflowPage.getControllerNodeId());
         wfDescription.setAdditionalInformation(workflowPage.getAdditionalInformation());
-        Map<String, ComponentInstallation> cmpInstallations = workflowPage.getComponentInstallations();
-        for (String wfNodeId : cmpInstallations.keySet()) {
+        Map<WorkflowNodeIdentifier, ComponentInstallation> cmpInstallations = workflowPage.getComponentInstallations();
+        for (WorkflowNodeIdentifier wfNodeId : cmpInstallations.keySet()) {
             wfDescription.getWorkflowNode(wfNodeId).getComponentDescription()
                 .setComponentInstallationAndUpdateConfiguration(cmpInstallations.get(wfNodeId));
         }
@@ -280,6 +293,57 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         boolean returnValue = !placeholderError && messageStore.isErrorAndWarningsFree();
         return returnValue;
+    }
+
+    private boolean validateWorkflowControllerVisibility() {
+        LogicalNodeId controllerNode = wfDescription.getControllerNode();
+        if (controllerNode == null || controllerNode.equals(localDefaultNodeId)) {
+            LOG.debug("Running with a local workflow controller; no visibility checks required");
+            return true; // workflow controller is local, so there are no visibility differences to check
+        }
+
+        Map<String, String> errors = performRemoteControllerVisibilityCheck();
+        if (errors == null || errors.isEmpty()) {
+            return true; // checked and found no errors
+        }
+
+        // convert reported errors (maximum one per component id) into stardard validation error entries
+        for (Entry<String, String> error : errors.entrySet()) {
+            ComponentValidationMessage componentValidationMessage =
+                new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, null, null, error.getValue());
+            List<ComponentValidationMessage> temp = new ArrayList<>();
+            temp.add(componentValidationMessage);
+            messageStore.addValidationMessagesByComponentId(error.getKey(), temp);
+        }
+        return false;
+    }
+
+    private Map<String, String> performRemoteControllerVisibilityCheck() {
+        final Exchanger<Map<String, String>> exchanger = new Exchanger<>();
+        ConcurrencyUtils.getAsyncTaskService().execute("Run remote query for component visibility", () -> {
+            try {
+                exchanger.exchange(workflowExecutionService.validateRemoteWorkflowControllerVisibilityOfComponents(wfDescription));
+            } catch (InterruptedException e) {
+                LOG.warn("Interrupted while waiting for the GUI thread to receive a query result");
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        while (true) {
+            try {
+                return exchanger.exchange(null, UI_EVENT_DISPATCH_INTERVAL_DURING_BLOCKING_REMOTE_CALL, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOG.warn("Interrupted while waiting for a query result");
+                return new HashMap<>();
+            } catch (TimeoutException e) {
+                Display display = Display.getCurrent();
+                // process all queued UI events before continuing to wait for the result
+                while (display.readAndDispatch()) {
+                    display = display; // yes, thank you CheckStyle, I realize that this block is empty
+                }
+            }
+        }
     }
 
     /**
@@ -314,7 +378,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
     private void executeWorkflow(WorkflowDescription clonedWfDesc) {
 
         DistributedComponentKnowledge compKnowledge = serviceRegistryAccess
-            .getService(DistributedComponentKnowledgeService.class).getCurrentComponentKnowledge();
+            .getService(DistributedComponentKnowledgeService.class).getCurrentSnapshot();
 
         try {
             WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(clonedWfDesc, localDefaultNodeId, compKnowledge);
@@ -338,7 +402,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         final WorkflowExecutionInformation wfExeInfo;
         try {
-            wfExeInfo = workflowExecutionService.executeWorkflowAsync(wfExecutionContext);
+            wfExeInfo = workflowExecutionService.startWorkflowExecution(wfExecutionContext);
         } catch (WorkflowExecutionException | RemoteOperationException e) {
             handleWorkflowExecutionError(clonedWfDesc, e);
             return;

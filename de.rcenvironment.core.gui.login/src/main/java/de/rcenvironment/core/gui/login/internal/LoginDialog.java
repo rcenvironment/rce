@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.login.internal;
 
-import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -29,7 +28,6 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
-import org.globus.gsi.OpenSSLKey;
 
 import de.rcenvironment.core.authentication.AuthenticationService;
 import de.rcenvironment.core.authentication.User;
@@ -53,16 +51,6 @@ public class LoginDialog extends Dialog {
      * The controller of this view.
      */
     private LoginDialogController loginDialogController;
-
-    /**
-     * The certificate.
-     */
-    private X509Certificate certificate;
-
-    /**
-     * The private key.
-     */
-    private OpenSSLKey privateKey;
 
     /**
      * Text field for the password.
@@ -182,24 +170,6 @@ public class LoginDialog extends Dialog {
     }
 
     /**
-     * Setter.
-     * 
-     * @param certificate The certificate to set.
-     */
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-    }
-
-    /**
-     * Setter.
-     * 
-     * @param key The key to set.
-     */
-    public void setKey(OpenSSLKey key) {
-        privateKey = key;
-    }
-
-    /**
      * 
      * Setter.
      * 
@@ -238,8 +208,6 @@ public class LoginDialog extends Dialog {
             } else {
                 return new LoginInput(usernameLdap, password);
             }
-        } else if (currentlySelectedTabTitle.equals(Messages.certificateTabName)) {
-            return new LoginInput(certificate, privateKey, password);
         } else {
             throw new AssertionError();
         }
@@ -247,44 +215,6 @@ public class LoginDialog extends Dialog {
 
     public boolean getAnonymousLogin(){
         return anonymousLogin;
-    }
-    /**
-     * Getter.
-     * 
-     * @return The certificate text box.
-     */
-    public Text getCertificateFileText() {
-        return certificatePathText;
-    }
-
-    /**
-     * 
-     * Getter.
-     * 
-     * @return the certificate combo box.
-     */
-    public Button getCertificateFileButton() {
-        return certificatePathButton;
-    }
-
-    /**
-     * 
-     * Getter.
-     * 
-     * @return the text field of the key file path.
-     */
-    public Text getKeyFileText() {
-        return keyPathText;
-    }
-
-    /**
-     * 
-     * Getter.
-     * 
-     * @return the button to choose the key file.
-     */
-    public Button getkeyFileButton() {
-        return keyPathButton;
     }
 
     /**
@@ -294,15 +224,6 @@ public class LoginDialog extends Dialog {
      */
     public String getUsernameLDAP() {
         return usernameLdap;
-    }
-
-    /**
-     * Getter.
-     * 
-     * @return the certficate of the certificate login
-     */
-    public X509Certificate getCertificate(){
-        return certificate;
     }
 
     /**
@@ -334,11 +255,6 @@ public class LoginDialog extends Dialog {
 
         tabFolder = new TabFolder(parent, SWT.NONE);
 
-
-        TabItem certificateTab = new TabItem(tabFolder, SWT.NONE);
-        certificateTab.setText(Messages.certificateTabName);
-        certificateTab.setControl(createCertificateComposite(tabFolder));
-
         TabItem idLoginTab = new TabItem(tabFolder, SWT.NONE);
         idLoginTab.setText(Messages.ldapTabName);
         idLoginTab.setControl(createLDAPComposite(tabFolder));
@@ -353,7 +269,6 @@ public class LoginDialog extends Dialog {
         });
         currentlySelectedTabTitle = loginDialogController.getTabTitle();
         setCurrentlySelectedTab();
-
 
         return tabFolder;
     }
@@ -398,46 +313,10 @@ public class LoginDialog extends Dialog {
         return composite;
     }
 
-    private Composite createCertificateComposite(final Composite parent) {
-        final Composite composite = (Composite) super.createDialogArea(parent);
-        composite.setLayout(new GridLayout(3, false));
-
-        if (!relogin || user == null || user.getType() != Type.certificate) {
-            createCertificateArea(composite);
-        } else {
-            createProxyCertificateArea(composite);
-        }
-
-        createPrivateKeyArea(composite);
-        passwordTextCertificate = createPasswordArea(composite);
-
-        loginDialogController.setUpDialogForCertificate(relogin);
-
-        return composite;
-    }
-
     @Override
     protected void okPressed() {
 
-        if (currentlySelectedTabTitle.equals(Messages.certificateTabName)){
-            if (user == null) {
-                if (certificate == null || privateKey == null) {
-                    MessageDialog.openError(getShell(),
-                        Messages.loginDialog,
-                        Messages.certAandKeyRequiered);
-                    return;
-                }
-            } else if (privateKey == null) {
-                MessageDialog.openError(getShell(),
-                    Messages.reLoginDialog,
-                    Messages.keyForCertRequiered);
-                return;
-            }
-            if (!passwordTextCertificate.getText().isEmpty()) {
-                password = passwordTextCertificate.getText();
-            }
-
-        } else if (currentlySelectedTabTitle.equals(Messages.ldapTabName)){
+        if (currentlySelectedTabTitle.equals(Messages.ldapTabName)){
             // get values
 
             anonymousLogin = anonymous.getSelection();

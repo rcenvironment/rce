@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -25,7 +25,9 @@ public interface InstanceValidationService {
     /**
      * Validates the RCE instance.
      * 
-     * @return {@link InstanceValidationResult}s sorted by {@link InstanceValidationResultType}
+     * @return Map with {@link InstanceValidationResult}s. For each validator one result exists. It is guaranteed that all of the possible
+     *         {@link InstanceValidationResultType}s are provided as keys of the map, i.e., each value of
+     *         {@link InstanceValidationResultType} is mapped at least to an empty list.
      */
     Map<InstanceValidationResultType, List<InstanceValidationResult>> validateInstance();
 }

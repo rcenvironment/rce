@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -18,11 +18,11 @@ import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 
 /**
- * Identifier for a component run.
+ * Data management transfer object representing a workflow component run.
  * 
  * @author Jan Flink
  * @author Brigitte Boden
- * @author Robert Mischke (8.0.0 id adaptations)
+ * @author Robert Mischke
  */
 public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
@@ -163,5 +163,21 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
     @Override
     public int compareTo(ComponentRun arg0) {
         return getStartTime().compareTo(arg0.getStartTime());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // implemented to be consistent with compareTo(); note that theoretically, however, this could be semantically wrong
+        if (!(o instanceof ComponentRun)) {
+            return false;
+        }
+        ComponentRun other = (ComponentRun) o;
+        return getStartTime().equals(other.getStartTime());
+    }
+
+    @Override
+    public int hashCode() {
+        // implemented to be consistent with compareTo()
+        return getStartTime().hashCode();
     }
 }

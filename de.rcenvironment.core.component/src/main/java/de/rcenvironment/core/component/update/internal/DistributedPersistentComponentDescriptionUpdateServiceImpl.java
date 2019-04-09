@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,10 +24,10 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
-import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
@@ -47,7 +47,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Tobias Brieden
  * @author Doreen Seider
  * 
- * Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
+ *         Note: See note in {@link RemotablePersistentComponentDescriptionUpdateService}. --seid_do
  */
 public class DistributedPersistentComponentDescriptionUpdateServiceImpl implements DistributedPersistentComponentDescriptionUpdateService {
 
@@ -165,7 +165,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
     private Map<LogicalNodeId, List<PersistentComponentDescription>> sortPersistentComponentDescriptions(
         List<PersistentComponentDescription> descriptions) {
 
-        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
 
         Map<LogicalNodeId, List<PersistentComponentDescription>> sortedDescriptions =
             new HashMap<LogicalNodeId, List<PersistentComponentDescription>>();
@@ -189,7 +189,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
      * the update should always be made to the newest available version in the network.
      * 
      */
-    protected LogicalNodeId getTargetNodeForUpdate(PersistentComponentDescription compDesc, Collection<ComponentInstallation> compInsts) {
+    protected LogicalNodeId getTargetNodeForUpdate(PersistentComponentDescription compDesc,
+        Collection<DistributedComponentEntry> compInsts) {
 
         ComponentInstallation exactlyMatchingComponent = null;
 
@@ -201,17 +202,19 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
         // update
         // check can be directly done on the given node, the description can be returned as it is and this method is done otherwise add the
         // basically matching component to the list of matching components which will be considered later on
-        for (ComponentInstallation compInst : compInsts) {
-            ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
-            String compId = compInterface.getIdentifier();
+        for (DistributedComponentEntry entry : compInsts) {
+            ComponentInstallation compInst = entry.getComponentInstallation();
+            ComponentInterface compInterface = compInst.getComponentInterface();
+            String compId = compInterface.getIdentifierAndVersion();
             if (compId.contains(ComponentConstants.ID_SEPARATOR)) {
-                compId = compInterface.getIdentifier().split(ComponentConstants.ID_SEPARATOR)[0];
+                compId = compInterface.getIdentifierAndVersion().split(ComponentConstants.ID_SEPARATOR)[0];
             }
             if (compId.equals(compDesc.getComponentIdentifier())
                 && (compDesc.getComponentVersion().equals("")
                     || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
 
-                if (compInst.getNodeId() == null || compInst.getNodeId().equals(localLogicalNodeId.getLogicalNodeIdString())) {
+                if (compInst.getNodeId() == null
+                    || compInst.getNodeId().equals(localLogicalNodeId.getLogicalNodeIdString())) {
                     return localLogicalNodeId;
                 } else if (compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
                     && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getLogicalNodeIdString())) {
@@ -224,13 +227,13 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
 
         // if there is not local component, take the exactly matching remote component if there is one
         if (exactlyMatchingComponent != null) {
-            return NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(exactlyMatchingComponent.getNodeId());
+            return exactlyMatchingComponent.getNodeIdObject();
         }
 
         // a matching component on the originally registered node was not found. thus set the node
         // identifier of any matching component if there is at least one found
         if (matchingComponents.size() > 0) {
-            return NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(matchingComponents.get(0).getNodeId());
+            return matchingComponents.get(0).getNodeIdObject();
         }
 
         // if there is no matching component found in the RCE network, the local node should be used, thus the local update service will be
@@ -238,7 +241,6 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
         return localLogicalNodeId;
 
     }
-    
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {
         this.communicationService = newCommunicationService;

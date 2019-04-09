@@ -108,12 +108,4 @@
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.parametricstudy.gui.ParametricStudyHistoryDataItemSubtreeBuilder"/>
    </extension>
-  
-  <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.core.gui.workflow.editor.properties.LoopComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.parametricstudy.gui.properties.ParametricStudyComponentFilter">
-       </validator>
-    </extension>
 </plugin>

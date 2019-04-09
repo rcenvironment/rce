@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -155,7 +155,12 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     @AllowRemoteAccess
     public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
         throws AuthorizationException {
+        return getStreamFromDataReference(dataReference, calledFromRemote, true);
+    }
 
+    @Override
+    @AllowRemoteAccess
+    public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote, Boolean decompress) {
         DataBackend dataBackend = BackendSupport.getDataBackend();
         String gzipReferenceKey = null;
         for (BinaryReference br : dataReference.getBinaryReferences()) {
@@ -167,7 +172,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
             BackendSupport.getDataBackend().suggestLocation(
                 UUID.fromString(gzipReferenceKey));
         DistributableInputStream stream = new DistributableInputStream(dataReference,
-            (InputStream) dataBackend.get(location));
+            (InputStream) dataBackend.get(location, decompress));
         // close local input stream before sending to another node. it is a transient field and will be "lost" without be closed before
         if (calledFromRemote) {
             try {
@@ -185,12 +190,20 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     // FIXME review: why can this method never throw an IOException? - misc_ro
     public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet) {
 
+        return newReferenceFromStream(inputStream, metaDataSet, false);
+    }
+
+    @Override
+    @AllowRemoteAccess
+    // FIXME review: why can this method never throw an IOException? - misc_ro
+    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, Boolean alreadyCompressed) {
+
         UUID uuid = UUID.randomUUID();
 
         // store input stream
         DataBackend dataBackend = BackendSupport.getDataBackend();
         URI location = dataBackend.suggestLocation(uuid);
-        dataBackend.put(location, inputStream);
+        dataBackend.put(location, inputStream, alreadyCompressed);
 
         // add a data reference with only one binary reference with the current only standard format and a default revision number.
         // TODO replace on new blob store implementation
@@ -244,6 +257,13 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     @Override
     @AllowRemoteAccess
     public void finishUpload(String id, final MetaDataSet metaDataSet) throws IOException {
+        finishUpload(id, metaDataSet, false);
+    }
+
+    @Override
+    @AllowRemoteAccess
+    public void finishUpload(String id, final MetaDataSet metaDataSet, final Boolean alreadyCompressed)
+        throws IOException {
         final UploadHolder upload = safeGetUploadById(id);
 
         final File tempFile = upload.finishAndGetFile();
@@ -264,7 +284,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
                     InputStream fis = new BufferedInputStream(new FileInputStream(tempFile), UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE);
                     try {
                         DataReference reference;
-                        reference = newReferenceFromStream(fis, metaDataSet);
+                        reference = newReferenceFromStream(fis, metaDataSet, alreadyCompressed);
                         // on success, attach the reference to the upload data
                         upload.setDataReference(reference);
                     } finally {
@@ -273,6 +293,8 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
                 } catch (IOException e) {
                     // on any error, attach the exception to the upload data
                     upload.setAsyncException(e);
+                } catch (RuntimeException e2) {
+                    upload.setAsyncException(new IOException(e2));
                 }
             }
         });
@@ -307,6 +329,13 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     @Override
     @AllowRemoteAccess
     public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet) throws IOException, RemoteOperationException {
+        return uploadInSingleStep(data, metaDataSet, false);
+    }
+
+    @Override
+    @AllowRemoteAccess
+    public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
+        RemoteOperationException {
         UploadHolder upload = new UploadHolder();
         upload.appendData(data);
 
@@ -318,7 +347,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
         // synchronously transfer the upload file to data management
         InputStream fis = new BufferedInputStream(new FileInputStream(tempFile), UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE);
         DataReference reference;
-        reference = newReferenceFromStream(fis, metaDataSet);
+        reference = newReferenceFromStream(fis, metaDataSet, alreadyCompressed);
         // on success, attach the reference to the upload data
         upload.setDataReference(reference);
         IOUtils.closeQuietly(fis);

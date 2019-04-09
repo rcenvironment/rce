@@ -12,8 +12,8 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>8.2.3-SNAPSHOT</version>
-		<relativePath >../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
+		<version>9.0.0-SNAPSHOT</version>
+		<relativePath>../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
 	</parent>
 
 	<properties>
@@ -168,5 +168,41 @@
 			</build>
 		</profile>
 	</profiles>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.0.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.puppycrawl.tools</groupId>
+						<artifactId>checkstyle</artifactId>
+						<version>8.18</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>run-checkstyle</id>
+						<phase>validate</phase>
+						<configuration>
+							<configLocation>${projects-root}/de.rcenvironment/checkstyle/checks.xml</configLocation>
+							<propertyExpansion>config_loc=${basedir}/${projects-root}/de.rcenvironment/checkstyle</propertyExpansion>
+							<encoding>UTF-8</encoding>
+							<consoleOutput>true</consoleOutput>
+							<violationSeverity>error</violationSeverity>
+							<failOnViolation>false</failOnViolation>
+							<logViolationsToConsole>true</logViolationsToConsole>
+							<linkXRef>false</linkXRef>
+						</configuration>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

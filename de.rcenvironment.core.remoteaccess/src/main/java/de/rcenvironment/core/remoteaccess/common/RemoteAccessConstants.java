@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,7 +22,12 @@ public final class RemoteAccessConstants {
     /**
      * The supported version (or list of versions) for the remote access protocol; used to determine client compatibility.
      */
-    public static final String PROTOCOL_VERSION_STRING = "8.0.0";
+    public static final String PROTOCOL_VERSION_STRING = "9.0.0";
+    
+    /**
+     * Default group name for SSH workflow components.
+     */
+    public static final String DEFAULT_GROUP_NAME_WFS = "SSH Remote Access Workflows";
 
     private RemoteAccessConstants() {}
 }

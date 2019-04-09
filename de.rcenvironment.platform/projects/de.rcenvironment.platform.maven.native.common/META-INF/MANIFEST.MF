@@ -2,24 +2,19 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Native Code Libraries - Cross-Platform
 Bundle-SymbolicName: de.rcenvironment.platform.maven.native.common;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/sigar-1.6.4.jar,
- lib/maven/jna-4.2.2.jar
+ lib/maven/jna-5.0.0.jar, lib/maven/jna-platform-5.0.0.jar
 Bundle-NativeCode: 
- native/sigar-amd64-winnt.dll;osname=Win32;osname=WindowsXP;osname=Windows2003;osname=WindowsVista;
- osname=Windows2008;osname=WindowsServer2008;osname=WindowsServer2008R2;
- osname=WindowsServer2012;osname=Windows 2012;osname=Windows Server 2012;osname=Win2012;
- osname=WindowsServer2012R2;osname=Windows 2012 R2;osname=Windows Server 2012 R2;osname=Win2012R2;
- osname=Windows7;
- osname=Windows8;osname=Windows 8;osname=Windows 8.1;osname=Win8; 
- osname=Windows10;osname=Windows 10;osname=Win10;processor=x86_64,
+ native/sigar-amd64-winnt.dll;osname=win32;processor=x86_64,
  native/libsigar-amd64-linux.so;osname=Linux;processor=x86_64
-Export-Package: com.sun.jna;version="4.2.2",
- com.sun.jna.darwin;version="4.2.2",
- com.sun.jna.ptr;version="4.2.2",
- com.sun.jna.win32;version="4.2.2",
+Export-Package: com.sun.jna;version="5.0.0",
+ com.sun.jna.platform.win32;version="5.0.0",
+ com.sun.jna.darwin;version="5.0.0",
+ com.sun.jna.ptr;version="5.0.0",
+ com.sun.jna.win32;version="5.0.0",
  org.hyperic.sigar;version="1.6.4",
  org.hyperic.sigar.cmd;version="1.6.4",
  org.hyperic.sigar.jmx;version="1.6.4",

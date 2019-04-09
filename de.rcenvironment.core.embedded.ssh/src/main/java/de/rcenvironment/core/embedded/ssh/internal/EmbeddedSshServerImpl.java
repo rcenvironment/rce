@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -30,7 +30,6 @@ import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of an embedded SSH server with OSGi lifecycle methods.
@@ -46,8 +45,6 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     private ConfigurationService configurationService;
 
     private CommandExecutionService commandExecutionService;
-
-    private SshAuthenticationManager authenticationManager;
 
     private SshConfiguration sshConfiguration;
 
@@ -73,14 +70,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
                 sshConfiguration = new SshConfiguration();
                 logger.error(e.getMessage());
             }
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-
-                @Override
-                @TaskDescription("Embedded SSH server startup")
-                public void run() {
-                    performStartup();
-                }
-            });
+            ConcurrencyUtils.getAsyncTaskService().execute("Embedded SSH server startup", this::performStartup);
         }
     }
 
@@ -102,7 +92,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     private synchronized void performStartup() {
         sshServerActive = getActivationSettingFromConfig(sshConfiguration);
         if (sshServerActive) {
-            authenticationManager = new SshAuthenticationManager(sshConfiguration);
+            SshAuthenticationManager authenticationManager = new SshAuthenticationManager(sshConfiguration);
             sshd = SshServer.setUpDefaultServer();
             // TODO also use this to announce the RCE product version?
             updateServerBannerWithAnnouncementData();
@@ -131,7 +121,8 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             } catch (IOException e) {
                 logger.error(
                     StringUtils.format("Failed to start embedded SSH server on port %s (attempted to bind to IP address %s)",
-                        sshConfiguration.getPort(), sshConfiguration.getHost()), e);
+                        sshConfiguration.getPort(), sshConfiguration.getHost()),
+                    e);
             }
         } else {
             logger.debug("Not running an SSH server as there is either no SSH configuration at all, "

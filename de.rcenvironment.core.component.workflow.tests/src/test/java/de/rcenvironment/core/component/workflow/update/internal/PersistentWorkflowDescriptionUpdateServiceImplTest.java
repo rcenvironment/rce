@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -13,15 +13,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.codehaus.jackson.JsonParseException;
 import org.easymock.EasyMock;
+import org.junit.Assert;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
-import junit.framework.Assert;
 
 /**
  * Test cases for {@link PersistentWorkflowDescriptionUpdateServiceImpl}.

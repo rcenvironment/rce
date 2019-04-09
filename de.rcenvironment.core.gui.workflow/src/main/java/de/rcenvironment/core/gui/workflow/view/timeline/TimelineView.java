@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -22,10 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -55,9 +51,15 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.datamanagement.commons.ComponentRunInterval;
@@ -744,12 +746,13 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .createAccessFor(caller);
         DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
             .getService(DistributedComponentKnowledgeService.class);
-        Collection<ComponentInstallation> installations = componentKnowledgeService
-            .getCurrentComponentKnowledge().getAllInstallations();
-        for (ComponentInstallation installation : installations) {
+        Collection<DistributedComponentEntry> installations = componentKnowledgeService
+            .getCurrentSnapshot().getAllInstallations();
+        for (DistributedComponentEntry entry : installations) {
+            ComponentInstallation installation = entry.getComponentInstallation();
             if (installation.getInstallationId().startsWith(identifier)) {
                 if (!COMPONENT_ICON_CACHE.containsKey(installation.getInstallationId())) {
-                    byte[] icon = installation.getComponentRevision().getComponentInterface().getIcon16();
+                    byte[] icon = installation.getComponentInterface().getIcon16();
                     if (icon != null) {
                         Image image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
                             new ByteArrayInputStream(icon))).createImage();
@@ -780,11 +783,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .createAccessFor(caller);
         DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
             .getService(DistributedComponentKnowledgeService.class);
-        Collection<ComponentInstallation> installations = componentKnowledgeService
-            .getCurrentComponentKnowledge().getAllInstallations();
-        for (ComponentInstallation installation : installations) {
+        Collection<DistributedComponentEntry> installations = componentKnowledgeService
+            .getCurrentSnapshot().getAllInstallations();
+        for (DistributedComponentEntry entry : installations) {
+            // FIXME this is unsafe: e.g. when looking for "comp1", "comp11" could be matched!
+            // TODO 9.0.0 provide a DistributedComponentKnowledge lookup method instead?
+            ComponentInstallation installation = entry.getComponentInstallation();
             if (installation.getInstallationId().startsWith(identifier)) {
-                return installation.getComponentRevision().getComponentInterface().getDisplayName();
+                return installation.getComponentInterface().getDisplayName();
             }
         }
         return null;

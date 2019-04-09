@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -87,6 +87,32 @@ public final class NetworkResponseFactory {
      */
     public static NetworkResponse generateResponseForNoRouteAtSender(NetworkRequest request, InstanceNodeSessionId localNodeId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_AT_SENDER, localNodeId, null);
+    }
+
+    /**
+     * Generates a {@link NetworkResponse} indicating that a request was directed at a certain instance session id, but a different instance
+     * session for the same persistent instance id is present within the network. This can occur because the node was restarted, but the old
+     * session id is still being referenced by the calling node.
+     * 
+     * @param request the request
+     * @param localNodeId the id of the node where the failure occurred
+     * @return the generated response
+     */
+    public static NetworkResponse generateResponseForTargetNodeWasRestarted(NetworkRequest request, InstanceNodeSessionId localNodeId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.TARGET_NODE_RESTARTED, localNodeId, null);
+    }
+
+    /**
+     * Generates a {@link NetworkResponse} indicating that a request was directed at a certain instance session id, but a different instance
+     * session for the same persistent instance id is present within the network at the same time, indicating an instance id collision.
+     * 
+     * @param request the request
+     * @param localNodeId the id of the node where the failure occurred
+     * @return the generated response
+     */
+    public static NetworkResponse generateResponseForInstanceIdCollision(NetworkRequest request,
+        InstanceNodeSessionId localNodeId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.INSTANCE_ID_COLLISION, localNodeId, null);
     }
 
     /**

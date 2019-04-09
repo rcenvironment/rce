@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -123,11 +123,11 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
      */
     public void testLocalCall() throws Exception {
 
-        ServiceCallResult result = callHandler.handle(REQUEST);
+        ServiceCallResult result = callHandler.dispatchToLocalService(REQUEST);
         assertEquals(RETURN_VALUE, result.getReturnValue());
 
         // equal call request to cover cache functionality
-        result = callHandler.handle(REQUEST);
+        result = callHandler.dispatchToLocalService(REQUEST);
         assertEquals(result.getReturnValue(), RETURN_VALUE);
 
         List<Serializable> params = new ArrayList<>();
@@ -135,25 +135,25 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
 
         ServiceCallRequest callbackRequest =
             new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
-                MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
+                MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params, null);
 
-        assertNotNull(callHandler.handle(callbackRequest));
+        assertNotNull(callHandler.dispatchToLocalService(callbackRequest));
 
         params = new ArrayList<Serializable>();
         params.add(new DummyProxy(objectID2));
 
         callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
-            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params, null);
 
-        assertNotNull(callHandler.handle(callbackRequest));
+        assertNotNull(callHandler.dispatchToLocalService(callbackRequest));
 
         params = new ArrayList<Serializable>();
         params.add(new DummyProxy(objectID3));
 
         callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
-            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params, null);
 
-        assertNotNull(callHandler.handle(callbackRequest));
+        assertNotNull(callHandler.dispatchToLocalService(callbackRequest));
 
         params = new ArrayList<Serializable>();
         List<Serializable> param = new ArrayList<>();
@@ -163,9 +163,9 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params.add((Serializable) param); // ArrayList
 
         callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
-            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params, null);
 
-        assertNotNull(callHandler.handle(callbackRequest));
+        assertNotNull(callHandler.dispatchToLocalService(callbackRequest));
     }
 
     /**
@@ -327,7 +327,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         @Override
         public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws RemoteOperationException {
             try {
-                return OSGiServiceCallHandlerImplTest.getCallHandler().handle(serviceCallRequest);
+                return OSGiServiceCallHandlerImplTest.getCallHandler().dispatchToLocalService(serviceCallRequest);
             } catch (InternalMessagingException e) {
                 return ServiceCallResultFactory.representInternalErrorAtHandler(serviceCallRequest, "Exception in mock handler", e);
             }

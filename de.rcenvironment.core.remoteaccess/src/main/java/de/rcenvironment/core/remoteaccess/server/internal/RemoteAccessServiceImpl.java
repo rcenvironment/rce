@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.remoteaccess.server.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,53 +19,77 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
+import de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService;
+import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
+import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
+import de.rcenvironment.core.component.workflow.execution.headless.api.ExtendedHeadlessWorkflowExecutionContextBuilder;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowDescriptionLoaderCallback;
-import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContextBuilder;
+import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService;
+import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DeletionBehavior;
+import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DisposalBehavior;
+import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService;
 import de.rcenvironment.core.monitoring.system.api.model.AverageOfDoubles;
 import de.rcenvironment.core.monitoring.system.api.model.SystemLoadInformation;
 import de.rcenvironment.core.remoteaccess.common.RemoteAccessConstants;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.common.CommonIdRules;
 import de.rcenvironment.core.utils.common.InvalidFilenameException;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides "remote access" operations. TODO outline RA concept
@@ -74,7 +98,18 @@ import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutR
  */
 // TODO @7.0.0: remove duplicate javadoc
 // TODO @7.0.0: use better exception class than WorkflowExecutionException
+@Component
 public class RemoteAccessServiceImpl implements RemoteAccessService {
+
+    private static final String REQUIRED_INPUTLOADER_VERSION = "1.1";
+    
+    private static final String REQUIRED_OUTPUTCOLLECTOR_VERSION = "1.1";
+
+    private static final String TAB = "\t";
+
+    private static final String NAME_DATA_TYPE = "[name]\t[data type]";
+
+    private static final String FORMAT_2F = "%.2f";
 
     private static final int PERCENT_MULTIPLIER = 100;
 
@@ -82,27 +117,47 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
     private static final double DOUBLE_NO_DATA_PLACEHOLDER = -1.0;
 
-    private static final String INTERFACE_ENDPOINT_NAME_INPUT = "input";
+    private static final String DE_RCENVIRONMENT_SCPOUTPUTCOLLECTOR = "de.rcenvironment.scpoutputcollector/";
 
-    private static final String INTERFACE_ENDPOINT_NAME_PARAMETERS = "parameters";
+    private static final String DE_RCENVIRONMENT_SCPINPUTLOADER = "de.rcenvironment.scpinputloader/";
 
-    private static final String INTERFACE_ENDPOINT_NAME_OUTPUT = "output";
+    private static final String KEY_META_DATA = "metaData";
 
-    private static final String WF_PLACEHOLDER_PARAMETERS = "##RUNTIME_PARAMETERS##";
+    private static final String KEY_DEFAULT_DATA_TYPE = "defaultDataType";
 
-    private static final String WF_PLACEHOLDER_INPUT_DIR = "##RUNTIME_INPUT_DIRECTORY##";
+    private static final String KEY_DATA_TYPE = "dataType";
 
-    private static final String WF_PLACEHOLDER_OUTPUT_PARENT_DIR = "##RUNTIME_OUTPUT_DIRECTORY##";
+    private static final String KEY_DATA_TYPES = "dataTypes";
 
-    private static final String WF_PLACEHOLDER_OUTPUT_FILES_FOLDER_NAME = "##OUTPUT_FILES_FOLDER_NAME##";
+    private static final String KEY_INPUT_HANDLING_OPTIONS = "inputHandlingOptions";
 
-    private static final String WORKFLOW_TEMPLATE_RESOURCE_PATH = "/resources/template.wf";
+    private static final String KEY_DEFAULT_INPUT_HANDLING = "defaultInputHandling";
 
-    private static final String WF_PLACEHOLDER_TOOL_ID = "##TOOL_ID##";
+    private static final String KEY_EXECUTION_CONSTRAINT_OPTIONS = "inputExecutionConstraintOptions";
 
-    private static final String WF_PLACEHOLDER_TOOL_VERSION = "##TOOL_VERSION##";
+    private static final String KEY_DEFAULT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
 
-    private static final String WF_PLACEHOLDER_TOOL_NODE_ID = "##TOOL_NODE_ID##";
+    private static final String KEY_DEFAULT_VALUE = "defaultValue";
+
+    private static final String KEY_POSSIBLE_VALUES = "possibleValues";
+
+    private static final int NUMBER_600 = 600;
+
+    private static final int NUMBER_200 = 200;
+
+    private static final int NUMBER_400 = 400;
+
+    // private static final String WF_PLACEHOLDER_PARAMETERS = "##RUNTIME_PARAMETERS##";
+
+    private static final String WF_PLACEHOLDER_INPUT_DIR = "##SCP_UPLOAD_DIRECTORY##";
+
+    private static final String WF_PLACEHOLDER_OUTPUT_PARENT_DIR = "##SCP_DOWNLOAD_DIRECTORY##";
+
+    private static final String WF_PLACEHOLDER_UNCOMPRESSED_UPLOAD = "##UNCOMPRESSED_UPLOAD_FLAG##";
+
+    private static final String WF_PLACEHOLDER_UNCOMPRESSED_DOWNLOAD = "##UNCOMPRESSED_DOWNLOAD_FLAG##";
+
+    private static final String WF_PLACEHOLDER_SIMPLE_DESCRIPTION_FORMAT = "##SIMPLE_FORMAT_FLAG##";
 
     private static final String WF_PLACEHOLDER_TIMESTAMP = "##TIMESTAMP##";
 
@@ -111,6 +166,10 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private static final String PUBLISHED_WF_DATA_FILE_SUFFIX = ".wf.dat";
 
     private static final String PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX = ".ph.dat";
+
+    private static final String PUBLISHED_WF_GROUP_KEY_PREFIX = "WF_GROUP_";
+
+    private static final String PUBLISHED_WF_KEEP_DATA_KEY_PREFIX = "WF_KEEP_DATA";
 
     private static final String OUTPUT_INDENT = "    ";
 
@@ -132,9 +191,32 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
     private LocalSystemMonitoringAggregationService localSystemMonitoringAggregationService;
 
+    private PersistentSettingsService persistentSettingsService;
+
     private File publishedWfStorageDir;
 
     private EmbeddedSshServerControl embeddedSshServerControl;
+
+    private ObjectMapper mapper = new ObjectMapper();
+
+    private ServiceRegistryPublisherAccess serviceRegistryAccess;
+
+    private List<String[]> toolTokens;
+
+    private List<String[]> simpleToolTokens;
+
+    private Map<String, String[]> wfTokens;
+
+    private Map<String, String[]> simpleWfTokens;
+
+    private Map<String, Map<String, String>> wfInputs;
+
+    private Map<String, Map<String, String>> wfOutputs;
+
+    // Maps the session tokens of running tools/workflows to their workflow execution id to enable cancelling
+    private volatile Map<String, WorkflowExecutionInformation> sessionTokenToWfExecInf;
+
+    private ToolIntegrationDocumentationService toolDocService;
 
     /**
      * Simple holder for execution parameters, including the workflow template file.
@@ -147,13 +229,17 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
         private File placeholdersFile;
 
+        private String sessionToken;
+
         private File inputFilesDir;
 
         private File outputFilesDir;
 
-        ExecutionSetup(File wfFile, File placeholdersFile, File inputFilesDir, File outputFilesDir) {
+        ExecutionSetup(File wfFile, File placeholdersFile, String sessionToken, File inputFilesDir,
+            File outputFilesDir) {
             this.workflowFile = wfFile;
             this.placeholdersFile = placeholdersFile;
+            this.sessionToken = sessionToken;
             this.inputFilesDir = inputFilesDir;
             this.outputFilesDir = outputFilesDir;
         }
@@ -164,6 +250,10 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
         public File getPlaceholderFile() {
             return placeholdersFile;
+        }
+
+        public String getSessionToken() {
+            return sessionToken;
         }
 
         public File getInputFilesDir() {
@@ -177,51 +267,221 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     }
 
     /**
-     * Simple boolean holder with "yes/no" formatting.
-     * 
-     * @author Robert Mischke
+     * OSGi life-cycle method.
      */
-    private static final class MutableYesNoFlag {
+    public void activate() {
+        serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
+        registerChangeListener();
+        sessionTokenToWfExecInf = new HashMap<String, WorkflowExecutionInformation>();
 
-        private boolean value;
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
-        public boolean getValue() {
-            return value;
-        }
+            @Override
+            @TaskDescription("Server-Side Remote Access: Restore persistently published workflows")
+            public void run() {
+                restoreWorkflowTemplatesFromPublishedWfStorage();
+            }
+        });
+        embeddedSshServerControl.setAnnouncedVersionOrProperty("RemoteAccess",
+            RemoteAccessConstants.PROTOCOL_VERSION_STRING);
+    }
 
-        public void setValue(boolean value) {
-            this.value = value;
-        }
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance to bind
+     */
+    @Reference
+    public void bindToolIntegrationDocumentationService(ToolIntegrationDocumentationService newInstance) {
+        this.toolDocService = newInstance;
+    }
 
-        @Override
-        public String toString() {
-            if (value) {
-                return "yes";
-            } else {
-                return "no";
+    private void registerChangeListener() {
+        serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class,
+            new DistributedComponentKnowledgeListener() {
+
+                @Override
+                public void onDistributedComponentKnowledgeChanged(
+                    final DistributedComponentKnowledge newKnowledge) {
+                    updateToolTokens();
+                }
+            });
+    }
+
+    private void updateToolTokens() {
+        toolTokens = new ArrayList<String[]>();
+        simpleToolTokens = new ArrayList<String[]>();
+
+        for (DistributedComponentEntry entry : getMatchingPublishedTools()) {
+            ComponentInterface compInterface = entry.getComponentInterface();
+            String nodeId = entry.getNodeId();
+            String nodeName = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId)
+                .getAssociatedDisplayName();
+            try {
+                Set<Map<String, Object>> nodeInputSet = new HashSet<>();
+                for (EndpointDefinition ed : entry.getComponentInterface().getInputDefinitionsProvider()
+                    .getStaticEndpointDefinitions()) {
+                    Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+
+                    rawEndpointData.put(EndpointDefinitionConstants.KEY_NAME, ed.getName());
+                    rawEndpointData.put(KEY_DATA_TYPES, ed.getPossibleDataTypes());
+                    rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDefaultDataType());
+                    rawEndpointData.put(KEY_INPUT_HANDLING_OPTIONS, ed.getInputDatumOptions());
+                    rawEndpointData.put(KEY_DEFAULT_INPUT_HANDLING, ed.getDefaultInputDatumHandling());
+                    rawEndpointData.put(KEY_EXECUTION_CONSTRAINT_OPTIONS, ed.getInputExecutionConstraintOptions());
+                    rawEndpointData.put(KEY_DEFAULT_EXECUTION_CONSTRAINT, ed.getDefaultInputExecutionConstraint());
+                    nodeInputSet.add(rawEndpointData);
+                }
+                for (EndpointDefinition ed : entry.getComponentInterface().getInputDefinitionsProvider()
+                    .getDynamicEndpointDefinitions()) {
+                    Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+
+                    rawEndpointData.put(EndpointDefinitionConstants.KEY_IDENTIFIER, ed.getIdentifier());
+                    rawEndpointData.put(KEY_DATA_TYPES, ed.getPossibleDataTypes());
+                    rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDefaultDataType());
+                    rawEndpointData.put(KEY_INPUT_HANDLING_OPTIONS, ed.getInputDatumOptions());
+                    rawEndpointData.put(KEY_DEFAULT_INPUT_HANDLING, ed.getDefaultInputDatumHandling());
+                    rawEndpointData.put(KEY_EXECUTION_CONSTRAINT_OPTIONS, ed.getInputExecutionConstraintOptions());
+                    rawEndpointData.put(KEY_DEFAULT_EXECUTION_CONSTRAINT, ed.getDefaultInputExecutionConstraint());
+                    Map<String, Map<String, Object>> rawMetadata = extractRawMetadata(ed);
+                    rawEndpointData.put(KEY_META_DATA, rawMetadata);
+                    nodeInputSet.add(rawEndpointData);
+                }
+                String nodeInputs = mapper.writeValueAsString(nodeInputSet);
+
+                Set<Map<String, Object>> nodeOutputSet = new HashSet<>();
+                for (EndpointDefinition ed : entry.getComponentInterface().getOutputDefinitionsProvider()
+                    .getStaticEndpointDefinitions()) {
+                    Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+
+                    rawEndpointData.put(EndpointDefinitionConstants.KEY_NAME, ed.getName());
+                    rawEndpointData.put(KEY_DATA_TYPES, ed.getPossibleDataTypes());
+                    rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDefaultDataType());
+                    nodeOutputSet.add(rawEndpointData);
+                }
+                for (EndpointDefinition ed : entry.getComponentInterface().getOutputDefinitionsProvider()
+                    .getDynamicEndpointDefinitions()) {
+                    Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+
+                    rawEndpointData.put(EndpointDefinitionConstants.KEY_IDENTIFIER, ed.getIdentifier());
+                    rawEndpointData.put(KEY_DATA_TYPES, ed.getPossibleDataTypes());
+                    rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDefaultDataType());
+                    Map<String, Map<String, Object>> rawMetadata = extractRawMetadata(ed);
+                    rawEndpointData.put(KEY_META_DATA, rawMetadata);
+                    nodeOutputSet.add(rawEndpointData);
+                }
+                String nodeOutputs = mapper.writeValueAsString(nodeOutputSet);
+
+                // Compute hash and add to output line
+                String toHash = compInterface.getDisplayName() + compInterface.getVersion() + nodeId + nodeName
+                    + nodeInputs + nodeOutputs + compInterface.getGroupName();
+                toolTokens.add(new String[] { compInterface.getDisplayName(), compInterface.getVersion(), nodeId,
+                    nodeName, nodeInputs, nodeOutputs, compInterface.getGroupName(),
+                    Integer.toString(toHash.hashCode()) });
+                simpleToolTokens.add(new String[] { compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName });
+            } catch (IOException e) {
+                log.error("An error occured while creating descriptions of the available tools.");
             }
         }
     }
 
-    /**
-     * OSGi life-cycle method.
-     */
-    public void activate() {
-        initAndRestoreFromPublishedWfStorage();
-        embeddedSshServerControl.setAnnouncedVersionOrProperty("RemoteAccess", RemoteAccessConstants.PROTOCOL_VERSION_STRING);
+    private void addOrReplaceWorkflowInWfTokens(String publishId, String groupName, WorkflowDescription wd) {
+
+        if (!checkIdString(publishId)) {
+            // for backwards compatility
+            log.error("Not listing the previously published remote access workflow " + publishId
+                + "; the name contains characters that are not allowed anymore");
+            return;
+
+        }
+
+        String nodeId = platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString();
+        String nodeName = platformService.getLocalDefaultLogicalNodeId().getAssociatedDisplayName();
+        String version = "1"; // version; hardcoded for now
+
+        if (groupName == null) {
+            groupName = RemoteAccessConstants.DEFAULT_GROUP_NAME_WFS;
+        }
+
+        ComponentDescription inputLoaderDesc = null;
+        ComponentDescription outputCollectorDesc = null;
+
+        for (WorkflowNode node : wd.getWorkflowNodes()) {
+            final ComponentDescription compDesc = node.getComponentDescription();
+            String compId = compDesc.getIdentifier();
+            // Component may not yet be available on RCE start (thus compId might contain
+            // "missing_[compId]"), but this does not matter for
+            // token generation
+            if (compId.contains(DE_RCENVIRONMENT_SCPINPUTLOADER)) {
+                inputLoaderDesc = compDesc;
+            } else if (compId.contains(DE_RCENVIRONMENT_SCPOUTPUTCOLLECTOR)) {
+                outputCollectorDesc = compDesc;
+            }
+        }
+
+        if (inputLoaderDesc == null || outputCollectorDesc == null) {
+            log.error("Error while parsing published workflow " + publishId);
+            return;
+        }
+
+        try {
+            // Get outputs of SCPInputLoader, these are the "inputs" of the published
+            // workflow
+            Set<Map<String, Object>> nodeInputSet = new HashSet<>();
+            Map<String, String> simpleInputsMap = new HashMap<String, String>();
+            for (EndpointDescription ed : inputLoaderDesc.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
+                Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+                ArrayList<DataType> dataTypes = new ArrayList<DataType>();
+                dataTypes.add(ed.getDataType());
+                rawEndpointData.put(KEY_DATA_TYPES, dataTypes);
+                rawEndpointData.put(EndpointDefinitionConstants.KEY_NAME, ed.getName());
+                rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDataType());
+                nodeInputSet.add(rawEndpointData);
+
+                simpleInputsMap.put(ed.getName(), ed.getDataType().getDisplayName());
+            }
+            String nodeInputs = mapper.writeValueAsString(nodeInputSet);
+
+            // Get inputs of SCPOutputCollector, these are the "outputs" of the published
+            // workflow
+            Set<Map<String, Object>> nodeOutputSet = new HashSet<>();
+            Map<String, String> simpleOutputsMap = new HashMap<String, String>();
+            for (EndpointDescription ed : outputCollectorDesc.getInputDescriptionsManager().getDynamicEndpointDescriptions()) {
+                Map<String, Object> rawEndpointData = new HashMap<String, Object>();
+
+                rawEndpointData.put(EndpointDefinitionConstants.KEY_NAME, ed.getName());
+                ArrayList<DataType> dataTypes = new ArrayList<DataType>();
+                dataTypes.add(ed.getDataType());
+                rawEndpointData.put(KEY_DATA_TYPES, dataTypes);
+                rawEndpointData.put(KEY_DEFAULT_DATA_TYPE, ed.getDataType());
+                nodeOutputSet.add(rawEndpointData);
+            }
+            String nodeOutputs = mapper.writeValueAsString(nodeOutputSet);
+
+            // Compute hash and add to output tokens
+            String toHash = publishId + version + nodeId + nodeName + nodeInputs + nodeOutputs;
+            wfTokens.put(publishId, new String[] { publishId, version, groupName, nodeId, nodeName, nodeInputs,
+                nodeOutputs, Integer.toString(toHash.hashCode()) });
+            simpleWfTokens.put(publishId, new String[] { publishId, version, nodeId, nodeName });
+            wfInputs.put(publishId, simpleInputsMap);
+            wfOutputs.put(publishId, simpleOutputsMap);
+        } catch (IOException e) {
+            log.error("An error occured while updating descriptions of the available workflows.");
+        }
     }
 
     @Override
     public void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format, boolean includeLoadData,
         int timeSpanMsec, int timeLimitMsec) throws InterruptedException, ExecutionException, TimeoutException {
 
-        List<ComponentInstallation> components = getMatchingPublishedTools();
-
         final Map<LogicalNodeId, SystemLoadInformation> systemLoadData;
         if (includeLoadData) {
             final Set<LogicalNodeId> reachableInstanceNodes = new HashSet<>();
-            for (ComponentInstallation c : components) {
-                reachableInstanceNodes.add(c.fetchNodeIdAsObject());
+            for (Object[] tokens : toolTokens) {
+                LogicalNodeId nodeIdObj = NodeIdentifierUtils
+                    .parseLogicalNodeIdStringWithExceptionWrapping((String) tokens[2]);
+
+                reachableInstanceNodes.add(nodeIdObj);
             }
             systemLoadData = localSystemMonitoringAggregationService
                 .collectSystemMonitoringDataWithTimeLimit(reachableInstanceNodes, timeSpanMsec, timeLimitMsec);
@@ -230,87 +490,201 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
 
         if ("csv".equals(format)) {
-            printComponentsListAsCsv(components, outputReceiver, systemLoadData);
+            printComponentsListAsCsv(outputReceiver, systemLoadData);
         } else if ("token-stream".equals(format)) {
-            printComponentsListAsTokens(components, outputReceiver, systemLoadData);
+            printComponentsListAsTokens(outputReceiver, systemLoadData);
+        } else if ("simple".equals(format)) {
+            printSimpleComponentsListAsTokens(outputReceiver, systemLoadData);
         } else {
             throw new IllegalArgumentException("Unrecognized output format: " + format);
         }
     }
 
+    private void printSimpleComponentsListAsTokens(TextOutputReceiver outputReceiver,
+        Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
+        outputReceiver.addOutput(Integer.toString(simpleToolTokens.size())); // number of entries
+        // print number of tokens per entry
+        if (systemLoadData != null) {
+            outputReceiver.addOutput("9");
+        } else {
+            outputReceiver.addOutput("5");
+        }
+
+        for (String[] tokens : simpleToolTokens) {
+            for (int i = 0; i < tokens.length; i++) {
+                outputReceiver.addOutput(tokens[i]);
+            }
+
+            if (systemLoadData != null) {
+                String nodeId = (String) tokens[2];
+                LogicalNodeId nodeIdObj = NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId);
+                // TODO (p3) extract common code with above method?
+                final SystemLoadInformation loadDataEntry = systemLoadData.get(nodeIdObj);
+                // two-step checking as there may be no load data available for that node
+                final double cpuAvg;
+                final int numSamples;
+                final int timeSpan;
+                final long availableRam;
+                if (loadDataEntry != null) {
+                    final AverageOfDoubles cpuLoadAvg = loadDataEntry.getCpuLoadAvg();
+                    cpuAvg = cpuLoadAvg.getAverage() * PERCENT_MULTIPLIER;
+                    numSamples = cpuLoadAvg.getNumSamples();
+                    timeSpan = cpuLoadAvg.getNumSamples()
+                        * LocalSystemMonitoringAggregationService.SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC;
+                    availableRam = loadDataEntry.getAvailableRam();
+                } else {
+                    cpuAvg = DOUBLE_NO_DATA_PLACEHOLDER;
+                    numSamples = INT_NO_DATA_PLACEHOLDER;
+                    timeSpan = INT_NO_DATA_PLACEHOLDER;
+                    availableRam = INT_NO_DATA_PLACEHOLDER;
+                }
+
+                outputReceiver.addOutput(StringUtils.format(FORMAT_2F, cpuAvg));
+                outputReceiver.addOutput(Integer.toString(numSamples));
+                outputReceiver.addOutput(Integer.toString(timeSpan));
+                outputReceiver.addOutput(Long.toString(availableRam));
+            }
+        }
+
+    }
+
+    @Override
+    public void printToolDetails(TextOutputReceiver outputReceiver, String toolId, String toolVersion, String nodeId, boolean template) {
+        DistributedComponentEntry entry = getMatchingComponentInstallationForTool(toolId, toolVersion, nodeId);
+
+        if (template) {
+            Map<String, String> inputsMap = new HashMap<String, String>();
+            for (EndpointDefinition ed : entry.getComponentInterface().getInputDefinitionsProvider()
+                .getStaticEndpointDefinitions()) {
+                inputsMap.put(ed.getName(), "<" + ed.getDefaultDataType().getDisplayName() + ">");
+            }
+            try {
+                outputReceiver.addOutput(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(inputsMap));
+            } catch (IOException e) {
+                log.error("Writing template failed: " + e.getMessage());
+            }
+        } else {
+            outputReceiver.addOutput("Inputs:");
+            outputReceiver.addOutput(NAME_DATA_TYPE);
+            for (EndpointDefinition ed : entry.getComponentInterface().getInputDefinitionsProvider()
+                .getStaticEndpointDefinitions()) {
+
+                outputReceiver.addOutput(ed.getName() + TAB + ed.getDefaultDataType());
+            }
+
+            outputReceiver.addOutput("\nOutputs:");
+            outputReceiver.addOutput(NAME_DATA_TYPE);
+
+            for (EndpointDefinition ed : entry.getComponentInterface().getOutputDefinitionsProvider()
+                .getStaticEndpointDefinitions()) {
+                outputReceiver.addOutput(ed.getName() + TAB + ed.getDefaultDataType());
+            }
+        }
+    }
+
+    @Override
+    public void printWfDetails(TextOutputReceiver outputReceiver, String wfId, boolean template) {
+
+        Map<String, String> simpleInputsMap = wfInputs.get(wfId);
+        Map<String, String> simpleOutputsMap = wfInputs.get(wfId);
+        if (template) {
+            Map<String, String> inputsMap = new HashMap<String, String>();
+            for (String inputName : simpleInputsMap.keySet()) {
+                inputsMap.put(inputName, "<" + simpleInputsMap.get(inputName) + ">");
+            }
+            try {
+                outputReceiver.addOutput(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(inputsMap));
+            } catch (IOException e) {
+                log.error("Writing template failed: " + e.getMessage());
+            }
+        } else {
+            outputReceiver.addOutput("Inputs:");
+            outputReceiver.addOutput(NAME_DATA_TYPE);
+            for (String inputName : simpleInputsMap.keySet()) {
+                outputReceiver.addOutput(inputName + TAB + simpleInputsMap.get(inputName));
+            }
+
+            outputReceiver.addOutput("\nOutputs:");
+            outputReceiver.addOutput(NAME_DATA_TYPE);
+
+            for (String outputName : simpleOutputsMap.keySet()) {
+                outputReceiver.addOutput(outputName + TAB + simpleOutputsMap.get(outputName));
+            }
+        }
+    }
+
     @Override
     public void printListOfAvailableWorkflows(TextOutputReceiver outputReceiver, String format) {
-        if (!"token-stream".equals(format)) {
-            throw new IllegalArgumentException("Unrecognized output format: " + format);
-        }
-        SortedSet<String> wfIds = new TreeSet<String>(publishedWorkflowTemplates.keySet());
-
-        outputReceiver.addOutput(Integer.toString(wfIds.size())); // number of entries
-        outputReceiver.addOutput("4"); // number of tokens per entry
-        for (String publishId : wfIds) {
+        if ("token-stream".equals(format)) {
             // NOTE: the output format is made to match printListOfAvailableTools(); most fields are not used yet
-            if (!checkIdOrVersionString(publishId)) {
-                // for backwards compatility
-                log.error("Not listing the previously published remote access workflow " + publishId
-                    + "; the name contains characters that are not allowed anymore");
-                continue;
+            outputReceiver.addOutput(Integer.toString(wfTokens.size())); // number of entries
+            outputReceiver.addOutput("8"); // number of tokens per entry
+            for (String[] tokens : wfTokens.values()) {
+                for (int i = 0; i < tokens.length; i++) {
+                    outputReceiver.addOutput(tokens[i]);
+                }
             }
-            String nodeId = platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString(); // changed in 8.0: showing LNIds
-            String nodeName = platformService.getLocalInstanceNodeSessionId().getAssociatedDisplayName();
-
-            outputReceiver.addOutput(publishId);
-            // TODO apply filtering too when versions are added
-            outputReceiver.addOutput("1"); // version; hardcoded for now
-            outputReceiver.addOutput(nodeId); // node id
-            outputReceiver.addOutput(nodeName); // node name
+        } else if ("simple".equals(format)) {
+            outputReceiver.addOutput(Integer.toString(simpleWfTokens.size())); // number of entries
+            outputReceiver.addOutput("4"); // number of tokens per entry
+            for (String[] tokens : simpleWfTokens.values()) {
+                for (int i = 0; i < tokens.length; i++) {
+                    outputReceiver.addOutput(tokens[i]);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Unrecognized output format: " + format);
         }
     }
 
     /**
      * Creates a workflow file from an internal template and the given parameters, and executes it.
      * 
-     * @param toolId the id of the integrated tool to run (see CommonToolIntegratorComponent)
-     * @param toolVersion the version of the integrated tool to run
-     * @param toolNodeId the node id of the instance to run the tool on; must NOT be null (resolve+validate this first)
-     * @param parameterString an optional string containing tool-specific parameters
-     * @param inputFilesDir the local file system path to read input files from
-     * @param outputFilesDir the local file system path to write output files to
+     * @param parameters the remote execution parameter object
      * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * 
      * @return the state the generated workflow finished in
      * @throws IOException on I/O errors
      * @throws WorkflowExecutionException on workflow execution errors
      */
     @Override
-    public FinalWorkflowState runSingleToolWorkflow(String toolId, String toolVersion, String toolNodeId, String parameterString,
-        File inputFilesDir, File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException,
-        WorkflowExecutionException {
-        validateIdOrVersionString(toolId);
-        validateIdOrVersionString(toolVersion);
-        ExecutionSetup executionSetup =
-            generateSingleToolExecutionSetup(toolId, toolVersion, toolNodeId, parameterString, inputFilesDir, outputFilesDir);
-        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
+    public FinalWorkflowState runSingleToolWorkflow(RemoteComponentExecutionParameter parameters,
+        SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException {
+        validateIdString(parameters.getToolId());
+        validateVersionString(parameters.getToolVersion());
+        ExecutionSetup executionSetup = generateSingleToolExecutionSetup(parameters);
+        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver, false);
     }
 
     /**
      * Executes a previously published workflow template.
      * 
      * @param workflowId the id of the published workflow template
-     * @param parameterString an optional string containing tool-specific parameters
+     * @param sessionToken the session token
      * @param inputFilesDir the local file system path to read input files from
      * @param outputFilesDir the local file system path to write output files to
      * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * @param uncompressedUpload whether the upload should be uncompressed
+     * @param simpleDescription whether the simple description format should be used
      * @return the state the generated workflow finished in
      * @throws IOException on I/O errors
      * @throws WorkflowExecutionException on workflow execution errors
      */
     @Override
-    public FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String parameterString, File inputFilesDir,
-        File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException {
-        validateIdOrVersionString(workflowId);
+    public FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String sessionToken, File inputFilesDir, File outputFilesDir,
+        SingleConsoleRowsProcessor consoleRowReceiver, boolean uncompressedUpload, boolean simpleDescription)
+        throws IOException,
+        WorkflowExecutionException {
+        validateIdString(workflowId);
         // TODO validate version once added
         ExecutionSetup executionSetup =
-            generateWorkflowExecutionSetup(workflowId, parameterString, inputFilesDir, outputFilesDir);
-        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
+            generateWorkflowExecutionSetup(workflowId, sessionToken, inputFilesDir, outputFilesDir, uncompressedUpload, simpleDescription);
+        boolean neverDeleteExecutionData = false;
+        String keepData = persistentSettingsService.readStringValue(PUBLISHED_WF_KEEP_DATA_KEY_PREFIX + workflowId);
+        if (keepData != null) {
+            neverDeleteExecutionData = Boolean.parseBoolean(keepData);
+        }
+        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver, neverDeleteExecutionData);
     }
 
     /**
@@ -318,17 +692,19 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * published under the given id.
      * 
      * @param wfFile the workflow file
-     * @param placeholdersFile TODO
+     * @param placeholdersFile the placeholders file
      * @param publishId the id by which the workflow file should be made available
+     * @param groupName name of the palette group in which the workflow will be shown
      * @param outputReceiver receiver for user feedback
      * @param persistent make the publishing persistent
+     * @param neverDeleteExecutionData never delete workflow execution data
      * @throws WorkflowExecutionException on failure to load/parse the workflow file
      */
     @Override
-    public void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, TextOutputReceiver outputReceiver,
-        boolean persistent) throws WorkflowExecutionException {
+    public void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, String groupName,
+        TextOutputReceiver outputReceiver, boolean persistent, boolean neverDeleteExecutionData) throws WorkflowExecutionException {
 
-        validateIdOrVersionString(publishId);
+        validateIdString(publishId);
 
         WorkflowDescription wd;
         try {
@@ -341,8 +717,10 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         if (placeholdersFile != null) {
             try {
                 workflowExecutionService.validatePlaceholdersFile(placeholdersFile);
-            } catch (WorkflowFileException e) { // review migration code, which was introduced due to changed exception type
-                throw new WorkflowExecutionException("Failed to validate placeholders file: " + wfFile.getAbsolutePath(), e);
+            } catch (WorkflowFileException e) { // review migration code, which was introduced due to changed exception
+                                                // type
+                throw new WorkflowExecutionException(
+                    "Failed to validate placeholders file: " + wfFile.getAbsolutePath(), e);
             }
         }
 
@@ -364,6 +742,9 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                 // store wf file if told to persist
                 if (persistent) {
                     FileUtils.writeStringToFile(workflowStorageFile, wfFileContent);
+                    if (groupName != null) {
+                        persistentSettingsService.saveStringValue(PUBLISHED_WF_GROUP_KEY_PREFIX + publishId, groupName);
+                    }
                 }
 
                 if (placeholdersFile != null) {
@@ -381,7 +762,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                 if (replaced == null) {
                     outputReceiver.addOutput(StringUtils.format("Successfully published workflow \"%s\"", publishId));
                 } else {
-                    outputReceiver.addOutput(StringUtils.format("Successfully updated the published workflow \"%s\"", publishId));
+                    outputReceiver.addOutput(
+                        StringUtils.format("Successfully updated the published workflow \"%s\"", publishId));
                 }
             } catch (IOException e) {
                 // avoid dangling, undefined workflow files on failure
@@ -390,23 +772,31 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                 throw new WorkflowExecutionException("Error publishing workflow file " + wfFile.getAbsolutePath());
             }
         }
+
+        persistentSettingsService.saveStringValue(PUBLISHED_WF_KEEP_DATA_KEY_PREFIX + publishId,
+            Boolean.toString(neverDeleteExecutionData));
+
+        addOrReplaceWorkflowInWfTokens(publishId, groupName, wd);
     }
 
     @Override
-    public void unpublishWorkflowForId(String publishId, TextOutputReceiver outputReceiver) throws WorkflowExecutionException {
+    public void unpublishWorkflowForId(String publishId, TextOutputReceiver outputReceiver)
+        throws WorkflowExecutionException {
 
-        validateIdOrVersionString(publishId);
+        validateIdString(publishId);
 
         String removed = publishedWorkflowTemplates.remove(publishId);
         publishedWorkflowTemplatePlaceholders.remove(publishId);
 
-        // always try to delete the storage files; if publishing was temporary, they are simply not found
+        // always try to delete the storage files; if publishing was temporary, they are
+        // simply not found
         File workflowStorageFile = getWorkflowStorageFile(publishId);
         if (workflowStorageFile.isFile()) {
             try {
                 Files.delete(workflowStorageFile.toPath());
             } catch (IOException e) {
-                throw new WorkflowExecutionException("Failed to unpublish the specified workflow; its storage file may be write-protected");
+                throw new WorkflowExecutionException(
+                    "Failed to unpublish the specified workflow; its storage file may be write-protected");
             }
         }
         File placeholderStorageFile = getPlaceholderStorageFile(publishId);
@@ -422,8 +812,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         if (removed != null) {
             outputReceiver.addOutput(StringUtils.format("Successfully unpublished workflow \"%s\"", publishId));
         } else {
-            outputReceiver.addOutput(StringUtils.format("ERROR: There is no workflow with id \"%s\" to unpublish", publishId));
+            outputReceiver.addOutput(
+                StringUtils.format("ERROR: There is no workflow with id \"%s\" to unpublish", publishId));
         }
+
+        wfTokens.remove(publishId);
+        simpleWfTokens.remove(publishId);
+        
+        persistentSettingsService.delete(PUBLISHED_WF_KEEP_DATA_KEY_PREFIX + publishId);
+        persistentSettingsService.delete(PUBLISHED_WF_GROUP_KEY_PREFIX + publishId);
     }
 
     /**
@@ -451,19 +848,21 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     // TODO add unit test
     public String validateToolParametersAndGetFinalNodeId(String toolId, String toolVersion, String nodeId)
         throws WorkflowExecutionException {
-        List<ComponentInstallation> availableTools = getMatchingPublishedTools();
+        List<DistributedComponentEntry> availableTools = getMatchingPublishedTools();
 
-        // note: not strictly necessary, but gives more consistent error messages instead of "tool not found"
-        validateIdOrVersionString(toolId);
-        validateIdOrVersionString(toolVersion);
+        // note: not strictly necessary, but gives more consistent error messages
+        // instead of "tool not found"
+        validateIdString(toolId);
+        validateVersionString(toolVersion);
 
         // only needed for nodeId == null to detect ambiguous matches
-        ComponentInstallation nodeMatch = null;
+        DistributedComponentEntry nodeMatch = null;
 
         // TODO once components are cached, optimize with map lookup
-        for (ComponentInstallation compInst : availableTools) {
-            ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
-            // TODO (p2) "display name" sounds odd here, but seems to be the public id; check
+        for (DistributedComponentEntry compInst : availableTools) {
+            ComponentInterface compInterface = compInst.getComponentInterface();
+            // TODO (p2) "display name" sounds odd here, but seems to be the public id;
+            // check
             if (toolId.equals(compInterface.getDisplayName())) {
                 if (toolVersion.equals(compInterface.getVersion())) {
                     if (nodeId != null) {
@@ -475,8 +874,10 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                         if (nodeMatch == null) {
                             nodeMatch = compInst;
                         } else {
-                            throw new WorkflowExecutionException(StringUtils.format("Tool selection is ambiguous without a node id; "
-                                + "tool '%s', version '%s' is provided by more than one node", toolId, toolVersion));
+                            throw new WorkflowExecutionException(StringUtils.format(
+                                "Tool selection is ambiguous without a node id; "
+                                    + "tool '%s', version '%s' is provided by more than one node",
+                                toolId, toolVersion));
                         }
                     }
                 }
@@ -488,12 +889,13 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                 // success; single node match
                 return nodeMatch.getNodeId();
             } else {
-                throw new WorkflowExecutionException(StringUtils.format("No matching tool for tool '%s' in version '%s'", toolId,
-                    toolVersion, nodeId));
+                throw new WorkflowExecutionException(StringUtils
+                    .format("No matching tool for tool '%s' in version '%s'", toolId, toolVersion, nodeId));
             }
         } else {
-            throw new WorkflowExecutionException(StringUtils.format("No matching tool for tool '%s' in version '%s', "
-                + "running on a node with id '%s'", toolId, toolVersion, nodeId));
+            throw new WorkflowExecutionException(StringUtils.format(
+                "No matching tool for tool '%s' in version '%s', " + "running on a node with id '%s'", toolId,
+                toolVersion, nodeId));
         }
 
     }
@@ -503,6 +905,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindWorkflowExecutionService(HeadlessWorkflowExecutionService newInstance) {
         this.workflowExecutionService = newInstance;
     }
@@ -512,6 +915,17 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
+    public void bindPersistentSettingsService(PersistentSettingsService newInstance) {
+        this.persistentSettingsService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    @Reference
     public void bindPlatformService(PlatformService newInstance) {
         this.platformService = newInstance;
     }
@@ -521,6 +935,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
         this.componentKnowledgeService = newInstance;
     }
@@ -530,6 +945,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindLocalSystemMonitoringAggregationService(LocalSystemMonitoringAggregationService newInstance) {
         this.localSystemMonitoringAggregationService = newInstance;
     }
@@ -539,6 +955,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindEmbeddedSshServerControl(EmbeddedSshServerControl newInstance) {
         this.embeddedSshServerControl = newInstance;
     }
@@ -548,30 +965,42 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      * 
      * @param newInstance the new service instance
      */
+    @Reference
     public void bindConfigurationService(ConfigurationService newInstance) {
         this.configurationService = newInstance;
     }
 
-    private void initAndRestoreFromPublishedWfStorage() {
+    // Restores workflow templates from storage. Does NOT initialize the workflow
+    // tokens, because for that the
+    // workflow description has to be loaded, which would fail at this point as the
+    // components are not yet available.
+    private void restoreWorkflowTemplatesFromPublishedWfStorage() {
         // initialize the storage location for published workflows and placeholder data
-        publishedWfStorageDir =
-            new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA), "ra/published-wf");
+        publishedWfStorageDir = new File(
+            configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA), "ra/published-wf");
         publishedWfStorageDir.mkdirs();
         if (!publishedWfStorageDir.isDirectory()) {
-            log.error("Failed to create Remote Access workflow storage directory " + publishedWfStorageDir.getAbsolutePath());
+            log.error("Failed to create Remote Access workflow storage directory "
+                + publishedWfStorageDir.getAbsolutePath());
             publishedWfStorageDir = null;
             return;
         }
 
+        wfTokens = new HashMap<String, String[]>();
+        simpleWfTokens = new HashMap<String, String[]>();
+        wfInputs = new HashMap<String, Map<String, String>>();
+        wfOutputs = new HashMap<String, Map<String, String>>();
         // restore persisted data
         for (File f : publishedWfStorageDir.listFiles()) {
             String filename = f.getName();
             if (filename.endsWith(PUBLISHED_WF_DATA_FILE_SUFFIX)) {
                 String wfId = filename.substring(0, filename.length() - PUBLISHED_WF_DATA_FILE_SUFFIX.length());
-                try {
-                    publishedWorkflowTemplates.put(wfId, FileUtils.readFileToString(f));
-                } catch (IOException e) {
-                    log.error("Failed to restore data of published RemoteAccess workflow from storage file " + f.getAbsolutePath(), e);
+                if (initWorkflowTokens(f, wfId)) {
+                    try {
+                        publishedWorkflowTemplates.put(wfId, FileUtils.readFileToString(f));
+                    } catch (IOException e) {
+                        log.error("Failed to restore data of published RemoteAccess workflow from storage file " + f.getAbsolutePath(), e);
+                    }
                 }
             } else if (filename.endsWith(PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX)) {
                 String wfId = filename.substring(0, filename.length() - PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX.length());
@@ -586,7 +1015,50 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
             }
         }
 
-        // TODO check for placeholder data without a workflow file? only sanity check; no actual harm in them - misc_ro
+        // TODO check for placeholder data without a workflow file? only sanity check;
+        // no actual harm in them - misc_ro
+    }
+
+    // returns true if successful
+    private boolean initWorkflowTokens(File f, String wfId) {
+        // Restore tokens for remote workflow listing
+        WorkflowDescription wd = null;
+        try {
+            TextOutputReceiver outputReceiver = new TextOutputReceiver() {
+
+                @Override
+                public void addOutput(String line) {
+                    log.debug("Output of command-line batch command(s): " + line);
+                }
+
+                @Override
+                public void onStart() {}
+
+                @Override
+                public void onFatalError(Exception e) {
+                    log.error(e.getMessage());
+                }
+
+                @Override
+                public void onFinished() {}
+            };
+
+            wd = workflowExecutionService.loadWorkflowDescriptionFromFileConsideringUpdates(f,
+                new HeadlessWorkflowDescriptionLoaderCallback(outputReceiver), true);
+            if (validateWorkflowFileAsTemplate(wd, outputReceiver)) {
+                String groupName = persistentSettingsService.readStringValue(PUBLISHED_WF_GROUP_KEY_PREFIX + wfId);
+                addOrReplaceWorkflowInWfTokens(wfId, groupName, wd);
+                return true;
+            } else {
+                log.error("Failed to restore permanently published workflow " + wfId + ". Probably it was published with an older version"
+                    + " of RCE. Please publish the workflow again with the current RCE version.");
+                return false;
+            }
+        } catch (WorkflowFileException | WorkflowExecutionException e) { // review migration code, which was introduced due to changed
+                                                                         // exception type
+            log.error("Failed to load published workflow file: " + f.getAbsolutePath(), e);
+            return false;
+        }
     }
 
     private File getWorkflowStorageFile(String id) throws WorkflowExecutionException {
@@ -607,107 +1079,164 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         return new File(publishedWfStorageDir, id + PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX);
     }
 
-    private boolean isComponentSuitableAsRemoteAccessTool(ComponentInstallation compInst) {
-        ComponentInterface compInterf = compInst.getComponentRevision().getComponentInterface();
-        EndpointDefinition endpoint;
+    private boolean isComponentSuitableAsRemoteAccessTool(DistributedComponentEntry entry) {
+        ComponentInterface compInterf = entry.getComponentInterface();
         // validate id and version
-        if (!checkIdOrVersionString(compInterf.getDisplayName()) || !checkIdOrVersionString(compInterf.getVersion())) {
+        if (!checkIdString(compInterf.getDisplayName()) || !checkVersionString(compInterf.getVersion())) {
             return false;
         }
-        // do not allow more that two static inputs, as this may block execution
-        if (compInterf.getInputDefinitionsProvider().getStaticEndpointDefinitions().size() != 2) {
+
+        // Only user-integrated tools are published via remote access, not RCE standard
+        // components
+        if (!compInterf.getIdentifierAndVersion().startsWith("de.rcenvironment.integration")) {
             return false;
         }
-        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_INPUT);
-        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.DirectoryReference)) {
+
+        if (!entry.getDeclaredPermissionSet().isPublic()) {
             return false;
         }
-        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_PARAMETERS);
-        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.ShortText)) {
-            return false;
-        }
-        // additional outputs are allowed for now
-        endpoint = compInterf.getOutputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_OUTPUT);
-        if (endpoint == null || endpoint.getDefaultDataType() != DataType.DirectoryReference) {
-            return false;
-        }
+
         return true;
     }
 
-    private List<ComponentInstallation> getMatchingPublishedTools() {
-        List<ComponentInstallation> components = new ArrayList<>();
-        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
-        for (ComponentInstallation ci : compKnowledge.getAllPublishedInstallations()) {
-            if (isComponentSuitableAsRemoteAccessTool(ci)) {
-                components.add(ci);
+    private List<DistributedComponentEntry> getMatchingPublishedTools() {
+        List<DistributedComponentEntry> components = new ArrayList<>();
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
+        for (DistributedComponentEntry entry : compKnowledge.getKnownSharedInstallations()) {
+            if (isComponentSuitableAsRemoteAccessTool(entry)) {
+                components.add(entry);
             }
         }
-        // TODO sort?
         return components;
     }
 
-    private void printComponentsListAsCsv(List<ComponentInstallation> components, TextOutputReceiver outputReceiver,
-        Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
-        SortedSet<String> lines = new TreeSet<>();
-        final CSVFormat csvFormat = CSVFormat.newFormat(' ').withQuote('"').withQuoteMode(QuoteMode.ALL);
-        for (ComponentInstallation ci : components) {
-            ComponentInterface compInterface = ci.getComponentRevision().getComponentInterface();
-            String nodeId = ci.getNodeId();
-            String nodeName = NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId).getAssociatedDisplayName();
-            if (systemLoadData != null) {
-                final SystemLoadInformation loadDataEntry = systemLoadData.get(ci.fetchNodeIdAsObject());
-                // two-step checking as there may be no load data available for that node
-                final double cpuAvg;
-                final int numSamples;
-                final int timeSpan;
-                final long availableRam;
-                if (loadDataEntry != null) {
-                    final AverageOfDoubles cpuLoadAvg = loadDataEntry.getCpuLoadAvg();
-                    cpuAvg = cpuLoadAvg.getAverage() * PERCENT_MULTIPLIER;
-                    numSamples = cpuLoadAvg.getNumSamples();
-                    timeSpan = cpuLoadAvg.getNumSamples()
-                        * LocalSystemMonitoringAggregationService.SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC;
-                    availableRam = loadDataEntry.getAvailableRam();
-                } else {
-                    cpuAvg = DOUBLE_NO_DATA_PLACEHOLDER;
-                    numSamples = INT_NO_DATA_PLACEHOLDER;
-                    timeSpan = INT_NO_DATA_PLACEHOLDER;
-                    availableRam = INT_NO_DATA_PLACEHOLDER;
-                }
-                lines.add(csvFormat.format(compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName,
-                    StringUtils.format("%.2f", cpuAvg), numSamples, timeSpan, availableRam));
-            } else {
-                lines.add(csvFormat.format(compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName));
+    private DistributedComponentEntry getMatchingComponentInstallationForTool(String toolName, String toolVersion,
+        String toolNodeId) {
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
+        DistributedComponentEntry matchingComponent = null;
+        for (DistributedComponentEntry entry : compKnowledge.getKnownSharedInstallations()) {
+            if (entry.getComponentInterface().getDisplayName().equals(toolName)
+                && entry.getComponentInterface().getVersion().equals(toolVersion)
+                && entry.getNodeId().equals(toolNodeId)) {
+                matchingComponent = entry;
             }
         }
-        for (String line : lines) {
-            outputReceiver.addOutput(line);
+        return matchingComponent;
+    }
+
+    private String getFullIdentifierForTool(String toolNameAndVersion) {
+        String[] splitToolId = toolNameAndVersion.split("/");
+        String toolName = splitToolId[0];
+        String toolVersion = splitToolId[1];
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
+        String fullId = null;
+        for (DistributedComponentEntry entry : compKnowledge.getKnownSharedInstallations()) {
+            if (entry.getComponentInterface().getDisplayName().equals(toolName)
+                && entry.getComponentInterface().getVersion().equals(toolVersion)) {
+                fullId = entry.getComponentInterface().getIdentifierAndVersion();
+            }
+        }
+        return fullId;
+    }
+
+    private ComponentInstallation getInputLoaderComponentInstallation() {
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
+        ComponentInstallation component = null;
+        for (DistributedComponentEntry entry : compKnowledge.getAllLocalInstallations()) {
+            if (entry.getComponentInterface().getIdentifierAndVersion().startsWith(DE_RCENVIRONMENT_SCPINPUTLOADER)) {
+                component = entry.getComponentInstallation();
+            }
+        }
+        return component;
+    }
+
+    private ComponentInstallation getOutputCollectorComponentInstallation() {
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
+        ComponentInstallation component = null;
+        for (DistributedComponentEntry entry : compKnowledge.getAllLocalInstallations()) {
+            if (entry.getComponentInterface().getIdentifierAndVersion()
+                .startsWith(DE_RCENVIRONMENT_SCPOUTPUTCOLLECTOR)) {
+                component = entry.getComponentInstallation();
+            }
+        }
+        return component;
+    }
+
+    private void printComponentsListAsCsv(TextOutputReceiver outputReceiver,
+        Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
+        final CSVFormat csvFormat = CSVFormat.newFormat(' ').withQuote('"').withQuoteMode(QuoteMode.ALL);
+        if (toolTokens != null) {
+            for (Object[] tokens : toolTokens) {
+                if (systemLoadData != null) {
+                    String nodeId = (String) tokens[2];
+                    LogicalNodeId nodeIdObj = NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId);
+
+                    final SystemLoadInformation loadDataEntry = systemLoadData.get(nodeIdObj);
+                    // two-step checking as there may be no load data available for that node
+                    final double cpuAvg;
+                    final int numSamples;
+                    final int timeSpan;
+                    final long availableRam;
+                    if (loadDataEntry != null) {
+                        final AverageOfDoubles cpuLoadAvg = loadDataEntry.getCpuLoadAvg();
+                        cpuAvg = cpuLoadAvg.getAverage() * PERCENT_MULTIPLIER;
+                        numSamples = cpuLoadAvg.getNumSamples();
+                        timeSpan = cpuLoadAvg.getNumSamples()
+                            * LocalSystemMonitoringAggregationService.SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC;
+                        availableRam = loadDataEntry.getAvailableRam();
+                    } else {
+                        cpuAvg = DOUBLE_NO_DATA_PLACEHOLDER;
+                        numSamples = INT_NO_DATA_PLACEHOLDER;
+                        timeSpan = INT_NO_DATA_PLACEHOLDER;
+                        availableRam = INT_NO_DATA_PLACEHOLDER;
+                    }
+                    String line = csvFormat.format(tokens, StringUtils.format(FORMAT_2F, cpuAvg), numSamples, timeSpan, availableRam);
+                    outputReceiver.addOutput(line);
+                } else {
+                    String line = csvFormat.format(tokens);
+                    outputReceiver.addOutput(line);
+                }
+            }
         }
     }
 
-    private void printComponentsListAsTokens(List<ComponentInstallation> components, TextOutputReceiver outputReceiver,
+    private Map<String, Map<String, Object>> extractRawMetadata(EndpointDefinition ed) {
+        Map<String, Map<String, Object>> rawMetadata = new HashMap<String, Map<String, Object>>();
+        for (String key : ed.getMetaDataDefinition().getMetaDataKeys()) {
+            Map<String, Object> metaDataForKey = new HashMap<String, Object>();
+            metaDataForKey.put(EndpointDefinitionConstants.KEY_GUI_NAME, ed.getMetaDataDefinition().getGuiName(key));
+            metaDataForKey.put(EndpointDefinitionConstants.KEY_GUI_POSITION,
+                Integer.toString(ed.getMetaDataDefinition().getGuiPosition(key)));
+            metaDataForKey.put(EndpointDefinitionConstants.KEY_GUIGROUP, ed.getMetaDataDefinition().getGuiGroup(key));
+            metaDataForKey.put(KEY_POSSIBLE_VALUES, ed.getMetaDataDefinition().getPossibleValues(key));
+            metaDataForKey.put(KEY_DEFAULT_VALUE, ed.getMetaDataDefinition().getDefaultValue(key));
+            metaDataForKey.put(EndpointDefinitionConstants.KEY_VISIBILITY,
+                ed.getMetaDataDefinition().getVisibility(key));
+            rawMetadata.put(key, metaDataForKey);
+        }
+        return rawMetadata;
+    }
+
+    private void printComponentsListAsTokens(TextOutputReceiver outputReceiver,
         Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
-        outputReceiver.addOutput(Integer.toString(components.size())); // number of entries
+        outputReceiver.addOutput(Integer.toString(toolTokens.size())); // number of entries
         // print number of tokens per entry
         if (systemLoadData != null) {
-            outputReceiver.addOutput("8");
+            outputReceiver.addOutput("11");
         } else {
-            outputReceiver.addOutput("4");
+            outputReceiver.addOutput("7");
         }
-        for (ComponentInstallation ci : components) {
-            ComponentInterface compInterface = ci.getComponentRevision().getComponentInterface();
-            String nodeId = ci.getNodeId();
-            String nodeName =
-                NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId).getAssociatedDisplayName();
 
-            outputReceiver.addOutput(compInterface.getDisplayName());
-            outputReceiver.addOutput(compInterface.getVersion());
-            outputReceiver.addOutput(nodeId);
-            outputReceiver.addOutput(nodeName);
+        for (String[] tokens : toolTokens) {
+            for (int i = 0; i < tokens.length; i++) {
+                outputReceiver.addOutput(tokens[i]);
+            }
 
             if (systemLoadData != null) {
+                String nodeId = (String) tokens[2];
+                LogicalNodeId nodeIdObj = NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId);
                 // TODO (p3) extract common code with above method?
-                final SystemLoadInformation loadDataEntry = systemLoadData.get(ci.fetchNodeIdAsObject());
+                final SystemLoadInformation loadDataEntry = systemLoadData.get(nodeIdObj);
                 // two-step checking as there may be no load data available for that node
                 final double cpuAvg;
                 final int numSamples;
@@ -727,162 +1256,79 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                     availableRam = INT_NO_DATA_PLACEHOLDER;
                 }
 
-                outputReceiver.addOutput(StringUtils.format("%.2f", cpuAvg));
+                outputReceiver.addOutput(StringUtils.format(FORMAT_2F, cpuAvg));
                 outputReceiver.addOutput(Integer.toString(numSamples));
                 outputReceiver.addOutput(Integer.toString(timeSpan));
                 outputReceiver.addOutput(Long.toString(availableRam));
             }
-
         }
     }
 
     private boolean validateWorkflowFileAsTemplate(WorkflowDescription wd, TextOutputReceiver outputReceiver)
         throws WorkflowExecutionException {
-        validateEquals(WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER, wd.getWorkflowVersion(), "Invalid workflow file version");
-        MutableYesNoFlag foundInputDirSource = new MutableYesNoFlag();
-        MutableYesNoFlag foundParametersSource = new MutableYesNoFlag();
-        MutableYesNoFlag foundOutputReceiver = new MutableYesNoFlag();
+        validateEquals(WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER, wd.getWorkflowVersion(),
+            "Invalid workflow file version");
+        int foundInputLoaders = 0;
+        int foundOutputCollectors = 0;
         for (WorkflowNode node : wd.getWorkflowNodes()) {
-            outputReceiver.addOutput(OUTPUT_INDENT + "Checking component \"" + node.getName() + "\"  [" + node.getIdentifier() + "]");
+            outputReceiver.addOutput(OUTPUT_INDENT + "Checking component \"" + node.getName() + "\"  ["
+                + node.getIdentifierAsObject().toString() + "]");
             final ComponentDescription compDesc = node.getComponentDescription();
             final String compId = compDesc.getIdentifier();
             final String compVersion = compDesc.getVersion();
-            if (compId.startsWith("de.rcenvironment.inputprovider/")) {
-                validateEquals("3.2", compVersion, "Invalid component version");
-                for (EndpointDescription outputEndpoint : node.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                    checkEndpoint(outputEndpoint, "input directory source", INTERFACE_ENDPOINT_NAME_INPUT, DataType.DirectoryReference,
-                        WF_PLACEHOLDER_INPUT_DIR,
-                        foundInputDirSource, outputReceiver);
-                    checkEndpoint(outputEndpoint, "input parameters source", INTERFACE_ENDPOINT_NAME_PARAMETERS, DataType.ShortText,
-                        WF_PLACEHOLDER_PARAMETERS,
-                        foundParametersSource, outputReceiver);
-                }
-            } else if (compId.startsWith("de.rcenvironment.outputwriter/")) {
-                validateEquals("2.0", compVersion, "Invalid component version");
-                Map<String, String> compConfig = compDesc.getConfigurationDescription().getConfiguration();
-                String selectedRoot = compConfig.get("SelectedRoot");
-                if (WF_PLACEHOLDER_OUTPUT_PARENT_DIR.equals(selectedRoot)) {
-                    for (EndpointDescription inputEndpoint : node.getInputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                        checkEndpoint(inputEndpoint, "output directory receiver", INTERFACE_ENDPOINT_NAME_OUTPUT,
-                            DataType.DirectoryReference, null,
-                            foundOutputReceiver, outputReceiver);
-                    }
-                    validateEquals("false", compConfig.get("SelectRootOnWorkflowStart"), "Invalid \"Select at workflow start\" setting");
-                } else {
-                    printEndpointValidationMessage(outputReceiver, StringUtils.format(
-                        "Ignoring this Output Writer as its \"Root folder\" setting is not the \"%s\" marker",
-                        WF_PLACEHOLDER_OUTPUT_PARENT_DIR));
-                }
+            if (compId.contains(DE_RCENVIRONMENT_SCPINPUTLOADER)) {
+                validateEquals(REQUIRED_INPUTLOADER_VERSION, compVersion, "Invalid component version");
+                foundInputLoaders++;
+            } else if (compId.contains(DE_RCENVIRONMENT_SCPOUTPUTCOLLECTOR)) {
+                validateEquals(REQUIRED_OUTPUTCOLLECTOR_VERSION, compVersion, "Invalid component version");
+                foundOutputCollectors++;
             }
         }
         // check for completeness
-        if (foundInputDirSource.getValue() && foundParametersSource.getValue() && foundOutputReceiver.getValue()) {
-            outputReceiver.addOutput("Validation successful");
+        if (foundInputLoaders == 1 && foundOutputCollectors == 1) {
+            outputReceiver.addOutput("Validation successful.");
             return true;
         } else {
-            outputReceiver.addOutput("Validation failed:");
-            outputReceiver.addOutput(OUTPUT_INDENT + "Found input directory source: " + foundInputDirSource);
-            outputReceiver.addOutput(OUTPUT_INDENT + "Found input parameters source: " + foundParametersSource);
-            outputReceiver.addOutput(OUTPUT_INDENT + "Found output receiver: " + foundOutputReceiver);
+            outputReceiver.addOutput(
+                "Validation failed: The workflow has to contain exactly one input loader and exactly one output collector.");
             return false;
         }
     }
 
-    private void checkEndpoint(EndpointDescription endpoint, String description, String expectedName, DataType expectedDataType,
-        String placeholderMarker, MutableYesNoFlag detectionFlag, TextOutputReceiver outputReceiver) throws WorkflowExecutionException {
-
-        final String actualName = endpoint.getName();
-        final DataType actualDataType = endpoint.getDataType();
-        final boolean dataTypeMatches = expectedDataType == actualDataType;
-        final boolean nameMatches = expectedName.equals(actualName);
-
-        boolean allMatched = false;
-        // minor hack to satisfy the CheckStyle "<= 6 parameters" rule: derive "isInputSide" value from the fact if a placeholderMarker is
-        // set
-        if (placeholderMarker != null) {
-            final boolean hasMarkerValue = placeholderMarker.equals(endpoint.getMetaDataValue("startValue"));
-            if (!nameMatches && !hasMarkerValue) {
-                // neither name nor marker matches -> ignore silently
-                return;
-            }
-            if (nameMatches && dataTypeMatches && hasMarkerValue) {
-                allMatched = true;
-            } else {
-                printEndpointValidationMessage(outputReceiver, StringUtils.format(
-                    "Output \"%s\" is a candidate for the %s, but it does not quite match: ", expectedName, description));
-                if (!nameMatches) {
-                    printEndpointValidationMessage(outputReceiver,
-                        StringUtils.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
-                }
-                if (!dataTypeMatches) {
-                    printEndpointValidationMessage(outputReceiver,
-                        StringUtils.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
-                            expectedDataType.getDisplayName()));
-                }
-                if (!hasMarkerValue) {
-                    printEndpointValidationMessage(outputReceiver,
-                        StringUtils.format("  - Marker value \"%s\" not found", placeholderMarker));
-                }
-                return;
-            }
-        } else {
-            if (!nameMatches || !dataTypeMatches) {
-                printEndpointValidationMessage(outputReceiver, StringUtils.format(
-                    "Input \"%s\" is a candidate for the %s, but it does not quite match: ", actualName, description));
-                if (!nameMatches) {
-                    printEndpointValidationMessage(outputReceiver,
-                        StringUtils.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
-                }
-                if (!dataTypeMatches) {
-                    printEndpointValidationMessage(outputReceiver,
-                        StringUtils.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
-                            expectedDataType.getDisplayName()));
-                }
-                return;
-            }
-            // note: "placeholder" parameter is not used for output receiver
-            validateEquals("output", endpoint.getMetaDataValue("filename"),
-                "Invalid \"Target name\" setting in Output Writer; must be \"output\"");
-            validateEquals("[root]", endpoint.getMetaDataValue("folderForSaving"),
-                "Invalid \"Target folder\" setting in Output Writer; must be \"[root]\"");
-            allMatched = true;
-        }
-
-        // check against accidental fall-through
-        if (!allMatched) {
-            throw new IllegalStateException("Internal error: Expected flag not set");
-        }
-
-        // check for duplicate and set flag if not
-        if (detectionFlag.getValue()) {
-            throw new WorkflowExecutionException("Found more than one " + description + " provider");
-        } else {
-            printEndpointValidationMessage(outputReceiver, StringUtils.format("Found %s \"%s\"", description, actualName));
-            detectionFlag.setValue(true);
-        }
-    }
-
-    private void printEndpointValidationMessage(TextOutputReceiver outputReceiver, String message) {
-        outputReceiver.addOutput(OUTPUT_INDENT + OUTPUT_INDENT + message);
-    }
-
     private void validateEquals(Object expected, Object actual, String message) throws WorkflowExecutionException {
         if (!expected.equals(actual)) {
-            throw new WorkflowExecutionException(StringUtils.format("%s: Expected \"%s\", but found \"%s\"", message, expected, actual));
+            throw new WorkflowExecutionException(
+                StringUtils.format("%s: Expected \"%s\", but found \"%s\"", message, expected, actual));
         }
     }
 
     // returns boolean result
-    private boolean checkIdOrVersionString(String id) {
-        return StringUtils.checkAgainstCommonInputRules(id) == null;
+    private boolean checkIdString(String id) {
+        return !CommonIdRules.validateCommonIdRules(id).isPresent();
+    }
+    
+ // returns boolean result
+    private boolean checkVersionString(String id) {
+        return !CommonIdRules.validateCommonVersionStringRules(id).isPresent();
     }
 
     // throws exception on failure
-    private void validateIdOrVersionString(String id) throws WorkflowExecutionException {
+    private void validateIdString(String id) throws WorkflowExecutionException {
         // TODO add integration for high-level commands using this
-        String valdationErrorMessage = StringUtils.checkAgainstCommonInputRules(id);
-        if (valdationErrorMessage != null) {
-            throw new WorkflowExecutionException("Invalid tool id, workflow id, or version \"" + id + "\": " + valdationErrorMessage);
+        Optional<String> valdationErrorMessage = CommonIdRules.validateCommonIdRules(id);
+        if (valdationErrorMessage.isPresent()) {
+            throw new WorkflowExecutionException(
+                "Invalid tool id or workflow id \"" + id + "\": " + valdationErrorMessage);
+        }
+    }
+    
+    // throws exception on failure
+    private void validateVersionString(String id) throws WorkflowExecutionException {
+        // TODO add integration for high-level commands using this
+        Optional<String> valdationErrorMessage = CommonIdRules.validateCommonVersionStringRules(id);
+        if (valdationErrorMessage.isPresent()) {
+            throw new WorkflowExecutionException(
+                "Invalid version \"" + id + "\": " + valdationErrorMessage);
         }
     }
 
@@ -891,48 +1337,135 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     }
 
     private void renameAsOld(File outputFilesDir) {
-        File tempDestination =
-            new File(outputFilesDir.getParentFile(), outputFilesDir.getName() + ".old." + System.currentTimeMillis());
+        File tempDestination = new File(outputFilesDir.getParentFile(),
+            outputFilesDir.getName() + ".old." + System.currentTimeMillis());
         outputFilesDir.renameTo(tempDestination);
         if (outputFilesDir.isDirectory()) {
             log.warn("Tried to move directory " + outputFilesDir.getAbsolutePath() + " to "
-                + tempDestination.getAbsolutePath()
-                + ", but it is still present");
+                + tempDestination.getAbsolutePath() + ", but it is still present");
         }
     }
 
-    private ExecutionSetup generateSingleToolExecutionSetup(String toolId, String toolVersion, String toolNodeId, String parameterString,
-        File inputFilesDir, File outputFilesDir) throws IOException {
-        InputStream templateStream = getClass().getResourceAsStream(WORKFLOW_TEMPLATE_RESOURCE_PATH);
-        if (templateStream == null) {
-            throw new IOException("Failed to read remote tool access template");
-        }
-        String template = IOUtils.toString(templateStream, WORKFLOW_FILE_ENCODING);
-        if (template == null || template.isEmpty()) {
-            throw new IOException("Found remote tool access template, but had empty content after loading it");
-        }
+    private ExecutionSetup generateSingleToolExecutionSetup(RemoteComponentExecutionParameter parameterObject)
+        throws IOException {
 
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         final String timestampString = dateFormat.format(new Date());
 
-        String workflowContent = template
-            .replace(WF_PLACEHOLDER_TOOL_ID, toolId)
-            .replace(WF_PLACEHOLDER_TOOL_VERSION, toolVersion) // guarded by validation; no escaping necessary
-            .replace(WF_PLACEHOLDER_TOOL_NODE_ID, toolNodeId) // guarded by validation; no escaping necessary
-            .replace(WF_PLACEHOLDER_PARAMETERS, StringUtils.escapeAsJsonStringContent(parameterString, false))
-            .replace(WF_PLACEHOLDER_TIMESTAMP, timestampString)
-            .replace(WF_PLACEHOLDER_INPUT_DIR, formatPathForWorkflowFile(inputFilesDir))
-            // note: the name splitting is needed due to OutputWriter constraints - misc_ro
-            // TODO (p1) >8.0.0 - recheck after placeholder change (?)
-            .replace(WF_PLACEHOLDER_OUTPUT_PARENT_DIR, formatPathForWorkflowFile(outputFilesDir.getParentFile()))
-            .replace(WF_PLACEHOLDER_OUTPUT_FILES_FOLDER_NAME, outputFilesDir.getName());
+        // Build workflow description containing the tool, an scp input loader and an
+        // scp
+        // output collector
+        WorkflowDescription workflowDesc = new WorkflowDescription(UUID.randomUUID().toString());
+        workflowDesc.setWorkflowVersion(5);
+        workflowDesc.setName("Remote_Tool_Access-" + timestampString + "-" + parameterObject.getToolId());
+
+        final DistributedComponentEntry matchingComponentEntry = getMatchingComponentInstallationForTool(
+            parameterObject.getToolId(), parameterObject.getToolVersion(), parameterObject.getToolNodeId());
+        WorkflowNode tool = new WorkflowNode(
+            new ComponentDescription(matchingComponentEntry.getComponentInstallation()));
+        WorkflowNode inputloader = new WorkflowNode(new ComponentDescription(getInputLoaderComponentInstallation()));
+        WorkflowNode outputcollector = new WorkflowNode(
+            new ComponentDescription(getOutputCollectorComponentInstallation()));
+        tool.setName(parameterObject.getToolId());
+        tool.setLocation(NUMBER_400, NUMBER_200);
+        inputloader.setName("Scp Input Loader");
+        inputloader.getConfigurationDescription().setConfigurationValue("UploadDirectory",
+            parameterObject.getInputFilesDir().getAbsolutePath());
+        inputloader.getConfigurationDescription().setConfigurationValue("UncompressedUpload",
+            Boolean.toString(parameterObject.isUncompressedUpload()));
+        inputloader.getConfigurationDescription().setConfigurationValue("SimpleDescriptionFormat",
+            Boolean.toString(parameterObject.isSimpleDescriptionFormat()));
+        inputloader.setLocation(NUMBER_200, NUMBER_200);
+        outputcollector.setName("Scp output collector");
+        outputcollector.getConfigurationDescription().setConfigurationValue("DownloadDirectory",
+            parameterObject.getOutputFilesDir().getAbsolutePath());
+        outputcollector.getConfigurationDescription().setConfigurationValue("UncompressedDownload",
+            Boolean.toString(parameterObject.isUncompressedUpload()));
+        outputcollector.getConfigurationDescription().setConfigurationValue("SimpleDescriptionFormat",
+            Boolean.toString(parameterObject.isSimpleDescriptionFormat()));
+        outputcollector.setLocation(NUMBER_600, NUMBER_200);
+        workflowDesc.addWorkflowNode(inputloader);
+        workflowDesc.addWorkflowNode(tool);
+        workflowDesc.addWorkflowNode(outputcollector);
+
+        if (parameterObject.getDynInputDesc() != null) {
+            // Parse dynamic inputs and outputs from the parameter string and add them to
+            // the tools workflow node
+            Set<Map<String, Object>> dynInputsSet = mapper.readValue(parameterObject.getDynInputDesc(),
+                new HashSet<Map<String, Object>>().getClass());
+            for (Map<String, Object> dynInput : dynInputsSet) {
+                String inputName = (String) dynInput.get(EndpointDefinitionConstants.KEY_NAME);
+                String identifier = (String) dynInput.get(EndpointDefinitionConstants.KEY_IDENTIFIER);
+                DataType type = DataType.valueOf((String) dynInput.get(KEY_DATA_TYPE));
+                Map<String, String> metaData = (Map<String, String>) dynInput.get(KEY_META_DATA);
+                tool.getInputDescriptionsManager().addDynamicEndpointDescription(identifier, inputName, type, metaData);
+            }
+        }
+        if (parameterObject.getDynOutputDesc() != null) {
+            Set<Map<String, Object>> dynOutputsSet = mapper.readValue(parameterObject.getDynOutputDesc(),
+                new HashSet<Map<String, Object>>().getClass());
+            for (Map<String, Object> dynOutput : dynOutputsSet) {
+                String outputName = (String) dynOutput.get(EndpointDefinitionConstants.KEY_NAME);
+                String identifier = (String) dynOutput.get(EndpointDefinitionConstants.KEY_IDENTIFIER);
+                DataType type = DataType.valueOf((String) dynOutput.get(KEY_DATA_TYPE));
+                Map<String, String> metaData = (Map<String, String>) dynOutput.get(KEY_META_DATA);
+                tool.getOutputDescriptionsManager().addDynamicEndpointDescription(identifier, outputName, type,
+                    metaData);
+            }
+        }
+
+        Set<String> nonReqInputsSet = new HashSet<String>();
+
+        // Read set of non-required inputs ("Required" or "RequiredIfConnected" on
+        // client side)
+        if (parameterObject.getNotRequiredInputs() != null) {
+            nonReqInputsSet = mapper.readValue(parameterObject.getNotRequiredInputs(),
+                new HashSet<String>().getClass());
+        }
+
+        // Configure InputLoader with the tools inputs and create connections
+        EndpointDescriptionsManager inputLoaderOutputs = inputloader.getOutputDescriptionsManager();
+        for (EndpointDescription inputDesc : tool.getInputDescriptionsManager().getEndpointDescriptions()) {
+            String inputName = inputDesc.getName();
+            DataType dataType = inputDesc.getDataType();
+            EndpointDescription outputDesc = inputLoaderOutputs.addDynamicEndpointDescription("default", inputName,
+                dataType, new HashMap<String, String>());
+            Connection inputConnection = new Connection(inputloader, outputDesc, tool, inputDesc);
+            workflowDesc.addConnection(inputConnection);
+            // Add execution constraint "NotRequired" if necessary
+            if (nonReqInputsSet.contains(inputName)) {
+                Map<String, String> metaData = inputDesc.getMetaData();
+                metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                    EndpointDefinition.InputExecutionContraint.NotRequired.toString());
+                tool.getInputDescriptionsManager().editStaticEndpointDescription(inputName, dataType, metaData);
+                inputDesc.setMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                    EndpointDefinition.InputExecutionContraint.NotRequired.toString());
+            }
+        }
+        // Configure OutputCollector with the tools outputs and create connections
+        EndpointDescriptionsManager outputCollectorInputs = outputcollector.getInputDescriptionsManager();
+        for (EndpointDescription outputDesc : tool.getOutputDescriptionsManager().getEndpointDescriptions()) {
+            String inputName = outputDesc.getName();
+            DataType dataType = outputDesc.getDataType();
+            EndpointDescription inputDesc = outputCollectorInputs.addDynamicEndpointDescription("default", inputName,
+                dataType, new HashMap<String, String>());
+            Connection outputConnection = new Connection(tool, outputDesc, outputcollector, inputDesc);
+            workflowDesc.addConnection(outputConnection);
+        }
+
+        // TODO Determine on which (logical) node the tool should run (in case several
+        // tools with same id are available).
+
         File wfFile = tempFileService.createTempFileFromPattern("rta-*.wf");
-        FileUtils.write(wfFile, workflowContent, WORKFLOW_FILE_ENCODING);
-        return new ExecutionSetup(wfFile, null, inputFilesDir, outputFilesDir);
+        WorkflowDescriptionPersistenceHandler persistenceHandler = new WorkflowDescriptionPersistenceHandler();
+        ByteArrayOutputStream content = persistenceHandler.writeWorkflowDescriptionToStream(workflowDesc);
+        FileUtils.writeByteArrayToFile(wfFile, content.toByteArray());
+        return new ExecutionSetup(wfFile, null, parameterObject.getSessionToken(), parameterObject.getInputFilesDir(),
+            parameterObject.getOutputFilesDir());
     }
 
-    private ExecutionSetup generateWorkflowExecutionSetup(String workflowId, String parameterString, File inputFilesDir,
-        File outputFilesDir) throws IOException, WorkflowExecutionException {
+    private ExecutionSetup generateWorkflowExecutionSetup(String workflowId, String sessionToken, File inputFilesDir, File outputFilesDir,
+        boolean uncompressedUpload, boolean simpleDescriptionFormat) throws IOException, WorkflowExecutionException {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         final String timestampString = dateFormat.format(new Date());
         final String template = publishedWorkflowTemplates.get(workflowId);
@@ -948,17 +1481,20 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
 
         String workflowContent = template
-            .replace(WF_PLACEHOLDER_PARAMETERS, StringUtils.escapeAsJsonStringContent(parameterString, false)) // prevent injection
+            // .replace(WF_PLACEHOLDER_PARAMETERS, StringUtils.escapeAsJsonStringContent(parameterString, false)) // prevent injection
             .replace(WF_PLACEHOLDER_TIMESTAMP, timestampString)
             .replace(WF_PLACEHOLDER_INPUT_DIR, formatPathForWorkflowFile(inputFilesDir))
-            .replace(WF_PLACEHOLDER_OUTPUT_PARENT_DIR, formatPathForWorkflowFile(outputFilesDir.getParentFile()));
+            .replace(WF_PLACEHOLDER_OUTPUT_PARENT_DIR, formatPathForWorkflowFile(outputFilesDir))
+            .replace(WF_PLACEHOLDER_SIMPLE_DESCRIPTION_FORMAT, Boolean.toString(simpleDescriptionFormat))
+            .replace(WF_PLACEHOLDER_UNCOMPRESSED_UPLOAD, Boolean.toString(uncompressedUpload))
+            .replace(WF_PLACEHOLDER_UNCOMPRESSED_DOWNLOAD, Boolean.toString(uncompressedUpload));
         File wfFile = tempFileService.createTempFileFromPattern("rwa-*.wf");
         FileUtils.write(wfFile, workflowContent, WORKFLOW_FILE_ENCODING);
-        return new ExecutionSetup(wfFile, placeholdersFile, inputFilesDir, outputFilesDir);
+        return new ExecutionSetup(wfFile, placeholdersFile, sessionToken, inputFilesDir, outputFilesDir);
     }
 
     private FinalWorkflowState executeConfiguredWorkflow(ExecutionSetup executionSetup,
-        SingleConsoleRowsProcessor customConsoleRowReceiver) throws WorkflowExecutionException {
+        SingleConsoleRowsProcessor customConsoleRowReceiver, boolean neverDeleteExecutionData) throws WorkflowExecutionException {
         log.debug("Executing remote access workflow " + executionSetup.getWorkflowFile().getAbsolutePath());
 
         File inputFilesDir = executionSetup.getInputFilesDir();
@@ -974,15 +1510,18 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
         logDir.mkdirs();
 
-        // TODO review >5.0.0: remove this output capture, as it is only used for debug output? - misc_ro
+        // TODO review >5.0.0: remove this output capture, as it is only used for debug
+        // output? - misc_ro
         CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver();
 
         // TODO specify log directory?
-        HeadlessWorkflowExecutionContextBuilder exeContextBuilder;
+        ExtendedHeadlessWorkflowExecutionContextBuilder exeContextBuilder;
         try {
-            exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(), logDir);
+            exeContextBuilder = new ExtendedHeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(),
+                logDir);
         } catch (InvalidFilenameException e) {
-            // This exception should never occur since the name of the workflow file used here is generated by the
+            // This exception should never occur since the name of the workflow file used
+            // here is generated by the
             // generateWorkflowExecutionSetup method and is always valid
             throw new IllegalStateException();
         }
@@ -991,16 +1530,26 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         exeContextBuilder.setSingleConsoleRowsProcessor(customConsoleRowReceiver);
         exeContextBuilder.setAbortIfWorkflowUpdateRequired(true); // fail on out-of-date templates
 
+        if (neverDeleteExecutionData) {
+            exeContextBuilder.setDeletionBehavior(DeletionBehavior.Never);
+            exeContextBuilder.setDisposalBehavior(DisposalBehavior.Never);
+        }
+
         WorkflowExecutionException executionException = null;
         FinalWorkflowState finalState = FinalWorkflowState.FAILED;
         try {
-            finalState = workflowExecutionService.executeWorkflowSync(exeContextBuilder.build());
+            HeadlessWorkflowExecutionContext context = exeContextBuilder.build();
+            WorkflowExecutionInformation execInf = workflowExecutionService.startHeadlessWorkflowExecution(context);
+            sessionTokenToWfExecInf.put(executionSetup.getSessionToken(), execInf);
+            finalState = workflowExecutionService.waitForWorkflowTerminationAndCleanup(context);
+            sessionTokenToWfExecInf.remove(executionSetup.getSessionToken());
         } catch (WorkflowExecutionException e) {
             executionException = e;
             File exceptionLogFile = new File(logDir, "error.log");
             // create a log file so the error cause is accessible via the log directory
             try {
-                FileUtils.writeStringToFile(exceptionLogFile, "Workflow execution failed with an error: " + e.toString());
+                FileUtils.writeStringToFile(exceptionLogFile,
+                    "Workflow execution failed with an error: " + e.toString());
             } catch (IOException e1) {
                 log.error("Failed to write exception log file " + exceptionLogFile.getAbsolutePath());
             }
@@ -1012,15 +1561,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
             File tempDestination = new File(inputFilesDir.getParentFile(), "input.old." + System.currentTimeMillis());
             inputFilesDir.renameTo(tempDestination);
             if (inputFilesDir.isDirectory()) {
-                log.warn("Tried to rename input directory " + inputFilesDir.getAbsolutePath() + " to " + tempDestination.getAbsolutePath()
-                    + ", but it is still present");
+                log.warn("Tried to rename input directory " + inputFilesDir.getAbsolutePath() + " to "
+                    + tempDestination.getAbsolutePath() + ", but it is still present");
             }
         }
 
         if (executionException != null) {
             throw executionException;
         }
-        
+
         try {
             tempFileService.disposeManagedTempDirOrFile(executionSetup.getWorkflowFile());
         } catch (IOException e) {
@@ -1031,7 +1580,54 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     }
 
     private CharSequence formatPathForWorkflowFile(File directory) {
-        return directory.getAbsolutePath().replaceAll("\\\\", "/"); // double escaping for java+regexp; replaces "\"->"/"
+        return directory.getAbsolutePath().replaceAll("\\\\", "/"); // double escaping for java+regexp; replaces
+                                                                    // "\"->"/"
+    }
+
+    @Override
+    public void cancelToolOrWorkflow(String sessionToken) {
+        WorkflowExecutionInformation wfExecInf = sessionTokenToWfExecInf.get(sessionToken);
+
+        if (wfExecInf != null) {
+            try {
+                workflowExecutionService.cancel(wfExecInf.getWorkflowExecutionHandle());
+            } catch (ExecutionControllerException | RemoteOperationException e) {
+                log.warn(StringUtils.format("Failed to cancel workflow '%s'; cause: %s",
+                    wfExecInf.getExecutionIdentifier(), e.getMessage()));
+            }
+        } else {
+            log.debug(
+                StringUtils.format("Failed to cancel workflow for session token '%s'; it was not running or already finished.",
+                    sessionToken));
+        }
+
+    }
+
+    @Override
+    public void getToolDocumentation(TextOutputReceiver outputReceiver, String toolId, String nodeId, String hashValue,
+        File outputFilePath) {
+        String fullToolId = getFullIdentifierForTool(toolId);
+        try {
+            File doc = toolDocService.getToolDocumentation(fullToolId, nodeId, hashValue);
+            FileUtils.copyDirectory(doc, outputFilePath);
+        } catch (RemoteOperationException | IOException e) {
+            log.warn("Failed to download tool documentaion; cause; " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void getToolDocumentationList(TextOutputReceiver outputReceiver, String toolId) {
+        String fullToolId = getFullIdentifierForTool(toolId);
+        //fullToolID is null if the id belongs to a published workflow
+        if (fullToolId != null) {
+            Map<String, String> toolDocMap = toolDocService.getComponentDocumentationList(fullToolId);
+            outputReceiver.addOutput(Integer.toString(toolDocMap.size()));
+            // For each entry, output the hash value and node id
+            for (Entry<String, String> docEntry : toolDocMap.entrySet()) {
+                outputReceiver.addOutput(docEntry.getKey());
+                outputReceiver.addOutput(docEntry.getValue());
+            } 
+        }
     }
 
 }

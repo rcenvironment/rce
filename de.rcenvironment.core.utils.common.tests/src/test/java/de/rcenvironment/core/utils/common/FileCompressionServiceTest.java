@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2018 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -76,10 +76,19 @@ public class FileCompressionServiceTest {
     private static final String FILE_NAME_TEST2 = "test2.PDF";
 
     private static final String FILE_NAME_TEST = "test.txt";
-    
+
     private static final String FILE_NAME_NFS = ".nfs000000000095a01200000e8";
 
     private static final String FILE_NAME_SUBFOLDER = "second";
+
+    private static final String LONG_FILE_NAME_TEST =
+        "ThisIsAVeryLongFileNameWithMoreThanHundredCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest.txt";
+
+    private static final String LONG_FILE_NAME_SUBFOLDER =
+        "ThisIsAVeryLongFolderNameWithMoreThanHundredCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest";
+
+    private static final String LONG_FILE_NAME_TEST2 =
+        "ThisIsAnotherVeryLongFileNameWithMoreThanHundredCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest.pdf";
 
     private final FileCompressionFormat formatParameter;
 
@@ -102,7 +111,7 @@ public class FileCompressionServiceTest {
     /**
      * @return the parameters to run each test with; returning all archive formats to test (currently .zip and .tgz)
      */
-    @Parameters // TODO add (name = "{0}") once JUnit >4.8 is available
+    @Parameters(name = " {0} ")
     public static List<Object[]> parameters() {
         return Arrays.asList(new Object[][] {
             { FileCompressionFormat.ZIP }, { FileCompressionFormat.TAR_GZ }
@@ -461,6 +470,44 @@ public class FileCompressionServiceTest {
     public void compressDirectoryToFileTest08NullFormatAndParameters() throws IOException {
 
         assertFalse(MSG_COMPRESSION_WAS_SUCCESSFUL, FileCompressionService.compressDirectoryToFile(null, null, null, true));
+    }
+
+    /**
+     * 
+     * Test the {@link FileCompressionService.compressDirectoryToFile()} method with file pathes larger than 100 chars.
+     * 
+     * @throws IOException I/O issue
+     *
+     */
+    @Test
+    public void compressDirectoryToFileTest09LongPath() throws IOException {
+
+        final File inputDir = createTempDir();
+        final File outputDir = createTempDir();
+        final File outputFile = generateArchiveOutputFileReference(outputDir);
+        final File finalDir = createTempDir();
+
+        createAndVerifyFile(inputDir, LONG_FILE_NAME_TEST);
+        createAndVerifyFile(inputDir, LONG_FILE_NAME_SUBFOLDER + File.separator + LONG_FILE_NAME_TEST2);
+
+        assertTrue(MSG_COMPRESSION_WAS_NOT_SUCCESSFUL,
+            FileCompressionService.compressDirectoryToFile(inputDir, outputFile, formatParameter, true));
+        assertTrue(MSG_EXPECTED_FILE_WAS_MISSING, outputFile.exists());
+        assertTrue(MSG_FILE_WAS_EMPTY, outputFile.length() > 0);
+
+        // Expanding:
+        assertTrue(MSG_EXPANDING_WAS_NOT_SUCCESSFUL,
+            FileCompressionService.expandCompressedDirectoryFromFile(outputFile, finalDir, formatParameter));
+
+        // Check that all files are present:
+        final String[] filenameArrayRoot = new File(finalDir, inputDir.getName()).list();
+        final String[] filenameArraySubFolder =
+            new File(finalDir.getAbsolutePath() + File.separator + inputDir.getName()
+                + File.separator + LONG_FILE_NAME_SUBFOLDER).list();
+        assertTrue(MSG_EXPECTED_FILE_WAS_MISSING, ArrayUtils.contains(filenameArrayRoot, LONG_FILE_NAME_TEST));
+        assertTrue(MSG_EXPECTED_FILE_WAS_MISSING, ArrayUtils.contains(filenameArrayRoot, LONG_FILE_NAME_SUBFOLDER));
+        assertTrue(MSG_EXPECTED_FILE_WAS_MISSING, ArrayUtils.contains(filenameArraySubFolder, LONG_FILE_NAME_TEST2));
+
     }
 
     /**
@@ -869,11 +916,11 @@ public class FileCompressionServiceTest {
         final File outputDir = createTempDir();
         final File finalDir = createTempDir();
         final File outputFile = generateArchiveOutputFileReference(outputDir);
-        
+
         createAndVerifyFile(inputDir, FILE_NAME_TEST);
         createAndVerifyDirectory(inputDir, FILE_NAME_SUBFOLDER);
 
-        // Compress 
+        // Compress
         assertTrue(MSG_COMPRESSION_WAS_NOT_SUCCESSFUL,
             FileCompressionService.compressDirectoryToFile(inputDir, outputFile, formatParameter, true));
 
@@ -1109,7 +1156,7 @@ public class FileCompressionServiceTest {
         assertTrue("Create temporary file for unit test was not successful.", file.isFile() && file.canRead());
         return file;
     }
-    
+
     private File createAndVerifyDirectory(final File parentDir, final String name) throws IOException {
         final File file = new File(parentDir, name);
         file.mkdir();

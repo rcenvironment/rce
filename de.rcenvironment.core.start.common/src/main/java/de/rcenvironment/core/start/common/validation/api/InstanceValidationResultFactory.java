@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.validation.api;
 
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.Callback;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
 import de.rcenvironment.core.start.common.validation.internal.InstanceValidationResultImpl;
 
@@ -16,6 +17,7 @@ import de.rcenvironment.core.start.common.validation.internal.InstanceValidation
  * Creates {@link InstanceValidationResultFactory}s.
  * 
  * @author Doreen Seider
+ * @author Alexander Weinert (Validation failure with user confirmation)
  */
 public final class InstanceValidationResultFactory {
     
@@ -31,7 +33,7 @@ public final class InstanceValidationResultFactory {
     public static InstanceValidationResult createResultForFailureWhichRequiresInstanceShutdown(String validationDisplayName,
         String logMessage) {
         return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED, 
-            logMessage, logMessage);
+            logMessage, logMessage, null);
     }
     
     /**
@@ -45,7 +47,7 @@ public final class InstanceValidationResultFactory {
     public static InstanceValidationResult createResultForFailureWhichRequiresInstanceShutdown(String validationDisplayName,
         String logMessage, String guiDialogMessage) {
         return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED, 
-            logMessage, guiDialogMessage);
+            logMessage, guiDialogMessage, null);
     }
 
     /**
@@ -56,8 +58,8 @@ public final class InstanceValidationResultFactory {
      * @return instance of {@link InstanceValidationResult}
      */
     public static InstanceValidationResult createResultForFailureWhichAllowesToProceed(String validationDisplayName, String logMessage) {
-        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED, 
-            logMessage, logMessage);
+        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED, 
+            logMessage, logMessage, null);
     }
     
     /**
@@ -70,8 +72,8 @@ public final class InstanceValidationResultFactory {
      */
     public static InstanceValidationResult createResultForFailureWhichAllowesToProceed(String validationDisplayName, String logMessage,
         String guiDialogMessage) {
-        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED, 
-            logMessage, guiDialogMessage);
+        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_CONFIRMATION_REQUIRED, 
+            logMessage, guiDialogMessage, null);
     }
 
     /**
@@ -81,7 +83,23 @@ public final class InstanceValidationResultFactory {
      * @return instance of {@link InstanceValidationResult}
      */
     public static InstanceValidationResult createResultForPassed(String validationDisplayName) {
-        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.PASSED, "", "");
+        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.PASSED, "", "", null);
+    }
+
+    /**
+     * Creates a result for the case of a failure, which is recoverable, but requires explicit confirmation by the user in order to do so.
+     * 
+     * @param validationDisplayName Display name of the validator which generates the validation result.
+     * @param logMessage The message to be logged for this failure
+     * @param guiDialogMessage The message to be delivered to the user in order to query them whether or not to proceed
+     * @param onProceed The callback to be triggered if the user asks to proceed with the startup. Should recover from the validation
+     *        failure.
+     * @return instance of {@link InstanceValidationResult}
+     */
+    public static InstanceValidationResult createResultForFailureWhichRequiresUserConfirmation(String validationDisplayName,
+        String logMessage, String guiDialogMessage, Callback onProceed) {
+        return new InstanceValidationResultImpl(validationDisplayName, InstanceValidationResultType.FAILED_RECOVERY_REQUIRED,
+            logMessage, guiDialogMessage, onProceed);
     }
 
 }

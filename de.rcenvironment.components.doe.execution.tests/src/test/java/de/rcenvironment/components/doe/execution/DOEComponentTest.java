@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -44,7 +44,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 /**
  * Test class for the DOE execution.
@@ -78,9 +78,11 @@ public class DOEComponentTest {
 
     private static final String X = "x";
 
-    private static final long EIGHT_HUNDRED_INT = 800;
+    private static final long CANCEL_TEST_TIMEOUT_MSEC = 1500;
 
     private static final int STATIC_OUTPUTS_COUNT = 2;
+    
+    private static final double DELTA = 0.000001;
 
     /**
      * Exception rule.
@@ -264,7 +266,7 @@ public class DOEComponentTest {
         for (int i = 1; i < 4; i++) {
             context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createNotAValue());
             component.processInputs();
-            Assert.assertEquals(1, context.getCapturedOutput(X).size());
+            Assert.assertEquals(1, context.getCapturedOutput(X).size(), DELTA);
             Assert.assertEquals(1, context.getCapturedOutput(Y).size());
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
@@ -855,7 +857,7 @@ public class DOEComponentTest {
      * 
      * @throws ComponentException on unexpected error.
      */
-    @Test(timeout = EIGHT_HUNDRED_INT)
+    @Test(timeout = CANCEL_TEST_TIMEOUT_MSEC)
     public void testCancelStart() throws ComponentException {
 
         setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, "200", ZERO, ZERO,
@@ -908,7 +910,7 @@ public class DOEComponentTest {
     private void checkOutput(double[] expectedValuesX, String outputName) {
         int i = 0;
         for (TypedDatum output : context.getCapturedOutput(outputName)) {
-            Assert.assertEquals(expectedValuesX[i++], ((FloatTD) output).getFloatValue());
+            Assert.assertEquals(expectedValuesX[i++], ((FloatTD) output).getFloatValue(), DELTA);
         }
         Assert.assertEquals(expectedValuesX.length, i);
     }

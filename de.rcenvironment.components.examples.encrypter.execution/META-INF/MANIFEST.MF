@@ -2,12 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Encrypter Component Execution (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.examples.encrypter.execution
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 9.0.0.qualifier
 Bundle-Vendor: DLR
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.examples.decrypter.execution,
  de.rcenvironment.components.examples.encrypter.common,
- de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,

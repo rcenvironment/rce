@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -24,7 +24,8 @@ public final class CpacsToolIntegrationConstants {
     public static final String[] COMPONENT_IDS = new String[] { CPACS_COMPONENT_ID_PREFIX };
 
     /** Constant. */
-    public static final String CPACS_TOOL_INTEGRATION_CONTEXT_UID = UUID.randomUUID().toString() + "_CPACS_TOOL_INTEGRATION_CONTEXT";
+    // TODO review: is there an actual need for this ID to be dynamic?
+    public static final String CPACS_TOOL_INTEGRATION_CONTEXT_UID = UUID.randomUUID().toString() + "_CPACS";
 
     /** Name of the directory with data to be zipped for the user. */
     public static final String RETURN_DIRECTORY_NAME = "ReturnDirectory";
@@ -76,7 +77,7 @@ public final class CpacsToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_TOOL_OUTPUT_FILENAME = "toolOutputFilename";
-    
+
     /** Constant. */
     // To avoid dependency cycles this key exists also in the file ScriptConfigurationPage.java,
     // see CPACS_MOCK_TOOL_OUTPUT_FILENAME!

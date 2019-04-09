@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.workflow.testworkflows</artifactId>
 	<name>RCE Core Component Workflow Test Workflows Bundle</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>9.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

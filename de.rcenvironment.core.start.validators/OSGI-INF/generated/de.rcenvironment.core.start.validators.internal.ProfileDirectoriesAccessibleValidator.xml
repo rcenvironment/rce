@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.start.validators.internal.ProfileDirectoriesAccessibleValidator">
+   <service>
+      <provide interface="de.rcenvironment.core.start.common.validation.spi.InstanceValidator"/>
+   </service>
+   <reference bind="bindConfigurationService" interface="de.rcenvironment.core.configuration.ConfigurationService" name="ConfigurationService"/>
+   <implementation class="de.rcenvironment.core.start.validators.internal.ProfileDirectoriesAccessibleValidator"/>
+</scr:component>

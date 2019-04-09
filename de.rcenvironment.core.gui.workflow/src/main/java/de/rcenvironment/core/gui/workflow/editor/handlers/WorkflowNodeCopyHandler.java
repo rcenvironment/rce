@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright 2006-2019 DLR, Germany
  * 
- * All rights reserved
+ * SPDX-License-Identifier: EPL-1.0
  * 
  * http://www.rcenvironment.de/
  */
@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
@@ -33,7 +33,8 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 
 /**
- * Handle copy part of copy&paste for {@link WorkflowNode}s, {@link Connection}s and {@link WorkflowLabel}s.
+ * Handle copy part of copy&paste for {@link WorkflowNode}s, {@link Connection}s
+ * and {@link WorkflowLabel}s.
  *
  * @author Doreen Seider
  * @author Oliver Seebach
@@ -52,7 +53,8 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         List<Connection> connections = new ArrayList<Connection>();
         List<WorkflowLabelPart> labels = new ArrayList<WorkflowLabelPart>();
 
-        // check whether there are connections between the selected nodes; if yes, add them to clipboard, too.
+        // check whether there are connections between the selected nodes; if yes, add
+        // them to clipboard, too.
         for (Object selectedObject : selection) {
             if (selectedObject instanceof WorkflowNodePart) {
                 WorkflowNodePart workflowNodePart = (WorkflowNodePart) selectedObject;
@@ -63,8 +65,10 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
                         WorkflowNodePart comparisonWorkflowNodePart = ((WorkflowNodePart) comparisonObject);
                         WorkflowNode comparisonWorkflowNode = (WorkflowNode) comparisonWorkflowNodePart.getModel();
                         for (Connection connection : model.getConnections()) {
-                            if ((connection.getSourceNode().getIdentifier().equals(workflowNode.getIdentifier())
-                                && connection.getTargetNode().getIdentifier().equals(comparisonWorkflowNode.getIdentifier()))) {
+                            if ((connection.getSourceNode().getIdentifierAsObject()
+                                    .equals(workflowNode.getIdentifierAsObject())
+                                    && connection.getTargetNode().getIdentifierAsObject()
+                                            .equals(comparisonWorkflowNode.getIdentifierAsObject()))) {
                                 connections.add(connection);
                             }
                         }
@@ -82,7 +86,7 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             JsonFactory f = new JsonFactory();
             JsonGenerator generator = null;
-            generator = f.createJsonGenerator(outputStream, JsonEncoding.UTF8);
+            generator = f.createGenerator(outputStream, JsonEncoding.UTF8);
             generator.setPrettyPrinter(new DefaultPrettyPrinter());
             generator.writeStartObject();
             if (!nodes.isEmpty()) {
@@ -105,7 +109,8 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         }
     }
 
-    private void writeComponent(JsonGenerator generator, List<WorkflowNodePart> nodes) throws JsonGenerationException, IOException {
+    private void writeComponent(JsonGenerator generator, List<WorkflowNodePart> nodes)
+            throws JsonGenerationException, IOException {
         generator.writeArrayFieldStart(WorkflowDescriptionPersistenceHandler.NODES);
         for (WorkflowNodePart workflowNodePart : nodes) {
             WorkflowNode workflowNode = (WorkflowNode) workflowNodePart.getModel();
@@ -114,7 +119,8 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         generator.writeEndArray();
     }
 
-    private void writeConnection(JsonGenerator generator, List<Connection> connections) throws JsonGenerationException, IOException {
+    private void writeConnection(JsonGenerator generator, List<Connection> connections)
+            throws JsonGenerationException, IOException {
         generator.writeArrayFieldStart(WorkflowDescriptionPersistenceHandler.CONNECTIONS);
         for (Connection connection : connections) {
             descriptionHandler.writeConnection(generator, connection);
@@ -122,14 +128,17 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         generator.writeEndArray();
     }
 
-    private void writeBendpoints(JsonGenerator generator, List<Connection> connections) throws JsonGenerationException, IOException {
+    private void writeBendpoints(JsonGenerator generator, List<Connection> connections)
+            throws JsonGenerationException, IOException {
         generator.writeArrayFieldStart(WorkflowDescriptionPersistenceHandler.BENDPOINTS);
-        Map<String, String> uniqueConnectionBendpointMapping = descriptionHandler.calculateUniqueBendpointList(connections);
+        Map<String, String> uniqueConnectionBendpointMapping = descriptionHandler
+                .calculateUniqueBendpointList(connections);
         descriptionHandler.writeBendpoints(generator, uniqueConnectionBendpointMapping);
         generator.writeEndArray();
     }
 
-    private void writeLabel(JsonGenerator generator, List<WorkflowLabelPart> labels) throws JsonGenerationException, IOException {
+    private void writeLabel(JsonGenerator generator, List<WorkflowLabelPart> labels)
+            throws JsonGenerationException, IOException {
         generator.writeArrayFieldStart(WorkflowDescriptionPersistenceHandler.LABELS);
         for (WorkflowLabelPart workflowLabelPart : labels) {
             WorkflowLabel workflowLabel = (WorkflowLabel) workflowLabelPart.getModel();
@@ -139,7 +148,8 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
     }
 
     /**
-     * Comparing two {@link WorkflowLabelPart}s, depending on the Y-Position of the {@link WorkflowLabel}.
+     * Comparing two {@link WorkflowLabelPart}s, depending on the Y-Position of the
+     * {@link WorkflowLabel}.
      *
      * @author Marc Stammerjohann
      */
