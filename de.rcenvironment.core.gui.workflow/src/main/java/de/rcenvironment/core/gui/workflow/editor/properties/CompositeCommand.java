@@ -85,5 +85,6 @@ class CompositeCommand extends WorkflowCommand {
     public void undo() {
         command2.undo();
         command1.undo();
+        done = false;
     }
 }

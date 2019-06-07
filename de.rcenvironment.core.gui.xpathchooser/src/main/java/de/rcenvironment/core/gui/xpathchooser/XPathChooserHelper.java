@@ -18,6 +18,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -34,6 +35,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.xpathchooser.model.XSDElement;
 import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
 
@@ -56,6 +58,12 @@ public class XPathChooserHelper {
      * For sash creation.
      */
     private static final int PERCENT_85 = 81;
+    
+    /**
+     * The upper end of the warning label, in percent.
+     */
+    private static final int PERCENT_93 = 93;
+    
 
     /**
      * Number of columns in the cpacs tree table.
@@ -107,6 +115,11 @@ public class XPathChooserHelper {
         secondGroup.setText("XPath");
         secondGroup.setLayout(new FillLayout());
         createLabel(secondGroup);
+        final CLabel warningLabel = new CLabel(parent, SWT.NONE);
+        warningLabel.setText("Due to limitations of XPath, namespaces may not be included correctly \n"
+            + "in the resulting path and may have to be adapted manually.");
+        warningLabel.setImage(StandardImages.WARNING_16.getImageDescriptor().createImage());
+        warningLabel.setAlignment(SWT.LEFT);
 
         // set layout data to allow sash
         final FormData firstData = new FormData();
@@ -122,10 +135,17 @@ public class XPathChooserHelper {
         sash.setLayoutData(sashData);
         final FormData secondData = new FormData();
         secondData.top = new FormAttachment(sash, 0);
-        secondData.bottom = new FormAttachment(PERCENT_100, 0);
+        secondData.bottom = new FormAttachment(PERCENT_93, 0);
         secondData.left = new FormAttachment(0, 0);
         secondData.right = new FormAttachment(PERCENT_100, 0);
         secondGroup.setLayoutData(secondData);
+
+        final FormData labelData = new FormData();
+        labelData.top = new FormAttachment(secondGroup, 0);
+        labelData.bottom = new FormAttachment(PERCENT_100, 0);
+        labelData.left = new FormAttachment(0, 0);
+        labelData.right = new FormAttachment(PERCENT_100, 0);
+        warningLabel.setLayoutData(labelData);
 
         // make sash movable
         sash.addSelectionListener(new SelectionAdapter() {
@@ -135,6 +155,7 @@ public class XPathChooserHelper {
                 sash.getParent().layout();
             }
         });
+        
 
         return secondGroup; // to allow further attachments
     }

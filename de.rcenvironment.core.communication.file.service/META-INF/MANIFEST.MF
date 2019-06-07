@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication File Service
 Bundle-SymbolicName: de.rcenvironment.core.communication.file.service;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-ManifestVersion: 2
 Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.api,

@@ -12,12 +12,12 @@
 				<title>Command line arguments for RCE</title>
 				<tgroup cols="3">
 					<colspec colname="Argument" colnum="1" colwidth="2.98*"/>
-					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
-					<colspec colname="Description" colnum="3" colwidth="4.88*"/>
+					<colspec colname="Type" colnum="2" align="left" colwidth="0.8*"/>
+					<colspec colname="Description" colnum="3" colwidth="4.88*" align="left"/>
 					<thead>
 						<row>
 							<entry>Argument</entry>
-							<entry align="left">Type</entry>
+							<entry>Type</entry>
 							<entry>Description</entry>
 						</row>
 					</thead>
@@ -35,8 +35,7 @@
 							<entry>RCE</entry>
 							<entry>If the profile argument is specified without a profile id or path, RCE launches the
 								Profile Selection UI, which allows to select a profile folder for
-								the startup as described in <xref linkend="profile_selection_ui"
-								/>.</entry>
+								the startup as described in <xref linkend="profile_selection_ui"/>.</entry>
 						</row>
 						<row>
 							<entry>batch "&lt;command string>"</entry>
@@ -46,13 +45,13 @@
 						</row>
 						<row>
 							<entry>headless</entry>
-							<entry align="center">RCE</entry>
+							<entry>RCE</entry>
 							<entry>Starts RCE in a headless modus without GUI. It will remain in the
 								OSGi console and waits for user input. </entry>
 						</row>
 						<row>
 							<entry>exec "&lt;command string>"</entry>
-							<entry align="center">RCE</entry>
+							<entry>RCE</entry>
 							<entry>
 								<para>Executes one or more shell commands defined by &lt;command string>. For the list of
 									available commands, refer to the command shell
@@ -80,14 +79,14 @@
 						</row>
 						<row>
 							<entry>configure</entry>
-							<entry align="center">RCE</entry>
+							<entry>RCE</entry>
 							<entry>Starts the RCE Configuration UI (<xref linkend="configuration_ui"/>) which can be used
 								to configure SSH accounts with passphrases or to configure e-mail
 								support for the RCE instance.</entry>
 						</row>
 						<row>
 							<entry>data @noDefault </entry>
-							<entry align="center">RCP</entry>
+							<entry>RCP</entry>
 							<entry>Set the default workspace location to empty</entry>
 						</row>
 						<row>
@@ -126,7 +125,7 @@
 						</row>
 						<row>
 							<entry>Drce.network.<?linebreak?>overrideNodeId =&lt;some-id></entry>
-							<entry align="center">VM</entry>
+							<entry>VM</entry>
 							<entry><para>Sets the local node id, overriding any stored value. This
 									is mostly used for automated
 								testing.</para>Example:<?linebreak?>
@@ -220,8 +219,8 @@
 			<table frame="all">
 				<title>Shell Commands</title>
 				<tgroup cols="2">
-					<colspec colname="c1" colnum="1" colwidth="1*"/>
-					<colspec colname="c2" colnum="2" colwidth="3.15*"/>
+					<colspec colname="Argument" colnum="1" colwidth="1*" align="left"/>
+					<colspec colname="Description" colnum="2" colwidth="3.15*" align="left"/>
 					<thead>
 						<row>
 							<entry>Argument</entry>
@@ -234,12 +233,34 @@
 							<entry>Lists all available commands.</entry>
 						</row>
 						<row>
-							<entry>components</entry>
-							<entry>Short form of "components list".</entry>
+							<entry>auth</entry>
+							<entry>Short form of "auth list".</entry>
 						</row>
 						<row>
-							<entry>components list</entry>
-							<entry>Lists components published by reachable RCE nodes.</entry>
+							<entry>auth create &lt;group id></entry>
+							<entry>Creates a new authorization group whith the given &lt;group id> (an identifier
+								consisting of 2-32 letters, numbers, underscores ("_") and/or
+								brackets).</entry>
+						</row>
+						<row>
+							<entry>auth delete &lt;group id></entry>
+							<entry>Deletes the local authorization group with the given &lt;group id>.</entry>
+						</row>
+						<row>
+							<entry>auth export &lt;group id></entry>
+							<entry>Exports the group with the given group id as an &lt;invitation string> that can be
+								imported by another node, allowing that other node to join this
+								group.</entry>
+						</row>
+						<row>
+							<entry>auth import &lt;invitation string></entry>
+							<entry>Imports a group from an &lt;invitation string> that was previously exported on another
+								node.</entry>
+						</row>
+						<row>
+							<entry>auth list</entry>
+							<entry>Lists the authorization groups that the local node belongs
+								to.</entry>
 						</row>
 						<row>
 							<entry>cn </entry>
@@ -266,6 +287,42 @@
 								the id).</entry>
 						</row>
 						<row>
+							<entry>components</entry>
+							<entry>Short form of "components list".</entry>
+						</row>
+						<row>
+							<entry>components list [--local] [--as-table]</entry>
+							<entry>Lists components published by reachable RCE nodes.<para>The
+									"--local" option only lists components provided by the local
+									node.</para><para>The "--as-table" option formats the output as
+									a table that is especially suited for automated
+								parsing.</para></entry>
+						</row>
+						<row>
+							<entry>components list-auth</entry>
+							<entry>Shows a list of all defined authorization settings. Note that
+								these settings are independent of whether a matching component
+								exists, which means that settings are kept when a component is
+								removed and later added again.</entry>
+						</row>
+						<row>
+							<entry>components set-auth &lt;component id> &lt;groups></entry>
+							<entry>Assigns a list of authorization groups to a component id. Note that authorization
+								settings always apply to all components with using this id,
+								regardless of the component's version.<para>The &lt;component id>
+									needs to be defined as listed by the "components list" command,
+									e.g. "rce/Parametric Study", "common/MyIntegratedTool", or
+									"cpacs/MyCpacsTool". This id must be enclosed in double quotes
+									if it contains spaces.</para>The &lt;groups> to assign need to
+								be provided as comma-separated list of user-defined authorization
+								groups. This replaces any previously assigned groups. Note that the
+								specified groups must have been created or imported beforehand; see
+								the "auth create" and "auth import" commands for details. Instead of
+								a list of groups, the special value "public" can be used to grant
+								access to any user within the visible network, while "local" revokes
+								any previously granted access by remote users. </entry>
+						</row>
+						<row>
 							<entry>mail &lt;recipient> &lt;subject> &lt;body></entry>
 							<entry>
 								<para>Sends an email to the specified recipient.</para>
@@ -290,6 +347,32 @@
 							<entry>Lists all reachable RCE nodes.</entry>
 						</row>
 						<row>
+							<entry>ra-admin list-wfs</entry>
+							<entry>Lists the ids of all published workflows.</entry>
+						</row>
+						<row>
+							<entry>ra-admin publish-wf [-g &lt;group name>] [-k] [-t] [-p &lt;JSON
+								placeholder file>] &lt;workflow file> &lt;id></entry>
+							<entry>Publishes a workflow file for remote execution via "ra run-wf"
+								using &lt;id>. <para>-g name of the group in which the workflow will
+									be shown in the Palette on the client instance</para><para>-k (keep
+								execution data): if set, the workflow execution data will not be
+								deleted after the workflow is run</para><para>-t (temporary/transient): if set,
+								the workflow is automatically unpublished when the RCE instance is
+								shut down</para><para>-p: adds a placeholder file for the given workflow; see
+								the "wf run" command's documentation for details. This operation
+								verifies that the workflow contains the required standard elements
+								before publishing.</para><para>Note that a snapshot of the workflow file (and
+								optionally, the given placeholder file) is taken before publishing;
+								subsequent changes of the workflow file do NOT affect the published
+								workflow.</para></entry>
+						</row>
+						<row>
+							<entry>ra-admin unpublish-wf &lt;id></entry>
+							<entry>Unpublishes (removes) the workflow file with the given &lt;id>
+								from remote execution.</entry>
+						</row>
+						<row>
 							<entry>restart </entry>
 							<entry>Restarts RCE.</entry>
 						</row>
@@ -298,8 +381,52 @@
 							<entry>Shuts down the local RCE instance.</entry>
 						</row>
 						<row>
+							<entry>ssh</entry>
+							<entry>Short form of "ssh list".</entry>
+						</row>
+						<row>
+							<entry>ssh add &lt;displayName> &lt;host> &lt;port> &lt;username>
+								&lt;keyfileLocation></entry>
+							<entry>Adds a new ssh connection.</entry>
+						</row>
+						<row>
+							<entry>ssh list</entry>
+							<entry>Lists all ssh connections, including ids and connection
+								states.</entry>
+						</row>
+						<row>
+							<entry>ssh start &lt;id></entry>
+							<entry>Starts/connects the ssh connection with the given &lt;id> (use "
+								ssh list" to get the id).</entry>
+						</row>
+						<row>
+							<entry>ssh stop &lt;id></entry>
+							<entry>Stops/disconnects the ssh connection with the given &lt;id> (use
+								" ssh list" to get the id).</entry>
+						</row>
+						<row>
 							<entry>stop</entry>
 							<entry>Shuts down the local RCE instance (alias of "shutdown").</entry>
+						</row>
+						<row>
+							<entry>sysmon api &lt;operation></entry>
+							<entry>Fetches system monitoring data from all reachable nodes in the
+								network, and prints it in a parser-friendly format.<para>Available
+									operations: avgcpu+ram &lt;time span> &lt;time limit> - fetches
+									the average CPU load over the given time span and the current
+									free RAM. </para><para>Operation parameters: time span - the
+									maximum time span (in seconds) to aggregate load data over time
+									limit - the maximum time (in milliseconds) to wait for each
+									node's load data response.</para></entry>
+						</row>
+						<row>
+							<entry>sysmon local/-l</entry>
+							<entry>Prints system monitoring data for the local instance.</entry>
+						</row>
+						<row>
+							<entry>sysmon remote/-r</entry>
+							<entry>Fetches system monitoring data from all reachable nodes in the
+								network, and prints it in a human-readable format.</entry>
 						</row>
 						<row>
 							<entry>version</entry>
@@ -315,22 +442,22 @@
 								ids.</entry>
 						</row>
 						<row>
-							<entry>wf details &lt;workflow execution id></entry>
-							<entry>Shows details about one workflow.</entry>
-						</row>
-						<row>
-							<entry>wf open &lt;workflow execution id></entry>
-							<entry>Opens a runtime viewer of a workflow. Requires GUI. When using SSH, this command is
-								only available to users with the role <emphasis role="italic"
-									>developer</emphasis>.</entry>
-						</row>
-						<row>
 							<entry>wf cancel &lt;workflow execution id></entry>
 							<entry>Cancels a running or paused workflow.</entry>
 						</row>
 						<row>
 							<entry>wf delete &lt;workflow execution id></entry>
 							<entry>Deletes a finished, cancelled or failed workflow from the data management and disposes it.</entry>
+						</row>
+						<row>
+							<entry>wf details &lt;workflow execution id></entry>
+							<entry>Shows details about one workflow.</entry>
+						</row>
+						<row>
+							<entry>wf open &lt;workflow execution id></entry>
+							<entry>Opens a runtime viewer of a workflow. Requires GUI. When using
+								SSH, this command is only available to users with the role <emphasis
+									role="italic">developer</emphasis>.</entry>
 						</row>
 						<row>
 							<entry>wf pause &lt;workflow execution id></entry>

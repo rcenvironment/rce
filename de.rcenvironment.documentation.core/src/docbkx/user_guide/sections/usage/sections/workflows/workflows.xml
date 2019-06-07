@@ -5,7 +5,7 @@
 	<sect2>
 		<title>Rationale</title>
 		<para>RCE is designed to execute automated, distributed workflows. Workflows consist of so called
-			workflow components which can be coupled among each other. Loops are supported, even
+			workflow components which can be coupled with each other. Loops are supported, even
 			multi-nested ones.</para>
 	</sect2>
 	<sect2>
@@ -14,11 +14,12 @@
 			about workflows and walk through the example workflows provided in RCE. The sections
 			here refer to the workflow examples where it is useful and vice versa.</para>
 		<para>Workflows in RCE are encapsulated in so called projects. To create the workflow examples
-			project go to: File->New->Workflow Examples Project. A dialog appears. Leave the default
-			project name or give it a name of your choice and confirm by clicking 'Finish'. In the
-			'Project Explorer' on the left-hand side, the newly created project is shown. The
-			example workflows are grouped in sub folders. It is recommended to walk through the
-			workflows following the prefix starting with '01_01_Hello_World.wf'.</para>
+			project go to: File → New → Workflow Examples Project. A dialog appears. Leave the
+			default project name or give it a name of your choice and confirm by clicking
+				<code>Finish</code>. In the <emphasis role="italic">Project Explorer</emphasis> on
+			the left-hand side, the newly created project is shown. The example workflows are
+			grouped in sub folders. It is recommended to walk through the workflows following the
+			prefix starting with <code>01_01_Hello_World.wf</code>.</para>
 	</sect2>
 	<sect2 id="workflow_components">
 		<title>Workflow Components</title>
@@ -59,37 +60,39 @@
 					RCE. On some systems, however, notably Ubuntu 18.04, this toolkit cannot be
 					executed, as the required library <emphasis role="italic"
 						>libgfortran3</emphasis> is not installed by default. If the toolkit cannot
-					be executed, the Optimizer component will issue the error "Could not start
-					optimizer. Maybe binaries are missing or not compatible with system.; cause:
-					Optimizer exited with a non zero exit code. Optimizer exit code = 127
-					(E#1543567120128)" or similar in the workflow console and the data
+					be executed, the Optimizer component will issue the error <code>Could not start
+						optimizer. Maybe binaries are missing or not compatible with system.; cause:
+						Optimizer exited with a non zero exit code. Optimizer exit code = 127
+						(E#1543567120128)</code> or similar in the workflow console and the data
 					management.</para>
-				<para><phrase os="linux">On Ubuntu 18.04, this library can be installed by installing the
-						package <emphasis role="italic">libgfortran3</emphasis>. For other systems,
-						please refer to the documentation or the administrator of your system in
-						order to satisfy the missing dependency of the Dakota toolkit.</phrase>
+				<para><phrase os="linux">On Ubuntu 18.04, this library can be installed by
+						installing the package <emphasis role="italic">libgfortran3</emphasis>. For
+						other systems, please refer to the documentation or the administrator of
+						your system in order to satisfy the missing dependency of the Dakota
+						toolkit.</phrase>
 					<phrase os="windows">Please refer to the documentation or the administrator of
 						your system in order to satisfy the missing dependency of the Dakota
 						toolkit.</phrase></para>
-			</note>The example workflows in sub folder '02_Component Groups' introduce some of the
-			workflow components provided. Additionally, there is a documentation for each workflow
-			component available in RCE. To access it, you can either rightclick on a component in a
-			workflow and select "Open Help" or press "F1". A help view opens on the right-hand side.
-			Moreover there is an entry "Help Contents" in the "Help" menu where you can navigate to
-			the component help you require.</para>
+			</note>The example workflows in subfolder <code>02_Component Groups</code> introduce
+			some of the workflow components provided. Additionally, there is a documentation for
+			each workflow component available in RCE. To access it, you can either rightclick on a
+			component in a workflow and select <code>Open Help</code> or press <code>F1</code>. A
+			help view opens on the right-hand side. Moreover there is an entry <code>Help
+				Contents</code> in the <code>Help</code> menu where you can navigate to the
+			component help you require.</para>
 		<para>The XML and CPACS components are able to read or extract data from an XML file via dynamic
 			in- or outputs. The XPathChooser is a feature that provides help selecting the item,
-			which shall be read or extracted. Add an in- or output and press the "XPath choosing..."
-			button to open a window , where you can select the XML file, which contains the item
-			that shall be selected. After choosing the file, the XPathChooser opens containing a
-			tree, symbolizing the XML file. By selecting an element, the text below is updated and
-			displays the current path. The last two columns are used to choose attributes. The
-			attribute name can be selected via the column “Attributes”. In the column “Values”, the
-			proper value can be selected. Use a double-click on an element to expand or fold the
-			tree. The chosen XPath will be written in the text field of the window, in which the
-			XPathChooser has been opened originally. Using this text field, new paths can be
-			created. Add a slash and the name of the node that shall be created to the existing
-			path. The new path will be added during the workflow run. </para>
+			which shall be read or extracted. Add an in- or output and press the <code>XPath
+				choosing...</code> button to open a window where you can select the XML file which
+			contains the item that shall be selected. After choosing the file, the XPathChooser
+			opens containing a tree, symbolizing the XML file. By selecting an element, the text
+			below is updated and displays the current path. The last two columns are used to choose
+			attributes. The attribute name can be selected via the column <code>Attributes</code>.
+			In the column <code>Values</code> the proper value can be selected. Use a double-click
+			on an element to expand or fold the tree. The chosen XPath will be written in the text
+			field of the window in which the XPathChooser has been opened originally. Using this
+			text field, new paths can be created. Add a slash and the name of the node that shall be
+			created to the existing path. The new path will be added during the workflow run. </para>
 		<para>New XPaths can only be generated within the inputs tab. Using the outputs tab will cause an error.</para>
 	</sect2>
 	<sect2>
@@ -317,12 +320,11 @@
 	<sect2>
 		<title>Execution Scheduling of Workflow Components</title>
 		<para>The execution of workflows is data-driven. As soon as all of the desired input data is
-			available, a workflow component will be executed. Which input data is desired, is
-			defined by the component developer (for RCE's default workflow components), the tool
-			integrator, and/or the workflow creator. The workflow component developer and tool
-			integrator decide which options are allowed for a particular workflow component. The
-			workflow creator can choose between those options at workflow design time. The following
-			options exist: </para>
+			available, a workflow component will be executed. Which input data is desired is defined
+			by the component developer (for RCE's default workflow components), the tool integrator,
+			and/or the workflow creator. The workflow component developer and tool integrator decide
+			which options are allowed for a particular workflow component. The workflow creator can
+			choose between those options at workflow design time. The following options exist: </para>
 		<para>Input handling:</para>
 			<itemizedlist>
 				<listitem>
@@ -432,17 +434,17 @@
 					checkbox in the "Nested Loop" configuration tab</para>
 			</listitem>
 				<listitem>
-				<para>Data exchange between loops of different loop levels is only allowed via a
-					driver workflow component. Thereby, only particular inputs and outputs of driver
-					workflow components are allowed to be connected to inputs and outputs of the
-					next upper loop level and particular ones to inputs and outputs of the same loop
-					level. For example, if a 'same loop level' output is connected to a loop with an
-					upper loop level, the workflow won't succeed or might even get stuck. Below you
-					find tables of inputs and outputs for each driver workflow component and whether
-					they must be connected to the same loop level or to the next upper loop level.
-					(Note: In the inputs and outputs tables of driver workflow components (in
-					'Inputs/Outputs' properties tab), the loop level requirement is present in a
-					particular column for each input and ouptut.)</para>
+				<para>Data exchange between loops of different loop levels is only allowed via a driver workflow
+					component. Thereby, only particular inputs and outputs of driver workflow
+					components are allowed to be connected to inputs and outputs of the next upper
+					loop level and particular ones to inputs and outputs of the same loop level. For
+					example, if a 'same loop level' output is connected to a loop with an upper loop
+					level, the workflow won't succeed or might even get stuck. Below you find tables
+					of inputs and outputs for each driver workflow component and whether they must
+					be connected to the same loop level or to the next upper loop level. <note>In
+						the inputs and outputs tables of driver workflow components (in
+						'Inputs/Outputs' properties tab), the loop level requirement is present in a
+						particular column for each input and output.</note></para>
 			</listitem>
 			</itemizedlist>
 			<table frame="all">

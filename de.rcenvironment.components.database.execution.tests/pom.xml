@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.database.execution.tests</artifactId>
 	<name>RCE Database Execution Bundle Tests</name>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.1.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 	
 

@@ -8,6 +8,10 @@
 
 package de.rcenvironment.components.switchcmp.gui;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
@@ -20,11 +24,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.components.switchcmp.common.SwitchComponentConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointChange;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
@@ -112,8 +119,37 @@ public class SwitchConditionSection extends ValidatingWorkflowNodePropertySectio
     }
 
     @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        
+        ComponentInstanceProperties config = getConfiguration();
+        config.addPropertyChangeListener(new PropertyChangeListener() {
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getNewValue() instanceof EndpointChange) {
+                    if (channelCombo.isDisposed()) {
+                        return;
+                    }
+                    setInputChannels();
+                }
+            }
+        });
+    }
+
+    @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
+        setInputChannels();
+    }
+
+    /**
+     * 
+     * Set input channels to channel combo box in the {@link SwitchConditionSection}.
+     * 
+     * @author Kathrin Schaffert
+     */
+    public void setInputChannels() {
         channelCombo.removeAll();
 
         for (EndpointDescription channelName : getConfiguration().getInputDescriptionsManager().getDynamicEndpointDescriptions()) {

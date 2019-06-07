@@ -55,6 +55,7 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
 
         content = new LayoutComposite(parent);
         content.setLayout(new FillLayout());
+        content.setData(CONTROL_PROPERTY_KEY, XmlLoaderComponentConstants.XMLCONTENT);
 
         initFileChoosingSection(toolkit, content);
     }
@@ -103,8 +104,7 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
             } catch (IOException | CoreException e) {
                 logger.error("Cannot read content from file.", e);
             }
-
-            refreshSection();
+            setXMLContent();
         }
     }
 
@@ -118,7 +118,6 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
             fileContentText.setText(getProperty(XmlLoaderComponentConstants.XMLCONTENT));
             return;
         }
-        fileContentText.setText("");
     }
 
     @Override
@@ -140,7 +139,33 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
                 fileChoosing();
             }
         }
-
     }
 
+    @Override
+    protected Updater createUpdater() {
+        return new XmlLoaderComponentSectionUpdater();
+    }
+
+    /**
+     * 
+     * XML Loader Component Section {@link DefaultUpdater} implementation of the handler to update the XML File UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class XmlLoaderComponentSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+
+            if (control instanceof Composite) {
+                if (newValue == null) {
+                    fileContentText.setText("");
+                } else {
+                    fileContentText.setText(newValue);
+                }
+            }
+        }
+    }
 }

@@ -356,6 +356,8 @@ public class ComponentExecutor {
         if (compExeType == ComponentExecutionType.StartAsInit || compExeType == ComponentExecutionType.StartAsRun
             || compExeType == ComponentExecutionType.ProcessInputs) {
             try {
+                // These kinds of signals are only executed after successful preparation of the component, hence we do not require null
+                // checks on component.get()
                 if (compExeType == ComponentExecutionType.ProcessInputs) {
                     compExeRelatedInstances.component.get().processInputs();
                 } else {
@@ -373,14 +375,29 @@ public class ComponentExecutor {
                         e.getMessage()));
                 }
             }
+            // The remaining events may be processed before the preparation of the component was complete, i.e., before
+            // compExeRelatedInstance#component has been set to contain some valid reference. Hence, we are required to check for that
+            // reference being null.
         } else if (compExeType == ComponentExecutionType.Reset) {
-            compExeRelatedInstances.component.get().reset();
+            final Component component = compExeRelatedInstances.component.get();
+            if (component != null) {
+                component.reset();
+            }
         } else if (compExeType == ComponentExecutionType.TearDown) {
-            compExeRelatedInstances.component.get().tearDown(compExeType.finalCompStateAfterTearedDown);
+            final Component component = compExeRelatedInstances.component.get();
+            if (component != null) {
+                component.tearDown(compExeType.finalCompStateAfterTearedDown);
+            }
         } else if (compExeType == ComponentExecutionType.HandleVerificationToken) {
-            compExeRelatedInstances.component.get().handleVerificationToken(compExeType.verificationToken);
+            final Component component = compExeRelatedInstances.component.get();
+            if (component != null) {
+                component.handleVerificationToken(compExeType.verificationToken);
+            }
         } else if (compExeType == ComponentExecutionType.CompleteVerification) {
-            compExeRelatedInstances.component.get().completeStartOrProcessInputsAfterVerificationDone();
+            final Component component = compExeRelatedInstances.component.get();
+            if (component != null) {
+                compExeRelatedInstances.component.get().completeStartOrProcessInputsAfterVerificationDone();
+            }
         } else {
             throw new ComponentExecutionException("Given component execution type not supported: " + compExeType);
         }

@@ -108,7 +108,6 @@ public final class SshConstants {
      * Code for the ESC key. Important because it is used as escape character for special keys
      */
     public static final int ESC_KEY_CODE = 27;
-
     // ASCII CODES - END
     // REGULAR EXPRESSIONS FOR SPECIAL KEY HANDLING - START
 
@@ -225,6 +224,11 @@ public final class SshConstants {
      * Command patterns.
      */
     public static final String COMMAND_PATTERN_SYSMON = "sysmon.*";
+
+    /**
+     * Command patterns.
+     */
+    public static final String COMMAND_PATTERN_AUTH = "auth .*";
 
     /**
      * Command patterns.

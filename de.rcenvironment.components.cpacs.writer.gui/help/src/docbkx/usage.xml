@@ -28,8 +28,10 @@
     <sect1>
         <title>Runtime GUI</title>
         <para>Double clicking on the CPACS Writer component during or after workflow execution opens
-            the “CPACS Geometry” view where the current CPACS content is shown. By clicking the
-            button “Show CPACS dataset in TIGL Viewer” the corresponding view “TIGL Viewer” will
-            show the CPACS geometry in the TiGL Viewer.</para>
+            the “CPACS Geometry” view where the current CPACS content is shown. <phrase os="windows"
+                >By clicking the button “Show CPACS dataset in TIGL Viewer” the corresponding view
+                “TIGL Viewer” will show the CPACS geometry in the TiGL Viewer, if that viewer is
+                configured. See the help entry for the TiGL Viewer component and the configuration
+                reference for more information on how to configure the TiGL viewer.</phrase></para>
     </sect1>
 </chapter>

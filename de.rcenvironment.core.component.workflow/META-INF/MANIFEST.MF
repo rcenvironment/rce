@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
@@ -14,11 +14,11 @@ Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.model.spi,
  de.rcenvironment.core.component.workflow.update.api
 Bundle-ClassPath: .
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.core.type;version="2.9.8",
- com.fasterxml.jackson.core.util;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.core.util;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  de.rcenvironment.core.authorization,
  de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.authorization.cryptography.api,

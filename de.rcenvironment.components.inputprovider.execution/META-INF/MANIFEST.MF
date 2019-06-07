@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
@@ -23,9 +23,9 @@ Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.remoteaccess.common,
  de.rcenvironment.core.utils.common,
- com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  org.eclipse.core.resources,
  org.eclipse.core.runtime;version="3.4.0",
  org.eclipse.core.runtime.jobs

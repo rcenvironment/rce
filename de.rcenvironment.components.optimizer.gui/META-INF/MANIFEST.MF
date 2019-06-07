@@ -3,14 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Name: RCE Optimizer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.gui;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,
  org.eclipse.core.runtime,
  de.rcenvironment.core.component
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
  de.rcenvironment.components.optimizer.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.execution.api,

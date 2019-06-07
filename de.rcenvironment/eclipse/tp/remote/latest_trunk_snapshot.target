@@ -1,12 +1,41 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target includeMode="feature" name="trunk_snapshot_platform_repo.all" sequenceNumber="74">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?pde version="3.8"?><target includeMode="feature" name="trunk_snapshot_platform_repo.all" sequenceNumber="74">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="9.0.0.0201808271034_SNAPSHOT"/>
-<unit id="de.rcenvironment.platform.maven_extensions.bdd.feature.feature.group" version="9.0.0.0201808271034_SNAPSHOT"/>
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+<unit id="de.rcenvironment.platform.maven_extensions.bdd.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
 <unit id="de.vonloesch.pdf4eclipse.feature.group" version="1.1.0"/>
 <unit id="nu.psnet.quickimage.feature.group" version="1.0.3.2"/>
 <repository location="https://software.dlr.de/updates/rce/9.x/repositories/platform/snapshots/trunk"/>
+	<unit id="de.rcenvironment.platform.maven.native.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="de.rcenvironment.platform.maven_common.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="de.rcenvironment.platform.maven_osgi.other.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="de.rcenvironment.platform.maven_osgi.paxlogging.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="de.rcenvironment.platform.p2.eclipse.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="de.rcenvironment.platform.p2.other.feature.feature.group" version="9.0.0.0201902120752_SNAPSHOT"/>
+	<unit id="org.eclipse.draw2d.feature.group" version="3.10.100.201606061308"/>
+	<unit id="org.eclipse.e4.rcp.feature.group" version="1.6.100.v20180611-0422"/>
+	<unit id="org.eclipse.ecf.core.feature.feature.group" version="1.5.0.v20180426-1936"/>
+	<unit id="org.eclipse.ecf.core.ssl.feature.feature.group" version="1.1.100.v20180301-0201"/>
+	<unit id="org.eclipse.ecf.filetransfer.feature.feature.group" version="3.14.0.v20180306-0429"/>
+	<unit id="org.eclipse.ecf.filetransfer.httpclient4.feature.feature.group" version="3.14.0.v20180301-0132"/>
+	<unit id="org.eclipse.ecf.filetransfer.httpclient4.ssl.feature.feature.group" version="1.1.100.v20180301-0132"/>
+	<unit id="org.eclipse.ecf.filetransfer.ssl.feature.feature.group" version="1.1.100.v20180301-0132"/>
+	<unit id="org.eclipse.emf.common.feature.group" version="2.14.0.v20180527-1134"/>
+	<unit id="org.eclipse.emf.ecore.feature.group" version="2.14.0.v20180529-1144"/>
+	<unit id="org.eclipse.equinox.executable.feature.group" version="3.8.0.v20180518-2029"/>
+	<unit id="org.eclipse.equinox.p2.core.feature.feature.group" version="1.5.0.v20180515-1348"/>
+	<unit id="org.eclipse.equinox.p2.extras.feature.feature.group" version="1.4.0.v20180515-1348"/>
+	<unit id="org.eclipse.equinox.p2.rcp.feature.feature.group" version="1.4.0.v20180515-1348"/>
+	<unit id="org.eclipse.equinox.p2.user.ui.feature.group" version="2.4.0.v20180515-1348"/>
+	<unit id="org.eclipse.gef.feature.group" version="3.11.0.201606061308"/>
+	<unit id="org.eclipse.help.feature.group" version="2.2.200.v20180611-0500"/>
+	<unit id="org.eclipse.platform.feature.group" version="4.8.0.v20180611-0656"/>
+	<unit id="org.eclipse.rcp.feature.group" version="4.8.0.v20180611-0656"/>
+	<unit id="org.eclipse.wst.common_core.feature.feature.group" version="3.9.1.v201803151712"/>
+	<unit id="org.eclipse.wst.common_ui.feature.feature.group" version="3.9.2.v201803040536"/>
+	<unit id="org.eclipse.wst.xml_core.feature.feature.group" version="3.10.0.v201805022129"/>
+	<unit id="org.eclipse.wst.xml_ui.feature.feature.group" version="3.10.0.v201804210200"/>
+	<unit id="org.eclipse.wst.xml_userdoc.feature.feature.group" version="3.10.0.v201804190136"/>
 </location>
 </locations>
 </target>

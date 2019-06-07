@@ -73,13 +73,14 @@ public final class SshAccountRole {
             allowedCommandPatterns.add("stop");
             allowedCommandPatterns.add("stats");
             allowedCommandPatterns.add("tasks.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_AUTH);
             break;
         case SshConstants.ROLE_NAME_IM_ADMIN:
             allowedCommandPatterns.add("im.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_AUTH);
             allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_NET_INFO);
             break;
         case SshConstants.ROLE_NAME_IM_DELEGATE:
-            allowedCommandPatterns.add("auth .*");
             allowedCommandPatterns.add("cn.*");
             allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
             allowedCommandPatterns.add("net.*");
@@ -90,6 +91,7 @@ public final class SshAccountRole {
             allowedCommandPatterns.add("tasks.*");
             allowedCommandPatterns.add("wf.*");
             allowedCommandPatterns.add("ra-admin.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_AUTH);
             break;
         case SshConstants.ROLE_NAME_DEVELOPER:
             allowedCommandPatterns.add(".*");

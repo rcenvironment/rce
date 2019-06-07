@@ -9,6 +9,7 @@
 package de.rcenvironment.core.gui.workflow.integration;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -16,14 +17,15 @@ import java.util.TreeSet;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Table;
@@ -36,7 +38,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
-import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationMetaDataDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -68,23 +69,25 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
 
     private TableColumn placeholderColumn;
 
+    private Map<String, String> previousValues;
+
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         parent.setLayout(new GridLayout(1, true));
-        
+
         final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         composite.setLayout(new GridLayout(1, true));
-        
+
         final Section propertiesSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
         propertiesSection.setText(Messages.propertyConfiguration);
         propertiesSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
-        
+
         Composite propertiesComposite = getWidgetFactory().createFlatFormComposite(propertiesSection);
         propertiesComposite.setLayout(new GridLayout(2, false));
         propertiesComposite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
-        
+
         new Label(propertiesComposite, SWT.NONE).setText(Messages.propGroupsLabel);
         new Label(propertiesComposite, SWT.NONE).setText(Messages.properties);
 
@@ -124,6 +127,7 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         editor.setEditor(nullText, nullItem, 1);
 
         propertiesSection.setClient(propertiesComposite);
+
     }
 
     private void updateSelection() {
@@ -147,27 +151,42 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             }
 
             Collections.sort(groupKeys);
-
+            previousValues = new HashMap<>();
             for (final String groupKey : groupKeys) {
                 TableItem configItem = new TableItem(propertyTable, SWT.NONE);
                 configItem.setText(metadata.getGuiName(groupKey));
                 TableEditor editor = new TableEditor(propertyTable);
                 final Text textField = new Text(propertyTable, SWT.NONE);
+                textField.setData(CONTROL_PROPERTY_KEY, groupKey);
                 final Button checkBox = new Button(propertyTable, SWT.CHECK | SWT.CENTER);
-                if (!ConfigurationDescription.isPlaceholder(config.get(groupKey))) {
+                checkBox.setData(CONTROL_PROPERTY_KEY, groupKey);
+                // because of technical issues, we have to distinguish empty string "" and space character string " " here
+                // empty string "", if checkbox "Define at workflow start" is checked (default situation)
+                // space character string " ", if checkbox is not checked, but no value is set during execution
+                // K. Schaffert, 30.04.2019
+                if (!config.get(groupKey).equals("")) { // checkbox unchecked
                     textField.setText(config.get(groupKey));
                     textField.setEnabled(true);
                     checkBox.setSelection(false);
-                } else {
-                    textField.setText("");
+                    previousValues.put(groupKey, config.get(groupKey));
+                } else { // checkbox checked
                     textField.setEnabled(false);
                     checkBox.setSelection(true);
+                    previousValues.put(groupKey, " "); // has to be stored, in case checkbox will be unchecked later
+                                                       // but no default value available
                 }
-                textField.addModifyListener(new ModifyListener() {
+
+                textField.addFocusListener(new FocusListener() {
 
                     @Override
-                    public void modifyText(ModifyEvent arg0) {
+                    public void focusLost(FocusEvent arg0) {
+                        getPreviousValues().put(groupKey, ((Text) arg0.getSource()).getText());
                         setProperty(groupKey, ((Text) arg0.getSource()).getText());
+                    }
+
+                    @Override
+                    public void focusGained(FocusEvent arg0) {
+                        // currently not needed
                     }
                 });
 
@@ -182,20 +201,29 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
                 checkBox.addSelectionListener(new SelectionListener() {
 
                     @Override
-                    public void widgetSelected(SelectionEvent arg0) {
+                    public void widgetSelected(SelectionEvent evt) {
+
+                        String defValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
+                            .getDefaultValue(groupKey);
+
                         if (checkBox.getSelection()) {
-                            textField.setText("");
-                            setProperty(groupKey, "${" + metadata.getGuiName(groupKey) + "}");
-                            textField.setEnabled(false);
+                            setProperty(groupKey, ""); // empty string for checkbox checked
                         } else {
-                            textField.setText("");
-                            textField.setEnabled(true);
+                            previousValues = getPreviousValues();
+                            // default value available && previous value is empty string
+                            if (!defValue.equals("") && previousValues.get(groupKey).equals(" ")) {
+                                // default value is set
+                                setProperty(groupKey, defValue);
+                            } else {
+                                // previous value is set
+                                setProperty(groupKey, previousValues.get(groupKey));
+                            }
                         }
                     }
 
                     @Override
-                    public void widgetDefaultSelected(SelectionEvent arg0) {
-                        widgetSelected(arg0);
+                    public void widgetDefaultSelected(SelectionEvent evt) {
+                        widgetSelected(evt);
                     }
                 });
                 boxEditor.horizontalAlignment = SWT.CENTER;
@@ -294,4 +322,51 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         }
     }
 
+    @Override
+    protected PropertiesSectionUpdater createUpdater() {
+        return new PropertiesSectionUpdater();
+    }
+
+    /**
+     * Properties Section {@link DefaultUpdater} implementation of the handler to update the Configuration UI of an integrated tool.
+     * 
+     * @author Kathrin Schaffert
+     * 
+     */
+    protected class PropertiesSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+
+            propertyTable.setRedraw(false);
+            if (control instanceof Button) {
+                for (Control c : control.getParent().getChildren()) {
+                    if (!(c instanceof Text)) {
+                        continue;
+                    }
+                    if (!c.getData(CONTROL_PROPERTY_KEY).equals(control.getData(CONTROL_PROPERTY_KEY))) {
+                        continue;
+                    }
+
+                    if (newValue.equals("")) { // checkbox checked
+                        ((Text) c).setEnabled(false);
+                        ((Button) control).setSelection(true);
+                    } else { // checkbox unchecked
+                        ((Text) c).setEnabled(true);
+                        ((Button) control).setSelection(false);
+                    }
+
+                }
+            }
+
+            if (control instanceof Text) {
+                ((Text) control).setText(newValue);
+            }
+            propertyTable.setRedraw(true);
+        }
+    }
+
+    private Map<String, String> getPreviousValues() {
+        return this.previousValues;
+    }
 }

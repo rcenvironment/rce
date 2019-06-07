@@ -26,8 +26,8 @@ Import-Package: de.rcenvironment.components.scpoutputcollector.common,
  de.rcenvironment.core.utils.common,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
- com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  org.osgi.service.component.annotations
 Bundle-Vendor: DLR

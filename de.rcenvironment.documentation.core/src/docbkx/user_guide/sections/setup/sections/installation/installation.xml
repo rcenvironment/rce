@@ -31,8 +31,8 @@
             packages, or extracting it from a zip file (which was traditionally used by earlier
             versions of RCE). Whenever possible, using the packages is recommended, as RCE is
             automatically installed into the proper system locations, and can be cleanly managed
-            using your distribution's package manager. If you are on a Debian-based distribution, a
-            package repository is provided as well, which makes it even easier to install and
+            using your distribution's package manager. If you are using a Debian-based distribution,
+            a package repository is provided as well, which makes it even easier to install and
             upgrade RCE. The following table compares these options:<table frame="all">
                 <title>Linux installation options</title>
                 <tgroup cols="8">
@@ -126,12 +126,12 @@
                                     the dialog that appears and click "Ok".</para>
                             </listitem>
                             <listitem>
-                                <para>Close the settings dialog and click "Refresh" to update the
+                                <para>Close the settings dialog and click "Reload" to update the
                                     list of available software. After this, you should find an entry
-                                    "rce" in this list (for example, using the "quick search" box),
-                                    which you can install like any other software. You will also
-                                    receive automatic notifications when a newer version of RCE 9.x
-                                    is available.</para>
+                                    "rce" in this list (for example, using the Search button), which
+                                    you can install like any other software. You will also receive
+                                    automatic notifications when a newer version of RCE 9.x is
+                                    available.</para>
                             </listitem>
                         </itemizedlist></para>
                 </listitem>
@@ -233,12 +233,12 @@
             <para>To install the .rpm file, download the latest version from
                 <programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/rpm/</uri></programlisting>You
                 can either install it with the graphical package management tools of your
-                distribution (double-clicking the .deb should start them), or by running the
+                distribution (double-clicking the .rpm should start them), or by running the
                 appropriate installation command as the "root" user. On CentOS or Red Hat, the
                 command is <code>yum install &lt;filename></code>; on SUSE, use <code>zypper install
                     &lt;filename></code>. To upgrade an existing installation, simply install the
                 newer package. The package manager will detect the upgrade and handle it
-                properly</para>
+                properly.</para>
         </sect3>
         <sect3 os="linux">
             <title>All Distributions - Running from the .zip File (alternative)</title>
@@ -261,7 +261,7 @@
                     <para>If you prefer using the command line, use the <code>unzip</code> command
                         to extract the zip file to a location of your choice. In the location where
                         you unpacked the files to, you can usually simply
-                        enter<programlisting>./rce</programlisting> to start RCE. In same cases, you
+                        enter<programlisting>./rce</programlisting> to start RCE. In some cases, you
                         may first need to make it executable using the
                         command<programlisting>chmod +x rce</programlisting></para>
                 </listitem>
@@ -274,8 +274,8 @@
     </sect2>
     <sect2>
         <title>Digital Signatures and Download Verification</title>
-        <para>Starting with RCE 6.x, we provide digital signatures for our releases. These are
-            intended to verify the integrity of the downloaded files, as <emphasis>any</emphasis>
+        <para>Starting with RCE 6.x, we provide digital signatures for our releases. These can be
+            used to verify the integrity of the downloaded files, as <emphasis>any</emphasis>
             unsigned software can be tampered with while downloading it over an unsecured (HTTP)
             connection. This is especially important when installing RCE from a user account with
                 <phrase os="windows">administrator</phrase><phrase os="linux">root</phrase>
@@ -285,7 +285,7 @@
                 <code>SHA256SUM.asc</code> file is provided next to the actual files. This file
             contains checksums for each release file, and these checksums are signed with our
             release key. It is named "RCE 6.x-9.x Automatic Signing Key", has the id 9DC1CE34, and
-            is valid until Nov 25, 2018. Its full fingerprint is <code>258B C129 EDA2 389D 3ECD 2DE6
+            is valid until Nov 22, 2020. Its full fingerprint is <code>258B C129 EDA2 389D 3ECD 2DE6
                 BA88 0CB3 9DC1 CE34</code>.</para>
         <para><phrase os="windows">On Windows, you need to install gpg4win
                     (<uri>http://www.gpg4win.org/</uri>) to verify the digital signature. You can
@@ -333,9 +333,9 @@
                     <para>Download the <code>SHA256SUMS.asc</code> file from the same location as
                         the installation package and place it in the same folder as the downloaded
                         .zip-file. Run
-                        <programlisting>gpg -v --yes SHA256SUMS.asc</programlisting>in the location
-                        where you saved it to; this verifies the digital signature. Inspect the
-                        output to see if it is correct; you should find the text "Good signature
+                        <programlisting>gpg --verify --yes SHA256SUMS.asc</programlisting>in the
+                        location where you saved it to; this verifies the digital signature. Inspect
+                        the output to see if it is correct; you should find the text "Good signature
                         from "RCE 6.x-9.x Automatic Signing Key
                         &lt;rcenvironment-builds@lists.sourceforge.net>" (or a similar translation).
                         Once the command has terminated, you should find a file
@@ -365,12 +365,12 @@
                 <listitem os="windows">
                     <para>Adapt the following command to the RCE version you downloaded previously
                         and run
-                        <programlisting>Get-FileHash -Algorithm sha256 rce-7.1.4.201609280904-standard-win32.x86_64.zip</programlisting>in
+                        <programlisting>Get-FileHash -Algorithm sha256 rce-9.0.0.201903131329-standard-win32.x86_64.zip</programlisting>in
                         the same folder from a PowerShell. The cmdlet will compute the hash for the
                         specified file and print it to the screen. You need to compare the
-                        calculated hash with the hash in the SHA256SUMS file. If both are equal, it
-                        is verified that the actual download matches what has been digitally signed
-                        for the release.</para>
+                        calculated hash with the hash in the SHA256SUMS file. If both are equal,
+                        this verifies that the actual download matches what has been digitally
+                        signed for the release.</para>
                 </listitem>
             </itemizedlist></para>
     </sect2>
@@ -389,10 +389,10 @@
             <note os="linux">
                 <para> On Ubuntu, the Ubuntu overlay scrollbars can sometimes lead to problems with
                     the RCE GUI. To avoid these problems, you can start RCE from a terminal with
-                        <code>env LIBOVERLAY_SCROLLBAR=0 ./rce</code>  to disable the overlay
-                    scrollbars for RCE. Alternatively, if you want to enable the overlay scrollbars
+                        <code>env LIBOVERLAY_SCROLLBAR=0 ./rce</code> to disable the overlay
+                    scrollbars for RCE. Alternatively, if you want to disable the overlay scrollbars
                     permanently for all programs, execute <code>echo "export LIBOVERLAY_SCROLLBAR=0"
-                        > /etc/X11/Xsession.d/80overlayscrollbars</code>  as a superuser and then
+                        > /etc/X11/Xsession.d/80overlayscrollbars</code> as a superuser and then
                     restart your computer.</para>
             </note>
         </para>
@@ -404,10 +404,10 @@
             when the GUI is not needed. </para>
         <para>To run a headless RCE instance, open a <phrase os="windows">command
                 prompt</phrase><phrase os="linux">terminal</phrase> and run the command
-            <programlisting>rce --headless -console</programlisting>While RCE is running,
-            you can enter various console commands described in <xref linkend="command_line"/>; note
-            that you need to prefix all RCE commands with "rce " here. To perform a clean shutdown,
-            for example, type <code>rce stop</code> and press enter.</para>
+            <programlisting>rce --headless -console</programlisting>While RCE is running, you can
+            enter various console commands described in <xref linkend="command_line"/>; note that
+            you need to prefix all RCE commands with "rce" here. To perform a clean shutdown, for
+            example, type <code>rce stop</code> and press enter.</para>
     </sect2>
     <sect2>
         <title>Installation as a <phrase os="linux">Daemon on a Linux Server</phrase><phrase
@@ -431,15 +431,15 @@
                 made to work, it creates unnecessary complications regarding installation paths and
                 file permissions. As registering a daemon requires root privileges anyway, there
                 should be no reason to use the .zip file; if you have a compelling use case for
-                this, please contact the RCE team.</para>
+                this, please contact the RCE team at <code>rce@dlr.de</code>.</para>
             <para os="linux">Once RCE is properly installed, registering it as a daemon is very
                 simple. A command named <code>rce-daemon</code> is provided to control the whole
-                daemon life cycle. The only manual step you need to perform before is creating a
-                user account that the daemon will run under. For now, this account has to be named
-                    <code>rce-daemon</code>; use you distribution's console commands or GUI tools to
-                add it. (Please note that this account needs to have a home directory to hold the
-                daemon's profile directory.) Future RCE versions will make this account name
-                customizable.</para>
+                daemon life cycle. The only manual step you need to perform before using that
+                command is creating a user account that the daemon will run under. For now, this
+                account has to be named <code>rce-daemon</code>; use your distribution's console
+                commands or GUI tools to add it. (Please note that this account needs to have a home
+                directory to hold the daemon's profile directory.) Future RCE versions will make
+                this account name customizable.</para>
             <para os="linux">Once this user account is created, you can use the following commands
                 to manage the daemon installation:<itemizedlist>
                     <listitem>
@@ -459,7 +459,7 @@
                             RCE instance's profile directory and relevant files</para>
                     </listitem>
                     <listitem>
-                        <para><code>rce-daemon status</code> - displays if the RCE deamon is
+                        <para><code>rce-daemon status</code> - displays if the RCE daemon is
                             currently running or not</para>
                     </listitem>
                 </itemizedlist></para>
@@ -477,8 +477,8 @@
                                 <listitem>
                                     <para>Set RCE_ROOT_PATH to the location of your RCE installation
                                         (typically, the location which you are editing these files
-                                        in). Note that RCE must already be present (and unpacked) in
-                                        this location; the daemon installer does not copy any files
+                                        in). RCE must already be present (and unpacked) in this
+                                        location; the daemon installer does not copy any files
                                         there.</para>
                                 </listitem>
                                 <listitem>
@@ -496,8 +496,8 @@
                     </listitem>
                     <listitem>
                         <para>Execute with administrator rights
-                            <programlisting>install_as_service.bat</programlisting> by double-click
-                            or on the command line</para>
+                            <programlisting>install_as_service.bat</programlisting> by
+                            double-clicking or on the command line</para>
                     </listitem>
                     <listitem>
                         <para>Open the Windows Service Managment Console (e.g. execute
@@ -530,9 +530,9 @@
                                     </listitem>
                                     <listitem>
                                         <para>Click <emphasis role="bold">Add User or
-                                                Group</emphasis>, and then add the appropriate
-                                            account to the list of accounts that possess the
-                                                <emphasis role="bold">Log on as a service</emphasis>
+                                                Group</emphasis> and add the appropriate account to
+                                            the list of accounts that possess the <emphasis
+                                                role="bold">Log on as a service</emphasis>
                                             right.</para>
                                     </listitem>
                                 </orderedlist>
@@ -548,11 +548,10 @@
                 <orderedlist>
                     <listitem>
                         <para>Open the Windows Service Managment Console (e.g. execute
-                            "services.msc" on the command line)</para>
+                                <code>services.msc</code> on the command line)</para>
                     </listitem>
                     <listitem>
-                        <para>Look for entry "RCE Service", do a right-click and click
-                            "Start"</para>
+                        <para>Right-click on the entry "RCE Service" and select "Start"</para>
                     </listitem>
                 </orderedlist>
             </para>
@@ -564,7 +563,7 @@
                                 <code>services.msc</code> on the command line)</para>
                     </listitem>
                     <listitem>
-                        <para>Look for entry "RCE Service", do a right-click and click "Stop"</para>
+                        <para>Right-click on the entry "RCE Service" and select "Stop"</para>
                     </listitem>
                 </orderedlist>
             </para>
@@ -583,8 +582,8 @@
                     </listitem>
                     <listitem>
                         <para>Execute with administrator rights
-                            <programlisting>uninstall_ service.bat</programlisting> by double-click
-                            or on the command line</para>
+                            <programlisting>uninstall_service.bat</programlisting> by
+                            double-clicking or on the command line</para>
                     </listitem>
                 </orderedlist>
             </para>
@@ -593,15 +592,15 @@
             <title><phrase os="linux">Daemon</phrase><phrase os="windows">Service</phrase>
                 Configuration</title>
             <para>After installation, the <phrase os="linux">daemon</phrase><phrase os="windows"
-                    >service</phrase> instance will be automatically started. This will create a
+                    >service</phrase> instance will be started automatically. This will create a
                 default configuration file if it does not exist yet.</para>
             <para os="linux">To configure the daemon instance, use <code>rce-daemon locate</code> to
                 find its configuration file, edit and save it, and then use <code>rce-daemon
                     restart</code> to apply the new configuration.</para>
             <para os="windows">To configure the service instance, locate the RCE configuration file
                 in the service user's home directory - by default, it is located at
-                "C:\users\&lt;user id>\.rce\default\configuration.json". Edit this file, and restart
-                the service to apply the changes.</para>
+                    <code>C:\users\&lt;user id>\.rce\default\configuration.json</code>. Edit this
+                file and restart the service to apply the changes.</para>
             <note>
                 <para>The need to restart the <phrase os="linux">daemon</phrase><phrase os="windows"
                         >service</phrase> is temporary; future versions of RCE will apply

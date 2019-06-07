@@ -23,6 +23,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
@@ -101,19 +102,6 @@ public class OutputWriterRootLocationSection extends WorkflowNodePropertySection
 
         workflowStartCheckbox.setLayoutData(new GridData(SWT.LEFT,
             SWT.TOP, true, false, 2, 1));
-        workflowStartCheckbox.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                setEnabilityRoot(!workflowStartCheckbox.getSelection());
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                widgetSelected(arg0);
-
-            }
-        });
         workflowStartCheckbox.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART);
 
         rootSelectFromProjectButton = new Button(rootgroup, SWT.NONE);
@@ -237,6 +225,29 @@ public class OutputWriterRootLocationSection extends WorkflowNodePropertySection
     protected void refreshSection() {
         super.refreshSection();
         setEnabilityRoot(!workflowStartCheckbox.getSelection());
+    }
+
+    @Override
+    protected RootLocationDefaultUpdater createUpdater() {
+        return new RootLocationDefaultUpdater();
+    }
+
+    /**
+     * 
+     * Root Location {@link DefaultUpdater} implementation of the handler to update the Root folder UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class RootLocationDefaultUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            if (control instanceof Button) {
+                setEnabilityRoot(!Boolean.valueOf(newValue));
+            }
+        }
     }
 
 }

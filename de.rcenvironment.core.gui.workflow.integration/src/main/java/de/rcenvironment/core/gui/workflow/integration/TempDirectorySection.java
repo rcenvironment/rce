@@ -15,6 +15,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -46,6 +47,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         composite.setLayout(new GridLayout(1, true));
+        composite.setData(CONTROL_PROPERTY_KEY, ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
         
         final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
         scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
@@ -86,12 +88,84 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
             }
         });
         scriptSection.setClient(scriptComposite);
-
+        onSuccessDeleteTempDirectoryButton.setData(CONTROL_PROPERTY_KEY, ToolIntegrationConstants.KEY_KEEP_ON_FAILURE);
     }
 
     @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
+        setActivationOfCheckboxes();
+    }
+
+    private void determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive, boolean deleteAlwaysActive) {
+        if (deleteOnceActive) {
+            onceDeleteTempDirectoryButton.setSelection(true);
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
+        } else if (deleteNeverActive) {
+            neverDeleteTempDirectoryButton.setSelection(true);
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
+        } else if (deleteAlwaysActive) {
+            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
+            alwaysDeleteTempDirectoryButton.setSelection(true);
+        }
+    }
+
+    @Override
+    public void refreshSection() {
+        super.refreshSection();
+        aboutToBeShown();
+    }
+       
+    @Override
+    protected TempSectionUpdater createUpdater() {
+        return new TempSectionUpdater();
+    }
+
+    /**
+     * Properties Section {@link DefaultUpdater} implementation of the handler to update the Properties Section UI of an integrated tool.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class TempSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            setActivationOfCheckboxes();
+        }
+    }
+
+    /**
+     * Listener for the delete temp dir radio buttons.
+     * 
+     * @author Sascha Zur
+     */
+    private class DeleteTempDirectorySelectionListener implements SelectionListener {
+
+        private final String key;
+
+        DeleteTempDirectorySelectionListener(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public void widgetDefaultSelected(SelectionEvent arg0) {
+            widgetSelected(arg0);
+        }
+
+        @Override
+        public void widgetSelected(SelectionEvent arg0) {
+            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR, key);
+            setActivationOfCheckboxes();
+        }
+    }
+
+    private void setActivationOfCheckboxes() {
+
         ReadOnlyConfiguration readOnlyconfig = getConfiguration().getConfigurationDescription()
             .getComponentConfigurationDefinition().getReadOnlyConfiguration();
 
@@ -129,58 +203,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         onSuccessDeleteTempDirectoryButton.setSelection(isKeepButtonActive()
             && Boolean.parseBoolean(getProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE)));
         setPropertyNotUndoable(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
-    }
 
-    private void determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive, boolean deleteAlwaysActive) {
-        if (deleteOnceActive) {
-            onceDeleteTempDirectoryButton.setSelection(true);
-            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
-        } else if (deleteNeverActive) {
-            neverDeleteTempDirectoryButton.setSelection(true);
-            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
-        } else if (deleteAlwaysActive) {
-            setPropertyNotUndoable(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
-            alwaysDeleteTempDirectoryButton.setSelection(true);
-        }
-    }
-
-    @Override
-    public void refreshSection() {
-        super.refreshSection();
-        aboutToBeShown();
-    }
-
-    /**
-     * Listener for the delete temp dir radio buttons.
-     * 
-     * @author Sascha Zur
-     */
-    private class DeleteTempDirectorySelectionListener implements SelectionListener {
-
-        private final String key;
-
-        DeleteTempDirectorySelectionListener(String key) {
-            this.key = key;
-        }
-
-        @Override
-        public void widgetDefaultSelected(SelectionEvent arg0) {
-            widgetSelected(arg0);
-        }
-
-        @Override
-        public void widgetSelected(SelectionEvent arg0) {
-            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR, key);
-
-            onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
-            if (!isKeepButtonActive()) {
-                onSuccessDeleteTempDirectoryButton.setSelection(false);
-                setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + false);
-            }
-        }
     }
 
     private boolean isKeepButtonActive() {

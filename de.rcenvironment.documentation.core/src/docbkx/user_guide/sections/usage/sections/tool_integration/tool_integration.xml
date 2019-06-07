@@ -22,9 +22,10 @@
             for the integration. </para>
         <para>If you use RCE with a graphical user interface this can be done with the help of an
             wizard which guides you through the settings. This wizard can be found in the menu
-                <emphasis role="italic">File -> Integrate Tool...</emphasis>. Required fields are
-            marked with an asterisk (*). When the wizard is finished and everything is correct, the
-            integrated tool will automatically show up in the Workflow Editor palette.</para>
+                <emphasis role="italic">Tool Integration -> Integrate Tool...</emphasis>. Required
+            fields are marked with an asterisk (*). When the wizard is finished and everything is
+            correct, the integrated tool will automatically show up in the Workflow Editor
+            palette.</para>
         <para>
             <note>
                 <para>The wizard has a dynamic help, which is shown by clicking on the question mark
@@ -149,7 +150,7 @@
             <para>The mappings can be specified by XML or XSLT as shown in the following examples.
                 RCE differentiates between these methods in accordance to the corresponding file
                 extension (.xml or .xsl).</para>
-            <para>Example for an input or tools pecific XML mapping :</para>
+            <para>Example for an input or tool specific XML mapping :</para>
             <para>
                 <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
 &lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">

@@ -102,8 +102,8 @@
                     <para>If the tool needs same inputs to be copied in another folder than the
                         Input folder, it should be done using the pre-execution script.<note>
                             <para>During execution, all content to replace in pre, post or command
-                                scripts will be tested for unsecure characters (such as /,?,* etc.).
-                                If it contains unsecure characters, the replacement will be denied
+                                scripts will be tested for insecure characters (such as /,?,* etc.).
+                                If it contains insecure characters, the replacement will be denied
                                 and the execution of the workflow will fail. This stringent behavior
                                 is needed to prevent malicious code execution, especially on remote
                                 hosts like compute nodes.</para>

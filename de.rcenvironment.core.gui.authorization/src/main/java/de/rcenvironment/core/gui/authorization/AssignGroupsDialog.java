@@ -25,6 +25,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -48,6 +49,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class AssignGroupsDialog extends TitleAreaDialog {
 
     private static final int MINUS_ONE = -1;
+
+    private static final int LEFT_BUTTON = 1;
 
     private Map<AuthorizationAccessGroup, Boolean> groupToStateMapping;
 
@@ -157,10 +160,11 @@ public class AssignGroupsDialog extends TitleAreaDialog {
         groupTableViewer.setInput(groupToStateMapping.keySet());
         comparator = new AuthorizationGroupViewerComparator();
         groupTableViewer.setComparator(comparator);
-        groupTableViewer.getTable().addListener(SWT.Selection, event -> {
+        groupTableViewer.getTable().addListener(SWT.MouseUp, event -> {
             int index = groupTableViewer.getTable().getSelectionIndex();
             groupTableViewer.setSelection(StructuredSelection.EMPTY);
-            if (event.detail == SWT.CHECK || index == MINUS_ONE) {
+            if (event.button != LEFT_BUTTON || event.detail == SWT.CHECK || index == MINUS_ONE
+                || !groupTableViewer.getTable().getItem(index).getBounds().contains(new Point(event.x, event.y))) {
                 return;
             }
             groupTableViewer.setChecked(groupTableViewer.getElementAt(index),

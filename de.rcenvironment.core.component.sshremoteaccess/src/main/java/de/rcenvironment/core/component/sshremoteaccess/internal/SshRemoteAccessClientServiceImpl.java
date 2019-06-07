@@ -93,6 +93,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
 
     private static final int UPDATE_TOOLS_INTERVAL_SECS = 10;
 
+    private static final String QUOT = "\"";
+
     private static LocalComponentRegistrationService registry;
 
     private PlatformService platformService;
@@ -576,6 +578,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         String[] splitToolId = toolId.split(SLASH);
         String toolName = splitToolId[0];
         String toolNameAndVersion = splitToolId[0] + SLASH + splitToolId[1];
+        String formattedToolNameAndVersion = QUOT + toolNameAndVersion.replace(QUOT, QUOT + QUOT) + QUOT;
 
         // Find all connectionIds for which the given tool is registered
         for (String connectionId : registeredComponentsPerConnection.keySet()) {
@@ -594,7 +597,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             if (session != null) {
                 JSchRCECommandLineExecutor executor = new JSchRCECommandLineExecutor(session);
 
-                String command = StringUtils.format("ra get-doc-list " + toolNameAndVersion);
+                String command = StringUtils.format("ra get-doc-list " + formattedToolNameAndVersion);
                 try {
                     executor.start(command);
                     try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
@@ -637,11 +640,12 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         toolId = toolId.replace("de.rcenvironment.remoteaccess.", "");
         String[] splitToolId = toolId.split(SLASH);
         String toolNameAndVersion = splitToolId[0] + SLASH + splitToolId[1];
-        
+        String formattedToolNameAndVersion = QUOT + toolNameAndVersion.replace(QUOT, QUOT + QUOT) + QUOT;
+
         String sessionId = null;
         String nodeId = null;
 
-        //Get connection ID and remote node id from logical node ID
+        // Get connection ID and remote node id from logical node ID
         for (Entry<String, LogicalNodeId> entry : logicalNodeMap.entrySet()) {
             if (entry.getValue().getLogicalNodeIdString().equals(logicalNodeId)) {
                 String[] splitId = entry.getKey().split(SLASH);
@@ -652,7 +656,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                 sessionId = splitId[1];
             }
         }
-        
+
         File docFile = null;
         Session session;
         session = sshService.getAvtiveSshSession(sessionId);
@@ -668,7 +672,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             // Target directory for the documentation
             File downloadDir = tempFileService.createManagedTempDir();
 
-            String command = StringUtils.format("ra get-tool-doc %s %s %s %s", toolNameAndVersion, nodeId, hashValue, currentSessionToken);
+            String command =
+                StringUtils.format("ra get-tool-doc %s %s %s %s", formattedToolNameAndVersion, nodeId, hashValue, currentSessionToken);
             rceExecutor.start(command);
             try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
 

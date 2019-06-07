@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
@@ -13,10 +13,10 @@ Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.core.component,
  org.eclipse.jface,
  org.junit
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.core.util;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.util;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.communication.management,

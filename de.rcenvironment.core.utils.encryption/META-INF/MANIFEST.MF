@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Encryption
 Bundle-SymbolicName: de.rcenvironment.core.utils.encryption
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.io,

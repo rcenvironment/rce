@@ -26,6 +26,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -49,6 +50,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class AssignComponentsDialog extends TitleAreaDialog {
 
     private static final int MINUS_ONE = -1;
+
+    private static final int LEFT_BUTTON = 1;
 
     private Map<NamedComponentAuthorizationSelector, Boolean> originalComponentToStateMapping;
 
@@ -132,10 +135,11 @@ public class AssignComponentsDialog extends TitleAreaDialog {
         comparator = new ComponentsViewerComparator();
         componentsTableViewer.setComparator(comparator);
         componentsTableViewer.setInput(originalComponentToStateMapping.keySet());
-        componentsTableViewer.getTable().addListener(SWT.Selection, event -> {
+        componentsTableViewer.getTable().addListener(SWT.MouseUp, event -> {
             int index = componentsTableViewer.getTable().getSelectionIndex();
             componentsTableViewer.setSelection(StructuredSelection.EMPTY);
-            if (event.detail == SWT.CHECK || index == MINUS_ONE) {
+            if (event.button != LEFT_BUTTON || event.detail == SWT.CHECK || index == MINUS_ONE
+                || !componentsTableViewer.getTable().getItem(index).getBounds().contains(new Point(event.x, event.y))) {
                 return;
             }
             componentsTableViewer.setChecked(componentsTableViewer.getElementAt(index),

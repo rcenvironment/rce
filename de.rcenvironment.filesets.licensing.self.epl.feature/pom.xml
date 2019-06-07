@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.licensing.self.epl.feature</artifactId>
 	<name>RCE File Sets - EPL Self-Licensing Information</name>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.1.0-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>
@@ -13,5 +13,48 @@
 		<version>1.0.0</version>
 		<relativePath>../de.rcenvironment/maven/parent/defaultBundle</relativePath>
 	</parent>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-windows-files</id>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<phase>process-resources</phase>
+						<configuration>
+							<outputDirectory>target/root_files_windows</outputDirectory>
+							<resources>
+								<resource>
+									<directory>root_files_windows</directory>
+									<filtering>true</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-linux-files</id>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<phase>process-resources</phase>
+						<configuration>
+							<outputDirectory>target/root_files_linux</outputDirectory>
+							<resources>
+								<resource>
+									<directory>root_files_linux</directory>
+									<filtering>true</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

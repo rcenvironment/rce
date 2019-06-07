@@ -11,6 +11,20 @@
                 component is currently only available on Windows operating systems.</note></para>
     </sect1>
     <sect1>
+        <title>Setup</title>
+        <para>The TiGL Viewer is not included in RCE anymore, but has to be downloaded and installed
+            separately. Please visit <ulink url="https://dlr-sc.github.io/tigl/pages/download.html"
+                >https://dlr-sc.github.io/tigl/pages/download.html</ulink> in order to obtain a
+            copy. Once installed, add the following lines to your configuration file and restart
+            RCE:<literallayout><code>"thirdPartyIntegration": {
+    "tiglViewer" : {
+        "binaryPath" : "/path/to/tiglViewer.exe"
+    }
+}</code></literallayout></para>
+        <para>For additional configuration options for the TiGL Viewer refer to the configuration
+            reference.</para>
+    </sect1>
+    <sect1>
         <title>Usage</title>
         <para>The TiGL Viewer component has no properties at all. It has a preconfigured input
             channel and a preconfigured output channel “TiGL Viewer File”.</para>

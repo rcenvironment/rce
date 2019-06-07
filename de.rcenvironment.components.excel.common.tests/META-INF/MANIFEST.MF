@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component Common Tests
 Bundle-SymbolicName: de.rcenvironment.components.excel.common.tests
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Fragment-Host: de.rcenvironment.components.excel.common
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing

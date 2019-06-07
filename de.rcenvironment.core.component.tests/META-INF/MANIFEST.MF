@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.tests
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Fragment-Host: de.rcenvironment.core.component
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
@@ -12,7 +12,9 @@ Import-Package: de.rcenvironment.core.authorization.testutils,
  de.rcenvironment.core.configuration.testutils,
  de.rcenvironment.core.datamodel.testutils,
  de.rcenvironment.core.notification.testutils,
+ de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.toolkit.core.setup,
  edu.uci.ics.jung.graph;version="2.0.1",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",

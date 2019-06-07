@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Cluster Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.cluster.tests
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Fragment-Host: de.rcenvironment.core.utils.cluster
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing

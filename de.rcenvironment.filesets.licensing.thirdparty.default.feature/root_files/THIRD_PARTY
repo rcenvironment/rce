@@ -117,6 +117,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
  Common Public License (CPL)
 	WSDL4J (wsdl4j:wsdl4j:1.6.2 - http://sf.net/projects/wsdl4j)
 	Sleak (http://www.eclipse.org/articles/swt-design-2/sleak.htm)
+	QuickImage (https://github.com/persal/quickimage)
 
  Custom License: Damien Miller
     jBCrypt (0.4 - http://www.mindrot.org/projects/jBCrypt/)
@@ -140,6 +141,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Jetty Server (org.mortbay.jetty:jetty:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty)
 	Jetty Utilities (org.mortbay.jetty:jetty-util:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/jetty-util)
 	JUnit (junit:junit:4.12 - http://junit.org)
+	Pdf4Eclipse (https://github.com/Borisvl/Pdf4Eclipse) - includes a fork of pdfrenderer (https://github.com/Borisvl/PDFrenderer, licensed under GNU Lesser General Public License (LGPL), Version 2.1) and JPedal (https://www.idrsolutions.com/jpedal/, licensed under GNU Lesser General Public License (LGPL), Version 2.1)
 	
  GNU Lesser General Public License (LGPL), Version 2.1
 	JACOB (com.jacob:jacob:1.17 - http://sourceforge.net/projects/jacob-project/)

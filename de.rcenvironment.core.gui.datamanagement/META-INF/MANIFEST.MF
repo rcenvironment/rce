@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Datamanagement
 Bundle-SymbolicName: de.rcenvironment.core.gui.datamanagement;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: com.fasterxml.jackson.databind;version="2.9.8",
+Import-Package: com.fasterxml.jackson.databind;version="2.9.9",
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.api,

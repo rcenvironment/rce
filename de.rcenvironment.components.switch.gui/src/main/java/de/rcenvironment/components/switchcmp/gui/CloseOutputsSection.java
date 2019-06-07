@@ -9,10 +9,12 @@
 package de.rcenvironment.components.switchcmp.gui;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.Section;
@@ -29,9 +31,9 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
 public class CloseOutputsSection extends ValidatingWorkflowNodePropertySection {
 
     private Button neverCloseButton;
-    
+
     private Button closeOnTrueButton;
-    
+
     private Button closeOnFalseButton;
 
     @Override
@@ -57,7 +59,7 @@ public class CloseOutputsSection extends ValidatingWorkflowNodePropertySection {
         closeOnTrueButton.setText("Close outputs on 'True'");
         closeOnTrueButton.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
         closeOnTrueButton.setData(CONTROL_PROPERTY_KEY, SwitchComponentConstants.CLOSE_OUTPUTS_ON_TRUE_KEY);
-        
+
         closeOnFalseButton = new Button(mainComposite, SWT.RADIO);
         closeOnFalseButton.setText("Close outputs on 'False'");
         closeOnFalseButton.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
@@ -71,5 +73,41 @@ public class CloseOutputsSection extends ValidatingWorkflowNodePropertySection {
             + "A component is finished, if all of its inputs are closed.");
 
     }
-    
+
+    @Override
+    protected Controller createController() {
+        return new CloseOutputsController();
+    }
+
+    /**
+     * 
+     * Close Outputs {@link DefaultController} implementation to handle the button activation.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    private class CloseOutputsController extends DefaultController {
+
+        @Override
+        public void widgetSelected(final SelectionEvent event) {
+            Button button = ((Button) event.getSource());
+            String key1 = (String) (button).getData(CONTROL_PROPERTY_KEY);
+            if (button.getSelection()) {
+                for (Control control : button.getParent().getChildren()) {
+                    if (!(control instanceof Button)) {
+                        continue;
+                    }
+                    if (((Button) control).equals(button)) {
+                        continue;
+                    }
+
+                    final String key2 = (String) control.getData(CONTROL_PROPERTY_KEY);
+                    String val = getConfiguration().getConfigurationDescription().getConfigurationValue(key2);
+                    if (Boolean.valueOf(val)) {
+                        setProperties(key1, String.valueOf(true), key2, String.valueOf(false));
+                    }
+                }
+            }
+        }
+    }
 }

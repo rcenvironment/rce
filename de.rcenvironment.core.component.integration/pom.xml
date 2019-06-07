@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.integration</artifactId>
 	<name>RCE Core Component Integration Bundle</name>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.1.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -742,7 +742,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         public void widgetDefaultSelected(final SelectionEvent event) {}
 
         @Override
-        public final void widgetSelected(final SelectionEvent event) {
+        public void widgetSelected(final SelectionEvent event) {
             final Object source = event.getSource();
             if (source instanceof Control) {
                 final Control control = (Control) source;

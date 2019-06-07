@@ -20,14 +20,13 @@
         <para>As for the inputs, you can choose the data types File and Directory. If you do so, it
             is possible to define a file or directory name (File/Dir). Thereby the incoming
             file/directory will always be renamed to it.</para>
-        <para>If no value is entered, the file/directory will have its original name (noted by “As
-            incoming”).</para>
-        <para>Verification allows you to manually review tool results and verify them. Before these 
-            results are proceed by a running workflow and used by other components, you have to 
-            approve them manually. For approving or rejecting an output, you insert a generated 
+        <para>If no value is entered, the file/directory will have its original name.</para>
+        <para>Verification allows you to manually review tool results and verify them. Before these
+            results are processed by a running workflow and used by other components, you have to
+            approve them manually. For approving or rejecting an output, you insert a generated
             verification key into the dialog under 'Run' -> 'Verify tool results'. By default this
-            verification key is stored in tool working directory. But you can also store it at a 
-            custom location on the tool's machine. Additionally you can get the verification key via 
+            verification key is stored in tool working directory. But you can also store it at a
+            custom location on the tool's machine. Additionally you can get the verification key via
             email.</para>
     </sect1>
 </chapter>

@@ -102,19 +102,19 @@
 			"admin" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "local_admin", //Allowed commands: cn|components|mail|net|restart|shutdown|stop|stats|tasks
+				"role" : "local_admin", //Allowed commands: cn|components|mail|net|restart|shutdown|stop|stats|tasks|auth
 				"enabled" : false
 			},
 			"im_admin" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "instance_management_admin", //Allowed commands: im|net info
+				"role" : "instance_management_admin", //Allowed commands: im|net info|auth
 				"enabled" : false
 			},
 			"im_delegate" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "instance_management_delegate_user", //Allowed commands: cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin
+				"role" : "instance_management_delegate_user", //Allowed commands: cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin|auth
 				"enabled" : false
 			},
 			"developer" : {
@@ -123,6 +123,13 @@
 				"role" : "developer",  //Allowed commands: all
 				"enabled" : false
 			}
+		}
+	},
+	"thirdPartyIntegration": {
+		"tiglViewer":{
+			"binaryPath" : "/path/to/tiglViewer.exe",
+			"startupTimeoutSeconds" : 20, //optional, default = 10
+			"embedWindow" : false //optional, default = true
 		}
 	}
 }

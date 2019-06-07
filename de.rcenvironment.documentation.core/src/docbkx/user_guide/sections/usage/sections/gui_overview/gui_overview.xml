@@ -2,10 +2,10 @@
 <sect1 id="gui_overview">
 	<title>Graphical User Interface</title>
 	<para>This section introduces the Graphical User Interface (GUI). </para>
-	<para>The GUI of RCE is composed of different views and editors (besides standard GUI elements
-		such as the menu bar, status bar, etc.). Views can be (re-)arranged by the user. They can
-		even be closed and opened again. Some views are closed by default, but can be opened as desired. 
-		To open a view go to: Window->Show view. </para>
+	<para>The GUI of RCE is composed of different views and editors (besides standard GUI elements such
+		as the menu bar, status bar, etc.). Views can be (re-)arranged by the user. They can even be
+		closed and opened again. Some views are closed by default, but can be opened as desired. To
+		open a view go to: Window → Show view. </para>
 	<figure>
 		<title>Workbench with different views and the workflow editor opened</title>
 		<mediaobject>
@@ -39,8 +39,8 @@
 					<emphasis role="italic">Palette:</emphasis> Lists all available workflow
 					components. If RCE runs in a distributed environment this includes local as well
 					as remote workflow components. At the top, it also provides actions for
-					connecting workflow components. The appearing connection editor dialog will look
-					like this. Additionally, connections of the workflow are shown in the <emphasis
+					connecting workflow components. We show the connection editor in the following
+					Figure. Additionally, connections of the workflow are shown in the <emphasis
 						role="italic">Properties</emphasis> view at the bottom, if the background of
 					the workflow editor is selected.</para>
 				<figure>
@@ -63,10 +63,11 @@
 			</listitem>
 			<listitem>
 				<para>
-					<emphasis role="italic">Network View:</emphasis> Shows all RCE nodes of the
+					<emphasis role="italic">Network View:</emphasis> Shows all RCE instances of the
 					distributed RCE network and their published workflow components. It also shows
 					the outgoing connections of the own RCE instance and allows to manage them
-					(start, stop, etc.). Furthermore, you are able to see monitoring data like CPU or RAM usage for each instance.</para>
+					(start, stop, etc.). Furthermore, you are able to see monitoring data like CPU
+					or RAM usage for each instance.</para>
 				<figure>
 					<title>Network View</title>
 					<mediaobject>

@@ -34,7 +34,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth=".5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -118,7 +118,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -159,7 +159,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -277,7 +277,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -303,11 +303,56 @@
 			</tgroup>
 		</table>
 		<table width="100%">
+			<title>"thirdPartyIntegration"</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>tiglViewer</entry>
+						<entry>Configuration of the external TiGL Viewer application integration. This needs to be
+							configured to enable RCE´s TiGL Viewer view and thus, the TiGL Viewer
+							workflow component. Note:TiGL Viewer must be downloaded and installed
+							separately.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>tiglViewer/binaryPath</entry>
+						<entry>The path to the TiGL Viewer executable file.  Must be an absolute path.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>tiglViewer/startupTimeoutSeconds</entry>
+						<entry>The timeout in seconds, to wait for the external TiGL viewer
+							application to start and determine its process id.</entry>
+						<entry>10</entry>
+					</row>
+					<row>
+						<entry>tiglViewer/embedWindow</entry>
+						<entry>If set to <emphasis role="italic">false</emphasis>, the external TiGL
+							Viewer application Window will not be embeded into RCE´s TiGL Viewer
+							view.</entry>
+						<entry>true</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<table width="100%">
 			<title>"sshServer"</title>
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1.02*"/>
 				<colspec colnum="2" colwidth="2.06*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -431,15 +476,15 @@
 					</row>
 					<row>
 						<entry>local_admin</entry>
-						<entry>cn|components|mail|net|restart|shutdown|stop|stats|tasks</entry>
+						<entry>cn|components|mail|net|restart|shutdown|stop|stats|tasks|auth</entry>
 					</row>
 					<row>
 						<entry>instance_management_admin</entry>
-						<entry>im|net info</entry>
+						<entry>im|net info|auth</entry>
 					</row>
 					<row>
 						<entry>instance_management_delegate_user</entry>
-						<entry>cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin</entry>
+						<entry>cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin|auth</entry>
 					</row>
 					<row>
 						<entry>developer</entry>
@@ -459,7 +504,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>
@@ -538,7 +583,7 @@
 			<tgroup cols="3">
 				<colspec colnum="1" colwidth="1*"/>
 				<colspec colnum="2" colwidth="2*"/>
-				<colspec colnum="3" colwidth="1*"/>
+				<colspec colnum="3" colwidth="0.5*"/>
 				<thead>
 					<row>
 						<entry><emphasis role="italic">Configuration key </emphasis></entry>

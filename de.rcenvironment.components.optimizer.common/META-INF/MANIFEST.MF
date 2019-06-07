@@ -3,15 +3,15 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Optimizer Component Common
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.common
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Export-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.components.optimizer.common.execution
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
 Service-Component: OSGI-INF/*.xml
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,

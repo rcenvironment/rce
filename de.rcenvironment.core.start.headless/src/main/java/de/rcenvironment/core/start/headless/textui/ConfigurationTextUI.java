@@ -541,7 +541,7 @@ public class ConfigurationTextUI {
             case OPTION_CHANGE_PASSWORD:
                 String newPW =
                     TextInputDialog.showPasswordInputBox(guiScreen, OPTION_CHANGE_PASSWORD,
-                        "Enter the new passwword for account \"" + loginName + "\":", "");
+                        "Enter the new password for account \"" + loginName + "\":", "");
                 if (StringUtils.isNullorEmpty(newPW)) {
                     LanternaUtils.showErrorMessageBox(guiScreen, "Password change aborted");
                     return;

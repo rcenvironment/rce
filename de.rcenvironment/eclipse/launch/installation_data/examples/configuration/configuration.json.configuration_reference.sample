@@ -124,5 +124,12 @@
 				"enabled" : false
 			}
 		}
+	},
+	"thirdPartyIntegration": {
+		"tiglViewer":{
+			"binaryPath" : "/path/to/tiglViewer.exe",
+			"startupTimeoutSeconds" : 10, //optional, default = 10
+			"embedWindow" : true //optional, default = true
+		}
 	}
 }

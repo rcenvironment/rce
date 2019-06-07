@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.resolution-stub</artifactId>
 	<name>RCE Platform - Maven Resolution Stub</name>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.1.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

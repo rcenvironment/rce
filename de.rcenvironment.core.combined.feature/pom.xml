@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.core.combined.feature</artifactId>
 	<name>RCE Combined Core Feature</name>
-	<version>9.0.0-SNAPSHOT</version>
+	<version>9.1.0-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

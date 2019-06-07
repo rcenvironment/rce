@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="9.0.0.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="9.1.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -136,7 +136,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <features>
       <feature id="de.rcenvironment.binaries.dakota.feature"/>
-      <feature id="de.rcenvironment.binaries.tiglviewer.feature"/>
       <feature id="de.rcenvironment.componentgroups.cpacs.feature"/>
       <feature id="de.rcenvironment.componentgroups.special.feature"/>
       <feature id="de.rcenvironment.componentgroups.standard.feature"/>

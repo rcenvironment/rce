@@ -22,6 +22,9 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import de.rcenvironment.components.database.common.DatabaseComponentConstants;
+import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertySection;
+
 /**
  * Database statement composite.
  *
@@ -67,7 +70,6 @@ public class DatabaseStatementComposite extends Composite {
         statementNameText = new Text(statementNameComposite, SWT.BORDER);
         GridData statementNameTextData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
         statementNameText.setLayoutData(statementNameTextData);
-//        statementNameText.setData(WorkflowNodePropertySection.CONTROL_PROPERTY_KEY, DatabaseComponentConstants.DB_STATEMENTS_KEY);
 
         Composite statementComposite = new Composite(this, SWT.NONE);
         statementComposite.setLayout(new GridLayout(1, false));
@@ -81,7 +83,7 @@ public class DatabaseStatementComposite extends Composite {
         GridData statementTextData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
         statementTextData.minimumHeight = STATEMENT_TEXT_MINIMUM_HEIGHT;
         statementText.setLayoutData(statementTextData);
-//        statementText.setData(WorkflowNodePropertySection.CONTROL_PROPERTY_KEY, DatabaseComponentConstants.DB_STATEMENTS_KEY);
+        statementText.setData(WorkflowNodePropertySection.CONTROL_PROPERTY_KEY, DatabaseComponentConstants.DB_STATEMENTS_KEY);
         statementText.setIndent(3);
         statementText.addKeyListener(new KeyAdapter() {
 
@@ -102,14 +104,12 @@ public class DatabaseStatementComposite extends Composite {
 
         writeToOutputCheckButton = new Button(writeToOutputGroup, SWT.CHECK);
         writeToOutputCheckButton.setText("Write result to output:");
-//        writeToOutputCheckButton.setData(WorkflowNodePropertySection.CONTROL_PROPERTY_KEY, DatabaseComponentConstants.DB_STATEMENTS_KEY);
 
         outputCombo = new CCombo(writeToOutputGroup, SWT.READ_ONLY | SWT.BORDER);
         outputCombo.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
         GridData outputComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         outputComboData.minimumWidth = OUTPUT_COMBO_MINIMUM_WIDTH;
         outputCombo.setLayoutData(outputComboData);
-//        outputCombo.setData(WorkflowNodePropertySection.CONTROL_PROPERTY_KEY, DatabaseComponentConstants.DB_STATEMENTS_KEY);
     }
 
     public StyledText getStatementText() {

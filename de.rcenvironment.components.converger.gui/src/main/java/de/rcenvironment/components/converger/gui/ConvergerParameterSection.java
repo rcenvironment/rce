@@ -9,10 +9,12 @@
 package de.rcenvironment.components.converger.gui;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Section;
@@ -31,17 +33,16 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
 public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySection {
 
     private static final int TEXT_WIDTH = 50;
-    
-    private Button notConvIgnoreButton;
-    
-    private Button notConvFailButton;
-    
-    private Button notConvNotAValueButton;
 
+    private Button notConvIgnoreButton;
+
+    private Button notConvFailButton;
+
+    private Button notConvNotAValueButton;
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        
+
         TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
         final Section sectionProperties = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
         sectionProperties.setText(Messages.parameterTitle);
@@ -87,4 +88,40 @@ public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySec
         sectionProperties.setClient(sectionInstallationClient);
     }
 
+    @Override
+    protected DefaultController createController() {
+        return new ConvergerParameterSectionController();
+    }
+
+    /**
+     * 
+     * Convergence Parameter {@link DefaultController} implementation to handle the button activation.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class ConvergerParameterSectionController extends DefaultController {
+
+        @Override
+        public void widgetSelected(final SelectionEvent event) {
+            Button button = (Button) event.getSource();
+            String key1 = (String) (button).getData(CONTROL_PROPERTY_KEY);
+            if (button.getSelection()) {
+                for (Control control : button.getParent().getChildren()) {
+                    if (!(control instanceof Button)) {
+                        continue;
+                    }
+                    if (((Button) control).equals(button)) {
+                        continue;
+                    }
+
+                    final String key2 = (String) control.getData(CONTROL_PROPERTY_KEY);
+                    String val = getConfiguration().getConfigurationDescription().getConfigurationValue(key2);
+                    if (Boolean.valueOf(val)) {
+                        setProperties(key1, String.valueOf(true), key2, String.valueOf(false));
+                    }
+                }
+            }
+        }
+    }
 }

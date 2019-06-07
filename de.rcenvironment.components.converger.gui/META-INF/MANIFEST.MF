@@ -3,12 +3,13 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.converger.gui;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin
 Import-Package: de.rcenvironment.components.converger.common,
  de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.workflow.model.api,

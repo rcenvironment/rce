@@ -2,12 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch GUI
 Bundle-SymbolicName: de.rcenvironment.components.switch.gui;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.switchcmp.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.component.workflow.model.spi,
@@ -21,8 +22,8 @@ Import-Package: de.rcenvironment.components.switchcmp.common,
  de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
- de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.incubator,
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
  org.apache.xmlbeans;version="2.3.0",

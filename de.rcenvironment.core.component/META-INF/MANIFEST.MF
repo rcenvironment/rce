@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component
 Bundle-SymbolicName: de.rcenvironment.core.component;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.authorization.api,
  de.rcenvironment.core.component.authorization.impl,
@@ -26,10 +26,10 @@ Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.validation.spi
 Bundle-ManifestVersion: 2
 Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
- com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.core.type;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.node;version="2.9.8",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
  de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.authorization.cryptography.api,
  de.rcenvironment.core.authorization.testutils,

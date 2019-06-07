@@ -8,6 +8,8 @@
 
 package de.rcenvironment.components.evaluationmemory.gui;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,11 +17,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Listener;
@@ -30,8 +32,10 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants;
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants.OverlapBehavior;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointChange;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertiesSection;
 
@@ -42,33 +46,6 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeProperti
  * @author Alexander Weinert
  */
 public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertySection {
-
-    /**
-     * Listener for the radio buttons governing overlapping tolerance intervals.
-     *
-     * @author Alexander Weinert
-     */
-    public class ToleranceOverlapBehaviorListener implements SelectionListener {
-
-        @Override
-        public void widgetDefaultSelected(SelectionEvent event) {
-            widgetSelected(event);
-        }
-
-        @Override
-        public void widgetSelected(SelectionEvent event) {
-            /* Since we only use this listener in this class and only for radio buttons, we know the source to be a button */
-            final Button button = (Button) event.getSource();
-            final String configKey = EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR;
-            final OverlapBehavior behavior = (OverlapBehavior) button.getData(configKey);
-            setThresholdOverlapBehavior(behavior);
-        }
-
-        private void setThresholdOverlapBehavior(OverlapBehavior behavior) {
-            final String configKey = EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR;
-            setProperty(configKey, behavior.toString());
-        }
-    }
 
     private Text memoryFilePathText;
 
@@ -96,18 +73,6 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         final Button selectAtWfStartButton = new Button(memFileComposite, SWT.CHECK);
         selectAtWfStartButton.setText("Select at workflow start");
         selectAtWfStartButton.setBackground(memFileComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
-        selectAtWfStartButton.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent event) {
-                enableFilePickerWidgets(!selectAtWfStartButton.getSelection());
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-                widgetSelected(event);
-            }
-        });
 
         selectAtWfStartButton.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
             EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START);
@@ -173,10 +138,8 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
 
         appendLabel(factory, compositeOverlap);
 
-        ToleranceOverlapBehaviorListener listener = new ToleranceOverlapBehaviorListener();
-
-        appendStrictButton(factory, compositeOverlap, listener);
-        appendLenientButton(factory, compositeOverlap, listener);
+        appendStrictButton(factory, compositeOverlap);
+        appendLenientButton(factory, compositeOverlap);
 
         sectionOverlap.setClient(compositeOverlap);
     }
@@ -195,8 +158,7 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
             "If the tolerance-interval around the input values contains multiple previously evaluated values:");
     }
 
-    private void appendStrictButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap,
-        ToleranceOverlapBehaviorListener listener) {
+    private void appendStrictButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap) {
         final GridData gridData = new GridData();
         gridData.horizontalSpan = 3;
 
@@ -204,11 +166,10 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         strictButton.setLayoutData(gridData);
         strictButton.setData(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR,
             OverlapBehavior.STRICT);
-        strictButton.addSelectionListener(listener);
+        strictButton.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR);
     }
 
-    private void appendLenientButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap,
-        final ToleranceOverlapBehaviorListener listener) {
+    private void appendLenientButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap) {
         final GridData gridData = new GridData();
         gridData.horizontalSpan = 3;
 
@@ -216,7 +177,7 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         lenientButton.setLayoutData(gridData);
         lenientButton.setData(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR,
             OverlapBehavior.LENIENT);
-        lenientButton.addSelectionListener(listener);
+        lenientButton.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR);
     }
 
     private boolean containsTolerantInputs() {
@@ -238,29 +199,21 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     @Override
     protected void setWorkflowNode(WorkflowNode workflowNode) {
         super.setWorkflowNode(workflowNode);
-        Boolean selectAtWfStart = Boolean.valueOf(getConfiguration().getConfigurationDescription()
-            .getConfigurationValue(EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START));
-        enableFilePickerWidgets(!selectAtWfStart);
 
-        // We set strict overlap handling as the default in order to maintain ``backwards compability'', i.e., in order to not break user
-        // expectations
-        final String overlapBehaviorKey = EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR;
-        final String overlapBehaviorString = getConfiguration().getConfigurationDescription().getConfigurationValue(overlapBehaviorKey);
+        ComponentInstanceProperties config = getConfiguration();
+        config.addPropertyChangeListener(new PropertyChangeListener() {
 
-
-        switch (OverlapBehavior.parseConfigValue(overlapBehaviorString)) {
-        case LENIENT:
-            lenientButton.setSelection(true);
-            break;
-        case STRICT:
-            strictButton.setSelection(true);
-            break;
-        default:
-            // This should never happen, unless new overlap behaviors are introduced. In order to avoid warnings, however, we explicitly
-            // check for this case as well.
-            strictButton.setSelection(true);
-            break;
-        }
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getNewValue() instanceof EndpointChange && !strictButton.isDisposed()) {
+                    if (containsTolerantInputs()) {
+                        enableToleranceOverlapButtons();
+                    } else {
+                        disableToleranceOverlapButtons();
+                    }
+                }
+            }
+        });
     }
 
     private void enableFilePickerWidgets(boolean enabled) {
@@ -276,5 +229,107 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     private void enableToleranceOverlapButtons() {
         this.strictButton.setEnabled(true);
         this.lenientButton.setEnabled(true);
+    }
+
+    @Override
+    protected EvaluationMemoryFileDefaultUpdater createUpdater() {
+        return new EvaluationMemoryFileDefaultUpdater();
+    }
+
+    /**
+     * 
+     * Evaluation Memory File {@link DefaultUpdater} implementation of the handler to update the Evaluation Memory UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class EvaluationMemoryFileDefaultUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+            // update Button "Select at workflow start"
+            if (control instanceof Button && propertyName.equals(EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START)) {
+                enableFilePickerWidgets(!Boolean.valueOf(newValue));
+            }
+            // update Buttons for "Handling overlapping tolerance-intervals"
+            if (control instanceof Button
+                && propertyName.equals(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR)) {
+                // We set strict overlap handling as the default in order to maintain ``backwards compability'', i.e., in order to not break
+                // user expectations
+                final String overlapBehaviorString =
+                    getConfiguration().getConfigurationDescription().getConfigurationValue(propertyName);
+                switch (OverlapBehavior.parseConfigValue(overlapBehaviorString)) {
+                case LENIENT:
+                    lenientButton.setSelection(true);
+                    break;
+                case STRICT:
+                    strictButton.setSelection(true);
+                    break;
+                default:
+                    // This should never happen, unless new overlap behaviors are introduced. In order to avoid warnings, however, we
+                    // explicitly
+                    // check for this case as well. (A.W.)
+                    strictButton.setSelection(true);
+                    break;
+                }
+            }
+        }
+    }
+
+    @Override
+    protected Controller createController() {
+        return new EvaluationMemoryController();
+    }
+
+    /**
+     * 
+     * Evaluation Memory {@link DefaultController} implementation to handle the button activation.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class EvaluationMemoryController extends DefaultController {
+
+        @Override
+        public void widgetSelected(final SelectionEvent event) {
+
+            if (!(event.getSource() instanceof Button)) {
+                return;
+            }
+
+            Button button = (Button) event.getSource();
+            String key = (String) button.getData(CONTROL_PROPERTY_KEY);
+
+            if (key == null) {
+                return;
+            }
+
+            // control for Button "Select at workflow start"
+            if (key.equals(EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START)) {
+                enableFilePickerWidgets(!button.getSelection());
+                setProperty(key, Boolean.toString(button.getSelection()));
+            }
+            // control for Button "Consider loop failures ..."
+            if (key.equals(EvaluationMemoryComponentConstants.CONFIG_CONSIDER_LOOP_FAILURES)) {
+                setProperty(key, Boolean.toString(button.getSelection()));
+            }
+            // control Buttons for "Handling overlapping tolerance-intervals"
+            if (key.equals(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR)) {
+                if (button.getData(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR)
+                    .equals(OverlapBehavior.STRICT)) {
+                    setThresholdOverlapBehavior(OverlapBehavior.STRICT);
+                    strictButton.setSelection(true);
+                } else {
+                    setThresholdOverlapBehavior(OverlapBehavior.LENIENT);
+                    lenientButton.setSelection(true);
+                }
+            }
+        }
+
+        private void setThresholdOverlapBehavior(OverlapBehavior behavior) {
+            final String configKey = EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR;
+            setProperty(configKey, behavior.toString());
+        }
     }
 }

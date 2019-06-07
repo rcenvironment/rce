@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Bootstrap Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration.bootstrap;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.core.type;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
  com.googlecode.lanterna;version="2.1.9",
  com.googlecode.lanterna.gui;version="2.1.9",
  com.googlecode.lanterna.gui.component;version="2.1.9",

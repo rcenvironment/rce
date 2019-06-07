@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common
 Bundle-SymbolicName: de.rcenvironment.core.utils.common;singleton:=true
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
@@ -22,8 +22,8 @@ Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.common.xml.api,
  de.rcenvironment.core.utils.common.xml.impl
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
  de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.modules.concurrency.utils,
  de.rcenvironment.toolkit.modules.statistics.api,

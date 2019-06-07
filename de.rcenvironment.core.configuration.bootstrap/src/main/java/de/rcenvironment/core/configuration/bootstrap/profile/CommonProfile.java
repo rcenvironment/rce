@@ -291,7 +291,7 @@ public class CommonProfile {
             final String[] profileDirectoryContents = profileDirectory.list();
             if (profileDirectoryContents == null) {
                 throw new ProfileException(
-                    String.format("TODO Error Message Could not determine contents of profile directory %s", profileDirectory.getName()));
+                    String.format("Could not determine contents of profile directory %s", profileDirectory.getName()));
             }
 
             if (profileDirectoryContents.length == 0) {

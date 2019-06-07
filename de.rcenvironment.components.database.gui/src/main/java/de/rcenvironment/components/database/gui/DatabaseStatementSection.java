@@ -8,6 +8,8 @@
 
 package de.rcenvironment.components.database.gui;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +26,8 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabFolder2Listener;
 import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionEvent;
@@ -34,6 +36,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -49,8 +52,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.database.common.DatabaseComponentConstants;
 import de.rcenvironment.components.database.common.DatabaseStatement;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointChange;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
+import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -60,9 +66,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
 /**
  * Database statement section.
  *
- * @author Oliver Seebach
+ * @author Oliver Seebach, Kathrin Schaffert
  */
 public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySection {
+
+    private static final String OUTPUT = "OUTPUT";
+
+    private static final String INPUT = "INPUT";
 
     private static final String INSERT_BUTTONS_TEXT = "Insert";
 
@@ -98,14 +108,49 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
             DatabaseComponentConstants.UPDATE, "UPDATE table_name SET column2 = 'value2' WHERE column1 = 'value1';");
     }
 
-    public DatabaseStatementSection() {
-
-    }
+    public DatabaseStatementSection() {}
 
     @Override
     public void setInput(IWorkbenchPart part, ISelection selection) {
         super.setInput(part, selection);
         refreshOutputCombos();
+
+        ComponentInstanceProperties config = getConfiguration();
+        config.addPropertyChangeListener(new PropertyChangeListener() {
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getNewValue() instanceof EndpointChange) {
+                    EndpointType type;
+                    if (statementsFolder.isDisposed()) {
+                        return;
+                    }
+                    if (((EndpointChange) evt.getNewValue()).getOldEndpointDescription() != null) {
+                        // for refreshing undo
+                        type = ((EndpointChange) evt.getNewValue()).getOldEndpointDescription().getEndpointDefinition().getEndpointType();
+                    } else {
+                        // for refreshing redo
+                        type = ((EndpointChange) evt.getNewValue()).getEndpointDescription().getEndpointDefinition().getEndpointType();
+                    }
+                    if (type.name().equals(INPUT)) {
+                        if (getOrderedInputNames().length != 0) {
+                            inputCombo.setItems(getOrderedInputNames());
+                            inputCombo.setEnabled(true);
+                            inputCombo.select(0); // default combo selection
+                        } else {
+                            inputCombo.setText(DatabaseComponentConstants.NO_INPUT_DEFINED_TEXT);
+                            inputCombo.setEnabled(false);
+                        }
+                    }
+                    if (type.name().equals(OUTPUT)) {
+
+                        refreshOutputCombos();
+                    }
+                }
+
+            }
+        });
+
     }
 
     @Override
@@ -192,8 +237,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         sectionStatement.setClient(mainComposite);
     }
 
-    private CTabItem addCTabItemToFolder(DatabaseStatement model, boolean autoUpdate) {
-        refreshOutputCombos();
+    private CTabItem addCTabItemToFolder(DatabaseStatement model) {
         CTabItem newCTabItem = new CTabItem(statementsFolder, SWT.CLOSE, model.getIndex());
         newCTabItem.setText(model.getName());
         DatabaseStatementComposite newDatabaseStatementComposite = new DatabaseStatementComposite(statementsFolder, SWT.NONE);
@@ -220,22 +264,24 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         }
         // register listeners
 
-        newDatabaseStatementComposite.getStatementNameText().addModifyListener(new ModifyStatementNameListener(newCTabItem));
-        newDatabaseStatementComposite.getStatementText().addModifyListener(new ModifyListener() {
+        newDatabaseStatementComposite.getStatementNameText().addFocusListener(new StatementNameFocusListener(newCTabItem));
+
+        newDatabaseStatementComposite.getStatementText().addFocusListener(new FocusListener() {
 
             @Override
-            public void modifyText(ModifyEvent event) {
+            public void focusLost(FocusEvent arg0) {
                 writeCurrentStatementsToProperties();
+            }
+
+            @Override
+            public void focusGained(FocusEvent arg0) {
+                // not needed
             }
         });
 
         newDatabaseStatementComposite.getWriteToOutputCheckButton().addSelectionListener(new WriteToOutputSelectionChangedListener());
         newDatabaseStatementComposite.getOutputCombo().addSelectionListener(new OutputSelectionChangedListener());
         newCTabItem.setControl(newDatabaseStatementComposite);
-
-        if (autoUpdate) {
-            writeCurrentStatementsToProperties();
-        }
 
         statementsFolder.setSelection(newCTabItem);
 
@@ -246,20 +292,19 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
 //        DatabaseStatement initialModel = new DatabaseStatement();
 //        initialModel.setName(INITIAL_STATEMENT_NAME);
 //        initialModel.setIndex(0);
-//        CTabItem newItem = addCTabItemToFolder(initialModel, false);
+//        CTabItem newItem = addCTabItemToFolder(initialModel);
 //        return newItem;
 //    }
 
     private String determineNextValidStatementName(String currentName) {
-        String nextValidName = currentName;
         List<String> currentStatementNames = getCurrentStatementNames();
         List<Integer> currentUsedIndices = convertStatementNamesToIndices(currentStatementNames);
         int newIndex = 1;
         while (currentUsedIndices.contains(newIndex)) {
             newIndex++;
         }
-        nextValidName = currentName + " (" + newIndex + ")";
-        return nextValidName;
+        currentName = currentName + " (" + newIndex + ")";
+        return currentName;
     }
 
     private List<Integer> convertStatementNamesToIndices(List<String> statementNames) {
@@ -290,7 +335,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         DatabaseStatement newModel = new DatabaseStatement();
         newModel.setName(name);
         newModel.setIndex(indexToSet);
-        CTabItem newItem = addCTabItemToFolder(newModel, true); // Add before "+" item
+        CTabItem newItem = addCTabItemToFolder(newModel); // Add before "+" item
         statementsFolder.setSelection(statementsFolder.getItemCount() - 2); // Select new created item
         refreshOutputCombos();
         return newItem;
@@ -336,11 +381,11 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         statementsFolder.setRedraw(false);
 
         // at least one statement found
-        if (models.size() > 0) {
+        if (!models.isEmpty()) {
             for (DatabaseStatement model : models) {
-                addCTabItemToFolder(model, false);
+                addCTabItemToFolder(model);
             }
-        } 
+        }
 
         // and the plus item
         statementsFolder.setSelection(0);
@@ -448,6 +493,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
                 CTabItem clickedItem = (CTabItem) event.item;
                 if (clickedItem.getText().equals(ADD_TAB_LABEL) && statementsFolder.getItemCount() > 1) {
                     addNewCTabItem();
+                    writeCurrentStatementsToProperties();
                 }
             }
         }
@@ -456,12 +502,6 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         public void widgetDefaultSelected(SelectionEvent event) {
             widgetSelected(event);
         }
-    }
-
-    @Override
-    public void aboutToBeHidden() {
-        writeCurrentStatementsToProperties();
-        super.aboutToBeHidden();
     }
 
     /**
@@ -500,6 +540,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
                 DatabaseStatementComposite statementComposite = (DatabaseStatementComposite) currentItem.getControl();
                 statementComposite.getStatementText().insert(templateToInsert);
             }
+            writeCurrentStatementsToProperties();
         }
 
         @Override
@@ -530,6 +571,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
                     }
                 }
             }
+            writeCurrentStatementsToProperties();
         }
 
         @Override
@@ -541,22 +583,39 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
     /**
      * Listener to react on statement name modification.
      *
-     * @author Oliver Seebach
+     * @author Oliver Seebach, Kathrin Schaffert
      */
-    private final class ModifyStatementNameListener implements ModifyListener {
+    private final class StatementNameFocusListener implements FocusListener {
 
         private final CTabItem statementItem;
 
-        private ModifyStatementNameListener(CTabItem statementItem) {
+        // Flag is used to avoid triggering "focusLost", when the composite is initialized for the first time and any user input is done.
+        // This is, because the first focus, when initializing the composite, is set to the "Statement Name" text field.
+        // Afterwards the flag is set to true and will not become false until the composite is disposed.
+        // (K. Schaffert, 25.04.2019)
+        private boolean flag;
+
+        private StatementNameFocusListener(CTabItem statementItem) {
             this.statementItem = statementItem;
+            flag = false;
         }
 
         @Override
-        public void modifyText(ModifyEvent event) {
-            // if (!statementItem.isDisposed()) {
-            statementItem.setText(((Text) event.widget).getText());
-            // }
-            writeCurrentStatementsToProperties();
+        public void focusLost(FocusEvent event) {
+
+            // If the first user input (flag = false) is NOT changing the "Statement Name", we avoid writing unsubstantial statements to the
+            // configuration. (K. Schaffert, 25.04.2019)
+            if (flag || !((Text) event.widget).getText().equals(NEW_STATEMENT_NAME)) {
+                statementItem.setText(((Text) event.widget).getText());
+                writeCurrentStatementsToProperties();
+            }
+            flag = true;
+        }
+
+        @Override
+        public void focusGained(FocusEvent event) {
+            // TODO Auto-generated method stub
+
         }
     }
 
@@ -568,9 +627,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
     private final class OutputSelectionChangedListener implements SelectionListener {
 
         @Override
-        public void widgetDefaultSelected(SelectionEvent event) {
-            widgetSelected(event);
-        }
+        public void widgetDefaultSelected(SelectionEvent event) {}
 
         @Override
         public void widgetSelected(SelectionEvent event) {
@@ -709,9 +766,6 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
                     statement.setStatement(control.getStatementText().getText());
                     statement.setWillWriteToOutput(control.getWriteToOutputCheckButton().getSelection());
                     String outputToWriteTo = control.getOutputCombo().getText();
-                    if (outputToWriteTo.equals(DatabaseComponentConstants.NO_OUTPUT_DEFINED_TEXT)) {
-                        outputToWriteTo = "";
-                    }
                     statement.setOutputToWriteTo(outputToWriteTo);
                     statement.setIndex(index);
                     currentStatements.add(statement);
@@ -719,7 +773,6 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
             }
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             String currentStatementsString = null;
-
             try {
                 currentStatementsString = mapper.writeValueAsString(currentStatements);
             } catch (JsonGenerationException | JsonMappingException e) {
@@ -737,4 +790,97 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         }
     }
 
+    @Override
+    protected DatabaseStatementSectionUpdater createUpdater() {
+        return new DatabaseStatementSectionUpdater();
+    }
+
+    /**
+     * Database Statement Section {@link DefaultUpdater} implementation of the handler to update the Statement Section UI.
+     * 
+     * @author Kathrin Schaffert
+     * 
+     */
+    protected class DatabaseStatementSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+
+            List<DatabaseStatement> models = readCurrentDatabaseStatementsFromConfig();
+
+            statementsFolder.setRedraw(false);
+
+            int tabNumber = statementsFolder.getItems().length - 1;
+            // refreshing folders after undo
+            if (models.size() > tabNumber) {
+                for (DatabaseStatement model : models) {
+                    boolean val = true;
+                    for (int i = 0; i < statementsFolder.getItems().length; i++) {
+                        if (statementsFolder.getItems()[i].getText().equals(model.getName())) {
+                            val = false;
+                            break;
+                        }
+                    }
+                    if (val) {
+                        addCTabItemToFolder(model);
+                    }
+                }
+            }
+            // refreshing folders after redo
+            if (models.size() < tabNumber) {
+                for (int i = 0; i < statementsFolder.getItems().length; i++) {
+                    boolean val = true;
+                    for (DatabaseStatement model : models) {
+                        if (statementsFolder.getItems()[i].getText().equals(model.getName())) {
+                            val = false;
+                            break;
+                        }
+                    }
+                    if (val) {
+                        statementsFolder.getItems()[i].dispose();
+                    }
+                }
+            }
+
+            for (DatabaseStatement model : models) {
+                CTabItem item = statementsFolder.getItem(model.getIndex());
+                if (item.getControl() instanceof DatabaseStatementComposite) {
+                    DatabaseStatementComposite dsc = (DatabaseStatementComposite) item.getControl();
+                    // refreshing Statement Name
+                    if (!dsc.getStatementNameText().getText().equals(model.getName())) {
+                        dsc.getStatementNameText().setText(model.getName());
+                        item.setText(model.getName());
+                    }
+                    // refreshing Statement Text
+                    if (!dsc.getStatementText().getText().equals(model.getStatement())) {
+                        dsc.getStatementText().setText(model.getStatement());
+                    }
+                    // refreshing Checkbox "write result to output"
+                    if (dsc.getWriteToOutputCheckButton().getSelection() != model.isWillWriteToOutput()) {
+                        dsc.getWriteToOutputCheckButton().setSelection(model.isWillWriteToOutput());
+                        if (model.isWillWriteToOutput()
+                            && !model.getOutputToWriteTo().equals(DatabaseComponentConstants.NO_OUTPUT_DEFINED_TEXT)) {
+                            dsc.getOutputCombo().setEnabled(true);
+                        } else {
+                            dsc.getOutputCombo().setEnabled(false);
+                        }
+                    } else {
+                        // refreshing Combo
+                        if (!dsc.getOutputCombo().getText().equals(model.getOutputToWriteTo())) {
+                            if (model.getOutputToWriteTo().equals("")) {
+                                dsc.getOutputCombo().setText("");
+                            } else {
+                                dsc.getOutputCombo().setText(model.getOutputToWriteTo());
+                                if (model.getOutputToWriteTo().equals(DatabaseComponentConstants.NO_OUTPUT_DEFINED_TEXT)) {
+                                    dsc.getOutputCombo().setEnabled(true);
+                                    dsc.getOutputCombo().setText("");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            statementsFolder.setRedraw(true);
+        }
+    }
 }

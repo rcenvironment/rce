@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 9.0.0.qualifier
+Bundle-Version: 9.1.0.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,
@@ -33,10 +33,10 @@ Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 DynamicImport-Package: de.rcenvironment.*
-Import-Package: com.fasterxml.jackson.core;version="2.9.8",
- com.fasterxml.jackson.core.type;version="2.9.8",
- com.fasterxml.jackson.databind;version="2.9.8",
- com.fasterxml.jackson.databind.type;version="2.9.8",
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.type;version="2.9.9",
  com.jcraft.jsch;version="0.1.54",
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
