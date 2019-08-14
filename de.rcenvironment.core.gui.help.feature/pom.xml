@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.help.feature</artifactId>
 	<name>RCE Core GUI Help Feature</name>
-	<version>9.1.0-SNAPSHOT</version>
+	<version>9.1.1-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>
@@ -20,7 +20,7 @@
 			<artifactId>de.rcenvironment.core.gui.help</artifactId>
 			<groupId>de.rcenvironment</groupId>
 			<type>pom</type>
-			<version>9.1.0-SNAPSHOT</version>
+			<version>9.1.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

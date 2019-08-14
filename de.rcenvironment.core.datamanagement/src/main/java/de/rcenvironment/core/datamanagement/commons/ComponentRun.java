@@ -162,22 +162,25 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
     @Override
     public int compareTo(ComponentRun arg0) {
+        int result = getStartTime().compareTo(arg0.getStartTime());
+        if (result == 0) {
+            return getRunCounter().compareTo(arg0.getRunCounter());
+        }
         return getStartTime().compareTo(arg0.getStartTime());
     }
 
     @Override
     public boolean equals(Object o) {
-        // implemented to be consistent with compareTo(); note that theoretically, however, this could be semantically wrong
         if (!(o instanceof ComponentRun)) {
             return false;
         }
         ComponentRun other = (ComponentRun) o;
-        return getStartTime().equals(other.getStartTime());
+        return getComponentRunID().equals(other.getComponentRunID());
     }
 
     @Override
     public int hashCode() {
         // implemented to be consistent with compareTo()
-        return getStartTime().hashCode();
+        return getStartTime().hashCode() + getRunCounter().hashCode();
     }
 }

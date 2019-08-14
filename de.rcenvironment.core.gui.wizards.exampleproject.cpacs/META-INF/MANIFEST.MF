@@ -3,6 +3,6 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: DLR
 Bundle-Name: RCE Core GUI Example Project Wizard
 Bundle-SymbolicName: de.rcenvironment.core.gui.wizards.exampleproject.cpacs
-Bundle-Version: 9.1.0.qualifier
+Bundle-Version: 9.1.1.qualifier
 Fragment-Host: de.rcenvironment.core.gui.wizards.exampleproject
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

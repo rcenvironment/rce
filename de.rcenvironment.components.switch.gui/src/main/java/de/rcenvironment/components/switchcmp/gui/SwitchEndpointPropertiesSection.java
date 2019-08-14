@@ -31,8 +31,7 @@ public class SwitchEndpointPropertiesSection extends EndpointPropertySection {
 
         EndpointSelectionPane dataOutputpane =
             new EndpointSelectionPane(Messages.dataOutputString, EndpointType.OUTPUT, null, new String[] {},
-                new String[] { SwitchComponentConstants.FALSE_OUTPUT, SwitchComponentConstants.TRUE_OUTPUT }, this);
-
+                new String[] { SwitchComponentConstants.FALSE_OUTPUT, SwitchComponentConstants.TRUE_OUTPUT }, this, true);
         setColumns(1);
         setPanes(dataInputPane, conditionInputPane, dataOutputpane);
         dataInputPane.setAllPanes(new EndpointSelectionPane[] { dataInputPane, conditionInputPane, dataOutputpane });

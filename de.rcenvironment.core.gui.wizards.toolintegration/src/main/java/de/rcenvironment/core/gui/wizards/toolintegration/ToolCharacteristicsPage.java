@@ -378,7 +378,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         @Override
         public void modifyText(ModifyEvent arg0) {
             configurationMap.put((String) text.getData(KEY_KEYS), text.getText());
-            validate(false);
         }
     }
 

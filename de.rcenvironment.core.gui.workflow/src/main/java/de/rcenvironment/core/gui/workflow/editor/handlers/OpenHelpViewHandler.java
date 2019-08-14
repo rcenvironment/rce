@@ -8,8 +8,6 @@
  
 package de.rcenvironment.core.gui.workflow.editor.handlers;
 
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
 
@@ -25,14 +23,8 @@ public class OpenHelpViewHandler extends AbstractWorkflowNodeEditHandler {
     
     @Override
     void edit() {
-
-        try {
-            IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(HELP_VIEW_ID);
-            view.setFocus();
-        } catch (PartInitException e) {
-            throw new RuntimeException(e);
-        }
-        
+        PlatformUI.getWorkbench().getHelpSystem()
+            .displayDynamicHelp();
     }
 
 }

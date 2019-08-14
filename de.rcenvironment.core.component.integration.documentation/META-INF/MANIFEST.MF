@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Integration Documentation
 Bundle-SymbolicName: de.rcenvironment.core.component.integration.documentation;singleton:=true
-Bundle-Version: 9.1.0.qualifier
+Bundle-Version: 9.1.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.component.integration.documentation,
  de.rcenvironment.core.component.integration.documentation.internal

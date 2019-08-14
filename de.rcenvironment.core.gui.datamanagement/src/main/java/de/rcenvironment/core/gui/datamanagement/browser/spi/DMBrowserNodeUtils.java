@@ -51,7 +51,11 @@ public abstract class DMBrowserNodeUtils {
             String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
             long time1 = nullSafeLongValue(val1);
             long time2 = nullSafeLongValue(val2);
-            return Long.compare(time1, time2);
+            int result = Long.compare(time1, time2);
+            if (result == 0) {
+                return o1.getTitle().compareTo(o2.getTitle());
+            }
+            return result;
         }
 
         private long nullSafeLongValue(String val1) {
@@ -89,7 +93,11 @@ public abstract class DMBrowserNodeUtils {
             String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
             long time1 = nullSafeLongValue(val1);
             long time2 = nullSafeLongValue(val2);
-            return Long.compare(time1, time2) * DESC;
+            int result = Long.compare(time1, time2) * DESC;
+            if (result == 0) {
+                return o2.getTitle().compareTo(o1.getTitle());
+            }
+            return result;
         }
 
         private long nullSafeLongValue(String val1) {

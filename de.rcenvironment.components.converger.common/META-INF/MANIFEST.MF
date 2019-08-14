@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.converger.common
-Bundle-Version: 9.1.0.qualifier
+Bundle-Version: 9.1.1.qualifier
 Export-Package: de.rcenvironment.components.converger.common
 RCE-Component: true
 Bundle-ClassPath: .
