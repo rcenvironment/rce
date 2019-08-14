@@ -14,10 +14,10 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -161,17 +161,17 @@ public class InternalTDImpl implements InternalTD {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
-        String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).getTextValue();
+        String typeStr = rootNode.get(SERIALIZE_KEY_TYPE).textValue();
         if (!isValidType(typeStr)) {
             return null;
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(typeStr);
-        String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).getTextValue();
+        String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).textValue();
         Queue<WorkflowGraphHop> hops = null;
         if (rootNode.has(SERIALIZE_KEY_HOPS)) {
             ArrayNode hopsArrayNode = (ArrayNode) rootNode.get(SERIALIZE_KEY_HOPS);
             hops = new LinkedList<>();
-            Iterator<JsonNode> hopsElements = hopsArrayNode.getElements();
+            Iterator<JsonNode> hopsElements = hopsArrayNode.elements();
             while (hopsElements.hasNext()) {
                 ArrayNode hopArrayNode = (ArrayNode) hopsElements.next();
                 hops.add(new WorkflowGraphHop(hopArrayNode.get(0).asText(), hopArrayNode.get(1).asText(),
@@ -180,7 +180,7 @@ public class InternalTDImpl implements InternalTD {
         }
         String pyld = null;
         if (rootNode.has(SERIALIZE_KEY_PAYLOAD)) {
-            pyld = rootNode.get(SERIALIZE_KEY_PAYLOAD).getTextValue();
+            pyld = rootNode.get(SERIALIZE_KEY_PAYLOAD).textValue();
         }
         return new InternalTDImpl(type, identifier, hops, pyld);
     }

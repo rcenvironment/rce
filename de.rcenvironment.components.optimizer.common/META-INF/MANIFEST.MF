@@ -3,13 +3,16 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Optimizer Component Common
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.common
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Export-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.components.optimizer.common.execution
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
 Service-Component: OSGI-INF/*.xml
-Import-Package: de.rcenvironment.core.communication.common,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -30,8 +33,5 @@ Import-Package: de.rcenvironment.core.communication.common,
  org.apache.commons.exec;version="1.1.0",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
  org.osgi.framework;version="1.5.0"
 RCE-Component: true

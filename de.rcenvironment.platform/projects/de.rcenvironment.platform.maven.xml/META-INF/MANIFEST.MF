@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - XML
 Bundle-SymbolicName: de.rcenvironment.platform.maven.xml;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Export-Package: org.dom4j;version="1.6.1",
  org.dom4j.bean;version="1.6.1",
  org.dom4j.datatype;version="1.6.1",

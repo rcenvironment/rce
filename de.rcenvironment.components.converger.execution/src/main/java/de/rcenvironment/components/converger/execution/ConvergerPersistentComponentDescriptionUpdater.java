@@ -16,17 +16,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -228,8 +228,8 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         if (dynamicOutputs != null) {
             List<ObjectNode> newOutputEndpoints = new ArrayList<ObjectNode>();
             for (JsonNode outputEndpoint : dynamicOutputs) {
-                String outputName = outputEndpoint.get(NAME).getTextValue();
-                String outputEndpointId = outputEndpoint.get(EP_IDENTIFIER).getTextValue();
+                String outputName = outputEndpoint.get(NAME).textValue();
+                String outputEndpointId = outputEndpoint.get(EP_IDENTIFIER).textValue();
                 if (outputEndpointId.equals(VALUE_TO_CONVERGE) && !outputName.endsWith(CONVERGED_SUFFIX)) {
                     ObjectNode convergedEndpoint = mapper.createObjectNode();
                     convergedEndpoint.put(NAME, TextNode.valueOf(outputName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX));
@@ -265,13 +265,13 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     metaData = mapper.createObjectNode();
                     ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
-                if (outputEndpoint.get(NAME).getTextValue().equals("Outer loop done")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Outer loop done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
-                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged")) {
+                } else if (outputEndpoint.get(NAME).textValue().equals("Converged")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
-                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged absolute")) {
+                } else if (outputEndpoint.get(NAME).textValue().equals("Converged absolute")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
-                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged relative")) {
+                } else if (outputEndpoint.get(NAME).textValue().equals("Converged relative")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 }
             }
@@ -287,7 +287,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
                 // not safe as a "normal" endpoint's name can also end with "_converged"
-                if (outputEndpoint.get(NAME).getTextValue().endsWith(CONVERGED_SUFFIX)) {
+                if (outputEndpoint.get(NAME).textValue().endsWith(CONVERGED_SUFFIX)) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 } else {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
@@ -305,7 +305,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     metaData = mapper.createObjectNode();
                     ((ObjectNode) inputEndpoint).put(METADATA, metaData);
                 }
-                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals(VALUE_TO_CONVERGE)) {
+                if (inputEndpoint.get(EP_IDENTIFIER).textValue().equals(VALUE_TO_CONVERGE)) {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                     if (Boolean.valueOf(metaData.get("hasStartValue").asText())) {
                         continue;
@@ -321,7 +321,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     startInput.put(METADATA, metaData);
 
                     startInputs.add(startInput);
-                } else if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals(OUTER_LOOP_DONE)) {
+                } else if (inputEndpoint.get(EP_IDENTIFIER).textValue().equals(OUTER_LOOP_DONE)) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                     metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
                 }
@@ -343,7 +343,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode dynOutputsNode = node.get(DYNAMIC_OUTPUTS);
 
         if (dynOutputsNode != null) {
-            Iterator<JsonNode> nodeIterator = dynOutputsNode.getElements();
+            Iterator<JsonNode> nodeIterator = dynOutputsNode.elements();
             while (nodeIterator.hasNext()) {
                 ObjectNode dynOutputNode = (ObjectNode) nodeIterator.next();
                 if (dynOutputNode.get(EP_IDENTIFIER).asText().equals("convergedValue")) {
@@ -364,7 +364,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
         JsonNode maxIterNode = configNode.get("maxIterations");
         if (maxIterNode != null) {
-            String maxConvChecks = maxIterNode.getTextValue();
+            String maxConvChecks = maxIterNode.textValue();
             configNode.remove("maxIterations");
             configNode.put(ConvergerComponentConstants.KEY_MAX_CONV_CHECKS, maxConvChecks);
         }
@@ -384,16 +384,16 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode dynInputsNode = node.get(DYNAMIC_INPUTS);
 
         if (dynInputsNode != null) {
-            Iterator<JsonNode> nodeIterator = dynInputsNode.getElements();
+            Iterator<JsonNode> nodeIterator = dynInputsNode.elements();
             while (nodeIterator.hasNext()) {
                 JsonNode dynInputNode = nodeIterator.next();
                 ObjectNode jsonNode = (ObjectNode) dynInputNode.get(METADATA);
                 JsonNode hasStartValueJsonNode = jsonNode.get("hasStartValue");
                 if (hasStartValueJsonNode != null) {
-                    String hasStartValue = hasStartValueJsonNode.getTextValue();
+                    String hasStartValue = hasStartValueJsonNode.textValue();
                     if (hasStartValue.equals("true")) {
                         FloatTD floatValue = typedDatumService.getFactory()
-                            .createFloat(Double.valueOf(jsonNode.get("startValue").getTextValue()));
+                            .createFloat(Double.valueOf(jsonNode.get("startValue").textValue()));
                         jsonNode.put("initValue_dca67e34", typedDatumService.getSerializer().serialize(floatValue));
                     }
                 }
@@ -432,7 +432,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             for (JsonNode inputEndpoint : dynInputs) {
                 if (inputEndpoint.get(EP_IDENTIFIER).isNull()) {
                     ((ObjectNode) inputEndpoint).remove(EP_IDENTIFIER);
-                    if (inputEndpoint.get(DATATYPE).getTextValue().equals("Float")) {
+                    if (inputEndpoint.get(DATATYPE).textValue().equals("Float")) {
                         ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(
                             ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE));
                     } else {
@@ -526,14 +526,14 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         ArrayNode newConfigurationNode = JsonNodeFactory.instance.arrayNode();
         JsonNode oldEpsNode = null;
         for (JsonNode n : configurationNode) {
-            if (n.getTextValue().startsWith(eps + ":java.lang.Double:")) {
+            if (n.textValue().startsWith(eps + ":java.lang.Double:")) {
                 oldEpsNode = n;
             } else {
                 newConfigurationNode.add(n);
             }
         }
         if (oldEpsNode != null) {
-            String nodeString = oldEpsNode.getTextValue();
+            String nodeString = oldEpsNode.textValue();
             String value = "";
             if (nodeString.split(COLON).length > 1) {
                 value = nodeString.split(COLON)[2];
@@ -567,9 +567,9 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
 
     private Map<String, String> getOutputs(JsonNode addOutputNode) {
         Map<String, String> outputs = new HashMap<String, String>();
-        Iterator<JsonNode> nodeIterator = addOutputNode.getElements();
+        Iterator<JsonNode> nodeIterator = addOutputNode.elements();
         while (nodeIterator.hasNext()) {
-            String[] output = nodeIterator.next().getTextValue().split(COLON);
+            String[] output = nodeIterator.next().textValue().split(COLON);
             outputs.put(output[0], output[1]);
         }
         return outputs;

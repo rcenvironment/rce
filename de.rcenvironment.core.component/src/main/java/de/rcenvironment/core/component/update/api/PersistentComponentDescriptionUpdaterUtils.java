@@ -13,19 +13,19 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
@@ -92,7 +92,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
                 if (endpoint.get(EP_IDENTIFIER) == null || endpoint.get(EP_IDENTIFIER).equals("null")
                     || endpoint.get(EP_IDENTIFIER).isNull()) {
                     ((ObjectNode) endpoint).remove(EP_IDENTIFIER);
-                    ((ObjectNode) endpoint).put(EP_IDENTIFIER, TextNode.valueOf(identifier));
+                    ((ObjectNode) endpoint).set(EP_IDENTIFIER, TextNode.valueOf(identifier));
                 }
             }
         }
@@ -120,10 +120,10 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     private static void removeOuterLoopDoneEndpoint(JsonNode node, String endpointGroup, String identifyingKey, String identifyingValue) {
         if (node.has(endpointGroup)) {
             ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
-            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 ObjectNode endpointJsonNode = (ObjectNode) elements.next();
-                if (endpointJsonNode.get(identifyingKey).getTextValue().equals(identifyingValue)) {
+                if (endpointJsonNode.get(identifyingKey).textValue().equals(identifyingValue)) {
                     elements.remove();
                     break;
                 }
@@ -152,12 +152,12 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     private static void removeEndpointCharacterInfoFromMetaData(JsonNode node, String endpointGroup) {
         if (node.has(endpointGroup)) {
             ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
-            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 JsonNode endpointJsonNode = elements.next();
                 if (endpointJsonNode.has(METADATA)) {
                     JsonNode metaDataJsonNode = endpointJsonNode.get(METADATA);
-                    Iterator<Entry<String, JsonNode>> metaDataFields = metaDataJsonNode.getFields();
+                    Iterator<Entry<String, JsonNode>> metaDataFields = metaDataJsonNode.fields();
                     while (metaDataFields.hasNext()) {
                         Entry<String, JsonNode> nextMetaDataField = metaDataFields.next();
                         if (nextMetaDataField.getKey().equals("loopEndpointType_5e0ed1cd")) {
@@ -188,12 +188,12 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         if (node.has(endpointGroup)) {
             ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
-            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 JsonNode endpointJsonNode = elements.next();
                 if (endpointJsonNode.has(EP_IDENTIFIER)) {
-                    if (endpointJsonNode.get(EP_IDENTIFIER).getTextValue().equals(epIdentifier)
-                        && endpointJsonNode.get(NAME).getTextValue().endsWith(epNameSuffix)) {
+                    if (endpointJsonNode.get(EP_IDENTIFIER).textValue().equals(epIdentifier)
+                        && endpointJsonNode.get(NAME).textValue().endsWith(epNameSuffix)) {
                         ((ObjectNode) endpointJsonNode).put(EP_IDENTIFIER, epIdentifierToReplace);
                     }
                 }
@@ -218,31 +218,31 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             ObjectNode configObjectNode = (ObjectNode) configJsonNode;
             String confgKeyFaultToleranceNAV = "loopFaultTolerance_5e0ed1cd";
             if (configObjectNode.has(confgKeyFaultToleranceNAV)) {
-                String faultToleranceNAV = configObjectNode.get(confgKeyFaultToleranceNAV).getTextValue();
+                String faultToleranceNAV = configObjectNode.get(confgKeyFaultToleranceNAV).textValue();
                 configObjectNode.put(confgKeyFaultToleranceNAV, "Fail");
                 configObjectNode.put("faultTolerance-NAV_5e0ed1cd", faultToleranceNAV);
             }
             String configKeyMaxRerunBeforeFail = "loopRerunAndFail_5e0ed1cd";
             if (configObjectNode.has(configKeyMaxRerunBeforeFail)) {
-                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeFail).getTextValue();
+                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeFail).textValue();
                 configObjectNode.remove(configKeyMaxRerunBeforeFail);
                 configObjectNode.put("maxRerunBeforeFail-NAV_5e0ed1cd", faultToleranceNAV);
             }
             String configKeyMaxRerunBeforeDiscard = "loopRerunAndDiscard_5e0ed1cd";
             if (configObjectNode.has(configKeyMaxRerunBeforeDiscard)) {
-                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeDiscard).getTextValue();
+                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeDiscard).textValue();
                 configObjectNode.remove(configKeyMaxRerunBeforeDiscard);
                 configObjectNode.put("maxRerunBeforeDiscard-NAV_5e0ed1cd", faultToleranceNAV);
             }
             String configKeyFailLoopOnly = "failLoop_5e0ed1cd";
             if (configObjectNode.has(configKeyFailLoopOnly)) {
-                String faultToleranceNAV = configObjectNode.get(configKeyFailLoopOnly).getTextValue();
+                String faultToleranceNAV = configObjectNode.get(configKeyFailLoopOnly).textValue();
                 configObjectNode.remove(configKeyFailLoopOnly);
                 configObjectNode.put("failLoopOnly-NAV_5e0ed1cd", faultToleranceNAV);
             }
             String configKeyFinallyFailIfDiscarded = "finallyFail_5e0ed1cd";
             if (configObjectNode.has(configKeyFinallyFailIfDiscarded)) {
-                String faultToleranceNAV = configObjectNode.get(configKeyFinallyFailIfDiscarded).getTextValue();
+                String faultToleranceNAV = configObjectNode.get(configKeyFinallyFailIfDiscarded).textValue();
                 configObjectNode.remove(configKeyFinallyFailIfDiscarded);
                 configObjectNode.put("finallyFailIfDiscarded-NAV_5e0ed1cd", faultToleranceNAV);
             }
@@ -262,7 +262,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, IOException {
 
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
 
@@ -287,7 +287,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, IOException {
 
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+        JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
 
@@ -307,13 +307,13 @@ public final class PersistentComponentDescriptionUpdaterUtils {
 
     private static void updateInputNode(JsonNode inputNode) {
         if (inputNode != null) {
-            Iterator<JsonNode> nodeIterator = inputNode.getElements();
+            Iterator<JsonNode> nodeIterator = inputNode.elements();
             while (nodeIterator.hasNext()) {
                 JsonNode dynInputNode = nodeIterator.next();
                 ObjectNode jsonNode = (ObjectNode) dynInputNode.get(METADATA);
                 JsonNode usageJsonNode = jsonNode.get(USAGE);
                 if (usageJsonNode != null) {
-                    String usage = usageJsonNode.getTextValue();
+                    String usage = usageJsonNode.textValue();
                     switch (usage) {
                     case REQUIRED:
                         jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING,
@@ -360,15 +360,15 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
         if (staticInputs == null) {
             staticInputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).put(STATIC_INPUTS, staticInputs);
+            ((ObjectNode) node).set(STATIC_INPUTS, staticInputs);
         }
         ObjectNode staticCPACSIn = JsonNodeFactory.instance.objectNode();
         ObjectNode metaDataNode = JsonNodeFactory.instance.objectNode();
-        metaDataNode.put(USAGE, TextNode.valueOf(INITIAL));
-        staticCPACSIn.put(NAME, TextNode.valueOf(inputName));
-        staticCPACSIn.put(DATATYPE, TextNode.valueOf("FileReference"));
-        staticCPACSIn.put(METADATA, metaDataNode);
-        staticCPACSIn.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        metaDataNode.set(USAGE, TextNode.valueOf(INITIAL));
+        staticCPACSIn.set(NAME, TextNode.valueOf(inputName));
+        staticCPACSIn.set(DATATYPE, TextNode.valueOf("FileReference"));
+        staticCPACSIn.set(METADATA, metaDataNode);
+        staticCPACSIn.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticInputs.add(staticCPACSIn);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -395,13 +395,13 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
         if (staticOutputs == null) {
             staticOutputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).put(STATIC_OUTPUTS, staticOutputs);
+            ((ObjectNode) node).set(STATIC_OUTPUTS, staticOutputs);
         }
         ObjectNode newOutput = JsonNodeFactory.instance.objectNode();
-        newOutput.put(NAME, TextNode.valueOf(outputName));
-        newOutput.put(DATATYPE, TextNode.valueOf(dataType));
-        newOutput.put(METADATA, JsonNodeFactory.instance.objectNode());
-        newOutput.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        newOutput.set(NAME, TextNode.valueOf(outputName));
+        newOutput.set(DATATYPE, TextNode.valueOf(dataType));
+        newOutput.set(METADATA, JsonNodeFactory.instance.objectNode());
+        newOutput.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticOutputs.add(newOutput);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -426,13 +426,13 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
         if (staticOutputs == null) {
             staticOutputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).put(STATIC_OUTPUTS, staticOutputs);
+            ((ObjectNode) node).set(STATIC_OUTPUTS, staticOutputs);
         }
         ObjectNode staticCPACSOut = JsonNodeFactory.instance.objectNode();
-        staticCPACSOut.put(NAME, TextNode.valueOf(outputName));
-        staticCPACSOut.put(DATATYPE, TextNode.valueOf("FileReference"));
-        staticCPACSOut.put(METADATA, JsonNodeFactory.instance.objectNode());
-        staticCPACSOut.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        staticCPACSOut.set(NAME, TextNode.valueOf(outputName));
+        staticCPACSOut.set(DATATYPE, TextNode.valueOf("FileReference"));
+        staticCPACSOut.set(METADATA, JsonNodeFactory.instance.objectNode());
+        staticCPACSOut.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticOutputs.add(staticCPACSOut);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -459,11 +459,11 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
         ObjectNode configuration = (ObjectNode) node.get(CONFIGURATION);
         if (configuration.get(consumeCPACSInputsConfigVersion3) != null
-            && Boolean.valueOf(configuration.get(consumeCPACSInputsConfigVersion3).getTextValue())) {
+            && Boolean.valueOf(configuration.get(consumeCPACSInputsConfigVersion3).textValue())) {
             for (JsonNode staticInput : staticInputs) {
-                if (!(staticInput.get(NAME).getTextValue().equals(DIRECTORY))) {
+                if (!(staticInput.get(NAME).textValue().equals(DIRECTORY))) {
                     ObjectNode metadata = (ObjectNode) staticInput.get(METADATA);
-                    metadata.put(USAGE, TextNode.valueOf(REQUIRED));
+                    metadata.set(USAGE, TextNode.valueOf(REQUIRED));
                 }
             }
         }
@@ -490,8 +490,8 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
         if (dynamicInputs != null) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (!(dynamicInput.get(NAME).getTextValue().equals(DIRECTORY))) {
-                    ((ObjectNode) dynamicInput.get(METADATA)).put(USAGE, TextNode.valueOf("optional"));
+                if (!(dynamicInput.get(NAME).textValue().equals(DIRECTORY))) {
+                    ((ObjectNode) dynamicInput.get(METADATA)).set(USAGE, TextNode.valueOf("optional"));
                 }
             }
         }
@@ -517,19 +517,19 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
         ObjectNode configuration = (ObjectNode) node.get(CONFIGURATION);
         if (configuration.get(consumeDirectoryInputsConfigVersion3) != null
-            && Boolean.valueOf(configuration.get(consumeDirectoryInputsConfigVersion3).getTextValue())) {
+            && Boolean.valueOf(configuration.get(consumeDirectoryInputsConfigVersion3).textValue())) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (dynamicInput.get(NAME).getTextValue().equals(DIRECTORY)) {
+                if (dynamicInput.get(NAME).textValue().equals(DIRECTORY)) {
                     ObjectNode metadata = (ObjectNode) dynamicInput.get(METADATA);
-                    metadata.put(USAGE, TextNode.valueOf(REQUIRED));
+                    metadata.set(USAGE, TextNode.valueOf(REQUIRED));
                 }
             }
         } else if (configuration.get(consumeDirectoryInputsConfigVersion3) != null
-            && !configuration.get(consumeDirectoryInputsConfigVersion3).getBooleanValue()) {
+            && !configuration.get(consumeDirectoryInputsConfigVersion3).booleanValue()) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (dynamicInput.get(NAME).getTextValue().equals(DIRECTORY)) {
+                if (dynamicInput.get(NAME).textValue().equals(DIRECTORY)) {
                     ObjectNode metadata = (ObjectNode) dynamicInput.get(METADATA);
-                    metadata.put(USAGE, TextNode.valueOf(INITIAL));
+                    metadata.set(USAGE, TextNode.valueOf(INITIAL));
                 }
             }
         }
@@ -557,9 +557,9 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         JsonNode dynEndpoints = node.get(direction);
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
-                if (endpoint.get(NAME).getTextValue().equals(DIRECTORY)) {
+                if (endpoint.get(NAME).textValue().equals(DIRECTORY)) {
                     ((ObjectNode) endpoint).remove(EP_IDENTIFIER);
-                    ((ObjectNode) endpoint).put(EP_IDENTIFIER, TextNode.valueOf("directory"));
+                    ((ObjectNode) endpoint).set(EP_IDENTIFIER, TextNode.valueOf("directory"));
                 }
             }
         }

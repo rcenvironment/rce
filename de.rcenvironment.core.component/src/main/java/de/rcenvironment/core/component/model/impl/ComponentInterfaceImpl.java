@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.api.ComponentColor;

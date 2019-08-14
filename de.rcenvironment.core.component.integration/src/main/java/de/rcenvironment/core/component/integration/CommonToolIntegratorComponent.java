@@ -1154,7 +1154,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     private String createVerificationFileContent(String verificationToken) {
         String contentTemplate;
         try {
-            contentTemplate = IOUtils.toString(getClass().getResourceAsStream("/file_template_result_verification.txt"));
+            contentTemplate =
+                IOUtils.toString(CommonToolIntegratorComponent.class.getResourceAsStream("/file_template_result_verification.txt"));
         } catch (IOException e) {
             throw new RuntimeException("Failed to load file template for verification key file", e);
         }
@@ -1205,7 +1206,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
         String contentTemplate;
         try {
-            contentTemplate = IOUtils.toString(getClass().getResourceAsStream("/mail_template_result_verification.txt"));
+            contentTemplate =
+                IOUtils.toString(CommonToolIntegratorComponent.class.getResourceAsStream("/mail_template_result_verification.txt"));
         } catch (IOException e) {
             throw new RuntimeException("Failed to load file template for verification key email", e);
         }

@@ -31,6 +31,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -494,6 +495,10 @@ public final class FileCompressionService {
         final File source = sourceDirectory;
         final String sourceName;
 
+        if (os instanceof TarArchiveOutputStream) {
+            ((TarArchiveOutputStream) os).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        }
+        
         if (integrateSourceDirectory) {
             sourceName = String.format("%s%s", source.getName(), File.separator);
         } else {

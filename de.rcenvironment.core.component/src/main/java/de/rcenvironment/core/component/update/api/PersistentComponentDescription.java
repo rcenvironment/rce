@@ -13,13 +13,14 @@ import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
@@ -84,14 +85,14 @@ public class PersistentComponentDescription implements Serializable {
         if (!node.get(COMPONENT).has(IDENTIFIER)) {
             throw new IOException("Required attribute 'identifier' missing in node's component delcaration");
         }
-        componentIdentifier = node.get(COMPONENT).get(IDENTIFIER).getTextValue();            
+        componentIdentifier = node.get(COMPONENT).get(IDENTIFIER).textValue();
 
         if (node.get(COMPONENT).has(VERSION)) {
-            componentVersion = node.get(COMPONENT).get(VERSION).getTextValue();
+            componentVersion = node.get(COMPONENT).get(VERSION).textValue();
         }
 
         if (node.has(PLATFORM)) {
-            final String encodedNodeId = node.get(PLATFORM).getTextValue();
+            final String encodedNodeId = node.get(PLATFORM).textValue();
             try {
                 componentNodeIdentifier = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(encodedNodeId);
             } catch (IdentifierException e) {

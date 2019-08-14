@@ -13,9 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -53,7 +54,7 @@ public class EditOutputLocationsCommand extends WorkflowNodeCommand {
         this.out = out;
         this.refreshable = refreshable;
         mapper = JsonUtils.getDefaultObjectMapper();
-        mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
     }
 
     /**

@@ -17,9 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
@@ -37,6 +34,10 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
@@ -210,7 +211,6 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void refreshSection() {
         super.refreshSection();
@@ -273,7 +273,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             if (configString == null || configString.equals("")) {
                 try {
                     setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
-                        mapper.defaultPrettyPrintingWriter().writeValueAsString(methodDescriptions));
+                        mapper.writer().writeValueAsString(methodDescriptions));
                 } catch (JsonParseException e) {
                     logger.error(COULD_NOT_PARSE_METHOD_FILE, e);
                 } catch (JsonMappingException e) {

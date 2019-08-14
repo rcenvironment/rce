@@ -21,9 +21,6 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonLocation;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -32,6 +29,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessage;
@@ -367,12 +368,18 @@ public class ConfigurationServiceImplTest {
         final CachingListener listener = new CachingListener();
         service.addErrorListener(listener);
         // test parsing error
-        service.setExceptionToThrow(new JsonParseException("parsing error", null));
+        // Although the constructor used for constructing a JsonParseException here is deprecated, the Jackson-documentation offers no
+        // alternative. Thus, we keep this construction.
+        @SuppressWarnings("deprecation") final JsonParseException parseException = new JsonParseException("parsing error", null);
+        service.setExceptionToThrow(parseException);
         service.getConfiguration("dummy", Object.class);
         Assert.assertNotNull(listener.lastErrorMessage);
         Assert.assertTrue(!listener.lastErrorMessage.isEmpty());
         // test mapping error
-        service.setExceptionToThrow(new JsonMappingException("mapping error", (JsonLocation) null));
+        // Deprecated constructor, see above.
+        @SuppressWarnings("deprecation") final JsonMappingException mappingException =
+            new JsonMappingException("mapping error", (JsonLocation) null);
+        service.setExceptionToThrow(mappingException);
         service.getConfiguration("dummy", Object.class);
         Assert.assertTrue(!listener.lastErrorMessage.isEmpty());
     }

@@ -9,9 +9,7 @@
 package de.rcenvironment.core.gui.cluster.configuration.internal;
 
 import java.util.Map;
-
-import org.codehaus.jackson.map.annotate.JsonDeserialize;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystem;
 
 

@@ -12,16 +12,16 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -67,7 +67,7 @@ public class PythonToScriptingPersistentComponentDescriptionUpdater implements P
         throws IOException {
         if (!silent) {
             JsonFactory jsonFactory = new JsonFactory();
-            JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
+            JsonParser jsonParser = jsonFactory.createParser(description.getComponentDescriptionAsString());
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
@@ -81,11 +81,11 @@ public class PythonToScriptingPersistentComponentDescriptionUpdater implements P
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         // update python placeholder (V 1.0)
         JsonNode configurationNode = node.get("configuration");
-        Iterator<JsonNode> nodeIterator = configurationNode.getElements();
+        Iterator<JsonNode> nodeIterator = configurationNode.elements();
         int index = 0;
         while (nodeIterator.hasNext()) {
             JsonNode configurationValueNode = nodeIterator.next();
-            if (configurationValueNode.getTextValue().startsWith("pythonInstallation:java.lang.String:")) {
+            if (configurationValueNode.textValue().startsWith("pythonInstallation:java.lang.String:")) {
                 break;
             }
             index++;
@@ -95,16 +95,16 @@ public class PythonToScriptingPersistentComponentDescriptionUpdater implements P
         // Add language for conversion to script component
         ((ArrayNode) configurationNode).add("scriptLanguage:java.lang.String:Python");
         // replace all _dm_[""] occurences in user script
-        nodeIterator = configurationNode.getElements();
+        nodeIterator = configurationNode.elements();
         index = 0;
         while (nodeIterator.hasNext()) {
             JsonNode configurationValueNode = nodeIterator.next();
-            if (configurationValueNode.getTextValue().startsWith("script:java.lang.String:")) {
+            if (configurationValueNode.textValue().startsWith("script:java.lang.String:")) {
                 break;
             }
             index++;
         }
-        String script = configurationNode.get(index).getTextValue();
+        String script = configurationNode.get(index).textValue();
         Pattern p = Pattern.compile("(_dm_\\[\".*\"\\])");
         Matcher m = p.matcher(script);
 

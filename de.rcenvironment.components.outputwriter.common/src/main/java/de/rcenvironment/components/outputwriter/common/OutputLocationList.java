@@ -12,7 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 /**
  * Class to store outputLocation information which are then converted to json. The key in the map corresponds to the filename of the

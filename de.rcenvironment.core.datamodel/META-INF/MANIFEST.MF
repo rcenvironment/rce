@@ -2,16 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Data Model
 Bundle-SymbolicName: de.rcenvironment.core.datamodel;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Import-Package: de.rcenvironment.core.utils.common,
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13"
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9"
 Export-Package: de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.testutils,
  de.rcenvironment.core.datamodel.types.api

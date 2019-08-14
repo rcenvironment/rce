@@ -14,12 +14,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
@@ -115,15 +115,15 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         JsonNode configNode = node.get(WorkflowDescriptionPersistenceHandler.DYNAMIC_OUTPUTS);
-        Iterator<JsonNode> iterator = configNode.getElements();
+        Iterator<JsonNode> iterator = configNode.elements();
         while (iterator.hasNext()) {
             ObjectNode outputNode = (ObjectNode) iterator.next();
-            if (outputNode.get(WorkflowDescriptionPersistenceHandler.DATATYPE).getTextValue().equals(DataType.FileReference.name())) {
+            if (outputNode.get(WorkflowDescriptionPersistenceHandler.DATATYPE).textValue().equals(DataType.FileReference.name())) {
                 ObjectNode metaDataNode = (ObjectNode) outputNode.get(WorkflowDescriptionPersistenceHandler.METADATA);
-                metaDataNode.put(InputProviderComponentConstants.META_VALUE,
+                metaDataNode.set(InputProviderComponentConstants.META_VALUE,
                     TextNode.valueOf(StringUtils.format(ConfigurationDefinitionConstants.PLACEHOLDER_FORMAT_STRING,
-                        outputNode.get(WorkflowDescriptionPersistenceHandler.NAME).getTextValue())));
-                metaDataNode.put(InputProviderComponentConstants.META_FILESOURCETYPE,
+                        outputNode.get(WorkflowDescriptionPersistenceHandler.NAME).textValue())));
+                metaDataNode.set(InputProviderComponentConstants.META_FILESOURCETYPE,
                     TextNode.valueOf(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART));
             }
         }
@@ -147,14 +147,14 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
         if (configurationsNode != null) {
-            Iterator<Entry<String, JsonNode>> fields = configurationsNode.getFields();
+            Iterator<Entry<String, JsonNode>> fields = configurationsNode.fields();
             Map<String, String> fileOutputs = new HashMap<>();
             Map<String, String> dirOutputs = new HashMap<>();
             
             while (fields.hasNext()) {
                 Entry<String, JsonNode> configurationNode = fields.next();
                 String ouputName = configurationNode.getKey();
-                String value = ((TextNode) configurationNode.getValue()).getTextValue();
+                String value = ((TextNode) configurationNode.getValue()).textValue();
                 if (value.matches(ComponentUtils.PLACEHOLDER_REGEX) || value.matches(filePlaceholderRegex)) {
                     fields.remove();
                     fileOutputs.put(ouputName, value);

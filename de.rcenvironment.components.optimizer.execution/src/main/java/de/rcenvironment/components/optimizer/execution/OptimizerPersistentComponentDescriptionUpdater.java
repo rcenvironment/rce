@@ -17,20 +17,21 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.NullNode;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
@@ -236,16 +237,16 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                     metaData = JsonNodeFactory.instance.objectNode();
                     ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
-                if (outputEndpoint.get(NAME).getTextValue().equals("Outer loop done")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Outer loop done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
                 }
-                if (outputEndpoint.get(NAME).getTextValue().equals("Iteration")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Iteration")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                 }
-                if (outputEndpoint.get(NAME).getTextValue().equals("Gradient request")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Gradient request")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                 }
-                if (outputEndpoint.get(NAME).getTextValue().equals("Done")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 }
             }
@@ -254,10 +255,10 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (dynamicOutputs != null) {
             for (JsonNode outputEndpoint : dynamicOutputs) {
                 ObjectNode metaData = (ObjectNode) outputEndpoint.get(METADATA);
-                if (outputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Design")) {
+                if (outputEndpoint.get(EP_IDENTIFIER).textValue().equals("Design")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                 }
-                if (outputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("optima")) {
+                if (outputEndpoint.get(EP_IDENTIFIER).textValue().equals("optima")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 }
             }
@@ -266,13 +267,13 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (dynamicInputs != null) {
             for (JsonNode inputEndpoint : dynamicInputs) {
                 ObjectNode metaData = (ObjectNode) inputEndpoint.get(METADATA);
-                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Objective")
-                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Constraint")
-                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("gradients")) {
+                if (inputEndpoint.get(EP_IDENTIFIER).textValue().equals("Objective")
+                    || inputEndpoint.get(EP_IDENTIFIER).textValue().equals("Constraint")
+                    || inputEndpoint.get(EP_IDENTIFIER).textValue().equals("gradients")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                 }
-                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("startvalues")
-                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("outerLoopDone")) {
+                if (inputEndpoint.get(EP_IDENTIFIER).textValue().equals("startvalues")
+                    || inputEndpoint.get(EP_IDENTIFIER).textValue().equals("outerLoopDone")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                     metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
                 }
@@ -291,7 +292,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (staticOutputs != null) {
             for (JsonNode outputEndpoint : staticOutputs) {
                 ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
-                if (outputEndpoint.get(NAME).getTextValue().equals("Optimizer is finished")) {
+                if (outputEndpoint.get(NAME).textValue().equals("Optimizer is finished")) {
                     ((ObjectNode) outputEndpoint).put(NAME, LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
                 }
             }
@@ -311,7 +312,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
         ((ObjectNode) node.get(CONFIGURATION)).put(PRE_CALC_FILE_PATH, "${preCalcFilePath}");
         TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
-        Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
+        Map<String, Object> configs = mapper.readValue(methodConfigurations.textValue(), new HashMap<String, Object>().getClass());
         ObjectNode accuracyNode = mapper.createObjectNode();
         accuracyNode.put("GuiName", "Solution accuracy");
         accuracyNode.put("dataType", "Real");
@@ -343,7 +344,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             while (it.hasNext()) {
                 ObjectNode input = (ObjectNode) it.next();
                 if (((ObjectNode) input.get(METADATA)).get(GOAL) != null
-                    && ((ObjectNode) input.get(METADATA)).get(GOAL).getTextValue().equals("Solve for")) {
+                    && ((ObjectNode) input.get(METADATA)).get(GOAL).textValue().equals("Solve for")) {
                     ((ObjectNode) input.get(METADATA)).put(GOAL, "Minimize");
                     ((ObjectNode) input.get(METADATA)).remove("solve");
                 }
@@ -372,7 +373,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             statEndpoints.add(gradientRequest);
             for (JsonNode o : statEndpoints) {
                 ObjectNode outNode = (ObjectNode) o;
-                if (outNode.get(NAME).getTextValue().equals("Iteration count")) {
+                if (outNode.get(NAME).textValue().equals("Iteration count")) {
                     outNode.remove(NAME);
                     outNode.put(NAME, "Iteration");
                 }
@@ -381,7 +382,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
         ((ObjectNode) node.get(CONFIGURATION)).put(PRE_CALC_FILE_PATH, "${preCalcFilePath}");
         TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
-        Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
+        Map<String, Object> configs = mapper.readValue(methodConfigurations.textValue(), new HashMap<String, Object>().getClass());
         if (configs != null && configs.get("Dakota Surrogate-Based Local") != null) {
             ((HashMap<String, Object>) configs.get("Dakota Surrogate-Based Local")).put("methodCode", "surrogate_based_local");
 
@@ -430,7 +431,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(NAME) != null
-                    && endpoint.get(NAME).getTextValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                    && endpoint.get(NAME).textValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
                     ((ObjectNode) endpoint).put(EP_IDENTIFIER, "gradients");
                 }
             }
@@ -452,11 +453,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             List<JsonNode> newNodes = new LinkedList<JsonNode>();
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(NAME) != null
-                    && dynEndpoints.get(endpoint.get(NAME).getTextValue()
+                    && dynEndpoints.get(endpoint.get(NAME).textValue()
                         + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX) == null) {
                     ObjectNode optimalNode = (ObjectNode) copy(endpoint);
                     optimalNode.put("identifier", UUID.randomUUID().toString());
-                    optimalNode.put(NAME, optimalNode.get(NAME).getTextValue() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX);
+                    optimalNode.put(NAME, optimalNode.get(NAME).textValue() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX);
                     optimalNode.put(EP_IDENTIFIER, OptimizerComponentConstants.ID_OPTIMA);
                     newNodes.add(optimalNode);
                 }
@@ -496,28 +497,28 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER) == null
                     || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).isNull()
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).getTextValue().equals("null")) {
+                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).textValue().equals("null")) {
                     ObjectNode objectEndpoint = (ObjectNode) endpoint;
                     objectEndpoint.remove(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER);
                     String identifier = "";
                     if ((objectEndpoint.get(METADATA)) != null
-                        && !((ObjectNode) objectEndpoint.get(METADATA)).get(WEIGHT).getTextValue().equals(NAN)) {
+                        && !((ObjectNode) objectEndpoint.get(METADATA)).get(WEIGHT).textValue().equals(NAN)) {
                         identifier = OBJECTIVE;
                         updateMetaData(objectEndpoint, dynEndpoints);
                     } else if (((ObjectNode) objectEndpoint.get(METADATA)) != null) {
                         identifier = CONSTRAINT;
                         updateMetaData(objectEndpoint, dynEndpoints);
                     } else {
-                        if (objectEndpoint.get(NAME).getTextValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                        if (objectEndpoint.get(NAME).textValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
                             ObjectNode newMetadataObjectNode = JsonNodeFactory.instance.objectNode();
                             objectEndpoint.put(METADATA, newMetadataObjectNode);
                             String functionName =
-                                objectEndpoint.get(NAME).getTextValue()
-                                    .substring(1, objectEndpoint.get(NAME).getTextValue().indexOf('.'));
+                                objectEndpoint.get(NAME).textValue()
+                                    .substring(1, objectEndpoint.get(NAME).textValue().indexOf('.'));
                             for (JsonNode otherEndpoint : dynEndpoints) {
-                                if (otherEndpoint.get(NAME).getTextValue().equals(functionName)
+                                if (otherEndpoint.get(NAME).textValue().equals(functionName)
                                     && (otherEndpoint.get(METADATA)) != null
-                                    && !((ObjectNode) otherEndpoint.get(METADATA)).get(WEIGHT).getTextValue().equals(NAN)) {
+                                    && !((ObjectNode) otherEndpoint.get(METADATA)).get(WEIGHT).textValue().equals(NAN)) {
                                     identifier = OBJECTIVE;
                                     break;
                                 } else {
@@ -539,18 +540,18 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private void updateMetaData(ObjectNode objectEndpoint, JsonNode dynEndpoints) {
         ObjectNode metadata = (ObjectNode) objectEndpoint.get(METADATA);
-        if (metadata.get(GOAL).getTextValue().equals("0")) {
+        if (metadata.get(GOAL).textValue().equals("0")) {
             metadata.put(GOAL, TextNode.valueOf("Minimize"));
-        } else if (metadata.get(GOAL).getTextValue().equals("1")) {
+        } else if (metadata.get(GOAL).textValue().equals("1")) {
             metadata.put(GOAL, TextNode.valueOf("Maximize"));
         } else {
             metadata.put(GOAL, TextNode.valueOf("Solve for"));
         }
         boolean hasMetaData = false;
         for (JsonNode otherEndpoint : dynEndpoints) {
-            if (otherEndpoint.get(NAME).getTextValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)
-                && otherEndpoint.get(NAME).getTextValue()
-                    .contains(OptimizerComponentConstants.GRADIENT_DELTA + objectEndpoint.get(NAME).getTextValue() + ".")) {
+            if (otherEndpoint.get(NAME).textValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)
+                && otherEndpoint.get(NAME).textValue()
+                    .contains(OptimizerComponentConstants.GRADIENT_DELTA + objectEndpoint.get(NAME).textValue() + ".")) {
                 hasMetaData = true;
             }
         }
@@ -574,13 +575,13 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         boolean foundMethodConfigurations = false;
         boolean foundPackageDeclaration = false;
         for (int i = 0; i < completeConfiguration.size(); i++) {
-            if (completeConfiguration.get(i).getTextValue() != null) {
-                String[] configItem = completeConfiguration.get(i).getTextValue().split(COLON);
+            if (completeConfiguration.get(i).textValue() != null) {
+                String[] configItem = completeConfiguration.get(i).textValue().split(COLON);
                 if (configItem[0].equals(ALGORITHM)) {
                     algorithmNode = updateAlgorithm(completeConfiguration.get(i));
                 }
                 if (configItem[0].contains(METHOD_CONFIGURATIONS) && configItem.length > 2 && configItem[2] != null) {
-                    String configs = completeConfiguration.get(i).getTextValue();
+                    String configs = completeConfiguration.get(i).textValue();
                     configs = configs.substring(configs.indexOf("{"));
                     methodsConfigurationNode = updateMethods(configs);
                     foundMethodConfigurations = true;
@@ -588,11 +589,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                 if (configItem[0].equals(OptimizerComponentConstants.OPTIMIZER_PACKAGE)) {
                     foundPackageDeclaration = true;
                     if (configItem.length > 2 && configItem[2] != null && !configItem[2].isEmpty()
-                        && (algorithmNode != null && algorithmNode.getTextValue().contains("Pyranha"))) {
+                        && (algorithmNode != null && algorithmNode.textValue().contains("Pyranha"))) {
                         optimizerPackageNode = TextNode.valueOf(OptimizerComponentConstants.OPTIMIZER_PACKAGE
                             + ":java.lang.String:pyranha");
                     } else if (configItem.length > 2 && configItem[2] != null && !configItem[2].isEmpty()
-                        && (algorithmNode != null && algorithmNode.getTextValue().contains("Dakota"))) {
+                        && (algorithmNode != null && algorithmNode.textValue().contains("Dakota"))) {
                         optimizerPackageNode = TextNode.valueOf(OptimizerComponentConstants.OPTIMIZER_PACKAGE
                             + ":java.lang.String:dakota");
                     } else {
@@ -693,7 +694,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
     private static JsonNode updateAlgorithm(JsonNode algorithm) {
         JsonNode returnNode = null;
         String prefix = "algorithm:java.lang.String:";
-        String[] algorithmItem = algorithm.getTextValue().split(COLON);
+        String[] algorithmItem = algorithm.textValue().split(COLON);
         if (algorithmItem.length > 2) {
             if (algorithmItem[2] != null && algorithmItem[2].equals("HOPSPACK Asynch Pattern Search")) {
                 returnNode = TextNode.valueOf(prefix + "Dakota HOPSPACK Asynch Pattern Search");

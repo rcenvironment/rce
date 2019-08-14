@@ -8,7 +8,9 @@
 
 package de.rcenvironment.core.gui.tiglviewer.views;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -27,9 +29,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.part.ViewPart;
 
-import de.rcenvironment.core.configuration.ConfigurationException;
+import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
@@ -40,7 +44,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Markus Litz
  * @author Markus Kunde
  * @author Robert Mischke (changed binaries handling; code cleanup)
- * @author Jan Flink (changed thread and error handling)
+ * @author Jan Flink (changed thread and error handling, removed TiGL Viewer binaries, made it use an existing local TiGL Viewer
+ *         installation)
  */
 @SuppressWarnings("restriction")
 public class TIGLViewer extends ViewPart {
@@ -65,19 +70,20 @@ public class TIGLViewer extends ViewPart {
 
     private static final int START_PROCESS_TIMEOUT = 10;
 
+    private static final int LOAD_FILE_TIMEOUT = 90;
+
     /** process ID. **/
     private int processID = 0;
 
-    private Future<?> grabProcessID;
+    private Future<?> grabApplication;
 
     private CountDownLatch grabProcessLatch = new CountDownLatch(1);
 
+    private CountDownLatch grabWindowLatch = new CountDownLatch(1);
+
     private Composite parentComposite;
 
-    /**
-     * The constructor.
-     */
-    public TIGLViewer() {}
+    private File ctrlFile = null;
 
     /**
      * This is a callback that will allow us to create the viewer and initialize it.
@@ -95,42 +101,59 @@ public class TIGLViewer extends ViewPart {
     }
 
     private void startTiGLViewerApplication() {
-        showMessage("Starting TiGL Viewer application...");
-        final File unpackedFilesLocation;
-        try {
-            unpackedFilesLocation = getUnpackedFilesLocation();
-        } catch (ConfigurationException e) {
-            LOGGER.error("Failed to locate TiGL Viewer binaries: " + e.toString());
-            showMessage("Failed to locate TiGL Viewer binaries. Please see the log file for more details.");
+        showMessage("Waiting for the external TiGL Viewer application to be started...");
+        ConfigurationSegment tiglViewerSegment = getTiGLViewerConfigurationSegment();
+        String tiglViewerBinaryPath = tiglViewerSegment.getString("binaryPath");
+        if (tiglViewerBinaryPath == null) {
+            LOGGER.warn(
+                "TiGL Viewer integration not configured (correctly). The 'binaryPath' key of the 'tiglViewer'"
+                    + " configuration segment returned null.");
+            showMessage(
+                "The TiGL Viewer integration is not configured.\nPlease see the \"thirdPartyConfiguration\""
+                    + " segment in the configuration reference for details.");
             return;
         }
-
+        final int startupTimeout;
+        if (tiglViewerSegment.getInteger("startupTimeoutSeconds") != null) {
+            startupTimeout = tiglViewerSegment.getInteger("startupTimeoutSeconds");
+        } else {
+            startupTimeout = START_PROCESS_TIMEOUT;
+        }
+        final boolean embedWindow;
+        if (tiglViewerSegment.getBoolean("embedWindow") != null) {
+            embedWindow = tiglViewerSegment.getBoolean("embedWindow");
+        } else {
+            embedWindow = true;
+        }
         // create special window-title token as unique identifier
-        final String windowTitleToken = Long.toString(Math.abs(new Random().nextLong()), RADIX);
+        final String windowTitleToken = Long.toString(new Random().nextLong(), RADIX);
         final String windowTitle = "TIGLViewer-" + windowTitleToken;
-
-        final File exeFile = new File(unpackedFilesLocation, "binaries/TIGLViewer.exe");
-        final File ctrlFile = new File(unpackedFilesLocation, "controlfile.xml");
+        final File exeFile = new File(tiglViewerBinaryPath);
+        if (!exeFile.exists() || !exeFile.isFile() || !exeFile.canExecute()) {
+            showMessage(StringUtils.format("TiGL Viewer executable not found at the configured path: %s\n"
+                + "Please check the TiGL Viewer configuration. See the \"thirdPartyConfiguration\""
+                + " segment in the configuration reference for details.", exeFile.getAbsolutePath()));
+            LOGGER.error(StringUtils.format("TiGL Viewer executable not found at path: %s", exeFile.getAbsolutePath()));
+            return;
+        }
+        if (!exeFile.canExecute()) {
+            showMessage(StringUtils.format("The configured TiGL Viewer file is not executable: %s\n"
+                + "Please check the file privileges.", exeFile.getAbsolutePath()));
+            LOGGER.error(StringUtils.format("The configured TiGL Viewer file is not executable: %s", exeFile.getAbsolutePath()));
+        }
+        LOGGER.debug(StringUtils.format("Located TiGL Viewer executable at: %s", exeFile.getAbsolutePath()));
 
         ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
-            @TaskDescription("Starting TiGL Viewer application.")
-            @Override
+            @TaskDescription("Starting the TiGL Viewer applications process.")
             public void run() {
+                generateControlFile();
                 String secondaryViewId = TIGLViewer.this.getViewSite().getSecondaryId();
-
-                // note: it would be an internal product error if these files were missing, so RTEs are sufficient - misc_ro
-                verifyFileExistence(exeFile);
-                verifyFileExistence(ctrlFile);
-
-                LOGGER.debug("Located TiGLViewer binary at " + exeFile.getAbsolutePath());
 
                 final String exeFilePathString = convertToPathStringForExecution(exeFile);
                 final String ctrlFilePathString = convertToPathStringForExecution(ctrlFile);
 
-                final String commonCommandPart = "cmd /C start /MIN " + exeFilePathString + " --windowtitle " + windowTitle
-                    + " --controlFile " + ctrlFilePathString;
-
+                String commonCommandPart = buildCommonCommandPart(embedWindow, windowTitle, exeFilePathString, ctrlFilePathString);
                 final String sCommand;
                 try {
                     if (secondaryViewId == null) {
@@ -146,65 +169,84 @@ public class TIGLViewer extends ViewPart {
 
                         // TODO (p2): "secondId" is not being escaped - verify that is it always safe against injection
                         sCommand = commonCommandPart + " --filename " + DOUBLE_QUOTE + secondaryViewId + DOUBLE_QUOTE;
-                        LOGGER.debug(
-                            "Starting TIGL Viewer application with input file " + secondaryViewId
-                                + " (derived from secondary view id)");
+                        LOGGER.debug(StringUtils.format(
+                            "Starting TiGL Viewer application with input file %s", secondaryViewId));
                     }
 
                     Runtime.getRuntime().exec(sCommand);
-                    if (!grabProcessLatch.await(START_PROCESS_TIMEOUT, TimeUnit.SECONDS)) {
-                        throw new InterruptedException("Unable to start TiGL Viewer process");
+                    if (!grabProcessLatch.await(startupTimeout, TimeUnit.SECONDS)) {
+                        throw new InterruptedException("Unable to identify TiGL Viewer process ID");
+                    }
+                    if (!grabWindowLatch.await(LOAD_FILE_TIMEOUT, TimeUnit.SECONDS)) {
+                        throw new InterruptedException(StringUtils.format(
+                            "The TiGL Viewer application took too long to start. Timeout (%ss) reached.\n"
+                                + "This can be caused by too large input files or general problems with the TiGL Viewer application.",
+                            LOAD_FILE_TIMEOUT));
                     }
                 } catch (IOException | InterruptedException e) {
-                    grabProcessID.cancel(true);
-                    LOGGER.error(e);
                     Display.getDefault().asyncExec(new Runnable() {
-
                         @Override
                         public void run() {
-                            showMessage("Unable to start the TiGL Viewer application. Please see the log file for more details.");
+                            showMessage("Unable to start the TiGL Viewer application.\n" + e.getMessage());
                         }
                     });
+                    grabApplication.cancel(true);
+                    disposeControlFile();
+                    LOGGER.error(e);
+                    // TODO Auto-generated method stub
+                
                 }
             }
         });
 
-        grabProcessID = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRateAfterDelay(new Runnable() {
+        grabApplication = ConcurrencyUtils.getAsyncTaskService()
+            .scheduleAtFixedRateAfterDelay(new Runnable() {
+                private final TCHAR tChrTitle = new TCHAR(0, windowTitle, true);
+                private final int[] i = { 0, 0 };
+                @TaskDescription("Grabbing the TiGL Viewer applications process.")
+                public void run() {
+                    LOGGER.debug("Scanning for the TiGL Viewer applications process ID.");
+                    final long handle = OS.FindWindow(null, tChrTitle);
+                    OS.GetWindowThreadProcessId((int) handle, i);
+                    processID = i[0];
+                    if (processID != 0) {
+                        grabProcessLatch.countDown();
+                        LOGGER.debug(StringUtils.format("TiGL Viewer application process startet with process ID %s.", processID));
+                        if (embedWindow) {
+                            OS.SetWindowLongPtr((int) handle, OS.GWL_STYLE,
+                                OS.WS_VISIBLE | OS.WS_CLIPSIBLINGS);
+                            Display.getDefault().asyncExec(new Runnable() {
 
-            private final TCHAR tChrTitle = new TCHAR(0, windowTitle, true);
+                                @Override
+                                public void run() {
+                                    if (parentComposite.isDisposed()) {
+                                        return;
+                                    }
+                                    clearMessage();
+                                    Composite nativeComposite = new Composite(parentComposite, SWT.EMBEDDED);
+                                    OS.SetParent((int) handle, nativeComposite.handle);
+                                    nativeComposite.pack();
+                                    nativeComposite.setBounds(nativeComposite.getParent().getBounds());
+                                    grabWindowLatch.countDown();
+                                }
+                            });
+                        } else {
+                            Display.getDefault().syncExec(new Runnable() {
 
-            private final int[] i = { 0, 0 };
-
-            @TaskDescription("Grabbing the TiGL Viewer applications process ID.")
-            public void run() {
-                LOGGER.debug("Waiting for TiGL Viewer applications process ID.");
-                final long handle = OS.FindWindow(null, tChrTitle);
-                OS.GetWindowThreadProcessId((int) handle, i);
-                processID = i[0];
-                if (processID != 0) {
-                    LOGGER.debug("TiGL Viewer application process startet with process ID:" + processID);
-                    OS.SetWindowLongPtr((int) handle, OS.GWL_STYLE,
-                        OS.WS_VISIBLE | OS.WS_CLIPSIBLINGS);
-
-                    Display.getDefault().asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            if (parentComposite.isDisposed()) {
-                                return;
-                            }
-                            clearMessage();
-                            Composite nativeComposite = new Composite(parentComposite, SWT.EMBEDDED);
-                            OS.SetParent((int) handle, nativeComposite.handle);
-                            nativeComposite.pack();
-                            nativeComposite.setBounds(nativeComposite.getParent().getBounds());
+                                @Override
+                                public void run() {
+                                    showMessage(StringUtils.format("TiGL Viewer started externally with the window title '%s'.\n"
+                                        + "Note: Closing this view also closes the external window.", windowTitle));
+                                    LOGGER.debug(
+                                        StringUtils.format("TiGL Viewer started externally with the window title '%s'.", windowTitle));
+                                }
+                            });
+                            grabWindowLatch.countDown();
                         }
-                    });
-                    grabProcessLatch.countDown();
-                    grabProcessID.cancel(true);
+                        grabApplication.cancel(true);
+                        }
                 }
-            }
-        }, GRAB_PROCESS_THREAD_DELAY, GRAB_PROCESS_THREAD_DELAY);
+            }, GRAB_PROCESS_THREAD_DELAY, GRAB_PROCESS_THREAD_DELAY);
     }
 
     private void showMessage(String message) {
@@ -225,18 +267,12 @@ public class TIGLViewer extends ViewPart {
         }
     }
 
-    private File getUnpackedFilesLocation() throws ConfigurationException {
+    private ConfigurationSegment getTiGLViewerConfigurationSegment() {
         final ServiceRegistryAccess serviceRegistry = ServiceRegistry.createAccessFor(this);
         final ConfigurationService confService = serviceRegistry.getService(ConfigurationService.class);
-        return confService.getUnpackedFilesLocation("tiglviewer");
+        return confService.getConfigurationSegment("thirdPartyIntegration/tiglViewer");
     }
 
-    private void verifyFileExistence(final File exeFile) {
-        if (!exeFile.isFile()) {
-            // TODO (p2) use "consistency error" exception here once available
-            throw new RuntimeException("Missing expected file " + exeFile);
-        }
-    }
 
     private String convertToPathStringForExecution(File file) {
         // execution path hack that inserts double quotes around the path, but excludes the drive letter and colon;
@@ -250,18 +286,69 @@ public class TIGLViewer extends ViewPart {
         // Nothing to do here.
     }
 
+    private void generateControlFile() {
+        String controlContent = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+            + "<TIGLViewer>\n"
+            + "    <console display=\"0\"/>\n"
+            + "    <toolbars display=\"1\"/>\n"
+            + "</TIGLViewer>";
+
+        try {
+            ctrlFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("controlfile.xml");
+        } catch (IOException e) {
+            LOGGER.error("Error generating temp file.", e);
+
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ctrlFile.getAbsolutePath()))) {
+            writer.write(controlContent);
+        } catch (IOException e) {
+            LOGGER.warn("Error generating controlfile for TiGL Viewer.", e);
+        }
+    }
+
+    private String buildCommonCommandPart(final boolean embedWindow, final String windowTitle, final String exeFilePathString,
+        final String ctrlFilePathString) {
+        StringBuilder commonCommandPart = new StringBuilder();
+        commonCommandPart.append("cmd /C start ");
+        if (embedWindow) {
+            commonCommandPart.append("/MIN ");
+        }
+        commonCommandPart.append(exeFilePathString);
+        commonCommandPart.append(" --windowtitle ");
+        commonCommandPart.append(windowTitle);
+        commonCommandPart.append(" --controlFile ");
+        commonCommandPart.append(ctrlFilePathString);
+        return commonCommandPart.toString();
+    }
+
     @Override
     public void dispose() {
-        try {
-            if (grabProcessID != null) {
-                grabProcessID.cancel(true);
+        if (grabApplication != null) {
+            grabApplication.cancel(true);
+        }
+        killTiglViewerProcess();
+        disposeControlFile();
+    }
+
+    private void disposeControlFile() {
+        if (ctrlFile != null) {
+            try {
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(ctrlFile);
+            } catch (IOException e) {
+                LOGGER.error("Failed to dispose controlfile: " + ctrlFile.getAbsolutePath());
             }
-            if (processID != 0) {
-                LOGGER.debug("Killing the TiGL Viewer application process with PID: " + processID);
+        }
+    }
+
+    private void killTiglViewerProcess() {
+        if (processID != 0) {
+            LOGGER.debug(StringUtils.format("Stopping and disposing the TiGL Viewer application with process ID %s.", processID));
+            try {
                 Runtime.getRuntime().exec("taskkill /F /PID " + processID);
+                processID = 0;
+            } catch (IOException e) {
+                LOGGER.error(StringUtils.format("Unable to stop and dispose process with ID %s.", processID), e);
             }
-        } catch (IOException e) {
-            LOGGER.error(e);
         }
     }
 }

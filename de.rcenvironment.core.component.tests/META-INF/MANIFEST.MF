@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.tests
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Fragment-Host: de.rcenvironment.core.component
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing
@@ -11,11 +11,13 @@ Import-Package: de.rcenvironment.core.communication.messaging,
  de.rcenvironment.core.configuration.testutils,
  de.rcenvironment.core.datamodel.testutils,
  de.rcenvironment.core.notification.testutils,
+ de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.toolkit.core.setup,
  edu.uci.ics.jung.graph;version="2.0.1",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",
- org.codehaus.jackson.map;version="1.9.13"
+ org.apache.commons.logging;version="1.1.1"
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.component,
  de.rcenvironment.core.component.model.testutils

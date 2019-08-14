@@ -2,10 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Decrypter Component GUI (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.outputwriter.gui;singleton:=true
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Localization: plugin
-Import-Package: de.rcenvironment.components.outputwriter.common,
+Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ de.rcenvironment.components.outputwriter.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
@@ -25,12 +28,6 @@ Import-Package: de.rcenvironment.components.outputwriter.common,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.annotate;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.map.annotate;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
  org.eclipse.core.internal.resources,
  org.eclipse.core.resources,
  org.eclipse.osgi.util;version="1.1.0"

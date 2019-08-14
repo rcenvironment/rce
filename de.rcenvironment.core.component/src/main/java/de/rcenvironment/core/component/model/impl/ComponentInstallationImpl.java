@@ -11,7 +11,8 @@ package de.rcenvironment.core.component.model.impl;
 import java.io.Serializable;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;

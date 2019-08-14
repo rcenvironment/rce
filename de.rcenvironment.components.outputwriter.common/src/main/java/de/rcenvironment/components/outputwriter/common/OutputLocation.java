@@ -10,9 +10,7 @@ package de.rcenvironment.components.outputwriter.common;
 
 import java.util.List;
 import java.util.UUID;
-
-import org.codehaus.jackson.annotate.JsonIgnore;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants.HandleExistingFile;
 
 /**

@@ -16,16 +16,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.util.DefaultPrettyPrinter;
-import org.codehaus.jackson.util.DefaultPrettyPrinter.Lf2SpacesIndenter;
+
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -59,8 +60,8 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
                 return new WritableConfigurationSegmentImpl(null);
             }
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-            mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_COMMENTS, true);
-            mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+            mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+            mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
             validateJsonSyntax(mapper);
             JsonNode node = mapper.readTree(storageFile);
             return new WritableConfigurationSegmentImpl(node);
@@ -90,8 +91,9 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
      * Custom Jackson JSON indenter that uses 4 spaces instead of 2.
      * 
      * @author Robert Mischke
+     * @author Alexander Weinert
      */
-    private static class CustomIndenter extends Lf2SpacesIndenter {
+    private static class CustomIndenter extends DefaultIndenter {
 
         @Override
         public void writeIndentation(JsonGenerator jg, int level) throws IOException, JsonGenerationException {
@@ -136,7 +138,7 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
     private void writeJsonFile(JsonNode jsonRootNode, File file) throws IOException {
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonFactory jsonFactory = new JsonFactory();
-        try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(file, JsonEncoding.UTF8)) {
+        try (JsonGenerator jsonGenerator = jsonFactory.createGenerator(file, JsonEncoding.UTF8)) {
             DefaultPrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
             CustomIndenter customIndenter = new CustomIndenter();
             prettyPrinter.indentObjectsWith(customIndenter);

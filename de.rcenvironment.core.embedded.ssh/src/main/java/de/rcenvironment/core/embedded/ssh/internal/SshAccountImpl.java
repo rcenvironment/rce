@@ -23,8 +23,7 @@ import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
-import org.codehaus.jackson.annotate.JsonIgnore;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 
 /**

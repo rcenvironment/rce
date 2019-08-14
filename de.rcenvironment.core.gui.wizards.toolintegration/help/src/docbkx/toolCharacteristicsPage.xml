@@ -18,8 +18,8 @@
                                     name of the component. The name is very important, because the
                                     tool will be displayed in the workflow editor palette with this
                                     name. Note that the name must not contain special characters.
-                                    The name will not be accepted if there is another locally
-                                    created tool with the same name. </para>
+                                    Note: Integrating a tool with an already existing tool name will 
+									overwrite the configuration of the previous integrated tool. </para>
                 </listitem>
             </itemizedlist></para>
         <para>Optional fields:<itemizedlist>

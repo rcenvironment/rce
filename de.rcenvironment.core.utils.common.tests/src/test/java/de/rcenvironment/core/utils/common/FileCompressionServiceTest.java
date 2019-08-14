@@ -81,6 +81,15 @@ public class FileCompressionServiceTest {
 
     private static final String FILE_NAME_SUBFOLDER = "second";
 
+    private static final String LONG_FILE_NAME_TEST =
+        "ThisIsAVeryLongFileNameWithMoreThanHundretCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest.txt";
+
+    private static final String LONG_FILE_NAME_SUBFOLDER =
+        "ThisIsAVeryLongFolderNameWithMoreThanHundretCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest";
+
+    private static final String LONG_FILE_NAME_TEST2 =
+        "ThisIsAnotherVeryLongFileNameWithMoreThanHundretCharsForTestingLongFilePathessWithinTheFileCompressionServiceTest.pdf";
+
     private final FileCompressionFormat formatParameter;
 
     private final TempFileService tempFileService;
@@ -461,6 +470,35 @@ public class FileCompressionServiceTest {
     public void compressDirectoryToFileTest08NullFormatAndParameters() throws IOException {
 
         assertFalse(MSG_COMPRESSION_WAS_SUCCESSFUL, FileCompressionService.compressDirectoryToFile(null, null, null, true));
+    }
+
+    /**
+     * 
+     * Test the {@link FileCompressionService.compressDirectoryToFile()} method with file pathes larger than 100 chars.
+     * 
+     * @throws IOException I/O issue
+     *
+     */
+    @Test
+    public void compressDirectoryToFileTest09LongPath() throws IOException {
+
+        final File inputDir = createTempDir();
+        final File outputDir = createTempDir();
+        final File outputFile = generateArchiveOutputFileReference(outputDir);
+        final File finalDir = createTempDir();
+        final File finalFile = generateArchiveOutputFileReference(finalDir);
+
+        createAndVerifyFile(inputDir, LONG_FILE_NAME_TEST);
+        createAndVerifyFile(inputDir, File.separator + LONG_FILE_NAME_SUBFOLDER + File.separator + LONG_FILE_NAME_TEST2);
+
+        assertTrue(MSG_COMPRESSION_WAS_NOT_SUCCESSFUL,
+            FileCompressionService.compressDirectoryToFile(inputDir, outputFile, formatParameter, true));
+        assertTrue(MSG_EXPECTED_FILE_WAS_MISSING, outputFile.exists());
+        assertTrue(MSG_FILE_WAS_EMPTY, outputFile.length() > 0);
+        // Expanding:
+        assertTrue(MSG_EXPANDING_WAS_NOT_SUCCESSFUL,
+            FileCompressionService.expandCompressedDirectoryFromFile(outputFile, finalFile, formatParameter));
+
     }
 
     /**

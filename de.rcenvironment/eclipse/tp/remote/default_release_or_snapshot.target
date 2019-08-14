@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="71">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="71">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="de.rcenvironment.platform.combined.feature.feature.group" version="8.2.2.201805301313"/>

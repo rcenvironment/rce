@@ -10,8 +10,8 @@ package de.rcenvironment.core.component.model.configuration.impl;
 
 import java.util.Map;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationExtensionDefinition;
 

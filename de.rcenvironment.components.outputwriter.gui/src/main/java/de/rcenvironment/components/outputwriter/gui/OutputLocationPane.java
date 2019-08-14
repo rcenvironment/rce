@@ -17,9 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -45,6 +42,10 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -99,7 +100,7 @@ public class OutputLocationPane implements Refreshable {
         super();
         this.executor = executor;
         jsonMapper = JsonUtils.getDefaultObjectMapper();
-        jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        jsonMapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
     }
 
     /**

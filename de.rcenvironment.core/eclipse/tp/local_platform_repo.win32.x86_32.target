@@ -28,7 +28,6 @@
 <plugin id="org.eclipse.equinox.p2.updatesite"/>
 <plugin id="org.eclipse.team.ui"/>
 <plugin id="org.apache.jasper"/>
-<plugin id="org.codehaus.jackson.mapper"/>
 <plugin id="org.eclipse.equinox.simpleconfigurator.manipulator"/>
 <plugin id="org.apache.lucene.analysis"/>
 <plugin id="javax.servlet"/>
@@ -44,7 +43,6 @@
 <plugin id="org.eclipse.equinox.http.registry"/>
 <plugin id="org.eclipse.equinox.p2.operations"/>
 <plugin id="org.eclipse.core.variables"/>
-<plugin id="org.codehaus.jackson.core"/>
 <plugin id="org.eclipse.equinox.p2.ql"/>
 <plugin id="org.mortbay.jetty.server"/>
 <plugin id="org.eclipse.equinox.launcher"/>
@@ -55,7 +53,6 @@
 <plugin id="org.sat4j.core"/>
 <plugin id="org.eclipse.jface.databinding"/>
 <plugin id="org.eclipse.jsch.ui"/>
-<plugin id="org.codehaus.jackson.xc"/>
 <plugin id="org.eclipse.ui.win32"/>
 <plugin id="org.ops4j.pax.logging.pax-logging-api"/>
 <plugin id="org.eclipse.core.databinding.property"/>

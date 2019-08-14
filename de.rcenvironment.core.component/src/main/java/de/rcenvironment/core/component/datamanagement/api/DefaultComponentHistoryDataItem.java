@@ -16,11 +16,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
@@ -223,18 +223,18 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
             Deque<EndpointHistoryDataItem>>());
 
         if (endpointObjectNode != null) {
-            Iterator<String> endpointNamesIterator = endpointObjectNode.getFieldNames();
+            Iterator<String> endpointNamesIterator = endpointObjectNode.fieldNames();
             while (endpointNamesIterator.hasNext()) {
                 String endpointName = endpointNamesIterator.next();
                 endpoints.put(endpointName, new LinkedList<EndpointHistoryDataItem>());
                 ArrayNode endpointJsonArray = (ArrayNode) endpointObjectNode.get(endpointName);
-                Iterator<JsonNode> endpointDataObjectNodesIterator = endpointJsonArray.getElements();
+                Iterator<JsonNode> endpointDataObjectNodesIterator = endpointJsonArray.elements();
                 while (endpointDataObjectNodesIterator.hasNext()) {
                     ObjectNode endpointDataObjectNode = (ObjectNode) endpointDataObjectNodesIterator.next();
                     EndpointHistoryDataItem endpointHistoryData = new EndpointHistoryDataItem(
-                        endpointDataObjectNode.get(TIMESTAMP).getLongValue(),
-                        endpointDataObjectNode.get(NAME).getTextValue(),
-                        serializer.deserialize(endpointDataObjectNode.get(VALUE).getTextValue()));
+                        endpointDataObjectNode.get(TIMESTAMP).longValue(),
+                        endpointDataObjectNode.get(NAME).textValue(),
+                        serializer.deserialize(endpointDataObjectNode.get(VALUE).textValue()));
                     endpoints.get(endpointName).add(endpointHistoryData);
                 }
             }

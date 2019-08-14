@@ -7,7 +7,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>8.2.3-SNAPSHOT</version>
+	<version>8.3.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>

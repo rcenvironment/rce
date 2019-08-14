@@ -16,9 +16,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -62,7 +63,7 @@ public class OutputWriterComponentValidator extends AbstractComponentValidator {
         String outputLocString = getProperty(componentDescription,
                 OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
         ObjectMapper jsonMapper = JsonUtils.getDefaultObjectMapper();
-        jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
+        jsonMapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
         if (outputLocString == null) {
             outputLocString = "{}";
         }

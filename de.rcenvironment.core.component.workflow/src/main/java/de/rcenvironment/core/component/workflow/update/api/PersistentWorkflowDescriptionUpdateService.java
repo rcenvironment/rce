@@ -10,7 +10,7 @@ package de.rcenvironment.core.component.workflow.update.api;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonParseException;
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 

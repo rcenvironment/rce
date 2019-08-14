@@ -11,11 +11,10 @@ package de.rcenvironment.core.mail;
 import java.io.File;
 import java.io.IOException;
 
-import jodd.mail.EmailAddress;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -23,6 +22,7 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.mail.internal.MailFilterInformation;
 import de.rcenvironment.core.mail.internal.PasswordObfuscationHelper;
 import de.rcenvironment.core.utils.common.JsonUtils;
+import jodd.mail.EmailAddress;
 
 /**
  * Class providing the configuration of the mail bundle.

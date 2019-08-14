@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.basicSettings</artifactId>
-		<version>8.2.3-SNAPSHOT</version>
+		<version>8.3.0-SNAPSHOT</version>
 		<relativePath>../basicSettings</relativePath>
 	</parent>
 

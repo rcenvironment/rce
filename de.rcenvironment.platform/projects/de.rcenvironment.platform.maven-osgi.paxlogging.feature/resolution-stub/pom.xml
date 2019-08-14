@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven-osgi.paxlogging.stub</artifactId>
 	<name>RCE Platform - Maven-OSGi PAX-Logging Resolution Stub</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>8.3.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

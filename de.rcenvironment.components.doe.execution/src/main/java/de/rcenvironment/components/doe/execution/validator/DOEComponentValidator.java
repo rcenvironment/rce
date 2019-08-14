@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;

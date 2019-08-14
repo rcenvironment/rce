@@ -9,15 +9,15 @@ package de.rcenvironment.components.doe.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -153,12 +153,12 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
                 ObjectNode metaData = (ObjectNode) outputEndpoint.get(METADATA);
                 if (metaData == null) {
                     metaData = JsonNodeFactory.instance.objectNode();
-                    ((ObjectNode) outputEndpoint).put(METADATA, metaData);
+                    ((ObjectNode) outputEndpoint).set(METADATA, metaData);
                 }
-                if (outputEndpoint.get("name").getTextValue().equals("Outer loop done")) {
+                if (outputEndpoint.get("name").textValue().equals("Outer loop done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
                 }
-                if (outputEndpoint.get("name").getTextValue().equals("Done")) {
+                if (outputEndpoint.get("name").textValue().equals("Done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, "OuterLoopEndpoint");
                 }
             }

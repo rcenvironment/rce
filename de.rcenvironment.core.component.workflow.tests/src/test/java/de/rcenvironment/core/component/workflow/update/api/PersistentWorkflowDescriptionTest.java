@@ -14,9 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codehaus.jackson.JsonParseException;
 import org.easymock.EasyMock;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 

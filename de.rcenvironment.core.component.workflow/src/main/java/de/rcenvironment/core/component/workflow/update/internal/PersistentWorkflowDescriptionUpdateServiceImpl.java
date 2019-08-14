@@ -21,19 +21,20 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.node.TextNode;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
@@ -178,9 +179,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     private Set<String> getEndpointsOfGroup(JsonNode node, String endpointGroup) throws JsonProcessingException, IOException {
         Set<String> endpoints = new HashSet<>();
         if (node.has(endpointGroup)) {
-            Iterator<JsonNode> outputJsonNodes = node.get(endpointGroup).getElements();
+            Iterator<JsonNode> outputJsonNodes = node.get(endpointGroup).elements();
             while (outputJsonNodes.hasNext()) {
-                endpoints.add(outputJsonNodes.next().get(IDENTIFIER).getTextValue());
+                endpoints.add(outputJsonNodes.next().get(IDENTIFIER).textValue());
             }
         }
         return endpoints;
@@ -194,11 +195,11 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             if (workflowDescriptionAsTree.has(CONNECTIONS)) {
                 ArrayNode connectionsJsonNode = (ArrayNode) workflowDescriptionAsTree.get(CONNECTIONS);
 
-                Iterator<JsonNode> connectionJsonNodes = connectionsJsonNode.getElements();
+                Iterator<JsonNode> connectionJsonNodes = connectionsJsonNode.elements();
                 while (connectionJsonNodes.hasNext()) {
                     JsonNode connectionJsonNode = connectionJsonNodes.next();
-                    if (connectionJsonNode.get("input").getTextValue().equals(endpointRemoved)
-                        || connectionJsonNode.get("output").getTextValue().equals(endpointRemoved)) {
+                    if (connectionJsonNode.get("input").textValue().equals(endpointRemoved)
+                        || connectionJsonNode.get("output").textValue().equals(endpointRemoved)) {
                         connectionJsonNodes.remove();
                     }
                 }
@@ -216,7 +217,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
-            ((ObjectNode) workflowDescriptionAsTree).put(WORKFLOW_VERSION, TextNode.valueOf(CURRENT_VERSION));
+            ((ObjectNode) workflowDescriptionAsTree).set(WORKFLOW_VERSION, TextNode.valueOf(CURRENT_VERSION));
 
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
@@ -268,12 +269,12 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                 JsonNode connections = workflowDescriptionAsTree.remove(CONNECTIONS);
                 JsonNode bendpoints = workflowDescriptionAsTree.remove(BENDPOINTS);
                 workflowDescriptionAsTree.remove(NODES);
-                workflowDescriptionAsTree.put(NODES, componentNodes);
+                workflowDescriptionAsTree.set(NODES, componentNodes);
                 if (connections != null) {
-                    workflowDescriptionAsTree.put(CONNECTIONS, connections);
+                    workflowDescriptionAsTree.set(CONNECTIONS, connections);
                 }
                 if (bendpoints != null) {
-                    workflowDescriptionAsTree.put(BENDPOINTS, bendpoints);
+                    workflowDescriptionAsTree.set(BENDPOINTS, bendpoints);
                 }
             }
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -298,7 +299,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         connections = updateConnectionsToVersion3(connections, nodes, jsonFactory);
         ((ObjectNode) workflowDescriptionAsTree).remove(CONNECTIONS);
         if (connections != null) {
-            ((ObjectNode) workflowDescriptionAsTree).put(CONNECTIONS, connections);
+            ((ObjectNode) workflowDescriptionAsTree).set(CONNECTIONS, connections);
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -320,9 +321,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         ((ObjectNode) workflowDescriptionAsTree).remove(NODES);
         ((ObjectNode) workflowDescriptionAsTree).remove(WORKFLOW_VERSION);
-        ((ObjectNode) workflowDescriptionAsTree).put(WORKFLOW_VERSION, TextNode.valueOf(VERSION_3));
+        ((ObjectNode) workflowDescriptionAsTree).set(WORKFLOW_VERSION, TextNode.valueOf(VERSION_3));
         if (nodes != null) {
-            ((ObjectNode) workflowDescriptionAsTree).put(NODES, nodes);
+            ((ObjectNode) workflowDescriptionAsTree).set(NODES, nodes);
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -351,23 +352,23 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             for (JsonNode connection : ((ArrayNode) connections)) {
                 ObjectNode connectionObject = (ObjectNode) connection;
                 ObjectNode newConnectionsObjectNode = jsonFactory.objectNode();
-                newConnectionsObjectNode.put(SOURCE, connectionObject.get(SOURCE));
-                String sourceOutput = connectionObject.get(OUTPUT).getTextValue();
+                newConnectionsObjectNode.set(SOURCE, connectionObject.get(SOURCE));
+                String sourceOutput = connectionObject.get(OUTPUT).textValue();
                 for (JsonNode component : nodes) {
-                    if (((ObjectNode) component).get(IDENTIFIER).getTextValue().equals(connectionObject.get(SOURCE).getTextValue())) {
+                    if (((ObjectNode) component).get(IDENTIFIER).textValue().equals(connectionObject.get(SOURCE).textValue())) {
                         boolean foundOutput = false;
                         if (((ObjectNode) component).get(DYNAMIC_OUTPUTS) != null) {
                             for (JsonNode endpoint : ((ObjectNode) component).get(DYNAMIC_OUTPUTS)) {
-                                if (((ObjectNode) endpoint).get(NAME).getTextValue().equals(sourceOutput)) {
-                                    newConnectionsObjectNode.put(OUTPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
+                                if (((ObjectNode) endpoint).get(NAME).textValue().equals(sourceOutput)) {
+                                    newConnectionsObjectNode.set(OUTPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
                                     foundOutput = true;
                                 }
                             }
                         }
                         if (((ObjectNode) component).get(STATIC_OUTPUTS) != null) {
                             for (JsonNode endpoint : ((ObjectNode) component).get(STATIC_OUTPUTS)) {
-                                if (((ObjectNode) endpoint).get(NAME).getTextValue().equals(sourceOutput)) {
-                                    newConnectionsObjectNode.put(OUTPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
+                                if (((ObjectNode) endpoint).get(NAME).textValue().equals(sourceOutput)) {
+                                    newConnectionsObjectNode.set(OUTPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
                                     foundOutput = true;
                                 }
                             }
@@ -376,7 +377,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                             ArrayNode staticOutputs = (ArrayNode) component.get(STATIC_OUTPUTS);
                             if (staticOutputs == null) {
                                 staticOutputs = JsonNodeFactory.instance.arrayNode();
-                                ((ObjectNode) component).put(STATIC_OUTPUTS, staticOutputs);
+                                ((ObjectNode) component).set(STATIC_OUTPUTS, staticOutputs);
                             }
                             ObjectNode newStaticOutput = JsonNodeFactory.instance.objectNode();
                             newStaticOutput.put(NAME, sourceOutput);
@@ -384,29 +385,29 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                             newStaticOutput.put(DATATYPE, SHORT_TEXT);
                             staticOutputs.add(newStaticOutput);
 
-                            newConnectionsObjectNode.put(OUTPUT, newStaticOutput.get(IDENTIFIER));
+                            newConnectionsObjectNode.set(OUTPUT, newStaticOutput.get(IDENTIFIER));
                         }
                     }
                 }
 
-                newConnectionsObjectNode.put(TARGET, connectionObject.get(TARGET));
+                newConnectionsObjectNode.set(TARGET, connectionObject.get(TARGET));
 
-                String targetInput = connectionObject.get(INPUT).getTextValue();
+                String targetInput = connectionObject.get(INPUT).textValue();
                 for (JsonNode component : nodes) {
-                    if (((ObjectNode) component).get(IDENTIFIER).getTextValue().equals(connectionObject.get(TARGET).getTextValue())) {
+                    if (((ObjectNode) component).get(IDENTIFIER).textValue().equals(connectionObject.get(TARGET).textValue())) {
                         boolean foundInput = false;
                         if (((ObjectNode) component).get(DYNAMIC_INPUTS) != null) {
                             for (JsonNode endpoint : ((ObjectNode) component).get(DYNAMIC_INPUTS)) {
-                                if (((ObjectNode) endpoint).get(NAME).getTextValue().equals(targetInput)) {
-                                    newConnectionsObjectNode.put(INPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
+                                if (((ObjectNode) endpoint).get(NAME).textValue().equals(targetInput)) {
+                                    newConnectionsObjectNode.set(INPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
                                     foundInput = true;
                                 }
                             }
                         }
                         if (((ObjectNode) component).get(STATIC_INPUTS) != null) {
                             for (JsonNode endpoint : ((ObjectNode) component).get(STATIC_INPUTS)) {
-                                if (((ObjectNode) endpoint).get(NAME).getTextValue().equals(targetInput)) {
-                                    newConnectionsObjectNode.put(INPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
+                                if (((ObjectNode) endpoint).get(NAME).textValue().equals(targetInput)) {
+                                    newConnectionsObjectNode.set(INPUT, ((ObjectNode) endpoint).get(IDENTIFIER));
                                     foundInput = true;
                                 }
                             }
@@ -415,7 +416,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                             ArrayNode staticInputs = (ArrayNode) component.get(STATIC_INPUTS);
                             if (staticInputs == null) {
                                 staticInputs = JsonNodeFactory.instance.arrayNode();
-                                ((ObjectNode) component).put(STATIC_INPUTS, staticInputs);
+                                ((ObjectNode) component).set(STATIC_INPUTS, staticInputs);
                             }
                             ObjectNode newStaticInput = JsonNodeFactory.instance.objectNode();
                             newStaticInput.put(NAME, targetInput);
@@ -423,7 +424,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                             newStaticInput.put(DATATYPE, SHORT_TEXT);
 
                             staticInputs.add(newStaticInput);
-                            newConnectionsObjectNode.put(INPUT, newStaticInput.get(IDENTIFIER));
+                            newConnectionsObjectNode.set(INPUT, newStaticInput.get(IDENTIFIER));
                         }
                     }
                 }
@@ -438,16 +439,16 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         ArrayNode oldConfigNode = (ArrayNode) componentNode.get(CONFIGURATION);
         if (oldConfigNode != null) {
             for (JsonNode config : oldConfigNode) {
-                String[] splitted = StringUtils.splitAndUnescape(config.getTextValue());
+                String[] splitted = StringUtils.splitAndUnescape(config.textValue());
 
                 if (splitted.length > 2) {
-                    newConfigNode.put(splitted[0], TextNode.valueOf(splitted[2]));
+                    newConfigNode.set(splitted[0], TextNode.valueOf(splitted[2]));
                 } else {
-                    newConfigNode.put(splitted[0], jsonFactory.textNode(""));
+                    newConfigNode.set(splitted[0], jsonFactory.textNode(""));
                 }
             }
         }
-        newComponentNode.put(CONFIGURATION, newConfigNode);
+        newComponentNode.set(CONFIGURATION, newConfigNode);
     }
 
     private static void updateDynamicEndpoints(String type,
@@ -458,9 +459,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         if (oldEndpointList != null) {
             for (JsonNode endpoint : oldEndpointList) {
                 ObjectNode newEndpoint = jsonFactory.objectNode();
-                String oldEndpoint = endpoint.getTextValue();
+                String oldEndpoint = endpoint.textValue();
                 newEndpoint.put(IDENTIFIER, UUID.randomUUID().toString());
-                newEndpoint.put("epIdentifier", jsonFactory.nullNode());
+                newEndpoint.set("epIdentifier", jsonFactory.nullNode());
                 String[] splittedEndpoint = StringUtils.splitAndUnescape(oldEndpoint);
 
                 newEndpoint.put(NAME, splittedEndpoint[0]);
@@ -473,7 +474,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                 if (metadata != null && metadata.get(splittedEndpoint[0]) != null) {
                     ObjectNode newMetadata = jsonFactory.objectNode();
                     for (JsonNode metaDatum : metadata.get(splittedEndpoint[0])) {
-                        String metadataText = metaDatum.getTextValue();
+                        String metadataText = metaDatum.textValue();
                         String[] splittedMetaDatum = StringUtils.splitAndUnescape(metadataText);
                         if (splittedMetaDatum[0].equals("usage")) {
                             if (splittedMetaDatum[2].equals("init")) {
@@ -486,7 +487,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                         }
                         newMetadata.put(splittedMetaDatum[0], splittedMetaDatum[2]);
                     }
-                    newEndpoint.put("metadata", newMetadata);
+                    newEndpoint.set("metadata", newMetadata);
                 }
                 newEndpointList.add(newEndpoint);
 
@@ -496,14 +497,14 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         newComponentNode.remove("add" + type);
         newComponentNode.remove(type.toLowerCase() + "MetaData");
 
-        newComponentNode.put("dynamic" + type + "s", newEndpointList);
+        newComponentNode.set("dynamic" + type + "s", newEndpointList);
     }
 
     @Override
     public PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescriptionString)
         throws JsonParseException, IOException {
 
-        try (JsonParser jsonParser = new JsonFactory().createJsonParser(persistentWorkflowDescriptionString)) {
+        try (JsonParser jsonParser = new JsonFactory().createParser(persistentWorkflowDescriptionString)) {
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
 
@@ -536,7 +537,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         List<PersistentComponentDescription> componentDescriptions = new LinkedList<PersistentComponentDescription>();
         if (nodes != null) {
-            Iterator<JsonNode> nodeIterator = nodes.getElements();
+            Iterator<JsonNode> nodeIterator = nodes.elements();
             while (nodeIterator.hasNext()) {
                 JsonNode component = nodeIterator.next();
 

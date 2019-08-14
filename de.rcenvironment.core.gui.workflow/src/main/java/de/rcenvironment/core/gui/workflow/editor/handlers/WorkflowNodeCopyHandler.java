@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
@@ -82,7 +82,7 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             JsonFactory f = new JsonFactory();
             JsonGenerator generator = null;
-            generator = f.createJsonGenerator(outputStream, JsonEncoding.UTF8);
+            generator = f.createGenerator(outputStream, JsonEncoding.UTF8);
             generator.setPrettyPrinter(new DefaultPrettyPrinter());
             generator.writeStartObject();
             if (!nodes.isEmpty()) {

@@ -11,8 +11,8 @@ package de.rcenvironment.core.component.model.endpoint.impl;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;

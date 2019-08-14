@@ -8,8 +8,8 @@
 
 package de.rcenvironment.core.utils.common;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A utility class for Json related stuff.

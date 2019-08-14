@@ -17,7 +17,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonIgnore;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;

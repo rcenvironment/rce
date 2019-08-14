@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component
 Bundle-SymbolicName: de.rcenvironment.core.component;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -22,7 +22,12 @@ Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.validation.api,
  de.rcenvironment.core.component.validation.spi
 Bundle-ManifestVersion: 2
-Import-Package: de.rcenvironment.core.command.common,
+Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
@@ -53,11 +58,6 @@ Import-Package: de.rcenvironment.core.command.common,
  org.apache.commons.collections4.map;version="4.0.0",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.annotate;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
  org.eclipse.core.runtime;version="3.4.0",
  org.osgi.framework,
  org.osgi.service.component,

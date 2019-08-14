@@ -29,7 +29,6 @@ import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
@@ -68,6 +67,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;

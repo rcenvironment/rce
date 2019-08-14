@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationMetaDataDefinition;

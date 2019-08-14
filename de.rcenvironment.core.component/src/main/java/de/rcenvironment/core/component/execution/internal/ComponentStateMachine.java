@@ -866,7 +866,14 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             if (compExeRelatedInstances.component != null) {
                 try {
                     synchronized (compExeRelatedInstances.component) {
-                        compExeRelatedInstances.component.get().dispose();
+                        final Component component = compExeRelatedInstances.component.get();
+
+                        // The reference to the component may be null if the preparation task has not yet been
+                        // executed. This may occur if, in large workflows, the execution is cancelled during
+                        // preparation. Hence, in this case, there is nothing to do.
+                        if (component != null) {
+                            component.dispose();
+                        }
                     }
                 } catch (RuntimeException e) {
                     LOG.error("Failed to dispose "

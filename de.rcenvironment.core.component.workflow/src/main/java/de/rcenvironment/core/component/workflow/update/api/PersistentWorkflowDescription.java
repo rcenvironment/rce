@@ -12,10 +12,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -53,7 +53,7 @@ public class PersistentWorkflowDescription implements Serializable {
             JsonNode node = JsonUtils.getDefaultObjectMapper().readTree(jsonParser);
 
             if (node.get(WORKFLOW_VERSION) != null) {
-                workflowVersion = node.get(WORKFLOW_VERSION).getTextValue();
+                workflowVersion = node.get(WORKFLOW_VERSION).textValue();
             }
         }
 

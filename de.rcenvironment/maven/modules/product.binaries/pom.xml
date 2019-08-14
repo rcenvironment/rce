@@ -17,8 +17,8 @@
 		<module>${projects-root}/de.rcenvironment.binaries.dakota.win32.x86_64</module>
 		<module>${projects-root}/de.rcenvironment.binaries.dakota.linux.x86_64</module>
 		<module>${projects-root}/de.rcenvironment.binaries.dakota.feature</module>
-		<module>${projects-root}/de.rcenvironment.binaries.tiglviewer.win32.x86_64</module>
-		<module>${projects-root}/de.rcenvironment.binaries.tiglviewer.feature</module>
+		
+		
 	</modules>
 
 </project>

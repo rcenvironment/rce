@@ -8,7 +8,7 @@
  
 package de.rcenvironment.core.gui.cluster.configuration.internal;
 
-import org.codehaus.jackson.map.annotate.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Describes sensitive part of cluster connection configuration.

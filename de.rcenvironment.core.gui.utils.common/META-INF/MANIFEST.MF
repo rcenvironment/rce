@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Utils Common Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.common;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
@@ -16,8 +16,7 @@ Import-Package: de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.utils.common.variables.legacy,
  de.rcenvironment.core.utils.incubator.configuration,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
- org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson.annotate;version="1.9.13"
+ org.apache.commons.logging;version="1.1.1"
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
  org.eclipse.core.filesystem,

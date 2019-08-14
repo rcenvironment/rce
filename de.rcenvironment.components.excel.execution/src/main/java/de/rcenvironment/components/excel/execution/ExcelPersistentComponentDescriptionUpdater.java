@@ -9,7 +9,7 @@ package de.rcenvironment.components.excel.execution;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonParseException;
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;

@@ -13,15 +13,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.codehaus.jackson.JsonParseException;
 import org.easymock.EasyMock;
+import org.junit.Assert;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonParseException;
 
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
-import junit.framework.Assert;
 
 /**
  * Test cases for {@link PersistentWorkflowDescriptionUpdateServiceImpl}.

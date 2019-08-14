@@ -2,9 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.remoteaccess
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Import-Package: de.rcenvironment.core.command.common,
+Import-Package: com.fasterxml.jackson.databind;version="2.9.9",
+ de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,

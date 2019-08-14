@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.switch.execution</artifactId>
 	<name>RCE Switch Component Execute Bundle</name>
-	<version>8.2.3-SNAPSHOT</version>
+	<version>8.3.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

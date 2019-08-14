@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
@@ -14,7 +14,12 @@ Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.model.spi,
  de.rcenvironment.core.component.workflow.update.api
 Bundle-ClassPath: .
-Import-Package: de.rcenvironment.core.authentication,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.type;version="2.9.9",
+ com.fasterxml.jackson.core.util;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
@@ -56,12 +61,6 @@ Import-Package: de.rcenvironment.core.authentication,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.annotate;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.type;version="1.9.13",
- org.codehaus.jackson.util;version="1.9.13",
  org.eclipse.core.resources,
  org.eclipse.core.runtime;version="3.4.0",
  org.eclipse.draw2d,

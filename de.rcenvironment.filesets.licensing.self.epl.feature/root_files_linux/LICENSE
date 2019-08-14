@@ -1,0 +1,22 @@
+This software is licensed under the Eclipse Public License (EPL) v1.0, 
+except for the third-party software listed in the "THIRD_PARTY" file.
+
+For the full text of the EPL v1.0, please refer to "licenses/Eclipse Public License v 1.0.html". 
+
+Moreover, this software uses the Dakota Library. That library and its use are covered
+by the Gnu Lesser General Public License (LGPL) v2.1. A copy of this license can be found in
+"plugins/de.rcenvironment.binaries.dakota.linux.x86_64_${qualifiedVersion}/resources/binaries".
+
+This software contains software components that are licensed by the copyright holders as Free Software or Open Source Software.
+The corresponding licenses are listed in the file THIRD_PARTY. Please see the "licenses" folder for the individual license files.
+For some Open Source Software licenses, we must provide the source code of the licensed software.
+You may obtain the source code of these software components from us on a data medium if you submit a request to our responsible
+research institute within three years after the distribution of the software to the following address
+
+        Deutsches Zentrum fuer Luft- und Raumfahrt e.V. (DLR)
+        Simulations- und Softwaretechnik
+        Linder Hoehe
+        51147 Koeln
+        Germany
+
+using the subject "Request for source code related to RCE".

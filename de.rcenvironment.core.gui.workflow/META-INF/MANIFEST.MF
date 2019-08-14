@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.2.3.qualifier
+Bundle-Version: 8.3.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
@@ -13,7 +13,11 @@ Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.core.component,
  org.eclipse.jface,
  org.junit
-Import-Package: de.rcenvironment.core.authentication,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.core.util;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.communication.management,
@@ -59,10 +63,6 @@ Import-Package: de.rcenvironment.core.authentication,
  org.apache.commons.lang3.text;version="3.1.0",
  org.apache.commons.lang3.time;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.codehaus.jackson;version="1.9.13",
- org.codehaus.jackson.map;version="1.9.13",
- org.codehaus.jackson.node;version="1.9.13",
- org.codehaus.jackson.util;version="1.9.13",
  org.eclipse.core.filesystem,
  org.eclipse.core.resources,
  org.eclipse.ui,

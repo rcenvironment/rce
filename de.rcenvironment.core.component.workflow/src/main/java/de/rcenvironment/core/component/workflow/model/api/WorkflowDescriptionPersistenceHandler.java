@@ -29,15 +29,16 @@ import java.util.TreeMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.util.DefaultPrettyPrinter;
+
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.IdentifierException;
@@ -286,7 +287,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         JsonFactory f = new JsonFactory();
-        JsonGenerator g = f.createJsonGenerator(outputStream, STANDARD_JSON_ENCODING);
+        JsonGenerator g = f.createGenerator(outputStream, STANDARD_JSON_ENCODING);
         g.setPrettyPrinter(new DefaultPrettyPrinter());
 
         g.writeStartObject();
@@ -323,7 +324,7 @@ public class WorkflowDescriptionPersistenceHandler {
             Map<String, String> connectionBendpointMapping = calculateUniqueBendpointList(wd.getConnections());
             if (!connectionBendpointMapping.isEmpty()) {
                 ByteArrayOutputStream bendpointsStream = new ByteArrayOutputStream();
-                JsonGenerator bendpointsGenerator = f.createJsonGenerator(bendpointsStream, STANDARD_JSON_ENCODING);
+                JsonGenerator bendpointsGenerator = f.createGenerator(bendpointsStream, STANDARD_JSON_ENCODING);
                 bendpointsGenerator.writeStartArray();
                 writeBendpoints(bendpointsGenerator, connectionBendpointMapping);
                 bendpointsGenerator.writeEndArray();
@@ -333,7 +334,7 @@ public class WorkflowDescriptionPersistenceHandler {
         }
         if (wd.getWorkflowLabels().size() > 0) {
             ByteArrayOutputStream labelsStream = new ByteArrayOutputStream();
-            JsonGenerator labelsGenerator = f.createJsonGenerator(labelsStream, STANDARD_JSON_ENCODING);
+            JsonGenerator labelsGenerator = f.createGenerator(labelsStream, STANDARD_JSON_ENCODING);
             labelsGenerator.writeStartArray();
 
             List<WorkflowLabel> workflowLabels = wd.getWorkflowLabels();
@@ -720,7 +721,7 @@ public class WorkflowDescriptionPersistenceHandler {
         Map<String, WorkflowNode> nodes = new HashMap<>();
         final String message = "Failed to parse a workflow node, skipping it";
 
-        Iterator<JsonNode> nodeJsonNodeIterator = nodesJsonNode.getElements();
+        Iterator<JsonNode> nodeJsonNodeIterator = nodesJsonNode.elements();
         while (nodeJsonNodeIterator.hasNext()) {
             ObjectNode nodeJsonNode = (ObjectNode) nodeJsonNodeIterator.next();
             try {
@@ -924,7 +925,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         Set<EndpointDescription> endpoints = new HashSet<>();
 
-        Iterator<JsonNode> endpointsJsonNodeIterator = endpointsJsonNode.getElements();
+        Iterator<JsonNode> endpointsJsonNodeIterator = endpointsJsonNode.elements();
         while (endpointsJsonNodeIterator.hasNext()) {
             ObjectNode endpointJsonNode = (ObjectNode) endpointsJsonNodeIterator.next();
 
@@ -951,7 +952,7 @@ public class WorkflowDescriptionPersistenceHandler {
             Map<String, String> metaData = new HashMap<>();
             if (endpointJsonNode.has(METADATA)) {
                 ObjectNode metaDataJsonNode = (ObjectNode) endpointJsonNode.get(METADATA);
-                Iterator<String> metaDataJsonNodeIterator = metaDataJsonNode.getFieldNames();
+                Iterator<String> metaDataJsonNodeIterator = metaDataJsonNode.fieldNames();
                 while (metaDataJsonNodeIterator.hasNext()) {
                     String key = metaDataJsonNodeIterator.next();
                     metaData.put(key, metaDataJsonNode.get(key).asText());
@@ -987,7 +988,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         Set<EndpointGroupDescription> endpointGroups = new HashSet<>();
 
-        Iterator<JsonNode> endpointGroupsJsonNodeIterator = endpointGroupsJsonNode.getElements();
+        Iterator<JsonNode> endpointGroupsJsonNodeIterator = endpointGroupsJsonNode.elements();
         while (endpointGroupsJsonNodeIterator.hasNext()) {
             ObjectNode endpointGroupJsonNode = (ObjectNode) endpointGroupsJsonNodeIterator.next();
 
@@ -1048,7 +1049,7 @@ public class WorkflowDescriptionPersistenceHandler {
         final String message = "Failed to parse connection, skipping it";
         List<Connection> connections = new ArrayList<>();
 
-        Iterator<JsonNode> connectionJsonNodeIterator = connectionsJsonNode.getElements();
+        Iterator<JsonNode> connectionJsonNodeIterator = connectionsJsonNode.elements();
         while (connectionJsonNodeIterator.hasNext()) {
             ObjectNode connectionJsonNode = (ObjectNode) connectionJsonNodeIterator.next();
             try {
@@ -1143,7 +1144,7 @@ public class WorkflowDescriptionPersistenceHandler {
         ParsingFailedFlagHolder parsingFailedFlag) {
         final String message = "Failed to parse bendpoint, skipping it";
 
-        Iterator<JsonNode> bendpointJsonNodeIterator = bendpointsJsonNode.getElements();
+        Iterator<JsonNode> bendpointJsonNodeIterator = bendpointsJsonNode.elements();
         while (bendpointJsonNodeIterator.hasNext()) {
             ObjectNode bendpointJsonNode = (ObjectNode) bendpointJsonNodeIterator.next();
             try {
@@ -1258,7 +1259,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         Map<String, String> configuration = new HashMap<>();
 
-        Iterator<String> configurationJsonNodeIterator = configurationJsonNode.getFieldNames();
+        Iterator<String> configurationJsonNodeIterator = configurationJsonNode.fieldNames();
         while (configurationJsonNodeIterator.hasNext()) {
             String key = configurationJsonNodeIterator.next();
             configuration.put(key, configurationJsonNode.get(key).asText());
@@ -1287,7 +1288,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         Set<WorkflowLabel> labels = new LinkedHashSet<>();
 
-        Iterator<JsonNode> labelsJsonNodeIterator = labelsJsonNode.getElements();
+        Iterator<JsonNode> labelsJsonNodeIterator = labelsJsonNode.elements();
         while (labelsJsonNodeIterator.hasNext()) {
             ObjectNode labelJsonNode = (ObjectNode) labelsJsonNodeIterator.next();
             try {
