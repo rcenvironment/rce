@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="78">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="81">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="9.1.0.201906071203"/>
-<unit id="de.rcenvironment.platform.maven_extensions.bdd.feature.feature.group" version="9.1.0.201906071203"/>
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="10.0.0.0201911201547_RC"/>
+<unit id="de.rcenvironment.platform.maven_extensions.bdd.feature.feature.group" version="10.0.0.0201911201547_RC"/>
 <unit id="de.vonloesch.pdf4eclipse.feature.group" version="1.1.0"/>
 <unit id="nu.psnet.quickimage.feature.group" version="1.0.3.2"/>
-<repository location="https://software.dlr.de/updates/rce/9.x/repositories/platform/releases/9.1.0/"/>
+<repository location="https://software.dlr.de/updates/rce/10.x/repositories/platform/releases/10.0.0"/>
 </location>
 </locations>
 </target>

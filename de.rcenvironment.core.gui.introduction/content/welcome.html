@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <meta charset="UTF-8"></meta>
+    <title>Welcome Page</title>
+    <link rel="stylesheet" type="text/css" href="styles/style.css"></link>
+	<script language="javascript" type="text/javascript" src="script/intro.js"></script>
+  </head>
+  <body>
+	<div id="header">
+		<img id="logo" src="../content/images/rce-logo.png"></img>
+		<div id="intro-header">
+			Welcome to RCE (Remote Component Environment)
+		</div>
+		<div id="close">
+			<a href="http://org.eclipse.ui.intro/close">
+				<div id="closetext">close</div>
+				<div id="x-symbol">&times;</div>
+			</a>	
+		</div>
+	</div>
+	<div id="content">
+		<div id="left">
+			<a href="http://org.eclipse.ui.intro/showExample?id=org.eclipse.sdk.samples.swt.examples">
+				<div id="element">
+					<img src="icons/workflowIcon.png"/>
+					<h1>Example Workflows</h1>
+					<p>Try the Workflow Example Project</p>
+				</div>
+			</a>
+			<a href="http://org.eclipse.ui.intro/navigateToLink?openLink=news">
+				<div id="element">
+					<img src="icons/whatsNewIcon.png"/>
+					<h1>What's New?</h1>
+					<p>Browse the latest news</p>
+				</div>
+			</a>
+		</div>
+		<div id="right">
+			<a href="http://org.eclipse.ui.intro/navigateToLink?openLink=newsletter">
+				<div id="element">
+					<img src="icons/newsletterIcon.png"/>
+					<h1>Newsletter</h1>
+					<p>Subscribe to the RCE newsletter</p>
+				</div>
+			</a>
+			<a href="http://org.eclipse.ui.intro/showHelp">
+				<div id="element">
+					<img src="icons/docuIcon.png"/>
+					<h1>Documentation</h1>
+					<p>Open the integrated RCE Help</p>
+				</div>
+			</a>
+		</div>
+	</div>
+	<div id="footer">
+		<div id="checkbox">
+			<a id="checkboxLinkValue" href="http://org.eclipse.ui.intro/saveInput?checkboxValue=checked"></a>
+			<input type="checkbox" id="launchWhenStarted"></input>
+			<label>Do not show again</label>
+		</div>
+		<div id="icon">
+			<a href="http://org.eclipse.ui.intro/navigateToLink?openLink=twitter">
+				<div id="twittericon"></div>
+			</a>
+			<a href="http://org.eclipse.ui.intro/navigateToLink?openLink=github">
+				<div id="githubicon"></div>
+			</a>	
+		</div>
+	</div>
+  </body>
+</html>

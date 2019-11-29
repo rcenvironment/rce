@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.outputwriter.execution.validator;
@@ -36,6 +36,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel
+ * @author Brigitte Boden
  */
 public class OutputWriterComponentValidator extends AbstractComponentValidator {
 

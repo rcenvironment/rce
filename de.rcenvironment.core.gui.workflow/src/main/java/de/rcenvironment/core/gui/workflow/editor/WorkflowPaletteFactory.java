@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor;
@@ -33,11 +33,10 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
-import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
-import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -79,17 +78,16 @@ public class WorkflowPaletteFactory {
             }
         });
 
+        ComponentImageContainerService componentImageContainerService =
+            ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class);
+
         for (DistributedComponentEntry componentEntry : componentInstallations) {
             ComponentInterface componentInterface =
                 componentEntry.getComponentInstallation().getComponentInterface();
             // prepare the icon of the component
             ImageDescriptor imageDescriptor = null;
-            Image image = ComponentImageManager.getInstance().getIcon16Image(componentInterface);
-            if (image == null) {
-                imageDescriptor = Activator.getInstance().getImageRegistry().getDescriptor(Activator.IMAGE_RCE_ICON_16);
-            } else {
-                imageDescriptor = ImageDescriptor.createFromImage(image);
-            }
+            Image image = componentImageContainerService.getComponentImageContainer(componentInterface).getComponentIcon16();
+            imageDescriptor = ImageDescriptor.createFromImage(image);
 
             String name = componentInterface.getDisplayName();
             ToolIntegrationContextRegistry toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);

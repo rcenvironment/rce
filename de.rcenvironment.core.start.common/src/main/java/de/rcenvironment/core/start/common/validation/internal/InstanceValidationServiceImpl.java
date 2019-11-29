@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.validation.internal;
@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
@@ -32,8 +36,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Christian Weiss
  * @author Doreen Seider
  * @author Tobias Rodehutskors
- * @author Alexander Weinert (Validation failure with user confirmation)
+ * @author Alexander Weinert (Validation failure with user confirmation, OSGI-DS annotations)
  */
+@Component
 public class InstanceValidationServiceImpl implements InstanceValidationService {
 
     protected Map<Class<? extends InstanceValidator>, InstanceValidationResult> executedValidators = new HashMap<>();
@@ -42,8 +47,13 @@ public class InstanceValidationServiceImpl implements InstanceValidationService 
 
     private List<InstanceValidator> validators = new LinkedList<>();
 
+    @Reference(cardinality =  ReferenceCardinality.MULTIPLE, name = "Instance Startup Validator", policy = ReferencePolicy.DYNAMIC)
     protected void bindInstanceValidator(final InstanceValidator newValidation) {
         validators.add(newValidation);
+    }
+    
+    protected void unbindInstanceValidator(final InstanceValidator oldValidation) {
+        validators.remove(oldValidation);
     }
 
     /**

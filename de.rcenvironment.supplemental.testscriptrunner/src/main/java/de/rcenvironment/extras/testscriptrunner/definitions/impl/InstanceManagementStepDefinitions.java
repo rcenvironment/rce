@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.extras.testscriptrunner.definitions.impl;
@@ -11,12 +11,16 @@ package de.rcenvironment.extras.testscriptrunner.definitions.impl;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.io.FileUtils;
 
 import cucumber.api.DataTable;
 import cucumber.api.java.After;
@@ -47,14 +53,29 @@ import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
  * installations.
  *
  * @author Robert Mischke
+ * @author Lukas Rosenbach
  */
 public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBase {
+
+    private static final String UPLINK_CLIENT_ROLE = "uplink_client";
+
+    private static final String ENABLE_ACCOUNT_PARAMETER = "true";
+
+    private static final String SSH_ACCOUNT_PASSWORD = "ra_demo";
+
+    private static final String SSH_ACCOUNT_NAME = SSH_ACCOUNT_PASSWORD;
+
+    private static final String IP_LOCALHOST = "127.0.0.1";
 
     private static final String WARNINGS_LOG_FILE_NAME = "warnings.log";
 
     private static final String DEBUG_LOG_FILE_NAME = "debug.log";
 
-    private static final int IM_OPERATION_TIMEOUT = 30000;
+    private static final int IM_OPERATION_TIMEOUT = 30000; // in milliseconds
+
+    private static final int IM_STARTUP_TIMEOUT = 60; // in seconds
+
+    private static final int NETWORK_CONNECTION_READINESS_POLLING_INTERVAL = 500; // arbitrary; adjust as necessary
 
     private static final ManagedInstance[] EMPTY_INSTANCE_ARRAY = new ManagedInstance[0];
 
@@ -233,7 +254,7 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
         printToCommandConsole(StringUtils.format("Auto-starting instance(s) \"%s\"", instanceList));
         if (autoStartPhrase != null) {
             instanceManagementService.startInstance(installationId, instanceIds, imOperationOutputReceiver,
-                IM_OPERATION_TIMEOUT, false);
+                IM_OPERATION_TIMEOUT, false, "");
         }
     }
 
@@ -243,12 +264,15 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
      * 
      * @param startConcurrentlyFlag a phrase that is present (non-null) if the instances should be started in parallel
      * @param startWithGuiFlag a phrase that is present (non-null) if the instances should be started with GUIs
+     * @param commandArguments console arguments that are used to start the instance.
      * @throws Throwable on failure
      */
-    @When("^starting all instances( concurrently)?( in GUI mode)?$")
-    public void whenStartingAllInstances(String startConcurrentlyFlag, String startWithGuiFlag) throws Throwable {
+    @When("^starting all instances( concurrently)?( in GUI mode)?(?: with console command[s]? (-{1,2}.+))?$")
+    public void whenStartingAllInstances(String startConcurrentlyFlag, String startWithGuiFlag, String commandArguments) throws Throwable {
+        log.debug(commandArguments);
         final boolean startConcurrently = startConcurrentlyFlag != null;
         final boolean startWithGui = startWithGuiFlag != null;
+
         if (startConcurrently) { // phrase present
             // start concurrently
             final RunnablesGroup runnablesGroup = ConcurrencyUtils.getFactory().createRunnablesGroup();
@@ -258,7 +282,7 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
                     @Override
                     public void run() {
                         try {
-                            startSingleInstance(instance, startWithGui);
+                            startSingleInstance(instance, startWithGui, commandArguments, IM_STARTUP_TIMEOUT * enabledInstances.size());
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -269,8 +293,41 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
         } else {
             // start sequentially
             for (ManagedInstance instance : enabledInstances) {
-                startSingleInstance(instance, startWithGui);
+                startSingleInstance(instance, startWithGui, commandArguments, IM_STARTUP_TIMEOUT * enabledInstances.size());
             }
+        }
+    }
+
+    /**
+     * Launches the listed instances in the order given by the comma separated list. Fails if instance in list has not been registered.
+     * 
+     * @param instanceIdList comma separated list of instances.
+     * @param startWithGuiFlag Null if the instances shall be started without a GUI, some arbitrary string otherwise.
+     * @param commandArguments The commands to be passed to the started instances. May be null, thus indicating no commands.
+     * @throws Throwable on failure
+     */
+    @When("^starting instances in the following order \"([^\"]*)\"( in GUI mode)?(?: with console command[s]? (-{1,2}.+))?$")
+    public void whenStartingInstancesInGivenOrder(String instanceIdList, String startWithGuiFlag, String commandArguments)
+        throws Throwable {
+        final boolean startWithGui = startWithGuiFlag != null;
+        List<String> instances = parseInstanceList(instanceIdList);
+        for (String instanceId : instances) {
+            ManagedInstance instance = instancesById.get(instanceId);
+            startSingleInstance(instance, startWithGui, commandArguments, IM_STARTUP_TIMEOUT * instances.size());
+        }
+    }
+
+    /**
+     * Launches the listed instances in the order given by the comma separated list. Fails if instance in list has not been registered.
+     * 
+     * @param instanceIdList comma separated list of instances.
+     * @throws Throwable on failure
+     */
+    @When("^stopping instances in the following order \"([^\"]*)\"$")
+    public void whenStoppingInstancesInGivenOrder(String instanceIdList) throws Throwable {
+        for (String instanceId : parseInstanceList(instanceIdList)) {
+            ManagedInstance instance = instancesById.get(instanceId);
+            stopSingleInstance(instance);
         }
     }
 
@@ -316,7 +373,8 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
      * @param delaySeconds the delay, in seconds, after which the action should be performed
      * @throws Throwable on failure
      */
-    @When("^scheduling (?:a|an instance) (shutdown|restart|reconnect) of \"([^\"]+)\" after (\\d+) seconds$")
+    @SuppressWarnings("deprecation")
+    @When("^scheduling (?:a|an instance) (shutdown|restart|reconnect) of \"([^\"]+)\" after (\\d+) second[s]?$")
     public void whenSchedulingNodeActionsAfterDelay(final String action, final String instanceId, final int delaySeconds)
         throws Throwable {
 
@@ -336,7 +394,7 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
                         break;
                     case "restart":
                         stopSingleInstance(instance);
-                        startSingleInstance(instance, false); // assuming headless mode here
+                        startSingleInstance(instance, false, "", IM_STARTUP_TIMEOUT); // assuming headless mode here
                         break;
                     case "reconnect":
                         cycleAllOutgoingConnectionsOf(instance);
@@ -400,7 +458,7 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
 
             final ManagedInstance serverInstance = resolveInstance(serverInstanceId);
 
-            final String ipString = "127.0.0.1";
+            final String ipString = IP_LOCALHOST;
             Integer serverPort = serverInstance.getServerPort();
             if (serverPort == null) {
                 serverPort = portNumberGenerator.incrementAndGet();
@@ -457,6 +515,9 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
                 if (success) {
                     pendingInstances.remove(instance);
                 }
+            }
+            if (!pendingInstances.isEmpty()) {
+                Thread.sleep(NETWORK_CONNECTION_READINESS_POLLING_INTERVAL);
             }
         }
 
@@ -692,11 +753,10 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
     /**
      * Convenience shortcut to test all relevant log files for a clean shutdown.
      * 
-     * @param instances either "all instances" or "instance[s] \"<comma-separated list>\""
      * @throws Throwable on failure
      */
-    @Then("^the log output of (all instances) should indicate a clean shutdown with no unexpected warnings or errors$")
-    public void thenTheLogOutputShouldIndicateACleanShutdown(String instances) throws Throwable {
+    @Then("^the log output of all instances should indicate a clean shutdown with no warnings or errors$")
+    public void thenTheLogOutputShouldIndicateACleanShutdown() throws Throwable {
         for (ManagedInstance instance : enabledInstances) {
             // expect empty or absent warnings.log file
             assertTheProfileRelativeFileOfInstanceIsMissingOrEmpty(instance, WARNINGS_LOG_FILE_NAME);
@@ -706,6 +766,24 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
             assertTheProfileRelativeFileOfInstanceContains(instance, DEBUG_LOG_FILE_NAME,
                 "Main application shutdown complete, exit code: 0");
         }
+    }
+
+    /**
+     * Convenience shortcut to test all relevant log files for a clean shutdown.
+     * 
+     * @param instanceId either "all instances" or "instance[s] \"<comma-separated list>\""
+     * @throws Throwable on failure
+     */
+    @Then("^the log output of \"([^\"]*)\" should indicate a clean shutdown with no warnings or errors$")
+    public void thenTheLogOutputShouldIndicateACleanShutdown(String instanceId) throws Throwable {
+        ManagedInstance instance = resolveInstance(instanceId);
+        // expect empty or absent warnings.log file
+        assertTheProfileRelativeFileOfInstanceIsMissingOrEmpty(instance, WARNINGS_LOG_FILE_NAME);
+        assertTheProfileRelativeFileOfInstanceContains(instance, DEBUG_LOG_FILE_NAME,
+            "Known unfinished operations on shutdown: <none>");
+        // note: this will fail on instances below 8.2.0-snapshot
+        assertTheProfileRelativeFileOfInstanceContains(instance, DEBUG_LOG_FILE_NAME,
+            "Main application shutdown complete, exit code: 0");
     }
 
     /**
@@ -742,13 +820,181 @@ public class InstanceManagementStepDefinitions extends AbstractStepDefinitionBas
         Thread.sleep(TimeUnit.SECONDS.toMillis(secondsToWait));
     }
 
-    private void startSingleInstance(final ManagedInstance instance, boolean withGUI) throws IOException {
+    /**
+     * Closes specific UI screens after they have been opened.
+     * 
+     * @throws Throwable on failure
+     */
+    // TODO review these former parameter descriptions; is the step itself complete?
+    // @param windowSpecification identifier to assign closing operation
+    // @param errorMessage Message which is expected
+    @When("^closing the configureUI$")
+    public void whenClosingConfigureUIAfterStartUp() throws Throwable {
+
+        try {
+            final Robot robot = new Robot();
+            List<Integer> keys = new LinkedList<Integer>();
+            keys.add(KeyEvent.VK_DOWN);
+            keys.add(KeyEvent.VK_DOWN);
+            keys.add(KeyEvent.VK_DOWN);
+            keys.add(KeyEvent.VK_ENTER);
+
+            performKeyboardActions(robot, keys);
+
+        } catch (AWTException e) {
+            // TODO if this happens, is the stacktrace actually relevant? if not, it should be compressed
+            log.error("Error attempting to close the configuration UI", e);
+        }
+    }
+
+    /**
+     * Adds one or more tools to one or more instances.
+     * 
+     * TODO actually support the parameter variations
+     * 
+     * @param instanceIds list of instances, where tools are to be added
+     * @throws Throwable on failure
+     */
+    @Given("^adding testtool to \"([^\"]*)\"$")
+    public void addToolToInstance(String instanceIds) throws Throwable {
+        ManagedInstance instance = resolveInstance(instanceIds);
+        File testToolIntegrate = instance.getAbsolutePathFromRelative("integration/tools/common/TestTool");
+        if (testToolIntegrate.exists()) {
+            FileUtils.cleanDirectory(testToolIntegrate);
+        } else {
+            testToolIntegrate.mkdir();
+        }
+
+        File testToolTemplateDir = new File(executionContext.getTestScriptLocation(), "tools/TestTool");
+        FileUtils.copyDirectory(testToolTemplateDir, testToolIntegrate);
+    }
+
+    /**
+     * Configure one or more instances as an ssh-server.
+     * 
+     * TODO actually support the parameter variations and make more flexible
+     * 
+     * @param instanceId list of instances, which are configured as an ssh server
+     * @throws Throwable on failure
+     */
+    @Given("^configuring \"([^\"]*)\" as ssh server$")
+    public void configureSSHuplink(String instanceId) throws Throwable {
+        final ManagedInstance instance = resolveInstance(instanceId);
+        final String ipString = IP_LOCALHOST;
+        Integer serverPort = instance.getServerPort();
+        if (serverPort == null) {
+            serverPort = portNumberGenerator.incrementAndGet();
+            instance.setServerPort(serverPort);
+        }
+        instanceManagementService.applyInstanceConfigurationOperations(instanceId,
+            instanceManagementService.newConfigurationOperationSequence().enableSshServer(ipString, serverPort),
+            getTextoutReceiverForIMOperations());
+        List<String> sshAccountList = new LinkedList<String>();
+        sshAccountList.add(SSH_ACCOUNT_NAME); // account name
+        sshAccountList.add(UPLINK_CLIENT_ROLE); // account role
+        sshAccountList.add(ENABLE_ACCOUNT_PARAMETER); // enabled
+        sshAccountList.add(SSH_ACCOUNT_PASSWORD); // pw
+        instanceManagementService.applyInstanceConfigurationOperations(instanceId,
+            instanceManagementService.newConfigurationOperationSequence().addSshAccountFromStringParameters(sshAccountList),
+            getTextoutReceiverForIMOperations());
+    }
+
+    /**
+     * Configures the uplink connection to an ssh-server defined by the given description string.
+     * 
+     * TODO integrate with existing configure step
+     * 
+     * @param clientInstanceId The instance ID of the client to be connected
+     * @param serverInstanceId The instance ID of the uplink server to connect to
+     * @param autoRetryFlag Null if autoRetry should be disabled, some arbitrary string otherwise
+     * @throws Throwable on failure
+     */
+    @Given("^connect \"([^\"]*)\" via uplink to ssh server \"([^\"]*)\"( with autoRetry enabled)?$")
+    public void configureUplinkConnections(String clientInstanceId, String serverInstanceId, String autoRetryFlag) throws Throwable {
+        final ManagedInstance clientInstance = resolveInstance(clientInstanceId);
+        final ManagedInstance serverInstance = resolveInstance(serverInstanceId);
+        clientInstance.setUplinkUserName(SSH_ACCOUNT_PASSWORD);
+        List<String> uplinkConnection = new LinkedList<String>();
+        uplinkConnection.add(clientInstance.getId()); // connection id
+        uplinkConnection.add(IP_LOCALHOST); // hostname
+        uplinkConnection.add(serverInstance.getServerPort().toString()); // port
+        uplinkConnection.add(clientInstance.getId()); // clientid
+        uplinkConnection.add(ENABLE_ACCOUNT_PARAMETER); // gateway
+        uplinkConnection.add(ENABLE_ACCOUNT_PARAMETER); // connectOnStartup
+        uplinkConnection.add(String.valueOf(autoRetryFlag != null)); // autoRetry
+        uplinkConnection.add(clientInstance.getUplinkUserName()); // user_name
+        uplinkConnection.add("password"); // token indicating pw follows
+        uplinkConnection.add(SSH_ACCOUNT_PASSWORD); // password
+
+        instanceManagementService.applyInstanceConfigurationOperations(clientInstanceId,
+            instanceManagementService.newConfigurationOperationSequence().addUplinkConnectionFromStringParameters(uplinkConnection),
+            getTextoutReceiverForIMOperations());
+    }
+
+    /**
+     * @param instanceId The id of the instance that is tested
+     * @param notFlag Null if the instance should not have access to the testtool, some arbitrary string otherwise
+     * @throws Throwable on failure
+     */
+    @Then("^\"([^\"]*)\" has( no)? access to testtool")
+    public void instanceCanAccessTools(String instanceId, String notFlag) throws Throwable {
+        ManagedInstance instance = resolveInstance(instanceId);
+        String commandOutput = executeCommandOnInstance(instance, "components", false);
+        final boolean toolShouldBePresent = (notFlag == null);
+        final boolean toolIsPresent = commandOutput.contains("common/TestTool");
+
+        if (toolIsPresent != toolShouldBePresent) {
+            final String errorMessage;
+            if (toolIsPresent) {
+                errorMessage = String.format("%s has access to common/TestTool", instance.getId());
+            } else {
+                errorMessage = String.format("%s has no access to common/TestTool", instance.getId());
+            }
+            fail(errorMessage);
+        }
+    }
+    
+    /**
+     * @param instanceId The id of the instance whose workflows need to be finished
+     * @throws Throwable on failure
+     */
+    @Then("^wait until all workflows on \"([^\"]*)\" are finished or (\\d+) seconds have passed")
+    public void ThenWaitUntilAllWorkflowsFinished(String instanceId, int timeoutInSecs) throws Throwable{
+        int countSecs = timeoutInSecs;
+        while(countSecs > 0) {
+            ManagedInstance instance = resolveInstance(instanceId);        
+            String commandOutput = executeCommandOnInstance(instance, "wf", false);
+            Pattern logDirPattern = Pattern.compile("-- TOTAL COUNT: \\d+ workflow\\(s\\): (\\d+) running");
+            final Matcher matcher = logDirPattern.matcher(commandOutput);
+            if (!matcher.find()) {
+                fail(StringUtils.format("Could not identify the number of running workflows by trying to match \"%s\"; full output:\n %s", logDirPattern, commandOutput));
+            } else {
+                if(Integer.parseInt(matcher.group(1)) == 0) {
+                    return;
+                }
+            }
+            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            countSecs--;
+        }
+        fail(StringUtils.format("%s second(s) have passed and not all workflows are finished", timeoutInSecs));
+    }
+
+    private void performKeyboardActions(Robot robot, List<Integer> keys) {
+        keys.forEach((key) -> {
+            robot.keyPress(key);
+            robot.keyRelease(key);
+        });
+    }
+
+    private void startSingleInstance(final ManagedInstance instance, boolean withGUI, String commandArguments, int timeout)
+        throws IOException {
         instance.onStarting();
 
         final String installationId = instance.getInstallationId();
         printToCommandConsole(StringUtils.format("Launching instance \"%s\" using installation \"%s\"", instance, installationId));
+        // Dividing timeout by 1000, because timeout for startup is calculated in seconds
         instanceManagementService.startInstance(installationId, listOfSingleStringElement(instance.getId()),
-            getTextoutReceiverForIMOperations(), IM_OPERATION_TIMEOUT, withGUI);
+            getTextoutReceiverForIMOperations(), timeout, withGUI, commandArguments);
     }
 
     private void stopSingleInstance(ManagedInstance instance) throws IOException {

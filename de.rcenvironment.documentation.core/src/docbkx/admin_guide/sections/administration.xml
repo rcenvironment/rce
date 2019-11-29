@@ -1,0 +1,183 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="administration">
+	<title>RCE Administration</title>
+	<sect1>
+		<title>SSH Uplink Networks</title>
+		<para>
+			To exchange tool computation services between organizations,
+			some sort
+			of network connection must
+			be established. As many
+			organizations are (understandably) reluctant to
+			open ports into their
+			networks,
+			the Uplink approach is based on connecting to a shared
+			coordination/forwarding server called a "relay".
+		</para>
+		<para>
+			This relay server is typically placed outside of any
+			organization's
+			protected network, e.g. on a rented
+			server or in the DMZ
+			of one of the involved organizations.
+		</para>
+		<para>
+			Due to the exposed nature of this relay server, it is designed
+			to be
+			secure by default. There is only
+			one way of connecting to it,
+			which is the encrypted and authenticated
+			SSH protocol. The protocol
+			transmitted over SSH is designed to be concise and easily audited.
+		</para>
+		<para> Development is focused on placing as little trust as possible into the relay server.
+			Technical steps are being taken to limit what data can be monitored at the relay server.
+			Some of these features, however, are <emphasis>not</emphasis> implemented in the
+			experimental Uplink feature in RCE 10 yet. In all RCE 10.x versions, data transmitted to
+			and from tools is safely encrypted against unauthorized access from
+				<emphasis>outside</emphasis> users, through the standard security features provided
+			by the SSH protocol. However, all data could theoretically still be observed by
+			administrators of the relay server. <emphasis>If this is unacceptable in your setup,
+				please wait for the RCE 11 release, in which the Uplink feature is scheduled for
+				non-experimental release.</emphasis></para>
+		<para>
+			A typical Uplink setup between two or more organizations
+			involves:
+		</para>
+		<para>
+			The Uplink relay server (a specially configured RCE instance) in
+			a
+			location that is accessible from all
+			organization's networks.
+		</para>
+		<para>
+			This relay server opens a SSH port, with one or more sets of
+			credentials
+			for each organization.
+			Typically, only a single login is
+			needed for each project group within an
+			organization; see
+			below.
+		</para>
+		<para>
+			An Uplink SSH gateway node (again, a specially configured RCE
+			instance)
+			in each organization's
+			network.
+		</para>
+		<para>
+			This node is the only one that actually establishes an SSH
+			connection to
+			the relay.
+		</para>
+		<para>
+			It is typically centrally administered, and not used for any
+			other
+			end-user work.
+		</para>
+		<para>
+			A benefit of this setup is that the SSH login credentials are
+			only
+			required to be present on that
+			machine. Additionally, this reduces
+			the number of SSH logins that must be
+			configured on the
+			server side, as
+			it is effectively shared by all users with access to this
+			(internal)
+			SSH gateway.
+		</para>
+		<para>
+			This node opens one or more default RCE network connection ports
+			towards
+			the internal
+			network. Access to this can be restricted using
+			standard internal network
+			policies as needed.
+		</para>
+		<para>
+			End users can then use their individual RCE instances to connect
+			to the
+			SSH gateway node (using
+			RCE's default network features).
+		</para>
+		<para>
+			Once this setup is complete, users can access tool compute
+			services
+			published by their or one of the
+			other organizations in the
+			form of virtual tools within their RCE
+			networks.
+		</para>
+	</sect1>
+	<sect1>
+		<title>Example of a Cross-Organization Network</title>
+		<para>The following figure gives an example of how such a
+			cross-organization network could be structured:
+		</para>
+		<figure>
+			<title>Example RCE network</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/RCE-uplink-network.png"
+						contentwidth="400" />
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>The four project partners in the example all have an internal
+			network of RCE instances which are connected by standard RCE
+			connections. Uplink connections to a relay server are used to connect
+			between the different partners. The relay server is located outside
+			of the organizations networks, and only the relay server has to be
+			reachable via SSH over the internet. Typically, for each organization
+			one RCE instance (called SSH gateway) established an SSH connections
+			to this relay server. All other instances in the institution’s
+			internal network can be connected to it by standard RCE connections
+			and still publish tools to the other partners/ access tools published
+			by other partners.
+		</para>
+		<para>
+			Each institution in the example has a different internal setup, all
+			of which are possible:
+			<itemizedlist>
+				<listitem>
+					<para> Partner A has a dedicated RCE server where the published tools are
+						located, which is connected to the SSH gateway by an RCE connection. All
+						other RCE users in the internal network are connected to this server </para>
+				</listitem>
+				<listitem>
+					<para> Partner B has put all the tools directly on the SSH gateway instance.
+					</para>
+				</listitem>
+				<listitem>
+					<para> In Partner C's network, some tools are located on the SSH gateway, but
+						some tools are also published by users directly on their own machines. As
+						long as they are connected to the SSH gateway also those tools can be
+						published to the other partners. </para>
+				</listitem>
+				<listitem>
+					<para> Partner D has no tool server, instead the users’ computers connect
+						directly to the relay server. </para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect1>
+	<sect1>
+		<title>Notes and Recommendations: RCE's Default Network Connections
+		</title>
+		<para>For default connections, an arbitrary number of incoming network
+			ports can be configured.</para>
+	</sect1>
+	<sect1>
+		<title>Notes and Recommendations: RCE's SSH Port</title>
+	<para> When creating SSH accounts using the built-in administration
+		text mode UI, there is an issue when entering passwords including the
+		"@" character. This does not weaken security in any way, but can be
+		confusing for end users when their correctly entered password does not
+		work. It may be advisable to inform users about this. </para>
+	<para>Hashing SSH passwords with external BCrypt tools and entering them into the JSON file
+			containing SSH accounts (either manually or via scripts) should theoretically work, but
+			is neither tested nor supported at this point. Please contact us at
+				<email>rce@dlr.de</email> if this is relevant for you.</para>
+	</sect1>
+</chapter>

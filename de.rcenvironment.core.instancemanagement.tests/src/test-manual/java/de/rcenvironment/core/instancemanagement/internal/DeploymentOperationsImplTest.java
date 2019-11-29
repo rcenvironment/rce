@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -27,8 +27,11 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Manual integration tests for {@link DeploymentOperationsImpl}.
  * 
  * @author Robert Mischke
+ * @author Lukas Rosenbach
  */
 public class DeploymentOperationsImplTest {
+
+    private static final int ONE_MINUTE_IN_MILLISECONDS = 60000;
 
     private TempFileService tfs;
 
@@ -63,10 +66,10 @@ public class DeploymentOperationsImplTest {
     public void testDownload() throws IOException {
         File tempFile = tfs.createTempFileFromPattern("download-*.tmp");
         assertEquals("", FileUtils.readFileToString(tempFile));
-        operations.downloadFile("https://software.dlr.de/updates/rce/6.x/products/standard/releases/latest/zip/VERSION",
-            tempFile, true, false);
+        operations.downloadFile("https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/zip/VERSION",
+            tempFile, true, false, ONE_MINUTE_IN_MILLISECONDS);
         String content = FileUtils.readFileToString(tempFile);
-        assertTrue(content.startsWith("6."));
+        assertTrue(content.startsWith("9."));
     }
 
     /**

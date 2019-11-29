@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -36,6 +36,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQue
  * 
  * @author Doreen Seider
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class WorkflowExecutionControllerImpl implements WorkflowExecutionController {
 

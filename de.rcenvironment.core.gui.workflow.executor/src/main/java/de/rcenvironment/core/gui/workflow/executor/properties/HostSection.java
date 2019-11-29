@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.executor.properties;
@@ -93,31 +93,28 @@ public class HostSection extends ValidatingWorkflowNodePropertySection {
                         pingLabel.setText("Pinging host " + host + " ...");
                     }
                     hostSection.layout();
-                    ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                    ConcurrencyUtils.getAsyncTaskService().execute(() -> {
 
-                        @Override
-                        public void run() {
-                            try {
-                                Process p1 = java.lang.Runtime.getRuntime().exec("ping " + host);
-                                final int result = p1.waitFor();
-                                Display.getDefault().asyncExec(new Runnable() {
+                        try {
+                            Process p1 = java.lang.Runtime.getRuntime().exec("ping " + host);
+                            final int result = p1.waitFor();
+                            Display.getDefault().asyncExec(new Runnable() {
 
-                                    @Override
-                                    public void run() {
-                                        if (result == 0) {
-                                            pingLabel.setText("Host " + host + " is reachable");
-                                        } else {
-                                            pingLabel.setText("Could not reach " + host);
-                                        }
-                                        pinging = false;
-                                        hostSection.layout();
+                                @Override
+                                public void run() {
+                                    if (result == 0) {
+                                        pingLabel.setText("Host " + host + " is reachable");
+                                    } else {
+                                        pingLabel.setText("Could not reach " + host);
                                     }
-                                });
-                            } catch (InterruptedException e) {
-                                Logger.getLogger(HostSection.class.getName()).log(Level.WARNING, "", e);
-                            } catch (IOException e) {
-                                Logger.getLogger(HostSection.class.getName()).log(Level.WARNING, "", e);
-                            }
+                                    pinging = false;
+                                    hostSection.layout();
+                                }
+                            });
+                        } catch (InterruptedException e) {
+                            Logger.getLogger(HostSection.class.getName()).log(Level.WARNING, "", e);
+                        } catch (IOException e) {
+                            Logger.getLogger(HostSection.class.getName()).log(Level.WARNING, "", e);
                         }
 
                     });

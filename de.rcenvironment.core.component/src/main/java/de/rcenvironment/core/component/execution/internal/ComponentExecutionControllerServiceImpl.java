@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
@@ -61,7 +61,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ComponentExecutionControllerService}.
@@ -111,49 +110,8 @@ public class ComponentExecutionControllerServiceImpl
     protected void activate(BundleContext context) {
         bundleContext = context;
 
-        componentControllerGarbargeCollectionFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            @TaskDescription("Garbage collection: Component controllers")
-            public void run() {
-                Set<String> compExeIds = new HashSet<>(componentExecutionInformations.keySet());
-                if (VERBOSE_LOGGING) {
-                    log.debug("Running garbage collection for component controllers: " + compExeIds);
-                }
-                for (String executionId : compExeIds) {
-                    ComponentExecutionController componentController = null;
-                    try {
-                        componentController = getExecutionController(executionId);
-                    } catch (ExecutionControllerException e) {
-                        log.debug(StringUtils.format("Component controller garbage collection: Skip component controller: %s; cause: %s",
-                            executionId, e.getMessage()));
-                        continue;
-                    }
-                    if (!componentController.isWorkflowControllerReachable()) {
-                        log.debug("Found component controller with unreachable workflow controller: " + executionId);
-                        if (!ComponentConstants.FINAL_COMPONENT_STATES_WITH_DISPOSED.contains(componentController.getState())) {
-                            try {
-                                log.debug("Cancel component controller: " + executionId);
-                                componentController.cancelSync(CANCEL_TIMEOUT_MSEC);
-                            } catch (InterruptedException e) {
-                                Thread.interrupted(); // ignore and try to go further
-                            } catch (RuntimeException e) {
-                                log.error("Cancelling component during garbage collecting failed: " + executionId, e);
-                            }
-                        }
-                        if (ComponentConstants.FINAL_COMPONENT_STATES.contains(componentController.getState())) {
-                            try {
-                                log.debug("Dispose component controller: " + executionId);
-                                performDispose(executionId);
-                            } catch (ExecutionControllerException | RemoteOperationException e) {
-                                log.error(StringUtils.format("Failed to dispose component during garbage collecting: %s; cause: %s",
-                                    executionId, e.toString()));
-                            }
-                        }
-                    }
-                }
-            }
-        }, COMPONENT_CONTROLLER_GARBAGE_COLLECTION_INTERVAL_MSEC);
+        componentControllerGarbargeCollectionFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedInterval(
+            "Garbage collection: Component controllers", this::runGarbageCollection, COMPONENT_CONTROLLER_GARBAGE_COLLECTION_INTERVAL_MSEC);
     }
 
     @Deactivate
@@ -414,6 +372,45 @@ public class ComponentExecutionControllerServiceImpl
             if (componentServiceRegistrations.containsKey(executionId)) {
                 componentServiceRegistrations.get(executionId).unregister();
                 componentServiceRegistrations.remove(executionId);
+            }
+        }
+    }
+
+    private void runGarbageCollection() {
+        Set<String> compExeIds = new HashSet<>(componentExecutionInformations.keySet());
+        if (VERBOSE_LOGGING) {
+            log.debug("Running garbage collection for component controllers: " + compExeIds);
+        }
+        for (String executionId : compExeIds) {
+            ComponentExecutionController componentController = null;
+            try {
+                componentController = getExecutionController(executionId);
+            } catch (ExecutionControllerException e) {
+                log.debug(StringUtils.format("Component controller garbage collection: Skip component controller: %s; cause: %s",
+                    executionId, e.getMessage()));
+                continue;
+            }
+            if (!componentController.isWorkflowControllerReachable()) {
+                log.debug("Found component controller with unreachable workflow controller: " + executionId);
+                if (!ComponentConstants.FINAL_COMPONENT_STATES_WITH_DISPOSED.contains(componentController.getState())) {
+                    try {
+                        log.debug("Cancel component controller: " + executionId);
+                        componentController.cancelSync(CANCEL_TIMEOUT_MSEC);
+                    } catch (InterruptedException e) {
+                        Thread.interrupted(); // ignore and try to go further
+                    } catch (RuntimeException e) {
+                        log.error("Cancelling component during garbage collecting failed: " + executionId, e);
+                    }
+                }
+                if (ComponentConstants.FINAL_COMPONENT_STATES.contains(componentController.getState())) {
+                    try {
+                        log.debug("Dispose component controller: " + executionId);
+                        performDispose(executionId);
+                    } catch (ExecutionControllerException | RemoteOperationException e) {
+                        log.error(StringUtils.format("Failed to dispose component during garbage collecting: %s; cause: %s",
+                            executionId, e.toString()));
+                    }
+                }
             }
         }
     }

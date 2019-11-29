@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
@@ -56,7 +56,7 @@ public class LauncherVersionValidator extends DefaultInstanceValidator {
 
             return InstanceValidationResultFactory.createResultForPassed(VALIDATION_DISPLAY_NAME);
         } catch (NumberFormatException e) {
-            return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(VALIDATION_DISPLAY_NAME,
+            return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(VALIDATION_DISPLAY_NAME,
                 "RCE was started with an unkown launcher. This might result in unkown behaviour.",
                 "RCE was started with an unkown launcher. This might result in unkown behaviour.");
         }

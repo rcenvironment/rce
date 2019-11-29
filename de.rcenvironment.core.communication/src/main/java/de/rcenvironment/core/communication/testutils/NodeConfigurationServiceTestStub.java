@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.testutils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
+import de.rcenvironment.core.communication.sshconnection.InitialUplinkConnectionConfig;
 import de.rcenvironment.toolkit.utils.common.IdGeneratorType;
 
 /**
@@ -172,6 +174,18 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
     @Override
     public String getInstanceAdditionalInformation() {
         return "";
+    }
+
+    @Override
+    public List<InitialUplinkConnectionConfig> getInitialUplinkConnectionConfigs() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public File getStandardImportDirectory(String subdir) {
+        // not needed so far
+        return null;
     }
 
 }

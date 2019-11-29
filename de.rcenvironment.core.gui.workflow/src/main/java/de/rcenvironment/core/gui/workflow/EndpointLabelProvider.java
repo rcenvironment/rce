@@ -3,12 +3,11 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow;
 
-import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,8 +18,6 @@ import org.eclipse.jface.viewers.DecorationOverlayIcon;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Display;
-
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -53,11 +50,11 @@ public class EndpointLabelProvider extends LabelProvider {
 
     private Image outputImage = ImageManager.getInstance().getSharedImage(StandardImages.OUTPUT_16);
 
-    private ImageDescriptor inputConnectedDecorationIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationArrow.gif"));
+    private ImageDescriptor inputConnectedDecorationIcon =
+        ImageDescriptor.createFromURL(EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationArrow.gif"));
 
-    private ImageDescriptor inputRequiredDecorationIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationAsteriks.gif"));
+    private ImageDescriptor inputRequiredDecorationIcon =
+        ImageDescriptor.createFromURL(EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationAsteriks.gif"));
 
     private Map<String, Image> componentImages = new HashMap<String, Image>();
 
@@ -92,14 +89,10 @@ public class EndpointLabelProvider extends LabelProvider {
             if (componentImages.containsKey(componentDesc.getIdentifier())) {
                 image = componentImages.get(componentDesc.getIdentifier());
             } else {
-                byte[] icon = componentDesc.getIcon16();
-                if (icon != null) {
-                    image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
-                    if (!image.isDisposed() && image != null) {
-                        componentImages.put(componentDesc.getIdentifier(), image);
-                    }
-                } else {
-                    image = componentImage;
+                image = componentDesc.getIcon16();
+
+                if (!image.isDisposed()) {
+                    componentImages.put(componentDesc.getIdentifier(), image);
                 }
             }
         } else if (element instanceof EndpointContentProvider.Endpoint) {
@@ -185,10 +178,6 @@ public class EndpointLabelProvider extends LabelProvider {
 
     @Override
     public void dispose() {
-
-        for (Image image : componentImages.values()) {
-            image.dispose();
-        }
 
         for (Image image : connectedDecoratorCache.values()) {
             image.dispose();

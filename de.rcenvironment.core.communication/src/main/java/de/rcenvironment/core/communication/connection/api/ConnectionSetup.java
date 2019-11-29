@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.connection.api;
@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.connection.api;
 import java.util.concurrent.TimeoutException;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
@@ -91,5 +92,11 @@ public interface ConnectionSetup {
      * @return the id of the last associated {@link MessageChannel}; may be null
      */
     String getLastChannelId();
+
+    /**
+     * @param netCP the {@link NetworkContactPoint} to compare to
+     * @return true iff host and port are equal to the ones in this setup.
+     */
+    boolean equalsHostAndPort(NetworkContactPoint netCP);
 
 }

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration.cpacs;
@@ -34,7 +34,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.integration.CommonToolIntegratorComponent;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
@@ -59,6 +59,7 @@ import de.rcenvironment.toolkit.utils.text.AbstractTextLinesReceiver;
  * 
  * @author Jan Flink
  * @author Doreen Seider (logging)
+ * @author Brigitte Boden
  */
 public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent {
 

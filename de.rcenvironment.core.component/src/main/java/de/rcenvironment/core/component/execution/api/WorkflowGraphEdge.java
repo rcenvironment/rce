@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.api;
@@ -72,4 +72,95 @@ public class WorkflowGraphEdge implements Serializable {
         return inputEndpointCharacter;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        if (inputEndpointCharacter == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + inputEndpointCharacter.hashCode();
+        }
+
+        if (inputIdentifier == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + inputIdentifier.hashCode();
+        }
+
+        if (outputEndpointCharacter == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + outputEndpointCharacter.hashCode();
+        }
+
+        if (outputIdentifier == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + outputIdentifier.hashCode();
+        }
+
+        if (sourceExecutionIdentifier == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + sourceExecutionIdentifier.hashCode();
+        }
+
+        if (targetExecutionIdentifier == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + targetExecutionIdentifier.hashCode();
+        }
+        
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof WorkflowGraphEdge)) {
+            return false;
+        }
+        WorkflowGraphEdge other = (WorkflowGraphEdge) obj;
+        if (inputEndpointCharacter != other.inputEndpointCharacter) {
+            return false;
+        }
+        if (inputIdentifier == null) {
+            if (other.inputIdentifier != null) {
+                return false;
+            }
+        } else if (!inputIdentifier.equals(other.inputIdentifier)) {
+            return false;
+        }
+        if (outputEndpointCharacter != other.outputEndpointCharacter) {
+            return false;
+        }
+        if (outputIdentifier == null) {
+            if (other.outputIdentifier != null) {
+                return false;
+            }
+        } else if (!outputIdentifier.equals(other.outputIdentifier)) {
+            return false;
+        }
+        if (sourceExecutionIdentifier == null) {
+            if (other.sourceExecutionIdentifier != null) {
+                return false;
+            }
+        } else if (!sourceExecutionIdentifier.equals(other.sourceExecutionIdentifier)) {
+            return false;
+        }
+        if (targetExecutionIdentifier == null) {
+            if (other.targetExecutionIdentifier != null) {
+                return false;
+            }
+        } else if (!targetExecutionIdentifier.equals(other.targetExecutionIdentifier)) {
+            return false;
+        }
+        return true;
+    }
 }

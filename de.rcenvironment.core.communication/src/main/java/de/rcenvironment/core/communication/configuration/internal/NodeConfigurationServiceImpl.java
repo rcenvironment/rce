@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.configuration.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,10 +26,12 @@ import de.rcenvironment.core.communication.configuration.CommunicationConfigurat
 import de.rcenvironment.core.communication.configuration.CommunicationIPFilterConfiguration;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.configuration.SshConnectionsConfiguration;
+import de.rcenvironment.core.communication.configuration.UplinkConnectionsConfiguration;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
+import de.rcenvironment.core.communication.sshconnection.InitialUplinkConnectionConfig;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -40,6 +43,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  * @author Sascha Zur
+ * @author Brigitte Boden
  */
 public class NodeConfigurationServiceImpl implements NodeConfigurationService {
 
@@ -55,6 +59,8 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     private CommunicationConfiguration configuration;
 
     private SshConnectionsConfiguration sshConfiguration;
+
+    private UplinkConnectionsConfiguration uplinkConfiguration;
 
     private ConfigurationService configurationService;
 
@@ -152,6 +158,11 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
         return ipFilterConfiguration;
     }
 
+    @Override
+    public File getStandardImportDirectory(String subdir) {
+        return configurationService.getStandardImportDirectory(subdir);
+    }
+
     /**
      * OSGi-DS lifecycle method; made public for unit testing.
      * 
@@ -166,7 +177,9 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
         log.info("Local 'isRelay' setting: " + isRelay());
 
         ConfigurationSegment sshConfigurationSegment = configurationService.getConfigurationSegment("sshRemoteAccess");
+        ConfigurationSegment uplinkConfigurationSegment = configurationService.getConfigurationSegment("uplink");
         sshConfiguration = new SshConnectionsConfiguration(sshConfigurationSegment);
+        uplinkConfiguration = new UplinkConnectionsConfiguration(uplinkConfigurationSegment);
     }
 
     /**
@@ -295,6 +308,11 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     @Override
     public String getInstanceAdditionalInformation() {
         return configurationService.getInstanceAdditionalInformation();
+    }
+
+    @Override
+    public List<InitialUplinkConnectionConfig> getInitialUplinkConnectionConfigs() {
+        return uplinkConfiguration.getProvidedConnectionConfigs();
     }
 
 }

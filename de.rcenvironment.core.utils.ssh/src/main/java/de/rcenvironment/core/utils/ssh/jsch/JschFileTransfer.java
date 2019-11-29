@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.utils.ssh.jsch;
 
@@ -23,6 +23,7 @@ import com.jcraft.jsch.Session;
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public final class JschFileTransfer {
 

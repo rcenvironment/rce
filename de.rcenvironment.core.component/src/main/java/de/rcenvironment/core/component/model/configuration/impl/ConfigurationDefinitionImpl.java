@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.configuration.impl;
@@ -146,6 +146,7 @@ public class ConfigurationDefinitionImpl implements Serializable, ConfigurationD
         return configurationMetaDataDef;
     }
     
+    @Override
     public List<Object> getRawConfigurationDefinition() {
         return rawConfigurationDef;
     }
@@ -154,6 +155,7 @@ public class ConfigurationDefinitionImpl implements Serializable, ConfigurationD
         return rawPlaceholderMetaDataDef;
     }
 
+    @Override
     public List<Object> getRawConfigurationMetaDataDefinition() {
         return rawConfigurationMetaDataDef;
     }

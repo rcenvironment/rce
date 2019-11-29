@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
@@ -15,10 +15,8 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 
 import org.easymock.Capture;
@@ -31,6 +29,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.component.execution.internal.ComponentExecutionScheduler.State;
 import de.rcenvironment.core.component.execution.internal.InternalTDImpl.InternalTDType;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
@@ -397,11 +396,11 @@ public class ComponentExecutionSchedulerTest {
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
 
-        Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
+        WorkflowGraphPath resetCycleHops = WorkflowGraphPath.createEmpty();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
         EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(executionId).anyTimes();
         EasyMock.replay(workflowGraphHopMock);
-        resetCycleHops.add(workflowGraphHopMock);
+        resetCycleHops.append(workflowGraphHopMock);
         InternalTDImpl resetTD = new InternalTDImpl(InternalTDType.NestedLoopReset, resetCycleHops);
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_2, resetTD));
 
@@ -450,12 +449,12 @@ public class ComponentExecutionSchedulerTest {
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
-        Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
+        WorkflowGraphPath resetCycleHops = WorkflowGraphPath.createEmpty();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
         EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier())
             .andReturn(new ComponentExecutionIdentifier(UUID.randomUUID().toString())).anyTimes();
         EasyMock.replay(workflowGraphHopMock);
-        resetCycleHops.add(workflowGraphHopMock);
+        resetCycleHops.append(workflowGraphHopMock);
         InternalTDImpl resetTD = new InternalTDImpl(InternalTDType.NestedLoopReset, resetCycleHops);
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_2, resetTD));
 
@@ -502,11 +501,11 @@ public class ComponentExecutionSchedulerTest {
         compExeScheduler.addResetDataIdSent(identifiers.get(1));
         assertTrue(compExeScheduler.isLoopResetRequested());
 
-        Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
+        WorkflowGraphPath resetCycleHops = WorkflowGraphPath.createEmpty();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
         EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(executionId).anyTimes();
         EasyMock.replay(workflowGraphHopMock);
-        resetCycleHops.add(workflowGraphHopMock);
+        resetCycleHops.append(workflowGraphHopMock);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
         for (String id : identifiers) {
@@ -586,11 +585,11 @@ public class ComponentExecutionSchedulerTest {
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
 
-        Queue<WorkflowGraphHop> hopsToTraverse = new LinkedList<>();
+        WorkflowGraphPath hopsToTraverse = WorkflowGraphPath.createEmpty();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
         EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(executionId).anyTimes();
         EasyMock.replay(workflowGraphHopMock);
-        hopsToTraverse.add(workflowGraphHopMock);
+        hopsToTraverse.append(workflowGraphHopMock);
         InternalTDImpl failureTD1 = new InternalTDImpl(InternalTDType.FailureInLoop, hopsToTraverse);
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, failureTD1));
         InternalTDImpl failureTD2 = new InternalTDImpl(InternalTDType.FailureInLoop, hopsToTraverse);
@@ -625,7 +624,7 @@ public class ComponentExecutionSchedulerTest {
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
 
-        Queue<WorkflowGraphHop> hopsToTraverse = new LinkedList<>();
+        WorkflowGraphPath hopsToTraverse = WorkflowGraphPath.createEmpty();
         InternalTDImpl failureTD1 = new InternalTDImpl(InternalTDType.FailureInLoop, "id-1", hopsToTraverse, "11");
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, failureTD1));
         InternalTDImpl failureTD2 = new InternalTDImpl(InternalTDType.FailureInLoop, "id-2", hopsToTraverse, "21");
@@ -767,7 +766,7 @@ public class ComponentExecutionSchedulerTest {
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
         endpointDatumsSent
-            .add(new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.FailureInLoop, new LinkedList<WorkflowGraphHop>(), "1")));
+            .add(new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.FailureInLoop, WorkflowGraphPath.createEmpty(), "1")));
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new NotAValueTDStub("id")));
 
         sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);

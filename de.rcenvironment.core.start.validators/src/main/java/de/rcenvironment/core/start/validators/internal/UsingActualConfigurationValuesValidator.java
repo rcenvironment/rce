@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
@@ -30,7 +30,7 @@ public class UsingActualConfigurationValuesValidator extends DefaultInstanceVali
             String errorMessage1 = "Failed to load configuration file. Most likely, it has syntax errors. Check the log for details.";
             String errorMessage2 = "Default configuration values will be applied.";
 
-            return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(validationDisplayName,
+            return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(validationDisplayName,
                 errorMessage1 + " " + errorMessage2, errorMessage1 + "\n\n" + errorMessage2);
         }
         return InstanceValidationResultFactory.createResultForPassed(validationDisplayName);

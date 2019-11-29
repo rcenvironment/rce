@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common;
@@ -50,10 +50,20 @@ public interface CommonIdBase extends Serializable {
     int SESSION_PART_LENGTH = 10;
 
     /**
+     * The maximum length, in characters, of any "logical node qualifier", which is the "logical node id part" without the trailing type
+     * identifier, which is a single character. Consequently, the maximum logical node id part length is this value plus one for the type
+     * identifier.
+     */
+    int MAXIMUM_LOGICAL_NODE_QUALIFIER_LENGTH = 32;
+
+    /**
      * The maximum length, in characters, of any non-null, non-default "logical node id part" of any subclass implementing this interface.
      * Note that this part is optional by default, but certain subinterfaces may make it mandatory as part of their external contract.
+     * <p>
+     * The "+1" represents the trailing type identifier which is added to the actual "qualifier". The type identifier is currently only used
+     * to distinguish between transient and recognizable logical node ids, but more types may be added in the future.
      */
-    int MAXIMUM_LOGICAL_NODE_PART_LENGTH = 33;
+    int MAXIMUM_LOGICAL_NODE_PART_LENGTH = MAXIMUM_LOGICAL_NODE_QUALIFIER_LENGTH + 1;
 
     /**
      * Derived total length of an {@link InstanceNodeId}'s string form; provided here to centralize test and parsing assumptions.
@@ -94,18 +104,24 @@ public interface CommonIdBase extends Serializable {
     /**
      * The prefix of all persistent/recognizable logical node parts.
      */
-    String RECOGNIZABLE_LOGICAL_NODE_PART_PREFIX = "1";
+    String RECOGNIZABLE_LOGICAL_NODE_PART_PREFIX = "r";
 
     /**
      * The prefix of all transient logical node parts.
      */
-    String TRANSIENT_LOGICAL_NODE_PART_PREFIX = "f";
+    String TRANSIENT_LOGICAL_NODE_PART_PREFIX = "t";
 
     /**
      * The default display name that is returned by {@link InstanceNodeSessionId#getAssociatedDisplayName()} if no name was associated with
      * that id using {@link #associateDisplayName(InstanceNodeSessionId, String)} yet.
      */
     String DEFAULT_DISPLAY_NAME = "<unknown>";
+
+    /**
+     * The suffix that is attached to an instance's current session name when a name resolution is requested for an older session of that
+     * instance.
+     */
+    String DISPLAY_NAME_SUFFIX_FOR_OUTDATED_SESSIONS = " <outdated session>";
 
     /**
      * Convenience method for acquiring the display name associated with the identified node.

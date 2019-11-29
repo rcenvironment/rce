@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.tiglviewer.views;
@@ -204,7 +204,7 @@ public class TIGLViewer extends ViewPart {
         });
 
         grabApplication = ConcurrencyUtils.getAsyncTaskService()
-            .scheduleAtFixedRateAfterDelay("Grabbing the external TiGL Viewer application window.", () -> {
+            .scheduleAtFixedIntervalAfterInitialDelay("Grabbing the external TiGL Viewer application window.", () -> {
                 LOGGER.debug("Scanning for the TiGL Viewer applications process ID.");
                 HWND hwnd = User32.INSTANCE.FindWindow(null, windowTitle);
                 IntByReference pidReference = new IntByReference();
@@ -263,7 +263,6 @@ public class TIGLViewer extends ViewPart {
             + "    <console display=\"0\"/>\n"
             + "    <toolbars display=\"1\"/>\n"
             + "</TIGLViewer>";
-
 
         try {
             ctrlFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("controlfile.xml");

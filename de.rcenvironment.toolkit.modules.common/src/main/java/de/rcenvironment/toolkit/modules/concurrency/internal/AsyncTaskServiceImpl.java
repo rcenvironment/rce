@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.toolkit.modules.concurrency.internal;
@@ -242,6 +242,11 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             try {
                 try {
                     result = innerCallable.call();
+                } catch (RejectedExecutionException e) {
+                    log.debug("Execution of Callable for task " + statisticsEntry.getCategoryName()
+                        + " was rejected, typically because the thread pool is shutting down; detail information: " + e.toString());
+                    exception = true;
+                    throw e;
                 } catch (RuntimeException e) {
                     log.warn("Unhandled exception in Callable for task " + statisticsEntry.getCategoryName(), e);
                     exception = true;
@@ -292,6 +297,10 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
             try {
                 try {
                     innerRunnable.run();
+                } catch (RejectedExecutionException e) {
+                    log.debug("Execution of Runnable for task " + statisticsEntry.getCategoryName()
+                        + " was rejected, typically because the thread pool is shutting down; detail information: " + e.toString());
+                    exception = true;
                 } catch (RuntimeException e) {
                     log.warn("Unhandled exception in Runnable for task " + statisticsEntry.getCategoryName(), e);
                     exception = true;
@@ -382,7 +391,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         try {
             getNullSafeExecutorService().execute(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), taskId));
         } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(runnable);
+            logExecutionRejectedAfterShutdown(categoryName);
             throw e;
         }
     }
@@ -414,7 +423,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         try {
             return getNullSafeExecutorService().submit(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), taskId));
         } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(runnable);
+            logExecutionRejectedAfterShutdown(categoryName);
             throw e;
         }
     }
@@ -446,7 +455,7 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
         try {
             return getNullSafeExecutorService().submit(new WrappedCallable<T>(task, getStatisticsEntry(categoryName), taskId));
         } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(task);
+            logExecutionRejectedAfterShutdown(categoryName);
             throw e; // the alternative would be returning a synthetic Future; unclear which is better
         }
     }
@@ -454,57 +463,104 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
     @Override
     @Deprecated
     public ScheduledFuture<?> scheduleAfterDelay(Runnable runnable, long delayMsec) {
-        return schedulerService.schedule(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
-            delayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().schedule(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
+                delayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(runnable);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public ScheduledFuture<?> scheduleAfterDelay(String categoryName, Runnable runnable, long delayMsec) {
-        return schedulerService.schedule(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
-            delayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().schedule(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
+                delayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public <T> ScheduledFuture<T> scheduleAfterDelay(String categoryName, Callable<T> callable, long delayMsec) {
-        return schedulerService.schedule(new WrappedCallable<T>(callable, getStatisticsEntry(categoryName), null),
-            delayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().schedule(new WrappedCallable<T>(callable, getStatisticsEntry(categoryName), null),
+                delayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     @Deprecated
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long repetitionDelayMsec) {
-        return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+        try {
+            return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(runnable);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(String categoryName, Runnable runnable, long repetitionDelayMsec) {
-        return scheduleAtFixedRateAfterDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+        try {
+            return scheduleAtFixedRateAfterDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedInterval(String categoryName, Runnable runnable, long repetitionDelayMsec) {
-        return scheduleAtFixedIntervalAfterInitialDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate
+        try {
+            return scheduleAtFixedIntervalAfterInitialDelay(categoryName, runnable, repetitionDelayMsec, repetitionDelayMsec); // delegate´
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     @Deprecated
     public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(Runnable runnable, long initialDelayMsec, long repetitionDelayMsec) {
-        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
-            initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().scheduleAtFixedRate(
+                new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), null),
+                initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(runnable);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(String categoryName, Runnable runnable, long initialDelayMsec,
         long repetitionDelayMsec) {
-        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
-            initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().scheduleAtFixedRate(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
+                initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedIntervalAfterInitialDelay(String categoryName, Runnable runnable, long initialDelayMsec,
         long repetitionDelayMsec) {
-        return schedulerService.scheduleWithFixedDelay(new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
-            initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        try {
+            return getNullSafeSchedulerService().scheduleWithFixedDelay(
+                new WrappedRunnable(runnable, getStatisticsEntry(categoryName), null),
+                initialDelayMsec, repetitionDelayMsec, TimeUnit.MILLISECONDS);
+        } catch (RejectedExecutionException e) {
+            logExecutionRejectedAfterShutdown(categoryName);
+            throw e; // the alternative would be returning a synthetic Future; unclear which is better
+        }
     }
 
     @Override
@@ -588,17 +644,34 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
     }
 
     private ExecutorService getNullSafeExecutorService() {
-        if (executorService != null) {
-            return executorService;
+        final ExecutorService snapshot = executorService; // prevent race conditions between null check and return
+        if (snapshot != null) {
+            return snapshot;
         } else {
             // use the same error handling as if the reference still pointed to a shutdown executor
             throw new RejectedExecutionException();
         }
     }
 
+    private ScheduledExecutorService getNullSafeSchedulerService() {
+        final ScheduledExecutorService snapshot = schedulerService; // prevent race conditions between null check and return
+        if (snapshot != null) {
+            return snapshot;
+        } else {
+            // use the same error handling as if the reference still pointed to a shutdown executor
+            throw new RejectedExecutionException();
+        }
+    }
+
+    @Deprecated
     private void logExecutionRejectedAfterShutdown(Object task) {
-        log.warn("Ignoring request to execute task of type " + task.getClass()
+        log.debug("Ignoring request to execute task of type " + task.getClass()
             + " as the thread pool has been shut down (java.util.concurrent.RejectedExecutionException)");
+    }
+
+    private void logExecutionRejectedAfterShutdown(String category) {
+        log.debug("Ignoring request to execute task of category '" + category
+            + "' as the thread pool has been shut down (java.util.concurrent.RejectedExecutionException)");
     }
 
     private void initialize() {

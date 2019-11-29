@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.management.internal;
@@ -83,7 +83,7 @@ public class ComponentDataConverterTest {
 
         // a simple stability check of the serialized form; obviously, the length value is specific to the created test object,
         // and must be adapted every time the test object is changed
-        final int expectedSerializedLength = 1007;
+        final int expectedSerializedLength = 1031;
         assertThat(serialized.length(), is(expectedSerializedLength));
     }
 

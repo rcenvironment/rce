@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.internal;
@@ -106,6 +106,14 @@ public class AuthorizationPermissionSetImpl implements AuthorizationPermissionSe
         final List<AuthorizationAccessGroup> newGroups = new ArrayList<>(groups);
         newGroups.retainAll(otherPermissionSet.getAccessGroups()); // intersects
         return new AuthorizationPermissionSetImpl(newGroups);
+    }
+
+    @Override
+    public AuthorizationAccessGroup getArbitraryGroup() {
+        if (groups.isEmpty()) {
+            throw new IllegalStateException("Requested a group from an empty permission set");
+        }
+        return groups.get(0); // there is no criterion for picking another one, so simply take the first
     }
 
     @Override

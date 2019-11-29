@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.resources.api;
@@ -437,7 +437,12 @@ public enum StandardImages implements ImageSource {
     /**
      * Default 16px icon for integrated tools.
      */
-    INTEGRATED_TOOL_DEFAULT_16(fromLocalBundle("tool16.png"));
+    INTEGRATED_TOOL_DEFAULT_16(fromLocalBundle("tool16.png")),
+
+    /**
+     * Default 32px icon for integrated tools.
+     */
+    INTEGRATED_TOOL_DEFAULT_32(fromLocalBundle("tool32.png"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 

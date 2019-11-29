@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.api;
@@ -42,6 +42,14 @@ public interface AuthorizationPermissionSet {
      * @return the intersection with the other set, ie a set containing only elements present in both
      */
     AuthorizationPermissionSet intersectWith(AuthorizationPermissionSet otherPermissionSet);
+
+    /**
+     * Returns any of the contained groups. For use cases where a ressouce can be accessed via any available group, but one must be chosen.
+     * No assumptions should be made about the selection process, e.g. it does neither have to be stable nor random.
+     * 
+     * @return any of the contained groups
+     */
+    AuthorizationAccessGroup getArbitraryGroup();
 
     /**
      * @return true if this permission set represents public access; if true, then the list of groups contains exactly the "public" group

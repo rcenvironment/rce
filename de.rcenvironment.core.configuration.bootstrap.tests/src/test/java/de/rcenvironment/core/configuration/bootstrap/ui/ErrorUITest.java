@@ -3,13 +3,14 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.bootstrap.ui;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class ErrorUITest {
      */
     @Test
     public void testErrorTextUIWithLanternaTest() {
-        final LanternaTest lanternaTest = new LanternaTest();
+        final LanternaTestUtils lanternaTest = new LanternaTestUtils();
         Runnable uiRunnable = new Runnable() {
 
             @Override
@@ -42,12 +43,12 @@ public class ErrorUITest {
         lanternaTest.setUiRunnable(uiRunnable);
         
         Queue<Matcher<char[][]>> assertions = new LinkedList<Matcher<char[][]>>();
-        assertions.add(TestTerminal.containsString(ARBITRARY_ERROR_TEXT));
+        assertions.add(TerminalStub.containsString(ARBITRARY_ERROR_TEXT));
         lanternaTest.addTestStage(assertions, 1);
         
         // TODO there is no assertion in this case, but the timer still waits for a flush, which causes it to wait for a second
         lanternaTest.addTestStage(new Key(Kind.Enter), 1);
         
-        lanternaTest.executeTests(true);
+        lanternaTest.executeTestsWithTimeout(5, TimeUnit.SECONDS);
     }
 }

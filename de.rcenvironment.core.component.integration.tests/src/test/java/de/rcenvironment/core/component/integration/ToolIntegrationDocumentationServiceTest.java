@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration;
@@ -153,6 +153,7 @@ public class ToolIntegrationDocumentationServiceTest {
 
         ComponentInterface cint = EasyMock.createNiceMock(ComponentInterface.class);
         EasyMock.expect(cint.getDocumentationHash()).andReturn(hash).anyTimes();
+        EasyMock.expect(cint.getIdentifierAndVersion()).andReturn(installationID).anyTimes();
         EasyMock.replay(cint);
 
         ComponentRevision cr = EasyMock.createNiceMock(ComponentRevision.class);

@@ -2,19 +2,20 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI CPACS Tool Integration Wizard
 Bundle-SymbolicName: de.rcenvironment.core.gui.wizards.toolintegration.cpacs;singleton:=true
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: de.rcenvironment.core.component.integration,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ de.rcenvironment.core.component.integration,
  de.rcenvironment.core.component.integration.cpacs,
+ de.rcenvironment.core.component.model.impl,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.utils.common.components,
  de.rcenvironment.core.gui.wizards.toolintegration,
  de.rcenvironment.core.gui.wizards.toolintegration.api,
  de.rcenvironment.core.utils.common,
  org.apache.commons.logging;version="1.1.1",
- com.fasterxml.jackson.core;version="2.9.9",
- com.fasterxml.jackson.databind;version="2.9.9",
  org.eclipse.help,
  org.eclipse.jface.dialogs,
  org.eclipse.jface.wizard,

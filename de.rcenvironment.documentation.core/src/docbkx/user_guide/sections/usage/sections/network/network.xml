@@ -1,181 +1,469 @@
 <!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <sect1 id="network">
-	<title>Connecting RCE instances via the RCE network or via SSH connections</title>
-	<para>RCE provides two possibilities to connect your RCE instance to other RCE instances and to use
-		the user-integrated tools and components published on those instances: The RCE network
-		connections and SSH connections. RCE connections are meant to be used only in a trusted
-		network (e.g. your institution's internal network). The RCE network traffic is currently
-			<emphasis>not encrypted</emphasis>. This means that it is <emphasis>not
-			secure</emphasis> to expose RCE server ports to untrusted networks like the internet. In
-		the case that it is not possible or not secure to use RCE connections, SSH connections
-		provide a more secure alternative. The following table compares the two connection
-			types:<table frame="all">
-			<title>Connection types</title>
-			<tgroup cols="6">
-				<colspec colname="c1" colnum="1" colwidth="2.06*"/>
-				<colspec colname="newCol4" colnum="2" colwidth="1.7*"/>
-				<colspec colname="newCol9" colnum="3" colwidth="2.55*"/>
-				<colspec colname="newCol6" colnum="4" colwidth="1.67*"/>
-				<colspec colname="newCol7" colnum="5" colwidth="1.98*"/>
-				<colspec colname="c2" colnum="6" colwidth="1*"/>
+	<title>Connecting RCE instances	</title>
+	<para>Since RCE 10, RCE provides three possibilities to connect your RCE instance to other RCE
+		instances and to use the user-integrated tools and components published on those instances:
+		The RCE network connections, SSH Uplink connections and SSH Remote Access connections. RCE
+		connections are meant to be used only in a trusted network (e.g. your institution's internal
+		network). The RCE network traffic is currently <emphasis>not encrypted</emphasis> . This
+		means that it is <emphasis>not secure </emphasis> to expose RCE server ports to untrusted
+		networks like the internet. In the case that it is not possible or not secure to use RCE
+		connections, SSH connections provide a more secure alternative. </para> 
+		<para>As the new Uplink connections do not yet support all features of
+			the former SSH connections (the publishing of workflows is not
+			possible by Uplink connections), we decided to keep both types of
+			connections in the current release. Thus, in the network view
+			there
+			are now 3 types of connections: the standard RCE connections
+			(meant to
+			be used in secure internal networks), the old "SSH Remote
+			Access
+			Connections" and the new "Uplink Connections".
+		</para>
+		<para>The following table compares the three connection types: <table
+			frame="all">
+			<title>Connection types - feature matrix</title>
+			<tgroup cols="4">
+				<colspec colname="c1" colnum="1" colwidth="2*"/>
+				<colspec colname="newCol4" colnum="2" colwidth="1*"/>
+				<colspec colname="newCol3" colnum="3" colwidth="1*"/>
+				<colspec colname="c2" colnum="4" colwidth="1*"/>
 				<thead>
 					<row>
 						<entry>Connection type</entry>
-						<entry>Access to all published tools</entry>
-						<entry>Supporting all RCE network functions (e.g. remote monitoring)</entry>
-						<entry>Encrypted traffic</entry>
-						<entry>Using login name and password or RSA key</entry>
-						<entry>Symmetrical</entry>
+						<entry>RCE connections ("internal network")</entry>
+						<entry>SSH Remote Access connections</entry>
+						<entry>SSH Uplink connections</entry>
 					</row>
 				</thead>
 				<tbody>
 					<row>
-						<entry>RCE connections</entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
-						<entry><emphasis role="bold">no</emphasis></entry>
-						<entry><emphasis role="bold">no</emphasis></entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
+						<entry>Publishing built-in tools (e.g. Joiner, Parametric Study, ...)</entry>
+						<entry>yes</entry>
+						<entry>no</entry>
+						<entry>no</entry>
 					</row>
 					<row>
-						<entry>SSH connections</entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
-						<entry><emphasis role="bold">no</emphasis></entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
-						<entry><emphasis role="bold">yes</emphasis></entry>
-						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry>Publishing user-integrated tools</entry>
+						<entry>yes</entry>
+						<entry>yes</entry>
+						<entry>yes</entry>
+					</row>
+					<row>
+						<entry>Publishing workflows as tools</entry>
+						<entry>no *</entry>
+						<entry>yes</entry>
+						<entry>no *</entry>
+					</row>
+					<row>
+						<entry>Symmetric/bidirectional tool publishing</entry>
+						<entry>yes</entry>
+						<entry>no</entry>
+						<entry>yes</entry>
+					</row>
+					<row>
+						<entry>Accessing remote workflow status and data management</entry>
+						<entry>yes</entry>
+						<entry>no</entry>
+						<entry>no</entry>
+					</row>
+					<row>
+						<entry>Remote system monitoring (CPU/RAM)</entry>
+						<entry>yes</entry>
+						<entry>yes</entry>
+						<entry>no **</entry>
+					</row>
+					<row>
+						<entry>Login authorization (via password or SSH keyfile)</entry>
+						<entry>no</entry>
+						<entry>yes</entry>
+						<entry>yes</entry>
+					</row>
+					<row>
+						<entry>Suitable for insecure networks (e.g. internet)</entry>
+						<entry>no (!)</entry>
+						<entry>partially ***</entry>
+						<entry>yes (via relay)</entry>
 					</row>
 				</tbody>
 			</tgroup>
-		</table></para>
+		</table> * = planned for RCE 11; ** = may be added in a future release; *** = connections
+		are encrypted, but require an open incoming network port for publishing tools - if possible,
+		use Uplink connections instead</para>
 	<sect2>
 		<title>RCE Network Connections</title>
-		<para>RCE connections are meant to be used only in a trusted network (e.g. your
-			institution's internal network). To build up a network of RCE instances, at least one of
-			the instances has to be configured as a server (see the "Configuration" section or the
-			sample configuration file "Relay server" for details).</para>
-		<para>On the client side, RCE network connections can be added in the "network" view by clicking
-			"Add network connection" and entering the hostname and port of an RCE server instance.
-			The connections are shown in the "RCE Network"->"Connections" subtree. They can also be
-			edited, connected and disconnected in the network view. However, the changes made here
-			are not saved in the configuration yet, i.e. they will be lost when RCE is closed or
-			restarted. To permanently add connections, you can edit the configuration file (see the
-			"Configuration" section for details). </para>
-		<para>In the "RCE Network" -> "Instances" subtree all RCE instances in the network are
-			listed. When expanding the entry for an instance, you can see monitoring data like CPU
-			or RAM usage for this instance, and the published components and tools of this instance
-			(if it has any).</para>
-		<para>The published components and tools of the other instances in your network are also shown in
-			the palette of the Workflow Editor. From there, you can use them in your workflows just
-			like your local components and tools. When you start a workflow, in the "Execute
-			Workflow" wizard there is an overview which component will be run on which RCE instance.
-			If a component is available on several instances, you can choose here on which instance
-			it should be run. In the same wizard, you can also choose another instance as the
-			"Controller Target Instance", which means that the workflow execution will be controlled
-			by this instance (see the section "Configuration Parameters" for more information). This
-			can be useful when you start a long-running workflow where all components are run on
-			remote instances and you do not want to keep your local computer connected all the
-			time.</para>
+		<para>RCE connections are meant to be used only in a trusted network
+			(e.g. your
+			institution's internal network). To build up a network of
+			RCE instances, at least one of
+			the instances has to be configured as a
+			server (see the "Configuration" section or the
+			sample configuration
+			file "Relay server" for details).
+		</para>
+		<para>On the client side, RCE network connections can be added in the
+			"network" view by clicking
+			"Add network connection" and entering the
+			hostname and port of an RCE server instance.
+			The connections are shown
+			in the "RCE Network"->"Connections" subtree. They can also be
+			edited,
+			connected and disconnected in the network view. However, the changes
+			made here
+			are not saved in the configuration yet, i.e. they will be
+			lost when RCE is closed or
+			restarted. To permanently add connections,
+			you can edit the configuration file (see the
+			"Configuration" section
+			for details).
+		</para>
+		<para>In the "RCE Network" -> "Instances" subtree all RCE instances in
+			the network are
+			listed. When expanding the entry for an instance, you
+			can see monitoring data like CPU
+			or RAM usage for this instance, and
+			the published components and tools of this instance
+			(if it has any).
+		</para>
+		<para>The published components and tools of the other instances in
+			your network are also shown in
+			the palette of the Workflow Editor.
+			From there, you can use them in your workflows just
+			like your local
+			components and tools. When you start a workflow, in the "Execute
+			Workflow" wizard there is an overview which component will be run on
+			which RCE instance.
+			If a component is available on several instances,
+			you can choose here on which instance
+			it should be run. In the same
+			wizard, you can also choose another instance as the
+			"Controller Target
+			Instance", which means that the workflow execution will be controlled
+			by this instance (see the section "Configuration Parameters" for more
+			information). This
+			can be useful when you start a long-running
+			workflow where all components are run on
+			remote instances and you do
+			not want to keep your local computer connected all the
+			time.
+		</para>
 	</sect2>
 	<sect2>
-		<title>SSH Remote Access Connections</title>
-		<para>SSH connections provide a more secure alternative to the standard RCE connections and can be
-			used to access tools remotely. The published tools are shown in the palette of the
-			client's Workflow Editor (this may take a few seconds after connecting, as the tool list
-			is fetched from the remote hosts every few seconds). From there, you can use them in
-			your workflows just like your local components and tools. Differently from tools
-			accessed by RCE network connections, in this case the component is shown to be executed
-			on your local instance in the Workflow Execution wizard.</para>
-		<para>Also workflows that were published on the remote instance (for information about the
-			publishing see section "Remote Tool and Workflow Access") are shown as components in the
-			palette of the client's Workflow Editor in the group "SSH Remote Access Workflows" (if
-			the client runs RCE 7.1 or newer). These remote workflows can be added to workflows and
-			executed like local components/tools.</para>
+		<title><anchor id="uplink-connections"/>Uplink Connections</title>
+		<para>Uplink connections allow to use the "SSH relay" functionality.
+			This means that it is possible to setup a single server as the
+			"relay" for a project (and only this server needs to be reachable on
+			an SSH port). All other RCE instances can connect to this server as
+			clients via SSH Uplink Connections and publish their tools so that they can be used by
+			other clients. (In contrast, with the former version of SSH
+			connections every partner who wanted to publish tools needed to
+			configure an SSH server).
+		</para>
 		<sect3>
-			<title>Configuring an RCE instance as an SSH server</title>
-			<para>The RCE instance that publishes the tool, or another instance connected to it by
-				RCE network connections, has to be configured as an RCE remote access server (see
-				the "Configuration" section or the sample configuration file "Remote access server"
-				for details). </para>
+			<title>Configuring an RCE instance as an Uplink relay</title>
+			<para>The RCE instance that should be used as the relay has to be configured as an SSH server and
+				provide at least one account with the role "uplink_client" or
+				"remote_access_user"(see <xref linkend="configuration"/> or the sample configuration
+				file "Uplink relay" for details). The recommended role is "uplink_client", which
+				allows only access to Uplink connections and no access to an interactive SSH shell. </para>
 			<note>
-				<para>When configuring an SSH account using a key file, note that for using key files, both
-					server and client have to run RCE 7.1 or newer and that only RSA-Keys in the
-					OpenSSH format are supported by RCE. You can generate such keys on Linux e.g.
-					using the "ssh-keygen" tool (which creates the correct format by default). On
-					Windows, you can use the software "puttygen" to generate a key (choose the type
-					"SSH-2 RSA") and convert it to the OpenSSH format ("Conversions"->"Export
-					OpenSSH key" in puttygen). </para>
+				<para>When configuring an SSH account using a key file, both server and client have to run RCE
+					7.1 or newer. In RCE 10.0.0, only RSA Keys generated by the tool
+						<code>puttygen</code> using Windows-style line endings work. This is a known
+					issue with RCE 10.0.0 and will be fixed in an upcoming version of RCE. </para>
+				<para>When using Windows, the default settings of <code>puttygen</code>, which comes
+					bundled together with the popular SSH client <code>putty</code>, are sufficient.
+					When using Linux, you will have to install the tool <code>puttygen</code>.
+					Please refer to the documentation of your system for instructions on installing
+					that tool. After you have generated a key on Linux, you will have to convert it
+					to use Windows-style line endings. We recommend the tool <code>todos</code> for
+					this task. Both <code>puttygen</code> and <code>todos</code> are readily
+					available for most major distributions from the official package sources.</para>
+			</note>
+		</sect3>
+		<sect3>
+			<title>Configuring an RCE instance as an Uplink client or gateway (in GUI mode)</title>
+			<para>On the client side, Uplink connections can be added in the
+				"network" view by clicking
+				"Add Uplink Connection". In the following
+				dialog, enter the hostname and
+				port of an Uplink relay as well as the
+				user name and the
+				authentication data of an SSH account configured on
+				this instance. Depending on the
+				SSH account, you have to authenticate
+				using a passphrase or by an RSA private key
+				file. If your private key
+				is protected by a passphrase, select the authentication
+				type "Keyfile
+				with passphrase protection", else select "Keyfile without passphrase
+				protection". If several clients are using the same account on a
+				relay, enter a different
+				"client ID" on each of them.
+			</para>
+			<para> If the instance should serve as a gateway (i.e. forward tools
+				between the (external) Uplink network
+				and a local network), set the
+				"isGateway" parameter to "true".
+			</para>
+			<para>The connections are shown in the "Uplink"->"Uplink
+				Connections"
+				subtree. They can also be edited, connected and
+				disconnected in the "network" view.
+				It is possible to store
+				passphrases using the Eclipse Secure Storage Mechanism. However, the changes made
+				here are not saved in the
+				configuration yet, i.e. they will be lost
+				when RCE is closed or restarted. To
+				permanently add Uplink
+				connections, you can edit the configuration file (see <xref linkend="configuration"/> for details).
+				Sample configuration files are
+				avaible as "Uplink Client" and "Uplink
+				Gateway".
+			</para>
+		</sect3>
+		<sect3>
+			<title>Configuring an Uplink Gateway in non-GUI mode</title>
+			<para>Configuring a gateway in non-GUI mode involves four steps:<itemizedlist>
+					<listitem>
+						<para>Configure an SSH Uplink connection to the SSH relay server in the
+							profile's <code>configuration.json</code> file. In this connection, make
+							sure to set the "<code>isGateway</code>" parameter to
+							"<code>true</code>" (without quotes).</para>
+					</listitem>
+					<listitem>
+						<para>Configure a normal RCE server port for the internal network. This is
+							the network port that clients in the local (internal) network can
+							connect to with standard ("internal network") connections.</para>
+					</listitem>
+					<listitem>
+						<para>Using the file-based import feature (see section <xref
+							linkend="authdata-import"/>), import the SSH password or the SSH
+							keyfile passphrase for logging into the Uplink relay. (Please note that
+							currently, the gateway must be (re)started after creating these import
+							files to apply the changes.)</para>
+					</listitem>
+					<listitem>
+						<para>To allow the gateway to forward tools that are not public, but only
+							published for specific authorization groups, the gateway must be a
+							member of at least one matching group. Use the file-based import feature
+							(see section <xref linkend="authdata-import"/>) to import any required
+							group keys. (Please note that currently, the gateway must be (re)started
+							after creating these import files to apply the changes.)</para>
+					</listitem>
+				</itemizedlist></para>
+		</sect3>
+		<sect3>
+			<title> Tool publishing </title>
+			<para> In order to make tools available for other clients, you have to publish them (for example
+				using the "Component Publishing" view; see user guide for more information about
+				pubishing/authorization groups). To make a tool available via an SSH relay, it has
+				to be either in the "Public Access" group or in an authorization group which name
+				starts with "<emphasis role="bold">external_</emphasis>". Tools in other
+				authorization groups will only be shared in your local RCE network. </para>
+			<note>
+				<para>
+					Note: Tools that are available to a client via an Uplink
+					connection are
+					also
+					available to RCE instances connected to that
+					client in its local RCE
+					network (if they possess the corresponding
+					authorization group key and the
+					"isGateway" option is set for the
+					Uplink connection).
+					Accordingly, tools published by those instances
+					in the "Public
+					Access" group or in an authorization group which name
+					starts with
+					"external_" will also be made available via the Uplink
+					relay. Please not that this only works if the gateway itself
+					also possesses the authorization group key.
+				</para>
+			</note>
+		</sect3>
+		<sect3>
+			<title>Possibly surprising behavior (or non-behavior)</title>
+			<para>Nodes connected via Uplink connections do not show up in
+				the
+				network view as nodes (same as Remote Access).
+			</para>
+			<para>Imported tools show up in the Network view under the Node
+				running the Uplink connection (also the same as Remote Access), and
+				they are not yet marked or distinguishable from normal components.
+			</para>
+			<para>Tools located on the RCE instance serving as relay are not
+				published
+				automatically. If you want to publish them, you have to add a
+				connection to the relay from the same instance.
+			</para>
+		</sect3>
+		<sect3>
+			<title>Known issues/limitations of the current release</title>
+			<para> Uplink connections are an <emphasis>experimental</emphasis> feature in RCE 10.x and have
+				some known limitations: <itemizedlist>
+					<listitem>
+						<para>Connections are always encrypted as part of the SSH connection, but
+							there is no additional "internal" encryption of tool input/output data
+							yet (which is planned for future versions to protect users against
+							untrustworthy relay servers).</para>
+					</listitem>
+					<listitem>
+						<para>The behavior on errors, disconnects, and server shutdowns is not fully
+							implemented yet; this will be stabilized in RCE 11.</para>
+					</listitem>
+					<listitem>
+						<para>Custom tool icons are not yet transferred over Uplink
+							connections.</para>
+					</listitem>
+				</itemizedlist>
+			</para>
+		</sect3>
+	</sect2>
+	
+	<sect2>
+		<title>Example of a Cross-Organization Network</title>
+		<para>The following figure gives an example of how a
+			cross-organization network using Uplink connections could be structured:
+		</para>
+		<figure>
+			<title>Example RCE network</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/RCE-uplink-network.png"
+						contentwidth="400" />
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>The four project partners in the example all have an internal
+			network of RCE instances which are connected by standard RCE
+			connections. Uplink connections to a relay server are used to connect
+			between the different partners. The relay server is located outside
+			of the organizations networks, and only the relay server has to be
+			reachable via SSH over the internet. Typically, for each organization
+			one RCE instance (called SSH gateway) established an SSH connections
+			to this relay server. All other instances in the institution’s
+			internal network can be connected to it by standard RCE connections
+			and still publish tools to the other partners/ access tools published
+			by other partners.
+		</para>
+		<para> Each institution in the example has a different internal setup, all of which are possible: <itemizedlist>
+				<listitem>
+					<para>Partner A has a dedicated RCE server where the published tools are
+						located, which is connected to the SSH gateway by an RCE connection. All
+						other RCE users in the internal network are connected to this server.</para>
+				</listitem>
+				<listitem>
+					<para>Partner B has put all the tools directly on the SSH gateway
+						instance.</para>
+				</listitem>
+				<listitem>
+					<para>In Partner C's network, some tools are located on the SSH gateway, but
+						some tools are also published by users directly on their own machines. As
+						long as they are connected to the SSH gateway also those tools can be
+						published to the other partners.</para>
+				</listitem>
+				<listitem>
+					<para>Partner D has no tool server, instead the users’ computers connect
+						directly to the relay server.</para>
+				</listitem>
+			</itemizedlist></para>
+	</sect2>
+	<sect2>
+		<title><anchor id="ra-connections"/>SSH Remote Access Connections</title>
+		<note>
+			<para>Since RCE 10, the recommended connection type for secure connections are the SSH Uplink
+				connections (cf. previous chapters). However, as the new Uplink connections do not
+				yet support all features of the SSH Remote Access Connections (the publishing of
+				workflows and the access to monitoring data is not possible by Uplink connections),
+				the current release provides both types of connections. This chapter describe the
+				usage of the SSH Remote Access Connections.</para>
+		</note>
+		<para>SSH connections provide a more secure alternative to the
+			standard RCE connections and can be
+			used to access tools remotely. The
+			published tools are shown in the palette of the
+			client's Workflow
+			Editor (this may take a few seconds after connecting, as the tool
+			list
+			is fetched from the remote hosts every few seconds). From there,
+			you can use them in
+			your workflows just like your local components and
+			tools. Differently from tools
+			accessed by RCE network connections, in
+			this case the component is shown to be executed
+			on your local instance
+			in the Workflow Execution wizard.
+		</para>
+		<para>Also workflows that were published on the remote instance (for
+			information about the
+			publishing see section "Remote Tool and Workflow
+			Access") are shown as components in the
+			palette of the client's
+			Workflow Editor in the group "SSH Remote Access Workflows" (if
+			the
+			client runs RCE 7.1 or newer). These remote workflows can be added to
+			workflows and
+			executed like local components/tools.
+		</para>
+		<sect3>
+			<title> Configuring an RCE instance as an SSH server</title>
+			<para>The RCE instance that publishes the tool, or another instance
+				connected to it by
+				RCE network connections, has to be configured as
+				an RCE remote access server (see
+				the "Configuration" section or the
+				sample configuration file "Remote access server"
+				for details).
+			</para>
+			<note>
+				<para>When configuring an SSH account using a key file, both server and client have
+					to run RCE 7.1 or newer. In RCE 10.0.0, only RSA Keys generated by the tool
+						<code>puttygen</code> using Windows-style line endings work. This is a known
+					issue with RCE 10.0.0 and will be fixed in an upcoming version of RCE. </para>
+				<para>When using Windows, the default settings of <code>puttygen</code>, which comes
+					bundled together with the popular SSH client <code>putty</code>, are sufficient.
+					When using Linux, you will have to install the tool <code>puttygen</code>.
+					Please refer to the documentation of your system for instructions on installing
+					that tool. After you have generated a key on Linux, you will have to convert it
+					to use Windows-style line endings. We recommend the tool <code>todos</code> for
+					this task. Both <code>puttygen</code> and <code>todos</code> are readily
+					available for most major distributions from the official package sources.</para>
 			</note>
 		</sect3>
 		<sect3>
 			<title>Configuring an RCE instance as an SSH client</title>
-			<para>On the client side, SSH connections can be added in the "network" view by clicking
-				"Add SSH Remote Access Connection". In the following dialog, enter the hostname and
-				port of an RCE instance that provides an SSH server as well as the user name and the
-				authentication data of an SSH account configured on this instance. Depending on the
-				SSH account, you have to authenticate using a passphrase or by an RSA private key
-				file. If your private key is protected by a passphrase, select the authentication
-				type "Keyfile with passphrase protection", else select "Keyfile without passphrase
-				protection".</para>
-			<para>The connections are shown in the "SSH Remote Access"->"SSH Remote Access Connections"
-				subtree. They can also be edited, connected and disconnected in the "network" view.
-				It is possible to store passphrases using the Eclipse Secure Storage Mechanism (this
-				is only available on Windows). However, the changes made here are not saved in the
-				configuration yet, i.e. they will be lost when RCE is closed or restarted. To
-				permanently add SSH connections, you can edit the configuration file (see the
-				"Configuration" section for details). However, it is not possible yet to store the
-				passphrases for such connections permanently.</para>
+			<para>On the client side, SSH connections can be added in the
+				"network" view by clicking
+				"Add SSH Remote Access Connection". In the
+				following dialog, enter the hostname and
+				port of an RCE instance that
+				provides an SSH server as well as the user name and the
+				authentication data of an SSH account configured on this instance.
+				Depending on the
+				SSH account, you have to authenticate using a
+				passphrase or by an RSA private key
+				file. If your private key is
+				protected by a passphrase, select the authentication
+				type "Keyfile
+				with passphrase protection", else select "Keyfile without passphrase
+				protection".
+			</para>
+			<para>The connections are shown in the "SSH Remote Access"->"SSH
+				Remote Access Connections"
+				subtree. They can also be edited,
+				connected and disconnected in the "network" view.
+				It is possible to
+				store passphrases using the Eclipse Secure Storage Mechanism. 
+				However, the changes made here are
+				not saved in the
+				configuration yet, i.e. they will be lost when RCE
+				is closed or restarted. To
+				permanently add SSH connections, you can
+				edit the configuration file (see the
+				"Configuration" section for
+				details). 
+			</para>
 		</sect3>
-	</sect2>
-	<sect2>
-		<title>Example Structure of an RCE network with several project partners</title>
-		<para>This section describes how an RCE network with several project partners could be
-			structured. RCE provides two different types of connections between RCE instances which
-			can both be used to access published tools:</para>
-		<para>Standard RCE connections are meant to be used in a trusted (internal) network, as the
-			data exchanged via those connections is not encrypted. These connections are
-			bidirectional and allow to share more data than just the information about published
-			tools (e.g. they can be used to access data about executed workflows on another
-			instance).</para>
-		<para>RCE SSH connections use the SSH protocol to provide an encrypted connection. They are
-			meant to securely connect RCE instances from different institutions over the internet.
-			These connections are one-directional and allow the client to run published tools and
-			workflows on the server (of course, both instances can be configured as client AND
-			server at the same time if necessary so they can use each other’s tools).</para>
-		<para>In practice, most partners will probably use both types of connections: RCE
-			connections to connect different RCE instances within their institution and SSH
-			connections to connect to the other partners. The following figure gives an example of
-			how such a project network could be structured:</para>
-		<figure>
-				<title>Example RCE network</title>
-			<mediaobject>
-				<imageobject>
-					<imagedata fileref="images/RCE-SSH-network.png" contentwidth="400"/>
-				</imageobject>
-			</mediaobject>
-		</figure>
-		<para>The four project partners in the example all have an internal network of RCE instances which
-			are connected by standard RCE connections. SSH connections are used to connect between
-			the different partners. Therefore, each partner who wants to publish tools to other
-			partners has one RCE instance which is configured as an SSH server. Only this one
-			instance per institution has to be reachable via SSH over the internet, all other
-			instances in the institution’s internal network can be connected to it by standard RCE
-			connections and still publish tools to the other partners/access tools published by
-			other partners.</para>
-		<para>In the example, the RCE instances in Partner A’s network can access the tools
-			published in Partner C’s network and vice versa. One of the instances from Partner D can
-			access Partner C’s tools; and all the partners can access the tools in Partner B’s
-			network.</para>
-		<para>Each institution in the example has a different internal setup, all of which are
-			possible:</para>
-		<para>Partner A has a dedicated RCE server where the published tools are located, which is
-			connected to the SSH server by an RCE connection. All other RCE users in the internal
-			network are connected to this server.</para>
-		<para>Partner B has put all the tools directly on the SSH server.</para>
-		<para>In Partner C’s network, some tools are located on the SSH server, but some tools are
-			also published by users directly on their own machines. As long as they are connected to
-			the SSH server, also those tools can be used by the other partners. </para>
-		<para>Partner D has not published any tools and has no SSH server, instead the users’
-			computers connect directly to the other partner’s SSH servers. </para>
 	</sect2>
 </sect1>

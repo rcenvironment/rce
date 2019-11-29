@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -32,9 +32,11 @@ import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutRec
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Lukas Rosenbach
  */
 public class InstanceManagementServiceImplManualTests {
 
+    private static final int ONE_MINUTE_IN_MILLISECONDS = 60000;
     private final Log log = LogFactory.getLog(getClass());
 
     /**
@@ -65,7 +67,7 @@ public class InstanceManagementServiceImplManualTests {
         imService.bindConfigurationService(configurationProvider);
         imService.activate();
 
-        String version = imService.fetchVersionInformationFromDownloadSourceFolder("releases/latest");
+        String version = imService.fetchVersionInformationFromDownloadSourceFolder("releases/latest", ONE_MINUTE_IN_MILLISECONDS);
         log.debug("Identified remote version: " + version);
         assertTrue(version.startsWith("6."));
         // test: there should be no leftover whitespace

@@ -28,6 +28,8 @@
 		<module>${projects-root}/de.rcenvironment.core.communication.file.service.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms</module>
 		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.uplink</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.uplink.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component</module>
 		<module>${projects-root}/de.rcenvironment.core.component.datamanagement</module>
 		<module>${projects-root}/de.rcenvironment.core.component.executor</module>
@@ -38,6 +40,7 @@
 		<module>${projects-root}/de.rcenvironment.core.component.scripting</module>
 		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.component.uplinktoolaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.component.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow.testworkflows</module>
@@ -112,6 +115,7 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.communication</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.datamanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.introduction</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>

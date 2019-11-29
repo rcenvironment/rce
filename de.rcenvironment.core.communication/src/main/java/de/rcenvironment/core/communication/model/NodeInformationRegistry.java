@@ -3,27 +3,41 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.model;
 
 import java.io.PrintStream;
 
+import de.rcenvironment.core.communication.api.NodeNameResolver;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+
 /**
  * An interface providing a way to get extended node information for a node id.
  * 
  * @author Robert Mischke
  */
-public interface NodeInformationRegistry {
+public interface NodeInformationRegistry extends NodeNameResolver {
 
     /**
-     * Returns a {@link SharedNodeInformationHolder} instance that can be queried for the information gathered about the specified node.
+     * Sets the name to associate with the given instance session; this is typically called for the local node on startup, and when learning
+     * of new remote instance sessions.
      * 
-     * @param id the id of the node
-     * @return the {@link SharedNodeInformationHolder} interface for this node
+     * @param id the instance session id
+     * @param newName the name to associate
      */
-    SharedNodeInformationHolder getNodeInformationHolder(String id);
+    void associateDisplayName(InstanceNodeSessionId id, String newName);
+
+    /**
+     * Sets the name to associate with a specific logical node on the given instance session. This is typically the result of a remote node
+     * explicitly announcing such a name mapping. Passing null as the new name removes any existing name association.
+     * 
+     * @param id the logical node session id
+     * @param newName the name to associate, or null to remove an existing association
+     */
+    void associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName);
 
     /**
      * Debug method; prints all registered id-to-displayName associations.
@@ -32,4 +46,5 @@ public interface NodeInformationRegistry {
      * @param introText an optional line to be printered before the output; set to null to disable
      */
     void printAllNameAssociations(PrintStream output, String introText);
+
 }

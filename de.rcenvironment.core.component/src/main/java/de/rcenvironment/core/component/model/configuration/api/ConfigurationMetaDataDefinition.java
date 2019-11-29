@@ -3,11 +3,10 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.configuration.api;
-
 
 /**
  * Describes meta data information for configuration options.

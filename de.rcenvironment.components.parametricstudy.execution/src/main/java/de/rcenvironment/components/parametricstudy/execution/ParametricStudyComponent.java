@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.components.parametricstudy.execution;
 
@@ -35,6 +35,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Markus Kunde
  * @author Arne Bachmann
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 @LazyDisposal
 public class ParametricStudyComponent extends AbstractNestedLoopComponent {

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
@@ -44,7 +44,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 public class DataManagementServiceImpl implements DataManagementService {
 
     private static final String STRING_FILENAME_NOT_VALID =
-        "Filename/path '%S' contains characters that are not valid for all operating systems; "
+        "Filename/path '%s' contains characters that are not valid for all operating systems; "
             + "it might lead to problems when accessing the file on another operating system";
 
     private static final String ARCHIVE_TAR_GZ = "archive.tar.gz";

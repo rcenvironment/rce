@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" activate="activate" name="de.rcenvironment.core.communication.sshconnection.internal.SshConnectionServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.communication.sshconnection.SshConnectionService"/>
+   </service>
+   <reference bind="addListener" cardinality="0..1" interface="de.rcenvironment.core.communication.sshconnection.api.SshConnectionListener" name="Listener" policy="dynamic" unbind="removeListener"/>
+   <reference cardinality="1..1" field="configurationService" interface="de.rcenvironment.core.communication.configuration.NodeConfigurationService" name="configurationService"/>
+   <reference cardinality="1..1" field="secureStorageImportService" interface="de.rcenvironment.core.configuration.SecureStorageImportService" name="secureStorageImportService"/>
+   <reference cardinality="1..1" field="secureStorageService" interface="de.rcenvironment.core.configuration.SecureStorageService" name="secureStorageService"/>
+   <implementation class="de.rcenvironment.core.communication.sshconnection.internal.SshConnectionServiceImpl"/>
+</scr:component>

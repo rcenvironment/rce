@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.start.gui;
 
@@ -36,7 +36,6 @@ import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
 
 /**
@@ -199,41 +198,38 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
     private void triggerAsyncShutdownOrRestart(final boolean performRestart) {
         // spawn a new async task to avoid blocking the caller while waiting for the latch -- misc_ro
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Process shutdown trigger (GUI mode)", () -> {
 
-            @Override
-            @TaskDescription("Process shutdown trigger (GUI mode)")
-            public void run() {
-                final boolean logWaitingPeriod = readyForShutdownSignalsLatch.getCount() != 0;
-                if (logWaitingPeriod) {
-                    log.debug("Shutdown triggered during early GUI startup; waiting for completion signal");
-                }
-                try {
-                    // no timeout needed, as there is a timeout guard for the whole shutdown process already
-                    readyForShutdownSignalsLatch.await();
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for shutdown readiness (restart flag=" + performRestart + ")");
-                    return;
-                }
-                if (logWaitingPeriod) {
-                    log.debug("Received signal that early GUI startup has completed; proceeding with shutdown/restart request");
-                }
-                Display.getDefault().asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (!PlatformUI.isWorkbenchRunning()) {
-                            return;
-                        }
-                        log.debug("Triggering shutdown/restart of GUI platform");
-                        if (performRestart) {
-                            PlatformUI.getWorkbench().restart();
-                        } else {
-                            PlatformUI.getWorkbench().close();
-                        }
-                    }
-                });
+            final boolean logWaitingPeriod = readyForShutdownSignalsLatch.getCount() != 0;
+            if (logWaitingPeriod) {
+                log.debug("Shutdown triggered during early GUI startup; waiting for completion signal");
             }
+            try {
+                // no timeout needed, as there is a timeout guard for the whole shutdown process already
+                readyForShutdownSignalsLatch.await();
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for shutdown readiness (restart flag=" + performRestart + ")");
+                return;
+            }
+            if (logWaitingPeriod) {
+                log.debug("Received signal that early GUI startup has completed; proceeding with shutdown/restart request");
+            }
+            Display.getDefault().asyncExec(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (!PlatformUI.isWorkbenchRunning()) {
+                        return;
+                    }
+                    log.debug("Triggering shutdown/restart of GUI platform");
+                    if (performRestart) {
+                        PlatformUI.getWorkbench().restart();
+                    } else {
+                        PlatformUI.getWorkbench().close();
+                    }
+                }
+            });
+
         });
     }
 

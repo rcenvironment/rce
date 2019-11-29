@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.optimizer.gui.properties;
@@ -48,6 +48,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * "Properties" view tab for choosing Algorithm.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert
  */
 public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySection {
 

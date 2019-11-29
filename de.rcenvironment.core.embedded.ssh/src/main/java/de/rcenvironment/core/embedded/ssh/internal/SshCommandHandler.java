@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -20,10 +20,11 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.session.ServerSession;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
@@ -72,7 +73,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
     // Handling the thread - START
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         // start thread
         environment = env;
         loginName = environment.getEnv().get(Environment.ENV_USER);
@@ -95,9 +96,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
     }
 
     private boolean isPotentiallyAllowedToRunCommands() {
-        // TODO temporarily allowed for both account types; review
-        return true;
-        // return activeUser.startsWith(SshConstants.TEMP_USER_PREFIX);
+        return authenticationManager.isAllowedToOpenShell(loginName);
     }
 
     @Override
@@ -147,7 +146,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channelSession) {
         // close resources
         try {
             in.close();

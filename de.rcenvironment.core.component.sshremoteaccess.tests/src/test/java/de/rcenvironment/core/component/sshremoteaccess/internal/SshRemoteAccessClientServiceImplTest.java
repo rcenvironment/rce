@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.sshremoteaccess.internal;
@@ -19,16 +19,16 @@ import java.util.ArrayList;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.IOUtils;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.easymock.EasyMock;
@@ -41,7 +41,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
 import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
-import de.rcenvironment.core.authorization.testutils.AuthorizationTestUtils;
+import de.rcenvironment.core.communication.api.LogicalNodeManagementService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
@@ -105,7 +105,7 @@ public class SshRemoteAccessClientServiceImplTest {
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
-            public Command createCommand(String commandString) {
+            public Command createCommand(ChannelSession channelSession, String commandString) {
                 if (commandString.equals("ra list-tools") || commandString.equals("ra list-wfs")) {
 
                     final String stdout;
@@ -153,7 +153,7 @@ public class SshRemoteAccessClientServiceImplTest {
                         }
 
                         @Override
-                        public void start(Environment env) throws IOException {
+                        public void start(ChannelSession channelSession, Environment env) throws IOException {
 
                             if (stdout != null) {
                                 stdoutStream.write(stdout.getBytes());
@@ -167,13 +167,11 @@ public class SshRemoteAccessClientServiceImplTest {
                             }
                             stdoutStream.flush();
                             stderrStream.flush();
-                            IOUtils.closeQuietly(stdoutStream);
-                            IOUtils.closeQuietly(stderrStream);
                             exitCallback.onExit(exitValue);
                         }
 
                         @Override
-                        public void destroy() {}
+                        public void destroy(ChannelSession channelSession) {}
 
                     };
                 } else {
@@ -201,8 +199,8 @@ public class SshRemoteAccessClientServiceImplTest {
         mockRegistry = EasyMock.createNiceMock(LocalComponentRegistrationService.class);
         remoteAccessService.bindComponentRegistry(mockRegistry);
 
-        // needed to fetch default permission groups
-        remoteAccessService.bindAuthorizationService(AuthorizationTestUtils.createAuthorizationServiceStub());
+        LogicalNodeManagementService logicalNodeService = EasyMock.createNiceMock(LogicalNodeManagementService.class);
+        remoteAccessService.bindLogicalNodeManagementService(logicalNodeService);
     }
 
     /**

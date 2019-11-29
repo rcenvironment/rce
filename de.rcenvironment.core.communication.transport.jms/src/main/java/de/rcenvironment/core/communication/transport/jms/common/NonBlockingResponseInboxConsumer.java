@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.communication.transport.jms.common;
 
@@ -125,14 +125,10 @@ public final class NonBlockingResponseInboxConsumer extends AbstractJmsQueueCons
                 log.debug("Response listener for queue " + queueName + " has been shut down while " + responseListenerMap.size()
                     + " request(s) were still pending; generating failure responses");
                 for (final JmsResponseCallback listener : responseListenerMap.values()) {
-                    threadPool.execute(new Runnable() {
+                    threadPool.execute("JMS Network Transport: Handle pending non-blocking request after queue listener shutdown",
+                        listener::onChannelClosed);
 
-                        @Override
-                        @TaskDescription("JMS Network Transport: Handle pending non-blocking request after queue listener shutdown")
-                        public void run() {
-                            listener.onChannelClosed();
-                        }
-                    });
+
                 }
                 // requests are handled; do not send timeout responses, too
                 responseListenerMap.clear();
@@ -142,58 +138,54 @@ public final class NonBlockingResponseInboxConsumer extends AbstractJmsQueueCons
 
     @Override
     protected void dispatchMessage(final Message message, final Connection jmsConnection) {
-        threadPool.execute(new Runnable() {
+        threadPool.execute("JMS Network Transport: Dispatch incoming response", () -> {
 
-            @Override
-            @TaskDescription("JMS Network Transport: Dispatch incoming response")
-            public void run() {
-                final String messageId;
-                try {
-                    messageId = message.getJMSCorrelationID();
-                    // sanity check
-                    if (messageId == null) {
-                        log.error("Unexpected state: null JMS message correlation id");
-                        return; // no graceful handling possible
+            final String messageId;
+            try {
+                messageId = message.getJMSCorrelationID();
+                // sanity check
+                if (messageId == null) {
+                    log.error("Unexpected state: null JMS message correlation id");
+                    return; // no graceful handling possible
+                }
+            } catch (JMSException e) {
+                log.error("Unexpected error while handling JMS response", e);
+                // TODO add an error callback for this? right now, the timeout will handle it
+                return;
+            }
+            JmsResponseCallback responseListener;
+            // As the JMS broker-generated message ids are used for correlation, the response listener cannot be registered until after
+            // the JMS message has been sent. Usually, this is not a problem. If local CPU load and/or thread congestion is very high,
+            // however, the response can arrive before the sender has managed to register its response listener in the synchronized map.
+            // This retry loop fixes this problem by waiting briefly in case no listener is found. - misc_ro
+            int retryCount = 0;
+            while (true) {
+                synchronized (responseListenerMap) {
+                    responseListener = responseListenerMap.remove(messageId);
+                }
+                if (responseListener != null) {
+                    if (retryCount > 0) {
+                        log.debug("Successfully fetched mapping information for a network response after retrying for "
+                            + retryCount * RESPONSE_LISTENER_RETRY_WAIT_MSEC
+                            + " msec; there is probably high CPU load on the local instance");
                     }
-                } catch (JMSException e) {
-                    log.error("Unexpected error while handling JMS response", e);
-                    // TODO add an error callback for this? right now, the timeout will handle it
+                    responseListener.onResponseReceived(message);
+                    break;
+                }
+                if (retryCount >= RESPONSE_LISTENER_MAX_RETRY_COUNT) {
+                    log.debug("No response listener for message " + messageId
+                        + " even after retrying - most likely, the response arrived after the timeout");
                     return;
                 }
-                JmsResponseCallback responseListener;
-                // As the JMS broker-generated message ids are used for correlation, the response listener cannot be registered until after
-                // the JMS message has been sent. Usually, this is not a problem. If local CPU load and/or thread congestion is very high,
-                // however, the response can arrive before the sender has managed to register its response listener in the synchronized map.
-                // This retry loop fixes this problem by waiting briefly in case no listener is found. - misc_ro
-                int retryCount = 0;
-                while (true) {
-                    synchronized (responseListenerMap) {
-                        responseListener = responseListenerMap.remove(messageId);
-                    }
-                    if (responseListener != null) {
-                        if (retryCount > 0) {
-                            log.debug("Successfully fetched mapping information for a network response after retrying for "
-                                + retryCount * RESPONSE_LISTENER_RETRY_WAIT_MSEC
-                                + " msec; there is probably high CPU load on the local instance");
-                        }
-                        responseListener.onResponseReceived(message);
-                        break;
-                    }
-                    if (retryCount >= RESPONSE_LISTENER_MAX_RETRY_COUNT) {
-                        log.debug("No response listener for message " + messageId
-                            + " even after retrying - most likely, the response arrived after the timeout");
-                        return;
-                    }
-                    retryCount++;
-                    try {
-                        Thread.sleep(RESPONSE_LISTENER_RETRY_WAIT_MSEC);
-                    } catch (InterruptedException e) {
-                        log.warn("Thread interrupted while retrying to fetch response mapping information");
-                        return; // in case only this thread was interrupted, this will be handled by the standard timeout
-                    }
+                retryCount++;
+                try {
+                    Thread.sleep(RESPONSE_LISTENER_RETRY_WAIT_MSEC);
+                } catch (InterruptedException e) {
+                    log.warn("Thread interrupted while retrying to fetch response mapping information");
+                    return; // in case only this thread was interrupted, this will be handled by the standard timeout
                 }
-
             }
+
         });
     }
 

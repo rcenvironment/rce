@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.datamanagement.browser;
@@ -598,8 +598,7 @@ public class DMContentProvider implements ITreeContentProvider {
                         MetaDataSet metaDataSet = new MetaDataSet();
                         final String componentName = componentInstance.getComponentInstanceName();
                         metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
-                        metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID()
-                            .split(STRING_SLASH)[0]);
+                        metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID());
                         compNode.setMetaData(metaDataSet);
 
                         boolean failed = false;
@@ -691,7 +690,7 @@ public class DMContentProvider implements ITreeContentProvider {
                 metaDataSet.setValue(METADATA_HISTORY_USER_INFO_TEXT, componentSpecificText);
                 final String componentName = componentInstance.getComponentInstanceName();
                 metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
-                metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+                metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID());
                 String componentRunNodeText = StringUtils.format(COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
                     componentName, componentSpecificText, startDateString, componentRunLocationTag);
                 if (componentRun.getFinalState() != null && componentRun.getFinalState() != FinalComponentRunState.FINISHED
@@ -745,8 +744,7 @@ public class DMContentProvider implements ITreeContentProvider {
             MetaDataSet metaDataSet = new MetaDataSet();
             final String componentName = componentInstance.getComponentInstanceName();
             metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
-            metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
-
+            metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID());
             final String componentHostName;
             if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
                 final ComponentRun firstRun = workflowRun.getComponentRuns().get(componentInstance).iterator().next();
@@ -782,7 +780,7 @@ public class DMContentProvider implements ITreeContentProvider {
                 final Long startTime = componentRun.getStartTime();
                 MetaDataSet metaDataSetRun = new MetaDataSet();
                 metaDataSetRun.setValue(METADATA_COMPONENT_NAME, componentName);
-                metaDataSetRun.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+                metaDataSetRun.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID());
                 metaDataSetRun.setValue(METADATA_HISTORY_ORDERING, startTime.toString());
                 final String startDateString = dateFormat.format(new Date(startTime));
                 final String componentSpecificText = getNodeTitleForComponentRun(componentRun);
@@ -1195,7 +1193,8 @@ public class DMContentProvider implements ITreeContentProvider {
     }
 
     private ComponentHistoryDataItemSubtreeBuilder getComponentHistoryDataItemSubtreeBuilder(DMBrowserNode node) {
-        String identifier = node.getMetaData().getValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER);
+        //split() removes the version from the identifier
+        String identifier = node.getMetaData().getValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER).split("/")[0];
         for (String supportedIdentifier : historySubtreeBuilders.keySet()) {
             if (identifier.matches(supportedIdentifier)) {
                 return historySubtreeBuilders.get(supportedIdentifier);

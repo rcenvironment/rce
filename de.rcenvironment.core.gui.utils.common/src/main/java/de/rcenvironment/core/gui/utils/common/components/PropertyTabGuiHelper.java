@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.utils.common.components;
@@ -417,8 +417,22 @@ public final class PropertyTabGuiHelper {
      * @return The filename or null
      */
     public static String selectDirectoryFromFileSystem(final Shell shell, final String title) {
+        return selectDirectoryFromFileSystemWithPath(shell, title, null);
+    }
+    
+    /**
+     * Dialog for file system directories, when FilterPath is given.
+     * 
+     * @param shell The shell to block modally
+     * @param title The dialog title
+     * @param path The given path to filter in
+     * @return The filename or null
+     */
+    
+    public static String selectDirectoryFromFileSystemWithPath(final Shell shell, final String title, final String path) {
         final DirectoryDialog fileDialog = new DirectoryDialog(shell);
         fileDialog.setText(title);
+        fileDialog.setFilterPath(path);
         return fileDialog.open();
     }
 

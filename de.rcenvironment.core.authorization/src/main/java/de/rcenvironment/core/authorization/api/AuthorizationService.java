@@ -3,13 +3,14 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
@@ -32,6 +33,17 @@ public interface AuthorizationService {
      * The length of the "id suffix" of generated {@link AuthorizationAccessGroup}s.
      */
     int GROUP_ID_SUFFIX_LENGTH = 16;
+
+    /**
+     * The subdirectory of the profile "imports" directory where group key files, if any, are imported from at startup. Successfully
+     * imported files are deleted afterwards.
+     */
+    String GROUP_KEY_FILE_IMPORT_SUBDIRECTORY = "auth-group-keys";
+
+    /**
+     * The prefix in an import file that causes the following key (of at least 2 key segments) to be deleted instead of imported.
+     */
+    String GROUP_KEY_FILE_IMPORT_DELETION_PREFIX = "delete ";
 
     /**
      * @return provides access to the {@link DefaultAuthorizationObjects}
@@ -107,6 +119,27 @@ public interface AuthorizationService {
      * @throws OperationFailureException if representing the group failed, usually due to an invalid format
      */
     AuthorizationAccessGroup representRemoteGroupId(String fullGroupId) throws OperationFailureException;
+
+    /**
+     * Batch equivalent of {@link #representRemoteGroupId(String)}, converting a {@link Collection} of group ids to a {@link Set} of
+     * {@link AuthorizationAccessGroup}s. Duplicate (or otherwise equivalent) ids are merged; therefore, the returned set may be smaller
+     * than the input collection.
+     * 
+     * @param fullGroupIds the group ids to convert
+     * @return the generated set of {@link AuthorizationAccessGroup}s
+     * @throws OperationFailureException if representing a group failed, usually due to an invalid format
+     */
+    Set<AuthorizationAccessGroup> representRemoteGroupIds(Collection<String> fullGroupIds) throws OperationFailureException;
+
+    /**
+     * Accepts a {@link Collection} of {@link AuthorizationAccessGroup}s and returns a {@link Set} containing those elements that are also
+     * locally accessible, ie have local key data available and are therefore usable. May return identical group objects, or replace them
+     * with equivalent ones; calling code should make no assumptions beyond equality.
+     * 
+     * @param inputGroups the groups to process
+     * @return the filtered Collection as a {@link Set}
+     */
+    Set<AuthorizationAccessGroup> intersectWithAccessibleGroups(Set<AuthorizationAccessGroup> inputGroups);
 
     /**
      * Returns the cryptographic key data for the given group, if any is available.

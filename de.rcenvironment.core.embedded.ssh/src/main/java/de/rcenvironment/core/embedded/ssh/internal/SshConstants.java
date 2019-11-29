@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -15,7 +15,7 @@ package de.rcenvironment.core.embedded.ssh.internal;
  * @author Robert Mischke
  */
 public final class SshConstants {
-    
+
     // TODO move at least some of these to the API package; for example, the names of the predefined SSH roles should be accessible from
     // Instance Management code, instead of having disconnected constants there -- misc_ro
 
@@ -181,6 +181,11 @@ public final class SshConstants {
     /**
      * Names of predefined roles.
      */
+    public static final String ROLE_NAME_UPLINK_CLIENT = "uplink_client";
+
+    /**
+     * Names of predefined roles.
+     */
     public static final String ROLE_NAME_WORKFLOW_OBSERVER = "workflow_observer";
 
     /**
@@ -217,8 +222,9 @@ public final class SshConstants {
      * Allowed role names.
      */
     public static final String[] PREDEFINED_ROLE_NAMES = { ROLE_NAME_REMOTE_ACCESS_USER, ROLE_NAME_REMOTE_ACCESS_USER_ALIAS,
-        ROLE_NAME_REMOTE_ACCESS_ADMIN, ROLE_NAME_WORKFLOW_OBSERVER, ROLE_NAME_WORKFLOW_ADMIN, ROLE_NAME_LOCAL_ADMIN, ROLE_NAME_IM_ADMIN,
-        ROLE_NAME_IM_DELEGATE, ROLE_NAME_DEVELOPER, ROLE_NAME_DEFAULT};
+        ROLE_NAME_REMOTE_ACCESS_ADMIN, ROLE_NAME_UPLINK_CLIENT, ROLE_NAME_WORKFLOW_OBSERVER, ROLE_NAME_WORKFLOW_ADMIN,
+        ROLE_NAME_LOCAL_ADMIN, ROLE_NAME_IM_ADMIN,
+        ROLE_NAME_IM_DELEGATE, ROLE_NAME_DEVELOPER, ROLE_NAME_DEFAULT };
 
     /**
      * Command patterns.
@@ -239,6 +245,11 @@ public final class SshConstants {
      * Command patterns.
      */
     public static final String COMMAND_PATTERN_NET_INFO = "net info|net";
+
+    /**
+     * The pseudo command that is "executed" from the viewpoint of the SSH uplink client to attach input and output streams to.
+     */
+    public static final String SSH_UPLINK_VIRTUAL_CONSOLE_COMMAND = "ra uplink";
 
     private SshConstants() {}
 }

@@ -3,12 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.headless;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -102,8 +103,23 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
     public boolean onRecoveryRequired(List<InstanceValidationResult> validationResults) {
         for (InstanceValidationResult result : validationResults) {
             final String dialogQuestion = result.getGuiDialogMessage();
-            final boolean attemptRecovery =
-                new QuestionDialogTextUI("Instance validation failure", LanternaUtils.applyWordWrapping(dialogQuestion)).run();
+            final boolean attemptRecovery;
+            try {
+                attemptRecovery =
+                    new QuestionDialogTextUI("Instance validation failure", LanternaUtils.applyWordWrapping(dialogQuestion)).run();
+            } catch (RuntimeException t) {
+                final StringBuilder logMessageBuilder = new StringBuilder("A recoverable instance validation failure occured. "
+                    + "The user could not be queried whether or not recovery should proceed due to the exception below. "
+                    + "Aborting startup.");
+                final Optional<String> userHint = result.getUserHint();
+                if (userHint.isPresent()) {
+                    logMessageBuilder.append('\n');
+                    logMessageBuilder.append(userHint.get());
+                }
+                log.error(logMessageBuilder.toString(), t);
+                return false;
+            }
+
             if (attemptRecovery) {
                 try {
                     result.getCallback().onConfirmation();

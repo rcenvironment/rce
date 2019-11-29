@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.authorization.impl;
@@ -24,6 +24,12 @@ public class NamedComponentAuthorizationSelectorImpl extends ComponentAuthorizat
         super(identifier);
         this.displayName = displayName;
     }
+    
+    public NamedComponentAuthorizationSelectorImpl(String identifier, String displayName, boolean assignable) {
+        super(identifier, assignable);
+        this.displayName = displayName;
+    }
+
 
     @Override
     public String getDisplayName() {
@@ -39,6 +45,12 @@ public class NamedComponentAuthorizationSelectorImpl extends ComponentAuthorizat
     @Override
     public int compareToIgnoreCase(NamedComponentAuthorizationSelector o) {
         return displayName.compareToIgnoreCase(o.getDisplayName());
+    }
+
+
+    @Override
+    public int compareToIgnoreCaseInternal(NamedComponentAuthorizationSelector o) {
+        return getId().compareToIgnoreCase(o.getId());
     }
 
 }

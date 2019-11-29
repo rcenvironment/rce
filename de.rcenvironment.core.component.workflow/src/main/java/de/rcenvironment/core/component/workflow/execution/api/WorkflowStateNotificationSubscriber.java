@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.api;
@@ -19,15 +19,14 @@ import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Subscriber for {@link WorkflowState} notifications.
  * 
- * @author Doreen Seider
- * 
  * Note: Subscribers are the GUI and the headless workflow execution command. --seid_do
  * 
+ * @author Doreen Seider
+ * @author Robert Mischke (refactoring/API adaptation)
  */
 public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubscriber {
 
@@ -46,7 +45,7 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
     private transient volatile long latestIsAliveReceived = 0;
 
     private transient ScheduledFuture<?> isWorkflowAliveCheckTask = null;
-    
+
     private AtomicBoolean isStopped = new AtomicBoolean(false);
 
     public WorkflowStateNotificationSubscriber(MultipleWorkflowsStateChangeListener listener) {
@@ -103,37 +102,30 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
     }
 
     /**
-     * Starts to check, that {@link WorkflowState#IS_ALIVE} is received continuously. If messages
-     * stop, {@link SingleWorkflowsStateChangeListener#onWorkflowNotAliveAnymore()} is called.
+     * Starts to check, that {@link WorkflowState#IS_ALIVE} is received continuously. If messages stop,
+     * {@link SingleWorkflowsStateChangeListener#onWorkflowNotAliveAnymore()} is called.
      */
     private synchronized void startCheckingForWorkflowNotAlive() {
         if (isWorkflowAliveCheckTask == null) {
             latestIsAliveReceived = System.currentTimeMillis();
-            isWorkflowAliveCheckTask = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
+            isWorkflowAliveCheckTask = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedInterval("Check workflow is alive",
+                this::checkIsWorkflowAlive, IS_ALIVE_CHECK_INTERVAL_MSEC);
+        }
+    }
 
-                @TaskDescription("Check workflow is alive")
-                @Override
-                public void run() {
-                    if (!isStopped.get()) {
-                        if (System.currentTimeMillis() - latestIsAliveReceived > IS_ALIVE_CHECK_INTERVAL_MSEC) {
-                            isStopped.set(true);
-                            String errorMessage = StringUtils.format(
-                                "Receiving 'is alive' message from workflow '%s' stopped. Most likely, "
-                                + "because the network connection to the workflow host node was interrupted",
-                                singleWfExecutionId);
-                            singleWfStateChangeListener.onWorkflowNotAliveAnymore(errorMessage);
-                            ConcurrencyUtils.getAsyncTaskService().submit(new Runnable() {
-    
-                                @TaskDescription("Stop checking workflow is alive")
-                                @Override
-                                public void run() {
-                                    stopCheckingForWorkflowNotAlive();
-                                }
-                            });
-                        }
-                    }
-                }
-            }, IS_ALIVE_CHECK_INTERVAL_MSEC);
+    private void checkIsWorkflowAlive() {
+        if (!isStopped.get()) {
+            if (System.currentTimeMillis() - latestIsAliveReceived > IS_ALIVE_CHECK_INTERVAL_MSEC) {
+                isStopped.set(true);
+                String errorMessage = StringUtils.format(
+                    "Receiving 'is alive' message from workflow '%s' stopped. Most likely, "
+                        + "because the network connection to the workflow host node was interrupted",
+                    singleWfExecutionId);
+                singleWfStateChangeListener.onWorkflowNotAliveAnymore(errorMessage);
+
+                ConcurrencyUtils.getAsyncTaskService().submit("Stop checking workflow is alive",
+                    this::stopCheckingForWorkflowNotAlive);
+            }
         }
     }
 

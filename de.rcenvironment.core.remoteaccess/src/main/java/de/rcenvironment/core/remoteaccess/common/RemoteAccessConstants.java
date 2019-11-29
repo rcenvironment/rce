@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.remoteaccess.common;
@@ -22,7 +22,7 @@ public final class RemoteAccessConstants {
     /**
      * The supported version (or list of versions) for the remote access protocol; used to determine client compatibility.
      */
-    public static final String PROTOCOL_VERSION_STRING = "9.0.0";
+    public static final String PROTOCOL_VERSION_STRING = "10.0.0";
     
     /**
      * Default group name for SSH workflow components.

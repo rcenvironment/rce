@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common;
@@ -40,19 +40,6 @@ public final class NodeIdentifierTestUtils {
      */
     public static InstanceNodeId createTestInstanceNodeId() {
         return getTestNodeIdentifierService().generateInstanceNodeId();
-    }
-
-    /**
-     * @return an {@link InstanceNodeId} with a randomly generated instance id; additionally, the given display name is associated with this
-     *         instance id using an internal singleton map (which only makes this appropriate for unit/integration tests that do not rely on
-     *         accurate multi-instance name data propagation)
-     * 
-     * @param displayName the display name to associate with this instance id
-     */
-    public static InstanceNodeId createTestInstanceNodeIdWithDisplayName(String displayName) {
-        final InstanceNodeId id = createTestInstanceNodeId();
-        getTestNodeIdentifierService().associateDisplayName(id, displayName);
-        return id;
     }
 
     /**
@@ -119,17 +106,6 @@ public final class NodeIdentifierTestUtils {
     }
 
     /**
-     * @return a {@link LogicalNodeId} with a random instance part and the default logical node part; additionally, the given display name
-     *         is associated with this id
-     * @param displayName the display name to associate with this logical node id
-     */
-    public static LogicalNodeId createTestDefaultLogicalNodeIdWithDisplayName(String displayName) {
-        final LogicalNodeId id = getTestNodeIdentifierService().generateInstanceNodeId().convertToDefaultLogicalNodeId();
-        getTestNodeIdentifierService().associateDisplayName(id, displayName);
-        return id;
-    }
-
-    /**
      * @return a {@link InstanceNodeSessionId} with all id parts being randomly generated
      * 
      * @param useDefaultLogicalNode if a default logical node should be generated
@@ -155,8 +131,9 @@ public final class NodeIdentifierTestUtils {
         if (!useDefaultLogicalNode) {
             throw new IllegalArgumentException("Not supported yet");
         } else {
-            LogicalNodeSessionId id = createTestInstanceNodeSessionId().convertToDefaultLogicalNodeSessionId();
-            getTestNodeIdentifierService().associateDisplayName(id, displayName);
+            final InstanceNodeSessionId instanceNodeSessionId = createTestInstanceNodeSessionId();
+            LogicalNodeSessionId id = instanceNodeSessionId.convertToDefaultLogicalNodeSessionId();
+            getTestNodeIdentifierService().associateDisplayName(instanceNodeSessionId, displayName);
             return id;
         }
     }

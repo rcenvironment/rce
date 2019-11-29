@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration.documentation;
@@ -42,4 +42,5 @@ public interface RemoteToolIntegrationDocumentationService {
      * @throws RemoteOperationException standard {@link RemotableService} exception
      */
     Map<String, String> getComponentDocumentationListForRemoteAccessTools(String identifier) throws RemoteOperationException;
+    
 }

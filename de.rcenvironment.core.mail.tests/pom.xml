@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.mail.tests</artifactId>
 	<name>RCE Core Mail Bundle Tests</name>
-	<version>9.1.1-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

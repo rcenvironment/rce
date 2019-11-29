@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common.impl;
@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService;
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.api.NodeNameResolver;
 import de.rcenvironment.core.communication.common.CommonIdBase;
 import de.rcenvironment.core.communication.common.IdType;
 import de.rcenvironment.core.communication.common.IdentifierException;
@@ -26,9 +27,7 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
-import de.rcenvironment.core.communication.model.NodeInformationRegistry;
 import de.rcenvironment.core.communication.model.SharedNodeInformationHolder;
-import de.rcenvironment.core.communication.model.internal.SharedNodeInformationHolderImpl;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.toolkit.utils.common.ConsistencyChecks;
 
@@ -48,7 +47,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     private static final String REGEXP_GROUP_INSTANCE_ID_PART = "([0-9a-f]{" + CommonIdBase.INSTANCE_PART_LENGTH + "})";
 
     // note: this assumes that #DEFAULT_LOGICAL_NODE_PART is regexp-safe, ie only consists of regexp literals
-    private static final String REGEXP_GROUP_LOGICAL_NODE_PART = "(" + CommonIdBase.DEFAULT_LOGICAL_NODE_PART + "|[0-9a-f]{1,"
+    private static final String REGEXP_GROUP_LOGICAL_NODE_PART = "(" + CommonIdBase.DEFAULT_LOGICAL_NODE_PART + "|[0-9a-zA-Z_]{1,"
         + CommonIdBase.MAXIMUM_LOGICAL_NODE_PART_LENGTH + "}" + ")";
 
     private static final Pattern INSTANCE_ID_STRING_PARSE_PATTERN =
@@ -75,9 +74,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
 
     private final String fullIdString; // cached concatenation of defining parts; always created, as it is needed for lookup anyway
 
-    private final transient NodeInformationRegistry nodeInformationRegistry;
-
-    private final transient SharedNodeInformationHolder nodeInformationHolder;
+    private final transient NodeNameResolver nodeNameResolver;
 
     private transient byte tempDeserializationTypeMarker; // not synchronized as it is used from a single thread only
 
@@ -92,8 +89,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
         this.sessionIdPart = null;
         this.logicalNodePart = null;
         this.fullIdString = null;
-        this.nodeInformationRegistry = null;
-        this.nodeInformationHolder = null;
+        this.nodeNameResolver = null;
     }
 
     /**
@@ -101,12 +97,12 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
      * returned by {@link #getFullIdString()}. TODO document patterns here or at that method
      * 
      * @param input the output-type-specific "full id string" to recreate the instance from
-     * @param nodeInformationRegistry the {@link SharedNodeInformationHolder} to attach to the resulting object
+     * @param nodeNameResolver the {@link SharedNodeInformationHolder} to attach to the resulting object
      * @param expectedInterface the {@link InstanceNodeSessionId} subinterface determining the output object's properties and guarantees,
      *        which also defines the accepted input pattern
      * @throws IdentifierException on malformed input
      */
-    public NodeIdentifierImpl(String input, NodeInformationRegistry nodeInformationRegistry,
+    public NodeIdentifierImpl(String input, NodeNameResolver nodeNameResolver,
         IdType type) throws IdentifierException {
         Objects.requireNonNull(input, "Cannot parse 'null' string to a node identifier"); // not allowed since 8.0
         this.idType = type;
@@ -144,8 +140,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
 
         // common fields; do this after parsing to not pollute the registry with potentially invalid keys
         this.fullIdString = input;
-        this.nodeInformationRegistry = nodeInformationRegistry;
-        this.nodeInformationHolder = selectAppropriateNodeInformationHolder();
+        this.nodeNameResolver = nodeNameResolver;
         checkBasicInternalConsistency();
     }
 
@@ -156,14 +151,14 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
      * @param instanceIdPart the instance id part to use
      * @param logicalNodePart the logical node part to use (may be null)
      * @param sessionIdPart the session id part to use (may be null)
-     * @param nodeInformationRegistry the {@link NodeInformationRegistry} to use
+     * @param nodeNameResolver the {@link NodeNameResolver} to use
      */
     protected NodeIdentifierImpl(String instanceIdPart, String logicalNodePart, String sessionIdPart,
-        NodeInformationRegistry nodeInformationRegistry, IdType type) {
+        NodeNameResolver nodeNameResolver, IdType type) {
         this.instanceIdPart = instanceIdPart;
         this.sessionIdPart = sessionIdPart;
         this.logicalNodePart = logicalNodePart;
-        this.nodeInformationRegistry = nodeInformationRegistry;
+        this.nodeNameResolver = nodeNameResolver;
         this.idType = type;
 
         // note: not using StringUtils.format here as the benefit is unclear for these simple concatenations (using constants)
@@ -187,7 +182,6 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
             throw new IllegalStateException();
         }
 
-        this.nodeInformationHolder = selectAppropriateNodeInformationHolder();
         checkBasicInternalConsistency();
     }
 
@@ -198,17 +192,16 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
      * @param logicalNodePart the logical node part to use (may be null)
      * @param sessionIdPart the session id part to use (may be null)
      * @param fullIdString the full id string to use
-     * @param nodeInformationRegistry the {@link NodeInformationRegistry} to use
+     * @param nodeNameResolver the {@link NodeNameResolver} to use
      */
     protected NodeIdentifierImpl(String instanceIdPart, String logicalNodePart, String sessionIdPart, String fullIdString,
-        NodeInformationRegistry nodeInformationRegistry, IdType type) {
+        NodeNameResolver nodeNameResolver, IdType type) {
         this.instanceIdPart = instanceIdPart;
         this.sessionIdPart = sessionIdPart;
         this.logicalNodePart = logicalNodePart;
         this.fullIdString = fullIdString;
-        this.nodeInformationRegistry = nodeInformationRegistry;
+        this.nodeNameResolver = nodeNameResolver;
         this.idType = type;
-        this.nodeInformationHolder = selectAppropriateNodeInformationHolder();
         checkBasicInternalConsistency();
     }
 
@@ -291,7 +284,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
         case INSTANCE_NODE_SESSION_ID:
         case LOGICAL_NODE_ID:
         case LOGICAL_NODE_SESSION_ID:
-            return new NodeIdentifierImpl(instanceIdPart, null, null, nodeInformationRegistry, IdType.INSTANCE_NODE_ID);
+            return new NodeIdentifierImpl(instanceIdPart, null, null, nodeNameResolver, IdType.INSTANCE_NODE_ID);
         default:
             throw new IllegalArgumentException(idType.toString());
         }
@@ -301,7 +294,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     public InstanceNodeSessionId convertToInstanceNodeSessionId() {
         switch (idType) { // the "from" type
         case LOGICAL_NODE_SESSION_ID:
-            return new NodeIdentifierImpl(instanceIdPart, null, sessionIdPart, nodeInformationRegistry,
+            return new NodeIdentifierImpl(instanceIdPart, null, sessionIdPart, nodeNameResolver,
                 IdType.INSTANCE_NODE_SESSION_ID);
         default:
             throw newInvalidConversionException(idType, IdType.INSTANCE_NODE_SESSION_ID);
@@ -312,7 +305,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     public LogicalNodeId convertToLogicalNodeId() {
         switch (idType) { // the "from" type
         case LOGICAL_NODE_SESSION_ID:
-            return new NodeIdentifierImpl(instanceIdPart, logicalNodePart, null, nodeInformationRegistry,
+            return new NodeIdentifierImpl(instanceIdPart, logicalNodePart, null, nodeNameResolver,
                 IdType.LOGICAL_NODE_ID);
         default:
             throw newInvalidConversionException(idType, IdType.LOGICAL_NODE_ID);
@@ -325,7 +318,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
         case INSTANCE_NODE_ID:
         case INSTANCE_NODE_SESSION_ID:
         case LOGICAL_NODE_ID:
-            return new NodeIdentifierImpl(instanceIdPart, DEFAULT_LOGICAL_NODE_PART, null, nodeInformationRegistry,
+            return new NodeIdentifierImpl(instanceIdPart, DEFAULT_LOGICAL_NODE_PART, null, nodeNameResolver,
                 IdType.LOGICAL_NODE_ID);
         case LOGICAL_NODE_SESSION_ID:
             // not providing for other types as "default" semantics would be confusing; add a new method if needed
@@ -340,14 +333,22 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
         if (idType != IdType.INSTANCE_NODE_ID) {
             throw newInvalidIdTypeForThisCallException();
         }
-        return new NodeIdentifierImpl(instanceIdPart, nodeIdPart, null, nodeInformationRegistry, IdType.LOGICAL_NODE_ID);
+        return new NodeIdentifierImpl(instanceIdPart, nodeIdPart, null, nodeNameResolver, IdType.LOGICAL_NODE_ID);
+    }
+
+    @Override
+    public LogicalNodeSessionId expandToLogicalNodeSessionId(String nodeIdPart) {
+        if (idType != IdType.INSTANCE_NODE_SESSION_ID) {
+            throw newInvalidIdTypeForThisCallException();
+        }
+        return new NodeIdentifierImpl(instanceIdPart, nodeIdPart, sessionIdPart, nodeNameResolver, IdType.LOGICAL_NODE_SESSION_ID);
     }
 
     @Override
     public LogicalNodeSessionId convertToDefaultLogicalNodeSessionId() {
         switch (idType) {// the "from" type
         case INSTANCE_NODE_SESSION_ID:
-            return new NodeIdentifierImpl(instanceIdPart, DEFAULT_LOGICAL_NODE_PART, sessionIdPart, nodeInformationRegistry,
+            return new NodeIdentifierImpl(instanceIdPart, DEFAULT_LOGICAL_NODE_PART, sessionIdPart, nodeNameResolver,
                 IdType.LOGICAL_NODE_SESSION_ID);
         case LOGICAL_NODE_ID:
         case LOGICAL_NODE_SESSION_ID:
@@ -369,7 +370,7 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
             ConsistencyChecks.reportFailure("The ids to combine cannot refer to different instances! " + this + " / " + instanceSessionId);
         }
         // combine
-        return new NodeIdentifierImpl(instanceIdPart, logicalNodePart, instanceSessionId.getSessionIdPart(), nodeInformationRegistry,
+        return new NodeIdentifierImpl(instanceIdPart, logicalNodePart, instanceSessionId.getSessionIdPart(), nodeNameResolver,
             IdType.LOGICAL_NODE_SESSION_ID);
     }
 
@@ -402,27 +403,12 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
 
     @Override
     public String getRawAssociatedDisplayName() {
-        return nodeInformationHolder.getDisplayName();
+        return nodeNameResolver.getDisplayNameForNodeId(this, false);
     }
 
     @Override
     public String getAssociatedDisplayName() {
-        String displayName = nodeInformationHolder.getDisplayName();
-        if (displayName == null) {
-            displayName = DEFAULT_DISPLAY_NAME;
-        }
-        // TODO (p1) 9.0.0: preliminary solution, sufficient as these ids are currently only used for SSH forwarding; generalize later
-        if (logicalNodePart != null && !DEFAULT_LOGICAL_NODE_PART.equals(logicalNodePart)) {
-            // custom logical node id -> attach logical node part to name
-            String suffix = getLogicalNodeRecognitionPart();
-            if (suffix == null) {
-                suffix = logicalNodePart; // fallback for transient logical node ids; not used in 8.0.0, but be prepared for updates
-            }
-            return StringUtils.format("%s [SSH forwarding #%s]", displayName, suffix);
-        } else {
-            // default case, including instance node id types
-            return displayName;
-        }
+        return nodeNameResolver.getDisplayNameForNodeId(this, true);
     }
 
     @Override
@@ -442,32 +428,6 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     @Override
     public String toString() {
         return StringUtils.format("\"%s\" [%s]", getAssociatedDisplayName(), fullIdString);
-    }
-
-    /**
-     * Access method for unit tests.
-     * 
-     * @return the assigned {@link SharedNodeInformationHolderImpl}
-     */
-    protected SharedNodeInformationHolder getMetaInformationHolder() {
-        return nodeInformationHolder;
-    }
-
-    /**
-     * Centralizes the selection of the proper SharedNodeInformationHolder. Requires {@link #nodeInformationRegistry} and all id part fields
-     * to be initialized.
-     */
-    private SharedNodeInformationHolder selectAppropriateNodeInformationHolder() {
-        switch (idType) {
-        case INSTANCE_NODE_ID:
-        case LOGICAL_NODE_ID:
-            return nodeInformationRegistry.getNodeInformationHolder(instanceIdPart);
-        case INSTANCE_NODE_SESSION_ID:
-        case LOGICAL_NODE_SESSION_ID:
-            return nodeInformationRegistry.getNodeInformationHolder(getInstanceNodeSessionIdString());
-        default:
-            throw new IllegalArgumentException();
-        }
     }
 
     // custom serialization hook; see JavaDoc of java.lang.Serializable

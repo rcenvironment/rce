@@ -3,12 +3,11 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -25,7 +24,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -37,7 +35,6 @@ import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaD
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowPlaceholderHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.gui.workflow.Activator;
 
 /**
  * Dialog for clearing placeholder history.
@@ -210,14 +207,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
     }
 
     private Image getImage(WorkflowNode element) {
-        byte[] icon = element.getComponentDescription().getIcon16();
-        Image image;
-        if (icon != null) {
-            image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
-        } else {
-            image = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_RCE_ICON_16);
-        }
-        return image;
+        return element.getComponentDescription().getIcon16();
     }
 
     @Override

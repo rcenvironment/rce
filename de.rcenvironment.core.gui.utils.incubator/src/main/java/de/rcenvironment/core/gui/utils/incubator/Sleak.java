@@ -4,7 +4,7 @@
  * 
  * SPDX-License-Identifier: CPL-1.0
  *  
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.utils.incubator;

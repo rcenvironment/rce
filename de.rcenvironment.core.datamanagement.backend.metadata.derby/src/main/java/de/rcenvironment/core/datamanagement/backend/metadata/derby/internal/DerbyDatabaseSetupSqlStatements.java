@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.backend.metadata.derby.internal;
@@ -74,6 +74,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Static strings representing sql statements for setting up database tables and views.
  * 
  * @author Jan Flink
+ * @author Brigitte Boden
  */
 public abstract class DerbyDatabaseSetupSqlStatements {
 

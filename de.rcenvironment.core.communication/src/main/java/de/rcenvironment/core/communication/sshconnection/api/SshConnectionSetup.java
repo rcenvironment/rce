@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection.api;
@@ -96,13 +96,6 @@ public interface SshConnectionSetup {
      * @return true, if the connection should be automatically reconnected.
      */
     boolean getAutoRetry();
-
-    /**
-     * Get the setting for storing the passphrase.
-     * 
-     * @return true, if the passphrase is to be stored.
-     */
-    boolean getStorePassphrase();
 
     /**
      * Get the setting using a passphrase.

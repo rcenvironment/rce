@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.impl;
@@ -30,6 +30,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier
  * Implementation of {@link WorkflowExecutionInformation}.
  * 
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class WorkflowExecutionInformationImpl extends ComponentExecutionInformationImpl implements WorkflowExecutionInformation {
 

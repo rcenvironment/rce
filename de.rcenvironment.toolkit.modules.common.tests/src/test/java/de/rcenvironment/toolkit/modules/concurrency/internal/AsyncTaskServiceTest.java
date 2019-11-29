@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.toolkit.modules.concurrency.internal;
@@ -155,13 +155,10 @@ public class AsyncTaskServiceTest extends AbstractConcurrencyModuleTest {
 
         final CountDownLatch counter = new CountDownLatch(taskCount);
         for (int i = 0; i < taskCount; i++) {
-            threadPool.execute(new Runnable() {
+            threadPool.execute(() -> {
 
-                @Override
-                public void run() {
-                    sleep(10);
-                    counter.countDown();
-                }
+                sleep(10);
+                counter.countDown();
             });
         }
         assertTrue(counter.await(waitTimeForCompletion, TimeUnit.MILLISECONDS));
@@ -231,16 +228,12 @@ public class AsyncTaskServiceTest extends AbstractConcurrencyModuleTest {
 
         // test Runnable
         final CountDownLatch test1CDL = new CountDownLatch(1);
-        threadPool.execute(new Runnable() {
-
-            @Override
-            @TaskDescription("Runnable context test")
-            public void run() {
-                assertEquals(expectedContext, ThreadContextHolder.getCurrentContext());
-                assertEquals(expectedValue, ThreadContextHolder.getCurrentContextAspect(String.class));
-                test1CDL.countDown();
-            }
+        threadPool.execute("Runnable context test", () -> {
+            ThreadContextHolder.getCurrentContext();
+            ThreadContextHolder.getCurrentContextAspect(String.class);
+            test1CDL.countDown();
         });
+
         test1CDL.await(1, TimeUnit.SECONDS);
 
         // test Callable

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common
 Bundle-SymbolicName: de.rcenvironment.core.utils.common;singleton:=true
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
@@ -11,6 +11,7 @@ Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.excel.legacy,
  de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.common.legacy,
+ de.rcenvironment.core.utils.common.osgi,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.service,

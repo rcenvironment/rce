@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.authorization;
 
@@ -201,6 +201,10 @@ public class AuthorizationGroupDialog extends TitleAreaDialog {
         exportKeyContribution.fill(buttonsComposite);
         Button exportGroupButton = (Button) exportKeyContribution.getWidget();
         exportGroupButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
+        Label label = new Label(composite, SWT.None);
+        label.setText(
+            "Note: Authorization groups for publishing components over\nUplink Connections must have the name prefix 'external_'.");
 
         registerChangeListeners();
 

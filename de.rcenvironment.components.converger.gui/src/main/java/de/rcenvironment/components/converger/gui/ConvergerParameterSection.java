@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.converger.gui;
@@ -29,6 +29,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * Provides a GUI for the parametric study component.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert
  */
 public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySection {
 

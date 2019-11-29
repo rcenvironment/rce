@@ -3,12 +3,10 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
-
-import java.util.Map;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.wizard.IWizard;
@@ -19,11 +17,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
-
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
-import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Extends the {@link WizardDialog} for adding a "save as" button to the ButtonBar.
@@ -52,6 +46,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         setShellStyle(SWT.CLOSE | SWT.MAX | SWT.TITLE | SWT.BORDER | SWT.RESIZE
             | getDefaultOrientation());
         this.isEdit = isEdit;
+        ((ToolIntegrationWizard) newWizard).setIsEdit(isEdit);
     }
 
     @Override
@@ -125,39 +120,12 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
 
         case IDialogConstants.FINISH_ID:
             if (!isEdit) {
-                finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigurationOk() && this.getParentShell() != null) {
-                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                        SWT.ICON_INFORMATION | SWT.OK);
-                    infoDialog.setText("Tool integrated");
-                    Map<String, Object> configurationMap = ((ToolIntegrationWizard) getWizard())
-                        .getConfigurationMap();
-                    String groupName = (String) configurationMap
-                        .get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
-                    if (groupName == null || groupName.isEmpty()) {
-                        groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
-                    }
-                    infoDialog.setMessage(StringUtils.format("Tool \"%s\" was successfully integrated to group \"%s\".",
-                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
-                    infoDialog.open();
-                }
+                finishPressed();           
                 break;
             }
             synchronized (LOCK_OBJECT) {
                 ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
                 finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigurationOk() && this.getParentShell() != null) {
-                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                        SWT.ICON_INFORMATION | SWT.OK);
-                    infoDialog.setText("Tool updated");
-                    infoDialog
-                        .setMessage(StringUtils
-                            .format("Tool \"%s\" was successfully updated.",
-                                ((ToolIntegrationWizard) getWizard())
-                                    .getConfigurationMap()
-                                    .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
-                    infoDialog.open();
-                }
             }
             break;
         case IDialogConstants.OPEN_ID:

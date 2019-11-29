@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.api;
@@ -43,7 +43,7 @@ public interface AuthorizationAccessGroup extends Comparable<AuthorizationAccess
     String getDisplayName();
 
     /**
-     * * Compares this object with the specified object for order by ignoring cases in the object´s name.
+     * Compares this object with the specified object for order by ignoring cases in the object´s name.
      * 
      * @param o the object to compare
      * @return a negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.

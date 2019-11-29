@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -36,7 +36,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
- * @author Brigitte Boden (added public key authentication)
+ * @author Brigitte Boden 
  */
 public class SshAuthenticationManager implements PasswordAuthenticator, TemporarySshAccountControl, PublickeyAuthenticator {
 
@@ -132,6 +132,27 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
                 && !destination.contains("..\\");
         }
         return isAllowed;
+    }
+    
+    /**
+     * Used to determine if the user is allowed to access a command shell or run any command.
+     * 
+     * @param username - The name of the user
+     * @return true if allowed
+     */
+    public boolean isAllowedToOpenShell(String username) {
+        // TODO check for potential NPE
+        return getRoleForUser(username).isAllowedToOpenShell();
+    }
+    
+    /**
+     * Used to determine if the user is allowed to use uplink connections.
+     * 
+     * @param username - The name of the user
+     * @return true if allowed
+     */
+    public boolean isAllowedToUseUplink(String username) {
+        return getRoleForUser(username).isAllowedToUseUplink();
     }
 
     /**

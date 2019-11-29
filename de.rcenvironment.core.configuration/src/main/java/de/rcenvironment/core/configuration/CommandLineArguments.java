@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.configuration;
 
@@ -17,6 +17,7 @@ import de.rcenvironment.core.configuration.bootstrap.CommandStack;
  * 
  * @author Sascha Zur
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public final class CommandLineArguments {
 
@@ -107,6 +108,11 @@ public final class CommandLineArguments {
                 if (args.hasNextIsValue()) { // there may be a following token
                     args.getNext(); // yes -> discard
                 }
+            } else if (option.equals("--upgrade-profile")) {
+                // parameter is already handled earlier in the startup process, ignore here
+                // While this continue is not strictly necessary here, we use it to satisfy checkstyle, which otherwise complains about an
+                // empty block
+                continue;
             } else {
                 getTemporaryLogger().warn(
                     "Ignoring unrecognized command-line argument '" + option + "' at position " + args.lastPos());

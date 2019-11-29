@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.utils.executor;
@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A {@link CommandLineExecutor} that executes the given commands locally.
@@ -98,19 +97,16 @@ public class LocalCommandLineExecutor extends AbstractCommandLineExecutor implem
 
         if (stdinStream != null) {
             final OutputStream stdin = process.getOutputStream();
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute("LocalCommandLineExecutor input stream pipe", () -> {
 
-                @Override
-                @TaskDescription("LocalCommandLineExecutor input stream pipe")
-                public void run() {
-                    try {
-                        IOUtils.copy(stdinStream, stdin);
-                        stdin.close();
-                    } catch (IOException e) {
-                        // TODO propagate to outside?
-                        log.error("Error writing STDIN stream", e);
-                    }
-                };
+                try {
+                    IOUtils.copy(stdinStream, stdin);
+                    stdin.close();
+                } catch (IOException e) {
+                    // TODO propagate to outside?
+                    log.error("Error writing STDIN stream", e);
+
+                }
             });
         }
     }

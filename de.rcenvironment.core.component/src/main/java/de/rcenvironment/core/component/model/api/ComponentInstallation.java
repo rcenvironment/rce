@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.api;
@@ -58,5 +58,10 @@ public interface ComponentInstallation extends Comparable<ComponentInstallation>
      * @return the number of maximum parallel instances, or <code>null</code> if unlimited
      */
     Integer getMaximumCountOfParallelInstances();
+
+    /**
+     * @return true iff the installation is a mapped component (i.e. representing a tool from an uplink connection)
+     */
+    boolean isMappedComponent();
 
 }

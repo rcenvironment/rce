@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 package de.rcenvironment.core.component.execution.internal;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -69,29 +70,27 @@ public class TypedDatumToOutputWriter {
         String inputName, Long outputDmId) {
         // map from each output of the component to a list of all connected recipients
         Map<String, List<EndpointDatumRecipient>> endpointDatumRecipients = compExeCtx.getEndpointDatumRecipients();
-        if (endpointDatumRecipients.containsKey(outputName)) {
-            // if the output is connected ...
-            
-            for (EndpointDatumRecipient epRecipient : endpointDatumRecipients.get(outputName)) {
-                if (considerRecipient(epRecipient, inputCompExeId, inputName)) {
-                    EndpointDatumImpl endpointDatum = new EndpointDatumImpl();
-                    endpointDatum.setEndpointDatumRecipient(epRecipient);
-                    endpointDatum.setOutputsComponentExecutionIdentifier(
-                        compExeCtx.getExecutionIdentifier());
-                    endpointDatum.setOutputsNodeId(compExeCtx.getNodeId());
-                    endpointDatum.setWorkflowExecutionIdentifier(
-                        compExeCtx.getWorkflowExecutionIdentifier());
-                    endpointDatum.setWorkflowNodeId(compExeCtx.getWorkflowNodeId());
-                    endpointDatum.setDataManagementId(outputDmId);
-                    endpointDatum.setValue(datumToSend);
-                    endpointDatumDispatcher.dispatchEndpointDatum(endpointDatum);
+        for (EndpointDatumRecipient epRecipient : endpointDatumRecipients.getOrDefault(outputName, new LinkedList<>())) {
+            if (!considerRecipient(epRecipient, inputCompExeId, inputName)) {
+                continue;
+            }
 
-                    if (VERBOSE_LOGGING) {
-                        LOG.debug(StringUtils.format("Sent at %s@%s: %s (-> %s@%s)", outputName,
-                            compExeCtx.getInstanceName(), datumToSend,
-                            epRecipient.getInputName(), epRecipient.getInputsComponentInstanceName()));
-                    }
-                }
+            EndpointDatumImpl endpointDatum = new EndpointDatumImpl();
+            endpointDatum.setEndpointDatumRecipient(epRecipient);
+            endpointDatum.setOutputsComponentExecutionIdentifier(
+                compExeCtx.getExecutionIdentifier());
+            endpointDatum.setOutputsNodeId(compExeCtx.getNodeId());
+            endpointDatum.setWorkflowExecutionIdentifier(
+                compExeCtx.getWorkflowExecutionIdentifier());
+            endpointDatum.setWorkflowNodeId(compExeCtx.getWorkflowNodeId());
+            endpointDatum.setDataManagementId(outputDmId);
+            endpointDatum.setValue(datumToSend);
+            endpointDatumDispatcher.dispatchEndpointDatum(endpointDatum);
+
+            if (VERBOSE_LOGGING) {
+                LOG.debug(StringUtils.format("Sent at %s@%s: %s (-> %s@%s)", outputName,
+                    compExeCtx.getInstanceName(), datumToSend,
+                    epRecipient.getInputName(), epRecipient.getInputsComponentInstanceName()));
             }
         }
     }

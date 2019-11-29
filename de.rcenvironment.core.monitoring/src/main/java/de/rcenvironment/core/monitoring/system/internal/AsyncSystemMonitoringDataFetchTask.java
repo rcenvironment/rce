@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.monitoring.system.internal;
@@ -15,7 +15,6 @@ import de.rcenvironment.core.monitoring.system.api.OperatingSystemException;
 import de.rcenvironment.core.monitoring.system.api.RemotableSystemMonitoringService;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshotListener;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link Runnable} for fetching monitoring data.
@@ -38,7 +37,6 @@ public class AsyncSystemMonitoringDataFetchTask implements Runnable {
     }
 
     @Override
-    @TaskDescription("Fetching monitoring data...")
     public void run() {
 
         try {

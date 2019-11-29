@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.ssh.server</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - SSH Server</name>
-	<version>9.1.0-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -14,13 +14,26 @@
 		<relativePath>../../maven/parent/mavenLibraryBundle</relativePath>
 	</parent>
 
+	<properties>
+		<!-- last updated: 2019-11-06, misc_ro -->
+		<versions.sshd>2.3.0</versions.sshd>
+	</properties>
+
 	<dependencies>
 		<dependency>
-			<!-- last updated: 2019-01-30, misc_ro; only upgraded to 1.7.0 for now, 
-				although 2.1.0 (released Sep 2018) is also available -->
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-core</artifactId>
-			<version>1.7.0</version> <!-- released Jan 2018 -->
+			<version>${versions.sshd}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.sshd</groupId>
+			<artifactId>sshd-common</artifactId>
+			<version>${versions.sshd}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.sshd</groupId>
+			<artifactId>sshd-scp</artifactId>
+			<version>${versions.sshd}</version>
 		</dependency>
 	</dependencies>
 

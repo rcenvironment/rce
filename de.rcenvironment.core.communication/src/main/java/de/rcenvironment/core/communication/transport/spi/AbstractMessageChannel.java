@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.transport.spi;
@@ -16,7 +16,6 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Abstract base class for the {@link MessageChannel} implementations of network transports.
@@ -169,14 +168,9 @@ public abstract class AbstractMessageChannel implements MessageChannel {
     }
 
     private void asyncFireOnClosedOrBroken() {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Communication Layer: Asynchronous handling of connection breakdown",
+            this::onClosedOrBroken);
 
-            @Override
-            @TaskDescription("Communication Layer: Asynchronous handling of connection breakdown")
-            public void run() {
-                onClosedOrBroken();
-            }
-        });
     }
 
     @Override

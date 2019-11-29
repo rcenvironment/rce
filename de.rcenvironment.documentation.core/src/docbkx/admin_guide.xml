@@ -1,0 +1,17 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+
+<book id="rce_admin_guide">
+	<title>
+		 RCE Administration and Security Guide
+	</title>
+	<subtitle>
+		&buildId;<!-- Entity is filled in by Maven build -->
+	</subtitle>
+
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="admin_guide/sections/preface.xml" />
+
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="admin_guide/sections/properties.xml"/>
+	
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="admin_guide/sections/administration.xml"/>
+
+</book>

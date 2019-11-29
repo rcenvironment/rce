@@ -4,10 +4,12 @@
 	<para>This section describes the configuration of RCE. Configuration is done within one single
 		configuration file. It is located in the profile directory. From the graphical user
 		interface, you can easily access it from the tool bar or the  <emphasis role="italic"
-			>Help</emphasis> menu. Note: To apply changes you need to restart RCE. The format of the
-		configuration file is JSON. See <ulink url="http://www.json.org/"><emphasis role="underline"
-				>http://www.json.org/</emphasis></ulink> for the format definition. Also refer to
-		the example configuration files in the installation data directory.</para>
+			>Configuration</emphasis> menu. </para>
+		<note>To apply changes you need to restart RCE.</note>
+	<para>The format of the configuration file is JSON. See <ulink url="http://www.json.org/"><emphasis role="underline"
+	>http://www.json.org/</emphasis></ulink> for the format definition. Also refer to
+	the example configuration files in the installation data directory.
+	</para>
 	<sect2>
 		<title>Configuration Locations and Files</title>
 		<para>Starting with RCE 6.0.0, all user data is strictly separated from the RCE installation
@@ -27,8 +29,12 @@
 	</sect2>
 	<sect2>
 		<title>Configuration Parameters</title>
-		<para>Configuration parameters are grouped within the configuration file. Below are lists of
-			the configuration parameters. There is one list per JSON configuration group. You can find example configurations in "configuration_reference_sample" in the installation data directory or by opening the configuration information in RCE.</para>
+		<para>Configuration parameters are grouped within the configuration file. The configuration
+			parameters are listed below. There is one list per JSON configuration group. Some
+			example snippets are given as well. The complete example configurations can be found in
+			the installation data directory in the sub-directory <emphasis role="italic"
+				>examples/configuration</emphasis> or by opening the configuration information in
+			RCE.</para>
 		<table width="100%">
 			<title>"general"</title>
 			<tgroup cols="3">
@@ -54,8 +60,7 @@
 										name.</para>
 								</listitem>
 								<listitem>
-									<para>${systemUser} is resolved to the Java "user.name"
-										property.</para>
+									<para>${systemUser} is resolved to the user account name.</para>
 								</listitem>
 								<listitem>
 									<para>${profileName} is resolved to the last part of the current
@@ -63,6 +68,10 @@
 								</listitem>
 								<listitem>
 									<para>${version} is resolved to the build id.</para>
+								</listitem>
+								<listitem>
+									<para>${javaVersion} is resolved to the JRE version
+										number.</para>
 								</listitem>
 							</itemizedlist><para>Example: "Default instance started by
 								\"${systemUser}\" on ${hostName}".</para></entry>
@@ -144,16 +153,6 @@
 				</tbody>
 			</tgroup>
 		</table>
-		<note>
-			<para>IMPORTANT: When setting up a network of RCE instances, keep in mind that the RCE
-				network traffic is currently <emphasis>not encrypted</emphasis>. This means that it
-				is <emphasis>not secure</emphasis> to expose RCE server ports to untrusted networks
-				like the internet. When setting up RCE connections between different locations, make
-				sure that they either connect across a secure network (e.g. your institution's
-				internal network), or that the connection is secured by other means, like SSH
-				tunneling or a VPN. Alternatively, you can set up SSH connections in RCE instead of
-				the standard RCE connections.</para>
-		</note>
 		<table frame="all" width="100%">
 			<title>"network"</title>
 			<tgroup cols="3">
@@ -272,6 +271,46 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<note>
+			<para>IMPORTANT: When setting up a network of RCE instances, keep in mind that the RCE
+				network traffic is currently <emphasis>not encrypted</emphasis>. This means that it
+				is <emphasis>not secure</emphasis> to expose RCE server ports to untrusted networks
+				like the internet. When setting up RCE connections between different locations, make
+				sure that they either connect across a secure network (e.g. your institution's
+				internal network), or that the connection is secured by other means, like SSH
+				tunneling or a VPN. Alternatively, you can set up an uplink connection in RCE
+				instead of the standard RCE connections.</para>
+		</note>
+		<para>Network Server Sample:
+			<programlisting>"network" : {
+		"serverPorts" : {
+			"relayPort1" : {
+				"ip" : "127.0.0.1",
+				"port" : 21000
+			}
+		}, 
+		"ipFilter" : {
+			"enabled" : false,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	}
+	</programlisting></para>
+		<para>Network Client
+			Sample:<programlisting>"network" : {
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 21000,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	}</programlisting></para>
 		<table width="100%">
 			<title>"componentSettings"</title>
 			<tgroup cols="3">
@@ -320,15 +359,16 @@
 				<tbody>
 					<row>
 						<entry>tiglViewer</entry>
-						<entry>Configuration of the external TiGL Viewer application integration. This needs to be
-							configured to enable RCE´s TiGL Viewer view and thus, the TiGL Viewer
-							workflow component. Note:TiGL Viewer must be downloaded and installed
-							separately.</entry>
+						<entry>Configuration of the external TiGL Viewer application integration.
+							This needs to be configured to enable RCE´s TiGL Viewer view and thus,
+							the TiGL Viewer workflow component. Note:TiGL Viewer must be downloaded
+							and installed separately.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
 						<entry>tiglViewer/binaryPath</entry>
-						<entry>The path to the TiGL Viewer executable file.  Must be an absolute path.</entry>
+						<entry>The path to the TiGL Viewer executable file. Must be an absolute
+							path.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -439,6 +479,20 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<para> SSH Server
+			Sample:<programlisting>"sshServer" : {
+		"enabled" : true,
+		"ip" : "127.0.0.1",
+		"port" : 31005,
+		"accounts" : {
+			"ra_demo" : {
+				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$qxCBuEvq0xWoOlox2dVbCu8zCYsyxQMBe5SAnS2HId0uaEp59aAu2",
+				"role" : "remote_access_user",
+				"enabled" : true
+			}
+		}
+	}</programlisting></para>
 		<table width="100%" id="table_ssh_roles">
 			<title>Possible roles for SSH accounts</title>
 			<tgroup cols="2">
@@ -453,14 +507,18 @@
 				</thead>
 				<tbody>
 					<row>
+						<entry>uplink_client (Standard role for using Uplink connections)</entry>
+						<entry>Cannot open a command shell or run any commands</entry>
+					</row>
+					<row>
 						<entry>remote_access_user (Standard role for using SSH remote access tools
 							and workflows)</entry>
-						<entry>ra|sysmon</entry>
+						<entry>ra|sysmon (can use Uplink connections)</entry>
 					</row>
 					<row>
 						<entry>remote access (backwards compatibility alias for
 							remote_access_user)</entry>
-						<entry>ra|sysmon</entry>
+						<entry>ra|sysmon (can use Uplink connections)</entry>
 					</row>
 					<row>
 						<entry>remote_access_admin</entry>
@@ -493,12 +551,112 @@
 				</tbody>
 			</tgroup>
 		</table>
-		<para>
-			<note>
-				<para>The command <emphasis role="italic">wf open</emphasis> is only accessible to
-					the role developer, as it influences the GUI of the server-instance.</para>
-			</note>
-		</para>
+		<table width="100%">
+			<title>"uplink"</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="0.5*" align="left"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>uplinkConnections</entry>
+						<entry>A map of Uplink connections.This allows the local instance to act as
+							an Uplink client. For each connection a unique identifier (id) must be
+							given. </entry>
+						<entry>{} (an empty map in JSON format)</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/displayName </entry>
+						<entry>The name for the connection that will be shown in the network
+							view.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/host </entry>
+						<entry>The remote RCE instance (Uplink relay) to connect to. Host names and
+							IPv4 addresses are permitted.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/port</entry>
+						<entry>Port number of the remote RCE instance.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/loginName</entry>
+						<entry>The login name for authentication.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/keyfileLocation</entry>
+						<entry>Path to the private key file, if keyfile authentication is used. Only
+							RSA keys in the OpenSSH format are supported.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/noPassphrase</entry>
+						<entry>This option should only be set if a private key that requires no
+							passphrase is used for authentication. If set to <emphasis role="italic"
+								>true</emphasis>, RCE does not ask for a passphrase before
+							connecting.</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/clientID</entry>
+						<entry>If other RCE instances use the same account to connect to the relay,
+							you have to set a unique client ID here (max. 8 characters)</entry>
+						<entry>default</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/isGateway</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, this instance will
+							act as an Uplink gateway (see chapter <xref linkend="uplink-connections"
+							/> for further information)</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/connectOnStartup</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the connection is
+							immediately established on startup. (Only possible when the password is
+							stored.)</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>uplinkConnections/[id]/autoRetry</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, RCE will try to
+							automatically reconnect the connection (every 5 seconds) if it can not
+							be established or is lost of a network error. (Only possible when the
+							password is stored in the secure store.) </entry>
+						<entry>false</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para> Uplink Connection
+			Sample:<programlisting>"uplink" : {
+		"uplinkConnections" : {
+			"exampleUplinkConnectionID" : {
+				"displayName" : "example",
+				"clientID": "client1",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"connectOnStartup": false,
+				"autoRetry" : false,
+				"isGateway" : false,
+				"loginName" : "ra_demo"
+				//The passphrase is not stored here, it has to be entered when connecting.
+			}
+		}
+	}</programlisting></para>
 		<table width="100%">
 			<title>"sshRemoteAccess"</title>
 			<tgroup cols="3">
@@ -562,8 +720,7 @@
 						<entry>sshConnections/[id]/connectOnStartup</entry>
 						<entry>If set to <emphasis role="italic">true</emphasis>, the connection is
 							immediately established on startup. (Only possible when the password is
-							stored in the secure store, which currently only works on Windows
-							machines.)</entry>
+							stored in the secure store.)</entry>
 						<entry>false</entry>
 					</row>
 					<row>
@@ -571,13 +728,27 @@
 						<entry>If set to <emphasis role="italic">true</emphasis>, RCE will try to
 							automatically reconnect the connection (every 10 seconds) if it can not
 							be established or is lost of a network error. (Only possible when the
-							password is stored in the secure store, which currently only works on
-							Windows machines.) </entry>
+							password is stored in the secure store.) </entry>
 						<entry>false</entry>
 					</row>
 				</tbody>
 			</tgroup>
 		</table>
+		<para> Remote Access Connection Sample
+			<programlisting>"sshRemoteAccess" : {
+				"sshConnections" : {
+					"exampleSSHConnection" : {
+						"displayName" : "example",
+						"host" : "127.0.0.1",
+						"port" : 31005,
+						"connectOnStartup": false,
+						"autoRetry" : false,
+						"loginName" : "ra_demo"
+						//The passphrase is not stored here, it has to be entered when connecting.
+					}
+				}
+			}</programlisting>
+		</para>
 		<table width="100%" id="smtpServerParameterTable">
 			<title>"smtpServer"</title>
 			<tgroup cols="3">
@@ -662,9 +833,8 @@
 		<sect3>
 			<title>Remote Access: SSH account configuration</title>		
 		
-			<para> If the RCE instance shall act as a SSH server, you can configure SSH accounts using the Configuration UI, which encrypts the SSH passwords before storing them in the
-				configuration file.
-			</para>
+			<para>If the RCE instance shall act as a SSH server, you can configure SSH accounts using the Configuration UI, which encrypts the SSH passwords before storing them in the
+				configuration file.</para>
 		
 			<note>
 				<para>All SSH accounts configured with this tool initially have the role "remote_access_user",
@@ -693,5 +863,138 @@
 			</note>
 		</sect3>
 
+	</sect2>
+	<sect2>
+		<title><anchor id="authdata-import"/>Importing authorization data without GUI access</title>
+		<para>There are currently two categories of authorization data that should not be simply written
+			into configuration files for security reasons: SSH login passwords and keyfile
+			passphrases, and RCE authorization group keys (the "export/import" strings). To support
+			scenarios where interactive entry is not possible, for example daemon/service
+			installations, a file-based import mechanism is provided as well.</para>
+		<para>The general usage is the same for all kinds of import data:<itemizedlist>
+				<listitem>
+					<para>Locate the folder of the profile that you want to import into.</para>
+				</listitem>
+				<listitem>
+					<para>If it does not exist yet, create a folder "<code>import</code>" within
+						that profile directory.</para>
+				</listitem>
+				<listitem>
+					<para>Within this "<code>import</code>" folder, create the sub-folder mentioned in the specific
+						description below; for example, "<code>auth-group-keys</code>".</para>
+				</listitem>
+				<listitem>
+					<para>To perform an import, create a file inside this specific sub-folder and
+						edit it, or copy a file that you already prepared into that folder. These
+						files are referred to as "import files". The filenames and contents to use
+						for them are described in the specific sections below.</para>
+				</listitem>
+				<listitem>
+					<para>Once you have created or copied all import files that you want to
+						processs, (re)start RCE. Currently, all import file processing is done on
+						startup. (Note: Future versions of RCE may be expanded to also detect and
+						process new import files without a restart.)</para>
+				</listitem>
+				<listitem>
+					<para>If a file has been successfully imported, it is
+							<emphasis>deleted</emphasis> to minimize the time that it is present in
+						the filesystem (for security), and to prevent it from being processed again
+						on every RCE start. Make sure that this file is not the only reference to
+						the authorization data that you have!</para>
+				</listitem>
+			</itemizedlist></para>
+		<sect3>
+			<title>Importing or deleting RCE authorization group keys</title>
+			<para>This section focusses on importing or deleting <emphasis role="italic">already
+					defined</emphasis> authorization groups via their group keys. Creating groups is
+				explained in <xref linkend="publishing_authorization"/>. </para>
+			<para>	
+				<itemizedlist>
+					<listitem>
+						<para>Group key import files must be placed in
+								<code>&lt;profile>/import/auth-group-keys/</code> .</para>
+					</listitem>
+					<listitem>
+						<para>For group keys, the import files can have any name. For each key you wish to import a
+							single file is required.</para>
+					</listitem>
+					<listitem>
+						<para>The import file's content must be the group import string; it should
+							look similar to
+								"<code>MyGroupName:23b0ad9043a39496:1:1K6D5C9BKYu[...]sSMLlj0Tg</code>".</para>
+					</listitem>
+					<listitem>
+						<para>Deleting groups is also supported. To delete a group, write "<code>delete</code>" into
+							the file, followed by the full id (name + random part) of the group you
+							want to delete. For convenience, you can also use the full import string
+							as used above. For example, if you wanted to delete the group mentioned
+							above, either of these contents would work:<itemizedlist>
+								<listitem>
+									<para>"<code>delete MyGroupName:23b0ad9043a39496</code>"</para>
+								</listitem>
+								<listitem>
+									<para>"<code>delete
+											MyGroupName:23b0ad9043a39496:1:1K6D5C9BKYu[...]sSMLlj0Tg</code>"</para>
+								</listitem>
+							</itemizedlist></para>
+					</listitem>
+					<listitem>
+						<para>After successful import or deletion of a group key, the file is deleted from the profile folder.</para>
+					</listitem>
+				</itemizedlist>
+			</para>
+		</sect3>
+		<sect3>
+			<title>Importing SSH Uplink passwords or keyfile passphrases</title>
+			<itemizedlist>
+				<listitem>
+					<para>Uplink password/passphrase import files must be placed in
+							<code>&lt;profile>/import/uplink-pws/</code> .</para>
+				</listitem>
+				<listitem>
+					<para>The names of the import files are relevant: These must be the "connection id" used in the
+						Uplink connection configuration. This id is the string right in front of the
+						the part outside of the connection's configuration block (e.g.
+							<code>"myConnection" : { ...&lt;connection settings>... }</code>). For
+						convenience on Windows, a ".txt" extension can be added to this filename;
+						this will be cut away by the importer.</para>
+				</listitem>
+				<listitem>
+					<para>The content of the files is the password or keyfile passphrase.</para>
+				</listitem>
+				<listitem>
+					<para>As this is never actually needed, deleting passwords is not directly
+						supported. If you have imported a password/passphrase you would rather
+						remove from RCE's secure storage, simply import a dummy password for the
+						same connection id. This will overwrite and erase the previous data.</para>
+				</listitem>
+			</itemizedlist>
+		</sect3>
+		<sect3>
+			<title>Importing SSH Remote Access passwords or keyfile passphrases</title>
+			<itemizedlist>
+				<listitem>
+					<para>Uplink password/passphrase import files must be placed in
+							<code>&lt;profile>/import/ra-pws/</code> .</para>
+				</listitem>
+				<listitem>
+					<para>The names of the import files are relevant: These must be the "connection id" used in the
+						Remote Access connection configuration. This id is the string right in front
+						of the the part outside of the connection's configuration block (e.g.
+							<code>"myConnection" : { ...&lt;connection settings>... }</code>). For
+						convenience on Windows, a ".txt" extension can be added to this filename;
+						this will be cut away by the importer.</para>
+				</listitem>
+				<listitem>
+					<para>The content of the files is the password or keyfile passphrase.</para>
+				</listitem>
+				<listitem>
+					<para>As this is never actually needed, deleting passwords is not directly
+						supported. If you have imported a password/passphrase you would rather
+						remove from RCE's secure storage, simply import a dummy password for the
+						same connection id. This will overwrite and erase the previous data.</para>
+				</listitem>
+			</itemizedlist>
+		</sect3>
 	</sect2>
 </sect1>

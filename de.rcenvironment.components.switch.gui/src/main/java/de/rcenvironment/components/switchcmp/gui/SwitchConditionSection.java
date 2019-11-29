@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.switchcmp.gui;
@@ -42,6 +42,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * Condition section where user can set desired condition.
  * 
  * @author David Scholz
+ * @author Kathrin Schaffert
  */
 public class SwitchConditionSection extends ValidatingWorkflowNodePropertySection {
 

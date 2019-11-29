@@ -1,0 +1,12 @@
+{
+	"uplinkConnections" : {
+		"exampleSSHConnection" : {
+			"displayName" : "example",
+			"host" : "127.0.0.1",
+			"port" : 31000,
+			"loginName" : "sample-user",
+			"keyfileLocation" : "filepath",
+			"noPassphrase" : true
+		}
+	}
+}

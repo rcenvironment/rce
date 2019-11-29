@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -31,7 +31,6 @@ import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptio
 import de.rcenvironment.core.component.workflow.execution.impl.ConsoleSubscriptionEventProcessor;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link ConsoleRowModelService} implementation.
@@ -106,16 +105,12 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
      */
     @Activate
     public void activate() {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Initial ConsoleRow model subscriptions", () -> {
 
-            @Override
-            @TaskDescription("Initial ConsoleRow model subscriptions")
-            public void run() {
-                subscriptionManager = new GenericSubscriptionManager(new ConsoleSubscriptionEventProcessor(
-                    ConsoleRowModelServiceImpl.this, consoleRowLogService), communicationService, workflowHostService, notificationService);
-                subscriptionManager.updateSubscriptionsForPrefixes(new String[] { ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT });
-                initialSubscriptionLatch.countDown();
-            }
+            subscriptionManager = new GenericSubscriptionManager(new ConsoleSubscriptionEventProcessor(
+                ConsoleRowModelServiceImpl.this, consoleRowLogService), communicationService, workflowHostService, notificationService);
+            subscriptionManager.updateSubscriptionsForPrefixes(new String[] { ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT });
+            initialSubscriptionLatch.countDown();
         });
     }
 

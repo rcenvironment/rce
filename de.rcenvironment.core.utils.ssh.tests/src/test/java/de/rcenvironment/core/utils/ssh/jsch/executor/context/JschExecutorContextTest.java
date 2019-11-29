@@ -3,9 +3,9 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.utils.ssh.jsch.executor.context;
 
 import static org.junit.Assert.assertTrue;
@@ -16,11 +16,12 @@ import java.util.ArrayList;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -47,17 +48,18 @@ public class JschExecutorContextTest {
     private static final int INVALID_PORT = -22;
 
     private static SshServer sshServer;
-    
+
     private static int port;
 
     private volatile boolean failed = false;
-    
+
     private final SshSessionConfiguration sshConfiguration = SshSessionConfigurationFactory
         .createSshSessionConfigurationWithAuthPhrase(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             DummyPasswordAuthenticator.PASSWORD);
 
     /**
-     * Set up test environment. 
+     * Set up test environment.
+     * 
      * @throws IOException on error
      **/
     @SuppressWarnings("serial")
@@ -67,12 +69,17 @@ public class JschExecutorContextTest {
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPasswordFactory()); }});
+        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
+
+            {
+                add(new UserAuthPasswordFactory());
+            }
+        });
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.setCommandFactory(SshTestUtils.createDummyCommandFactory());
         sshServer.start();
     }
-    
+
     /**
      * Set up work dir.
      * 
@@ -82,46 +89,48 @@ public class JschExecutorContextTest {
     public void createWorkDir() throws IOException {
         failed = false;
     }
-    
+
     /**
      * Tear down test environment.
-     * @throws IOException 
+     * 
+     * @throws IOException on unexpected errors
      **/
     @AfterClass
     public static void tearDown() throws IOException {
         sshServer.stop();
     }
-    
-    /** 
-     * Test. 
+
+    /**
+     * Test.
+     * 
      * @throws IOException on error
      * @throws ValidationFailureException on error
      **/
     @Test(timeout = SshTestUtils.TIMEOUT)
     public void testLifecycle() throws IOException, ValidationFailureException {
         JSchExecutorContext context = new JSchExecutorContext(sshConfiguration);
-        
+
         context.setUpSession();
         sshServer.setCommandFactory(new CommandFactory() {
-            
+
             @Override
-            public Command createCommand(String command) {
+            public Command createCommand(ChannelSession channelSession, String command) {
                 if (!command.contains("mkdir -p ")) {
                     failed = true;
                 }
                 return new DummyCommand();
             }
         });
-        
+
         CommandLineExecutor executor = context.setUpSandboxedExecutor();
         if (failed) {
             fail();
         }
-        
+
         sshServer.setCommandFactory(new CommandFactory() {
-            
+
             @Override
-            public Command createCommand(String command) {
+            public Command createCommand(ChannelSession channelSession, String command) {
                 if (!command.contains("rm ") && !command.contains("rmdir")) {
                     failed = true;
                 }
@@ -130,32 +139,33 @@ public class JschExecutorContextTest {
         });
 
         context.tearDownSandbox(executor);
-        
+
         context.tearDownSession();
-        
+
     }
-    
-    /** 
-     * Test. 
+
+    /**
+     * Test.
+     * 
      * @throws IOException on error
      * @throws ValidationFailureException on error
      **/
     @Test(timeout = SshTestUtils.TIMEOUT)
     public void testForLifecycleFailure() throws IOException, ValidationFailureException {
-        
+
         SshSessionConfiguration invalidSshConfiguration = SshSessionConfigurationFactory
             .createSshSessionConfigurationWithAuthPhrase(LOCALHOST, INVALID_PORT, DummyPasswordAuthenticator.USERNAME,
                 DummyPasswordAuthenticator.PASSWORD);
-        
+
         JSchExecutorContext context = new JSchExecutorContext(invalidSshConfiguration);
-        
+
         try {
             context.setUpSession();
             fail();
         } catch (ValidationFailureException e) {
             assertTrue(true);
         }
-        
+
         context = new JSchExecutorContext(sshConfiguration);
 
         try {
@@ -171,11 +181,11 @@ public class JschExecutorContextTest {
         } catch (IllegalStateException e) {
             assertTrue(true);
         }
-        
+
         JSchExecutorContext context2 = new JSchExecutorContext(sshConfiguration);
         context2.setUpSession();
         CommandLineExecutor executor = context2.setUpSandboxedExecutor();
-        
+
         try {
             context.tearDownSandbox(executor);
             fail();
@@ -184,9 +194,10 @@ public class JschExecutorContextTest {
         }
 
     }
-    
-    /** 
-     * Test. 
+
+    /**
+     * Test.
+     * 
      * @throws IOException on error
      * @throws ValidationFailureException on error
      **/

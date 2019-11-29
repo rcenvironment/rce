@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.management.internal;
@@ -52,7 +52,6 @@ import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link CommunicationManagementService} implementation.
@@ -136,11 +135,17 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
             // TODO add custom display name when available; move string reconstruction into NCP
             final String displayName = StringUtils.format("%s:%s", ncp.getHost(), ncp.getPort());
             boolean connectOnStartup = !"false".equals(ncp.getAttributes().get("connectOnStartup"));
-            ConnectionSetup setup = connectionSetupService.createConnectionSetup(ncp, displayName, connectOnStartup);
-            log.debug(StringUtils.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
-                setup.getDisplayName(), ncp.getAttributes()));
-            if (setup.getConnnectOnStartup()) {
-                setup.signalStartIntent();
+
+            if (connectionSetupService.connectionAlreadyExists(ncp)) {
+                log.debug(StringUtils.format("Redundant preconfigured connection '%s:%s'", ncp.getHost(), ncp.getPort()));
+            } else {
+                ConnectionSetup setup = connectionSetupService.createConnectionSetup(ncp, displayName,
+                    connectOnStartup);
+                log.debug(StringUtils.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
+                    setup.getDisplayName(), ncp.getAttributes()));
+                if (setup.getConnnectOnStartup()) {
+                    setup.signalStartIntent();
+                }
             }
         }
 
@@ -170,17 +175,13 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     @Override
     @Deprecated
     public void asyncConnectToNetworkPeer(final NetworkContactPoint ncp) {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Communication Layer: Connect to remote node (trigger task)", () -> {
 
-            @Override
-            @TaskDescription("Communication Layer: Connect to remote node (trigger task)")
-            public void run() {
-                try {
-                    log.debug("Initiating asynchronous connection to " + ncp);
-                    connectToRuntimePeer(ncp);
-                } catch (CommunicationException e) {
-                    log.warn("Failed to contact initial peer at NCP " + ncp, e);
-                }
+            try {
+                log.debug("Initiating asynchronous connection to " + ncp);
+                connectToRuntimePeer(ncp);
+            } catch (CommunicationException e) {
+                log.warn("Failed to contact initial peer at NCP " + ncp, e);
             }
         });
     }
@@ -223,6 +224,11 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
             }
             initializedServerContactPoints.clear();
         }
+
+        // fix for issue 0017039: remove all connection setups on shutdown so they don't block new ones from being loaded on restart
+        for (ConnectionSetup connectionSetup : connectionSetupService.getAllConnectionSetups()) {
+            connectionSetupService.disposeConnectionSetup(connectionSetup);
+        }
     }
 
     @Override
@@ -238,6 +244,11 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
                 scp.setSimulatingBreakdown(true);
             }
             initializedServerContactPoints.clear();
+        }
+
+        // fix for issue 0017039: remove all connection setups on shutdown so they don't block new ones from being loaded on restart
+        for (ConnectionSetup connectionSetup : connectionSetupService.getAllConnectionSetups()) {
+            connectionSetupService.disposeConnectionSetup(connectionSetup);
         }
     }
 
@@ -347,14 +358,8 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
         // "autoStartNetworkOnActivation" is true by default; only disabled in test code
         if (autoStartNetworkOnActivation && !CommandLineArguments.isDoNotStartNetworkRequested()) {
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute("Communication Layer: Main startup", this::startUpNetwork);
 
-                @Override
-                @TaskDescription("Communication Layer: Main startup")
-                public void run() {
-                    startUpNetwork();
-                }
-            });
         } else {
             log.debug("Network startup is disabled");
         }

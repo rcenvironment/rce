@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration.documentation.internal;
@@ -28,14 +28,17 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.component.integration.documentation.RemoteToolIntegrationDocumentationService;
+import de.rcenvironment.core.component.integration.documentation.ToolDocumentationProvider;
 import de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
@@ -77,11 +80,16 @@ public class ToolIntegrationDocumentationServiceImpl
 
     private Map<String, Map<String, Map<String, String>>> toolDocumentationCache;
 
+    private Map<String, ToolDocumentationProvider> toolDocProviderMap = new HashMap<String, ToolDocumentationProvider>();
+
     private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private ConfigurationService configService;
 
     private SshRemoteAccessClientService sshClientService;
+
+    @Reference
+    // private UplinkToolAccessClientService uplinkClientService;
 
     private ToolIntegrationService toolIntegrationService;
 
@@ -92,27 +100,25 @@ public class ToolIntegrationDocumentationServiceImpl
         Map<String, String> docs = new HashMap<>();
         for (DistributedComponentEntry entry : componentKnowledgeService.getCurrentSnapshot().getAllInstallations()) {
             ComponentInstallation ci = entry.getComponentInstallation();
-            if (ci.getInstallationId().equals(identifier)
+            if (ci.getComponentInterface().getIdentifierAndVersion().equals(identifier)
                 && !ci.getComponentInterface().getDocumentationHash().isEmpty()) {
                 docs.put(ci.getComponentInterface().getDocumentationHash(), ci.getNodeId());
             }
             // If the tool is SSH-forwarded, also get list of remote documentation nodes
-            if (ci.getInstallationId().equals(identifier) && identifier.startsWith(DE_RCENVIRONMENT_REMOTEACCESS)) {
-                if (identifier.startsWith(DE_RCENVIRONMENT_REMOTEACCESS)) {
-                    
-                    final RemoteToolIntegrationDocumentationService rtis =
-                        communicationService.getRemotableService(RemoteToolIntegrationDocumentationService.class,
-                            NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(ci.getNodeId()));
-                    
-                    Map<String, String> componentInstallationsWithDocumentation;
-                    try {
-                        componentInstallationsWithDocumentation = rtis.getComponentDocumentationListForRemoteAccessTools(identifier);
-                        for (String hash : componentInstallationsWithDocumentation.keySet()) {
-                            docs.put(hash, componentInstallationsWithDocumentation.get(hash));
-                        }
-                    } catch (RemoteOperationException e) {
-                        LOGGER.error("Could not retreive remote tool documenation: ", e);
+            if (ci.getComponentInterface().getIdentifierAndVersion().equals(identifier)
+                && identifier.startsWith(DE_RCENVIRONMENT_REMOTEACCESS)) {
+                final RemoteToolIntegrationDocumentationService rtis =
+                    communicationService.getRemotableService(RemoteToolIntegrationDocumentationService.class,
+                        NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(ci.getNodeId()));
+
+                Map<String, String> componentInstallationsWithDocumentation;
+                try {
+                    componentInstallationsWithDocumentation = rtis.getComponentDocumentationListForRemoteAccessTools(identifier);
+                    for (String hash : componentInstallationsWithDocumentation.keySet()) {
+                        docs.put(hash, componentInstallationsWithDocumentation.get(hash));
                     }
+                } catch (RemoteOperationException e) {
+                    LOGGER.error("Could not retreive remote tool documenation: ", e);
                 }
             }
         }
@@ -125,7 +131,7 @@ public class ToolIntegrationDocumentationServiceImpl
                 }
             }
         }
-        
+
         return docs;
     }
 
@@ -334,13 +340,33 @@ public class ToolIntegrationDocumentationServiceImpl
     @Override
     @AllowRemoteAccess
     public byte[] loadToolDocumentation(final String identifier, String nodeId, String hashValue) throws RemoteOperationException {
-        byte[] documentation = toolIntegrationService.getToolDocumentation(identifier);
 
-        if (documentation == null && identifier.startsWith(DE_RCENVIRONMENT_REMOTEACCESS)) {
+        LogicalNodeId nodeIdObj;
+        try {
+            nodeIdObj = NodeIdentifierUtils.parseLogicalNodeIdString(nodeId);
+        } catch (IdentifierException e) {
+            throw new RemoteOperationException("Failed to parse logical node id: " + e.getMessage());
+        }
+
+        byte[] documentation = null;
+        if (nodeIdObj.getLogicalNodePart().equals(LogicalNodeId.DEFAULT_LOGICAL_NODE_PART)) {
+            documentation = toolIntegrationService.getToolDocumentation(identifier);
+        } else if (identifier.startsWith(DE_RCENVIRONMENT_REMOTEACCESS)) {
             File documentationDir = sshClientService.downloadToolDocumentation(identifier, nodeId, hashValue);
 
             documentation =
                 FileCompressionService.compressDirectoryToByteArray(documentationDir, FileCompressionFormat.ZIP, false);
+        } else {
+            ToolDocumentationProvider toolDocumentationProvider = toolDocProviderMap.get(nodeId);
+            if (toolDocumentationProvider != null) {
+                try {
+                    documentation = toolDocumentationProvider.provideToolDocumentation(identifier, nodeId, hashValue);
+                } catch (IOException e) {
+                    // FIXME better exception handling; matching the existing behavior for now
+                    LOGGER.error("Error retrieving documentation", e);
+                    return null;
+                }
+            }
         }
 
         return documentation;
@@ -354,4 +380,8 @@ public class ToolIntegrationDocumentationServiceImpl
         return componentInstallationsWithDocumentation;
     }
 
+    @Override
+    public void registerToolDocumentationProvider(ToolDocumentationProvider provider, String nodeId) {
+        toolDocProviderMap.put(nodeId, provider);
+    }
 }

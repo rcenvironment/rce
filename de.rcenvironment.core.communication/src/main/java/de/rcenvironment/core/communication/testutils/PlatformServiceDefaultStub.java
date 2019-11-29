@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.testutils;
@@ -44,21 +44,6 @@ public class PlatformServiceDefaultStub implements PlatformService {
 
     @Override
     public LogicalNodeSessionId getLocalDefaultLogicalNodeSessionId() {
-        return null;
-    }
-
-    // @Override
-    // public NodeIdentityInformation getIdentityInformation() {
-    // return null;
-    // }
-
-    @Override
-    public LogicalNodeId createRecognizableLocalLogicalNodeId(String qualifier) {
-        return null;
-    }
-
-    @Override
-    public LogicalNodeId createTransientLocalLogicalNodeId() {
         return null;
     }
 

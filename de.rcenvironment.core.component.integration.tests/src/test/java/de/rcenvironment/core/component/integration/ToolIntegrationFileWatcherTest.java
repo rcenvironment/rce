@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 package de.rcenvironment.core.component.integration;
@@ -36,6 +36,7 @@ import de.rcenvironment.core.component.integration.internal.FileService;
 import de.rcenvironment.core.component.integration.internal.MockFileBuilder;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher.Factory;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.internal.WatchService;
 
 /**

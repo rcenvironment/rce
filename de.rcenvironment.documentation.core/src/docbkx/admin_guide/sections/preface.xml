@@ -1,0 +1,8 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="preface">
+	<title>Preface</title>
+	<para> This document is an <emphasis>early draft</emphasis> of the RCE Administration and Security
+		Guide which is currently focused on the security of cross-organization setups using the "SSH
+		Uplink" feature. Over time, this guide will be expanded to cover other aspects of RCE as
+		well.</para>
+</chapter>

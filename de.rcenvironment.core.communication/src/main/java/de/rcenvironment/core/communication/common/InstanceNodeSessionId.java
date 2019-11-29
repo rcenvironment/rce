@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common;
@@ -12,8 +12,8 @@ package de.rcenvironment.core.communication.common;
  * An identifier representing a session (an uninterrupted run maintaining its internal state) of an instance.
  * <p>
  * In an {@link InstanceNodeSessionId}, the instance and session parts are always defined (ie not null and
- * {@link CommonIdBase#INSTANCE_PART_LENGTH} and {@link CommonIdBase#SESSION_PART_LENGTH} characters long, respectively). The
- * "logical node part" is always null.
+ * {@link CommonIdBase#INSTANCE_PART_LENGTH} and {@link CommonIdBase#SESSION_PART_LENGTH} characters long, respectively). The "logical node
+ * part" is always null.
  * 
  * @author Robert Mischke
  */
@@ -50,5 +50,12 @@ public interface InstanceNodeSessionId extends CommonIdBase, ResolvableNodeId {
      * @return the default {@link LogicalNodeSessionId} for this instance session; may or may not return the same object on repeated calls
      */
     LogicalNodeSessionId convertToDefaultLogicalNodeSessionId();
+
+    /**
+     * @return a new {@link LogicalNodeSessionId} with the same instance id and session parts as this {@link InstanceNodeSessionId}, and the
+     *         given logical node part.
+     * @param nodeIdPart the node id part to use
+     */
+    LogicalNodeSessionId expandToLogicalNodeSessionId(String nodeIdPart);
 
 }

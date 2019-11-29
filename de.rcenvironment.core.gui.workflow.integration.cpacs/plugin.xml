@@ -35,27 +35,6 @@
                tab="workflow.editor.tab.integrated.toolinformation">
          </propertySection>
          <propertySection
-               class="de.rcenvironment.core.gui.workflow.integration.PreScriptSection"
-               enablesFor="1"
-               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
-               id="workflow.editor.tab.Properties.Section.toolprescript"
-               tab="workflow.editor.tab.integrated.toolprescript">
-         </propertySection>
-         <propertySection
-               class="de.rcenvironment.core.gui.workflow.integration.CommandReadOnlySection"
-               enablesFor="1"
-               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
-               id="workflow.editor.tab.Properties.Section.toolcommandscripts"
-               tab="workflow.editor.tab.integrated.toolcommandscripts">
-         </propertySection>
-         <propertySection
-               class="de.rcenvironment.core.gui.workflow.integration.PostScriptSection"
-               enablesFor="1"
-               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
-               id="workflow.editor.tab.Properties.Section.toolpostscript"
-               tab="workflow.editor.tab.integrated.toolpostscript">
-         </propertySection>
-         <propertySection
 		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
 		       enablesFor="1"
 		       filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
@@ -111,24 +90,6 @@
                id="workflow.editor.tab.integrated.toolinformation"
                label="%toolInfo"
                afterTab="workflow.editor.tab.HistoryData">
-         </propertyTab>
-         <propertyTab
-               category="default"
-               id="workflow.editor.tab.integrated.toolprescript"
-               label="%toolPrescript"
-               afterTab="workflow.editor.tab.integrated.toolinformation">
-         </propertyTab>
-         <propertyTab
-               category="default"
-               id="workflow.editor.tab.integrated.toolcommandscripts"
-               label="%toolCommandScripts"
-               afterTab="workflow.editor.tab.integrated.toolprescript">
-         </propertyTab>
-        <propertyTab
-               category="default"
-               id="workflow.editor.tab.integrated.toolpostscript"
-               label="%toolPostscript"
-               afterTab="workflow.editor.tab.integrated.toolcommandscripts">
          </propertyTab>
       </propertyTabs>
    </extension>

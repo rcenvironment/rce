@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.cpacs.writer.execution;
@@ -41,6 +41,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Markus Kunde
  * @author Markus Litz
  * @author Arne Bachmann
+ * @author Brigitte Boden
  */
 @LazyDisposal
 public class CpacsWriterComponent extends DefaultComponent {

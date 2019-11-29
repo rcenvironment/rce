@@ -3,13 +3,17 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.osgi.service.component.annotations.Component;
+
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
@@ -54,7 +58,7 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
         } else {
             final String logMessage =
                 String.format("Could not parse java version string: %s. Proceeding, but component authorization may not work", javaVersion);
-            return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(VALIDATION_DISPLAY_NAME, logMessage,
+            return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(VALIDATION_DISPLAY_NAME, logMessage,
                 logMessage);
         }
     }
@@ -70,27 +74,40 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
     private Optional<Boolean> isVersionCompatible(final String javaVersion) {
         /**
          * The java version string does not have a consistent format: Java 7 and 8 identify as 1.7.X_XXX and 1.8.X_XXX, respectively, while
-         * from Java 9 onwards the leading "1." is dropped and the versions identify as 9.X.X, 10.X.X, 11.X.X, and so on. At the time of
-         * writing, only Java versions up to Java 11 are available and it is unclear how the format of the version string will evolve over
-         * time. Hence, we opt for a conservative approach here and only return results if we can identify the version string as one of the
-         * above.
+         * from Java 9 onwards the leading "1." is dropped and the versions identify as 9.X.X, 10.X.X, 11.X.X, and so on. The regular
+         * expression identifies only the major version part including the following dot. E.g. 8., 9., 11. Thus, the string can be casted to
+         * an integer.
          */
 
-        if (javaVersion.startsWith("1.7")) {
-            // This should never occur, since from RCE 9.0 onwards we require Java 8, which is checked at an earlier point in the startup
-            // process.
-            return Optional.of(false);
-        } else if (javaVersion.startsWith("9") || javaVersion.startsWith("10") || javaVersion.startsWith("11")) {
-            return Optional.of(true);
-        } else if (javaVersion.startsWith("1.8")) {
-            try {
-                return Optional.of(tryCheckJava8VersionString(javaVersion));
-            } catch (IllegalArgumentException e) {
-                return Optional.empty();
-            }
-        } else {
-            return Optional.empty();
+        final String regex = "((7|8)\\.)|^((?!(?:1\\.))([9]|\\d{2,})\\.)";
+
+        final Pattern pattern = Pattern.compile(regex);
+        final Matcher matcher = pattern.matcher(javaVersion);
+
+        Optional<String> majorVersion = Optional.empty();
+        while (matcher.find()) {
+            majorVersion = Optional.of(matcher.group());
         }
+
+        if (majorVersion.isPresent()) {
+            Integer majorVersionNumber = Integer.valueOf(majorVersion.get().substring(0, majorVersion.get().length() - 1));
+
+            if (majorVersionNumber == 7) {
+                // This should never occur, since from RCE 9.0 onwards we require Java 8, which is checked at an earlier point in the
+                // startup
+                // process.
+                return Optional.of(false);
+            } else if (majorVersionNumber == 8) {
+                try {
+                    return Optional.of(tryCheckJava8VersionString(javaVersion));
+                } catch (IllegalArgumentException e) {
+                    return Optional.empty();
+                }
+            } else if (majorVersionNumber >= 9) {
+                return Optional.of(true);
+            }
+        }
+        return Optional.empty();
 
     }
 

@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.configuration;
 
+import java.io.File;
 import java.util.List;
 
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
@@ -15,6 +16,7 @@ import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
+import de.rcenvironment.core.communication.sshconnection.InitialUplinkConnectionConfig;
 
 /**
  * Configuration management service for the local node. It serves to decouple the communication classes from the low-level
@@ -111,6 +113,11 @@ public interface NodeConfigurationService {
     List<InitialSshConnectionConfig> getInitialSSHConnectionConfigs();
 
     /**
+     * @return The list of configured ssh connections.
+     */
+    List<InitialUplinkConnectionConfig> getInitialUplinkConnectionConfigs();
+
+    /**
      * Longitude and latitude values of the instance.
      * 
      * @return non null 2-dim array
@@ -137,5 +144,12 @@ public interface NodeConfigurationService {
      * @return information string
      */
     String getInstanceAdditionalInformation();
+
+    /**
+     * @param subdir the requested subdirectory within the profile's import directory
+     * @return the path of the profile's standard import directory for the given subdir part (currently, this is &lt;profile>/import/xy for
+     *         subdir value "xy"); no check is made whether this directory actually exists
+     */
+    File getStandardImportDirectory(String subdir);
 
 }

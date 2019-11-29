@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.monitoring.system.internal;
@@ -18,7 +18,6 @@ import de.rcenvironment.core.monitoring.system.api.SystemMonitoringConstants;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService;
 import de.rcenvironment.core.monitoring.system.api.model.SystemLoadInformation;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.utils.common.TimeSource;
 
 /**
@@ -72,7 +71,6 @@ public class SystemLoadInformationCollector implements Runnable {
     }
 
     @Override
-    @TaskDescription("Collect system load information")
     public synchronized void run() {
         try {
             // update interval checks

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common;
@@ -16,8 +16,9 @@ package de.rcenvironment.core.communication.common;
  * respectively. The logical node part can be at most {@link CommonIdBase#MAXIMUM_LOGICAL_NODE_PART_LENGTH} characters long; note that
  * {@link CommonIdBase#DEFAULT_LOGICAL_NODE_PART} has a special meaning, and must not be used accidentally.
  * <p>
- * Note that currently, all session parts of an instance's ids are guaranteed to be equal to allow simple conversion between id types. This
- * concept may be changed or expanded in the future to allow logical nodes to logically "restart" without the actual instance restarting.
+ * Note that all session parts of the ids related to the same instance session (i.e. its {@link InstanceNodeSessionId} and all
+ * {@link LogicalNodeSessionId}s) must be equal to allow simple conversion between id types. To create temporary/transient logical nodes (or
+ * to virtually "restart" logical nodes), new unique logical node parts should be used.
  * 
  * @author Robert Mischke
  */

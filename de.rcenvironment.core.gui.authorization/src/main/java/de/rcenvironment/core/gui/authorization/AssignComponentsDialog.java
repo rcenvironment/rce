@@ -3,9 +3,9 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.gui.authorization;
 
 import java.util.ArrayList;
@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.dialogs.IMessageProvider;
@@ -26,9 +27,12 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -69,6 +73,8 @@ public class AssignComponentsDialog extends TitleAreaDialog {
 
     private ComponentsViewerComparator comparator;
 
+    private AuthorizationLabelProvider labelProvider;
+
     protected AssignComponentsDialog(Shell parentShell, AuthorizationService authorizationService,
         Map<NamedComponentAuthorizationSelector, Boolean> componentToStateMapping, String groupName) {
         super(parentShell);
@@ -90,10 +96,11 @@ public class AssignComponentsDialog extends TitleAreaDialog {
         changedComponentToStateMappings.clear();
         List<Object> checkedElements = Arrays.asList(componentsTableViewer.getCheckedElements());
         for (TableItem tableItem : componentsTableViewer.getTable().getItems()) {
-            final NamedComponentAuthorizationSelector selector = (NamedComponentAuthorizationSelector) tableItem.getData();
+            final NamedComponentAuthorizationSelector selector = (NamedComponentAuthorizationSelector) tableItem
+                .getData();
             final boolean newState = checkedElements.contains(selector);
-            final Boolean oldState =
-                originalComponentToStateMapping.get(selector) != null && originalComponentToStateMapping.get(selector);
+            final Boolean oldState = originalComponentToStateMapping.get(selector) != null
+                && originalComponentToStateMapping.get(selector);
 
             if (newState != oldState) {
                 changedComponentToStateMappings.put(selector, newState);
@@ -125,21 +132,21 @@ public class AssignComponentsDialog extends TitleAreaDialog {
         scrolledComposite.setMinSize(AuthorizationConstants.SCROLL_COMPOSITE_MINIMUM_WIDTH,
             AuthorizationConstants.SCROLL_COMPOSITE_MINIMUM_HEIGHT);
 
-        componentsTableViewer =
-            CheckboxTableViewer.newCheckList(scrolledComposite,
-                SWT.BORDER | SWT.V_SCROLL | SWT.NO_FOCUS | SWT.FULL_SELECTION);
+        componentsTableViewer = CheckboxTableViewer.newCheckList(scrolledComposite,
+            SWT.BORDER | SWT.V_SCROLL | SWT.NO_FOCUS | SWT.FULL_SELECTION);
         componentsTableViewer.getTable().setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, true));
         componentsTableViewer.setContentProvider(new ComponentsTableContentProvider());
         componentsTableViewer.setCheckStateProvider(new ComponentCheckStateProvider());
-        componentsTableViewer.setLabelProvider(new AuthorizationLabelProvider());
+        labelProvider = new AuthorizationLabelProvider();
+        componentsTableViewer.setLabelProvider(labelProvider);
         comparator = new ComponentsViewerComparator();
         componentsTableViewer.setComparator(comparator);
         componentsTableViewer.setInput(originalComponentToStateMapping.keySet());
         componentsTableViewer.getTable().addListener(SWT.MouseUp, event -> {
             int index = componentsTableViewer.getTable().getSelectionIndex();
             componentsTableViewer.setSelection(StructuredSelection.EMPTY);
-            if (event.button != LEFT_BUTTON || event.detail == SWT.CHECK || index == MINUS_ONE
-                || !componentsTableViewer.getTable().getItem(index).getBounds().contains(new Point(event.x, event.y))) {
+            if (event.button != LEFT_BUTTON || event.detail == SWT.CHECK || index == MINUS_ONE || !componentsTableViewer
+                .getTable().getItem(index).getBounds().contains(new Point(event.x, event.y))) {
                 return;
             }
             componentsTableViewer.setChecked(componentsTableViewer.getElementAt(index),
@@ -150,14 +157,28 @@ public class AssignComponentsDialog extends TitleAreaDialog {
         makeAction();
         fillLocalToolbar(toolbar);
 
-        String publicGroupName =
-            authorizationService.getDefaultAuthorizationObjects().accessGroupPublicInLocalNetwork().getDisplayName();
+        Button showComponentIDCheckBox = new Button(content, SWT.CHECK | SWT.RIGHT);
+        showComponentIDCheckBox.setText("Show component ID next to component's name");
+        showComponentIDCheckBox.addSelectionListener(new SelectionAdapter() {
 
-        if (!groupName
-            .equals(publicGroupName)) {
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                labelProvider.setShowComponentID(((Button) event.getSource()).getSelection());
+                for (TableItem item : componentsTableViewer.getTable().getItems()) {
+                    item.setText(((AuthorizationLabelProvider) componentsTableViewer.getLabelProvider()).getText(item.getData()));
+                }
+                componentsTableViewer.update(componentsTableViewer.getTable().getItems(), new String[] {"text"});
+            }
+        });
+
+        String publicGroupName = authorizationService.getDefaultAuthorizationObjects().accessGroupPublicInLocalNetwork()
+            .getDisplayName();
+
+        if (!groupName.equals(publicGroupName)) {
             Label note = new Label(content, SWT.FILL);
             note.setText(StringUtils.format(
-                "Note:\nComponents that are member of the group \"%s\" are not shown in this dialog!", publicGroupName));
+                "Note:\nComponents that are member of the group \"%s\" are not shown in this dialog!",
+                publicGroupName));
         }
         scrolledComposite.setFocus();
         return container;
@@ -195,8 +216,17 @@ public class AssignComponentsDialog extends TitleAreaDialog {
 
         @Override
         public void run() {
+            TableItem[] tableItems = componentsTableViewer.getTable().getItems();
+            boolean[] checked = new boolean[tableItems.length];
+            for (int i = 0; i < tableItems.length; i++) {
+                checked[i] = tableItems[i].getChecked();
+            }
+            ArrayUtils.reverse(checked);
             comparator.setDirection(direction);
             componentsTableViewer.refresh();
+            for (int i = 0; i < tableItems.length; i++) {
+                tableItems[i].setChecked(checked[i]);
+            }
             sortActionAscending.setChecked(direction == AuthorizationConstants.ASCENDING);
             sortActionDescending.setChecked(direction == AuthorizationConstants.DESCENDING);
         }
@@ -244,7 +274,6 @@ public class AssignComponentsDialog extends TitleAreaDialog {
         }
     }
 
-    
     /**
      * Comparator for component tree.
      *
@@ -274,7 +303,8 @@ public class AssignComponentsDialog extends TitleAreaDialog {
 
         @Override
         public int compare(Viewer viewer, Object e1, Object e2) {
-            if (e1 instanceof NamedComponentAuthorizationSelector && e2 instanceof NamedComponentAuthorizationSelector) {
+            if (e1 instanceof NamedComponentAuthorizationSelector
+                && e2 instanceof NamedComponentAuthorizationSelector) {
                 NamedComponentAuthorizationSelector component1 = (NamedComponentAuthorizationSelector) e1;
                 NamedComponentAuthorizationSelector component2 = (NamedComponentAuthorizationSelector) e2;
                 int returncode = component1.compareToIgnoreCase(component2);

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -741,9 +741,10 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             if (throwable == null) {
                 // TODO use better synchronization object
                 synchronized (wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier()) {
-                    heartbeatFuture = threadPool.scheduleAtFixedRate(wfStateMachineCtx.getComponentLostWatcher(),
-                        ComponentDisconnectWatcher.DEFAULT_TEST_INTERVAL_MSEC);
-                    compRestartDetectionFuture = threadPool.scheduleAtFixedRate(wfStateMachineCtx.getNodeRestartWatcher(),
+                    heartbeatFuture = threadPool.scheduleAtFixedInterval("Peridically check for heartbeat messages from components",
+                        wfStateMachineCtx.getComponentLostWatcher(), ComponentDisconnectWatcher.DEFAULT_TEST_INTERVAL_MSEC);
+                    compRestartDetectionFuture = threadPool.scheduleAtFixedInterval(
+                        "Periodically check for restarts of nodes running workflow components", wfStateMachineCtx.getNodeRestartWatcher(),
                         NodeRestartWatcher.DEFAULT_TEST_INTERVAL_MSEC);
                 }
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.START_ATTEMPT_SUCCESSFUL));

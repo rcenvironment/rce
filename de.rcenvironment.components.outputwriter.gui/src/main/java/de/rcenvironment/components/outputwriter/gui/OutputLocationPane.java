@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.outputwriter.gui;
@@ -62,6 +62,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * UI part to add and edit OutputLocations in the OutputWriter Component.
  *
  * @author Brigitte Boden
+ * @author Kathrin Schaffert
  */
 
 public class OutputLocationPane implements Refreshable {
@@ -313,7 +314,7 @@ public class OutputLocationPane implements Refreshable {
      * Loads the current output locations into the UI table.
      */
     protected void fillTable() {
-        if (client.isVisible() && !table.isDisposed()) {
+        if (!table.isDisposed()) {
             table.removeAll();
             String jsonString = configuration.getConfigurationDescription()
                 .getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);

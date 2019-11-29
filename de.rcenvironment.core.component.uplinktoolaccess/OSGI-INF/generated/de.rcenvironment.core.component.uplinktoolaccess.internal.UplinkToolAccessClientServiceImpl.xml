@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" activate="activate" immediate="true" name="de.rcenvironment.core.component.uplinktoolaccess.internal.UplinkToolAccessClientServiceImpl">
+   <service>
+      <provide interface="de.rcenvironment.core.component.uplinktoolaccess.UplinkToolAccessClientService"/>
+   </service>
+   <reference bind="bindComponentRegistry" interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService" name="ComponentRegistry" unbind="unbindComponentRegistry"/>
+   <reference cardinality="1..1" field="authorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="authorizationService"/>
+   <reference cardinality="1..1" field="logicalNodeMappingService" interface="de.rcenvironment.core.communication.uplink.client.session.api.UplinkLogicalNodeMappingService" name="logicalNodeMappingService"/>
+   <reference cardinality="1..1" field="sshUplinkService" interface="de.rcenvironment.core.communication.uplink.client.session.api.SshUplinkConnectionService" name="sshUplinkService"/>
+   <reference cardinality="1..1" field="toolDocService" interface="de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService" name="toolDocService"/>
+   <reference cardinality="1..1" field="userComponentIdMappingService" interface="de.rcenvironment.core.component.api.UserComponentIdMappingService" name="userComponentIdMappingService"/>
+   <implementation class="de.rcenvironment.core.component.uplinktoolaccess.internal.UplinkToolAccessClientServiceImpl"/>
+</scr:component>

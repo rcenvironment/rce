@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 package de.rcenvironment.core.start.gui.internal;
@@ -46,6 +46,7 @@ import de.rcenvironment.core.start.Application;
  * This class advises the creation of the action bar of the {@link Application}.
  * 
  * @author Christian Weiss
+ * @author Riccardo Dusi
  */
 @SuppressWarnings("restriction")
 public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
@@ -153,6 +154,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
     /** New wizard drop down action. */
     private IWorkbenchAction newWizardDropDownAction;
     private IWorkbenchWindow workbenchWindow;
+
+    private IWorkbenchAction introAction;
 
     public ApplicationActionBarAdvisor(IActionBarConfigurer configurer) {
         super(configurer);
@@ -273,6 +276,10 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         aboutAction.setHoverImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.RCE_LOGO_16));
         register(aboutAction);
 
+        // Welcome Screen
+        introAction = ActionFactory.INTRO.create(window);
+        register(introAction);
+        
         // Cool bar actions
         newWizardDropDownAction = IDEActionFactory.NEW_WIZARD_DROP_DOWN.create(window);
         register(newWizardDropDownAction);
@@ -387,12 +394,15 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         // Help
         MenuManager helpMenu = new MenuManager("&Help", IWorkbenchActionConstants.M_HELP);
         helpMenu.add(new GroupMarker(IWorkbenchActionConstants.HELP_START));
+        helpMenu.add(introAction);
+        helpMenu.add(new Separator());
         helpMenu.add(helpAction);
         helpMenu.add(dynamicHelpAction);
         helpMenu.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-        helpMenu.add(new GroupMarker(IWorkbenchActionConstants.HELP_END));
         helpMenu.add(new Separator());
         helpMenu.add(aboutAction);
+        helpMenu.add(new GroupMarker(IWorkbenchActionConstants.HELP_END));
+        
         // add to main menu
         menuBar.add(helpMenu);
     }

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.cryptography.api;
@@ -98,7 +98,7 @@ public interface CryptographyOperationsProvider {
      * Convenience method chaining decode() and decrypt() and transforming the resulting bytes back into an UTF-8 string.
      * 
      * @param key the symmetric key to encrypt with
-     * @param input the input to encrypt
+     * @param input the input to decrypt
      * @return the restored plaintext
      * @throws OperationFailureException on failure, e.g. cryptography library errors, or an invalid key
      */

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.evaluationmemory.gui;
@@ -44,6 +44,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeProperti
  * 
  * @author Doreen Seider
  * @author Alexander Weinert
+ * @author Kathrin Schaffert
  */
 public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertySection {
 

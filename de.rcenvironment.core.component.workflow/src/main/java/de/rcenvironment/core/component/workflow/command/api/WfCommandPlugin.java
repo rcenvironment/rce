@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.command.api;
@@ -343,7 +343,7 @@ public class WfCommandPlugin implements CommandPlugin {
                 exeContextBuilder.setDisposalBehavior(dispose);
                 exeContextBuilder.setDeletionBehavior(delete);
 
-                workflowExecutionService.executeWorkflow(exeContextBuilder.build());
+                workflowExecutionService.executeWorkflow(exeContextBuilder.buildExtended());
             } catch (WorkflowExecutionException e) {
                 log.error("Exception while executing workflow: " + wfFile.getAbsolutePath(), e);
                 throw CommandException.executionError(ComponentUtils.createErrorLogMessage(e), cmdCtx);

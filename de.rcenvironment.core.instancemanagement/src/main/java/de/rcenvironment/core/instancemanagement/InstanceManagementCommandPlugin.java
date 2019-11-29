@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement;
@@ -35,8 +35,13 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
  * @author Robert Mischke
  * @author David Scholz
  * @author Brigitte Boden
+ * @author Lukas Rosenbach
  */
 public class InstanceManagementCommandPlugin implements CommandPlugin {
+
+    private static final int SECONDS_TO_MILLISECONDS = 1000;
+
+    private static final int DEFAULT_TIMEOUT = 60000;
 
     private static final String ROOT_COMMAND = "im";
 
@@ -55,6 +60,8 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     private static final String TIMEOUT = "--timeout";
 
     private static final String OPTION_START_WITH_GUI = "--gui";
+
+    private static final String COMMAND_ARGUMENTS = "--command-arguments";
 
     private static final Pattern IP_ADDRESS_PATTERN =
 
@@ -88,6 +95,8 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         private final List<String> instanceIds;
 
+        private final String commandArguments;
+
         /**
          * Constructor.
          * 
@@ -103,6 +112,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
             timeout = determineTimeout(remainingTokens);
             startWithGUI = determineStartWithGUI(remainingTokens);
+            commandArguments = determineCommandArguments(remainingTokens);
 
             if (expectInstallationId != Boolean.FALSE) {
                 // note: considering "optional" as "not required" here
@@ -116,6 +126,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             } else {
                 instanceIds = Collections.unmodifiableList(new ArrayList<String>());
             }
+
         }
 
         public long getTimeout() throws CommandException {
@@ -132,6 +143,10 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         public String getInstallationId() {
             return installationId;
+        }
+
+        public String getCommandArguments() {
+            return commandArguments;
         }
 
         private long determineTimeout(List<String> remainingTokens) throws CommandException {
@@ -204,6 +219,18 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             return Collections.unmodifiableList(instanceIdList);
         }
 
+        private String determineCommandArguments(List<String> remainingTokens) {
+            int index = remainingTokens.indexOf(COMMAND_ARGUMENTS);
+            if (index >= 0 && index + 1 < remainingTokens.size()) {
+                String arguments = remainingTokens.get(index + 1);
+                remainingTokens.remove(index + 1);
+                remainingTokens.remove(index);
+                return arguments;
+            } else {
+                return null;
+            }
+        }
+
     }
 
     /**
@@ -221,7 +248,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         contributions
             .add(new CommandDescription(ROOT_COMMAND + " install",
-                "[<--if-missing|--force-download|--force-reinstall>] <url version id/part> <installation id>",
+                "[<--if-missing|--force-download|--force-reinstall>] [<mayor version>]/<url version id/part> <installation id>",
                 true,
                 "downloads and installs a new RCE installation",
                 "--if-missing - download and install if and only if an installation with the same version is not present",
@@ -232,7 +259,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         contributions
             .add(new CommandDescription(ROOT_COMMAND + " reinstall",
-                "[<--force-download|--force-reinstall>] <url version id/part> <installation id>",
+                "[<--force-download|--force-reinstall>] [<mayor version>]/<url version id/part> <installation id>",
                 true,
                 "stops all instances running the given installation id, downloads and installs the new RCE installation, and starts the "
                     + "instances again with the new installation",
@@ -249,6 +276,8 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 "configures the configuration.json file of the specified RCE instance(s)",
 
                 "Available commands:",
+                InstanceManagementConstants.SET_RCE_VERSION
+                    + " <version> - sets the rce version of the instances. (Does not work on existing instances.)",
                 InstanceManagementConstants.SUBCOMMAND_RESET + " - resets the instance to an empty configuration",
                 InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE
                     + " <template id> - applies (i.e. copies) the given template as the new configuration",
@@ -278,10 +307,13 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER
                     + " <ip> <port> - enables the ssh server and sets the ip and port to bind to",
                 InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER + " - disables the ssh server",
+                InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT
+                    + " <username> <role> <enabled: true/false> password - adds an SSH account",
+                InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT + " <username> - removes an SSH account",
 
                 InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT + " - sets the request timeout in msec",
 
-                InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT + " - sets the forwrding timeout in msec",
+                InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT + " - sets the forwarding timeout in msec",
 
                 InstanceManagementConstants.SUBCOMMAND_ADD_ALLOWED_INBOUND_IP + " <ip> - adds/allows an inbound IP address to the filter",
 
@@ -294,6 +326,13 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION
                     + " <name> - removes a ssh connection",
 
+                InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION
+                    + " <id> <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> "
+                    + "password <password>",
+
+                InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION
+                    + " <id> - removes an uplink connection",
+
                 InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT + " <name> - publishes a new component",
 
                 InstanceManagementConstants.SUBCOMMAND_UNPUBLISH_COMPONENT + " <name> - unpublishes a component",
@@ -301,10 +340,10 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 InstanceManagementConstants.SUBCOMMAND_SET_BACKGROUND_MONITORING
                     + " <id> <interval> - Enables background monitoring with the given interval (in seconds)"
 
-        ));
+            ));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " start",
-            "[--timeout <value>] <instance id1, instance id2, ...> <installation id>",
+            "[--timeout <value>] [--command-arguments <arguments>] <instance id1, instance id2, ...> <installation id>",
             true,
             "starts a list of new RCE instances with the desired instance IDs and the desired installation; "
                 + "use \"" + InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID
@@ -318,7 +357,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " start all",
-            "[--timeout <value>] <installation id>",
+            "[--timeout <value>] [--command-arguments <arguments>] <installation id>",
             true,
             "starts all available instances. Uses the given installation; "
                 + "use \"" + InstanceManagementService.MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID
@@ -333,7 +372,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             TIMEOUT_DESCRIPTION));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " restart",
-            "[--timeout <value>] <instance id1, instance id2, ...> <installation id>",
+            "[--timeout <value>] [--command-arguments <arguments>] <instance id1, instance id2, ...> <installation id>",
             true,
             "restarts a list of RCE instances with the given instance IDs and the given installation"));
 
@@ -430,7 +469,13 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     }
 
     private void performInstall(CommandContext context) throws CommandException {
+
+        int timeout = DEFAULT_TIMEOUT;
         InstallationPolicy policy = InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT;
+
+        if (context.consumeNextTokenIfEquals(TIMEOUT)) {
+            timeout = getTimeoutValueFromContext(context);
+        }
         if (context.consumeNextTokenIfEquals(FORCE_DOWNLOAD)) {
             policy = InstallationPolicy.FORCE_NEW_DOWNLOAD_AND_REINSTALL;
         } else if (context.consumeNextTokenIfEquals(FORCE_REINSTALL)) {
@@ -438,6 +483,10 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         } else if (context.consumeNextTokenIfEquals(IF_MISSING)) {
             policy = InstallationPolicy.ONLY_INSTALL_IF_NOT_PRESENT;
         }
+        if (context.consumeNextTokenIfEquals(TIMEOUT)) {
+            timeout = getTimeoutValueFromContext(context);
+        }
+
         String urlQualifier = context.consumeNextToken();
         String installationId = context.consumeNextToken();
         if (urlQualifier == null || installationId == null || context.hasRemainingTokens()) {
@@ -447,27 +496,35 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             switch (policy) {
             case FORCE_NEW_DOWNLOAD_AND_REINSTALL:
                 instanceManagementService.setupInstallationFromUrlQualifier(installationId, urlQualifier,
-                    InstallationPolicy.FORCE_NEW_DOWNLOAD_AND_REINSTALL, context.getOutputReceiver(), 0);
+                    InstallationPolicy.FORCE_NEW_DOWNLOAD_AND_REINSTALL, context.getOutputReceiver(), timeout);
                 break;
             case FORCE_REINSTALL:
                 instanceManagementService.setupInstallationFromUrlQualifier(installationId, urlQualifier,
-                    InstallationPolicy.FORCE_REINSTALL, context.getOutputReceiver(), 0);
+                    InstallationPolicy.FORCE_REINSTALL, context.getOutputReceiver(), timeout);
                 break;
             case IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT:
                 instanceManagementService.setupInstallationFromUrlQualifier(installationId, urlQualifier,
-                    InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, context.getOutputReceiver(), 0);
+                    InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, context.getOutputReceiver(), timeout);
                 break;
             case ONLY_INSTALL_IF_NOT_PRESENT:
                 instanceManagementService.setupInstallationFromUrlQualifier(installationId, urlQualifier,
-                    InstallationPolicy.ONLY_INSTALL_IF_NOT_PRESENT, context.getOutputReceiver(), 0);
+                    InstallationPolicy.ONLY_INSTALL_IF_NOT_PRESENT, context.getOutputReceiver(), timeout);
                 break;
             default:
                 instanceManagementService.setupInstallationFromUrlQualifier(installationId, urlQualifier,
-                    InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, context.getOutputReceiver(), 0);
+                    InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, context.getOutputReceiver(), timeout);
                 break;
             }
         } catch (IOException e) {
             throw CommandException.executionError("Error during installation setup process: " + e.getMessage(), context);
+        }
+    }
+
+    private int getTimeoutValueFromContext(CommandContext context) throws CommandException {
+        try {
+            return Integer.parseInt(context.consumeNextToken()) * SECONDS_TO_MILLISECONDS;
+        } catch (NumberFormatException e) {
+            throw CommandException.executionError("Timeout value is not a number.", context);
         }
     }
 
@@ -547,17 +604,28 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
         try {
             instanceManagementService.applyInstanceConfigurationOperations(instanceIds, changeSequence, context.getOutputReceiver());
-        } catch (InstanceConfigurationException | IOException e) {
+        } catch (IOException e) {
             throw CommandException.executionError(e.toString(), context);
+        } catch (InstanceConfigurationException e) {
+            throw CommandException.executionError(e.getMessage(), context);
         }
     }
 
     private void parseConfigurationSubCommand(InstanceConfigurationOperationSequence changeSequence, String token, List<String> parameters)
         throws CommandException {
         switch (token) {
+        case InstanceManagementConstants.SET_RCE_VERSION:
+            assertParameterCount(parameters, 1, token);
+            String version = parameters.get(0);
+            changeSequence.setProfileVersion(version);
+            break;
         case InstanceManagementConstants.SUBCOMMAND_RESET:
             assertParameterCount(parameters, 0, token);
             changeSequence.resetConfiguration();
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_WIPE:
+            assertParameterCount(parameters, 0, token);
+            changeSequence.wipeConfiguration();
             break;
         case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
             assertParameterCount(parameters, 1, token);
@@ -580,8 +648,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             break;
         case InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION:
             assertParameterCount(parameters, 0, 1, token);
-            // TODO merge derived configuration keys?
-            changeSequence.setWorkflowHostFlag(parseSingleBooleanParameter(parameters, false));
+            changeSequence.setWorkflowHostFlag(parseSingleBooleanParameter(parameters, false)); // TODO merge derived configuration keys?
             break;
         case InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID:
             assertParameterCount(parameters, 1, token);
@@ -612,22 +679,19 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             break;
         case InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER:
             assertParameterCount(parameters, 2, token);
-
-            final String ipAddress = parameters.get(0);
-            if (!validateIpAddress(ipAddress)) {
-                throw CommandException.syntaxError(ipAddress + " is not a valid IP address.", currentContext.get());
-            }
-
-            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(1))) {
-                throw CommandException.syntaxError("The SSH port must be a numeric value.", currentContext.get());
-            }
-            final int sshServerPort = Integer.parseInt(parameters.get(1)); // note: may still fail with overflow
-
-            changeSequence.enableSshServer(ipAddress, sshServerPort);
+            configureSshServer(changeSequence, parameters);
             break;
         case InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER:
             assertParameterCount(parameters, 0, token);
             changeSequence.disableSshServer();
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT:
+            assertParameterCount(parameters, 4, token);
+            changeSequence.addSshAccountFromStringParameters(parameters);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.removeSshAccount(parameters.get(0));
             break;
         case InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION:
             assertParameterCount(parameters, 0, 1, token);
@@ -636,11 +700,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             break;
         case InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS:
             assertParameterCount(parameters, 1, token);
-            if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(0))) {
-                throw CommandException.syntaxError("Unexpected parameter type. Port must be a numeric value.", currentContext.get());
-            }
-            final int accessPort = Integer.parseInt(parameters.get(0));
-            changeSequence.enableImSshAccess(accessPort);
+            enableImSshAccess(changeSequence, parameters);
             break;
         case InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT:
             assertParameterCount(parameters, 1, token);
@@ -674,6 +734,14 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             assertParameterCount(parameters, 1, token);
             changeSequence.removeSshConnection(parameters.get(0));
             break;
+        case InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION:
+            assertParameterCount(parameters, 10, token);
+            changeSequence.addUplinkConnectionFromStringParameters(parameters);
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION:
+            assertParameterCount(parameters, 1, token);
+            changeSequence.removeUplinkConnection(parameters.get(0));
+            break;
         case InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT:
             assertParameterCount(parameters, 1, token);
             changeSequence.publishComponent(parameters.get(0));
@@ -692,6 +760,30 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         default:
             throw CommandException.syntaxError("Unexpected configuration command " + token, currentContext.get());
         }
+    }
+
+    private void enableImSshAccess(InstanceConfigurationOperationSequence changeSequence, List<String> parameters)
+        throws CommandException {
+        if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(0))) {
+            throw CommandException.syntaxError("Unexpected parameter type. Port must be a numeric value.", currentContext.get());
+        }
+        final int accessPort = Integer.parseInt(parameters.get(0));
+        changeSequence.enableImSshAccess(accessPort);
+    }
+
+    private void configureSshServer(InstanceConfigurationOperationSequence changeSequence, List<String> parameters)
+        throws CommandException {
+        final String ipAddress = parameters.get(0);
+        if (!validateIpAddress(ipAddress)) {
+            throw CommandException.syntaxError(ipAddress + " is not a valid IP address.", currentContext.get());
+        }
+
+        if (!org.apache.commons.lang3.StringUtils.isNumeric(parameters.get(1))) {
+            throw CommandException.syntaxError("The SSH port must be a numeric value.", currentContext.get());
+        }
+        final int sshServerPort = Integer.parseInt(parameters.get(1)); // note: may still fail with overflow
+
+        changeSequence.enableSshServer(ipAddress, sshServerPort);
     }
 
     private boolean parseSingleBooleanParameter(List<String> parameters, boolean defaultValue) throws CommandException {
@@ -731,15 +823,21 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
 
     private void performStart(CommandContext context) throws CommandException {
         final ParameterParser parameters = new ParameterParser(context, true, true);
+        String commandArguments;
+        if (parameters.getCommandArguments() == null) {
+            commandArguments = "";
+        } else {
+            commandArguments = parameters.getCommandArguments();
+        }
         triggerStartOfInstances(parameters.getInstallationId(), parameters.getInstanceIds(), parameters.getTimeout(),
-            parameters.getStartWithGUI(), context);
+            parameters.getStartWithGUI(), commandArguments, context);
     }
 
     private void performRestart(CommandContext context) throws CommandException {
         final ParameterParser parameters = new ParameterParser(context, true, true);
         triggerStopOfInstances(parameters.getInstanceIds(), parameters.getTimeout(), context);
         triggerStartOfInstances(parameters.getInstallationId(), parameters.getInstanceIds(), parameters.getTimeout(),
-            parameters.getStartWithGUI(), context);
+            parameters.getStartWithGUI(), parameters.getCommandArguments(), context);
     }
 
     private void performStop(CommandContext context) throws CommandException {
@@ -759,7 +857,13 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     private void performStartAll(CommandContext context) throws CommandException {
         final ParameterParser parameters = new ParameterParser(context, false, true);
         // TODO use GUI parameter?
-        triggerStartOfAllInstances(parameters.getInstallationId(), parameters.getTimeout(), context);
+        String commandArguments;
+        if (parameters.getCommandArguments() == null) {
+            commandArguments = "";
+        } else {
+            commandArguments = parameters.getCommandArguments();
+        }
+        triggerStartOfAllInstances(parameters.getInstallationId(), parameters.getTimeout(), commandArguments, context);
     }
 
     private void performList(CommandContext context) throws CommandException {
@@ -800,19 +904,21 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     }
 
     private void triggerStartOfInstances(final String installationId, final List<String> instanceIdList, final long timeout,
-        final boolean startWithGui, CommandContext context) throws CommandException {
+        final boolean startWithGui, final String commandArguments, CommandContext context) throws CommandException {
         try {
-            instanceManagementService.startInstance(installationId, instanceIdList, context.getOutputReceiver(), timeout, startWithGui);
+            instanceManagementService.startInstance(installationId, instanceIdList, context.getOutputReceiver(),
+                timeout, startWithGui, commandArguments);
         } catch (IOException e) {
             throw CommandException.executionError(e.toString(), context);
         }
     }
 
     // TODO add GUI parameter?
-    private void triggerStartOfAllInstances(final String installationId, final long timeout, CommandContext context)
+    private void triggerStartOfAllInstances(final String installationId, final long timeout, final String commandArguments,
+        CommandContext context)
         throws CommandException {
         try {
-            instanceManagementService.startAllInstances(installationId, context.getOutputReceiver(), timeout);
+            instanceManagementService.startAllInstances(installationId, context.getOutputReceiver(), timeout, commandArguments);
         } catch (IOException e) {
             throw CommandException.executionError(e.toString(), context);
         }

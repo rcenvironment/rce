@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement;
@@ -25,6 +25,8 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
+ * @author Lukas Rosenbach
  */
 public interface InstanceManagementService {
 
@@ -94,11 +96,12 @@ public interface InstanceManagementService {
      * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
      * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
      * @param startWithGui true if the instance shall be started with GUI.
+     * @param commandArguments console arguments that are used to start the instance.
      * @throws InstanceOperationException on startup failure
      * @throws IOException on I/O specific failures.
      */
     void startInstance(String installationId, List<String> instanceIds, TextOutputReceiver userOutputReceiver, long timeout,
-        boolean startWithGui)
+        boolean startWithGui, String commandArguments)
         throws InstanceOperationException, IOException;
 
     /**
@@ -121,10 +124,11 @@ public interface InstanceManagementService {
      * @param installationId the sub-folder of the root installation folder that contains the installation to use
      * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
      * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
+     * @param commandArguments optional arguments that will be used to start the instances.
      * @throws InstanceOperationException if an instance has a startup failure
      * @throws IOException on I/O specific failures.
      */
-    void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, long timeout)
+    void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, long timeout, String commandArguments)
         throws InstanceOperationException, IOException;
 
     /**

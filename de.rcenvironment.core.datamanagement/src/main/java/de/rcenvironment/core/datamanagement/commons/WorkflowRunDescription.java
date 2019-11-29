@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.commons;
@@ -21,6 +21,7 @@ import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
  * 
  * @author Jan Flink
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 
 public class WorkflowRunDescription implements Serializable, Comparable<WorkflowRunDescription> {

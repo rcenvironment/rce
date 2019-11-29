@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
@@ -57,7 +57,7 @@ public class LoggingConfiguredProperlyValidator extends DefaultInstanceValidator
             + " Most likely, because RCE was started from another directory than its installation directory. "
             + "(The installation directory is the directory that contains the 'rce' executable.)";
         final String errorMessage2 = " It is recommended to start RCE again from its installation directory.";
-        return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(validationDisplayName,
+        return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(validationDisplayName,
             errorMessage1 + " " + errorMessage2, errorMessage1 + "\n\n" + errorMessage2);
     }
     

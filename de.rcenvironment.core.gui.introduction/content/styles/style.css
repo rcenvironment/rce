@@ -1,0 +1,315 @@
+/* 
+* This css includes media queries which are used to make the "welcome.html" responsive. 
+*/
+
+/* css media queries for screens with screen-height > 840px and screen-width > 1125px */
+
+html, body{
+	width: 100%;
+	max-height: 100%;
+	min-height: 475px;
+	background-color: white;
+	font-family: Arial;
+	color: #282828;
+	float: left;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+h1{
+	font-size: 14px;
+}
+
+#header{
+	float: left;
+	position: relative;
+	width: 100%;
+	height: 21px;
+	padding: 0px;
+}
+
+#close{
+	float: left;
+	position: absolute;
+	top: 5px;
+	bottom: 0px;
+	right: 3px;
+	cursor: pointer;
+}
+
+#closetext{
+	position: absolute;
+	right: 15px;
+	color: #bd1d1d;
+	font-size: 12px;
+}
+
+#x-symbol{
+	font-size: 24px;
+	font-family: Arial, sans-serif;
+	color: #bd1d1d;
+	margin-top: -6px;
+}
+
+#intro-header{
+	float: left;
+	position: absolute;
+	top: 120px;
+	width: 100%;
+	font-size: 14px;
+	color: #5d5d5d;
+	font-weight: bold;
+	text-align: center;
+	margin: auto;
+}
+
+#logo{
+	position: absolute;
+	margin-top: 5px;
+	margin-left: 5px;
+}
+
+#content{
+	float: block;
+	position: relative;
+	width: 620px;
+	margin-top: 160px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#left{
+	float: left;
+	position: relative;
+}
+
+#right{
+	float: right;
+	position: relative;
+}
+
+#element{
+	min-width: 268px;
+	border-radius: 5px;
+	border: 1px solid;
+	border-color: #ececec;
+	padding: 10px;
+	margin: 20px 10px 20px 10px;
+	background-color: white;
+	box-shadow: -2px 2px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.25);
+	transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+	font-size: 12px;
+}
+
+#element > img{
+	width: 48px;
+	height: 48px;
+	float: left;
+	padding: 0px 5px 0px 0px;
+	margin-right: 5px;
+	position: relative;
+	top: 12px;
+}
+
+#element:last-child{
+	border-bottom: 0px solid gray;
+}
+
+#element:hover{
+	box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+a{
+	font-weight: normal;
+	color: #5d5d5d;
+	text-decoration: none;
+}
+
+a:hover{
+	text-decoration: none;
+	color: #bd1d1d;
+}
+
+#footer{
+	float: left;
+	position: fixed;
+	bottom: 0px;
+	width: 100%;
+	padding: 0px 0px 10px 0px;
+	border-top: 1px solid gray;
+	margin: 0 auto;
+	background-color: white;
+	font-weight: normal;
+	
+}
+
+#footertitle{
+	margin-bottom: 5px;
+}
+
+#checkbox{
+	display: none;
+	position: relative;
+	top: 10px;
+	left: 0px;
+	width: 200px;
+}
+
+#icon{
+	padding-top: 10px;
+	text-align: center;
+}
+
+#githubicon{
+	width: 50px;
+	height: 50px;
+	background-size: cover;
+	background-image: url("../icons/githubIcon.png");
+	display: inline-block;
+	margin: 0 auto;
+}
+
+#githubicon:hover{
+	background-image: url("../icons/githubIconHover.png");
+}
+
+#twittericon{
+	width: 50px;
+	height: 50px;
+	background-size: cover;
+	background-image: url("../icons/twitterIcon.png");
+	display: inline-block;
+	margin: 0 auto;
+}
+
+#twittericon:hover{
+	background-image: url("../icons/twitterIconHover.png");
+}
+
+#checkbox > label{
+		position: relative;
+		bottom: 2px;
+		font-size: 12px;
+}
+
+
+/* css media queries for screens with screen-width <= 800px */
+
+@media only screen and (max-width: 800px) {
+	html, body{
+		overflow: visible;
+	}
+		
+	#close{
+		position: absolute;
+		top: -10px;
+		right: 10px;
+	}
+	
+	#closetext{
+		position: relative;
+		color: #bd1d1d;
+	}
+	
+	#x-symbol{
+		font-size: 24px;
+		font-family: Arial, sans-serif;
+		color: white;
+		margin: 0px -15px 0px 12px;
+	}
+	
+	#header{
+		float: left;
+		position: relative;
+		width: 100%;
+		min-height: 65px;
+		box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+		background-color: #bd1d1d;
+		z-index: 2;
+		padding: 0px 0px 15px 0px;
+		overflow: hidden;
+	}
+	
+	#intro-header{
+		float: left;
+		position: relative;
+		left: 0;
+		top: 0;
+		width: 100%;
+		font-size: 15px;
+		color: white;
+		font-weight: bold;
+		margin-left: 2%;
+	}
+	
+	#logo{
+		float: left;
+		position: relative;
+		left: 0;
+		top: 0;
+		width: 100px;
+		margin-left: 1%;
+	}
+	
+		
+	#left{
+		width: 100%;
+		float: left;
+		position: relative;
+	}
+	
+	#right{
+		width: 100%;
+		float: left;
+		position: relative;
+	}
+	
+	#content{
+		float: left;
+		position: relative;
+		width: 100%;
+		margin: 0px;
+		padding: 0px;
+		overflow: hidden;
+	}
+
+	#element{
+		min-width: 100px;
+		width: 100%;
+		margin: 0px;
+		padding: 10px 10px 10px 10px;
+		border: 0px;
+		border-top: 1px solid #666;
+		border-radius: 0;
+		background-color: white;
+		box-shadow: -2px 2px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.25);
+		transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+	}
+	
+	#element > img {
+		display: none;
+	}
+	
+	#footer{
+		position: relative;
+		bottom: 0px;
+		width: 100%;
+		padding: 0px;
+		margin: 0px;
+	}
+	
+	#checkbox{
+		top: 2px;
+	}
+}
+
+	
+/* css media queries for screens with screen-width <= 363px */
+	
+@media only screen and (max-width: 363px) {
+	#header{
+		min-height: 85px;
+		min-width: 200px;
+	}
+}

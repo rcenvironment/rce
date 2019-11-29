@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.datamanagement.browser.spi;
@@ -41,6 +41,7 @@ import de.rcenvironment.core.gui.datamanagement.browser.Activator;
  * @author Jan Flink
  * @author Doreen Seider
  * @author Marc Stammerjohann
+ * @author Brigitte Boden
  * 
  */
 public final class DMBrowserNode {

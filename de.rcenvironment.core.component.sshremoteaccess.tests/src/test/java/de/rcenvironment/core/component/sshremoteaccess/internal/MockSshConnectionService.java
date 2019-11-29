@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.sshremoteaccess.internal;
@@ -105,6 +105,11 @@ final class MockSshConnectionService implements SshConnectionService {
 
     @Override
     public boolean isWaitingForRetry(String connectionId) {
+        return false;
+    }
+
+    @Override
+    public boolean sshConnectionAlreadyExists(SshConnectionContext context) {
         return false;
     }
 }

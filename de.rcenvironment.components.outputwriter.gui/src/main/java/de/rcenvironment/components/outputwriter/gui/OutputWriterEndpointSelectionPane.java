@@ -3,13 +3,14 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.outputwriter.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -46,11 +47,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * .
  * 
  * @author Sascha Zur
+ * @author Brigitte Boden
+ * @author Kathrin Schaffert
  */
 public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     protected ObjectMapper jsonMapper;
-    
+
     public OutputWriterEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, Executor executor) {
         super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
 
@@ -69,7 +72,8 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
                 endpointType,
                 dynEndpointIdToManage, false,
                 endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
-                    .getMetaDataDefinition(), new HashMap<String, String>(), paths);
+                    .getMetaDataDefinition(),
+                new HashMap<String, String>(), paths);
 
         onAddClicked(dialog);
     }
@@ -89,7 +93,8 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
             new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType,
                 dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(), newMetaData, paths);
+                    .getMetaDataDefinition(),
+                newMetaData, paths);
 
         onEditClicked(name, dialog, newMetaData);
     }
@@ -118,19 +123,36 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void editEndpoint(EndpointDescription oldDesc, String newName, DataType newType, Map<String, String> newMetaData) {
-        
-        String outputName = outputNameForInputName(oldDesc.getName());
-        if (editConfirmed(oldDesc, newName, newType, outputName)) {
-            super.editEndpoint(oldDesc, newName, newType, newMetaData);
 
+        String outputName = outputNameForInputName(oldDesc.getName());
+
+        EndpointDescription newDesc = endpointManager.getEndpointDescription(oldDesc.getName());
+
+        if (!newName.equals(oldDesc.getName())) {
+            newDesc.setName(newName);
+        }
+        newDesc.setDataType(newType);
+        newDesc.setMetaData(newMetaData);
+
+        switch (editConfirmed(oldDesc, newName, newType, outputName)) {
+
+        case InputInvolvedInTarget:
+            executeEditCommand(oldDesc, newDesc, true);
+            break;
+        case DoNotRemoveCompatibleTypes:
+            executeEditCommand(oldDesc, newDesc, false);
+            break;
+        case InputNotInvolvedInTarget:
+            return;
+        default:
+            return;
         }
     }
 
-    @Override
-    protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
+    protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription, boolean removeInput) {
         String outputName = outputIdForInputName(oldDescription.getName());
         WorkflowNodeCommand command =
-            new OutputWriterEditDynamicInputCommand(endpointType, oldDescription, newDescription, outputName, this);
+            new OutputWriterEditDynamicInputCommand(endpointType, oldDescription, newDescription, outputName, removeInput, this);
         execute(command);
     }
 
@@ -143,19 +165,41 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
      * @param outputName name of corresponding output
      * @return <code>true</code> if edit operation shall be performed <code>false</code> otherwise
      */
-    protected static boolean editConfirmed(EndpointDescription oldDesc, String newName, DataType newDataType, String outputName) {
-        if (outputName != null
-            && (newDataType.equals(DataType.DirectoryReference) || newDataType.equals(DataType.FileReference) || newName != oldDesc
-                .getName())) {
+    protected static DataTypeInputHandling editConfirmed(EndpointDescription oldDesc, String newName, DataType newDataType,
+        String outputName) {
+        DataType[] compatibleTypes = new DataType[] { DataType.Integer, DataType.Float };
+        List<DataType> compatibleTypesList = Arrays.asList(compatibleTypes);
+        if (outputName == null) {
+            return DataTypeInputHandling.InputInvolvedInTarget;
+        }
+        if (compatibleTypesList.contains(newDataType) && compatibleTypesList.contains(oldDesc.getDataType())) {
+            return DataTypeInputHandling.DoNotRemoveCompatibleTypes;
+        }
+        if (newDataType.equals(DataType.DirectoryReference) || newDataType.equals(DataType.FileReference) || newName != oldDesc
+            .getName()) {
 
             if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
                 Messages.editingInputWithOutputLocationDialogTitle,
                 StringUtils.format(Messages.editingInputWithOutputLocationDialogText,
                     oldDesc.getName(), outputName))) {
-                return false;
+                return DataTypeInputHandling.InputNotInvolvedInTarget;
             }
         }
-        return true;
+        return DataTypeInputHandling.InputInvolvedInTarget;
+    }
+
+    /**
+     * 
+     * Enum to handle different Input Data Type behaviour. Inputs written to target, respectively not written to target. Inputs written to
+     * target and shouldn't be removed.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected enum DataTypeInputHandling {
+        InputInvolvedInTarget,
+        InputNotInvolvedInTarget,
+        DoNotRemoveCompatibleTypes
     }
 
     @Override
@@ -203,7 +247,6 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         return result;
     }
 
-    
     /**
      * 
      * @param inputName Name of input
@@ -230,7 +273,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         }
         return null;
     }
-    
+
     /**
      * 
      * @param inputName Name of input
@@ -257,6 +300,5 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         }
         return null;
     }
-    
-    
+
 }

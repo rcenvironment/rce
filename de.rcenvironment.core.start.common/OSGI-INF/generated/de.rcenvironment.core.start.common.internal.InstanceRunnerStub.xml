@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.start.common.internal.InstanceRunnerStub">
+   <reference bind="bindCommandExecutionService" cardinality="1..1" interface="de.rcenvironment.core.command.api.CommandExecutionService" name="Command Execution Service" policy="static"/>
+   <reference bind="bindInstanceValidationService" cardinality="1..1" interface="de.rcenvironment.core.start.common.validation.api.InstanceValidationService" name="Instance Validation Service" policy="static"/>
+   <implementation class="de.rcenvironment.core.start.common.internal.InstanceRunnerStub"/>
+</scr:component>

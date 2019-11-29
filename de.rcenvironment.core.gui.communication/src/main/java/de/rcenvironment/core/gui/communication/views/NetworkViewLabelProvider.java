@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.communication.views;
 
@@ -64,6 +64,8 @@ public class NetworkViewLabelProvider extends LabelProvider {
             return "RCE Network";
         } else if (element == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
             return "SSH Remote Access";
+        } else if (element == AnchorPoints.SSH_UPLINK_SECTION_PARENT_NODE) {
+            return "Uplink (Experimental)";
         } else if (element instanceof NetworkGraphNodeWithContext) {
             NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) element;
             // switch by node context
@@ -128,6 +130,8 @@ public class NetworkViewLabelProvider extends LabelProvider {
         } else if (element == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE) {
             result = networkImage;
         } else if (element == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
+            result = networkImage;
+        } else if (element == AnchorPoints.SSH_UPLINK_SECTION_PARENT_NODE) {
             result = networkImage;
         }
         if (result == null) {

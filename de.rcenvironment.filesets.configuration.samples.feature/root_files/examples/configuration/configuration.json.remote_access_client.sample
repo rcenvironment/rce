@@ -1,3 +1,9 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for a remote access client.
+// 
+//
+
 {
 	"general" : {
 		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName}"

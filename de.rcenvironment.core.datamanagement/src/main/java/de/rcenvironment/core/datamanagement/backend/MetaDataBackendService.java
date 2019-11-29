@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.backend;
@@ -19,6 +19,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
  * Interface of the data management meta data backend.
  * 
  * @author Jan Flink
+ * @author Brigitte Boden
  */
 public interface MetaDataBackendService extends RemotableMetaDataService {
 

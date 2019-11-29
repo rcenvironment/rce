@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
@@ -73,6 +73,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Christian Weiss
  * @author Goekhan Guerkan
  * @author Robert Mischke (minor change)
+ * @author Brigitte Boden
  */
 final class WorkflowPage extends WizardPage {
 

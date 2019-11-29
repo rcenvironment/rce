@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -38,6 +38,7 @@ import de.rcenvironment.core.component.execution.api.ExecutionControllerExceptio
 import de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService;
 import de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallback;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.RemotableWorkflowExecutionControllerService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
@@ -259,7 +260,9 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
                 result.put(resultKey, "Invalid node id: " + refParts[2]); // should never happen
                 continue;
             }
-            if (!isNodeVisible(reachableLogicalNodes, logicalNodeId)) {
+            // note: for this visibility check, all logical node ids must be converted to default logical node ids,
+            // as these are the ones contained in the "reachableLogicalNodes" set
+            if (!isNodeVisible(reachableLogicalNodes, logicalNodeId.convertToDefaultLogicalNodeId())) {
                 result.put(resultKey, "The instance to run this component on is not visible from the workflow controller's instance. "
                     + "Check if they are located in disconnected networks.");
             } else if (!isComponentVisible(compKnowledge, componentIdAndVersion, logicalNodeId)) {
@@ -303,7 +306,9 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
         LogicalNodeId logicalNodeId) {
 
         for (DistributedComponentEntry comp : compKnowledge.getKnownSharedInstallationsOnNode(logicalNodeId, false)) {
-            if (comp.getComponentInstallation().getInstallationId().equals(componentIdAndVersion)) {
+            final ComponentInstallation componentInstallation = comp.getComponentInstallation();
+            final String identifierAndVersion = componentInstallation.getComponentInterface().getIdentifierAndVersion();
+            if (identifierAndVersion.equals(componentIdAndVersion) && componentInstallation.getNodeIdObject().equals(logicalNodeId)) {
                 return true;
             }
         }

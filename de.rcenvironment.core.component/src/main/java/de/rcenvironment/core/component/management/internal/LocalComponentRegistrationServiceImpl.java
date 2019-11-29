@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.management.internal;
@@ -61,6 +61,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * Default {@link LocalComponentRegistrationService} implementation.
  *
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 @Component
 // TODO the handling of internal component publication data has become too complex; needs refactoring, probably a further split
@@ -357,6 +358,10 @@ public class LocalComponentRegistrationServiceImpl implements LocalComponentRegi
     @Override
     public ComponentAuthorizationSelector getComponentSelector(ComponentInstallation component) {
 
+        if (component.isMappedComponent()) {
+            return new ComponentAuthorizationSelectorImpl(component.getInstallationId(), false);
+        }
+
         final String internalId = component.getComponentInterface().getIdentifier();
         String externalId;
         try {
@@ -390,11 +395,13 @@ public class LocalComponentRegistrationServiceImpl implements LocalComponentRegi
         }
         synchronized (associatedSelectorDisplayNames) {
             for (ComponentAuthorizationSelector selector : selectors) {
-                String associatedName = associatedSelectorDisplayNames.get(selector.getId());
-                if (associatedName == null) {
-                    associatedName = "<" + selector.getId() + ">"; // TODO improve?
+                if (selector.isAssignable()) {
+                    String associatedName = associatedSelectorDisplayNames.get(selector.getId());
+                    if (associatedName == null) {
+                        associatedName = "<" + selector.getId() + ">"; // TODO improve?
+                    }
+                    result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), associatedName));
                 }
-                result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), associatedName));
             }
         }
         Collections.sort(result);
@@ -414,14 +421,15 @@ public class LocalComponentRegistrationServiceImpl implements LocalComponentRegi
         final ArrayList<NamedComponentAuthorizationSelector> result = new ArrayList<>();
         synchronized (associatedSelectorDisplayNames) {
             for (ComponentAuthorizationSelector selector : selectors) {
-                final String displayName;
-                if (associatedSelectorDisplayNames.containsKey(selector.getId())) {
-                    displayName = associatedSelectorDisplayNames.get(selector.getId());
-                } else {
-                    displayName = selector.getId();
+                if (selector.isAssignable()) {
+                    final String displayName;
+                    if (associatedSelectorDisplayNames.containsKey(selector.getId())) {
+                        displayName = associatedSelectorDisplayNames.get(selector.getId());
+                    } else {
+                        displayName = selector.getId();
+                    }
+                    result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), displayName));
                 }
-
-                result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), displayName));
             }
         }
         Collections.sort(result);
@@ -448,14 +456,15 @@ public class LocalComponentRegistrationServiceImpl implements LocalComponentRegi
         final ArrayList<NamedComponentAuthorizationSelector> result = new ArrayList<>();
         synchronized (associatedSelectorDisplayNames) {
             for (ComponentAuthorizationSelector selector : selectorsForAccessGroup) {
-                final String displayName;
-                if (associatedSelectorDisplayNames.containsKey(selector.getId())) {
-                    displayName = associatedSelectorDisplayNames.get(selector.getId());
-                } else {
-                    displayName = selector.getId();
+                if (selector.isAssignable()) {
+                    final String displayName;
+                    if (associatedSelectorDisplayNames.containsKey(selector.getId())) {
+                        displayName = associatedSelectorDisplayNames.get(selector.getId());
+                    } else {
+                        displayName = selector.getId();
+                    }
+                    result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), displayName));
                 }
-
-                result.add(new NamedComponentAuthorizationSelectorImpl(selector.getId(), displayName));
             }
         }
         Collections.sort(result);
@@ -668,7 +677,7 @@ public class LocalComponentRegistrationServiceImpl implements LocalComponentRegi
             oldPermissionSet = permissionSetLocalOnly;
         }
         final boolean modified = !oldPermissionSet.equals(newPermissionSet);
-        if (modified && !initializing) {
+        if (modified && !initializing && selector.isAssignable()) {
             try {
                 permissionStorage.persistAssignment(selector, newPermissionSet);
             } catch (OperationFailureException e) {

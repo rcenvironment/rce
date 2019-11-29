@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.api;
@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
@@ -27,6 +28,7 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDesc
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Class holding information about an installed {@link Component}.
@@ -39,12 +41,12 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
  * @author Sascha Zur
  * @author David Scholz
  * 
- * Note: It is actually the model of a component when it is dragged into the workflow editor. It holds the configuration of a
- * component, its dynamic endpoints, etc. More editor-related information are put into the {@link WorkflowNode}.
- * {@link ComponentDescription} is embedded in a {@link WorkflowNode}. A {@link ComponentDescription} belongs to exactly one
- * {@link ComponentInstallation}. The {@link ComponentInstallation} is mutable which I doubt to be good. It is done to change the
- * {@link ComponentInstallation} at workflow start to the one of the target instance the user chose to run the component on.
- * --seid_do
+ *         Note: It is actually the model of a component when it is dragged into the workflow editor. It holds the configuration of a
+ *         component, its dynamic endpoints, etc. More editor-related information are put into the {@link WorkflowNode}.
+ *         {@link ComponentDescription} is embedded in a {@link WorkflowNode}. A {@link ComponentDescription} belongs to exactly one
+ *         {@link ComponentInstallation}. The {@link ComponentInstallation} is mutable which I doubt to be good. It is done to change the
+ *         {@link ComponentInstallation} at workflow start to the one of the target instance the user chose to run the component on.
+ *         --seid_do
  * 
  */
 public class ComponentDescription implements Serializable, Cloneable, Comparable<ComponentDescription> {
@@ -80,25 +82,24 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
         this.componentInterface = componentRevision.getComponentInterface();
 
         inputDescriptionsManager = new EndpointDescriptionsManager(componentInterface.getInputDefinitionsProvider(),
-                EndpointType.INPUT);
+            EndpointType.INPUT);
 
         outputDescriptionsManager = new EndpointDescriptionsManager(componentInterface.getOutputDefinitionsProvider(),
-                EndpointType.OUTPUT);
+            EndpointType.OUTPUT);
 
         configurationDescription = new ConfigurationDescription(componentInterface.getConfigurationDefinition(),
-                componentInterface.getConfigurationExtensionDefinitions());
+            componentInterface.getConfigurationExtensionDefinitions());
 
     }
 
     /**
-     * Initializes the component with default initial values such as endpoints.
-     * May only be called for newly created components.
+     * Initializes the component with default initial values such as endpoints. May only be called for newly created components.
      */
     public void initializeWithDefaults() {
         inputDescriptionsManager.addInitialDynamicEndpointDescriptions();
         outputDescriptionsManager.addInitialDynamicEndpointDescriptions();
         configurationDescription.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM,
-                String.valueOf(true));
+            String.valueOf(true));
     }
 
     public String getIdentifier() {
@@ -157,32 +158,45 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     }
 
     /**
-     * @return <code>true</code> if the component can technically only be
-     *         executed locally, otherwise <code>false</code>
+     * @return <code>true</code> if the component can technically only be executed locally, otherwise <code>false</code>
      */
     public boolean canOnlyBeExecutedLocally() {
         return componentInterface.getLocalExecutionOnly();
     }
 
     /**
-     * @return <code>true</code> if the component should be disposed workflow
-     *         disposal, <code>false</code> if immediately when the component
+     * @return <code>true</code> if the component should be disposed workflow disposal, <code>false</code> if immediately when the component
      *         had finished (default behavior)
      */
     public boolean performLazyDisposal() {
         return componentInterface.getPerformLazyDisposal();
     }
 
-    public byte[] getIcon16() {
-        return componentInterface.getIcon16();
+/**
+     * Returns the image of the component in 16x16. The image is shared, the caller MUST NOT dispose it!
+     * @return image in 16x16
+     */
+    public Image getIcon16() {
+        return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+            .getComponentImageContainer(componentInterface).getComponentIcon16();
     }
 
-    public byte[] getIcon24() {
-        return componentInterface.getIcon24();
+    /**
+     * Returns the image of the component in 24x24. The image is shared, the caller MUST NOT dispose it!
+     * @return image in 24x24 
+     */
+    public Image getIcon24() {
+        return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+            .getComponentImageContainer(componentInterface).getComponentIcon24();
     }
 
-    public byte[] getIcon32() {
-        return componentInterface.getIcon32();
+    /**
+     * Returns the image of the component in 32x32. The image is shared, the caller MUST NOT dispose it!
+     * @return image in 32x32 
+     */
+    public Image getIcon32() {
+        return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+            .getComponentImageContainer(componentInterface).getComponentIcon32();
     }
 
     /**
@@ -196,8 +210,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     }
 
     /**
-     * @param installation
-     *            new {@link ComponentInstallation} to set
+     * @param installation new {@link ComponentInstallation} to set
      */
     public void setComponentInstallationAndUpdateConfiguration(ComponentInstallation installation) {
         setComponentInstallation(installation);
@@ -205,8 +218,8 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
         Map<String, String> placeholders = configurationDescription.getPlaceholders();
 
         configurationDescription = new ConfigurationDescription(
-                installation.getComponentInterface().getConfigurationDefinition(),
-                installation.getComponentInterface().getConfigurationExtensionDefinitions());
+            installation.getComponentInterface().getConfigurationDefinition(),
+            installation.getComponentInterface().getConfigurationExtensionDefinitions());
         configurationDescription.setConfiguration(config);
         configurationDescription.setPlaceholders(placeholders);
     }
@@ -218,18 +231,17 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     /**
      * Copies the execution information of the given component description.
      * 
-     * @param installation
-     *            component installation with execution information to copy
+     * @param installation component installation with execution information to copy
      */
     public void setComponentInstallation(ComponentInstallation installation) {
         String interfaceId = componentInterface.getIdentifierAndVersion();
         String newInterfaceId = installation.getComponentInterface().getIdentifierAndVersion();
         if (!newInterfaceId.equals(interfaceId) && !(newInterfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
-                && newInterfaceId.endsWith(interfaceId)
-                && !(interfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
-                && interfaceId.endsWith(newInterfaceId)) {
+            && newInterfaceId.endsWith(interfaceId)
+            && !(interfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
+            && interfaceId.endsWith(newInterfaceId)) {
             throw new IllegalArgumentException(
-                    "Component installation doesn't refer to the interface: " + componentInterface.getIdentifierAndVersion());
+                "Component installation doesn't refer to the interface: " + componentInterface.getIdentifierAndVersion());
         }
 
         this.componentInstallation = installation;

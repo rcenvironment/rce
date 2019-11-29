@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.configuration.api;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -46,5 +47,16 @@ public interface ConfigurationDefinition {
      * @return related configuration meta data definitions
      */
     ConfigurationMetaDataDefinition getConfigurationMetaDataDefinition();
+
+    /**
+     * @return raw configuration definition.
+     */
+    List<Object> getRawConfigurationDefinition();
+
+    
+    /**
+     * @return raw configuration metadata definition.
+     */
+    List<Object> getRawConfigurationMetaDataDefinition();
 
 }

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.converger.gui;singleton:=true
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin

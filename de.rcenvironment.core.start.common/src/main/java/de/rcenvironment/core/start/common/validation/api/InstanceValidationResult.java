@@ -3,10 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.validation.api;
+
+import java.util.Optional;
 
 import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
 
@@ -101,4 +103,13 @@ public interface InstanceValidationResult {
      *         {@link InstanceValidationResultType#FAILED_RECOVERY_REQUIRED}).
      */
     Callback getCallback();
+
+    /**
+     * If a validator requires recovery, RCE queries the user whether this recovery should be performed. In headless mode, it may not be
+     * possible to pose that query to the user. In that case, it may be possible to give the user a hint how to perform the recovery
+     * manually, e.g., via manually editing some files or via some command-line switch that enables that recovery without further querying.
+     * 
+     * @return A hint that can be shown to the user if RCE requires confirmation for a recovery, but is unable to obtain that confirmation.
+     */
+    Optional<String> getUserHint();
 }

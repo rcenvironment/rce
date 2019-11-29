@@ -1,0 +1,52 @@
+{
+  "commandScriptLinux" : "echo \"The test tool is doing its work.\"",
+  "commandScriptWindows" : "echo \"The test tool is doing its work.\"",
+  "copyToolBehavior" : "never",
+  "deleteWorkingDirectoriesNever" : true,
+  "documentationFilePath" : "",
+  "enableCommandScriptLinux" : true,
+  "enableCommandScriptWindows" : true,
+  "groupName" : "Testing",
+  "imitationScript" : "",
+  "imitationToolOutputFilename" : "",
+  "inputs" : [ {
+    "inputHandling" : "Single",
+    "endpointFileName" : "",
+    "endpointDataType" : "Float",
+    "defaultInputExecutionConstraint" : "Required",
+    "endpointName" : "x_in",
+    "defaultInputHandling" : "Single",
+    "inputExecutionConstraint" : "Required",
+    "endpointFolder" : ""
+  } ],
+  "integrationType" : "Common",
+  "isActive" : true,
+  "launchSettings" : [ {
+    "limitInstallationInstancesNumber" : "10",
+    "limitInstallationInstances" : "true",
+    "rootWorkingDirectory" : "",
+    "host" : "RCE",
+    "toolDirectory" : "C:\\",
+    "version" : "1.0"
+  } ],
+  "outputs" : [ {
+    "inputHandling" : "-",
+    "endpointFileName" : "",
+    "endpointDataType" : "Float",
+    "endpointName" : "x_out",
+    "inputExecutionConstraint" : "-",
+    "endpointFolder" : ""
+  } ],
+  "postScript" : "import math\r\n${out:x_out} = math.sin(${in:x_in} ** 2)",
+  "preScript" : "",
+  "toolDescription" : "This tool is for testing only.\r\nIt has no functionality.",
+  "toolIconPath" : "",
+  "toolIntegrationVersion" : 1,
+  "toolIntegratorE-Mail" : "",
+  "toolIntegratorName" : "",
+  "toolName" : "TestTool",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "uploadIcon" : true
+}

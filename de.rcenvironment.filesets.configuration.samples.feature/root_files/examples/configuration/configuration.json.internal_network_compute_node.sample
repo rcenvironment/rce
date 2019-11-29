@@ -1,0 +1,25 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for a compute node in the internal network.
+// Because the "isWorkflow host" option is set, this instance can be used as workflow controller by other instances.
+// It connects to an internal relay server to be reachable for other instances connected to that relay.
+//
+
+{
+	"general" : {
+		"instanceName" : "Example compute node started by \"${systemUser}\" on ${hostName}",
+		"isWorkflowHost": true
+	},
+	"network" : {
+		"connections" : {
+			"relayInternal" : {
+				"host" : "127.0.0.1",
+				"port" : 21000,
+				"connectOnStartup": true,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	}
+}

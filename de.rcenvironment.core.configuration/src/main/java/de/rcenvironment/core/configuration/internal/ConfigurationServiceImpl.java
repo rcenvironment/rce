@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.internal;
@@ -54,6 +54,7 @@ import de.rcenvironment.core.utils.common.VersionUtils;
  * @author Robert Mischke
  * @author Christian Weiss
  * @author Doreen Seider
+ * @author Kathrin Schaffert
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
 
@@ -85,8 +86,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final ObjectMapper mapper; // reusable JSON mapper object
 
     /**
-     * The merged map of key-value replacements; the namespace qualifier is merged into the map keys by the format
-     * "<namespace>:<plain key value>".
+     * The merged map of key-value replacements; the namespace qualifier is merged into the map keys by the format "<namespace>:<plain key
+     * value>".
      */
     private Map<String, String> substitutionProperties = new HashMap<>();
 
@@ -393,6 +394,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public File getStandardImportDirectory(String subdir) {
+        // TODO could get its individual CPId
+        return new File(getConfigurablePath(ConfigurationService.ConfigurablePathId.PROFILE_ROOT), "import/" + subdir);
+    }
+
+    @Override
     public File getOriginalProfileDirectory() {
         return bootstrapSettings.getOriginalProfile().getProfileDirectory();
     }
@@ -525,6 +532,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             profile.getLocationDependentName());
         instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_VERSION,
             StringUtils.nullSafeToString(VersionUtils.getVersionOfProduct(), "<unknown>"));
+        instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_JAVA_VERSION,
+            System.getProperty(SYSTEM_PROPERTY_JAVA_VERSION));
+        instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_SYSTEM_NAME,
+            System.getProperty(SYSTEM_PROPERTY_OS_NAME));
 
         // only determine the host name if actually necessary
         if (instanceName.contains(CONFIGURATION_PLACEHOLDER_HOST_NAME)) {

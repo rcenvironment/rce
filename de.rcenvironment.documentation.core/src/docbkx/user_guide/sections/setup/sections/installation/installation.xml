@@ -20,7 +20,7 @@
         <title> Installation</title>
         <para os="windows">On Windows, a single zip file is provided to set up client and server
             installations, which can be downloaded
-            from<programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/zip/</uri></programlisting>Simply
+            from<programlisting><uri>https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/zip/</uri></programlisting>Simply
             extract the zip file to a location on your file system.<note>
                 <para>IMPORTANT: Please note that due to restrictions of the standard Windows file
                     system (NTFS), you should choose a destination path that is as short as
@@ -115,14 +115,14 @@
                                     key...". Copy the text
                                     <programlisting>258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>into
                                     the dialog that appears and click "Ok". The list of keys should
-                                    now contain an entry "RCE 6.x-9.x Automatic Signing Key
-                                    &lt;rcenvironment-builds@lists.sourceforge.net>".</para>
+                                    now contain an entry "RCE Automatic Signing Key
+                                    &lt;rce@dlr.de>".</para>
                             </listitem>
                             <listitem>
                                 <para>Click on a section named "Additional Repositories", "Other
                                     Sources" or similar. Select the "Add..." or "Add new..." option.
                                     Copy the text
-                                    <programlisting>deb https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/ /</programlisting>into
+                                    <programlisting>deb https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/deb/ /</programlisting>into
                                     the dialog that appears and click "Ok".</para>
                             </listitem>
                             <listitem>
@@ -130,7 +130,7 @@
                                     list of available software. After this, you should find an entry
                                     "rce" in this list (for example, using the Search button), which
                                     you can install like any other software. You will also receive
-                                    automatic notifications when a newer version of RCE 9.x is
+                                    automatic notifications when a newer version of RCE 10.x is
                                     available.</para>
                             </listitem>
                         </itemizedlist></para>
@@ -145,16 +145,14 @@
                                 <programlisting>apt-key adv --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
                                 <note>
                                     <para>If you see a message containing the text <code>"RCE
-                                            6.x-9.x Automatic Signing Key
-                                            &lt;rcenvironment-builds@lists.sourceforge.net>"</code>,
-                                        the key import was successful. Sometimes, this step fails
-                                        with the message "<code>key [...] not found on keyserver;
-                                            gpg: no valid OpenPGP data found.</code>" If this
-                                        happens, just repeat the command a few times until it works.
-                                        This issue may also be caused by an outdated gpg version
-                                        (gpg version 2.0.9 on SUSE Linux Enterprise Desktop 11 is
-                                        known to be problematic, while gpg version 2.0.22
-                                        works).</para>
+                                            Automatic Signing Key &lt;rce@dlr.de>"</code>, the key
+                                        import was successful. Sometimes, this step fails with the
+                                        message "<code>key [...] not found on keyserver; gpg: no
+                                            valid OpenPGP data found.</code>" If this happens, just
+                                        repeat the command a few times until it works. This issue
+                                        may also be caused by an outdated gpg version (gpg version
+                                        2.0.9 on SUSE Linux Enterprise Desktop 11 is known to be
+                                        problematic, while gpg version 2.0.22 works).</para>
                                     <para>The RCE signing key is published on the keyserver
                                             <code>pool.sks-keyservers.net</code>, which is the
                                         default keyserver for most distributions of gpg. If your
@@ -166,18 +164,18 @@
                                         determine how to specify the keyserver.</para>
                                     <para>If you cannot access keyservers at all for some reason,
                                         you can also download the key manually from
-                                        <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_9.x_signing_key.asc</programlisting>
+                                        <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_signing_key.asc</programlisting>
                                         After the download has completed, you can import the key by
                                         executing
-                                        <programlisting>apt-key adv --import rce_9.x_signing_key.asc</programlisting>
+                                        <programlisting>apt-key adv --import rce_signing_key.asc</programlisting>
                                         from the command line. </para>
                                 </note>
                             </para>
                         </listitem>
                         <listitem>
                             <para>
-                                <programlisting>echo "deb https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/ /"
-  >/etc/apt/sources.list.d/dlr_rce_9_releases.list</programlisting>
+                                <programlisting>echo "deb https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/deb/ /"
+  >/etc/apt/sources.list.d/dlr_rce_10_releases.list</programlisting>
                                 <note>
                                     <para>Although it may be split across lines here, this command
                                         must be executed as a single line.</para>
@@ -205,23 +203,23 @@
                         scripts. Once they are available, you can find them
                         at<programlisting> https://github.com/rcenvironment/rce-signing</programlisting></para>
                     <para>Executing the script
-                        <programlisting>register_rce_9.x_deb_repository.sh</programlisting> will
+                        <programlisting>register_rce_10.x_deb_repository.sh</programlisting> will
                         import the signing key onto your system and subsequently register the
                         repository with your package manager.</para>
-                </note>Once you have installed RCE using either of these approaches, any RCE 9.x
+                </note>Once you have installed RCE using either of these approaches, any RCE 10.x
                 upgrade will automatically show up via the update mechanism of your operating
                 system. Depending on the upgrade settings of your system, they may be installed
                 automatically, or be presented to you for selection.<note>
-                    <para>Although technically possible, RCE 9.x will not auto-upgrade to 10.x (or
-                        higher) to maintain compatibility within networks of RCE 9.x instances. You
-                        will need to manually install the 10.x repository location in order to
+                    <para>Although technically possible, RCE 10.x will not auto-upgrade to 11.x (or
+                        higher) to maintain compatibility within networks of RCE 10.x instances. You
+                        will need to manually install the 11.x repository location in order to
                         upgrade.</para>
                 </note></para>
         </sect3>
         <sect3 os="linux">
             <title>Debian/Ubuntu/Mint - Installation of the .deb Package (alternative)</title>
             <para>To install the .deb file manually, download the latest version from
-                <programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/deb/</uri></programlisting>You
+                <programlisting><uri>https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/deb/</uri></programlisting>You
                 can either install it using the graphical package management tools of your
                 distribution (double-clicking the .deb should start them), or by running <code>sudo
                     dpkg -i &lt;filename></code> from a terminal. To upgrade an existing
@@ -231,7 +229,7 @@
         <sect3 os="linux">
             <title>CentOS/Red Hat - Installation of the .rpm Package (recommended)</title>
             <para>To install the .rpm file, download the latest version from
-                <programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/rpm/</uri></programlisting>You
+                <programlisting><uri>https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/rpm/</uri></programlisting>You
                 can either install it with the graphical package management tools of your
                 distribution (double-clicking the .rpm should start them), or by running the
                 appropriate installation command as the "root" user. On CentOS or Red Hat, the
@@ -244,7 +242,7 @@
             <title>All Distributions - Running from the .zip File (alternative)</title>
             <para>If none of the previous installation options fits your needs, you can also extract
                 RCE from a zip file downloaded
-                from<programlisting><uri>https://software.dlr.de/updates/rce/9.x/products/standard/releases/latest/zip/</uri></programlisting></para>
+                from<programlisting><uri>https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/zip/</uri></programlisting></para>
             <itemizedlist>
                 <listitem>
                     <para>If you prefer graphical tools, double-click the .zip file to open it with
@@ -284,9 +282,9 @@
         <para>For each type of release files (.zip, .deb, and .rpm files), a
                 <code>SHA256SUM.asc</code> file is provided next to the actual files. This file
             contains checksums for each release file, and these checksums are signed with our
-            release key. It is named "RCE 6.x-9.x Automatic Signing Key", has the id 9DC1CE34, and
-            is valid until Nov 22, 2020. Its full fingerprint is <code>258B C129 EDA2 389D 3ECD 2DE6
-                BA88 0CB3 9DC1 CE34</code>.</para>
+            release key. It is named "RCE Automatic Signing Key", has the id 9DC1CE34, and is valid
+            until Nov 22, 2020. Its full fingerprint is <code>258B C129 EDA2 389D 3ECD 2DE6 BA88
+                0CB3 9DC1 CE34</code>.</para>
         <para><phrase os="windows">On Windows, you need to install gpg4win
                     (<uri>http://www.gpg4win.org/</uri>) to verify the digital signature. You can
                 use the Get-FileHash cmdlet of the Windows PowerShell to verify the checksum. The
@@ -300,18 +298,15 @@
                 <listitem>
                     <para>Execute
                         <programlisting>gpg --recv-key 258BC129EDA2389D3ECD2DE6BA880CB39DC1CE34</programlisting>
-                        to import the signing key. This only needs to be done once per key, e.g.
-                        once for all RCE 9.x releases.<note>
-                            <para>If you see a message containing the text <code>"RCE 6.x-9.x
-                                    Automatic Signing Key
-                                    &lt;rcenvironment-builds@lists.sourceforge.net>"</code>, the key
-                                import was successful. Sometimes, this step fails with the message
-                                    "<code>key [...] not found on keyserver; gpg: no valid OpenPGP
-                                    data found.</code>" If this happens, just repeat the command a
-                                few times until it works. This issue may also be caused by an
-                                outdated gpg version (gpg version 2.0.9 on SUSE Linux Enterprise
-                                Desktop 11 is known to be problematic, while gpg version 2.0.22
-                                works).</para>
+                        to import the signing key. This only needs to be done once per key.<note>
+                            <para>If you see a message containing the text <code>"RCE Automatic
+                                    Signing Key &lt;rce@dlr.de>"</code>, the key import was
+                                successful. Sometimes, this step fails with the message "<code>key
+                                    [...] not found on keyserver; gpg: no valid OpenPGP data
+                                    found.</code>" If this happens, just repeat the command a few
+                                times until it works. This issue may also be caused by an outdated
+                                gpg version (gpg version 2.0.9 on SUSE Linux Enterprise Desktop 11
+                                is known to be problematic, while gpg version 2.0.22 works).</para>
                             <para>The RCE signing key is published on the keyserver
                                     <code>pool.sks-keyservers.net</code>, which is the default
                                 keyserver for most distributions of gpg. If your installation does
@@ -322,10 +317,10 @@
                                 specify the keyserver.</para>
                             <para>If you cannot access keyservers at all for some reason, you can
                                 also download the key manually from
-                                <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_9.x_signing_key.asc</programlisting>
+                                <programlisting>https://github.com/rcenvironment/rce-signing/blob/master/rce_signing_key.asc</programlisting>
                                 After the download has completed, you can import the key by
                                 executing
-                                <programlisting>apt-key adv --import rce_9.x_signing_key.asc</programlisting>
+                                <programlisting>apt-key adv --import rce_signing_key.asc</programlisting>
                                 from the command line. </para>
                         </note></para>
                 </listitem>
@@ -336,8 +331,7 @@
                         <programlisting>gpg --verify --yes SHA256SUMS.asc</programlisting>in the
                         location where you saved it to; this verifies the digital signature. Inspect
                         the output to see if it is correct; you should find the text "Good signature
-                        from "RCE 6.x-9.x Automatic Signing Key
-                        &lt;rcenvironment-builds@lists.sourceforge.net>" (or a similar translation).
+                        from "RCE Automatic Signing Key &lt;rce@dlr.de>" (or a similar translation).
                         Once the command has terminated, you should find a file
                             <code>SHA256SUMS</code> in the current folder.</para>
                     <note>
@@ -380,9 +374,9 @@
                 the "rce" executable from Windows Explorer. Optionally, create a desktop icon from
                 the right-click menu using the "send to > desktop" option. </phrase></para>
         <para>Once your RCE instance has started, you can open the configuration file with the menu
-            option "Help > Open Configuration File". Edit the file, save it, and then restart RCE
+            option "Configuration > Open Configuration File". Edit the file, save it, and then restart RCE
             using the "File > Restart" menu option to apply the changes. There are configuration
-            templates and other information available via the "Help > Open Configuration
+            templates and other information available via the "Configuration > Open Configuration
             Information" option. The available configuration settings are described in the
             configuration chapter.</para>
         <para>
@@ -440,6 +434,8 @@
                 commands or GUI tools to add it. (Please note that this account needs to have a home
                 directory to hold the daemon's profile directory.) Future RCE versions will make
                 this account name customizable.</para>
+            <note os="linux"><para>As of RCE 10, the daemon wrapper still uses the System V approach. Migration to systemd is
+                    planned for RCE 11.</para></note>
             <para os="linux">Once this user account is created, you can use the following commands
                 to manage the daemon installation:<itemizedlist>
                     <listitem>
@@ -601,10 +597,15 @@
                 in the service user's home directory - by default, it is located at
                     <code>C:\users\&lt;user id>\.rce\default\configuration.json</code>. Edit this
                 file and restart the service to apply the changes.</para>
+            <para>For importing SSH credentials and authorization group keys into a <phrase
+                    os="linux">daemon</phrase><phrase os="windows">service</phrase>, please refer to
+                section <xref linkend="authdata-import"/>. As of RCE 10, file-based imports are only
+                processed on startup, so a restart is required for this, too.</para>
             <note>
                 <para>The need to restart the <phrase os="linux">daemon</phrase><phrase os="windows"
                         >service</phrase> is temporary; future versions of RCE will apply
-                    configuration changes as soon as the configuration file is changed.</para>
+                    configuration changes as soon as configuration files are changed or new import
+                    files are placed in the respective folders.</para>
             </note>
         </sect3>
     </sect2>

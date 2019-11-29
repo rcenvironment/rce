@@ -3,13 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
 
 import java.awt.GraphicsEnvironment;
-import java.io.ByteArrayInputStream;
 import java.text.CollationKey;
 import java.text.Collator;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
@@ -51,7 +49,6 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.gui.workflow.Activator;
 
 /**
  * 
@@ -269,14 +266,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
     }
 
     private Image getImage(WorkflowNode element) {
-        byte[] icon = element.getComponentDescription().getIcon16();
-        Image image;
-        if (icon != null) {
-            image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
-        } else {
-            image = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_RCE_ICON_16);
-        }
-        return image;
+        return element.getComponentDescription().getIcon16();
     }
 
     private void addMessageItem(WorkflowNode node, ComponentValidationMessage.Type type, String message) {

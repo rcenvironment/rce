@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
@@ -57,7 +57,7 @@ public class DataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        pi = NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy");
+        pi = NodeIdentifierTestUtils.createTestDefaultLogicalNodeId();
         drId = UUID.randomUUID();
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();

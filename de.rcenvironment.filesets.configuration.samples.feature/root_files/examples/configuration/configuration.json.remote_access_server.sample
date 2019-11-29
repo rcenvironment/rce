@@ -1,3 +1,9 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for a remote access server.
+// 
+//
+
 {
 	"general" : {
 		"instanceName" : "Example Remote Access server started by \"${systemUser}\" on ${hostName}"

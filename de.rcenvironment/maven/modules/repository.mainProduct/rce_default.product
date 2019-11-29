@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="9.1.1.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="10.0.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -155,7 +155,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <feature id="nu.psnet.quickimage"/>
       <feature id="org.eclipse.wst.xml_ui.feature"/>
       <feature id="de.rcenvironment.core.gui.help.feature"/>
-      <feature id="de.rcenvironment.extensions.testscriptrunner.feature" version="1.0.0.qualifier"/>
+      <feature id="de.rcenvironment.extensions.testscriptrunner.feature"/>
    </features>
 
    <configurations>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="de.rcenvironment.core.authorization.internal.AuthorizationServiceImpl">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" activate="activate" name="de.rcenvironment.core.authorization.internal.AuthorizationServiceImpl">
    <service>
       <provide interface="de.rcenvironment.core.authorization.api.AuthorizationService"/>
    </service>
@@ -7,5 +7,7 @@
    <reference bind="bindCryptographyOperationsProvider" interface="de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider" name="CryptographyOperationsProvider"/>
    <reference bind="bindObjectBindingsService" interface="de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService" name="ObjectBindingsService"/>
    <reference bind="bindSecureStorageService" interface="de.rcenvironment.core.configuration.SecureStorageService" name="SecureStorageService"/>
+   <reference cardinality="1..1" field="configurationService" interface="de.rcenvironment.core.configuration.ConfigurationService" name="configurationService"/>
+   <reference cardinality="1..1" field="secureStorageImportService" interface="de.rcenvironment.core.configuration.SecureStorageImportService" name="secureStorageImportService"/>
    <implementation class="de.rcenvironment.core.authorization.internal.AuthorizationServiceImpl"/>
 </scr:component>

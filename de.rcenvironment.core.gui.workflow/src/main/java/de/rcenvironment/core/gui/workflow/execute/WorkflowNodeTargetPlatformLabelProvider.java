@@ -3,12 +3,11 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,13 +24,10 @@ import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Resource;
-import org.eclipse.swt.widgets.Display;
 
-import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
-import de.rcenvironment.core.gui.workflow.Activator;
 
 /**
  * The composite containing the controls to configure the workflow execution.
@@ -40,8 +36,7 @@ import de.rcenvironment.core.gui.workflow.Activator;
  * @author Goekhan Guerkan
  */
 
-public class WorkflowNodeTargetPlatformLabelProvider extends
-    StyledCellLabelProvider {
+public class WorkflowNodeTargetPlatformLabelProvider extends StyledCellLabelProvider {
 
     private List<CCombo> comboList;
 
@@ -69,8 +64,8 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
      * @param componentsTable
      * @param iWizard
      */
-    public WorkflowNodeTargetPlatformLabelProvider(
-        TargetNodeEditingSupport editingSupport, WorkflowDescription workflowDescription, IWizard iWizard) {
+    public WorkflowNodeTargetPlatformLabelProvider(TargetNodeEditingSupport editingSupport, WorkflowDescription workflowDescription,
+        IWizard iWizard) {
         this.editingSupport = editingSupport;
         this.workflowDescription = workflowDescription;
         comboList = new ArrayList<CCombo>();
@@ -88,24 +83,8 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
     public Image getImage(WorkflowNode workflowNode) {
         // create the image, if it has not been created yet
         if (!images.containsKey(workflowNode)) {
-            final ComponentDescription componentDescription = workflowNode
-                .getComponentDescription();
-            Image image = null;
-            // prefer the 16x16 icon
-            byte[] icon = componentDescription.getIcon16();
-            // if there is no 16x16 icon try the 32x32 one
-            if (icon == null) {
-                icon = componentDescription.getIcon32();
-            }
-            // only create an image, if icon data are available
-            if (icon != null) {
-                image = new Image(Display.getCurrent(),
-                    new ByteArrayInputStream(icon));
-                resources.add(image);
-            } else {
-                image = Activator.getInstance().getImageRegistry()
-                    .get(Activator.IMAGE_RCE_ICON_16);
-            }
+            Image image = workflowNode.getComponentDescription().getIcon16();
+            resources.add(image);
             images.put(workflowNode, image);
         }
         return images.get(workflowNode);
@@ -122,19 +101,16 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
 
         WorkflowNodeIdentifier identifier = null;
         for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
-            if (node.getIdentifierAsObject().equals(
-                workflowNode.getIdentifierAsObject())) {
+            if (node.getIdentifierAsObject().equals(workflowNode.getIdentifierAsObject())) {
                 identifier = node.getIdentifierAsObject();
             }
         }
 
-        WorkflowNode wfNode = workflowDescription
-            .getWorkflowNode(identifier);
+        WorkflowNode wfNode = workflowDescription.getWorkflowNode(identifier);
 
         editingSupport.setValue(wfNode, combo.getSelectionIndex());
 
-        boolean exactMatch = editingSupport
-            .isNodeExactMatchRegardingComponentVersion(wfNode);
+        boolean exactMatch = editingSupport.isNodeExactMatchRegardingComponentVersion(wfNode);
 
         if (!exactMatch) {
             combo.setForeground(ColorPalette.getInstance().getWarningColor());
@@ -193,7 +169,10 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
     public void disposeRescources() {
 
         for (Resource resource : resources) {
-            resource.dispose();
+            //avoids disposing of shared commponent images
+            if (!(resource instanceof Image)) {
+                resource.dispose();
+            }
         }
 
     }
@@ -238,6 +217,5 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
     // public Map<WorkflowNode, Integer> getNodeValueWithError() {
     // return nodeValueWithError;
     // }
-
 
 }

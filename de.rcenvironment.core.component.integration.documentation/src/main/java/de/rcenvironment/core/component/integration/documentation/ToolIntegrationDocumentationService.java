@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration.documentation;
@@ -43,4 +43,12 @@ public interface ToolIntegrationDocumentationService {
      * @return map with all different hashes
      */
     Map<String, String> getComponentDocumentationList(String identifier);
+    
+    /**
+     * Register a tool documentation provider for a node id.
+     * 
+     * @param provider the provider class
+     * @param nodeId the node id for which this provider should be called.
+     */
+    void registerToolDocumentationProvider(ToolDocumentationProvider provider, String nodeId);
 }

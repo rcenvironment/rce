@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.connection.impl;
@@ -659,6 +659,12 @@ public class ConnectionSetupImpl implements ConnectionSetup {
     public String getNetworkContactPointString() {
         return NetworkContactPointUtils.toDefinitionString(ncp);
     }
+
+    @Override
+    public boolean equalsHostAndPort(NetworkContactPoint netCP) {
+        return ncp.getHost().equals(netCP.getHost()) && ncp.getPort() == netCP.getPort();
+    }
+    //
 
     /**
      * Callback to notify this setup that its associated {@link MessageChannel} was closed.

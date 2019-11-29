@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.core.utils.scripting</artifactId>
 	<name>RCE Core Utils Scripting Bundle</name>
-	<version>9.1.1-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
@@ -35,6 +35,7 @@ import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
  * 
  * @author Juergen Klein
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class BackendSupportTest {
 

@@ -1,0 +1,23 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for a client node in the internal network.
+// It connects to a standalone server or to an internal network relay.
+//
+
+{
+	"general" : {
+		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName}"
+	},
+	"network" : {
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 21000,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		}
+	}
+}

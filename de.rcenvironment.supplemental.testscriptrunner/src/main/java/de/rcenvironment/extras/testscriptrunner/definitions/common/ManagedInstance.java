@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.extras.testscriptrunner.definitions.common;
@@ -33,6 +33,8 @@ public final class ManagedInstance {
     private String installationId; // the id of the installation to run this instance/profile with
 
     private Integer serverPort; // currently only supporting one server port; could be changed later
+    
+    private String uplinkUserName;
 
     private final List<String> configuredAutostartConnectionIds = new ArrayList<>();
 
@@ -124,6 +126,14 @@ public final class ManagedInstance {
         }
         return content;
     }
+    
+    /**
+     * @param relativePath A path relative to the profile directory of this instance
+     * @return A file representing the absolute path to the given relative path
+     */
+    public synchronized File getAbsolutePathFromRelative(String relativePath) {
+        return instanceManagementService.resolveRelativePathWithinProfileDirectory(id, relativePath);
+    }
 
     /**
      * Must be called before starting the instance.
@@ -140,8 +150,15 @@ public final class ManagedInstance {
         potentiallyRunning = false;
     }
 
-    @SuppressWarnings("unused") // for future use
     public synchronized boolean getPotentiallyRunning() {
         return potentiallyRunning;
+    }
+
+    public String getUplinkUserName() {
+        return uplinkUserName;
+    }
+
+    public void setUplinkUserName(String uplinkUserName) {
+        this.uplinkUserName = uplinkUserName;
     }
 }

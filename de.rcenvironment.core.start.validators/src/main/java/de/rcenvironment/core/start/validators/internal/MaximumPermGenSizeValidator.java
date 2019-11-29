@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
@@ -66,7 +66,7 @@ public class MaximumPermGenSizeValidator extends DefaultInstanceValidator {
     
     private InstanceValidationResult createInstanceValidationResult(int minPermSizeValue, String minPermSizeUnit) {
         String errorMessage = Messages.permGenSizeTooLow + minPermSizeValue + minPermSizeUnit + ".";
-        return InstanceValidationResultFactory.createResultForFailureWhichAllowesToProceed(
+        return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(
             VALIDATION_DISPLAY_NAME, errorMessage);
     }
     

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.bootstrap.ui;
@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matcher;
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class ProfileSelectionUITest {
 
     private TempFileService tempFileService;
 
-    private LanternaTest lanternaTest;
+    private LanternaTestUtils lanternaTest;
 
     /**
      * Creates the test instance.
@@ -50,7 +51,7 @@ public class ProfileSelectionUITest {
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempFileService = TempFileServiceAccess.getInstance();
 
-        lanternaTest = new LanternaTest();
+        lanternaTest = new LanternaTestUtils();
         Runnable uiRunnable = new Runnable() {
 
             @Override
@@ -85,7 +86,7 @@ public class ProfileSelectionUITest {
 
         // create the assertion and navigate to the location where the error label should be displayed
         Queue<Matcher<char[][]>> assertions = new LinkedList<Matcher<char[][]>>();
-        assertions.add(TestTerminal.containsString("Unable to load most recently used profiles."));
+        assertions.add(TerminalStub.containsString("Unable to load most recently used profiles."));
         lanternaTest.addTestStage(new Key(Kind.Enter), assertions, 1);
 
         // exit the UI
@@ -94,7 +95,7 @@ public class ProfileSelectionUITest {
         lanternaTest.addTestStage(new Key(Kind.ArrowDown), 1);
         lanternaTest.addTestStage(new Key(Kind.Enter), 1);
 
-        lanternaTest.executeTests(true);
+        lanternaTest.executeTestsWithTimeout(5, TimeUnit.SECONDS);
 
         // reset
         TestUtils.resetSystemPropertyToOriginal(ProfileUtils.SYSTEM_PROPERTY_USER_HOME, originalUserHome);
@@ -115,11 +116,11 @@ public class ProfileSelectionUITest {
 
         // create the assertion and navigate to the location where the error label should be displayed
         Queue<Matcher<char[][]>> assertions = new LinkedList<Matcher<char[][]>>();
-        assertions.add(TestTerminal.containsString("The profiles parent directory cannot be created or it is not"));
-        assertions.add(TestTerminal.containsString("a directory."));
+        assertions.add(TerminalStub.containsString("The profiles parent directory cannot be created or it is not"));
+        assertions.add(TerminalStub.containsString("a directory."));
         lanternaTest.addTestStage(new Key(Kind.Enter), assertions, 1);
 
-        lanternaTest.executeTests(false);
+        lanternaTest.executeTests();
 
         // reset
         System.clearProperty(ProfileUtils.SYSTEM_PROPERTY_PROFILES_PARENT_DIRECTORY_OVERRIDE);

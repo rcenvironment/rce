@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.remoteaccess.server.internal;
@@ -59,9 +59,9 @@ import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
-import de.rcenvironment.core.component.workflow.execution.headless.api.ExtendedHeadlessWorkflowExecutionContextBuilder;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContext;
+import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContextBuilder;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DeletionBehavior;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DisposalBehavior;
@@ -89,12 +89,12 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides "remote access" operations. TODO outline RA concept
  * 
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 // TODO @7.0.0: remove duplicate javadoc
 // TODO @7.0.0: use better exception class than WorkflowExecutionException
@@ -274,14 +274,9 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         registerChangeListener();
         sessionTokenToWfExecInf = new HashMap<String, WorkflowExecutionInformation>();
 
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Server-Side Remote Access: Restore persistently published workflows",
+            this::restoreWorkflowTemplatesFromPublishedWfStorage);
 
-            @Override
-            @TaskDescription("Server-Side Remote Access: Restore persistently published workflows")
-            public void run() {
-                restoreWorkflowTemplatesFromPublishedWfStorage();
-            }
-        });
         embeddedSshServerControl.setAnnouncedVersionOrProperty("RemoteAccess",
             RemoteAccessConstants.PROTOCOL_VERSION_STRING);
     }
@@ -1515,9 +1510,9 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver();
 
         // TODO specify log directory?
-        ExtendedHeadlessWorkflowExecutionContextBuilder exeContextBuilder;
+        HeadlessWorkflowExecutionContextBuilder exeContextBuilder;
         try {
-            exeContextBuilder = new ExtendedHeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(),
+            exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(),
                 logDir);
         } catch (InvalidFilenameException e) {
             // This exception should never occur since the name of the workflow file used
@@ -1538,7 +1533,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         WorkflowExecutionException executionException = null;
         FinalWorkflowState finalState = FinalWorkflowState.FAILED;
         try {
-            HeadlessWorkflowExecutionContext context = exeContextBuilder.build();
+            HeadlessWorkflowExecutionContext context = exeContextBuilder.buildExtended();
             WorkflowExecutionInformation execInf = workflowExecutionService.startHeadlessWorkflowExecution(context);
             sessionTokenToWfExecInf.put(executionSetup.getSessionToken(), execInf);
             finalState = workflowExecutionService.waitForWorkflowTerminationAndCleanup(context);

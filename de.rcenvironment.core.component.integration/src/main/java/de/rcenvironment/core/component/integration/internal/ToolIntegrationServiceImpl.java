@@ -3,17 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.integration.internal;
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,13 +24,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Semaphore;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageInputStream;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,7 +44,6 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentIdRules;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
@@ -72,6 +63,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -82,13 +74,10 @@ import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.core.utils.incubator.ImageResize;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ToolIntegrationService}.
@@ -126,9 +115,37 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     private static final String POSSIBLE_VALUES = "possibleValues";
 
-    private static final int ICONSIZE32 = 32;
+    /** The icon sizes used in RCE. */
+    enum IconSize {
+        /** Icon size 16 * 16. */
+        ICONSIZE16(16, "icon16.png"),
+        /** Icon size 24 * 24. */
+        ICONSIZE24(24, "icon24.png"),
+        /** Icon size 32 * 32. */
+        ICONSIZE32(32, "icon32.png");
 
-    private static final int ICONSIZE16 = 16;
+        /** The size of the icon. */
+        private final int size;
+
+        /**
+         * The relative path to a pre-scaled version of the icon. The suffix of this path is used to determine the encoding of the
+         * pre-scaled version of the icon.
+         */
+        private final String path;
+
+        IconSize(int size, String path) {
+            this.size = size;
+            this.path = path;
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public String getPath() {
+            return path;
+        }
+    }
 
     private static final String COULD_NOT_READ_TOOL_CONFIGURATION = "Could not read tool configuration: ";
 
@@ -138,7 +155,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     private final Map<String, String> toolNameToPath = Collections.synchronizedMap(new HashMap<>());
 
-    private final Map<String, Map<String, Object>> integratedConfiguration = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Map<String, Object>> integratedConfiguration = Collections
+        .synchronizedMap(new HashMap<>());
 
     @Deprecated
     private final Set<String> publishedComponents = Collections.synchronizedSet(new HashSet<>());
@@ -147,9 +165,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-    // We explicitly do not mark the watchManager as a Reference, as it requires a ToolIntegrationService to be constructed. Hence, OSGI
-    // would be unable to instantiate the class during construction of ToolIntegrationService. Hence, we obtain an instance of this class
-    // only after all dependencies have been injected, i.e., during the activation-method.
+    // We explicitly do not mark the watchManager as a Reference, as it requires a
+    // ToolIntegrationService to be constructed. Hence, OSGI
+    // would be unable to instantiate the class during construction of
+    // ToolIntegrationService. Hence, we obtain an instance of this class
+    // only after all dependencies have been injected, i.e., during the
+    // activation-method.
     private ToolIntegrationFileWatcherManager watchManager;
 
     private ToolIntegrationContextRegistry toolIntegrationContextRegistry;
@@ -159,6 +180,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     private LogicalNodeId localLogicalNodeId;
 
     private AuthorizationService authorizationService;
+
+    private IconHelper iconHelper;
 
     private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
 
@@ -173,16 +196,17 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context, boolean savePublished) {
-        byte[] icon16 = readIcons(ICONSIZE16, configurationMap, context);
-        byte[] icon32 = readIcons(ICONSIZE32, configurationMap, context);
-        String docuHash = createDocumentationHash(configurationMap, context);
-        String toolName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
-        String toolComponentID = context.getPrefixForComponentId()
-            + toolName;
-        String toolClassName = context.getImplementingComponentClassName();
-        String version = ((Map<String, String>) ((List<Object>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
-            .get(ToolIntegrationConstants.KEY_VERSION);
+    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context,
+        boolean savePublished) {
+        final File toolDirFile = createToolDirFile(configurationMap, context);
+        final byte[] icon16 = iconHelper.getIcon(IconSize.ICONSIZE16, configurationMap, toolDirFile);
+        final byte[] icon32 = iconHelper.getIcon(IconSize.ICONSIZE32, configurationMap, toolDirFile);
+        final String docuHash = createDocumentationHash(configurationMap, context);
+        final String toolName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+        final String toolComponentID = context.getPrefixForComponentId() + toolName;
+        final String toolClassName = context.getImplementingComponentClassName();
+        final String version = ((Map<String, String>) ((List<Object>) configurationMap
+            .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0)).get(ToolIntegrationConstants.KEY_VERSION);
         String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
 
         if (!areConfigurationIdsValide(toolName, version, groupName)) {
@@ -192,15 +216,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
         EndpointDefinitionsProvider inputProvider;
         EndpointDefinitionsProvider outputProvider;
-        // tool publication mixed into tool integration is deprecated; see Mantis #16044
-        // boolean isPublished = false;
-        // readPublishedComponents(context);
-        // if ((publishedComponents.contains(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)) || publishedComponents
-        // .contains(context.getRootPathToToolIntegrationDirectory() + File.separator
-        // + context.getNameOfToolIntegrationDirectory()
-        // + File.separator + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
-        // isPublished = true;
-        // }
+
         ConfigurationDefinition configuration;
         try {
             Set<EndpointDefinition> inputs = createInputs(configurationMap);
@@ -212,11 +228,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             configuration = generateConfiguration(configurationMap);
         } catch (IllegalArgumentException e) {
             log.warn("Could not read endpoints from " + toolComponentID + ": ", e);
-            inputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
-            outputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
-            configuration =
-                ComponentConfigurationModelFactory.createConfigurationDefinition(new LinkedList<>(), new LinkedList<>(),
-                    new LinkedList<>(), new HashMap<String, String>());
+            inputProvider = ComponentEndpointModelFactory
+                .createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
+            outputProvider = ComponentEndpointModelFactory
+                .createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
+            configuration = ComponentConfigurationModelFactory.createConfigurationDefinition(new LinkedList<>(),
+                new LinkedList<>(), new LinkedList<>(), new HashMap<String, String>());
         }
         if (groupName == null || groupName.isEmpty()) {
             groupName = context.getComponentGroupId();
@@ -225,35 +242,30 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         supportedIds.add(toolComponentID);
         supportedIds.add(ToolIntegrationConstants.COMPONENT_IDS[1] + "_"
             + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-        ComponentInterface componentInterface =
-            new ComponentInterfaceBuilder()
-                .setIdentifier(toolComponentID)
-                .setIdentifiers(supportedIds)
-                .setDisplayName((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))
-                .setGroupName(groupName)
-                .setIcon16(icon16)
-                .setIcon32(icon32)
-                .setDocumentationHash(docuHash)
-                .setVersion(version)
-                .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
-                .setConfigurationDefinition(configuration)
-                .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
-                .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
-                .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
-                .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
-                .build();
+        ComponentInterface componentInterface = new ComponentInterfaceBuilder().setIdentifier(toolComponentID)
+            .setIdentifiers(supportedIds)
+            .setDisplayName((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))
+            .setGroupName(groupName).setIcon16(icon16).setIcon32(icon32).setDocumentationHash(docuHash)
+            .setVersion(version).setInputDefinitionsProvider(inputProvider)
+            .setOutputDefinitionsProvider(outputProvider).setConfigurationDefinition(configuration)
+            .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
+            .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
+            .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
+            .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD).build();
 
         String limitExecutionCount = "";
         if ((((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
             .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) != null) {
-            limitExecutionCount = (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
-                .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES);
+            limitExecutionCount = (((List<Map<String, String>>) configurationMap
+                .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+                    .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES);
         } else {
-            limitExecutionCount = (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
-                .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
+            limitExecutionCount = (((List<Map<String, String>>) configurationMap
+                .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+                    .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
         }
-        String maxParallelCountString =
-            (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+        String maxParallelCountString = (((List<Map<String, String>>) configurationMap
+            .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
                 .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT);
 
         Integer maxParallelCount = null;
@@ -267,21 +279,18 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 maxParallelCount = 1;
             }
         }
-        ComponentInstallation ci =
-            new ComponentInstallationBuilder()
-                .setComponentRevision(
-                    new ComponentRevisionBuilder()
-                        .setComponentInterface(componentInterface)
-                        .setClassName(toolClassName).build())
-                .setNodeId(localLogicalNodeId)
-                // For testing purposes:
-                // .setNodeId(platformService.createTransientLocalLogicalNodeId())
-                .setInstallationId(componentInterface.getIdentifierAndVersion())
-                .setMaximumCountOfParallelInstances(maxParallelCount)
-                .build();
+        ComponentInstallation ci = new ComponentInstallationBuilder()
+            .setComponentRevision(new ComponentRevisionBuilder().setComponentInterface(componentInterface)
+                .setClassName(toolClassName).build())
+            .setNodeId(localLogicalNodeId)
+            // For testing purposes:
+            // .setNodeId(platformService.createTransientLocalLogicalNodeId())
+            .setInstallationId(componentInterface.getIdentifierAndVersion())
+            .setMaximumCountOfParallelInstances(maxParallelCount).build();
         if (configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) == null
             || (Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE)) {
-            // not setting any publication permissions here; this will be handled by the registration service
+            // not setting any publication permissions here; this will be handled by the
+            // registration service
             localComponentRegistry.registerOrUpdateLocalComponentInstallation(ci);
         }
 
@@ -295,30 +304,28 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         boolean valid = true;
         Optional<String> toolNameValidation = ComponentIdRules.validateComponentIdRules(toolName);
         if (toolNameValidation.isPresent()) {
-            log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "tool name",
-                toolNameValidation.get()));
+            log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "tool name", toolNameValidation.get()));
             valid = false;
         }
         if (version != null) {
             Optional<String> versionValidation = ComponentIdRules.validateComponentVersionRules(version);
             if (versionValidation.isPresent()) {
-                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "version",
-                    versionValidation.get()));
+                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "version", versionValidation.get()));
                 valid = false;
             }
         }
         if (groupName != null && !groupName.isEmpty()) {
             Optional<String> groupValidation = ComponentIdRules.validateComponentGroupNameRules(groupName);
             if (groupValidation.isPresent()) {
-                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "group name",
-                    groupValidation.get()));
+                log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "group name", groupValidation.get()));
                 valid = false;
             }
         }
         return valid;
     }
 
-    private String createDocumentationHash(final Map<String, Object> configurationMap, final ToolIntegrationContext context) {
+    private String createDocumentationHash(final Map<String, Object> configurationMap,
+        final ToolIntegrationContext context) {
         final File toolDir = createToolDirFile(configurationMap, context);
         final File docDir = new File(toolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
         if (!docDir.exists()) {
@@ -344,26 +351,28 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         boolean valid = true;
         BigInteger directorySize = FileUtils.sizeOfDirectoryAsBigInteger(docDir);
         if (DOCU_DIRECTORY_MAXIMUM_SIZE.compareTo(directorySize) < 0) {
-            log.error(StringUtils.format("Size of documentation directory %s too big (max. 50 Mb).", docDir.getAbsolutePath()));
+            log.error(StringUtils.format("Size of documentation directory %s too big (max. 50 Mb).",
+                docDir.getAbsolutePath()));
             valid = false;
         }
         for (File f : docDir.listFiles()) {
             if (f.isDirectory()) {
-                log.error(StringUtils.format("Directories not allowed in documentation directory %s.", docDir.getAbsolutePath()));
+                log.error(StringUtils.format("Directories not allowed in documentation directory %s.",
+                    docDir.getAbsolutePath()));
                 valid = false;
-            } else if (!ArrayUtils.contains(
-                ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, FilenameUtils.getExtension(f.getName()))) {
+            } else if (!ArrayUtils.contains(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS,
+                FilenameUtils.getExtension(f.getName()))) {
 
                 // ignore .nfs files since they are an delete artifact
                 if (CrossPlatformFilenameUtils.isNFSFile(f.getName())) {
                     continue;
                 }
 
-                log.error(
-                    StringUtils.format("Invalid filetype of %s in documentation directory %s. (Valid filetypes: %s)", f.getName(),
-                        docDir.getAbsolutePath(),
-                        Arrays.toString(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS).replaceAll("\\[", "").replaceAll("\\]",
-                            "")));
+                log.error(StringUtils.format(
+                    "Invalid filetype of %s in documentation directory %s. (Valid filetypes: %s)", f.getName(),
+                    docDir.getAbsolutePath(),
+                    Arrays.toString(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS).replaceAll("\\[", "")
+                        .replaceAll("\\]", "")));
                 valid = false;
             }
         }
@@ -371,57 +380,9 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     }
 
     private File createToolDirFile(Map<String, Object> configurationMap, ToolIntegrationContext context) {
-        return new File(new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory()),
+        return new File(
+            new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory()),
             (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-    }
-
-    private byte[] readIcons(int size, Map<String, Object> configurationMap, ToolIntegrationContext context) {
-        byte[] iconArray = null;
-        iconArray = readDefaultToolIcon(size);
-        String iconPath = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
-
-        if (iconPath != null && !iconPath.isEmpty()) {
-            if (!new File(iconPath).isAbsolute()) {
-                iconPath = context.getRootPathToToolIntegrationDirectory() + File.separator + context.getNameOfToolIntegrationDirectory()
-                    + File.separator + context.getToolDirectoryPrefix() + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)
-                    + File.separator + iconPath;
-            }
-            File icon = new File(iconPath);
-            if (icon.exists() && icon.isFile()) {
-                try {
-                    final File iconsource = icon;
-                    final File icontarget = TempFileServiceAccess.getInstance().createTempFileFromPattern("icon_" + size + "*.png");
-                    Image image = ImageIO.read(icon);
-                    if (image == null) {
-                        iconArray = readDefaultToolIcon(size);
-                    } else {
-                        if (iconsource.exists()) {
-                            try (FileImageInputStream imageInputStream = new FileImageInputStream(iconsource)) {
-                                BufferedImage bi = ImageResize.resize(ImageIO.read(imageInputStream), size);
-                                if (bi != null && icontarget != null) {
-                                    ImageIO.write(bi, "PNG", icontarget);
-                                    iconArray = FileUtils.readFileToByteArray(icontarget);
-                                    TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(icontarget);
-                                }
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    log.debug("Could not load icon, use default icon");
-                }
-            }
-        }
-        return iconArray;
-    }
-
-    private byte[] readDefaultToolIcon(int iconSize) {
-        try (InputStream inputStream = ToolIntegrationServiceImpl.class.getResourceAsStream("/resources/icons/tool" + iconSize + ".png")) {
-            return IOUtils.toByteArray(inputStream);
-        } catch (FileNotFoundException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -434,8 +395,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
         if (integratedConfiguration.containsKey(toolComponentID)) {
             String toolIDAndVersion = toolComponentID + ComponentConstants.ID_SEPARATOR
-                + ((List<Map<String, String>>) integratedConfiguration
-                    .get(toolComponentID).get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0)
+                + ((List<Map<String, String>>) integratedConfiguration.get(toolComponentID)
+                    .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0)
                         .get(ToolIntegrationConstants.KEY_VERSION);
             synchronized (integratedConfiguration) {
                 integratedConfiguration.remove(toolComponentID);
@@ -457,7 +418,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     @SuppressWarnings("unchecked")
     private void readConfigurationWithMetaDataToLists(Map<String, Object> configurationMap, List<Object> configuration,
         List<Object> configurationMetadata) {
-        Map<String, Object> properties = (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
+        Map<String, Object> properties = (Map<String, Object>) configurationMap
+            .get(ToolIntegrationConstants.KEY_PROPERTIES);
         if (properties != null) {
             for (String groupKey : properties.keySet()) {
                 Map<String, Object> group = (Map<String, Object>) properties.get(groupKey);
@@ -468,12 +430,14 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 }
                 for (String propertyOrConfigfile : group.keySet()) {
                     int i = 0;
-                    if (!(group.get(propertyOrConfigfile) instanceof String || group.get(propertyOrConfigfile) instanceof Boolean)) {
+                    if (!(group.get(propertyOrConfigfile) instanceof String
+                        || group.get(propertyOrConfigfile) instanceof Boolean)) {
                         Map<String, String> property = (Map<String, String>) group.get(propertyOrConfigfile);
                         Map<String, String> config = new HashMap<>();
                         config.put(ConfigurationDefinitionConstants.KEY_CONFIGURATION_KEY,
                             property.get(ToolIntegrationConstants.KEY_PROPERTY_KEY));
-                        config.put(ComponentConstants.KEY_DEFAULT_VALUE, property.get(ToolIntegrationConstants.KEY_PROPERTY_DEFAULT_VALUE));
+                        config.put(ComponentConstants.KEY_DEFAULT_VALUE,
+                            property.get(ToolIntegrationConstants.KEY_PROPERTY_DEFAULT_VALUE));
                         configuration.add(config);
                         Map<String, String> configMetadata = new HashMap<>();
                         configMetadata.put(ConfigurationDefinitionConstants.KEY_METADATA_GUI_NAME,
@@ -491,7 +455,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             }
         }
         Map<String, String> historyConfig = new HashMap<>();
-        historyConfig.put(ConfigurationDefinitionConstants.KEY_CONFIGURATION_KEY, ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM);
+        historyConfig.put(ConfigurationDefinitionConstants.KEY_CONFIGURATION_KEY,
+            ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM);
         historyConfig.put(ComponentConstants.KEY_DEFAULT_VALUE, "" + false);
         configuration.add(historyConfig);
     }
@@ -508,19 +473,19 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             }
         }
         configuration.put(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY,
-            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0).get(
-                ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY));
+            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0)
+                .get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY));
 
         configuration.put(ToolIntegrationConstants.KEY_TOOL_DIRECTORY,
-            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0).get(
-                ToolIntegrationConstants.KEY_TOOL_DIRECTORY));
+            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0)
+                .get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY));
         return configuration;
     }
 
     @SuppressWarnings("unchecked")
     private Set<EndpointDefinition> createOutputs(Map<String, Object> configurationMap) {
-        List<Map<String, String>> definedOutputs =
-            (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_OUTPUTS);
+        List<Map<String, String>> definedOutputs = (List<Map<String, String>>) configurationMap
+            .get(ToolIntegrationConstants.KEY_ENDPOINT_OUTPUTS);
         Set<EndpointDefinition> outputs = new HashSet<>();
         if (definedOutputs != null) {
             for (Map<String, String> output : definedOutputs) {
@@ -534,8 +499,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             }
         }
 
-        List<Map<String, Object>> dynamicOutputs =
-            (List<Map<String, Object>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_OUTPUTS);
+        List<Map<String, Object>> dynamicOutputs = (List<Map<String, Object>>) configurationMap
+            .get(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_OUTPUTS);
 
         if (dynamicOutputs != null) {
             for (Map<String, Object> output : dynamicOutputs) {
@@ -546,7 +511,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 dataTypes.addAll((List<String>) output.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPES));
                 description.put(DATA_TYPES, dataTypes);
 
-                Map<String, Object> metadata = (Map<String, Object>) output.get(ToolIntegrationConstants.KEY_ENDPOINT_METADATA);
+                Map<String, Object> metadata = (Map<String, Object>) output
+                    .get(ToolIntegrationConstants.KEY_ENDPOINT_METADATA);
                 description.put(META_DATA, metadata);
                 outputs.add(ComponentEndpointModelFactory.createEndpointDefinition(description, EndpointType.OUTPUT));
             }
@@ -556,13 +522,14 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     @SuppressWarnings("unchecked")
     private Set<EndpointDefinition> createInputs(Map<String, Object> configurationMap) {
-        List<Map<String, String>> definedInputs =
-            (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_INPUTS);
+        List<Map<String, String>> definedInputs = (List<Map<String, String>>) configurationMap
+            .get(ToolIntegrationConstants.KEY_ENDPOINT_INPUTS);
         Set<EndpointDefinition> inputs = new HashSet<>();
         if (definedInputs != null) {
             for (Map<String, String> input : definedInputs) {
                 Map<String, Object> description = new HashMap<>();
-                description.put(EndpointDefinitionConstants.KEY_NAME, input.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
+                description.put(EndpointDefinitionConstants.KEY_NAME,
+                    input.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
                 description.put(DEFAULT_DATA_TYPE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
                 List<String> dataTypes = new LinkedList<>();
                 dataTypes.add(input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
@@ -572,9 +539,11 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 // migration code: usage (required, initial, optional) -> constant, single
                 String[] inputHandlings;
                 if (input.containsKey(ToolIntegrationConstants.KEY_INPUT_HANDLING)) {
-                    inputHandlings = StringUtils.splitAndUnescape(input.get(ToolIntegrationConstants.KEY_INPUT_HANDLING));
+                    inputHandlings = StringUtils
+                        .splitAndUnescape(input.get(ToolIntegrationConstants.KEY_INPUT_HANDLING));
                     if (input.containsKey(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING)) {
-                        description.put(DEFAULT_INPUT_HANDLING, input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING));
+                        description.put(DEFAULT_INPUT_HANDLING,
+                            input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING));
                     } else {
                         description.put(DEFAULT_INPUT_HANDLING, inputHandlings[0]);
                     }
@@ -590,8 +559,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 // migration code: usage (required, initial, optional) -> required, not required
                 String[] inputExecutionConstraints;
                 if (input.containsKey(ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT)) {
-                    inputExecutionConstraints = StringUtils.splitAndUnescape(input
-                        .get(ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT));
+                    inputExecutionConstraints = StringUtils
+                        .splitAndUnescape(input.get(ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT));
                     if (input.containsKey(ToolIntegrationConstants.KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT)) {
                         description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT,
                             input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT));
@@ -599,9 +568,11 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                         description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT, inputExecutionConstraints[0]);
                     }
                 } else {
-                    inputExecutionConstraints = new String[] { EndpointDefinition.InputExecutionContraint.Required.name() };
+                    inputExecutionConstraints = new String[] {
+                        EndpointDefinition.InputExecutionContraint.Required.name() };
                     if (input.get(ToolIntegrationConstants.KEY_ENDPOINT_USAGE).equals("optional")) {
-                        inputExecutionConstraints = new String[] { EndpointDefinition.InputExecutionContraint.NotRequired.name() };
+                        inputExecutionConstraints = new String[] {
+                            EndpointDefinition.InputExecutionContraint.NotRequired.name() };
                     }
                     description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT, inputExecutionConstraints[0]);
                 }
@@ -609,7 +580,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
                 Map<String, Map<String, Object>> metadata = new HashMap<>();
                 if ((input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.FileReference.name())
-                    || input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.DirectoryReference.name()))
+                    || input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE)
+                        .equals(DataType.DirectoryReference.name()))
                     && input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME) != null) {
                     Map<String, Object> metadataFilename = new HashMap<>();
                     metadataFilename.put(EndpointDefinitionConstants.KEY_GUI_NAME, "Filename");
@@ -619,7 +591,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                     possibleValuesListFilename.add(input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME));
                     metadataFilename.put(POSSIBLE_VALUES, possibleValuesListFilename);
                     metadataFilename.put(DEFAULT_VALUE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME));
-                    metadataFilename.put(EndpointDefinitionConstants.KEY_VISIBILITY, Visibility.developerConfigurable.toString());
+                    metadataFilename.put(EndpointDefinitionConstants.KEY_VISIBILITY,
+                        Visibility.developerConfigurable.toString());
                     metadata.put(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME, metadataFilename);
                 }
 
@@ -628,8 +601,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             }
         }
         if (configurationMap.containsKey(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_INPUTS)) {
-            List<Map<String, Object>> dynamicInputs =
-                (List<Map<String, Object>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_INPUTS);
+            List<Map<String, Object>> dynamicInputs = (List<Map<String, Object>>) configurationMap
+                .get(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_INPUTS);
             for (Map<String, Object> input : dynamicInputs) {
                 Map<String, Object> description = new HashMap<>();
                 description.put(IDENTIFIER, input.get(ToolIntegrationConstants.KEY_ENDPOINT_IDENTIFIER));
@@ -638,10 +611,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 dataTypes.addAll((List<String>) input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPES));
                 description.put(DATA_TYPES, dataTypes);
 
-                Map<String, Object> metadata = (Map<String, Object>) input.get(ToolIntegrationConstants.KEY_ENDPOINT_METADATA);
+                Map<String, Object> metadata = (Map<String, Object>) input
+                    .get(ToolIntegrationConstants.KEY_ENDPOINT_METADATA);
                 description.put(META_DATA, metadata);
 
-                // migration code: usage (required, initial, optional) -> consuming vs. immutable
+                // migration code: usage (required, initial, optional) -> consuming vs.
+                // immutable
                 // and required vs. required if connected
                 if (metadata.containsKey("usage")) {
                     description.put(DEFAULT_INPUT_HANDLING, EndpointDefinition.InputDatumHandling.Single.name());
@@ -652,15 +627,19 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                     description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT,
                         EndpointDefinition.InputExecutionContraint.Required.name());
                     List<String> inputinputExecutionConstraintOptions = new LinkedList<>();
-                    inputinputExecutionConstraintOptions.add(EndpointDefinition.InputExecutionContraint.Required.name());
-                    inputinputExecutionConstraintOptions.add(EndpointDefinition.InputExecutionContraint.RequiredIfConnected.name());
+                    inputinputExecutionConstraintOptions
+                        .add(EndpointDefinition.InputExecutionContraint.Required.name());
+                    inputinputExecutionConstraintOptions
+                        .add(EndpointDefinition.InputExecutionContraint.RequiredIfConnected.name());
                     description.put(INPUT_EXECUTION_CONSTRAINTS, inputinputExecutionConstraintOptions);
                     metadata.remove("usage");
                 } else {
                     if (input.containsKey(ToolIntegrationConstants.KEY_INPUT_HANDLING_OPTIONS)) {
-                        description.put(DEFAULT_INPUT_HANDLING, input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING));
+                        description.put(DEFAULT_INPUT_HANDLING,
+                            input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING));
                         List<String> inputHandlingOptions = new LinkedList<>();
-                        inputHandlingOptions.addAll((List<String>) input.get(ToolIntegrationConstants.KEY_INPUT_HANDLING_OPTIONS));
+                        inputHandlingOptions
+                            .addAll((List<String>) input.get(ToolIntegrationConstants.KEY_INPUT_HANDLING_OPTIONS));
                         description.put(INPUT_HANDLINGS, inputHandlingOptions);
                     }
 
@@ -688,10 +667,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         String configFolder = context.getRootPathToToolIntegrationDirectory();
         File toolIntegrationFile = new File(configFolder, context.getNameOfToolIntegrationDirectory());
         readPublishedComponents(context);
-        if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles().length > 0) {
+        if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory()
+            && toolIntegrationFile.listFiles().length > 0) {
             log.debug("Initializing tool integration root directory " + toolIntegrationFile.getAbsolutePath());
             for (File toolFolder : toolIntegrationFile.listFiles()) {
-                if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) { // to review: why is this "null" check needed?
+                if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) { // to review: why is this "null"
+                                                                                        // check needed?
                     log.debug("Initializing tool directory " + toolFolder.getAbsolutePath());
                     readToolDirectory(toolFolder, context);
                 }
@@ -710,12 +691,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         File configFile = new File(toolFolder, context.getConfigurationFilename());
         if (configFile.exists() && configFile.isFile()) {
             try {
-                Map<String, Object> configurationMap =
-                    mapper.readValue(configFile,
-                        new HashMap<String, Object>().getClass());
+                Map<String, Object> configurationMap = mapper.readValue(configFile,
+                    new HashMap<String, Object>().getClass());
                 if (!integratedConfiguration.containsKey(context.getPrefixForComponentId()
                     + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
-                    toolNameToPath.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), toolFolder.getAbsolutePath());
+                    toolNameToPath.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
+                        toolFolder.getAbsolutePath());
 
                     checkIcon(toolFolder, configurationMap);
 
@@ -737,13 +718,18 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     }
 
     private void checkIcon(File toolFolder, Map<String, Object> configurationMap) {
-        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
-            File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
-            if (!icon.isAbsolute()) {
-                icon = new File(toolFolder, icon.getName());
+        // Review, the commented out version of this code does nothing. Maybe the
+        // intention here was to sanitize the input, i.e., to
+        // make sure that the properties concerning the tool icon are properly set and
+        // sane
 
-            }
-        }
+        /*
+         * if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) { File icon = new File((String)
+         * configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)); if (!icon.isAbsolute()) { icon = new File(toolFolder,
+         * icon.getName());
+         * 
+         * } }
+         */
     }
 
     @Override
@@ -753,26 +739,26 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             configurationMap.put(ToolIntegrationConstants.KEY_TOOL_INTEGRATION_VERSION,
                 ToolIntegrationConstants.CURRENT_TOOLINTEGRATION_VERSION);
         }
-        // TODO : Code for removing deprecated key; should be removed in the future 8/3/16 zur_sa
-        @SuppressWarnings("unchecked") Map<String, String> launchSettings =
-            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0);
+        // TODO : Code for removing deprecated key; should be removed in the future
+        // 8/3/16 zur_sa
+        @SuppressWarnings("unchecked") Map<String, String> launchSettings = ((List<Map<String, String>>) configurationMap
+            .get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0);
         String value = launchSettings.remove(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
         if (!launchSettings.containsKey(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) && value != null) {
             launchSettings.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES, value);
         }
 
-        File toolConfigFile =
-            new File(folder, information.getNameOfToolIntegrationDirectory() + File.separator
-                + information.getToolDirectoryPrefix() + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+        File toolConfigFile = new File(folder, information.getNameOfToolIntegrationDirectory() + File.separator
+            + information.getToolDirectoryPrefix() + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
         toolConfigFile.mkdirs();
-        handleToolIcon(configurationMap, toolConfigFile);
+        iconHelper.prescaleAndCopyIcon(configurationMap, toolConfigFile);
         handleDoc(configurationMap, toolConfigFile);
         // deprecated, remove when done; see Mantis #16044
         // configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
         Map<String, Object> sortedMap = new TreeMap<>();
         sortedMap.putAll(configurationMap);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(new File(toolConfigFile, information.getConfigurationFilename()),
-            sortedMap);
+        mapper.writerWithDefaultPrettyPrinter()
+            .writeValue(new File(toolConfigFile, information.getConfigurationFilename()), sortedMap);
         toolNameToPath.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
             toolConfigFile.getAbsolutePath());
     }
@@ -789,7 +775,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                         try {
                             FileUtils.forceDelete(f);
                         } catch (IOException e) {
-                            log.error("Could not delete old documentation file: " + f.getAbsolutePath() + ": " + e.getMessage());
+                            log.error("Could not delete old documentation file: " + f.getAbsolutePath() + ": "
+                                + e.getMessage());
                         }
                     }
                 }
@@ -806,40 +793,22 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         }
     }
 
-    private void handleToolIcon(Map<String, Object> configurationMap, File toolConfigFile) {
-        if ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null
-            && !((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)).isEmpty()) {
-            File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
-            if (configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON) != null
-                && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON)) {
-                if (icon.exists() && icon.isFile() && icon.isAbsolute()) {
-                    File destination = new File(toolConfigFile, icon.getName());
-                    if (!destination.getAbsolutePath().equals(icon.getAbsolutePath())) {
-                        try {
-                            FileUtils.copyFile(icon, destination);
-                            configurationMap.remove(ToolIntegrationConstants.KEY_UPLOAD_ICON);
-                            configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getName());
-                        } catch (IOException e) {
-                            log.warn("Could not copy icon to tool directory: ", e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     @Override
-    public void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext information) throws IOException {
+    public void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext information)
+        throws IOException {
         String configFolder = information.getRootPathToToolIntegrationDirectory();
         writeToolIntegrationFileToSpecifiedFolder(configFolder, configurationMap, information);
     }
 
     private void readPublishedComponents(ToolIntegrationContext context) {
-        File toolsfolder = new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
+        File toolsfolder = new File(context.getRootPathToToolIntegrationDirectory(),
+            context.getNameOfToolIntegrationDirectory());
         if (toolsfolder.exists()) {
             try {
-                File publishedComponentsFile = new File(toolsfolder, ToolIntegrationConstants.PUBLISHED_COMPONENTS_FILENAME);
-                // deprecated mechanism - the file is only checked to log backwards compatibility warnings; see Mantis #16044
+                File publishedComponentsFile = new File(toolsfolder,
+                    ToolIntegrationConstants.PUBLISHED_COMPONENTS_FILENAME);
+                // deprecated mechanism - the file is only checked to log backwards
+                // compatibility warnings; see Mantis #16044
                 if (publishedComponentsFile.isFile()) {
                     Set<String> newPublishedComponents = new HashSet<>(FileUtils.readLines(publishedComponentsFile));
                     for (String newComp : newPublishedComponents) {
@@ -891,23 +860,18 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     protected void activate() {
         watchManager = fileWatcherManagerBuilder.build(this);
 
-        asyncTaskService.execute(new Runnable() {
+        asyncTaskService.execute("Initialize all provided ToolIntegrationContexts", () -> {
 
-            @Override
-            @TaskDescription("Initialize all provided ToolIntegrationContexts")
-            public void run() {
-                ToolIntegrationContext context;
-                while ((context = toolIntegrationContextRegistry.fetchNextUninitializedToolIntegrationContext()) != null) {
-                    if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
-                        log.debug("Registering " + ToolIntegrationContext.class.getSimpleName() + " " + context.getContextId());
-                        integrateToolIntegrationContext(context);
-                    }
+            ToolIntegrationContext context;
+            while ((context = toolIntegrationContextRegistry.fetchNextUninitializedToolIntegrationContext()) != null) {
+                if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
+                    log.debug("Registering " + ToolIntegrationContext.class.getSimpleName() + " " + context.getContextId());
+                    integrateToolIntegrationContext(context);
                 }
-                log.debug("Received termination signal from " + ToolIntegrationContext.class.getSimpleName() + " queue");
-                localComponentRegistry.reportToolIntegrationRegistrationComplete();
             }
+            log.debug("Received termination signal from " + ToolIntegrationContext.class.getSimpleName() + " queue");
+            localComponentRegistry.reportToolIntegrationRegistrationComplete();
         });
-
     }
 
     /**
@@ -981,7 +945,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     @Override
     public void updatePublishedComponents(ToolIntegrationContext context) {
-        // note: this code is still left in place to prevent side effects, but no publication settings are loaded anymore;
+        // note: this code is still left in place to prevent side effects, but no
+        // publication settings are loaded anymore;
         // see see Mantis #16044
         Set<String> oldPublishedComponents = new HashSet<>();
         synchronized (publishedComponents) {
@@ -1041,11 +1006,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         String name = identifier.substring(context.getPrefixForComponentId().length());
         name = name.substring(0, name.indexOf(ComponentConstants.ID_SEPARATOR));
 
-        final File sourceDirectory = new File(toolNameToPath.get(name),
-            ToolIntegrationConstants.DOCS_DIR_NAME);
+        final File sourceDirectory = new File(toolNameToPath.get(name), ToolIntegrationConstants.DOCS_DIR_NAME);
 
-        final byte[] resultData =
-            FileCompressionService.compressDirectoryToByteArray(sourceDirectory, FileCompressionFormat.ZIP, false);
+        final byte[] resultData = FileCompressionService.compressDirectoryToByteArray(sourceDirectory,
+            FileCompressionFormat.ZIP, false);
 
         if (resultData == null) {
             log.error("Was not able to create an archive for documentation due to a compression issue.");
@@ -1103,6 +1067,15 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             Thread.currentThread().interrupt();
             return;
         }
+    }
+
+    @Reference
+    private void bindIconHelper(IconHelper newInstance) {
+        this.iconHelper = newInstance;
+    }
+
+    private void unbindIconHelper(IconHelper oldInstance) {
+        this.iconHelper = null;
     }
 
 }

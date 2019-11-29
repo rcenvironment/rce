@@ -3,16 +3,18 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
+import org.apache.sshd.server.shell.ShellFactory;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
+import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSessionService;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
 
 /**
@@ -21,7 +23,7 @@ import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
  * @author Sebastian Holtappels
  * @author Robert Mischke
  */
-public class CustomSshCommandFactory implements Factory<Command>, CommandFactory {
+public class CustomSshCommandFactory implements CommandFactory, ShellFactory {
 
     private CommandExecutionService commandExecutionService;
 
@@ -29,31 +31,40 @@ public class CustomSshCommandFactory implements Factory<Command>, CommandFactory
 
     private ScpContextManager scpContextManager;
 
+    private ServerSideUplinkSessionService uplinkSessionService;
+
     private SshConfiguration sshConfiguration;
 
     // ShellFactory - Methods
 
     public CustomSshCommandFactory(SshAuthenticationManager authenticationManager, ScpContextManager scpContextManager,
-        CommandExecutionService commandExecutionService, SshConfiguration sshConfiguration) {
+        CommandExecutionService commandExecutionService, ServerSideUplinkSessionService uplinkSessionService,
+        SshConfiguration sshConfiguration) {
         this.sshConfiguration = sshConfiguration;
         this.authenticationManager = authenticationManager;
         this.scpContextManager = scpContextManager;
+        this.uplinkSessionService = uplinkSessionService;
         this.commandExecutionService = commandExecutionService;
     }
 
     @Override
-    public Command create() {
-        return createCommand(null);
+    public Command createShell(ChannelSession channelSession) {
+        return createCommand(null, null);
     }
 
     // CommandFactory - Methods
 
     @Override
-    public Command createCommand(String command) {
+    public Command createCommand(ChannelSession channelSession, String command) {
         Command result = null;
         if (command != null && command.trim().startsWith(SshConstants.SCP_COMMAND)) {
+            // SCP commands
             result = new ScpCommandWrapper(command, scpContextManager);
+        } else if (SshConstants.SSH_UPLINK_VIRTUAL_CONSOLE_COMMAND.equals(command)) {
+            // Uplink pseudo-command execution
+            result = new SshUplinkCommandHandler(uplinkSessionService, authenticationManager);
         } else {
+            // SSH command execution and interactive shell
             result = new SshCommandHandler(command, authenticationManager, commandExecutionService, sshConfiguration);
         }
         return result;

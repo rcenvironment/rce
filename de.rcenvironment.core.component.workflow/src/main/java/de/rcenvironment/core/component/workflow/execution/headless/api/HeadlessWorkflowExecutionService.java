@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.headless.api;
@@ -16,6 +16,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionE
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
+import de.rcenvironment.core.component.workflow.execution.headless.internal.ExtendedHeadlessWorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionVerificationRecorder;
 import de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionVerificationResult;
 
@@ -30,6 +31,7 @@ import de.rcenvironment.core.component.workflow.execution.headless.internal.Head
  * @author Sascha Zur
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public interface HeadlessWorkflowExecutionService extends WorkflowExecutionService {
 
@@ -70,7 +72,7 @@ public interface HeadlessWorkflowExecutionService extends WorkflowExecutionServi
      * @return the state that the workflow finished with
      * @throws WorkflowExecutionException on execution failure
      */
-    FinalWorkflowState executeWorkflow(HeadlessWorkflowExecutionContext headlessWfExeContext) throws WorkflowExecutionException;
+    FinalWorkflowState executeWorkflow(ExtendedHeadlessWorkflowExecutionContext headlessWfExeContext) throws WorkflowExecutionException;
 
     /**
      * Starts workflow execution (prepareContextForExecution has to be run first to get extended execution context).

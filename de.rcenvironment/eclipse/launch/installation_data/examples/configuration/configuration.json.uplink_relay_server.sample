@@ -1,0 +1,26 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for an uplink relay. It allows different clients (possibly from different organizations) to connect and share their tools
+// over a secure connection. For each client, an own account can be configured. The "role" of each account has to be "uplink_client" to use this feature. 
+//
+// If several clients are to use the same account, they have to set different client IDs in their configurations. 
+//
+
+{
+	"general" : {
+		"instanceName" : "Example uplink relay started by \"${systemUser}\" on ${hostName}"
+	},
+	"sshServer" : {
+		"enabled" : true,
+		"ip" : "127.0.0.1",
+		"port" : 31055,
+		"accounts" : {
+			"ra_demo" : {
+				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$qxCBuEvq0xWoOlox2dVbCu8zCYsyxQMBe5SAnS2HId0uaEp59aAu2",
+				"role" : "uplink_client",
+				"enabled" : true
+			}
+		}
+	}
+}

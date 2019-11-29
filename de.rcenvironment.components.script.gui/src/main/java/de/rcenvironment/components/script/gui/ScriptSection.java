@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.script.gui;
@@ -22,7 +22,9 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
@@ -41,6 +43,7 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * @author Doreen Seider
  * @author Sascha Zur
  * @author Hendrik Abbenhaus
+ * @author Kathrin Schaffert
  */
 public class ScriptSection extends AbstractScriptSection {
 
@@ -76,6 +79,14 @@ public class ScriptSection extends AbstractScriptSection {
             }
 
         });
+        languages.addListener(SWT.MouseWheel, new Listener() {
+            @Override
+            public void handleEvent(Event arg0) {
+                // deactivate MouseWheel interaction for Script language dropdown menu
+                arg0.doit = false;
+            }
+        });
+
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         ScriptExecutorFactoryRegistry scriptExecutorRegistry = serviceRegistryAccess.getService(ScriptExecutorFactoryRegistry.class);
         List<ScriptLanguage> languagesForCombo =

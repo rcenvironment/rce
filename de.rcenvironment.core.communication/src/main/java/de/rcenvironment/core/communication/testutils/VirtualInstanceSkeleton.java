@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.testutils;
@@ -20,7 +20,6 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Base class for {@link VirtualInstance} that provides management of the instance life cycle and the configured test properties.
@@ -47,19 +46,15 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                 if (currentState == VirtualInstanceState.INITIAL
                     || currentState == VirtualInstanceState.STOPPED) {
                     enterState(VirtualInstanceState.STARTING);
-                    sharedThreadPool.execute(new Runnable() {
+                    sharedThreadPool.execute("Communication Layer: Virtual instance startup", () -> {
 
-                        @Override
-                        @TaskDescription("Communication Layer: Virtual instance startup")
-                        public void run() {
-                            try {
-                                performStartup();
-                                enterState(VirtualInstanceState.STARTED);
-                            } catch (InterruptedException e) {
-                                log.debug("Virtual instance startup failed", e);
-                            } catch (CommunicationException e) {
-                                log.debug("Virtual instance startup failed", e);
-                            }
+                        try {
+                            performStartup();
+                            enterState(VirtualInstanceState.STARTED);
+                        } catch (InterruptedException e) {
+                            log.debug("Virtual instance startup failed", e);
+                        } catch (CommunicationException e) {
+                            log.debug("Virtual instance startup failed", e);
                         }
 
                     });
@@ -71,17 +66,13 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
             case SIMULATED_CRASHING:
                 if (currentState == VirtualInstanceState.STARTED) {
                     enterState(VirtualInstanceState.SIMULATED_CRASHING);
-                    sharedThreadPool.execute(new Runnable() {
+                    sharedThreadPool.execute("Communication Layer: Virtual instance crash simulation", () -> {
 
-                        @Override
-                        @TaskDescription("Communication Layer: Virtual instance crash simulation")
-                        public void run() {
-                            try {
-                                performSimulatedCrash();
-                                enterState(VirtualInstanceState.STOPPED);
-                            } catch (InterruptedException e) {
-                                log.debug("Error while simulating virtual instance crash", e);
-                            }
+                        try {
+                            performSimulatedCrash();
+                            enterState(VirtualInstanceState.STOPPED);
+                        } catch (InterruptedException e) {
+                            log.debug("Error while simulating virtual instance crash", e);
                         }
 
                     });
@@ -94,17 +85,13 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                 // TODO react on "stop" requests during startup?
                 if (currentState == VirtualInstanceState.STARTED) {
                     enterState(VirtualInstanceState.STOPPING);
-                    sharedThreadPool.execute(new Runnable() {
+                    sharedThreadPool.execute("Communication Layer: Virtual instance shutdown", () -> {
 
-                        @Override
-                        @TaskDescription("Communication Layer: Virtual instance shutdown")
-                        public void run() {
-                            try {
-                                performShutdown();
-                                enterState(VirtualInstanceState.STOPPED);
-                            } catch (InterruptedException e) {
-                                log.debug("Virtual instance shutdown failed", e);
-                            }
+                        try {
+                            performShutdown();
+                            enterState(VirtualInstanceState.STOPPED);
+                        } catch (InterruptedException e) {
+                            log.debug("Virtual instance shutdown failed", e);
                         }
 
                     });

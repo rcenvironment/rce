@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.backend.metadata.derby.internal;
@@ -74,6 +74,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * 
  * @author Jan Flink
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 

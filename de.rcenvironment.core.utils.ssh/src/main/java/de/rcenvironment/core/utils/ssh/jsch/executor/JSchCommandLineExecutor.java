@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.utils.ssh.jsch.executor;
 
@@ -31,6 +31,7 @@ import de.rcenvironment.core.utils.ssh.jsch.JschFileTransfer;
  * Note that this class is not thread-safe.
  * 
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class JSchCommandLineExecutor extends AbstractCommandLineExecutor implements CommandLineExecutor {
 

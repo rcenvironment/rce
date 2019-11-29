@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.configuration,
@@ -19,11 +19,13 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.exception,
+ de.rcenvironment.core.utils.common.osgi,
  de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.toolkit.modules.statistics.api,
  de.rcenvironment.toolkit.utils.common,
  org.apache.commons.io,
+ org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.equinox.internal.security.auth,
  org.eclipse.equinox.security.storage,

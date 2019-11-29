@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.datamanagement.browser;
@@ -128,6 +128,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Robert Mischke
  * @author Jan Flink
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class DataManagementBrowser extends ViewPart implements DMBrowserNodeContentAvailabilityHandler {
 
@@ -369,7 +370,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             } else {
                 fileDialog.setText("Export to file system...");
             }
-            fileDialog.setFileName(browserNodesToSave.get(0).getTitle().replace(":", "_"));
+            fileDialog.setFileName(browserNodesToSave.get(0).getTitle().replace(": ", "_"));
             final String directoryPath = fileDialog.open();
             if (directoryPath == null) {
                 return;

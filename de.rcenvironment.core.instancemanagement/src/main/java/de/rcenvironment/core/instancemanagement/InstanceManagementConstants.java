@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement;
@@ -13,6 +13,7 @@ package de.rcenvironment.core.instancemanagement;
  *
  * @author Brigitte Boden
  * @author David Scholz (moved subcommand string from {@link InstanceManagementCommandPlugin}).
+ * @author Lukas Rosenbach
  */
 public final class InstanceManagementConstants {
 
@@ -35,6 +36,16 @@ public final class InstanceManagementConstants {
      * Resets the config.
      */
     public static final String SUBCOMMAND_RESET = "--reset";
+    
+    /**
+     * Wipes the config.
+     */
+    public static final String SUBCOMMAND_WIPE = "--wipe";
+    
+    /**
+     * Set profile version.
+     */
+    public static final String SET_RCE_VERSION = "--set-rce-version";
 
     /**
      * Applies a template.
@@ -85,6 +96,17 @@ public final class InstanceManagementConstants {
      * 
      */
     public static final String SUBCOMMAND_DISABLE_SSH_SERVER = "--disable-ssh-server";
+    
+    /**
+     * 
+     */
+    public static final String SUBCOMMAND_ADD_SSH_ACCOUNT = "--add-ssh-account";
+    
+    /**
+     * 
+     */
+    public static final String SUBCOMMAND_REMOVE_SSH_ACCOUNT = "--remove-ssh-account";
+    
 
     /**
      * 
@@ -120,6 +142,17 @@ public final class InstanceManagementConstants {
      * 
      */
     public static final String SUBCOMMAND_REMOVE_SSH_CONNECTION = "--remove-ssh-connection";
+    
+    /**
+     * 
+     */
+    public static final String SUBCOMMAND_ADD_UPLINK_CONNECTION = "--add-uplink-connection";
+
+    /**
+     * 
+     */
+    public static final String SUBCOMMAND_REMOVE_UPLINK_CONNECTION = "--remove-uplink-connection";
+
 
     /**
      * 
@@ -155,6 +188,11 @@ public final class InstanceManagementConstants {
      * Constant.
      */
     public static final String LOCALHOST = "127.0.0.1";
+    
+    /**
+     * Constant.
+     */
+    public static final String AUTHORIZATION_SEGMENT = "authorization";
 
     private InstanceManagementConstants() {}
 }

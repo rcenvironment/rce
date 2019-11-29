@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" name="de.rcenvironment.core.communication.uplink.client.session.internal.SshUplinkConnectionSetupCommandPlugin">
+   <service>
+      <provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+   </service>
+   <reference cardinality="1..1" field="sshConnectionService" interface="de.rcenvironment.core.communication.uplink.client.session.api.SshUplinkConnectionService" name="sshConnectionService"/>
+   <implementation class="de.rcenvironment.core.communication.uplink.client.session.internal.SshUplinkConnectionSetupCommandPlugin"/>
+</scr:component>

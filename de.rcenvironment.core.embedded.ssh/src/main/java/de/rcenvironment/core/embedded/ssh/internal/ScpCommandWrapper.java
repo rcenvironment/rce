@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -17,10 +17,11 @@ import java.nio.file.FileSystem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.file.FileSystemAware;
-import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.scp.ScpCommand;
 import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
@@ -63,7 +64,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     private ScpCommandFactory scpCommandFactory;
 
     private ScpContextManager scpContextManager;
-    
+
     private ServerSession session;
 
     private final Log logger = LogFactory.getLog(getClass());
@@ -75,7 +76,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     }
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         String username = env.getEnv().get(Environment.ENV_USER);
         try {
             String virtualScpPath = getScpPathOfCommand();
@@ -83,7 +84,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
             ScpContext scpContext = scpContextManager.getMatchingScpContext(username, virtualScpPath);
             if (scpContext != null) {
                 try {
-                    delegateToScp(env, scpContext);
+                    delegateToScp(channelSession, env, scpContext);
                 } catch (IOException e) {
                     logger.warn("Exception in SCP command wrapper", e);
                     throw e;
@@ -104,7 +105,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channelSession) {
         try {
             if (out != null) {
                 out.close();
@@ -114,15 +115,15 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
         }
     }
 
-    private void delegateToScp(Environment env, ScpContext scpContext) throws IOException {
-        ScpCommand scpCommand = (ScpCommand) scpCommandFactory.createCommand(rewriteCommand(command, scpContext));
+    private void delegateToScp(ChannelSession channelSession, Environment env, ScpContext scpContext) throws IOException {
+        ScpCommand scpCommand = (ScpCommand) scpCommandFactory.createCommand(channelSession, rewriteCommand(command, scpContext));
         scpCommand.setErrorStream(err);
         scpCommand.setExitCallback(callback);
         scpCommand.setInputStream(in);
         scpCommand.setOutputStream(out);
         scpCommand.setSession(session);
         scpCommand.setFileSystem(fileSystem);
-        scpCommand.start(env);
+        scpCommand.start(channelSession, env);
     }
 
     private String rewriteCommand(String originalCommand, ScpContext scpContext) {
@@ -155,8 +156,8 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
         }
 
         logger.debug("Final SCP mapped path: " + rewrittenPath);
-        
-        //Create necessary parent directories, if not existing
+
+        // Create necessary parent directories, if not existing
         File rewrittenPathParentDir = new File(rewrittenPath).getParentFile();
         rewrittenPathParentDir.mkdirs();
 
@@ -200,8 +201,6 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     public void setExitCallback(ExitCallback callbackParam) {
         this.callback = callbackParam;
     }
-    
-    
 
     @Override
     // TODO review: use this for additional security? - misc_ro

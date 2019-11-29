@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
@@ -44,13 +44,14 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
 import de.rcenvironment.core.component.api.ComponentIdRules;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Sascha Zur
+ * @author Brigitte Boden
  */
 public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 

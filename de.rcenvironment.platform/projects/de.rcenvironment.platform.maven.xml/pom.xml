@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.xml</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - XML</name>
-	<version>9.1.0-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.doe.gui.properties;
@@ -86,6 +86,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * Section for all design of experiments configurations.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert
  */
 public class DOESection extends ValidatingWorkflowNodePropertySection {
 

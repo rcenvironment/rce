@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection.internal;
@@ -21,7 +21,6 @@ import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Execution handler for "ssh [...]" commands.
@@ -72,16 +71,20 @@ public class SshConnectionSetupCommandPlugin implements CommandPlugin {
         final int port = Integer.parseInt(parameters.get(2));
         final String username = parameters.get(3);
         final String keyfileLocation = parameters.get(4);
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
-            @TaskDescription("Create new SSH Connection.")
-            @Override
-            public void run() {
-                String id =
-                    sshConnectionService.addSshConnection(
-                        new SshConnectionContext(null, connectionName, host, port, username, keyfileLocation, false, false, false));
-                context.println("Added SSH connection setup, created id " + id);
-            }
+        SshConnectionContext contextSSH = new SshConnectionContext(null, connectionName, null, host, port, username,
+            keyfileLocation, false, false, false, false);
+
+        if (sshConnectionService.sshConnectionAlreadyExists(contextSSH)) {
+            context.println(StringUtils.format("Connection setup to host '%s:%d' already exists.", contextSSH.getDestinationHost(),
+                contextSSH.getPort()));
+            return;
+        }
+
+        ConcurrencyUtils.getAsyncTaskService().execute("Create new SSH Connection.", () -> {
+            // add contextSSH here instead of new SshConnectionContext
+            String id = sshConnectionService.addSshConnection(contextSSH);
+            context.println("Added SSH connection setup, created id " + id);
         });
 
     }
@@ -100,13 +103,10 @@ public class SshConnectionSetupCommandPlugin implements CommandPlugin {
         }
         final String connectionId = parameters.get(0);
 
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Start SSH Connection.", () -> {
 
-            @TaskDescription("Start SSH Connection.")
-            @Override
-            public void run() {
-                sshConnectionService.connectSession(connectionId);
-            }
+            sshConnectionService.connectSession(connectionId);
+
         });
     }
 

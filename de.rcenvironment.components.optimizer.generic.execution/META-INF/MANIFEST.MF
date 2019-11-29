@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Optimizer Generic Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.generic.execution
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Fragment-Host: de.rcenvironment.components.optimizer.execution
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy
@@ -12,8 +12,8 @@ Import-Package: de.rcenvironment.components.optimizer.common.execution,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
- org.apache.commons.compress.archivers;version="1.18.0",
- org.apache.commons.compress.archivers.zip;version="1.18.0",
+ org.apache.commons.compress.archivers;version="1.19.0",
+ org.apache.commons.compress.archivers.zip;version="1.19.0",
  org.apache.commons.io;version="2.0.1"
 Export-Package: de.rcenvironment.components.optimizer.generic.execution,
  de.rcenvironment.components.optimizer.generic.execution.internal

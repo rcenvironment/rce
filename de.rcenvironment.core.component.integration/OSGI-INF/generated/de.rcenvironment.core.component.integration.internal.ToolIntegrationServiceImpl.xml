@@ -6,6 +6,7 @@
    <reference bind="bindAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="AuthorizationService"/>
    <reference bind="bindComponentRegistry" interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService" name="ComponentRegistry" unbind="unbindComponentRegistry"/>
    <reference bind="bindFileWatcherManagerBuilder" interface="de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager$Builder" name="FileWatcherManagerBuilder"/>
+   <reference bind="bindIconHelper" interface="de.rcenvironment.core.component.integration.internal.IconHelper" name="IconHelper" unbind="unbindIconHelper"/>
    <reference bind="bindPlatformService" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService"/>
    <reference bind="bindToolIntegrationContextRegistry" interface="de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry" name="ToolIntegrationContextRegistry"/>
    <implementation class="de.rcenvironment.core.component.integration.internal.ToolIntegrationServiceImpl"/>

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement;
@@ -16,8 +16,17 @@ import java.util.List;
  *
  * @author Robert Mischke
  * @author Brigitte Boden
+ * @author Lukas Rosenbach
  */
 public interface InstanceConfigurationOperationSequence {
+    
+    /**
+     * Adds an operation to set the profile version of an instance. Only reasonable as the first change operation.
+     * 
+     * @param version the profile version
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence setProfileVersion(String version);
 
     /**
      * Adds an operation to reset the configuration to the empty default state. Only reasonable as the first change operation.
@@ -25,6 +34,13 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence resetConfiguration();
+    
+    /**
+     * Adds an operation to wipe the configuration to the empty default state. Only reasonable as the first change operation.
+     * 
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence wipeConfiguration();
 
     /**
      * Adds an operation to reset the configuration to the given template. Only reasonable as the first change operation.
@@ -159,6 +175,22 @@ public interface InstanceConfigurationOperationSequence {
     InstanceConfigurationOperationSequence disableSshServer();
 
     /**
+     * Adds an operation to add an SSH account to an embedded SSH server.
+     * 
+     * @param parameters The list of parameters (username, role, enabled<true|false>, password)
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence addSshAccountFromStringParameters(List<String> parameters);
+    
+    /**
+     * Adds an operation to remove an SSH account from an embedded SSH server.
+     * 
+     * @param username The name of the account to be removed.
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence removeSshAccount(String username);
+    
+    /**
      * Adds an operation to enable the embedded SSH server, and configure a reserved type of SSH account used to execute commands from the
      * IM master instance.
      * 
@@ -228,7 +260,25 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence removeSshConnection(String name);
+    
+    /**
+     * Adds an operation to add an uplink connection. The individual parameters are parsed from a list of string parameters.
+     * 
+     * @param parameters the list of string parameter tokens; in the format:
+     *  <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> password <password>
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence addUplinkConnectionFromStringParameters(List<String> parameters);
 
+    /**
+     * Adds an operation to remove an uplink connection.
+     * 
+     * @param id the id of the uplink connection
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence removeUplinkConnection(String id);
+
+    
     /**
      * Adds an operation to publish a component.
      * 

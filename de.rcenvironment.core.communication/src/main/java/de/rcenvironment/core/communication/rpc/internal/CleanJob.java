@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.rpc.internal;
@@ -26,7 +26,6 @@ import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Background task which sets the time to live (TTL) for call back objects and call back proxy objects which are held by
@@ -57,7 +56,7 @@ public class CleanJob {
 
     private static CommunicationService communicationService;
 
-    private static Map<String, ScheduledFuture<?>> scheduleAtFixedRate = new HashMap<String, ScheduledFuture<?>>();
+    private static Map<String, ScheduledFuture<?>> backgroundCleanJob = new HashMap<String, ScheduledFuture<?>>();
 
     /** Only called by OSGi. */
     @Deprecated
@@ -98,7 +97,6 @@ public class CleanJob {
         }
 
         @Override
-        @TaskDescription("Communication Layer: Purge old callback objects/proxies and renew TTL for remaining")
         public void run() {
 
             // remove all unreferenced and expired objects and renew TTL for all remaining objects
@@ -151,10 +149,12 @@ public class CleanJob {
         Map<String, InstanceNodeSessionId> platforms) {
 
         synchronized (CleanJob.class) {
-            if (!scheduleAtFixedRate.containsKey(iface.getCanonicalName())) {
+            if (!backgroundCleanJob.containsKey(iface.getCanonicalName())) {
                 CleanRunnable runnable = new CleanRunnable(iface, objects, ttls, platforms);
-                scheduleAtFixedRate.put(iface.getCanonicalName(),
-                    ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(runnable, CleanJob.UPDATE_INTERVAL_MSEC));
+                backgroundCleanJob.put(iface.getCanonicalName(),
+                    ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedInterval(
+                        "Communication Layer: Purge old callback objects/proxies and renew TTL for remaining", runnable,
+                        CleanJob.UPDATE_INTERVAL_MSEC));
             }
 
         }
@@ -169,8 +169,8 @@ public class CleanJob {
     public static void unscheduleJob(Class iface) {
 
         synchronized (CleanJob.class) {
-            if (scheduleAtFixedRate.containsKey(iface.getCanonicalName())) {
-                boolean cancelled = scheduleAtFixedRate.get(iface.getCanonicalName()).cancel(true);
+            if (backgroundCleanJob.containsKey(iface.getCanonicalName())) {
+                boolean cancelled = backgroundCleanJob.get(iface.getCanonicalName()).cancel(true);
                 if (!cancelled) {
                     LogFactory.getLog(CleanJob.class).warn("Clean job triggered by " + iface.getCanonicalName()
                         + " could not be cancelled. Probably, it was already done.");

@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +19,11 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import com.jcraft.jsch.Session;
 
@@ -30,6 +36,7 @@ import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListen
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
 import de.rcenvironment.core.communication.sshconnection.impl.SshConnectionSetupImpl;
+import de.rcenvironment.core.configuration.SecureStorageImportService;
 import de.rcenvironment.core.configuration.SecureStorageSection;
 import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -45,7 +52,10 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
  * Default implementation of {@link SshConnectionService}.
  *
  * @author Brigitte Boden
+ * @author Robert Mischke
  */
+
+@Component
 public class SshConnectionServiceImpl implements SshConnectionService {
 
     private static final String NO_SSH_CONNECTION_WITH_ID_S_CONFIGURED = "No SSH connection with id %s configured.";
@@ -59,9 +69,14 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     private final AsyncOrderedCallbackManager<SshConnectionListener> callbackManager =
         ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
+    @Reference
     private NodeConfigurationService configurationService;
 
-    private SecureStorageService securePreferencesService;
+    @Reference
+    private SecureStorageService secureStorageService;
+
+    @Reference
+    private SecureStorageImportService secureStorageImportService;
 
     private SecureStorageSection secureStorageSection;
 
@@ -79,8 +94,23 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         return setup.getSession();
     }
 
+    /**
+     * @param context the {@link SshConnectionContext}.
+     * @return true iff a connection with the same host and port already exists
+     */
+    public boolean sshConnectionAlreadyExists(SshConnectionContext context) {
+        for (String s : connectionSetups.keySet()) {
+            if (connectionSetups.get(s).getHost().equals(context.getDestinationHost())
+                && connectionSetups.get(s).getPort() == context.getPort()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String addSshConnection(SshConnectionContext context) {
+
         String connectionId = UUID.randomUUID().toString();
 
         SshConnectionListener listenerAdapter = defineListenerForSSHConnectionSetup();
@@ -88,7 +118,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         final SshConnectionSetupImpl newSetup;
         newSetup = new SshConnectionSetupImpl(connectionId, context.getDisplayName(), context.getDestinationHost(),
             context.getPort(), context.getSshAuthUser(), context.getKeyfileLocation(), context.isUsePassphrase(),
-            false, context.isConnectImmediately(), context.isAutoRetry(), listenerAdapter);
+            context.isConnectImmediately(), context.isAutoRetry(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -102,6 +132,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
                     }
                 });
             }
+
         }
         return connectionId;
     }
@@ -287,6 +318,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
      * 
      * @param listener The listener.
      */
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, unbind = "removeListener") // injected by OSGi
     public void addListener(SshConnectionListener listener) {
         callbackManager.addListener(listener);
     }
@@ -308,8 +340,9 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         final SshConnectionSetupImpl newSetup;
         newSetup =
             new SshConnectionSetupImpl(context.getId(), context.getDisplayName(), context.getDestinationHost(),
-                context.getPort(), context.getSshAuthUser(), context.getKeyfileLocation(), context.isUsePassphrase(), false,
-                context.isConnectImmediately(), context.isAutoRetry(), listenerAdapter);
+                context.getPort(), context.getSshAuthUser(), context.getKeyfileLocation(), context.isUsePassphrase(),
+                context.isConnectImmediately(),
+                context.isAutoRetry(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -334,10 +367,22 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     /**
      * OSGi-DS lifecycle method.
      */
+    @Activate
     public void activate() {
 
+        // perform any file-based password imports
+        final File importFilesDir =
+            configurationService.getStandardImportDirectory(SshConnectionConstants.PASSWORD_FILE_IMPORT_SUBDIRECTORY);
         try {
-            secureStorageSection = securePreferencesService.getSecureStorageSection(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
+            secureStorageImportService.processImportDirectory(importFilesDir,
+                SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE, null, null, true, true);
+        } catch (OperationFailureException e) {
+            log.warn(
+                "Error while attempting to import SSH Remote Access connection passwords from " + importFilesDir + ": " + e.getMessage());
+        }
+
+        try {
+            secureStorageSection = secureStorageService.getSecureStorageSection(SshConnectionConstants.SSH_CONNECTIONS_PASSWORDS_NODE);
         } catch (IOException e) {
             // TODO decide: how to handle this case?
             log.error("Failed to initialize secure storage");
@@ -352,7 +397,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         for (InitialSshConnectionConfig config : configs) {
             SshConnectionSetup setup =
                 new SshConnectionSetupImpl(config.getId(), config.getDisplayName(), config.getHost(), config.getPort(), config.getUser(),
-                    config.getKeyFileLocation(), config.getUsePassphrase(), false, config.getConnectOnStartup(), config.getAutoRetry(),
+                    config.getKeyFileLocation(), config.getUsePassphrase(), config.getConnectOnStartup(), config.getAutoRetry(),
                     defineListenerForSSHConnectionSetup());
             connectionSetups.put(config.getId(), setup);
             if (config.getConnectOnStartup()) {
@@ -364,15 +409,6 @@ public class SshConnectionServiceImpl implements SshConnectionService {
                 }
             }
         }
-    }
-
-    /**
-     * OSGI bind method.
-     * 
-     * @param service The service to bind.
-     */
-    public void bindNodeConfigurationService(NodeConfigurationService service) {
-        this.configurationService = service;
     }
 
     private void storeSshConnectionPassword(String connectionId, String password) {
@@ -413,8 +449,8 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         final SshConnectionSetupImpl newSetup;
         newSetup =
             new SshConnectionSetupImpl(id, oldSetup.getDisplayName(), oldSetup.getHost(), oldSetup.getPort(), oldSetup.getUsername(),
-                oldSetup.getKeyfileLocation(), oldSetup.getUsePassphrase(), storePassphrase, oldSetup.getConnectOnStartUp(),
-                oldSetup.getAutoRetry(), listenerAdapter);
+                oldSetup.getKeyfileLocation(), oldSetup.getUsePassphrase(), oldSetup.getConnectOnStartUp(), oldSetup.getAutoRetry(),
+                listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -437,7 +473,4 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         }
     }
 
-    protected void bindSecureStorageService(SecureStorageService newService) {
-        securePreferencesService = newService;
-    }
 }

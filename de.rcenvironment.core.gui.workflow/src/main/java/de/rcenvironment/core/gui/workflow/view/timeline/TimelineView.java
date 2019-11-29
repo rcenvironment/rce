@@ -3,12 +3,11 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.view.timeline;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,6 +59,7 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.datamanagement.commons.ComponentRunInterval;
@@ -458,22 +458,15 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         try {
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-            Map<String, Object> jsonStructureRoot = mapper.readValue(resource,
-                new HashMap<String, Object>().getClass());
+            Map<String, Object> jsonStructureRoot = mapper.readValue(resource, new HashMap<String, Object>().getClass());
             String jsonWorkflowName = (String) jsonStructureRoot.get(TimelineViewConstants.JSON_WORKFLOWNAME);
-            String jsonWorkflowStart = (String) jsonStructureRoot
-                .get(TimelineViewConstants.JSON_WORKFLOWSTARTTIME);
-            String jsonWorkflowEnd = (String) jsonStructureRoot
-                .get(TimelineViewConstants.JSON_WORKFLOWENDTIME);
-            List<Object> jsonComponentList = (ArrayList<Object>) jsonStructureRoot
-                .get(TimelineViewConstants.JSON_COMPONENTS);
-            if (jsonWorkflowName == null || jsonWorkflowName.equals("")
-                || jsonWorkflowStart == null || jsonWorkflowStart.equals("")
-                || jsonWorkflowEnd == null || jsonWorkflowEnd.equals("")
-                || jsonComponentList == null || jsonComponentList.isEmpty()) {
-                String message =
-                    "Unable to open the timeline view for the selected workflow run."
-                        + " An unexpected problem occured while reading the timeline data.";
+            String jsonWorkflowStart = (String) jsonStructureRoot.get(TimelineViewConstants.JSON_WORKFLOWSTARTTIME);
+            String jsonWorkflowEnd = (String) jsonStructureRoot.get(TimelineViewConstants.JSON_WORKFLOWENDTIME);
+            List<Object> jsonComponentList = (ArrayList<Object>) jsonStructureRoot.get(TimelineViewConstants.JSON_COMPONENTS);
+            if (jsonWorkflowName == null || jsonWorkflowName.equals("") || jsonWorkflowStart == null || jsonWorkflowStart.equals("")
+                || jsonWorkflowEnd == null || jsonWorkflowEnd.equals("") || jsonComponentList == null || jsonComponentList.isEmpty()) {
+                String message = "Unable to open the timeline view for the selected workflow run."
+                    + " An unexpected problem occured while reading the timeline data.";
                 LogFactory.getLog(TimelineView.class).error(message);
                 refreshLabel.setText(message);
                 return false;
@@ -481,8 +474,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             workflowNameLabel.setText(jsonWorkflowName);
             workflowNameLabel.pack();
             this.wfStartDate = new Date();
-            this.wfStartDate.setTime(Long.valueOf(jsonWorkflowStart)
-                .longValue());
+            this.wfStartDate.setTime(Long.valueOf(jsonWorkflowStart).longValue());
             this.wfEndDate = new Date();
             this.wfEndDate.setTime(Long.valueOf(jsonWorkflowEnd).longValue());
             setVisibleArea(wfStartDate, wfEndDate);
@@ -493,16 +485,12 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
             for (Object jsonCurrentComponentObject : jsonComponentList) {
                 Map<String, Object> jsonCurrentComponent = (Map<String, Object>) jsonCurrentComponentObject;
-                String currentComponentName = (String) jsonCurrentComponent
-                    .get(TimelineViewConstants.JSON_COMPONENT_NAME);
-                String currentComponentID = (String) jsonCurrentComponent
-                    .get(TimelineViewConstants.JSON_COMPONENT_ID);
-                TimelineComponentRow currentRow = new TimelineComponentRow(
-                    currentComponentName, currentComponentID, wfStartDate,
-                    wfEndDate);
+                String currentComponentName = (String) jsonCurrentComponent.get(TimelineViewConstants.JSON_COMPONENT_NAME);
+                String currentComponentID = (String) jsonCurrentComponent.get(TimelineViewConstants.JSON_COMPONENT_ID);
+                TimelineComponentRow currentRow =
+                    new TimelineComponentRow(currentComponentName, currentComponentID, wfStartDate, wfEndDate);
 
-                List<Object> jsonActivityList = (ArrayList<Object>) jsonCurrentComponent
-                    .get(TimelineViewConstants.JSON_COMPONENT_EVENTS);
+                List<Object> jsonActivityList = (ArrayList<Object>) jsonCurrentComponent.get(TimelineViewConstants.JSON_COMPONENT_EVENTS);
 
                 Collections.sort(jsonActivityList, new Comparator<Object>() {
 
@@ -515,10 +503,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     public int compare(Object o1, Object o2) {
                         Map<String, String> compare1 = (HashMap<String, String>) o1;
                         Map<String, String> compare2 = (HashMap<String, String>) o2;
-                        return compare1
-                            .get(TimelineViewConstants.JSON_ACTIVITYTIME)
-                            .compareTo(
-                                compare2.get(TimelineViewConstants.JSON_ACTIVITYTIME));
+                        return compare1.get(TimelineViewConstants.JSON_ACTIVITYTIME)
+                            .compareTo(compare2.get(TimelineViewConstants.JSON_ACTIVITYTIME));
                     }
                 });
                 List<TimelineActivityPart> currentActivities = new ArrayList<TimelineActivityPart>();
@@ -528,19 +514,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     Map<String, String> currentActivityMap = (Map<String, String>) jsonCurrentActivity;
 
                     Date currentActivityTime = new Date();
-                    long activityTime = Long.valueOf(currentActivityMap
-                        .get(TimelineViewConstants.JSON_ACTIVITYTIME));
+                    long activityTime = Long.valueOf(currentActivityMap.get(TimelineViewConstants.JSON_ACTIVITYTIME));
                     currentActivityTime.setTime(activityTime);
 
-                    String currentEventType = currentActivityMap
-                        .get(TimelineViewConstants.JSON_ACTIVITYTYPE);
-                    TimelineActivityType eventType = TimelineActivityType
-                        .valueOfjsonName(currentEventType);
+                    String currentEventType = currentActivityMap.get(TimelineViewConstants.JSON_ACTIVITYTYPE);
+                    TimelineActivityType eventType = TimelineActivityType.valueOfjsonName(currentEventType);
                     String comment = null;
-                    if (currentActivityMap
-                        .containsKey(TimelineViewConstants.JSON_COMPONENT_EVENT_INFOTEXT)) {
-                        comment = currentActivityMap
-                            .get(TimelineViewConstants.JSON_COMPONENT_EVENT_INFOTEXT);
+                    if (currentActivityMap.containsKey(TimelineViewConstants.JSON_COMPONENT_EVENT_INFOTEXT)) {
+                        comment = currentActivityMap.get(TimelineViewConstants.JSON_COMPONENT_EVENT_INFOTEXT);
                     }
                     TimelineActivityPart currentActivity = null;
                     if (eventType == TimelineActivityType.COMPONENT_RUN) {
@@ -549,43 +530,36 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                         } else {
                             run++;
                         }
-                        currentActivity = new TimelineActivityPart(currentComponentName,
-                            eventType, currentActivityTime, String.valueOf(run), comment);
+                        currentActivity = new TimelineActivityPart(currentComponentName, eventType, currentActivityTime,
+                            String.valueOf(run), comment);
                     } else {
-                        currentActivity = new TimelineActivityPart(currentComponentName,
-                            eventType, currentActivityTime, String.valueOf(run), comment);
+                        currentActivity = new TimelineActivityPart(currentComponentName, eventType, currentActivityTime,
+                            String.valueOf(run), comment);
                         if (eventType == TimelineActivityType.EXTERNAL_TOOL_RUN_IN_COMPONENT_RUN) {
                             extToolRunPrev = true;
                         }
                     }
 
-                    if (currentActivities.size() == 0
-                        && !currentActivityTime.equals(wfStartDate)) {
-                        TimelineActivityPart currentFirstActivity = new TimelineActivityPart(currentComponentName,
-                            TimelineActivityType.WAITING, wfStartDate,
-                            null);
+                    if (currentActivities.size() == 0 && !currentActivityTime.equals(wfStartDate)) {
+                        TimelineActivityPart currentFirstActivity =
+                            new TimelineActivityPart(currentComponentName, TimelineActivityType.WAITING, wfStartDate, null);
                         currentFirstActivity.setEndtime(currentActivityTime);
                         if (currentActivities.size() > 0) {
-                            currentActivities.get(currentActivities.size() - 1)
-                                .setEndtime(currentActivityTime);
+                            currentActivities.get(currentActivities.size() - 1).setEndtime(currentActivityTime);
                         }
                         currentActivities.add(currentFirstActivity);
                     }
                     if (currentActivities.size() > 0) {
-                        currentActivities.get(currentActivities.size() - 1)
-                            .setEndtime(currentActivityTime);
+                        currentActivities.get(currentActivities.size() - 1).setEndtime(currentActivityTime);
                     }
                     currentActivities.add(currentActivity);
                 }
-                currentRow.setActivities(currentActivities
-                    .toArray(new TimelineActivityPart[currentActivities
-                        .size()]));
+                currentRow.setActivities(currentActivities.toArray(new TimelineActivityPart[currentActivities.size()]));
                 currentRow.setWorkflowStartTime(wfStartDate);
                 currentRow.setWorkflowEndTime(wfEndDate);
                 currentRows.add(currentRow);
             }
-            rows = currentRows.toArray(new TimelineComponentRow[currentRows
-                .size()]);
+            rows = currentRows.toArray(new TimelineComponentRow[currentRows.size()]);
 
         } catch (IOException e) {
             LogFactory.getLog(TimelineView.class).error(e);
@@ -604,14 +578,11 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     private void showComponentRows(TimelineComponentRow[] newrows) {
         this.navigation.setWorflowStartEndTime(wfStartDate, wfEndDate);
-        this.navigation.setTimeTableComponentRows(filter(newrows,
-            this.allowedComponentNames));
-        this.list.setTimeTableComponentRows(filter(newrows,
-            this.allowedComponentNames));
+        this.navigation.setTimeTableComponentRows(filter(newrows, this.allowedComponentNames));
+        this.list.setTimeTableComponentRows(filter(newrows, this.allowedComponentNames));
     }
 
-    private TimelineComponentRow[] filter(TimelineComponentRow[] oldrows,
-        String[] allowed) {
+    private TimelineComponentRow[] filter(TimelineComponentRow[] oldrows, String[] allowed) {
         if (allowed == null) {
             return oldrows;
         }
@@ -662,9 +633,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 enableZoomActions();
             }
         };
-        zoomInAction.setImageDescriptor(ImageDescriptor
-            .createFromURL(TimelineView.class
-                .getResource("/resources/icons/zoom_in.gif")));
+        zoomInAction.setImageDescriptor(ImageDescriptor.createFromURL(TimelineView.class.getResource("/resources/icons/zoom_in.gif")));
         zoomInAction.setEnabled(false);
 
         zoomOutAction = new Action(Messages.zoomout) {
@@ -681,9 +650,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 enableZoomActions();
             }
         };
-        zoomOutAction.setImageDescriptor(ImageDescriptor
-            .createFromURL(TimelineView.class
-                .getResource("/resources/icons/zoom_out.gif")));
+        zoomOutAction.setImageDescriptor(ImageDescriptor.createFromURL(TimelineView.class.getResource("/resources/icons/zoom_out.gif")));
         zoomOutAction.setEnabled(false);
 
         filterAction = new Action("Filter") {
@@ -695,12 +662,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     for (TimelineComponentRow currentRow : rows) {
                         currentList.add(currentRow.getName());
                     }
-                    allowedComponentNames = currentList
-                        .toArray(new String[currentList.size()]);
+                    allowedComponentNames = currentList.toArray(new String[currentList.size()]);
                 }
-                TimelineFilterDialog dialog = new TimelineFilterDialog(
-                    Display.getCurrent().getActiveShell(),
-                    allowedComponentNames, rows);
+                TimelineFilterDialog dialog = new TimelineFilterDialog(Display.getCurrent().getActiveShell(), allowedComponentNames, rows);
                 dialog.create();
                 dialog.updateContent();
                 if (dialog.open() == 0) { // 0 = ok
@@ -710,9 +674,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
             }
         };
-        filterAction.setImageDescriptor(ImageDescriptor
-            .createFromURL(TimelineView.class
-                .getResource("/resources/icons/filter.gif")));
+        filterAction.setImageDescriptor(ImageDescriptor.createFromURL(TimelineView.class.getResource("/resources/icons/filter.gif")));
         filterAction.setEnabled(false);
     }
 
@@ -742,29 +704,18 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      * @return the image
      */
     public static Image getImageIconFromId(String identifier, Object caller) {
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry
-            .createAccessFor(caller);
-        DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
-            .getService(DistributedComponentKnowledgeService.class);
-        Collection<DistributedComponentEntry> installations = componentKnowledgeService
-            .getCurrentSnapshot().getAllInstallations();
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(caller);
+        DistributedComponentKnowledgeService componentKnowledgeService =
+            serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class);
+        Collection<DistributedComponentEntry> installations = componentKnowledgeService.getCurrentSnapshot().getAllInstallations();
         for (DistributedComponentEntry entry : installations) {
             ComponentInstallation installation = entry.getComponentInstallation();
             if (installation.getInstallationId().startsWith(identifier)) {
-                if (!COMPONENT_ICON_CACHE.containsKey(installation.getInstallationId())) {
-                    byte[] icon = installation.getComponentInterface().getIcon16();
-                    if (icon != null) {
-                        Image image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
-                            new ByteArrayInputStream(icon))).createImage();
-                        COMPONENT_ICON_CACHE.put(installation.getInstallationId(), image);
-                    } else {
-                        COMPONENT_ICON_CACHE.put(installation.getInstallationId(),
-                            ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_16));
-                    }
-                }
-                return COMPONENT_ICON_CACHE.get(installation.getInstallationId());
+                return serviceRegistryAccess.getService(ComponentImageContainerService.class)
+                    .getComponentImageContainer(installation.getComponentInterface()).getComponentIcon16();
             }
         }
+
         return null;
     }
 
@@ -779,12 +730,10 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         if (identifier == null) {
             return null;
         }
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry
-            .createAccessFor(caller);
-        DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
-            .getService(DistributedComponentKnowledgeService.class);
-        Collection<DistributedComponentEntry> installations = componentKnowledgeService
-            .getCurrentSnapshot().getAllInstallations();
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(caller);
+        DistributedComponentKnowledgeService componentKnowledgeService =
+            serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class);
+        Collection<DistributedComponentEntry> installations = componentKnowledgeService.getCurrentSnapshot().getAllInstallations();
         for (DistributedComponentEntry entry : installations) {
             // FIXME this is unsafe: e.g. when looking for "comp1", "comp11" could be matched!
             // TODO 9.0.0 provide a DistributedComponentKnowledge lookup method instead?
@@ -842,10 +791,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      * @param currentWorkflowEndTime Contains the end time of the current worklfow
      * @return the converted Date
      */
-    public static Date convertPixelToDate(int xPixel, int canvasSizeX,
-        Date currentWorkflowStartTime, Date currentWorkflowEndTime) {
-        long value = ((currentWorkflowEndTime.getTime() * xPixel) + (currentWorkflowStartTime
-            .getTime() * (canvasSizeX - xPixel))) / canvasSizeX;
+    public static Date convertPixelToDate(int xPixel, int canvasSizeX, Date currentWorkflowStartTime, Date currentWorkflowEndTime) {
+        long value =
+            ((currentWorkflowEndTime.getTime() * xPixel) + (currentWorkflowStartTime.getTime() * (canvasSizeX - xPixel))) / canvasSizeX;
         Date date = new Date();
         date.setTime(value);
         return date;
@@ -861,11 +809,10 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      * @param currentWorkflowEndTime the current workflowendtime
      * @return the return
      */
-    public static int convertDateToPixel(Date date, int canvasSizeX,
-        Date currentWorkflowStartTime, Date currentWorkflowEndTime) {
+    public static int convertDateToPixel(Date date, int canvasSizeX, Date currentWorkflowStartTime, Date currentWorkflowEndTime) {
         long value = date.getTime();
-        int xPixel = (int) (((value - currentWorkflowStartTime.getTime()) * canvasSizeX) / (currentWorkflowEndTime
-            .getTime() - currentWorkflowStartTime.getTime()));
+        int xPixel = (int) (((value - currentWorkflowStartTime.getTime()) * canvasSizeX)
+            / (currentWorkflowEndTime.getTime() - currentWorkflowStartTime.getTime()));
         return xPixel;
     }
 
@@ -902,13 +849,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     @Override
     public void widgetSelected(SelectionEvent arg0) {
         int begin = scrollBar.getMinimum() + scrollBar.getSelection();
-        int end = scrollBar.getMinimum() + scrollBar.getSelection()
-            + scrollBar.getThumb();
-        setVisibleArea(
-            convertPixelToDate(begin, scrollBar.getMaximum(), wfStartDate,
-                wfEndDate),
-            convertPixelToDate(end, scrollBar.getMaximum(), wfStartDate,
-                wfEndDate));
+        int end = scrollBar.getMinimum() + scrollBar.getSelection() + scrollBar.getThumb();
+        setVisibleArea(convertPixelToDate(begin, scrollBar.getMaximum(), wfStartDate, wfEndDate),
+            convertPixelToDate(end, scrollBar.getMaximum(), wfStartDate, wfEndDate));
     }
 
     @Override
@@ -927,9 +870,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         } else {
             this.scrollBar.setThumb(defaultMinimumZoomValue);
         }
-        int beginSelection = convertDateToPixel(selectedStartTime,
-            this.scrollBar.getMaximum(), wfStartDate, wfEndDate)
-            - scrollBar.getMinimum();
+        int beginSelection =
+            convertDateToPixel(selectedStartTime, this.scrollBar.getMaximum(), wfStartDate, wfEndDate) - scrollBar.getMinimum();
         this.scrollBar.setSelection(beginSelection);
         enableZoomActions();
     }

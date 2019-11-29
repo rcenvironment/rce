@@ -3,19 +3,23 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.authorization.internal;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +40,8 @@ import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.authorization.api.DefaultAuthorizationObjects;
 import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
 import de.rcenvironment.core.authorization.cryptography.api.SymmetricKey;
+import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.SecureStorageImportService;
 import de.rcenvironment.core.configuration.SecureStorageSection;
 import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -51,6 +57,8 @@ import de.rcenvironment.toolkit.utils.common.IdGenerator;
  */
 @Component
 public class AuthorizationServiceImpl implements AuthorizationService {
+
+    private static final String COLON = ":";
 
     private static final int PRE_RELEASE_KEY_DATA_LENGTH = 23;
 
@@ -71,6 +79,12 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     private SecureStorageSection groupDataStorage; // may be null if the store could not be fetched
 
     private volatile boolean initializingFromPersistedData;
+
+    @Reference
+    private ConfigurationService configurationService;
+
+    @Reference
+    private SecureStorageImportService secureStorageImportService;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -103,6 +117,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Activate
     public void activate() {
         initializingFromPersistedData = true;
+        processImportFiles();
         restorePersistedGroups();
         initializingFromPersistedData = false;
     }
@@ -174,10 +189,31 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         if (validationError.isPresent()) {
             throw new OperationFailureException(validationError.get());
         }
-        String[] parts = fullGroupId.split(":");
+        String[] parts = fullGroupId.split(COLON);
         final String groupName = parts[0];
         final String idPart = parts[1];
         return new AuthorizationAccessGroupImpl(groupName, idPart, fullGroupId, defaultGroupDisplayName(groupName, idPart));
+    }
+
+    @Override
+    public Set<AuthorizationAccessGroup> representRemoteGroupIds(Collection<String> fullGroupIds) throws OperationFailureException {
+        Set<AuthorizationAccessGroup> result = new HashSet<>(fullGroupIds.size());
+        for (String fullGroupId : fullGroupIds) {
+            result.add(representRemoteGroupId(fullGroupId));
+        }
+        return result;
+    }
+
+    @Override
+    public Set<AuthorizationAccessGroup> intersectWithAccessibleGroups(Set<AuthorizationAccessGroup> inputGroups) {
+        Set<AuthorizationAccessGroup> result = new HashSet<>(inputGroups.size());
+
+        for (AuthorizationAccessGroup group : inputGroups) {
+            if (isGroupAccessible(group)) {
+                result.add(group);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -316,7 +352,8 @@ public class AuthorizationServiceImpl implements AuthorizationService {
                 try {
                     groupDataStorage.store(group.getFullId(), keyData.getEncodedStringForm());
                 } catch (OperationFailureException e) {
-                    log.error("Error while saving new key data for access group " + group.getFullId() + ": " + e.toString());
+                    log.error(
+                        StringUtils.format("Error while saving new key data for access group %s: %s", group.getFullId(), e.toString()));
                     success = false;
                 }
             } else {
@@ -325,6 +362,73 @@ public class AuthorizationServiceImpl implements AuthorizationService {
             }
         }
         return success;
+    }
+
+    private void processImportFiles() {
+        synchronized (storageLock) {
+            if (groupDataStorage != null) {
+                // perform any file-based password imports
+                final File importFilesDir =
+                    configurationService.getStandardImportDirectory(GROUP_KEY_FILE_IMPORT_SUBDIRECTORY);
+                // define mappings of file contents to secure storage entries
+                BiFunction<String, String, String> keyMapping = (filename, content) -> {
+                    boolean isDeletion = content.startsWith(GROUP_KEY_FILE_IMPORT_DELETION_PREFIX);
+                    if (isDeletion) {
+                        content = content.substring(GROUP_KEY_FILE_IMPORT_DELETION_PREFIX.length()).trim();
+                    }
+                    String[] parts = content.split("\\:");
+                    if (!isDeletion) {
+                        // normal import
+                        if (parts.length != 4) {
+                            log.warn("Ignoring import file " + filename + " as its content is not a complete group import string");
+                            return null;
+                        }
+                    } else {
+                        // deletion
+                        if (parts.length < 2) {
+                            log.warn("Ignoring import file " + filename
+                                + " as it contains a deletion statement, but the following data is not at least a two-part group key");
+                            return null;
+                        }
+                    }
+                    // in both cases (import+deletion), return the full group key
+                    return parts[0] + COLON + parts[1];
+                };
+                BiFunction<String, String, String> valueMapping = (filename, content) -> {
+                    boolean isDeletion = content.startsWith(GROUP_KEY_FILE_IMPORT_DELETION_PREFIX);
+                    if (isDeletion) {
+                        // if the content passed the key mapping function above, no more checking is required;
+                        // return "null" to delete that key from secure storage
+                        return null;
+                    }
+                    String[] parts = content.split(COLON);
+                    // at this point, we are in import (not deletion) mode, so the content should already be validated
+                    if (parts.length != 4) {
+                        // should never happen
+                        throw new IllegalStateException(
+                            "Import file content passed key mapping, but had unexpected format in value mapping");
+                    }
+                    if (!parts[2].equals("1")) {
+                        log.warn("Invalid group key data in import file " + filename + " as it uses unknown version " + parts[2]
+                            + "; deleting any pre-existing key");
+                        // a better behavior may be to simply ignore this import file, but the API does not support this yet;
+                        // this case should not happen at this time at all, anyway, so when we add more key versions, this should be adapted
+                        return null;
+                    }
+                    return parts[2] + COLON + parts[3];
+                };
+                try {
+                    secureStorageImportService.processImportDirectory(importFilesDir, SECURE_STORAGE_NODE_ID, keyMapping, valueMapping,
+                        true, true);
+                } catch (OperationFailureException e) {
+                    log.warn(
+                        "Error while attempting to import SSH Uplink connection passwords from " + importFilesDir + ": " + e.getMessage());
+                }
+
+            } else {
+                log.warn("Not processing group key import files as the secure storage is not available");
+            }
+        }
     }
 
     private void restorePersistedGroups() {

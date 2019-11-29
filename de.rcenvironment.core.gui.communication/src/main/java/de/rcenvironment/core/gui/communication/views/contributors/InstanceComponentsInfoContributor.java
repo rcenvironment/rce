@@ -3,29 +3,23 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.communication.views.contributors;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
@@ -48,8 +42,6 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 public class InstanceComponentsInfoContributor extends NetworkViewContributorBase {
 
     private static final int INSTANCE_ELEMENTS_PRIORITY = 10;
-
-    private final Log log = LogFactory.getLog(getClass());
 
     private final AuthorizationService authorizationService;
 
@@ -127,15 +119,14 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
 
     private Image folderImage;
 
-    private final Map<String, Image> componentIconCache;
-
     private Image componentFallbackImage;
+
+    private boolean showFullId;
 
     public InstanceComponentsInfoContributor() {
         ImageManager imageManager = ImageManager.getInstance();
         folderImage = imageManager.getSharedImage(StandardImages.FOLDER_16);
         componentFallbackImage = imageManager.getSharedImage(StandardImages.RCE_LOGO_16);
-        componentIconCache = new HashMap<>();
 
         authorizationService = ServiceRegistry.createAccessFor(this).getService(AuthorizationService.class);
     }
@@ -269,9 +260,17 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
                     returnValueBuilder.append("public");
                 } else {
                     returnValueBuilder.append("available via ");
-                    returnValueBuilder.append(
-                        // Map the access groups to their name and join the resulting strings with the separator ", "
-                        permissionSet.stream().map(AuthorizationAccessGroup::getName).collect(Collectors.joining(", ")));
+                    if (showFullId) {
+                        returnValueBuilder.append(
+                            // Map the access groups to their name and join the resulting strings with the separator ", "
+                            permissionSet.stream().map(AuthorizationAccessGroup::getFullId).collect(Collectors.joining(", ")));
+                    
+                    } else {
+                        returnValueBuilder.append(
+                            // Map the access groups to their name and join the resulting strings with the separator ", "
+                            permissionSet.stream().map(AuthorizationAccessGroup::getName).collect(Collectors.joining(", ")));
+                  
+                    }
                 }
                 returnValueBuilder.append(">");
             }
@@ -291,54 +290,20 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
             assertIsComponentNode(typedNode); // consistency check
             ComponentInstallation installation = typedNode.getComponentInstallation();
             if (installation != null) {
-                // FIXME improve caching key; temporary
-                String cacheKey = installation.getInstallationId();
-                Image image = componentIconCache.get(cacheKey);
-                if (image == null) {
-                    try {
-                        byte[] iconData = installation.getComponentInterface().getIcon16();
-                        if (iconData != null) {
-                            // TODO review: dispose Image instance? or cache Image instance instead?
-                            ImageDescriptor iDescr =
-                                ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(iconData)));
-                            image = iDescr.createImage();
-                        } else {
-                            log.debug(
-                                "Using fallback image for component \"" + installation.getInstallationId() + "\" as the icon data is null");
-                            image = componentFallbackImage;
-                        }
-                    } catch (RuntimeException e) {
-                        log.warn(
-                            "Using fallback image for component \"" + installation.getInstallationId()
-                                + "\" as an error occurred while parsing the image data: " + e.toString());
-                        image = componentFallbackImage; // set fallback in case of errors
-                    }
-                    componentIconCache.put(cacheKey, image);
-                }
-                return image;
+                return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+                    .getComponentImageContainer(installation.getComponentInterface()).getComponentIcon16();
             } else {
                 // This case occurs if we display a component installation that is inaccessible due to publication groups. Previously, the
                 // following warning was logged:
-                // 
-                //      "Found a network view component node without a component installation: " + typedNode.getDisplayNameOfNode()
-                // 
+                //
+                // "Found a network view component node without a component installation: " + typedNode.getDisplayNameOfNode()
+                //
                 // We retain this warning in this comment in order to allow future developers to find the point where this message was
                 // issued in case they need to debug user-supplied logs that contain this warning message.
                 return componentFallbackImage;
             }
         }
         throw newUnexpectedCallException();
-    }
-
-    @Override
-    public void dispose() {
-        // dispose cached component resources/icons
-        for (Image image : componentIconCache.values()) {
-            if (image != componentFallbackImage) {
-                image.dispose();
-            }
-        }
-        // note: not disposing folderImage and componentFallbackImage, as they are shared
     }
 
     private Object[] createNodesForComponentInstallations(NetworkGraphNodeWithContext node,
@@ -362,5 +327,12 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
             throw new IllegalStateException("Unexpected context: " + typedNode.getContext());
         }
     }
-
+    
+    public void setShowFullId(boolean showFullId){
+        this.showFullId = showFullId;
+    }
+    @Override
+    public void dispose() {
+        // removed disposing of component images, because all component images are handled in the ComponentImageManger
+    }
 }

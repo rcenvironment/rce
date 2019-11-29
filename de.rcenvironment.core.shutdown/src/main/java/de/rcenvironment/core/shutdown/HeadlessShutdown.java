@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.shutdown;
@@ -29,7 +29,6 @@ import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.toolkitbridge.api.ToolkitBridge;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
@@ -132,33 +131,29 @@ public class HeadlessShutdown {
     }
 
     private void startShutdownListener(final ServerSocket serverSocket, final String secretString) {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Service/daemon shutdown listener", () -> {
 
-            @Override
-            @TaskDescription("Service/daemon shutdown listener")
-            public void run() {
-                writeToLog("Listening for shutdown signals");
-                Socket client = null;
-                String message = null;
-                try {
-                    client = waitForConnection(serverSocket);
-                    message = readMessage(client);
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-                if (message != null) {
-                    writeToLog("Message \"" + message + "\" received");
-                    if (message.contains("shutdown") && message.contains(secretString)) {
-                        logger.info("Received shutdown signal, shutting down");
-                        IOUtils.closeQuietly(serverSocket);
-                        Instance.shutdown(); // non-blocking
-                        try {
-                            Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
-                            writeToLog("Regular shutdown time expired, shutting down hard using System.exit()");
-                            System.exit(0);
-                        } catch (InterruptedException e) {
-                            writeToLog("Received expected interrupt before the shutdown timeout expired");
-                        }
+            writeToLog("Listening for shutdown signals");
+            Socket client = null;
+            String message = null;
+            try {
+                client = waitForConnection(serverSocket);
+                message = readMessage(client);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+            if (message != null) {
+                writeToLog("Message \"" + message + "\" received");
+                if (message.contains("shutdown") && message.contains(secretString)) {
+                    logger.info("Received shutdown signal, shutting down");
+                    IOUtils.closeQuietly(serverSocket);
+                    Instance.shutdown(); // non-blocking
+                    try {
+                        Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
+                        writeToLog("Regular shutdown time expired, shutting down hard using System.exit()");
+                        System.exit(0);
+                    } catch (InterruptedException e) {
+                        writeToLog("Received expected interrupt before the shutdown timeout expired");
                     }
                 }
             }

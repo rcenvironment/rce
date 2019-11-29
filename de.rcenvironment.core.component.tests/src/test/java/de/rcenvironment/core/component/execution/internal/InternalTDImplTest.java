@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
@@ -11,13 +11,11 @@ package de.rcenvironment.core.component.execution.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import java.util.LinkedList;
-import java.util.Queue;
-
 import org.junit.Test;
 
 import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -64,8 +62,8 @@ public class InternalTDImplTest {
         type = InternalTDImpl.InternalTDType.NestedLoopReset;
         WorkflowGraphHop graphHop = new WorkflowGraphHop(new ComponentExecutionIdentifier(HOP_EXE_ID), HOP_OUTPUT_NAME,
             new ComponentExecutionIdentifier(TARGET_EXE_ID), TARGET_OUTPUT_NAME);
-        Queue<WorkflowGraphHop> graphHops = new LinkedList<>();
-        graphHops.add(graphHop);
+        WorkflowGraphPath graphHops = WorkflowGraphPath.createEmpty();
+        graphHops.append(graphHop);
         internalTD = new InternalTDImpl(type, INTERNAL_TD_ID, graphHops);
         tdStr = internalTD.serialize();
         assertEquals(SERIALIZED_RESET_LOOP_TD, tdStr); // ensures backward compatibility

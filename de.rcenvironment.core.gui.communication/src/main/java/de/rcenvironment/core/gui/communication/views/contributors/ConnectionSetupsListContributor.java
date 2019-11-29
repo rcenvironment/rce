@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.communication.views.contributors;
@@ -141,8 +141,21 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
                 if (ncp != null) {
                     ConnectionSetup newNetworkConnection = connectionSetupService.createConnectionSetup(
                         ncp, newConnectionName, true);
-                    if (newConnectImmediately) {
-                        newNetworkConnection.signalStartIntent();
+                    if (newNetworkConnection != null) {
+                        if (newConnectImmediately) {
+                            newNetworkConnection.signalStartIntent();
+                        }
+                    } else {
+                        display.asyncExec(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                                errorDialog.setMessage(StringUtils.format("SSH connection with host '%s' and port '%d' already exists.",
+                                    ncp.getHost(), ncp.getPort()));
+                                errorDialog.open();
+                            }
+                        });
                     }
                 }
             }
@@ -280,6 +293,25 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
             String connectionName = dialog.getConnectionName();
             boolean connectImmediately = dialog.getConnectImmediately();
             NetworkContactPoint ncp = dialog.getParsedNetworkContactPoint();
+
+            //
+            if (connectionSetupService.connectionAlreadyExists(ncp)) {
+                display.asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(),
+                            SWT.ICON_ERROR | SWT.OK);
+                        errorDialog.setMessage(
+                            StringUtils.format("Connection with host %s and port %d already exists.",
+                                ncp.getHost(), ncp.getPort()));
+                        errorDialog.open();
+                    }
+                });
+                return;
+            }
+            //
+
             if (ncp != null) {
                 if (connectionName.isEmpty()) {
                     connectionName = ncp.getHost() + ":" + ncp.getPort();
@@ -307,10 +339,10 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
      * @return the tree element to refresh when the list of {@link ConnectionSetup}s changes
      */
     public Object getFullRefreshRootElement() {
-        //For some reason, refreshing the root element does not work.
+        // For some reason, refreshing the root element does not work.
         return PARENT_ANCHOR;
     }
-    
+
     /**
      * @return the tree element to expand when the list of {@link ConnectionSetup}s changes
      */

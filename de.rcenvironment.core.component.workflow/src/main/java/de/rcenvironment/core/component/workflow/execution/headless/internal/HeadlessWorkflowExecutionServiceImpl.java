@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.component.workflow.execution.headless.internal;
 
@@ -69,6 +69,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * @author Phillip Kroll
  * @author Doreen Seider
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 @Component
 public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExecutionService {
@@ -90,10 +91,9 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     @Override
-    public FinalWorkflowState executeWorkflow(HeadlessWorkflowExecutionContext wfExeContext) throws WorkflowExecutionException {
-        final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx = new ExtendedHeadlessWorkflowExecutionContext(wfExeContext);
-        startHeadlessWorkflowExecution(extHeadlessWfExeCtx);
-        return waitForWorkflowTerminationAndCleanup(extHeadlessWfExeCtx);
+    public FinalWorkflowState executeWorkflow(ExtendedHeadlessWorkflowExecutionContext wfExeContext) throws WorkflowExecutionException {
+        startHeadlessWorkflowExecution(wfExeContext);
+        return waitForWorkflowTerminationAndCleanup(wfExeContext);
     }
 
     @Override
@@ -233,8 +233,16 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         Set<ExtendedHeadlessWorkflowExecutionContext> extHeadlessWfExeCtxsExpected = new HashSet<>();
 
         for (HeadlessWorkflowExecutionContext headlessWfExeCtx : headlessWfExeCtxs) {
-            final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx =
-                new ExtendedHeadlessWorkflowExecutionContext(headlessWfExeCtx);
+            final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx = new ExtendedHeadlessWorkflowExecutionContext();
+            extHeadlessWfExeCtx.setWfFile(headlessWfExeCtx.getWorkflowFile());
+            extHeadlessWfExeCtx.setLogDirectory(headlessWfExeCtx.getLogDirectory());
+            extHeadlessWfExeCtx.setPlaceholdersFile(headlessWfExeCtx.getPlaceholdersFile());
+            extHeadlessWfExeCtx.setTextOutputReceiver(headlessWfExeCtx.getTextOutputReceiver());
+            extHeadlessWfExeCtx.setIsCompactOutput(headlessWfExeCtx.isCompactOutput());
+            extHeadlessWfExeCtx.setSingleConsoleRowsProcessor(headlessWfExeCtx.getSingleConsoleRowReceiver());
+            extHeadlessWfExeCtx.setDisposeBehavior(headlessWfExeCtx.getDisposalBehavior());
+            extHeadlessWfExeCtx.setDeletionBehavior(headlessWfExeCtx.getDeletionBehavior());
+            extHeadlessWfExeCtx.setAbortIfWorkflowUpdateRequired(headlessWfExeCtx.shouldAbortIfWorkflowUpdateRequired());
             try {
                 startHeadlessWorkflowExecutionInternal1(extHeadlessWfExeCtx);
             } catch (WorkflowExecutionException e) {
@@ -531,7 +539,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     private Map<String, Map<String, String>> parsePlaceholdersFile(File placeholdersFile) throws WorkflowFileException {
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
-            return mapper.readValue(placeholdersFile, new TypeReference<HashMap<String, HashMap<String, String>>>() {
+            return mapper.readValue(placeholdersFile, new TypeReference<HashMap<String, Map<String, String>>>() {
             });
         } catch (IOException e) {
             throw new WorkflowFileException(StringUtils.format("Failed to parse placeholders file: %s",

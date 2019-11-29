@@ -3,14 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.internal;
 
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.CommonIdBase;
 import de.rcenvironment.core.communication.common.InstanceNodeId;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
@@ -20,7 +19,6 @@ import de.rcenvironment.core.communication.configuration.NodeConfigurationServic
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.Assertions;
-import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Implementation of {@link PlatformService}.
@@ -93,20 +91,9 @@ public class PlatformServiceImpl implements PlatformService {
     }
 
     @Override
-    public LogicalNodeId createRecognizableLocalLogicalNodeId(String qualifier) {
-        return localInstanceId.expandToLogicalNodeId(CommonIdBase.RECOGNIZABLE_LOGICAL_NODE_PART_PREFIX + qualifier);
-    }
-
-    @Override
-    public LogicalNodeId createTransientLocalLogicalNodeId() {
-        // FIXME not collision-free at all, only for testing; restricted to not require DM field adaptations (36 chars)
-        return localInstanceId.expandToLogicalNodeId(CommonIdBase.TRANSIENT_LOGICAL_NODE_PART_PREFIX + IdGenerator.fastRandomHexString(2));
-    }
-
-    @Override
     public boolean matchesLocalInstance(ResolvableNodeId identifier) {
         Assertions.isDefined(identifier, "NodeIdentifier must not be null.");
-        // TODO >=8.0: review whether this is the best possible implementation considering possible InstanceId collisionss - misc_ro
+        // TODO >=8.0: review whether this is the best possible implementation considering possible InstanceId collisions - misc_ro
         return localInitialNodeInformation.getInstanceNodeSessionId().isSameInstanceNodeAs(identifier);
     }
 

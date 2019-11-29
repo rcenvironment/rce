@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -30,6 +30,10 @@ public final class SshAccountRole {
     private String allowedCommandRegEx = null;
 
     private String disallowedCommandRegEx = null;
+    
+    private boolean allowedToOpenShell = true;
+    
+    private boolean allowedToUseUplink = false;
 
     public SshAccountRole(String roleName) {
         this.roleName = roleName;
@@ -43,6 +47,7 @@ public final class SshAccountRole {
             // Note: the space is important for security, as it prevents the user from executing ra-admin - do not remove it!
             allowedCommandPatterns.add("ra .*");
             allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
+            allowedToUseUplink = true;
             break;
         case SshConstants.ROLE_NAME_REMOTE_ACCESS_ADMIN:
             allowedCommandPatterns.add("ra.*");
@@ -96,6 +101,10 @@ public final class SshAccountRole {
         case SshConstants.ROLE_NAME_DEVELOPER:
             allowedCommandPatterns.add(".*");
             break;
+        case SshConstants.ROLE_NAME_UPLINK_CLIENT:
+            allowedToOpenShell = false;
+            allowedToUseUplink = true;
+            break;
         case SshConstants.ROLE_NAME_DEFAULT:
             break;
         default:
@@ -111,6 +120,11 @@ public final class SshAccountRole {
         if (!SshConstants.ROLE_NAME_DEVELOPER.equals(roleName)) {
             disallowedCommandPatterns.add("wf open.*");
         }
+    }
+
+    
+    public boolean isAllowedToUseUplink() {
+        return allowedToUseUplink;
     }
 
     public String getRoleName() {
@@ -153,6 +167,10 @@ public final class SshAccountRole {
             disallowedCommandRegEx = regExBuilder.toString();
         }
         return disallowedCommandRegEx;
+    }
+    
+    public boolean isAllowedToOpenShell() {
+        return allowedToOpenShell;
     }
 
     @Override

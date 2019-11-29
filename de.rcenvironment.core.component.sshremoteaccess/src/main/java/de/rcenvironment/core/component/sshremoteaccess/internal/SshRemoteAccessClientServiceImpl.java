@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.sshremoteaccess.internal;
@@ -44,7 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
-import de.rcenvironment.core.authorization.api.AuthorizationService;
+import de.rcenvironment.core.communication.api.LogicalNodeManagementService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
@@ -111,14 +111,20 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
 
     private Map<String, LogicalNodeId> logicalNodeMap;
 
-    private AuthorizationService authorizationService;
-
     private TempFileService tempFileService;
+
+    @Reference
+    private LogicalNodeManagementService logicalNodeManagementService;
 
     public SshRemoteAccessClientServiceImpl() {
         registeredComponentsPerConnection = Collections.synchronizedMap(new HashMap<String, Map<String, ComponentInstallation>>());
         registeredComponentHashesPerConnection = Collections.synchronizedMap(new HashMap<String, Map<String, String>>());
         logicalNodeMap = new HashMap<>();
+    }
+
+    // For test purposes only
+    protected void bindLogicalNodeManagementService(LogicalNodeManagementService newService) {
+        logicalNodeManagementService = newService;
     }
 
     @Override
@@ -188,6 +194,10 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             String line = it.nextLine();
             if (line.equals("")) {
                 LOG.error("Could not load the list of available workflows from the remote instance. Reason: " + it.nextLine());
+            } else if (line.contains("Your account is not allowed to run an interactive shell or execute commands.")) {
+                LOG.error("Could not load the list of available workflows from the remote instance. Reason: " + line);
+                sshService.disconnectSession(connectionId);
+                return;
             } else {
                 numberOfWorkflows = Integer.parseInt(line);
             }
@@ -259,7 +269,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             LOG.error("Executing SSH command (ra list-tools) failed", e1);
         }
 
-        if (toolDescriptionsString.contains("Command ra list-tools not executed.")) {
+        if (toolDescriptionsString.contains("Command ra list-tools not executed.")
+            || toolDescriptionsString.contains("Your account is not allowed to run an interactive shell or execute commands.")) {
             LOG.error("Could not load the list of available tools from the remote instance. Reason: " + toolDescriptionsString);
         } else {
             parseOutputStringForComponentsList(toolDescriptionsString, connectionId, registeredComponents, registeredComponentHashes,
@@ -415,7 +426,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             LogicalNodeId remoteId = NodeIdentifierUtils.parseLogicalNodeIdString(remoteNodeId);
             String recPart = remoteId.getInstanceNodeIdString();
             // If there is no local node yet representing the given remote node, create a new one
-            LogicalNodeId logicalNode = platformService.createRecognizableLocalLogicalNodeId(recPart);
+            // (note: we decided against backporting logical node naming to this deprecated feature)
+            LogicalNodeId logicalNode = logicalNodeManagementService.createRecognizableLocalLogicalNodeId(recPart, null);
             logicalNodeMap.put(remoteNodeId, logicalNode);
             return logicalNode;
         } catch (IdentifierException e) {
@@ -432,7 +444,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         }
         // If there is no local node yet representing the given remote node, create a new one
         // TODO Rework when we have a concept for display names
-        LogicalNodeId logicalNode = platformService.createTransientLocalLogicalNodeId();
+        // (note: we decided against backporting logical node naming to this deprecated feature)
+        LogicalNodeId logicalNode = logicalNodeManagementService.createTransientLocalLogicalNodeId(null);
         logicalNodeMap.put(id, logicalNode);
         return logicalNode;
     }
@@ -537,9 +550,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
     @Activate
     public void activate() {
         taskFuture = ConcurrencyUtils.getAsyncTaskService()
-            .scheduleAtFixedRate("Periodic updating of SSH-accessible remote tools", () -> {
-                updateSshRemoteAccessComponents();
-            }, TimeUnit.SECONDS.toMillis(UPDATE_TOOLS_INTERVAL_SECS));
+            .scheduleAtFixedInterval("Periodic updating of SSH-accessible remote tools", this::updateSshRemoteAccessComponents,
+                TimeUnit.SECONDS.toMillis(UPDATE_TOOLS_INTERVAL_SECS));
         tempFileService = TempFileServiceAccess.getInstance();
     }
 
@@ -561,11 +573,6 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             LOG.error("Failed to read default tool icon: " + e);
             return null;
         }
-    }
-
-    @Reference
-    protected void bindAuthorizationService(AuthorizationService newInstance) {
-        this.authorizationService = newInstance;
     }
 
     @Override

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 package de.rcenvironment.core.gui.authorization;
@@ -30,7 +30,7 @@ public final class ShowAuthorizationGroupIdAction extends Action {
     @Override
     public void run() {
         if (viewer.getLabelProvider() instanceof AuthorizationLabelProvider) {
-            ((AuthorizationLabelProvider) viewer.getLabelProvider()).setShowID(isChecked());
+            ((AuthorizationLabelProvider) viewer.getLabelProvider()).setShowGroupID(isChecked());
             viewer.refresh();
         }
     }

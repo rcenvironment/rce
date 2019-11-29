@@ -45,7 +45,7 @@
                         inputs are closed.</para>
                     </listitem>
                     <listitem>
-                        <para>Close outputs on 'True': Use this option if the switch component is
+                        <para>Close outputs on 'False': Use this option if the switch component is
                         supposed to control the loop. All inputs which are connected to the output
                         'False' will be closed. Note that a component is finished if all of its
                         inputs are closed.</para>

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -20,7 +20,6 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Checks periodically if heartbeat messages of workflow-related components were received and react on timeouts. Until RCE 8, this detected
@@ -88,8 +87,8 @@ public class ComponentDisconnectWatcher implements Runnable {
         }
     }
 
+    // Peridically check for heartbeat messages from components (old task description)
     @Override
-    @TaskDescription("Peridically check for heartbeat messages from components")
     public void run() {
         if (VERBOSE_LOGGING) {
             LOG.debug(logMessage);

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration;
@@ -22,6 +22,7 @@ import de.rcenvironment.core.configuration.internal.UnpackedFilesDirectoryResolv
  * @author Robert Mischke
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Kathrin Schaffert
  */
 public interface ConfigurationService {
 
@@ -67,6 +68,16 @@ public interface ConfigurationService {
     String CONFIGURATION_PLACEHOLDER_VERSION = "${version}";
 
     /**
+     * A placeholder in certain configuration properties that is resolved to the system's Java Version.
+     */
+    String CONFIGURATION_PLACEHOLDER_JAVA_VERSION = "${javaVersion}";
+
+    /**
+     * A placeholder in certain configuration properties that is resolved to the operating system name.
+     */
+    String CONFIGURATION_PLACEHOLDER_SYSTEM_NAME = "${systemName}";
+
+    /**
      * Default value for configuration key "general/instanceName".
      */
     String DEFAULT_INSTANCE_NAME_VALUE = "Unnamed instance started by \"${systemUser}\" on ${hostName}";
@@ -92,6 +103,16 @@ public interface ConfigurationService {
      * Standard Java "user.name" property.
      */
     String SYSTEM_PROPERTY_USER_NAME = "user.name";
+
+    /**
+     * Standard Java "java.version" property.
+     */
+    String SYSTEM_PROPERTY_JAVA_VERSION = "java.version";
+
+    /**
+     * Standard Java "os.name" property.
+     */
+    String SYSTEM_PROPERTY_OS_NAME = "os.name";
 
     /**
      * Identifies various directories/locations that are affected by the chosen profile directory, or other configuration settings.
@@ -386,6 +407,13 @@ public interface ConfigurationService {
     File initializeSubDirInConfigurablePath(ConfigurablePathId pathId, String relativePath);
 
     /**
+     * @param subdir the requested subdirectory within the profile's import directory
+     * @return the path of the profile's standard import directory for the given subdir part (currently, this is &lt;profile>/import/xy for
+     *         subdir value "xy"); no check is made whether this directory actually exists
+     */
+    File getStandardImportDirectory(String subdir);
+
+    /**
      * Returns the *parent* temporary directory root. Inside of this, the *instance* temporary directory root is created on startup.
      * <p>
      * NOTE: This method is only intended for the central management and cleanup of temporary directories. It should NOT be used by other
@@ -403,7 +431,7 @@ public interface ConfigurationService {
      * @return true if the default configuration file is used.
      */
     boolean isUsingDefaultConfigurationValues();
-    
+
     /**
      * Attempts to resolve the given fileset id to a directory containing unpacked files (which should always be considered read-only).
      * Refer to the {@link UnpackedFilesDirectoryResolver} JavaDoc for details of the resolution process.

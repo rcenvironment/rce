@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.utils.incubator;
@@ -32,6 +32,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Unit test for {@link FileSystemOperations} methods.
  * 
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class FileSystemOperationsTest {
 

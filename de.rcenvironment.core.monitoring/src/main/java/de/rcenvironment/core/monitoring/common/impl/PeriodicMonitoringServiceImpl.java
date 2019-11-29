@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.monitoring.common.impl;
@@ -28,7 +28,6 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.monitoring.common.spi.PeriodicMonitoringDataContributor;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsConsumer;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
 
@@ -67,7 +66,6 @@ public class PeriodicMonitoringServiceImpl {
     private final class BackgroundTask implements Runnable {
 
         @Override
-        @TaskDescription("Periodic background monitoring task")
         public void run() {
             final List<String> output;
             synchronized (activeTopics) {
@@ -111,7 +109,7 @@ public class PeriodicMonitoringServiceImpl {
         // always start the task, as topics may be enabled at a later time
         // TODO leave at this initial delay or start immediately?
         taskFuture = ConcurrencyUtils.getAsyncTaskService()
-            .scheduleAtFixedRate(new BackgroundTask(), TimeUnit.SECONDS.toMillis(intervalSec));
+            .scheduleAtFixedInterval("Periodic background monitoring task", new BackgroundTask(), TimeUnit.SECONDS.toMillis(intervalSec));
 
         objectBindingsService.setConsumer(PeriodicMonitoringDataContributor.class,
             new ObjectBindingsConsumer<PeriodicMonitoringDataContributor>() {

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor.connections;
@@ -38,6 +38,7 @@ import de.rcenvironment.core.gui.workflow.editor.connections.ConnectionDialogCom
  * Section that shows the connection editor.
  * 
  * @author Oliver Seebach
+ * @author Brigitte Boden
  *
  */
 public class ConnectionsSection extends AbstractPropertySection {

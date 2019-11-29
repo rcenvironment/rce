@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.authorization.api;
@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.model.api.ComponentRevision;
  * then this abstraction is the place to change it.
  *
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public interface ComponentAuthorizationSelector {
 
@@ -28,5 +29,10 @@ public interface ComponentAuthorizationSelector {
      * @return the unique identifier of this selector; instances with the same id are considered equal
      */
     String getId();
+    
+    /**
+     * @return true iff the component should be assignable to authorization groups by the user
+     */
+    boolean isAssignable();
 
 }

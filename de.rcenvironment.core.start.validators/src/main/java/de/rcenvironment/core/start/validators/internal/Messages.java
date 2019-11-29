@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.validators.internal;
@@ -49,6 +49,30 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String failedToCreateTempFile;
+
+    /** Constant. Takes two parameters: Profile ID (String) and path to profile directory (String) */
+    public static String profileUpgradeQuery;
+
+    /** Constant. Takes three parameters: Profile ID (String), path to profile directory (String), and current profile version (int) */
+    public static String profileUpgradeLogMessage;
+
+    /** Constant. Takes three parameters: Profile ID (String), path to profile directory (String), and current profile version (int) */
+    public static String profileUpgradeNoQueryUserHint;
+
+    /** Constant. Takes two parameters: Profile ID (String) and path to profile directory (String) */
+    public static String profileUpgradeTriedAndFailedError;
+
+    /** Constant. Takes two parameters: Profile ID (String) and current profile version (int) */
+    public static String profileUpgradeNotPossibleError;
+
+    /** Constant. */
+    public static String profileVersionValidationSuccess;
+    
+    /** Constant. Takes one parameter: path to profile directory (String) */
+    public static String profileNotAccessibleError;
+    
+    /** Constant. Takes one parameter: Profile ID (String) */
+    public static String profileVersionNotDeterminedError;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

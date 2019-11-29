@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.embedded.ssh.internal;
@@ -25,6 +25,7 @@ import de.rcenvironment.core.embedded.ssh.api.SshAccount;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class SshConfiguration {
 
@@ -241,6 +242,10 @@ public class SshConfiguration {
 
     public Integer getIdleTimeoutSeconds() {
         return idleTimeoutSeconds;
+    }
+
+    public void setIdleTimeoutSeconds(Integer idleTimeoutSeconds) {
+        this.idleTimeoutSeconds = idleTimeoutSeconds;
     }
 
     public void setPort(int sshContactPoint) {

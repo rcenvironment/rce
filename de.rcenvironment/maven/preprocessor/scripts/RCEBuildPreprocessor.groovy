@@ -22,16 +22,16 @@ class RCEBuildPreprocessor {
 
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
-			'platform': 'releases/9.1.0',
-			'intermediate': 'releases/9.1.0'
+			'platform': 'snapshots/trunk',
+			'intermediate': 'snapshots/trunk'
 		],
 		'rc_or_release': [
-			'platform': 'releases/9.1.0',
-			'intermediate': 'releases/9.1.0'
+			'platform': 'releases/10.0.0',
+			'intermediate': 'releases/10.0.0'
 		]
 	]
 	
-	final DEFAULT_REPOSITORIES_ROOT_URL = 'https://software.dlr.de/updates/rce/9.x/repositories/'
+	final DEFAULT_REPOSITORIES_ROOT_URL = 'https://software.dlr.de/updates/rce/10.x/repositories/'
 	
 	private maven
 	private buildType     // snapshot, rc, release

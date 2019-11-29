@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection;
@@ -18,6 +18,8 @@ public class SshConnectionContext {
     private String id;
 
     private String displayName;
+    
+    private String qualifier;
 
     private String destinationHost;
 
@@ -32,11 +34,14 @@ public class SshConnectionContext {
     private boolean connectImmediately;
 
     private boolean autoRetry;
+    
+    private boolean isGateway;
 
-    public SshConnectionContext(String id, String displayName, String destinationHost, int port, String sshAuthUser,
-        String keyfileLocation, boolean usePassphrase, boolean connectImmediately, boolean autoRetry) {
+    public SshConnectionContext(String id, String displayName, String qualifier, String destinationHost, int port, String sshAuthUser,
+        String keyfileLocation, boolean usePassphrase, boolean connectImmediately, boolean autoRetry, boolean isGateway) {
         this.id = id;
         this.displayName = displayName;
+        this.qualifier = qualifier;
         this.destinationHost = destinationHost;
         this.port = port;
         this.sshAuthUser = sshAuthUser;
@@ -44,6 +49,7 @@ public class SshConnectionContext {
         this.usePassphrase = usePassphrase;
         this.connectImmediately = connectImmediately;
         this.autoRetry = autoRetry;
+        this.isGateway = isGateway;
     }
 
     public String getId() {
@@ -80,5 +86,13 @@ public class SshConnectionContext {
 
     public boolean isAutoRetry() {
         return autoRetry;
+    }
+    
+    public String getQualifier() {
+        return qualifier;
+    }
+    
+    public boolean isGateway() {
+        return isGateway;
     }
 }

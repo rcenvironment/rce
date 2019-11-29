@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.communication.views;
 
@@ -37,6 +37,7 @@ import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDat
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
  */
 public class NetworkViewContentProvider implements IStructuredContentProvider, ITreeContentProvider {
 
@@ -86,6 +87,7 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
         // keep top-level nodes in a set to recognize them in getParent()
         firstLevelNodes.clear();
         firstLevelNodes.add(AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE);
+        firstLevelNodes.add(AnchorPoints.SSH_UPLINK_SECTION_PARENT_NODE);
         firstLevelNodes.add(AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE);
 
         return firstLevelNodes.toArray();
@@ -129,7 +131,8 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
         }
 
         if (parentNode == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE
-            || parentNode == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
+            || parentNode == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE
+            || parentNode == AnchorPoints.SSH_UPLINK_SECTION_PARENT_NODE) {
             List<Object> result = new ArrayList<>();
             if (parentNode == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE) {
                 // old code - hard-coded element

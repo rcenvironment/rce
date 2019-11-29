@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SSH Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.component.sshremoteaccess;singleton:=true
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: com.jcraft.jsch;version="0.1.54",
+Import-Package: com.jcraft.jsch;version="0.1.55",
  de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,

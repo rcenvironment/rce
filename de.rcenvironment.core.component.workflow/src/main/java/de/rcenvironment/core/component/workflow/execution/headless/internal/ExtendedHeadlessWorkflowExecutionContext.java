@@ -3,13 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.headless.internal;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,18 +19,13 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
-import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.headless.api.ConsoleRowSubscriber;
-import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContext;
-import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DeletionBehavior;
-import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DisposalBehavior;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
  * Encapsulates the specific information for a single workflow execution.
@@ -39,11 +33,9 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * @author Robert Mischke
  * @author Doreen Seider
  */
-public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflowExecutionContext {
+public class ExtendedHeadlessWorkflowExecutionContext extends HeadlessWorkflowExecutionContextImpl {
 
     private final Log log = LogFactory.getLog(getClass());
-
-    private final HeadlessWorkflowExecutionContext headlessWfExeContext;
 
     private final CountDownLatch workflowFinishedLatch;
 
@@ -64,10 +56,8 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
     // informational; not needed for execution - misc_ro
     private WorkflowState finalState;
-
-    public ExtendedHeadlessWorkflowExecutionContext(HeadlessWorkflowExecutionContext headlessWfExeContext) {
-        this.headlessWfExeContext = headlessWfExeContext;
-
+    
+    public ExtendedHeadlessWorkflowExecutionContext() {
         // wait for two events: the "end of console output marker", and the workflow reaching a finished state; using two separate latches
         // to ensure a duplicate event cannot count for the other type -misc_ro
         workflowFinishedLatch = new CountDownLatch(1);
@@ -94,14 +84,14 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     }
 
     protected void addOutput(String compactOutput, String verboseOutput) {
-        if (headlessWfExeContext.getTextOutputReceiver() != null) {
+        if (this.getTextOutputReceiver() != null) {
             if (isCompactOutput()) {
                 if (compactOutput != null && !compactOutput.isEmpty()) {
-                    headlessWfExeContext.getTextOutputReceiver().addOutput(compactOutput);
+                    this.getTextOutputReceiver().addOutput(compactOutput);
                 }
             } else {
                 if (verboseOutput != null && !verboseOutput.isEmpty()) {
-                    headlessWfExeContext.getTextOutputReceiver().addOutput(verboseOutput);
+                    this.getTextOutputReceiver().addOutput(verboseOutput);
                 }
             }
         }
@@ -111,8 +101,8 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
      * @param consoleRow called if new console row was received, e.g. by the {@link ConsoleRowSubscriber}
      */
     public final void reportConsoleRowReceived(ConsoleRow consoleRow) {
-        if (headlessWfExeContext.getSingleConsoleRowReceiver() != null) {
-            headlessWfExeContext.getSingleConsoleRowReceiver().onConsoleRow(consoleRow);
+        if (this.getSingleConsoleRowReceiver() != null) {
+            this.getSingleConsoleRowReceiver().onConsoleRow(consoleRow);
         }
     }
 
@@ -248,56 +238,6 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
     private synchronized List<NotificationSubscription> getNotificationSubscribersToUnsubscribeOnFinish() {
         return new ArrayList<>(notificationSubscriptionsToUnsubscribeOnFinish);
-    }
-
-    @Override
-    public File getWorkflowFile() {
-        return headlessWfExeContext.getWorkflowFile();
-    }
-
-    @Override
-    public File getPlaceholdersFile() {
-        return headlessWfExeContext.getPlaceholdersFile();
-    }
-
-    @Override
-    public File getLogDirectory() {
-        return headlessWfExeContext.getLogDirectory();
-    }
-
-    @Override
-    public File[] getLogFiles() {
-        return headlessWfExeContext.getLogFiles();
-    }
-
-    @Override
-    public TextOutputReceiver getTextOutputReceiver() {
-        return headlessWfExeContext.getTextOutputReceiver();
-    }
-
-    @Override
-    public SingleConsoleRowsProcessor getSingleConsoleRowReceiver() {
-        return headlessWfExeContext.getSingleConsoleRowReceiver();
-    }
-
-    @Override
-    public DisposalBehavior getDisposalBehavior() {
-        return headlessWfExeContext.getDisposalBehavior();
-    }
-
-    @Override
-    public DeletionBehavior getDeletionBehavior() {
-        return headlessWfExeContext.getDeletionBehavior();
-    }
-
-    @Override
-    public boolean shouldAbortIfWorkflowUpdateRequired() {
-        return headlessWfExeContext.shouldAbortIfWorkflowUpdateRequired();
-    }
-
-    @Override
-    public boolean isCompactOutput() {
-        return headlessWfExeContext.isCompactOutput();
     }
 
     /**

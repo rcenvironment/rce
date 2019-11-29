@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.scpoutputcollector.common</artifactId>
 	<name>RCE Output Collector Component Common Bundle</name>
-	<version>8.2.0-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

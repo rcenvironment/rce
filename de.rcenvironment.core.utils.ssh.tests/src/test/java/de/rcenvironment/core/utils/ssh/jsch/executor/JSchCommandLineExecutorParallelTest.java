@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.utils.ssh.jsch.executor;
@@ -44,6 +44,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * Test case for {@link JSchCommandLineExecutor}.
  * 
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class JSchCommandLineExecutorParallelTest {
 

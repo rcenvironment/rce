@@ -3,17 +3,15 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.management.internal;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
 
@@ -26,6 +24,8 @@ import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
 import de.rcenvironment.core.authorization.cryptography.api.SymmetricKey;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.management.utils.JsonDataEncryptionUtils;
+import de.rcenvironment.core.component.management.utils.JsonDataWithOptionalEncryption;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -40,43 +40,6 @@ import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 public final class ComponentDataConverter {
 
     private static final ObjectMapper sharedJsonMapper = JsonUtils.getDefaultObjectMapper();
-
-    /**
-     * A simple bean representing the component entry data to be published as JSON.
-     *
-     * @author Robert Mischke
-     */
-    public static class ComponentEntryTransferObject {
-
-        private Map<String, String> authData; // null = public access
-
-        private String data; // serialized, and encrypted if non-public
-
-        @SuppressWarnings("unused") // used for JSON deserialization
-        public ComponentEntryTransferObject() {}
-
-        ComponentEntryTransferObject(String data, Map<String, String> authKeys) {
-            this.authData = authKeys;
-            this.data = data;
-        }
-
-        public Map<String, String> getAuthData() {
-            return authData;
-        }
-
-        public void setAuthData(Map<String, String> authKeys) {
-            this.authData = authKeys;
-        }
-
-        public String getData() {
-            return data;
-        }
-
-        public void setData(String data) {
-            this.data = data;
-        }
-
-    }
 
     private ComponentDataConverter() {}
 
@@ -131,20 +94,18 @@ public final class ComponentDataConverter {
                 permissionSet, permissionSet, false, null);
         }
         try {
-            // final String rawInstallationData = Objects.requireNonNull(entry.getPublicationData());
+
             final String rawComponentData = serializeComponentInstallationData(componentInstallation);
-            final ComponentEntryTransferObject transferObject;
+            final JsonDataWithOptionalEncryption transferObject;
+
             if (permissionSet.isPublic()) {
                 // public -> no encryption; simply embed the serialized component data
-                transferObject = new ComponentEntryTransferObject(serializeComponentInstallationData(componentInstallation), null);
+                transferObject = JsonDataEncryptionUtils.asPublicData(serializeComponentInstallationData(componentInstallation));
             } else {
-                // generate a common symmetric encryption key to encrypt the installation data with
-                final CryptographyOperationsProvider cryptographyOperations = authorizationService.getCryptographyOperationsProvider();
-                // encrypt the data
-                SymmetricKey componentDataEncryptionKey = cryptographyOperations.generateSymmetricKey();
-                String encryptedComponentData = cryptographyOperations.encryptAndEncodeString(componentDataEncryptionKey, rawComponentData);
-                // encrypt the common key with each group's individual key
-                Map<String, String> authKeys = new HashMap<>();
+                // TODO (p2) 9.0.0 the content data is encrypted, but the component's id is still publicly visible; encrypt or hash it
+
+                // gather each group's individual key
+                Map<String, SymmetricKey> keyData = new HashMap<>();
                 for (AuthorizationAccessGroup group : permissionSet.getAccessGroups()) {
                     final AuthorizationAccessGroupKeyData keyDataForGroup = authorizationService.getKeyDataForGroup(group);
                     if (keyDataForGroup == null) {
@@ -153,16 +114,14 @@ public final class ComponentDataConverter {
                                 + " when creating publication data for " + componentInstallation.getInstallationId() + "; skipping group");
                         continue;
                     }
-                    SymmetricKey groupKey = keyDataForGroup.getSymmetricKey();
-                    // TODO (p3) improve: this is slightly inefficient, as the common key was encoded already, and is now encrypted as that
-                    // string form's byte array representation - ideally, the key's byte array form would be encrypted directly
-                    authKeys.put(group.getFullId(),
-                        cryptographyOperations.encryptAndEncodeString(groupKey, componentDataEncryptionKey.getEncodedForm()));
+                    keyData.put(group.getFullId(), keyDataForGroup.getSymmetricKey());
                 }
 
-                // TODO (p2) 9.0.0 the content data is now encrypted, but the component's id is still publicly visible; encrypt or hash it
-                transferObject = new ComponentEntryTransferObject(encryptedComponentData, authKeys);
+                // delegate to the utility method to encrypt with a common key, and individually encrypt that key for each group
+                transferObject = JsonDataEncryptionUtils.encryptForKeys(rawComponentData, keyData,
+                    authorizationService.getCryptographyOperationsProvider());
             }
+
             final String serializedForm = sharedJsonMapper.writeValueAsString(transferObject);
             return new DistributedComponentEntryImpl(componentInstallation.getComponentInterface().getDisplayName(), componentInstallation,
                 permissionSet, permissionSet, false, serializedForm);
@@ -185,53 +144,42 @@ public final class ComponentDataConverter {
      */
     public static DistributedComponentEntry deserializeRemoteDistributedComponentEntry(String jsonData,
         AuthorizationService authorizationService) throws OperationFailureException {
-        final ComponentEntryTransferObject transferObject;
+        final JsonDataWithOptionalEncryption transferObject;
         try {
-            transferObject = sharedJsonMapper.readValue(jsonData, ComponentEntryTransferObject.class);
+            transferObject = sharedJsonMapper.readValue(jsonData, JsonDataWithOptionalEncryption.class);
         } catch (IOException e) {
             throw new OperationFailureException("Error deserializing component entry from JSON data: " + jsonData, e);
         }
-        final Map<String, String> authKeys = transferObject.getAuthData();
         final ComponentInstallation componentInstallation;
         final String displayName;
         final AuthorizationPermissionSet declaredPermissionSet;
         final AuthorizationPermissionSet matchingPermissionSet;
-        if (authKeys == null) {
+
+        if (JsonDataEncryptionUtils.isPublic(transferObject)) {
             // public access; no decryption required
             declaredPermissionSet = authorizationService.getDefaultAuthorizationObjects().permissionSetPublicInLocalNetwork();
             matchingPermissionSet = declaredPermissionSet;
-            componentInstallation = deserializeComponentInstallationData(transferObject.getData());
+            componentInstallation = deserializeComponentInstallationData(JsonDataEncryptionUtils.getPublicData(transferObject));
             displayName = componentInstallation.getComponentInterface().getDisplayName();
         } else {
-            // group-based authorization
-            final List<AuthorizationAccessGroup> declaredGroups = new ArrayList<>(authKeys.size());
-            final List<AuthorizationAccessGroup> matchingGroups = new ArrayList<>(authKeys.size());
-            String authMapValueForFirstMatchingGroup = null;
-            for (Entry<String, String> authEntry : authKeys.entrySet()) {
-                final AuthorizationAccessGroup remoteGroup = authorizationService.representRemoteGroupId(authEntry.getKey());
-                declaredGroups.add(remoteGroup);
-                if (authorizationService.isGroupAccessible(remoteGroup)) {
-                    matchingGroups.add(remoteGroup);
-                    // note: it is important that the group list maintains its ordering so this actually matches the first group
-                    if (authMapValueForFirstMatchingGroup == null) {
-                        authMapValueForFirstMatchingGroup = authEntry.getValue();
-                    }
-                }
-            }
+            // resolve the declared authorization groups and their intersection with locally accessible groups
+            final Set<String> declaredGroupIds = JsonDataEncryptionUtils.getKeyIds(transferObject);
+            final Set<AuthorizationAccessGroup> declaredGroups = authorizationService.representRemoteGroupIds(declaredGroupIds);
+            final Set<AuthorizationAccessGroup> matchingGroups = authorizationService.intersectWithAccessibleGroups(declaredGroups);
+
+            // convert to permission sets
             declaredPermissionSet = authorizationService.buildPermissionSet(declaredGroups);
             matchingPermissionSet = authorizationService.buildPermissionSet(matchingGroups);
-            if (!matchingPermissionSet.isLocalOnly()) { // at least one matching remote group
+            if (!matchingPermissionSet.isLocalOnly()) {
+                // there is at least one matching remote group -> pick an arbitrary one and attempt decryption
                 final CryptographyOperationsProvider cryptographyOperations = authorizationService.getCryptographyOperationsProvider();
-                // pick the first authorized group (arbitrary, but must match the map value stored above)
-                final AuthorizationAccessGroup groupForDecryption = matchingGroups.get(0);
+                final AuthorizationAccessGroup groupForDecryption = matchingPermissionSet.getArbitraryGroup();
+                final String groupId = groupForDecryption.getFullId();
                 final SymmetricKey groupKey = authorizationService.getKeyDataForGroup(groupForDecryption).getSymmetricKey();
-                // decrypt the common component data key
-                SymmetricKey componentDataKey = cryptographyOperations.decodeSymmetricKey(
-                    cryptographyOperations.decodeAndDecryptString(groupKey, authMapValueForFirstMatchingGroup));
-                // use the common component data key to decrypt the component data
-                final String decryptedComponentData =
-                    cryptographyOperations.decodeAndDecryptString(componentDataKey, transferObject.getData());
-                // parse the decrypted component data
+                // attempt decryption of the component data
+                String decryptedComponentData =
+                    JsonDataEncryptionUtils.attemptDecryption(transferObject, groupId, groupKey, cryptographyOperations);
+                // success -> deserialize
                 componentInstallation = deserializeComponentInstallationData(decryptedComponentData);
                 displayName = componentInstallation.getComponentInterface().getDisplayName();
             } else {
@@ -244,5 +192,4 @@ public final class ComponentDataConverter {
         return new DistributedComponentEntryImpl(displayName, componentInstallation, declaredPermissionSet, matchingPermissionSet, true,
             null);
     }
-
 }

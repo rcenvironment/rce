@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.authorization.impl;
@@ -26,6 +26,9 @@ import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.authorization.cryptography.api.CryptographyOperationsProvider;
 import de.rcenvironment.core.authorization.cryptography.api.SymmetricKey;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.common.CommonIdBase;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.component.authorization.api.ComponentAuthorizationSelector;
 import de.rcenvironment.core.component.authorization.api.ComponentExecutionAuthorizationService;
 import de.rcenvironment.core.component.authorization.api.RemotableComponentExecutionAuthorizationService;
@@ -34,6 +37,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.threadcontext.ThreadContextHolder;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
@@ -87,12 +91,24 @@ public class ComponentExecutionAuthorizationServiceImpl
     @AllowRemoteAccess
     public synchronized String requestExecutionTokenForPublicComponent(String internalComponentId, String componentVersion)
         throws OperationFailureException {
+        final LogicalNodeSessionId destinationNodeId = getLogicalNodeDestinationOfServiceCall();
+
         ComponentAuthorizationSelector componentSelector = localComponentRegistrationService.getComponentSelector(internalComponentId);
+        // TODO ugly quick fix: if the target node is a non-default LogicalNodeId, assume a proxy component and adjust the selector
+        if (!destinationNodeId.getLogicalNodePart().equals(CommonIdBase.DEFAULT_LOGICAL_NODE_PART)) {
+            componentSelector = patchComponentSelectorWithNonDefaultLogicalNodeId(componentSelector, componentVersion, destinationNodeId);
+        }
         AuthorizationPermissionSet permissionSet = localComponentRegistrationService.getComponentPermissionSet(componentSelector, true);
+
         if (permissionSet.isPublic()) {
-            log.debug("Generating access token for public component \"" + internalComponentId + "\"");
+            log.debug("Generating access token for public component \"" + internalComponentId + "\" on logical node :"
+                + destinationNodeId.getLogicalNodePart());
             return generateAndRegisterToken(internalComponentId + ":public");
         } else {
+            log.debug(StringUtils.format(
+                "Rejecting request for a public execution permission token for component \"%s\" on logical node :%s "
+                    + "as it is not currently public; actual permissions: %s",
+                internalComponentId, destinationNodeId.getLogicalNodePart(), permissionSet.getSignature()));
             throw new OperationFailureException(StringUtils.format(
                 "Public execution permission was requested for component \"%s\", "
                     + "but it is not currently public; maybe its permissions have been changed very recently",
@@ -104,23 +120,33 @@ public class ComponentExecutionAuthorizationServiceImpl
     @AllowRemoteAccess
     public String requestEncryptedExecutionTokenViaGroupMembership(String internalComponentId, String componentVersion, String groupId)
         throws OperationFailureException {
+        final LogicalNodeSessionId destinationNodeId = getLogicalNodeDestinationOfServiceCall();
 
         ComponentAuthorizationSelector componentSelector = localComponentRegistrationService.getComponentSelector(internalComponentId);
+        // TODO ugly quick fix: if the target node is a non-default LogicalNodeId, assume a proxy component and adjust the selector
+        if (!destinationNodeId.getLogicalNodePart().equals(CommonIdBase.DEFAULT_LOGICAL_NODE_PART)) {
+            componentSelector = patchComponentSelectorWithNonDefaultLogicalNodeId(componentSelector, componentVersion, destinationNodeId);
+        }
         AuthorizationPermissionSet permissionSet = localComponentRegistrationService.getComponentPermissionSet(componentSelector, true);
         AuthorizationAccessGroup groupReference = authorizationService.representRemoteGroupId(groupId);
 
         if (permissionSet.includesAccessGroup(groupReference)) {
-            log.debug(StringUtils.format("Generating access token for component \"%s\", accessible via group membership in \"%s\"",
-                internalComponentId, groupId));
+            log.debug(StringUtils.format(
+                "Generating access token for component \"%s\" on logical node :%s, accessible via group membership in \"%s\"",
+                internalComponentId, destinationNodeId.getLogicalNodePart(), groupId));
             final String accessToken = generateAndRegisterToken(internalComponentId + ":group");
             final AuthorizationAccessGroupKeyData groupKeyData = authorizationService.getKeyDataForGroup(groupReference);
             final SymmetricKey secretGroupKey = groupKeyData.getSymmetricKey();
             return cryptographyOperationsProvider.encryptAndEncodeString(secretGroupKey, accessToken);
         } else {
+            log.debug(StringUtils.format(
+                "Rejecting request for a group-based execution permission token for component \"%s\" on logical node :%s by group "
+                    + "as it is not currently available for that group; actual permissions: %s",
+                internalComponentId, destinationNodeId.getLogicalNodePart(), groupId, permissionSet.getSignature()));
             throw new OperationFailureException(StringUtils.format(
-                "Group-based execution permission was requested for component \"%s\", "
+                "Group-based execution permission was requested for component \"%s\" on logical node :%s, "
                     + "but it is not currently available for group \"%s\"; maybe its permissions have been changed very recently",
-                internalComponentId, groupId));
+                internalComponentId, destinationNodeId.getLogicalNodePart(), groupId));
         }
     }
 
@@ -198,6 +224,22 @@ public class ComponentExecutionAuthorizationServiceImpl
         if (removedUnused > 0) {
             log.debug("Removed " + removedUnused + " unused component execution token(s) that have timed out");
         }
+    }
+
+    private LogicalNodeSessionId getLogicalNodeDestinationOfServiceCall() {
+        final ServiceCallContext serviceCallContext = ThreadContextHolder.getCurrentContextAspect(ServiceCallContext.class);
+        if (serviceCallContext == null) {
+            throw new IllegalStateException("No service call context available");
+        }
+        final LogicalNodeSessionId receivingNodeId = serviceCallContext.getReceivingNode();
+        return receivingNodeId;
+    }
+
+    private ComponentAuthorizationSelector patchComponentSelectorWithNonDefaultLogicalNodeId(
+        ComponentAuthorizationSelector componentSelector, String componentVersion, final LogicalNodeSessionId destinationNodeId) {
+        componentSelector = new ComponentAuthorizationSelectorImpl(
+            componentSelector.getId() + "/" + componentVersion + "/" + destinationNodeId.getLogicalNodePart());
+        return componentSelector;
     }
 
 }

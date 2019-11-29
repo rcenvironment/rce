@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
@@ -45,13 +45,13 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Implementation of the {@link RemotableFileDataService}.
  * 
  * @author Juergen Klein
+ * @author Brigitte Boden
  */
 public class RemotableFileDataServiceImpl implements RemotableFileDataService {
 
@@ -272,31 +272,28 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
         }
 
         // asynchronously transfer the upload file to data management
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Generate data reference from upload", () -> {
 
-            @Override
-            @TaskDescription("Generate data reference from upload")
-            public void run() {
-                // TODO depending on file store, this could be optimized by moving (reusing) the
-                // upload file; alternatively, data stores could directly support incremental
-                // uploading - misc_ro
+            // TODO depending on file store, this could be optimized by moving (reusing) the
+            // upload file; alternatively, data stores could directly support incremental
+            // uploading - misc_ro
+            try {
+                InputStream fis = new BufferedInputStream(new FileInputStream(tempFile), UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE);
                 try {
-                    InputStream fis = new BufferedInputStream(new FileInputStream(tempFile), UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE);
-                    try {
-                        DataReference reference;
-                        reference = newReferenceFromStream(fis, metaDataSet, alreadyCompressed);
-                        // on success, attach the reference to the upload data
-                        upload.setDataReference(reference);
-                    } finally {
-                        IOUtils.closeQuietly(fis);
-                    }
-                } catch (IOException e) {
-                    // on any error, attach the exception to the upload data
-                    upload.setAsyncException(e);
-                } catch (RuntimeException e2) {
-                    upload.setAsyncException(new IOException(e2));
+                    DataReference reference;
+                    reference = newReferenceFromStream(fis, metaDataSet, alreadyCompressed);
+                    // on success, attach the reference to the upload data
+                    upload.setDataReference(reference);
+                } finally {
+                    IOUtils.closeQuietly(fis);
                 }
+            } catch (IOException e) {
+                // on any error, attach the exception to the upload data
+                upload.setAsyncException(e);
+            } catch (RuntimeException e2) {
+                upload.setAsyncException(new IOException(e2));
             }
+
         });
     }
 

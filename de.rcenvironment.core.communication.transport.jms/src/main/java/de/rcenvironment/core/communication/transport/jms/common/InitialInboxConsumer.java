@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.communication.transport.jms.common;
 
@@ -57,24 +57,21 @@ public final class InitialInboxConsumer extends AbstractJmsQueueConsumer impleme
 
     @Override
     protected void dispatchMessage(final Message message, final Connection connection) {
-        threadPool.execute(new Runnable() {
+        threadPool.execute("JMS Network Transport: Dispatch initial handshake request", () -> {
 
-            @Override
-            @TaskDescription("JMS Network Transport: Dispatch initial handshake request")
-            public void run() {
+            try {
+                Session responseSession = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 try {
-                    Session responseSession = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                    try {
-                        dispatchMessageInternal(message, responseSession, connection);
-                    } finally {
-                        if (responseSession != null) {
-                            responseSession.close();
-                        }
+                    dispatchMessageInternal(message, responseSession, connection);
+                } finally {
+                    if (responseSession != null) {
+                        responseSession.close();
                     }
-                } catch (JMSException e) {
-                    log.error("JMS exception in response session for request from queue " + queueName, e);
                 }
+            } catch (JMSException e) {
+                log.error("JMS exception in response session for request from queue " + queueName, e);
             }
+
         });
     }
 

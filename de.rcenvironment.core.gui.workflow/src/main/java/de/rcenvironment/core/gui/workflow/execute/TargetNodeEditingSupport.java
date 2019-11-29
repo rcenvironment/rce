@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
@@ -38,6 +38,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Heinrich Wendel
  * @author Christian Weiss
+ * @author Brigitte Boden
  */
 final class TargetNodeEditingSupport extends EditingSupport {
 
@@ -54,8 +55,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
     private Map<WorkflowNodeIdentifier, List<String>> values = new HashMap<WorkflowNodeIdentifier, List<String>>();
 
     /**
-     * Backing {@link InstanceNodeSessionId}s sorted as the are displayed in the
-     * combo box.
+     * Backing {@link InstanceNodeSessionId}s sorted as the are displayed in the combo box.
      */
     private Map<WorkflowNodeIdentifier, List<LogicalNodeId>> nodes = new HashMap<WorkflowNodeIdentifier, List<LogicalNodeId>>();
 
@@ -63,15 +63,15 @@ final class TargetNodeEditingSupport extends EditingSupport {
 
     private final ServiceRegistryAccess serviceRegistryAccess;
 
-    private Map<WorkflowNodeIdentifier, Map<LogicalNodeId, Integer>> matchingNodeInfo 
-        = new HashMap<WorkflowNodeIdentifier, Map<LogicalNodeId, Integer>>();
+    private Map<WorkflowNodeIdentifier, Map<LogicalNodeId, Integer>> matchingNodeInfo =
+        new HashMap<WorkflowNodeIdentifier, Map<LogicalNodeId, Integer>>();
 
     private Map<WorkflowNode, Boolean> hasVersionErrorMap = new HashMap<WorkflowNode, Boolean>();
 
     private Map<WorkflowNode, ComponentDescription> initialComponentDescriptions = new HashMap<WorkflowNode, ComponentDescription>();
 
     TargetNodeEditingSupport(final NodeIdentifierConfigurationHelper nodeIdConfigHelper, final LogicalNodeId localNode,
-            final ColumnViewer viewer, final int column) {
+        final ColumnViewer viewer, final int column) {
         super(viewer);
         this.nodeIdConfigHelper = nodeIdConfigHelper;
         this.column = column;
@@ -80,7 +80,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
 
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class)
-                .getCurrentSnapshot();
+            .getCurrentSnapshot();
     }
 
     @Override
@@ -94,7 +94,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
             return null;
         }
         ComboBoxCellEditor editor = new ComboBoxCellEditor(((TableViewer) viewer).getTable(),
-                getValues((WorkflowNode) element).toArray(new String[] {}));
+            getValues((WorkflowNode) element).toArray(new String[] {}));
         return editor;
     }
 
@@ -111,16 +111,14 @@ final class TargetNodeEditingSupport extends EditingSupport {
             node = localNode;
         }
         return matchingNodeInfo.get(wfNode.getIdentifierAsObject()).containsKey(node) && matchingNodeInfo
-                .get(wfNode.getIdentifierAsObject()).get(node).equals(ComponentUtils.EQUAL_COMPONENT_VERSION);
+            .get(wfNode.getIdentifierAsObject()).get(node).equals(ComponentUtils.EQUAL_COMPONENT_VERSION);
     }
 
     /**
      * {@inheritDoc}.
      * <p>
-     * The returned value is preferably the one specified in the
-     * {@link ComponentDescription}, but if this platform is not able to execute
-     * this type of node, another valid platform is chosen (which would be indicated
-     * by a return value of 'true' through
+     * The returned value is preferably the one specified in the {@link ComponentDescription}, but if this platform is not able to execute
+     * this type of node, another valid platform is chosen (which would be indicated by a return value of 'true' through
      * {@link #isValueSuggestion(WorkflowNode)}).
      * </p>
      * 
@@ -165,21 +163,24 @@ final class TargetNodeEditingSupport extends EditingSupport {
         int intValue = ((Integer) value).intValue();
         if (intValue >= 0) {
             ComponentInstallation installation;
-            if (nodes.get(((WorkflowNode) element).getIdentifierAsObject()).get(intValue) == null
-                    || nodes.get(((WorkflowNode) element).getIdentifierAsObject()).get(intValue).equals(localNode)) {
+            LogicalNodeId logicalNodeId = nodes.get(((WorkflowNode) element).getIdentifierAsObject()).get(intValue);
+            if (logicalNodeId == null) {
+                logicalNodeId = localNode;
+            }
+            if (logicalNodeId.isSameInstanceNodeAs(localNode)) {
                 installation = ComponentUtils.getComponentInstallationForNode(
-                        ((WorkflowNode) element).getComponentDescription().getIdentifier(),
-                        compKnowledge.getAllLocalInstallations(), localNode);
+                    ((WorkflowNode) element).getComponentDescription().getIdentifier(),
+                    compKnowledge.getAllLocalInstallations(), logicalNodeId);
             } else {
                 installation = ComponentUtils.getComponentInstallationForNode(
-                        ((WorkflowNode) element).getComponentDescription().getIdentifier(),
-                        compKnowledge.getKnownSharedInstallationsOnNode(
-                                nodes.get(((WorkflowNode) element).getIdentifierAsObject()).get(intValue), false),
-                        nodes.get(((WorkflowNode) element).getIdentifierAsObject()).get(intValue));
+                    ((WorkflowNode) element).getComponentDescription().getIdentifier(),
+                    compKnowledge.getKnownSharedInstallationsOnNode(
+                        logicalNodeId, false),
+                    logicalNodeId);
             }
             if (installation != null) {
                 ((WorkflowNode) element).getComponentDescription()
-                        .setComponentInstallationAndUpdateConfiguration(installation);
+                    .setComponentInstallationAndUpdateConfiguration(installation);
             }
         }
     }
@@ -201,7 +202,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
                 if (!(nodes.get(node.getIdentifierAsObject()).get(i).equals(localNode))) {
 
                     if (isNodeExactMatchRegardingComponentVersion(node, nodes.get(node.getIdentifierAsObject()).get(i))
-                            && isNodeExactMatchRegardingInitialComponentVersion(node)) {
+                        && isNodeExactMatchRegardingInitialComponentVersion(node)) {
 
                         remoteIndexList.add(i);
                     }
@@ -215,9 +216,9 @@ final class TargetNodeEditingSupport extends EditingSupport {
             int randomIndex = remoteIndexList.get(random.nextInt(remoteIndexList.size()));
 
             installation = ComponentUtils.getComponentInstallationForNode(
-                    node.getComponentDescription().getIdentifier(),
-                    compKnowledge.getKnownSharedInstallationsOnNode(nodes.get(node.getIdentifierAsObject()).get(randomIndex), false),
-                    nodes.get(node.getIdentifierAsObject()).get(randomIndex));
+                node.getComponentDescription().getIdentifier(),
+                compKnowledge.getKnownSharedInstallationsOnNode(nodes.get(node.getIdentifierAsObject()).get(randomIndex), false),
+                nodes.get(node.getIdentifierAsObject()).get(randomIndex));
             comboindex = randomIndex;
 
             setValue(node, randomIndex);
@@ -230,18 +231,15 @@ final class TargetNodeEditingSupport extends EditingSupport {
     }
 
     /**
-     * Builds and returns the list of available platforms for the given
-     * {@link WorkflowNode}.
+     * Builds and returns the list of available platforms for the given {@link WorkflowNode}.
      * 
-     * @param wfNode
-     *            The {@link WorkflowNode}.
-     * @return The list of strings representing the available platforms for the
-     *         given {@link WorkflowNode}.
+     * @param wfNode The {@link WorkflowNode}.
+     * @return The list of strings representing the available platforms for the given {@link WorkflowNode}.
      */
     protected List<String> getValues(WorkflowNode wfNode) {
 
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class)
-                .getCurrentSnapshot();
+            .getCurrentSnapshot();
 
         if (!wfNode.isInit()) {
             initialComponentDescriptions.put(wfNode, wfNode.getComponentDescription().clone());
@@ -266,15 +264,15 @@ final class TargetNodeEditingSupport extends EditingSupport {
         // error.
         if (!hasVersionError) {
             matchingNodeInfo.put(wfNode.getIdentifierAsObject(),
-                    nodeIdConfigHelper.getTargetPlatformsForComponent(wfNode.getComponentDescription()));
+                nodeIdConfigHelper.getTargetPlatformsForComponent(wfNode.getComponentDescription()));
 
         } else {
             matchingNodeInfo.put(wfNode.getIdentifierAsObject(),
-                    nodeIdConfigHelper.getTargetPlatformsForComponent(initialComponentDescriptions.get(wfNode)));
+                nodeIdConfigHelper.getTargetPlatformsForComponent(initialComponentDescriptions.get(wfNode)));
 
         }
         List<LogicalNodeId> sortedTargetNodes = new ArrayList<LogicalNodeId>(
-                matchingNodeInfo.get(wfNode.getIdentifierAsObject()).keySet());
+            matchingNodeInfo.get(wfNode.getIdentifierAsObject()).keySet());
 
         nodeIdConfigHelper.sortNodes(sortedTargetNodes);
 
@@ -283,7 +281,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
         // component
         if (sortedTargetNodes.contains(localNode)) {
             nodeValues.add(enhanceNodeNameWithVersionInformation(wfNode,
-                    localNode.getAssociatedDisplayName() + " " + Messages.localPlatformSelectionTitle, localNode));
+                localNode.getAssociatedDisplayName() + " " + Messages.localPlatformSelectionTitle, localNode));
             nodes.get(wfNode.getIdentifierAsObject()).add(null);
         }
         // add all supporting nodes to the list of choices
@@ -308,7 +306,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
         if (matchingNodeInfo.get(wfNode.getIdentifierAsObject()).get(node).equals(ComponentUtils.LOWER_COMPONENT_VERSION)) {
             nodeName = nodeName + " " + Messages.older;
         } else if (matchingNodeInfo.get(wfNode.getIdentifierAsObject()).get(node)
-                .equals(ComponentUtils.GREATER_COMPONENT_VERSION)) {
+            .equals(ComponentUtils.GREATER_COMPONENT_VERSION)) {
             nodeName = nodeName + " " + Messages.newer;
         }
         return nodeName;

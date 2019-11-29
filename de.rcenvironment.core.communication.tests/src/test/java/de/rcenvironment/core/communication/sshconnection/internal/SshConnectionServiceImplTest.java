@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection.internal;
@@ -21,14 +21,15 @@ import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.junit.After;
@@ -91,7 +92,7 @@ public class SshConnectionServiceImplTest {
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
-            public Command createCommand(String commandString) {
+            public Command createCommand(ChannelSession channelSession, String commandString) {
                 if (commandString.equals("ra protocol-version")) {
                     return new Command() {
 
@@ -129,7 +130,7 @@ public class SshConnectionServiceImplTest {
                         }
 
                         @Override
-                        public void start(Environment env) throws IOException {
+                        public void start(ChannelSession channelSession, Environment env) throws IOException {
 
                             if (stdout != null) {
                                 stdoutStream.write(stdout.getBytes());
@@ -149,7 +150,7 @@ public class SshConnectionServiceImplTest {
                         }
 
                         @Override
-                        public void destroy() {}
+                        public void destroy(ChannelSession channelSession) {}
 
                     };
                 } else {
@@ -185,7 +186,7 @@ public class SshConnectionServiceImplTest {
     public void testHandlingSshConnection() {
         // Add a connection
         String connectionId = sshConnectionService
-            .addSshConnection(new SshConnectionContext(null, DISPLAYNAME, LOCALHOST, PORT, USER, null, true, false, false));
+            .addSshConnection(new SshConnectionContext(null, DISPLAYNAME, "", LOCALHOST, PORT, USER, null, true, false, false, false));
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);
@@ -195,8 +196,8 @@ public class SshConnectionServiceImplTest {
         assertNull(sshConnectionService.getAvtiveSshSession(connectionId));
 
         // Edit the connection
-        sshConnectionService.editSshConnection(new SshConnectionContext(connectionId, DISPLAYNAME2, LOCALHOST, PORT, USER, null, true,
-            false, false));
+        sshConnectionService.editSshConnection(new SshConnectionContext(connectionId, DISPLAYNAME2, "", LOCALHOST, PORT, USER, null, true,
+            false, false, false));
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);

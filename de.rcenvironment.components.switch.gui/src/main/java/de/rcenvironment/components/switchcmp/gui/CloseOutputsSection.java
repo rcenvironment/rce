@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.switchcmp.gui;
@@ -27,6 +27,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * Tab where the user can decide whether the component should close outputs if <code>true</code> or <code>false</code> was sent.
  * 
  * @author Doreen Seider
+ * @author Kathrin Schaffert
  */
 public class CloseOutputsSection extends ValidatingWorkflowNodePropertySection {
 

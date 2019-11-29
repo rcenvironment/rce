@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.toolkit.modules.concurrency.api;
 
@@ -67,4 +67,13 @@ public interface ConcurrencyUtilsFactory {
      * @return the new instance
      */
     <T> CallablesGroup<T> createCallablesGroup(Class<T> clazz);
+
+    /**
+     * Creates a {@link BlockingResponseMapper}.
+     * 
+     * @param <TKey> the association key type
+     * @param <TResponse> the response type
+     * @return the new instance
+     */
+    <TKey, TResponse> BlockingResponseMapper<TKey, TResponse> createBlockingResponseMapper();
 }

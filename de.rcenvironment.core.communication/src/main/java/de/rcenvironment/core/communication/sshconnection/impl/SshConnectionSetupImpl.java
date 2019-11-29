@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection.impl;
@@ -49,8 +49,6 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
 
     private boolean autoRetry;
 
-    private boolean storePassphrase;
-
     private boolean usePassphrase;
 
     private int consecutiveConnectionFailures;
@@ -60,7 +58,7 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
     private Log log = LogFactory.getLog(getClass());
 
     public SshConnectionSetupImpl(String id, String displayName, String host, int port, String userName, String keyFileLocation,
-        boolean usePassphrase, boolean storePassphrase, boolean connectOnStartUp, boolean autoRetry, SshConnectionListener listener) {
+        boolean usePassphrase, boolean connectOnStartUp, boolean autoRetry, SshConnectionListener listener) {
         if (keyFileLocation == null || keyFileLocation.isEmpty()) {
             config = SshSessionConfigurationFactory.createSshSessionConfigurationWithAuthPhrase(host, port, userName, null);
         } else {
@@ -71,7 +69,6 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
         this.autoRetry = autoRetry;
         this.listener = listener;
         this.displayName = displayName;
-        this.storePassphrase = storePassphrase;
         this.usePassphrase = usePassphrase;
         listener.onCreated(this);
         this.consecutiveConnectionFailures = 0;
@@ -273,11 +270,6 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
     }
 
     @Override
-    public boolean getStorePassphrase() {
-        return storePassphrase;
-    }
-
-    @Override
     public boolean getUsePassphrase() {
         return usePassphrase;
     }
@@ -294,5 +286,4 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
             this.consecutiveConnectionFailures = 0;
         }
     }
-
 }

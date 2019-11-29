@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.utils.common.xml.impl;
@@ -346,7 +346,7 @@ public class XMLMapperServiceImpl implements XMLMapperService {
             throw new XMLException(
                 "XML mapping error. No mapping nodes (/map:mappings/map:mapping) found in the mapping file."
                     + " Please ensure that your mapping file contains the corresponding nodes and uses the corresponding namespace"
-                    + " (xmlns:map=\"http://www.rcenvironment.de/2015/mapping\")", e);
+                    + " (xmlns:map=\"https://rcenvironment.de/2015/mapping\")", e);
         }
         return mappings;
     }

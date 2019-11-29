@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.api;
@@ -80,6 +80,15 @@ public class ComponentInstallationBuilder {
         componentInstallation.setMaximumCountOfParallelInstances(maximumCountOfParallelInstances);
         return this;
     }
+    
+    /**
+     * @param isMapped if the installation represents a remote component
+     * @return builder object for method chaining purposes
+     */
+    public ComponentInstallationBuilder setIsMappedCompoent(boolean isMapped) {
+        componentInstallation.setMappedComponent(isMapped);
+        return this;
+    }
 
     /**
      * @return {@link ComponentInstallation} object built
@@ -87,4 +96,5 @@ public class ComponentInstallationBuilder {
     public ComponentInstallation build() {
         return componentInstallation;
     }
+    
 }

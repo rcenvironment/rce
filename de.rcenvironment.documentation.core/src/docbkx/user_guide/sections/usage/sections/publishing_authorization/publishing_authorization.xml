@@ -20,8 +20,8 @@
 			<listitem>
 				<para>Public: Components with the "public" setting can be used by all connected RCE
 					instances. This is equivalent to the tool and component publishing in earlier
-					versions of RCE. Tools in the "public" group are also available over SSH
-					connections.</para>
+					versions of RCE. Tools in the "public" group are also available over Uplink Connections
+					and Remote Access connections.</para>
 			</listitem>
 		</itemizedlist><note>
 			<para>If the "Component Publishing" view is not visible, you can open it from the
@@ -48,6 +48,9 @@
 			the "Import Group Key" button in their "Authorization Groups" dialog. After importing a
 			key on an RCE instance, all tools published for that group on connected RCE instances
 			are visible and can be used like a "public" component. </para>
+			<note><para>To provide access to tools over Uplink Connections, the tools either have to be 
+			"public" or in an authorization group which name starts with "external_". Tools in other authorization
+			groups are only accessible from the internal RCE network.</para></note>
 	</sect2>
 	<sect2>
 		<title>Publishing tools on the command console</title>

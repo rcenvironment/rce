@@ -1,0 +1,29 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for an uplink client. It connects to an uplink relay (which might be outside of the local netowrk) via a secure connection.
+//
+// Use this config if you want to connect a single client to a relay. If you want to forward tools between your local network and the relay, consider the uplink_gateway config.
+//
+// If several clients are to use the same account on the uplink relay, they have to set different client IDs in their configurations. 
+//
+
+{
+	"general" : {
+		"instanceName" : "Example client started by \"${systemUser}\" on ${hostName}"
+	},
+	"uplink" : {
+		"uplinkConnections" : {
+			"exampleUplinkConnectionID" : {
+				"displayName" : "example",
+				"clientID": "client1",
+				"host" : "127.0.0.1",
+				"port" : 31055,
+				"connectOnStartup": false,
+				"autoRetry" : false,
+				"isGateway" : false,
+				"loginName" : "ra_demo"
+				//The passphrase is not stored here, it has to be entered when connecting.
+			}
+		}
+	}
+}

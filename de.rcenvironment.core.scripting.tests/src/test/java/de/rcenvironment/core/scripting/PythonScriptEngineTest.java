@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.scripting;
@@ -93,10 +93,9 @@ public class PythonScriptEngineTest {
         for (int i = 0; i < scriptEvalCount; i++) {
 
             final String suffix = String.valueOf(i);
-            threadPool.execute(new Runnable() {
+            threadPool.execute(() -> {
 
-                @Override
-                public void run() {
+
                     if (isSynchronized) {
                         synchronized (PythonScriptEngineTest.this) {
                             executePythonScript(suffix, iterationFinishedLatch);
@@ -105,7 +104,7 @@ public class PythonScriptEngineTest {
                         executePythonScript(suffix, iterationFinishedLatch);
                     }
                 }
-            });
+            );
         }
 
         assertTrue(iterationFinishedLatch.await(waitInterval, TimeUnit.SECONDS));

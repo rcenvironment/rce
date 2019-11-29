@@ -7,7 +7,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>9.1.1-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -20,6 +20,7 @@
 	<properties>
 		<userguide.content.prefix>user_guide/</userguide.content.prefix>
 		<devguide.content.prefix>developer_guide/</devguide.content.prefix>
+		<adminguide.content.prefix>admin_guide/</adminguide.content.prefix>
 	</properties>
 
 	<profiles>
@@ -107,6 +108,13 @@
 											<replacefilter token="href=&quot;"
 												value="href=&quot;${devguide.content.prefix}" />
 										</replace>
+										<replace dir="target/docbkx/eclipse">
+											<include name="**/admin_guide/toc.xml" />
+											<replacefilter token="topic=&quot;"
+												value="topic=&quot;${adminguide.content.prefix}" />
+											<replacefilter token="href=&quot;"
+												value="href=&quot;${adminguide.content.prefix}" />
+										</replace>
 										<delete>
 											<fileset dir="target/docbkx/eclipse" includes="**/plugin.xml" />
 											<fileset dir="target/docbkx/eclipse" includes="**/index.xml" />
@@ -115,10 +123,14 @@
 											toFile="target/docbkx/eclipse/windows/user_guide_toc.xml" />
 										<move file="target/docbkx/eclipse/windows/developer_guide/toc.xml"
 											toFile="target/docbkx/eclipse/windows/developer_guide_toc.xml" />
+										<move file="target/docbkx/eclipse/windows/admin_guide/toc.xml"
+											toFile="target/docbkx/eclipse/windows/admin_guide_toc.xml" />
 										<move file="target/docbkx/eclipse/linux/user_guide/toc.xml"
 											toFile="target/docbkx/eclipse/linux/user_guide_toc.xml" />
 										<move file="target/docbkx/eclipse/linux/developer_guide/toc.xml"
 											toFile="target/docbkx/eclipse/linux/developer_guide_toc.xml" />
+										<move file="target/docbkx/eclipse/linux/admin_guide/toc.xml"
+											toFile="target/docbkx/eclipse/linux/admin_guide_toc.xml" />
 										<echo>Modified toc.xml files and deleted plugin.xml and
 											index.xml files.</echo>
 										<zip destfile="target/docbkx/eclipse/windows/doc.zip">

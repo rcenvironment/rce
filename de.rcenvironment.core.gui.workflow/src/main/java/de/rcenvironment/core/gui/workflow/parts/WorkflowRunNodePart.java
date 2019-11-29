@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.parts;
@@ -59,7 +59,6 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Read-only EditPart representing a WorkflowNode, storing additional workflow execution information.
@@ -296,20 +295,17 @@ public class WorkflowRunNodePart extends ReadOnlyWorkflowNodePart {
                             final IViewPart view = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(
                                 viewConfElement.getAttribute("class"),
                                 cid.getExecutionIdentifier(), IWorkbenchPage.VIEW_VISIBLE); // $NON-NLS-1$
-                            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                            ConcurrencyUtils.getAsyncTaskService().execute("Initialize component runtime view data", () -> {
 
-                                @Override
-                                @TaskDescription("Initialize component runtime view data")
-                                public void run() {
-                                    ((ComponentRuntimeView) view).initializeData(cid);
-                                    Display.getDefault().asyncExec(new Runnable() {
+                                ((ComponentRuntimeView) view).initializeData(cid);
+                                Display.getDefault().asyncExec(new Runnable() {
 
-                                        @Override
-                                        public void run() {
-                                            ((ComponentRuntimeView) view).initializeView();
-                                        }
-                                    });
-                                }
+                                    @Override
+                                    public void run() {
+                                        ((ComponentRuntimeView) view).initializeView();
+                                    }
+                                });
+
                             });
 
                             PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().activate(view);

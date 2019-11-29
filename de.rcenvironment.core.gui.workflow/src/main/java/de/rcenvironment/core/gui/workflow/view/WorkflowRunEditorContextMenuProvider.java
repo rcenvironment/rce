@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.view;
@@ -27,11 +27,10 @@ import org.eclipse.ui.PlatformUI;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowExecutionInformationPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * {@link ContextMenuProvider} for the {@link WorkflowRunEditor}.
@@ -95,20 +94,17 @@ public class WorkflowRunEditorContextMenuProvider extends ContextMenuProvider {
                                             showView(viewConfElement.getAttribute("class"),
                                                 compExeInfo.getExecutionIdentifier(), IWorkbenchPage.VIEW_VISIBLE); //$NON-NLS-1$
 
-                                        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                                        ConcurrencyUtils.getAsyncTaskService().execute("Initialize component runtime view data", () -> {
 
-                                            @Override
-                                            @TaskDescription("Initialize component runtime view data")
-                                            public void run() {
-                                                ((ComponentRuntimeView) view).initializeData(compExeInfo);
-                                                Display.getDefault().asyncExec(new Runnable() {
+                                            ((ComponentRuntimeView) view).initializeData(compExeInfo);
+                                            Display.getDefault().asyncExec(new Runnable() {
 
-                                                    @Override
-                                                    public void run() {
-                                                        ((ComponentRuntimeView) view).initializeView();
-                                                    }
-                                                });
-                                            }
+                                                @Override
+                                                public void run() {
+                                                    ((ComponentRuntimeView) view).initializeView();
+                                                }
+                                            });
+
                                         });
                                         view.setFocus();
                                     } catch (PartInitException e) {

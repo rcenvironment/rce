@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.xml.impl;
@@ -162,13 +162,13 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
                 value = typedDatumFactory.createShortText(rawValue);
                 break;
             case Boolean:
-                value = typedDatumFactory.createBoolean(Boolean.valueOf(rawValue));
+                value = typedDatumFactory.createBoolean(Boolean.valueOf(rawValue.trim()));
                 break;
             case Float:
-                value = typedDatumFactory.createFloat(Double.valueOf(rawValue));
+                value = typedDatumFactory.createFloat(Double.valueOf(rawValue.trim()));
                 break;
             case Integer:
-                value = typedDatumFactory.createInteger(Long.valueOf(rawValue));
+                value = typedDatumFactory.createInteger(Long.valueOf(rawValue.trim()));
                 break;
             default:
                 throw new DataTypeException(StringUtils.format(errorMessage,

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
@@ -40,12 +40,12 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributor;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributorRegistry;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
@@ -59,7 +59,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Sascha Zur
  * @author Robert Mischke (disabled mixed-in component publishing)
- * @author Alexander Weinert (refactoring and 
+ * @author Alexander Weinert (refactoring and
  */
 public class ToolIntegrationWizard extends Wizard {
 
@@ -94,9 +94,13 @@ public class ToolIntegrationWizard extends Wizard {
             configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, true);
             handleIcon();
             // tool publication as part of the integration UI is disabled; see Mantis #16044
-            // Boolean publish = (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
-            File toolPath = new File(new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
-                integrationContext.getNameOfToolIntegrationDirectory()), integrationContext.getToolDirectoryPrefix()),
+            // Boolean publish = (Boolean)
+            // configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
+            File toolPath = new File(
+                new File(
+                    new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                        integrationContext.getNameOfToolIntegrationDirectory()),
+                    integrationContext.getToolDirectoryPrefix()),
                 (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
             if (toolDocuTarget != null && configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH) != null
                 && !((String) configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH)).isEmpty()) {
@@ -133,31 +137,30 @@ public class ToolIntegrationWizard extends Wizard {
                 integrationService.integrateTool(configurationMap, integrationContext);
             }
 
-            // Despite its name, the method #getInitialComponentKnowledge returns the component knowledge at the time of the
+            // Despite its name, the method #getInitialComponentKnowledge returns the
+            // component knowledge at the time of the
             // call, i.e., in this case, after the tool integration
             DistributedComponentKnowledge componentKnowledge = getInitialComponentKnowledge();
-            final boolean existingComponentEntryPublished = componentKnowledge.getAllLocalInstallations()
-                .stream()
+            final boolean existingComponentEntryPublished = componentKnowledge.getAllLocalInstallations().stream()
                 .filter(entry -> {
-                    // Filter the stream to contain only those ComponentEntry whose name matches the tool that we just integrated
+                    // Filter the stream to contain only those ComponentEntry whose name matches the
+                    // tool that we just integrated
                     final String toolName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
                     return entry.getComponentInterface().getDisplayName().equals(toolName);
-                })
-                .anyMatch(entry -> entry.getType().isRemotelyAccessible());
+                }).anyMatch(entry -> entry.getType().isRemotelyAccessible());
 
-            if (existingComponentEntryPublished) {
+            if (existingComponentEntryPublished && !isEdit) {
                 new UIJob("Show user warning for existing publication entries") {
 
                     @Override
                     public IStatus runInUIThread(IProgressMonitor arg0) {
-                        MessageBox infoDialog = new MessageBox(shell,
-                            SWT.ICON_INFORMATION | SWT.OK);
+                        MessageBox infoDialog = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
                         infoDialog.setText("Tool updated");
-                        infoDialog
-                            .setMessage(StringUtils .format(
-                                "The tool \"%s\" is published due to existing publication entries. "
-                                    + "Please check the publication settings in the view \"Component Publishing\"",
-                                configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                        infoDialog.setMessage(StringUtils.format(
+                            "The tool \"%s\" is published due to existing publication entries. "
+                                + "Please verify that this tool is actually meant to be published."
+                                + "Otherwise unpublish the tool via the \"Component Publishing\" view.",
+                            configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
                         infoDialog.open();
                         return Status.OK_STATUS;
                     }
@@ -168,6 +171,33 @@ public class ToolIntegrationWizard extends Wizard {
             integrationService.registerRecursive((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
                 integrationContext);
 
+            new UIJob("Display success message to user") {
+
+                @Override
+                public IStatus runInUIThread(IProgressMonitor arg0) {
+                    if (shell != null) {
+                        MessageBox infoDialog = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+                        String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
+                        if (groupName == null || groupName.isEmpty()) {
+                            groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
+                        }
+                        if (!isEdit) {
+                            infoDialog.setText("Tool integrated");
+                            infoDialog.setMessage(
+                                StringUtils.format("Tool \"%s\" was successfully integrated to group \"%s\".",
+                                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
+                        } else {
+                            infoDialog.setText("Tool updated");
+                            infoDialog.setMessage(StringUtils.format("Tool \"%s\" was successfully updated.",
+                                configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                        }
+
+                        infoDialog.open();
+                    }
+                    return Status.OK_STATUS;
+                }
+            }.schedule();
+
             return Status.OK_STATUS;
         }
 
@@ -175,12 +205,10 @@ public class ToolIntegrationWizard extends Wizard {
             if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
                 File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
                 if (!icon.isAbsolute() && iconTarget != null) {
-                    File toolConfigFile =
-                        new File(integrationContext.getRootPathToToolIntegrationDirectory(),
-                            integrationContext.getNameOfToolIntegrationDirectory()
-                                + File.separator
-                                + integrationContext.getToolDirectoryPrefix()
-                                + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+                    File toolConfigFile = new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                        integrationContext.getNameOfToolIntegrationDirectory() + File.separator
+                            + integrationContext.getToolDirectoryPrefix()
+                            + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
                     icon = new File(toolConfigFile, icon.getName());
                     try {
                         FileUtils.copyFile(iconTarget, icon);
@@ -204,6 +232,11 @@ public class ToolIntegrationWizard extends Wizard {
     private static final Log LOGGER = LogFactory.getLog(ToolIntegrationWizard.class);
 
     protected ToolIntegrationContextRegistry integrationContextRegistry;
+
+    // used to differ between integration and update context of wizard. In case
+    // integrating and editing continues
+    // to differ, separating the functionality into two wizards should be considered
+    protected boolean isEdit;
 
     private Map<String, Object> configurationMap;
 
@@ -245,13 +278,15 @@ public class ToolIntegrationWizard extends Wizard {
     public ToolIntegrationWizard(boolean progressMonitor, String type) {
         setNeedsProgressMonitor(progressMonitor);
         configurationMap = new HashMap<>();
-        configurationMap.put(ToolIntegrationConstants.INTEGRATION_TYPE, ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE);
+        configurationMap.put(ToolIntegrationConstants.INTEGRATION_TYPE,
+            ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE);
         setWindowTitle(Messages.wizardTitle);
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         integrationService = serviceRegistryAccess.getService(ToolIntegrationService.class);
         integrationContextRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
         TrayDialog.setDialogHelpAvailable(true);
         wizardType = type;
+        isEdit = false;
     }
 
     @Override
@@ -259,11 +294,13 @@ public class ToolIntegrationWizard extends Wizard {
         List<String> toolNames = new LinkedList<>();
 
         for (String id : integrationService.getIntegratedComponentIds()) {
-            toolNames.add(integrationService.getToolConfiguration(id).get(ToolIntegrationConstants.KEY_TOOL_NAME).toString());
+            toolNames.add(
+                integrationService.getToolConfiguration(id).get(ToolIntegrationConstants.KEY_TOOL_NAME).toString());
         }
 
         List<String> groupNames = new ArrayList<>();
-        LogicalNodeId localNode = serviceRegistryAccess.getService(PlatformService.class).getLocalDefaultLogicalNodeId();
+        LogicalNodeId localNode = serviceRegistryAccess.getService(PlatformService.class)
+            .getLocalDefaultLogicalNodeId();
         Collection<DistributedComponentEntry> installations = getInitialComponentKnowledge().getAllInstallations();
         installations = ComponentUtils.eliminateComponentInterfaceDuplicates(installations, localNode);
         for (DistributedComponentEntry ci : installations) {
@@ -276,12 +313,11 @@ public class ToolIntegrationWizard extends Wizard {
 
         Collections.sort(groupNames, String.CASE_INSENSITIVE_ORDER);
 
-        editConfigurationPage =
-            new ChooseConfigurationPage(Messages.chooseConfigPageTitle, integrationContextRegistry.getAllIntegrationContexts(), this,
-                wizardType);
+        editConfigurationPage = new ChooseConfigurationPage(Messages.chooseConfigPageTitle,
+            integrationContextRegistry.getAllIntegrationContexts(), this, wizardType);
 
-        characteristicsPage =
-            new ToolCharacteristicsPage(Messages.firstToolIntegrationPageTitle, configurationMap, toolNames, groupNames);
+        characteristicsPage = new ToolCharacteristicsPage(Messages.firstToolIntegrationPageTitle, configurationMap,
+            toolNames, groupNames);
 
         inOutputPage = new InOutputConfigurationPage(Messages.inOuputPage, configurationMap);
         propertyPage = new PropertyConfigurationPage(Messages.propertyPage, configurationMap);
@@ -297,8 +333,8 @@ public class ToolIntegrationWizard extends Wizard {
 
         this.getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
 
-        IntegrationWizardPageContributorRegistry contributorRegistry =
-            serviceRegistryAccess.getService(IntegrationWizardPageContributorRegistry.class);
+        IntegrationWizardPageContributorRegistry contributorRegistry = serviceRegistryAccess
+            .getService(IntegrationWizardPageContributorRegistry.class);
         for (IntegrationWizardPageContributor contributor : contributorRegistry.getAllContributors()) {
             List<ToolIntegrationWizardPage> pages = contributor.getAdditionalPagesList(configurationMap);
             additionalPages.put(contributor.getType(), pages);
@@ -310,7 +346,8 @@ public class ToolIntegrationWizard extends Wizard {
     }
 
     private DistributedComponentKnowledge getInitialComponentKnowledge() {
-        DistributedComponentKnowledgeService registry = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class);
+        DistributedComponentKnowledgeService registry = serviceRegistryAccess
+            .getService(DistributedComponentKnowledgeService.class);
         return registry.getCurrentSnapshot();
     }
 
@@ -333,9 +370,11 @@ public class ToolIntegrationWizard extends Wizard {
         } else {
             if (page.equals(toolPage)) {
                 nextPage = currentAdditionalPages.get(0);
-            } else if (currentAdditionalPages.contains(page) && currentAdditionalPages.indexOf(page) < currentAdditionalPages.size() - 1) {
+            } else if (currentAdditionalPages.contains(page)
+                && currentAdditionalPages.indexOf(page) < currentAdditionalPages.size() - 1) {
                 nextPage = currentAdditionalPages.get(currentAdditionalPages.indexOf(page) + 1);
-            } else if (currentAdditionalPages.contains(page) && currentAdditionalPages.indexOf(page) == currentAdditionalPages.size() - 1) {
+            } else if (currentAdditionalPages.contains(page)
+                && currentAdditionalPages.indexOf(page) == currentAdditionalPages.size() - 1) {
                 nextPage = scriptPage;
             } else if (page.equals(scriptPage)) {
                 return null;
@@ -383,12 +422,13 @@ public class ToolIntegrationWizard extends Wizard {
     @Override
     public boolean performFinish() {
 
-        // We ``cache'' the shell here while the wizard is still visible in order to be able to display an alert box later on if an error
+        // We ``cache'' the shell here while the wizard is still visible in order to be
+        // able to display an alert box later on if an error
         // occurs during tool integration
         final Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 
-        final String integrationJobTitle =
-            StringUtils.format(Messages.integrateToolJobTitle, configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+        final String integrationJobTitle = StringUtils.format(Messages.integrateToolJobTitle,
+            configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
         new ToolIntegrationJob(integrationJobTitle, shell).schedule();
 
         return isConfigurationOk();
@@ -414,17 +454,18 @@ public class ToolIntegrationWizard extends Wizard {
     private void determineIntegrationContext() {
         if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null) {
             for (ToolIntegrationContext context : integrationContextRegistry.getAllIntegrationContexts()) {
-                if (context.getContextType().equalsIgnoreCase(configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).toString())) {
+                if (context.getContextType()
+                    .equalsIgnoreCase(configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).toString())) {
                     integrationContext = context;
                 }
             }
         } else {
-            integrationContext =
-                integrationContextRegistry.getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
+            integrationContext = integrationContextRegistry
+                .getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
         }
         if (integrationContext == null) {
-            LOGGER.error(
-                "Found no integration context for integration type " + configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
+            LOGGER.error("Found no integration context for integration type "
+                + configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
         }
     }
 
@@ -435,31 +476,35 @@ public class ToolIntegrationWizard extends Wizard {
      */
     public void performSaveAs(String folderPath) {
         determineIntegrationContext();
-        File toolConfigFile =
-            new File(folderPath, integrationContext.getNameOfToolIntegrationDirectory() + File.separator
-                + integrationContext.getToolDirectoryPrefix() + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+        File toolConfigFile = new File(folderPath,
+            integrationContext.getNameOfToolIntegrationDirectory() + File.separator
+                + integrationContext.getToolDirectoryPrefix()
+                + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
         try {
-            integrationService.writeToolIntegrationFileToSpecifiedFolder(folderPath, configurationMap, integrationContext);
+            integrationService.writeToolIntegrationFileToSpecifiedFolder(folderPath, configurationMap,
+                integrationContext);
             MessageBox infoDialog = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
             if (toolConfigFile.exists()) {
                 infoDialog.setText("Tool saved");
-                infoDialog
-                    .setMessage(StringUtils.format("Successfully saved tool: %s\nLocation: " + toolConfigFile.getAbsolutePath(),
+                infoDialog.setMessage(
+                    StringUtils.format("Successfully saved tool: %s\nLocation: " + toolConfigFile.getAbsolutePath(),
                         configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
             } else {
                 infoDialog.setText("Saving failed");
-                infoDialog
-                    .setMessage(StringUtils.format("Could not save tool: %s\nLocation tried: " + toolConfigFile.getAbsolutePath(),
-                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                infoDialog.setMessage(StringUtils.format(
+                    "Could not save tool: %s\nLocation tried: " + toolConfigFile.getAbsolutePath(),
+                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
             }
             infoDialog.open();
         } catch (IOException e) {
             MessageBox errorDialog = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
             errorDialog.setText("Saving failed");
-            errorDialog.setMessage(
-                StringUtils.format(
-                    "Failed to save tool configuration to: " + toolConfigFile.getAbsolutePath() + "\nCause: " + e.getMessage(),
-                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+            errorDialog
+                .setMessage(
+                    StringUtils.format(
+                        "Failed to save tool configuration to: " + toolConfigFile.getAbsolutePath()
+                            + "\nCause: " + e.getMessage(),
+                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
             errorDialog.open();
 
         }
@@ -469,7 +514,8 @@ public class ToolIntegrationWizard extends Wizard {
         integrationService = newIntegrationService;
     }
 
-    protected void bindIntegrationInformationRegistry(ToolIntegrationContextRegistry incIntegrationInformationRegistry) {
+    protected void bindIntegrationInformationRegistry(
+        ToolIntegrationContextRegistry incIntegrationInformationRegistry) {
         integrationContextRegistry = incIntegrationInformationRegistry;
     }
 
@@ -490,7 +536,7 @@ public class ToolIntegrationWizard extends Wizard {
      * Setter for the configuration map to edit.
      * 
      * @param newPreviousConfiguration loaded map
-     * @param configJson               where the config came from
+     * @param configJson where the config came from
      */
     public void setPreviousConfiguration(Map<String, Object> newPreviousConfiguration, File configJson) {
         Map<String, Object> configurationMapCopy = new HashMap<>();
@@ -500,7 +546,8 @@ public class ToolIntegrationWizard extends Wizard {
         }
         setConfigurationMap(configurationMapCopy);
         if (configJson != null) {
-            if (newPreviousConfiguration != null && newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null) {
+            if (newPreviousConfiguration != null
+                && newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null) {
                 for (ToolIntegrationContext context : integrationContextRegistry.getAllIntegrationContexts()) {
                     if (newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE).toString()
                         .equalsIgnoreCase(context.getContextType())) {
@@ -508,15 +555,15 @@ public class ToolIntegrationWizard extends Wizard {
                     }
                 }
             } else {
-                integrationContext =
-                    integrationContextRegistry.getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
+                integrationContext = integrationContextRegistry
+                    .getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
             }
         }
 
         updateAllPages();
         for (Entry<String, List<ToolIntegrationWizardPage>> addPages : additionalPages.entrySet()) {
-            if (newPreviousConfiguration != null
-                && !addPages.getKey().equals(newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE))) {
+            if (newPreviousConfiguration != null && !addPages.getKey()
+                .equals(newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE))) {
                 for (ToolIntegrationWizardPage page : addPages.getValue()) {
                     page.setPageComplete(true);
                 }
@@ -596,7 +643,8 @@ public class ToolIntegrationWizard extends Wizard {
             toolDocuTarget = null;
             if (new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME).exists()) {
                 toolDocuTarget = new File(tempToolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
-                FileUtils.copyDirectory(new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME), toolDocuTarget);
+                FileUtils.copyDirectory(new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME),
+                    toolDocuTarget);
             }
 
             iconTarget = null;
@@ -620,7 +668,7 @@ public class ToolIntegrationWizard extends Wizard {
      * Sets the new integration type and creates a new Map.
      * 
      * @param incIntegrationType to set
-     * @param template           if the new type comes from a template
+     * @param template if the new type comes from a template
      */
     public void setIntegrationType(String incIntegrationType, boolean template) {
         this.integrationType = incIntegrationType;
@@ -654,7 +702,8 @@ public class ToolIntegrationWizard extends Wizard {
      */
     public ToolIntegrationContext getCurrentContext() {
         if (integrationContext == null) {
-            return integrationContextRegistry.getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
+            return integrationContextRegistry
+                .getToolIntegrationContextById(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
         }
         return integrationContext;
     }
@@ -664,5 +713,9 @@ public class ToolIntegrationWizard extends Wizard {
      */
     public void open() {
         editConfigurationPage.updatePage();
+    }
+
+    protected void setIsEdit(boolean isEditNew) {
+        this.isEdit = isEditNew;
     }
 }

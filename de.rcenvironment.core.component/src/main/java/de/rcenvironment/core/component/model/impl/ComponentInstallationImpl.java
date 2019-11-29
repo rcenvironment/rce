@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.impl;
@@ -26,6 +26,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class ComponentInstallationImpl implements ComponentInstallation, Serializable {
 
@@ -39,6 +40,17 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
     private String installationId; // component interface id and version
 
     private Integer maximumCountOfParallelInstances = null;
+    
+    private boolean mappedComponent = false;
+
+    @Override
+    public boolean isMappedComponent() {
+        return mappedComponent;
+    }
+
+    public void setMappedComponent(boolean isMapped) {
+        this.mappedComponent = isMapped;
+    }
 
     @Override
     public String getNodeId() {

@@ -2,9 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server Tests
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh.tests
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Require-Bundle: de.rcenvironment.core.utils.testing
 Fragment-Host: de.rcenvironment.core.embedded.ssh
-Import-Package: de.rcenvironment.core.configuration.testutils
+Import-Package: com.jcraft.jsch;version="0.1.55",
+ de.rcenvironment.core.communication.sshconnection.impl,
+ de.rcenvironment.core.communication.uplink.client.session.api,
+ de.rcenvironment.core.configuration,
+ de.rcenvironment.core.configuration.testutils,
+ de.rcenvironment.core.utils.common.exception,
+ de.rcenvironment.core.utils.ssh.jsch,
+ org.apache.commons.io;version="2.2.0"

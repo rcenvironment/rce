@@ -10,9 +10,9 @@
 	  </category>
       <wizard
             category="de.rcenvironment.rce.wizard.category"
-            class="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard"
+            class="de.rcenvironment.core.gui.wizards.exampleproject.RCEExampleProjectWizard"
             icon="/icons/workflowProj16.gif"
-            id="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard"
+            id="de.rcenvironment.core.gui.wizards.exampleproject.RCEExampleProjectWizard"
             name="Workflow Examples Project...">
       </wizard>
    </extension>
@@ -21,7 +21,7 @@
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension targetID="de.rcenvironment.core">
          <newWizardShortcut
-            id="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard">
+            id="de.rcenvironment.core.gui.wizards.exampleproject.RCEExampleProjectWizard">
          </newWizardShortcut>
       </perspectiveExtension>
    </extension>
@@ -31,7 +31,7 @@
 		<commonWizard 
 			menuGroupId="de.rcenvironment.core.gui.wizards.exampleproject"
 			type="new" 
-			wizardId="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard">
+			wizardId="de.rcenvironment.core.gui.wizards.exampleproject.RCEExampleProjectWizard">
 			<enablement />
  		</commonWizard>   
    </extension> 

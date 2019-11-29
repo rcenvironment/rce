@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.resources.internal;
 
@@ -12,7 +12,6 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.gui.resources.api.ColorManager;
-import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 
@@ -52,10 +51,6 @@ public class Activator implements BundleActivator {
             ColorManager.setInstance(new ColorManagerImpl());
         }
         
-        synchronized (ComponentImageManager.class) {
-            //TODO add check if component image manger is already present, see above ^
-            ComponentImageManager.getInstance();
-        }
     }
 
     /**

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.authorization;
@@ -22,15 +22,15 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.api.UserComponentIdMappingService;
 import de.rcenvironment.core.component.authorization.api.NamedComponentAuthorizationSelector;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
 import de.rcenvironment.core.gui.resources.api.ColorManager;
-import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardColors;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
-import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * Label Provider for the trees.
@@ -49,13 +49,13 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
 
     private final DistributedComponentKnowledgeService componentRegistryService;
 
-    private final ServiceRegistryPublisherAccess serviceRegistryAccess;
+    private boolean showGroupID = false;
 
-    private boolean showID = false;
+    private boolean showComponentID = false;
 
     public AuthorizationLabelProvider() {
         super();
-        serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
+        final ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
 
         userComponentIdMappingService = serviceRegistryAccess.getService(UserComponentIdMappingService.class);
         authorizationService = serviceRegistryAccess.getService(AuthorizationService.class);
@@ -73,7 +73,7 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
             return ERROR_FALLBACK_LABEL_TEXT; // should never happen
         }
     }
-    
+
     private String getNameForComponentAuthorizationSelector(final NamedComponentAuthorizationSelector selector) {
         String internalId;
         try {
@@ -84,12 +84,15 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
         }
         final boolean isAvailable = componentRegistryService.getCurrentSnapshot().getAllLocalInstallations().stream()
             .anyMatch(entry -> entry.getComponentInterface().getIdentifier().equals(internalId));
-        
-        final StringBuilder displayNameBuilder = new StringBuilder(selector.getDisplayName());
+
+        final StringBuilder displayNameBuilder;
+        displayNameBuilder = new StringBuilder(selector.getDisplayName());
+        if (showComponentID) {
+            displayNameBuilder.append(" (" + selector.getId() + ")");
+        }
         if (!isAvailable) {
             displayNameBuilder.append(" <not available>");
         }
-        
         return displayNameBuilder.toString();
     }
 
@@ -99,7 +102,7 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
     }
 
     private String getNameForAuthorizationAccessGroup(AuthorizationAccessGroup group) {
-        if (showID || authorizationService.isPublicAccessGroup(group)) {
+        if (showGroupID || authorizationService.isPublicAccessGroup(group)) {
             return group.getDisplayName();
         }
         return group.getName();
@@ -119,7 +122,7 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
     private Image getDefaultImage() {
         return ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_16);
     }
-    
+
     private Image getImageForAuthorizationAccessGroup(AuthorizationAccessGroup group) {
         if (authorizationService.isPublicAccessGroup(group)) {
             // public access group
@@ -133,28 +136,24 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
     private Image getImageForComponentAuthorizationSelector(final NamedComponentAuthorizationSelector selector) {
         final Optional<DistributedComponentEntry> firstMatchingEntry =
             componentRegistryService.getCurrentSnapshot().getAllInstallations()
-            .stream()
-            // We only retain those installations whose id matches the external id for the given selector
-            .filter(entry -> {
-                try {
-                    final String internalId = entry.getComponentInterface().getIdentifier();
-                    final String externalId = userComponentIdMappingService.fromInternalToExternalId(internalId);
-                    return externalId.equals(selector.getId());
-                } catch (OperationFailureException e) {
-                    logIdMappingFailure(selector.getId());
-                    return false;
-                }
-            })
-            .findFirst();
+                .stream()
+                // We only retain those installations whose id matches the external id for the given selector
+                .filter(entry -> {
+                    try {
+                        final String internalId = entry.getComponentInterface().getIdentifier();
+                        final String externalId = userComponentIdMappingService.fromInternalToExternalId(internalId);
+                        // only local components are allowed to be published, so only local icons are used
+                        return externalId.equals(selector.getId()) && entry.getType().isLocal();
+                    } catch (OperationFailureException e) {
+                        logIdMappingFailure(selector.getId());
+                        return false;
+                    }
+                })
+                .findFirst();
 
         if (firstMatchingEntry.isPresent()) {
-            Image image = ComponentImageManager.getInstance().getIcon16Image(firstMatchingEntry.get().getComponentInterface());
-            if (image != null) {
-                return image;
-            } else {
-                // default icon for integrated tools
-                return getDefaultIconForComponentAuthorizationSelector();
-            }
+            return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+                .getComponentImageContainer(firstMatchingEntry.get().getComponentInterface()).getComponentIcon16();
         } else {
             return getDefaultIconForComponentAuthorizationSelector();
         }
@@ -164,8 +163,12 @@ public class AuthorizationLabelProvider extends LabelProvider implements IColorP
         return ImageManager.getInstance().getSharedImage(StandardImages.INTEGRATED_TOOL_DEFAULT_16);
     }
 
-    public void setShowID(boolean show) {
-        this.showID = show;
+    public void setShowGroupID(boolean showGroupID) {
+        this.showGroupID = showGroupID;
+    }
+
+    public void setShowComponentID(boolean showComponentID) {
+        this.showComponentID = showComponentID;
     }
 
     @Override

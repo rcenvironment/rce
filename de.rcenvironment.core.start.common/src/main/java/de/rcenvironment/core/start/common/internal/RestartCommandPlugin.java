@@ -3,13 +3,15 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import org.osgi.service.component.annotations.Component;
 
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
@@ -22,6 +24,7 @@ import de.rcenvironment.core.start.common.Instance;
  * 
  * @author Sascha Zur
  */
+@Component
 public class RestartCommandPlugin implements CommandPlugin {
 
     private static final String CMD_RESTART = "restart";

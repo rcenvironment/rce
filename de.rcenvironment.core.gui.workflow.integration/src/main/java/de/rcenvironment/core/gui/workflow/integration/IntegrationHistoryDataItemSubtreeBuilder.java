@@ -3,30 +3,20 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.integration;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 
-import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.IntegrationHistoryDataItem;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
-import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
@@ -43,10 +33,6 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Sascha Zur
  */
 public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistoryDataItemSubtreeBuilder {
-
-    private static Image defaultIconImage;
-    
-    private final Map<String, Image> componentIconImageCache = new HashMap<>();
 
     @Override
     public String[] getSupportedHistoryDataItemIdentifier() {
@@ -85,38 +71,7 @@ public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistor
 
     @Override
     public Image getComponentIcon(String identifier) {
-        if (!componentIconImageCache.containsKey(identifier)) {
-            byte[] icon = null;
-            ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-            DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
-                .getService(DistributedComponentKnowledgeService.class);
-            Collection<DistributedComponentEntry> installations = componentKnowledgeService.getCurrentSnapshot()
-                .getAllInstallations();
-            for (DistributedComponentEntry entry : installations) {
-                ComponentInstallation installation = entry.getComponentInstallation();
-                if (installation.getInstallationId().startsWith(identifier)) {
-                    icon = installation.getComponentInterface().getIcon16();
-                    break;
-                }
-            }
-            if (icon != null) {
-                componentIconImageCache.put(identifier, ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
-                    new ByteArrayInputStream(icon))).createImage());
-            }
-        }
-        if (componentIconImageCache.containsKey(identifier)) {
-            return componentIconImageCache.get(identifier);            
-        } else {
-            if (defaultIconImage == null) {
-                InputStream inputStream = null;
-                try {
-                    inputStream = IntegrationHistoryDataItemSubtreeBuilder.class.getResourceAsStream("/resources/icons/tool16.png");
-                    defaultIconImage = ImageDescriptor.createFromImage(new Image(Display.getCurrent(), inputStream)).createImage();
-                } finally {
-                    IOUtils.closeQuietly(inputStream);
-                }
-            }
-            return defaultIconImage;
-        }
+        return ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class).getComponentImageContainer(identifier)
+            .getComponentIcon16();
     }
 }

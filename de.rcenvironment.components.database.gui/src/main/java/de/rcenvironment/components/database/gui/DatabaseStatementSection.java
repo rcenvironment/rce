@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.database.gui;
@@ -67,6 +67,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Database statement section.
  *
  * @author Oliver Seebach, Kathrin Schaffert
+ * @author Kathrin Schaffert
  */
 public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySection {
 

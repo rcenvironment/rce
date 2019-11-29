@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<extension point="org.eclipse.ui.intro">
+		<intro
+			class="org.eclipse.ui.intro.config.CustomizableIntroPart"
+			id="de.rcenvironment.core.start.gui.intro"
+			label="Welcome to RCE"
+			icon="../de.rcenvironment.core.gui.resources/resources/images/logo16.png" /> 
+  		<introProductBinding
+  			introId="de.rcenvironment.core.start.gui.intro"
+  			productId="de.rcenvironment.core.start.product"/> 
+  		</extension>
+ 			<extension point="org.eclipse.ui.intro.config">
+ 				<config
+ 					content="$nl$/introContent.xml"
+ 					id="de.rcenvironment.core.start.gui.introConfigId"
+ 					introId="de.rcenvironment.core.start.gui.intro">
+ 				<presentation home-page-id="root">
+  					<implementation
+  						kind="html"
+  						os="win32,linux"
+  						style="content/styles/style.css" /> 
+  				</presentation>
+  				</config>
+ 		 </extension>
+ 		<extension point="org.eclipse.ui.intro.configExtension">
+  			<action
+  				name="showExample"
+  				replaces="runAction?pluginId=de.rcenvironment.core.gui.introduction&amp;class=de.rcenvironment.core.gui.introduction.ShowExampleAction"/>
+			<action
+  				name="navigateToLink"
+  				replaces="runAction?pluginId=de.rcenvironment.core.gui.introduction&amp;class=de.rcenvironment.core.gui.introduction.NavigateToLink&amp;openLink=value;"/>
+			<action
+  				name="saveInput"
+  				replaces="runAction?pluginId=de.rcenvironment.core.gui.introduction&amp;class=de.rcenvironment.core.gui.introduction.SaveUserInput&amp;checkboxValue=value"/>
+  		</extension>
+</plugin>

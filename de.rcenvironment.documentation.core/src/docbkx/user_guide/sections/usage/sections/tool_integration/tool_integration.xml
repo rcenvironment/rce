@@ -23,13 +23,13 @@
         <para>If you use RCE with a graphical user interface this can be done with the help of an
             wizard which guides you through the settings. This wizard can be found in the menu
                 <emphasis role="italic">Tool Integration -> Integrate Tool...</emphasis>. Required
-            fields are marked with an asterisk (*). When the wizard is finished and everything is
-            correct, the integrated tool will automatically show up in the Workflow Editor
+            fields are marked with an asterisk (*). When the wizard is finished and if everything
+            is correct, the integrated tool will automatically show up in the Workflow Editor
             palette.</para>
         <para>
             <note>
                 <para>The wizard has a dynamic help, which is shown by clicking on the question mark
-                    on the bottom left or by pressing F1. It will guide you through every page of
+                    on the bottom left or by pressing F1. It will guide you through the pages of
                     the wizard.</para>
             </note>
         </para>
@@ -49,15 +49,15 @@
             default. The configuration files can be created from the properties that are defined for
             the tool on the "Tool Properties" page.</para>
         <para><emphasis role="bold">Input Directory</emphasis>: All inputs of type "File" and
-            "Directory" will be copied here. They will have a subdirectory that is named exactly as
-            the input's name (e.g. the input "x" of type "File" will be put into "Input
+            "Directory" will be copied here. They will have a subdirectory that has the same name as
+            the name of the input (e.g. the input "x" of type "File" will be put into "Input
             Directory/x/filename").</para>
         <para><emphasis role="bold">Output Directory</emphasis>: All outputs of type "File" and
             "Directory" can be written into this directory. After that, you can use the placeholder
             for this directory to assign these outputs to RCE outputs in the post execution script.
-            To write the output directory into an output "x" of type "Directory" the following line
-            in the post execution script would be required: ${out:x} = "${dir:output}"</para>
-        <para><emphasis role="bold">Tool Directory</emphasis>: This is the directory, where the
+            To write, e.g., the output directory into an output "x" of type "Directory" the following line
+            in the post execution script would be required: <code>${out:x} = "${dir:output}"</code></para>
+        <para><emphasis role="bold">Tool Directory</emphasis>: This is the directory where the
             actual tool is located. If the tool should not be copied, it will be exactly the same
             directory that you choose, otherwise it will be the same as the chosen directory but
             copied to the working directory.</para>
@@ -71,15 +71,15 @@
         <title>Copying of Integrated Tools</title>
         <para>When a component is created in the integration wizard, a configuration file is
             created.</para>
-        <para>All configuration files from the tool integration are stored in the directory</para>
-        <para><code>&lt;profile folder>/integration/tools/</code></para>
+        <para>All configuration files from the tool integration are stored in the directory
+                <code>&lt;profile folder>/integration/tools/</code></para>
         <para>In this directory, there is a separation between different kinds of integration
-            realized through one subdirectory for each. The <code>common</code> folder is always
-            existent.</para>
-        <para>In these subdirectory, the integrated tools are stored, again separated through a
-            subdirectory for each. The name of the directory equals the name of integration of the
+            realized through one subdirectory for each. The <code>common</code> folder always
+            exists.</para>
+        <para>In these subdirectories, the integrated tools are stored, again separated through into
+            a subdirectory for each. The name of the directory is the name of integration of the
             tool. </para>
-        <para>If an integrated tool should be copied to another RCE instance or another machine, the
+        <para>If an integrated tool is copied to another RCE instance or another machine, the
             directory of the tool must be copied, containing a <code>configuration.json</code> and
             some optional files. It must be put in the equivalent integration type directory of the
             target RCE instance. After that, RCE automatically reads the new folder and if
@@ -87,8 +87,9 @@
         <para>
             <note>
                 <para>If you want to delete a tool folder that contains some documentation, this can
-                    cause an error. If you have this problem, delete the documentation folder at
-                    first (it must be empty), afterwards you can delete the tool folder.</para>
+                    cause an error. If you have this problem, first empty the documentation folder
+                    and delete the empty folder the documentation folder at first (it must be
+                    empty), afterwards you can delete the tool folder.</para>
             </note>
         </para>
         <sect3>
@@ -321,7 +322,7 @@ post.bat</programlisting>
                             will appear immediately in the palette and is be ready to use.</para>
                 </listitem>
                 <listitem>
-                    <para>If not already done, do not forget to publish your tool (cf. Section<xref
+                    <para>If not already done, do not forget to publish your tool (cf. <xref
                                 linkend="publishing_authorization"/> ) after testing it locally. To
                             check if your tool is successfully published to the RCE network open the
                             tab <emphasis role="italic">Network View</emphasis> at the bottom and
@@ -341,7 +342,7 @@ post.bat</programlisting>
             <para><code>/integration/tools/cpacs/[YourToolName]</code></para>
             <para>Copy the folder <code>[YourToolName]</code> to the same location inside the
                 profile folder running with your headless server instance. Use the "auth" commands
-                (cf. Section<xref linkend="publishing_authorization"/> ) to publish your tool. If
+                (cf. <xref linkend="publishing_authorization"/> ) to publish your tool. If
                 the server instance is already running, your tool will be available immediately
                 after publishing.</para>
         </sect3>

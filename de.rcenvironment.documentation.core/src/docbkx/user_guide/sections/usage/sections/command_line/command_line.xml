@@ -524,6 +524,10 @@
 					</tbody>
 				</tgroup>
 			</table>
+			<note>
+				<para>The command <emphasis role="italic">wf open</emphasis> is only accessible to
+					the role developer, as it influences the GUI of the server-instance.</para>
+			</note>
 		</para>
 	
 	<sect3 id="placeholder_files">

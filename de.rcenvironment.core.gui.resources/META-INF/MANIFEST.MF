@@ -2,16 +2,17 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Resources Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.resources;singleton:=true
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-Activator: de.rcenvironment.core.gui.resources.internal.Activator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: de.rcenvironment.core.component.model.api,
+Import-Package: 
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.jface.resource,
  org.eclipse.swt,
  org.eclipse.swt.graphics,
  org.eclipse.swt.widgets,
- org.osgi.framework;version="1.3.0"
+ org.osgi.framework;version="1.3.0",
+ org.osgi.service.component.annotations;version="1.3.0"
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.gui.resources.api

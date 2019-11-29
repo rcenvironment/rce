@@ -3,12 +3,11 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.execute;
 
-import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -684,12 +683,12 @@ public class PlaceholderPage extends WizardPage {
                 final String selectedPath;
                 if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_DIR)) {
                     selectedPath = PropertyTabGuiHelper
-                        .selectDirectoryFromFileSystem(getShell(),
-                            "Open path...");
+                        .selectDirectoryFromFileSystemWithPath(getShell(),
+                            "Open path...", placeholderText.getText());
                 } else {
                     selectedPath = PropertyTabGuiHelper
                         .selectFileFromFileSystem(getShell(),
-                            new String[] {}, "Open path...");
+                            new String[] {}, "Open path...", placeholderText.getText());
                 }
                 if (selectedPath != null) {
                     placeholderText.setText(selectedPath);
@@ -711,16 +710,8 @@ public class PlaceholderPage extends WizardPage {
     }
 
     private static Image getImage(WorkflowNode element) {
-        byte[] icon = element.getComponentDescription().getIcon16();
-        Image image;
-        if (icon != null) {
-            image = new Image(Display.getCurrent(), new ByteArrayInputStream(
-                icon));
-        } else {
-            image = Activator.getInstance().getImageRegistry()
-                .get(Activator.IMAGE_RCE_ICON_16);
-        }
-        return image;
+        return element.getComponentDescription().getIcon16();
+
     }
 
     private String getControlText(int id) {

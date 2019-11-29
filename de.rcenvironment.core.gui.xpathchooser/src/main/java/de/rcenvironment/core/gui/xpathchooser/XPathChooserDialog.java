@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.xpathchooser;
 
@@ -103,8 +103,11 @@ public class XPathChooserDialog extends TitleAreaDialog {
                 chooser = new XPathChooserHelper(root);
             }
         } catch (final XMLStreamException e) {
-            LOGGER.error("Could not parse provided XML document");
-            MessageDialog.openError(aParentShell, "Error", "Could not parse provided XML document.");
+            int lineOfError = e.getLocation().getLineNumber();
+            String errorMsg = "Could not parse provided XML document. Error occured at line " + Integer.toString(lineOfError) + ".";
+            String errorLog = "Could not parse provided XML document at line " + Integer.toString(lineOfError);
+            LOGGER.error(errorLog);
+            MessageDialog.openError(aParentShell, "Error", errorMsg);
             chooser = null;
         }
     }

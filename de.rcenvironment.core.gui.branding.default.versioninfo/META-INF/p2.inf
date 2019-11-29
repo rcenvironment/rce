@@ -7,5 +7,7 @@ instructions.configure=\
 	removeRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:1,enabled:true);\
 	removeRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:0,enabled:true);\
 	removeRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:1,enabled:true);\
-	addRepository(location:https${#58}//software.dlr.de/updates/rce/9.x/repositories/standard/releases/latest/,type:0,enabled:true);\
-	addRepository(location:https${#58}//software.dlr.de/updates/rce/9.x/repositories/standard/releases/latest/,type:1,enabled:true);
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/9.x/repositories/standard/releases/latest/,type:0,enabled:true);\
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/9.x/repositories/standard/releases/latest/,type:1,enabled:true);\
+	addRepository(location:https${#58}//software.dlr.de/updates/rce/10.x/repositories/standard/releases/latest/,type:0,enabled:true);\
+	addRepository(location:https${#58}//software.dlr.de/updates/rce/10.x/repositories/standard/releases/latest/,type:1,enabled:true);

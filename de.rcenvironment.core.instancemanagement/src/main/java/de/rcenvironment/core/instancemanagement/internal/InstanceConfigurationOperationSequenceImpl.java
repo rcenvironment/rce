@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -21,6 +21,7 @@ import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
  * 
  * @author Robert Mischke
  * @author Brigitte Boden
+ * @author Lukas Rosenbach
  */
 class InstanceConfigurationOperationSequenceImpl implements InstanceConfigurationOperationSequence {
 
@@ -40,11 +41,29 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     }
 
     @Override
+    public InstanceConfigurationOperationSequence setProfileVersion(String version) {
+        if (!entries.isEmpty()) {
+            throw new IllegalStateException("The 'set profile version' operation can only be added as the first configuration step");
+        }
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SET_RCE_VERSION, version));
+        return this;
+    }
+
+    @Override
     public InstanceConfigurationOperationSequence resetConfiguration() {
         if (!entries.isEmpty()) {
             throw new IllegalStateException("The 'reset' operation can only be added as the first configuration step");
         }
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_RESET));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence wipeConfiguration() {
+        if (!entries.isEmpty()) {
+            throw new IllegalStateException("The 'wipe' operation can only be added as the first configuration step");
+        }
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_WIPE));
         return this;
     }
 
@@ -89,7 +108,7 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_RELAY_OPTION, value));
         return this;
     }
-    
+
     @Override
     public InstanceConfigurationOperationSequence setCustomNodeId(String value) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_SET_CUSTOM_NODE_ID, value));
@@ -165,6 +184,23 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     }
 
     @Override
+    public InstanceConfigurationOperationSequence addSshAccountFromStringParameters(List<String> parameters) {
+        String username = parameters.get(0);
+        String role = parameters.get(1);
+        Boolean enabled = Boolean.parseBoolean(parameters.get(2));
+        String password = parameters.get(3);
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT, username, role,
+            enabled, password));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence removeSshAccount(String username) {
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT, username));
+        return this;
+    }
+
+    @Override
     public InstanceConfigurationOperationSequence enableImSshAccess(int accessPort) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS, accessPort));
         return this;
@@ -229,6 +265,35 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     @Override
     public InstanceConfigurationOperationSequence removeSshConnection(String name) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION, name));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence addUplinkConnectionFromStringParameters(List<String> parameters) {
+        // <id> <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> password <password>
+        final String connectionId = parameters.get(0);
+        final String hostName = parameters.get(1);
+        final int port = Integer.parseInt(parameters.get(2));
+        final String clientId = parameters.get(3);
+        final boolean isGateway = Boolean.parseBoolean(parameters.get(4));
+        final boolean connectOnStartup = Boolean.parseBoolean(parameters.get(5));
+        final boolean autoRetry = Boolean.parseBoolean(parameters.get(6));
+        final String userName = parameters.get(7);
+        // TODO add support for keyfiles
+        String password = null;
+        if (parameters.get(8).equals("password")) {
+            password = parameters.get(9);
+        }
+        final ConfigurationUplinkConnection uplinkConnection = new ConfigurationUplinkConnection(connectionId, hostName, port, userName,
+            connectionId, clientId, null, connectOnStartup, autoRetry, isGateway, password);
+        appendStep(
+            new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION, uplinkConnection));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence removeUplinkConnection(String id) {
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION, id));
         return this;
     }
 

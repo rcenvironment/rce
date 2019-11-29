@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.components.tiglviewer.gui.runtime;
 
@@ -22,7 +22,6 @@ import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.components.tiglviewer.execution.TiglViewerView;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Shows a TiGL Viewer as view within RCE.
@@ -54,26 +53,23 @@ public class TiglViewerRuntimeView extends TiglViewerView {
             }
             final IWorkbenchPage page = window.getActivePage();
 
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute("Starting TiGLViewer", () -> {
 
-                @Override
-                @TaskDescription("Starting TiGLViewer")
-                public void run() {
-                    Display.getDefault().asyncExec(new Runnable() {
+                Display.getDefault().asyncExec(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            try {
-                                if (OS.isFamilyWindows()) {
-                                    page.showView("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer",
-                                        secondId, IWorkbenchPage.VIEW_ACTIVATE);
-                                }
-                            } catch (PartInitException e) {
-                                LOGGER.error(e);
+                    @Override
+                    public void run() {
+                        try {
+                            if (OS.isFamilyWindows()) {
+                                page.showView("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer",
+                                    secondId, IWorkbenchPage.VIEW_ACTIVATE);
                             }
+                        } catch (PartInitException e) {
+                            LOGGER.error(e);
                         }
-                    });
-                }
+                    }
+                });
+
             });
         } catch (RuntimeException e) {
             LOGGER.error("TiGLViewer component cannot open TiGLViewer. Maybe no GUI available?");

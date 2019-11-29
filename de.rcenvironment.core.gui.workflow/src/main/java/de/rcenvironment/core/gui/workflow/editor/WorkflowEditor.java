@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor;
@@ -129,16 +129,17 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
+import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
@@ -149,7 +150,6 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPer
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
-import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.EditorsHelper;
@@ -188,6 +188,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Goekhan Guerkan
  * @author Jan Flink
  * @author Martin Misiak
+ * @author Brigitte Boden
  */
 public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
     implements ITabbedPropertySheetPageContributor, DistributedComponentKnowledgeListener {
@@ -600,17 +601,18 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
                                             .getDescription();
                                         // Context menu for integrated tools
                                         if (toolName != null && getSelectedPaletteComponent(toolName) != null
-                                            && getSelectedPaletteComponent(toolName).getInstallationId().matches(
+                                            && getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifier().matches(
                                                 ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID)) {
                                             extendPaletteContextMenu(menu,
-                                                getSelectedPaletteComponent(toolName).getInstallationId());
+                                                getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion());
                                         }
                                         // Context menu for SSH remote access tools
                                         if (toolName != null && getSelectedPaletteComponent(toolName) != null
-                                            && getSelectedPaletteComponent(toolName).getInstallationId().matches(
-                                                "de.rcenvironment.remoteaccess.*")) {
+                                            && getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion()
+                                                .matches(
+                                                    "de.rcenvironment.remoteaccess.*")) {
                                             extendPaletteContextMenuForSshComponent(menu,
-                                                getSelectedPaletteComponent(toolName).getInstallationId());
+                                                getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion());
                                         }
                                     }
                                 }
@@ -1210,12 +1212,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         ComponentInterface componentInterface = installation.getComponentInterface();
         // prepare the icon of the component
         ImageDescriptor imageDescriptor = null;
-        Image image = ComponentImageManager.getInstance().getIcon16Image(componentInterface);
-        if (image == null) {
-            imageDescriptor = Activator.getInstance().getImageRegistry().getDescriptor(Activator.IMAGE_RCE_ICON_16);
-        } else {
-            imageDescriptor = ImageDescriptor.createFromImage(image);
-        }
+        Image image = ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
+            .getComponentImageContainer(componentInterface).getComponentIcon16();
+        imageDescriptor = ImageDescriptor.createFromImage(image);
 
         String name = componentInterface.getDisplayName();
         if (componentInterface.getVersion() != null
@@ -1292,9 +1291,43 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
 
     private synchronized void refreshPalette(Collection<DistributedComponentEntry> entries) {
         // create entry lists
+        List<String> componentNames = getExistingComponentNames(entries);
+        // getting the componentImageContaineService
+        ComponentImageContainerService componentImageContainerService =
+            ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class);
+
+        // order: remove entries, add entries and update icons; reduces count of icon calls
+        // the new order will not change the behavior if a component is "changed" by unpublish and publish but allow icon updates if the
+        // "change" does not affect the name
+
+        // check for every palette entry if contained in existing components -
+        // if not : remove
+        Map<PaletteDrawer, List<PaletteEntry>> componentsToRemove = new HashMap<PaletteDrawer, List<PaletteEntry>>();
+
+        for (Object group : paletteRoot.getChildren()) {
+            if (group instanceof PaletteDrawer) {
+                for (Object component : ((PaletteDrawer) group).getChildren()) {
+                    if (component instanceof PaletteEntry) {
+                        if (!componentNames.contains(((PaletteEntry) component).getLabel())) {
+                            if (!componentsToRemove.containsKey(group)) {
+                                componentsToRemove.put((PaletteDrawer) group, new ArrayList<PaletteEntry>());
+                            }
+                            componentsToRemove.get(group).add((PaletteEntry) component);
+                        }
+                    }
+                }
+            }
+        }
+        for (PaletteDrawer group : componentsToRemove.keySet()) {
+            for (PaletteEntry entry : componentsToRemove.get(group)) {
+                removeComponentFromGroup(group, entry);
+            }
+        }
+        
+       //create list with the palette state at the moment of execution 
         List<String> paletteEntries = getExistingPaletteEntries();
         List<String> paletteGroups = getExistingPaletteGroups();
-        List<String> componentNames = getExistingComponentNames(entries);
+
         // check for every component entry if contained in current palette - if not :
         // add
         for (DistributedComponentEntry entry : entries) {
@@ -1316,33 +1349,24 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
                     paletteGroups.add(group);
                 }
                 addComponentToGroup(component, group);
-            }
-        }
+            } else {
+                // if the component is not new, the component has to be already there, so the icon will be updated
+                for (Object group : paletteRoot.getChildren()) {
+                    if (group instanceof PaletteDrawer) {
+                        for (Object component : ((PaletteDrawer) group).getChildren()) {
+                            if (component instanceof PaletteEntry && ((PaletteEntry) component).getLabel().equals(name)) {
+                                ImageDescriptor descriptor = ImageDescriptor.createFromImage(componentImageContainerService
+                                    .getComponentImageContainer(entry.getComponentInterface()).getComponentIcon16());
+                                ((PaletteEntry) component).setLargeIcon(descriptor);
+                                ((PaletteEntry) component).setSmallIcon(descriptor);
 
-        // check for every palette entry if contained in existing components -
-        // if not : remove
-        Map<PaletteDrawer, List<PaletteEntry>> componentsToRemove = new HashMap<PaletteDrawer, List<PaletteEntry>>();
-
-        for (Object group : paletteRoot.getChildren()) {
-            if (group instanceof PaletteDrawer) {
-                for (Object component : ((PaletteDrawer) group).getChildren()) {
-                    if (component instanceof PaletteEntry) {
-                        if (!componentNames.contains(((PaletteEntry) component).getLabel())) {
-                            if (!componentsToRemove.containsKey(group)) {
-                                componentsToRemove.put((PaletteDrawer) group, new ArrayList<PaletteEntry>());
                             }
-                            componentsToRemove.get(group).add((PaletteEntry) component);
                         }
                     }
                 }
             }
         }
 
-        for (PaletteDrawer group : componentsToRemove.keySet()) {
-            for (PaletteEntry entry : componentsToRemove.get(group)) {
-                removeComponentFromGroup(group, entry);
-            }
-        }
     }
 
     @Override
@@ -1561,7 +1585,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
             }
         });
     }
-    
+
     private void addExportDocumentation(Menu menu, final String toolID) {
         documentationToolPaletteMenuItem = new MenuItem(menu, SWT.NONE);
         documentationToolPaletteMenuItem.setText("Export Documentation");
@@ -1580,7 +1604,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
             }
         });
     }
-   
+
     public boolean isAllLabelsShown() {
         return allLabelsShown;
     }

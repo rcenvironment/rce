@@ -3,16 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.api;
 
 import java.io.Serializable;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,6 +30,7 @@ import de.rcenvironment.core.utils.incubator.GraphvizUtils.DotFileBuilder;
  * @author Doreen Seider
  * @author Sascha Zur
  * @author Tobias Brieden
+ * @author Alexander Weinert (refactoring)
  * 
  *         Note: The workflow graph was introduced to reset nested loops and later to realize fault-tolerant loops. From a semantic point of
  *         view, it is kind of redundant to the WorkflowDescription or at least keeps semantically similar information but is not linked to
@@ -53,12 +51,9 @@ public class WorkflowGraph implements Serializable {
 
     private final Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes;
 
-    // identifier created by WorkflowGraph#createEdgeIdentifier -> set of WorkflowGraphEdge
-    // All Edges which have the same source component and the same output belong to the same set, even if they have different target nodes.
-    // map from an created edge key to its WorkflowGraphEdge
-    private final Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
+    private final WorkflowGraphEdges edges;
 
-    private final Map<ComponentExecutionIdentifier, Map<String, Set<Deque<WorkflowGraphHop>>>> determinedHopsToDriverOnFailure =
+    private final Map<ComponentExecutionIdentifier, Map<String, Set<WorkflowGraphPath>>> determinedHopsToDriverOnFailure =
         new HashMap<>();
 
     private final Map<ComponentExecutionIdentifier, WorkflowGraphNode> determinedDriverNodes = new HashMap<>();
@@ -66,26 +61,16 @@ public class WorkflowGraph implements Serializable {
     // TODO this internal map should be created within the constructor and not handed into the constructor
     public WorkflowGraph(Map<ComponentExecutionIdentifier, WorkflowGraphNode> nodes, Set<WorkflowGraphEdge> edgeSet) {
         this.nodes = nodes;
-
-        for (WorkflowGraphEdge edge : edgeSet) {
-            String edgeKey = WorkflowGraph.createEdgeKey(edge);
-            if (!edges.containsKey(edgeKey)) {
-                edges.put(edgeKey, new HashSet<WorkflowGraphEdge>());
-            }
-            edges.get(edgeKey).add(edge);
-        }
+        this.edges = WorkflowGraphEdges.create(edgeSet);
     }
 
     /**
-     * Returns {@link Deque}s of {@link WorkflowGraphHop}s that need to be traversed when node with given execution identifier need to reset
-     * its loop.
-     * 
-     * TODO This calculation should only be performed once for each node and then be cached for later retrieval.
+     * Returns {@link WorkflowGraphPath}s that need to be traversed when node with given execution identifier need to reset its loop.
      * 
      * @param startNodeExecutionId execution identifier of the node that need to reset its loop
-     * @return {@link Deque}s of {@link WorkflowGraphHop}s to traverse for each output of the node that need to reset its loop
+     * @return {@link WorkflowGraphPath}s to traverse for each output of the node that need to reset its loop
      */
-    public synchronized Set<Deque<WorkflowGraphHop>> getHopsToTraverseWhenResetting(ComponentExecutionIdentifier startNodeExecutionId) {
+    public synchronized Set<WorkflowGraphPath> getHopsToTraverseWhenResetting(ComponentExecutionIdentifier startNodeExecutionId) {
         // A set of node that stores all visited nodes during the recursive calculation of the hops to traverse for resetting a nested loop.
         Set<WorkflowGraphNode> alreadyVisitedNodes = new HashSet<>();
 
@@ -95,10 +80,10 @@ public class WorkflowGraph implements Serializable {
             recursionResult);
 
         // create a copy of the data structure
-        Set<Deque<WorkflowGraphHop>> hopsDequesSnapshot = new HashSet<>();
+        Set<WorkflowGraphPath> pathsSnapshot = new HashSet<>();
         for (List<WorkflowGraphEdge> edgeList : recursionResult) {
 
-            Deque<WorkflowGraphHop> deque = new ArrayDeque<>();
+            WorkflowGraphPath path = new WorkflowGraphPath();
 
             // transform edges into the necessary WorkflowGraphHops
             for (WorkflowGraphEdge edge : edgeList) {
@@ -110,15 +95,15 @@ public class WorkflowGraph implements Serializable {
                     currentNode.getEndpointName(edge.getOutputIdentifier()), edge.getTargetExecutionIdentifier(),
                     nextNode.getEndpointName(edge.getInputIdentifier()), edge.getOutputIdentifier());
 
-                deque.addLast(nextHop);
+                path.append(nextHop);
             }
 
-            // check if the first node and the last node in the queue are the same. if this is not the case we need to add a dummy hop with
+            // check if the first node and the last node in the path are the same. if this is not the case we need to add a dummy hop with
             // an unreachable target node, to work around a sanity check in ComponentExecutionScheduler.handleInternalEndpointDatumAdded()
             ComponentExecutionIdentifier firstExeId = edgeList.get(0).getSourceExecutionIdentifier();
             ComponentExecutionIdentifier lastExeId = edgeList.get(edgeList.size() - 1).getTargetExecutionIdentifier();
             if (firstExeId.equals(lastExeId)) {
-                hopsDequesSnapshot.add(deque);
+                pathsSnapshot.add(path);
             } else {
 
                 // hopOutputName must not be a existing outputName!
@@ -129,13 +114,13 @@ public class WorkflowGraph implements Serializable {
 
                 WorkflowGraphHop nextHop =
                     new WorkflowGraphHop(lastExeId, dummyHopOuputName, dummyTargetExecutionIdentifier, dummyTargetInputName);
-                deque.addLast(nextHop);
+                path.append(nextHop);
 
-                hopsDequesSnapshot.add(deque);
+                pathsSnapshot.add(path);
             }
         }
 
-        return hopsDequesSnapshot;
+        return pathsSnapshot;
     }
 
     private void recursion(Set<WorkflowGraphNode> alreadyVisitedNodes, WorkflowGraphNode node, EndpointCharacter startEndpointCharacter,
@@ -150,9 +135,6 @@ public class WorkflowGraph implements Serializable {
                 // and the currentChain already contains some hops, add the currentChain to the result list
                 completedChains.add(currentChain);
             }
-
-            return;
-
         } else {
             for (WorkflowGraphEdge nextEdge : nextEdgesToVisit) {
 
@@ -177,31 +159,26 @@ public class WorkflowGraph implements Serializable {
         // have a look at each output
         for (String startNodeOutputId : startNode.getOutputIdentifiers()) {
 
-            String tmpEdgeKey = WorkflowGraph.createEdgeKey(startNode, startNodeOutputId);
+            // if the given output has a connection to at least one other node,
+            // then check all edges
+            for (WorkflowGraphEdge edge : edges.getOutgoingEdges(startNode, startNodeOutputId)) {
 
-            // if the given output has a connection to at least one other node...
-            if (edges.containsKey(tmpEdgeKey)) {
+                WorkflowGraphNode targetNode = nodes.get(edge.getTargetExecutionIdentifier());
+                if (alreadyVisitedNodes.contains(targetNode)) {
+                    // if the target node of this edge is already considered, skip this edge
+                    continue;
+                }
 
-                // then check all edges
-                for (WorkflowGraphEdge edge : edges.get(tmpEdgeKey)) {
-
-                    WorkflowGraphNode targetNode = nodes.get(edge.getTargetExecutionIdentifier());
-                    if (alreadyVisitedNodes.contains(targetNode)) {
-                        // if the target node of this edge is already considered, skip this edge
-                        continue;
-                    }
-
-                    // if the start node is a driver,
-                    if (startNode.isDriver()) {
-                        // we also need to check that we are not leaving the loop level
-                        if (startEndpointCharacter.equals(edge.getOutputCharacter())) {
-                            nextEdgesToVisit.add(edge);
-                            alreadyVisitedNodes.add(targetNode);
-                        }
-                    } else {
+                // if the start node is a driver,
+                if (startNode.isDriver()) {
+                    // we also need to check that we are not leaving the loop level
+                    if (startEndpointCharacter.equals(edge.getOutputCharacter())) {
                         nextEdgesToVisit.add(edge);
                         alreadyVisitedNodes.add(targetNode);
                     }
+                } else {
+                    nextEdgesToVisit.add(edge);
+                    alreadyVisitedNodes.add(targetNode);
                 }
             }
         }
@@ -210,33 +187,51 @@ public class WorkflowGraph implements Serializable {
     }
 
     /**
-     * Returns {@link Deque}s of {@link WorkflowGraphHop}s that need to be traversed when node with given execution identifier failed within
-     * a fault-tolerant loop.
+     * Returns {@link WorkflowGraphPath}s that need to be traversed when node with given execution identifier failed within a fault-tolerant
+     * loop.
      * 
-     * @param startNodeEecutionId execution identifier of the node that failed within a fault-tolerant loop
-     * @return {@link Deque}s of {@link WorkflowGraphHop}s to traverse for each output of the node that failed
+     * @param startNodeExecutionId execution identifier of the node that failed within a fault-tolerant loop
+     * @return {@link WorkflowGraphPath}s to traverse for each output of the node that failed
      * 
      * @throws ComponentExecutionException if searching for driver node fails (might be an user error)
      */
-    public Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseOnFailure(ComponentExecutionIdentifier startNodeEecutionId)
+    public Map<String, Set<WorkflowGraphPath>> getHopsToTraverseOnFailure(ComponentExecutionIdentifier startNodeExecutionId)
         throws ComponentExecutionException {
 
-        Map<String, Set<Deque<WorkflowGraphHop>>> hopsDequesPerOutput;
-        if (nodes.get(startNodeEecutionId).isDriver()) {
-            hopsDequesPerOutput = getHopsToTraverseToGetToLoopDriver(startNodeEecutionId, EndpointCharacter.OUTER_LOOP,
-                determinedHopsToDriverOnFailure, false);
+        Map<String, Set<WorkflowGraphPath>> pathsPerOutput;
+        if (nodes.get(startNodeExecutionId).isDriver()) {
+            pathsPerOutput = getHopsToTraverseToGetToLoopDriver(startNodeExecutionId, EndpointCharacter.OUTER_LOOP,
+                determinedHopsToDriverOnFailure);
         } else {
-            hopsDequesPerOutput = getHopsToTraverseToGetToLoopDriver(startNodeEecutionId, EndpointCharacter.SAME_LOOP,
-                determinedHopsToDriverOnFailure, false);
+            pathsPerOutput = getHopsToTraverseToGetToLoopDriver(startNodeExecutionId, EndpointCharacter.SAME_LOOP,
+                determinedHopsToDriverOnFailure);
         }
 
+        return pathsPerOutput;
+    }
+
+    /**
+     * The recursive search for loop drivers implemented in
+     * {@link WorkflowGraph#getHopsToTraverseToGetToLoopDriver(ComponentExecutionIdentifier, EndpointCharacter, Map)} returns, for each
+     * output of the node represented by the given {@link ComponentExecutionIdentifier}, a set of paths leading to some input of the loop
+     * driver. Thus, the method may return multiple paths (possibly from differing outputs of the given node) that all lead to the same
+     * input of the same loop driver. In further processing, however, we only require one path per input of the loop driver.
+     * 
+     * Thus, this method ``cleans up'' the given mapping such that for each input of the loop driver, at most one path exists in the sets
+     * contained in the given map.
+     * 
+     * @param pathsPerOutput A map from output identifiers of some node (which is not given as a parameter to this method) to sets of paths
+     *                       leading from that node to its loop driver. As the loop driver of a given node is unique, there exists a unique
+     *                       source and target that is common to all paths in all sets contained in the map.
+     */
+    private void sanitizePathsPerOutput(Map<String, Set<WorkflowGraphPath>> pathsPerOutput) {
         Set<String> visitedInputs = new HashSet<>();
-        Iterator<Entry<String, Set<Deque<WorkflowGraphHop>>>> hopsDequesPerOutputIterator = hopsDequesPerOutput.entrySet().iterator();
-        while (hopsDequesPerOutputIterator.hasNext()) {
-            Entry<String, Set<Deque<WorkflowGraphHop>>> hopsDequesForOutput = hopsDequesPerOutputIterator.next();
-            Iterator<Deque<WorkflowGraphHop>> hopsForOutputIterator = hopsDequesForOutput.getValue().iterator();
+        Iterator<Entry<String, Set<WorkflowGraphPath>>> pathsPerOutputIterator = pathsPerOutput.entrySet().iterator();
+        while (pathsPerOutputIterator.hasNext()) {
+            Entry<String, Set<WorkflowGraphPath>> pathsForOutput = pathsPerOutputIterator.next();
+            Iterator<WorkflowGraphPath> hopsForOutputIterator = pathsForOutput.getValue().iterator();
             while (hopsForOutputIterator.hasNext()) {
-                Deque<WorkflowGraphHop> hops = hopsForOutputIterator.next();
+                WorkflowGraphPath hops = hopsForOutputIterator.next();
                 String targetInputName = hops.getLast().getTargetInputName();
                 if (visitedInputs.contains(targetInputName)) {
                     hopsForOutputIterator.remove();
@@ -244,12 +239,10 @@ public class WorkflowGraph implements Serializable {
                     visitedInputs.add(targetInputName);
                 }
             }
-            if (hopsDequesForOutput.getValue().isEmpty()) {
-                hopsDequesPerOutputIterator.remove();
+            if (pathsForOutput.getValue().isEmpty()) {
+                pathsPerOutputIterator.remove();
             }
         }
-
-        return hopsDequesPerOutput;
     }
 
     /**
@@ -258,9 +251,8 @@ public class WorkflowGraph implements Serializable {
      * @param executionIdentifier execution identifier of the node which driver needs to be found
      * @return {@link WorkflowGraphNode} of the driver that controls the node with the given execution identifier.
      * 
-     * @throws ComponentExecutionException if searching for driver node fails (might be an user error)
+     * @throws ComponentExecutionException if searching for driver node fails (signifies a developer error)
      */
-    // TODO review the kind of exception: when is it thrown? is it caused by an user or only a developer error?
     public WorkflowGraphNode getLoopDriver(ComponentExecutionIdentifier executionIdentifier) throws ComponentExecutionException {
 
         if (!determinedDriverNodes.containsKey(executionIdentifier)) {
@@ -270,103 +262,100 @@ public class WorkflowGraph implements Serializable {
         return determinedDriverNodes.get(executionIdentifier);
     }
 
-    private Map<String, Set<Deque<WorkflowGraphHop>>> getHopsToTraverseToGetToLoopDriver(ComponentExecutionIdentifier startNodeExecutionId,
-        EndpointCharacter startEnpointCharacter,
-        Map<ComponentExecutionIdentifier, Map<String, Set<Deque<WorkflowGraphHop>>>> alreadyDeterminedHops,
-        boolean isResetSearch) throws ComponentExecutionException {
-
+    private Map<String, Set<WorkflowGraphPath>> getHopsToTraverseToGetToLoopDriver(ComponentExecutionIdentifier startNodeExecutionId,
+        EndpointCharacter startEndpointCharacter,
+        Map<ComponentExecutionIdentifier, Map<String, Set<WorkflowGraphPath>>> alreadyDeterminedHops) throws ComponentExecutionException {
         synchronized (alreadyDeterminedHops) {
             if (!alreadyDeterminedHops.containsKey(startNodeExecutionId)) {
-                Map<String, Set<Deque<WorkflowGraphHop>>> hopsDequesPerOutput = new HashMap<String, Set<Deque<WorkflowGraphHop>>>();
-                WorkflowGraphNode startNode = nodes.get(startNodeExecutionId);
-                // we are going to calculate a set of deques for each output of the start node
+                final Map<String, Set<WorkflowGraphPath>> pathsPerOutput = new HashMap<String, Set<WorkflowGraphPath>>();
+                final WorkflowGraphNode startNode = nodes.get(startNodeExecutionId);
+                // we are going to calculate a set of paths for each output of the start node
                 for (String startNodeOutputId : startNode.getOutputIdentifiers()) {
-                    Set<Deque<WorkflowGraphHop>> hopsDeques = new HashSet<Deque<WorkflowGraphHop>>();
+                    Set<WorkflowGraphPath> paths = new HashSet<WorkflowGraphPath>();
                     // if the given output has a connection to another node...
-                    if (edges.containsKey(WorkflowGraph.createEdgeKey(startNode, startNodeOutputId))) {
+                    if (edges.containsOutgoingEdge(startNode, startNodeOutputId)) {
                         // ... we follow them down the graph
-                        for (WorkflowGraphEdge startEdge : edges.get(WorkflowGraph.createEdgeKey(startNode, startNodeOutputId))) {
+                        for (WorkflowGraphEdge startEdge : edges.getOutgoingEdges(startNode, startNodeOutputId)) {
                             if (startNode.isDriver()) {
                                 // if the start node is a driver, we also need to check that we are not leaving the loop level
-                                if (startEnpointCharacter.equals(startEdge.getOutputCharacter())) {
+                                if (startEndpointCharacter.equals(startEdge.getOutputCharacter())) {
                                     // TODO doens't this override the same value over and over again
-                                    hopsDeques = startNewHopsSearch(startNode, startEdge, isResetSearch);
+                                    paths = startNewHopsSearch(startNode, startEdge);
                                 }
                             } else {
                                 // TODO doesn't this override the same value over and over again
-                                hopsDeques = startNewHopsSearch(startNode, startEdge, isResetSearch);
+                                paths = startNewHopsSearch(startNode, startEdge);
                             }
                         }
                         // TODO and finally only the value of the last iteration is added to the set?
-                        hopsDequesPerOutput.put(startNode.getEndpointName(startNodeOutputId), hopsDeques);
+                        pathsPerOutput.put(startNode.getEndpointName(startNodeOutputId), paths);
                         // if the given output is not connected ...
                     } else {
                         // ... we add an empty set
-                        hopsDequesPerOutput.put(startNode.getEndpointName(startNodeOutputId), hopsDeques);
+                        pathsPerOutput.put(startNode.getEndpointName(startNodeOutputId), paths);
                     }
                 }
-                alreadyDeterminedHops.put(startNodeExecutionId, hopsDequesPerOutput);
+                alreadyDeterminedHops.put(startNodeExecutionId, pathsPerOutput);
             }
         }
-        return createSnapshotOfHopsDeques(alreadyDeterminedHops.get(startNodeExecutionId));
+        sanitizePathsPerOutput(alreadyDeterminedHops.get(startNodeExecutionId));
+
+        return createSnapshotOfPaths(alreadyDeterminedHops.get(startNodeExecutionId));
     }
 
     /**
      * Creates a copy for later destructive consumption by other classes without destroying the alreadyDeterminedHops data structure for
      * this class.
      */
-    private Map<String, Set<Deque<WorkflowGraphHop>>> createSnapshotOfHopsDeques(Map<String, Set<Deque<WorkflowGraphHop>>> hopDeques) {
-        Map<String, Set<Deque<WorkflowGraphHop>>> hopsDequesSnapshot = new HashMap<>();
-        for (String outputName : hopDeques.keySet()) {
-            hopsDequesSnapshot.put(outputName, new HashSet<Deque<WorkflowGraphHop>>());
-            for (Deque<WorkflowGraphHop> hops : hopDeques.get(outputName)) {
-                hopsDequesSnapshot.get(outputName).add(new ArrayDeque<>(hops));
+    private Map<String, Set<WorkflowGraphPath>> createSnapshotOfPaths(Map<String, Set<WorkflowGraphPath>> pathsMap) {
+        Map<String, Set<WorkflowGraphPath>> pathsSnapshot = new HashMap<>();
+        for (Map.Entry<String, Set<WorkflowGraphPath>> entry : pathsMap.entrySet()) {
+            final Set<WorkflowGraphPath> snapshotSet = new HashSet<>();
+            for (WorkflowGraphPath path : entry.getValue()) {
+                snapshotSet.add(WorkflowGraphPath.createCopy(path));
             }
+            pathsSnapshot.put(entry.getKey(), snapshotSet);
         }
-        return hopsDequesSnapshot;
+        return pathsSnapshot;
     }
 
-    private Set<Deque<WorkflowGraphHop>> startNewHopsSearch(WorkflowGraphNode startNode, WorkflowGraphEdge edge, boolean isResetSearch)
+    private Set<WorkflowGraphPath> startNewHopsSearch(WorkflowGraphNode startNode, WorkflowGraphEdge edge)
         throws ComponentExecutionException {
-
-        Set<Deque<WorkflowGraphHop>> hopsDeques = new HashSet<Deque<WorkflowGraphHop>>();
+        Set<WorkflowGraphPath> paths = new HashSet<>();
 
         WorkflowGraphNode nextNode = nodes.get(edge.getTargetExecutionIdentifier());
 
-        Deque<WorkflowGraphHop> hopsDeque = new ArrayDeque<WorkflowGraphHop>();
+        WorkflowGraphPath path = new WorkflowGraphPath();
 
         WorkflowGraphHop firstHop = new WorkflowGraphHop(edge.getSourceExecutionIdentifier(),
             startNode.getEndpointName(edge.getOutputIdentifier()), edge.getTargetExecutionIdentifier(),
             nextNode.getEndpointName(edge.getInputIdentifier()), edge.getOutputIdentifier());
-        hopsDeque.add(firstHop);
+        path.append(firstHop);
 
-        determineHopsRecursively(startNode, edge, nextNode, hopsDeque, hopsDeques, isResetSearch);
+        determineHopsRecursively(startNode, edge, nextNode, path, paths);
 
-        return hopsDeques;
+        return paths;
     }
 
     private void determineHopsRecursively(WorkflowGraphNode startNode, WorkflowGraphEdge edge, WorkflowGraphNode targetNode,
-        Deque<WorkflowGraphHop> hopsDeque, Set<Deque<WorkflowGraphHop>> hopsDeques, boolean isResetSearch)
+        WorkflowGraphPath path, Set<WorkflowGraphPath> paths)
         throws ComponentExecutionException {
 
         if (targetNode.getExecutionIdentifier().equals(startNode.getExecutionIdentifier())) {
             // got to start node again
-            if (targetNode.isDriver() && isResetSearch) {
-                // if a hopsDeque is complete, we add it to the set of all hopsDeques
-                hopsDeques.add(hopsDeque);
-            }
             return;
         }
-        if (nodeAlreadyVisitedThatWay(hopsDeque, targetNode, edge)) {
+        if (nodeAlreadyVisitedThatWay(path, targetNode, edge)) {
             return;
         }
 
         if (targetNode.isDriver()) {
             if (EndpointCharacter.OUTER_LOOP.equals(edge.getInputCharacter())) {
                 // No end of the recursion
-                continueHopSearch(startNode, targetNode, hopsDeque, hopsDeques, isResetSearch, EndpointCharacter.OUTER_LOOP);
-            } else if (EndpointCharacter.SAME_LOOP.equals(edge.getInputCharacter())) {
-                hopsDeques.add(hopsDeque);
+                continueHopSearch(startNode, targetNode, path, paths, EndpointCharacter.OUTER_LOOP);
+            } else {
+                // In this case, we have EndpointCharacter.SAME_LOOP.equals(edge.getInputCharacter())
+                paths.add(path);
                 addNodeToDeterminedDriverNodes(startNode, targetNode);
             }
         } else {
@@ -386,23 +375,21 @@ public class WorkflowGraph implements Serializable {
                     throw new IllegalArgumentException("Unknown endpoint character: " + edge.getInputCharacter());
                 }
             }
-            continueHopSearch(startNode, targetNode, hopsDeque, hopsDeques, isResetSearch, outputCharacterToConsider);
+            continueHopSearch(startNode, targetNode, path, paths, outputCharacterToConsider);
         }
     }
 
-    private boolean nodeAlreadyVisitedThatWay(Deque<WorkflowGraphHop> hopsDeque, WorkflowGraphNode nodeToVisit,
+    private boolean nodeAlreadyVisitedThatWay(WorkflowGraphPath path, WorkflowGraphNode nodeToVisit,
         WorkflowGraphEdge usedEdge) {
 
-        Iterator<WorkflowGraphHop> hopsDequeIterator = hopsDeque.iterator();
-        while (hopsDequeIterator.hasNext()) {
-            WorkflowGraphHop hop = hopsDequeIterator.next();
+        for (final WorkflowGraphHop hop : path) {
             if (hop.getHopExecutionIdentifier().equals(nodeToVisit.getExecutionIdentifier())) {
                 if (!hasNodeOppositeOutputCharacters(nodeToVisit)) {
                     return true;
                 } else {
                     // expect at least one edge otherwise it is no valid hop
                     EndpointCharacter hopEdgesOutputCharacter =
-                        edges.get(WorkflowGraph.createEdgeKey(nodes.get(hop.getHopExecutionIdentifier()), hop.getHopOutputIdentifier()))
+                        edges.getOutgoingEdges(nodes.get(hop.getHopExecutionIdentifier()), hop.getHopOutputIdentifier())
                             .iterator().next().getOutputCharacter();
                     EndpointCharacter usedEdgesInputCharacter = usedEdge.getInputCharacter();
                     // if node was already visited, it must be visited via a different input character than last time
@@ -428,39 +415,35 @@ public class WorkflowGraph implements Serializable {
         boolean outerLoop = false;
         for (String nodeOutputId : node.getOutputIdentifiers()) {
             // check if the node has outgoing connections for the output identified with nodeOutputId
-            if (edges.containsKey(WorkflowGraph.createEdgeKey(node, nodeOutputId))) {
-                for (WorkflowGraphEdge edge : edges.get(WorkflowGraph.createEdgeKey(node, nodeOutputId))) {
-                    if (edge.getOutputCharacter().equals(EndpointCharacter.SAME_LOOP)) {
-                        sameLoop = true;
-                    } else if (edge.getOutputCharacter().equals(EndpointCharacter.OUTER_LOOP)) {
-                        outerLoop = true;
-                    }
+            for (WorkflowGraphEdge edge : edges.getOutgoingEdges(node, nodeOutputId)) {
+                if (edge.getOutputCharacter().equals(EndpointCharacter.SAME_LOOP)) {
+                    sameLoop = true;
+                } else if (edge.getOutputCharacter().equals(EndpointCharacter.OUTER_LOOP)) {
+                    outerLoop = true;
                 }
             }
         }
         return sameLoop && outerLoop;
     }
 
-    private void continueHopSearch(WorkflowGraphNode startNode, WorkflowGraphNode targetNode, Deque<WorkflowGraphHop> hopsDeque,
-        Set<Deque<WorkflowGraphHop>> hopsDeques, boolean isResetSearch, EndpointCharacter... outputCharacters)
+    private void continueHopSearch(WorkflowGraphNode startNode, WorkflowGraphNode targetNode, WorkflowGraphPath path,
+        Set<WorkflowGraphPath> paths, EndpointCharacter outputCharacter)
         throws ComponentExecutionException {
 
         for (String targetNodeOutputId : targetNode.getOutputIdentifiers()) {
-            if (edges.containsKey(WorkflowGraph.createEdgeKey(targetNode, targetNodeOutputId))) {
-                for (WorkflowGraphEdge nextEdge : edges.get(WorkflowGraph.createEdgeKey(targetNode, targetNodeOutputId))) {
-                    if (Arrays.asList(outputCharacters).contains(nextEdge.getOutputCharacter())) {
-                        continueHopsSearch(startNode, targetNode, nextEdge, hopsDeque, hopsDeques, isResetSearch);
-                    }
+            for (WorkflowGraphEdge nextEdge : edges.getOutgoingEdges(targetNode, targetNodeOutputId)) {
+                if (outputCharacter.equals(nextEdge.getOutputCharacter())) {
+                    continueHopsSearch(startNode, targetNode, nextEdge, path, paths);
                 }
             }
         }
     }
 
     private void continueHopsSearch(WorkflowGraphNode startNode, WorkflowGraphNode currentNode, WorkflowGraphEdge edge,
-        Deque<WorkflowGraphHop> hopsDeque, Set<Deque<WorkflowGraphHop>> hopsDeques, boolean isResetSearch)
+        WorkflowGraphPath path, Set<WorkflowGraphPath> paths)
         throws ComponentExecutionException {
 
-        Deque<WorkflowGraphHop> newHopDeque = new ArrayDeque<WorkflowGraphHop>(hopsDeque);
+        WorkflowGraphPath newPath = WorkflowGraphPath.createCopy(path);
 
         WorkflowGraphNode nextNode = nodes.get(edge.getTargetExecutionIdentifier());
 
@@ -468,21 +451,25 @@ public class WorkflowGraph implements Serializable {
             currentNode.getEndpointName(edge.getOutputIdentifier()), edge.getTargetExecutionIdentifier(),
             nextNode.getEndpointName(edge.getInputIdentifier()), edge.getOutputIdentifier());
 
-        newHopDeque.add(nextHop);
+        newPath.append(nextHop);
 
-        determineHopsRecursively(startNode, edge, nextNode, newHopDeque, hopsDeques, isResetSearch);
+        determineHopsRecursively(startNode, edge, nextNode, newPath, paths);
     }
 
+    /**
+     * @param startNode  The node for which we record the driver node
+     * @param driverNode The loop driver of the given startNode. Must not be null.
+     * @throws ComponentExecutionException If, for the given startNode, a driver node has already been determined, and if that driver node
+     *                                     differs from driverNode.
+     */
     private void addNodeToDeterminedDriverNodes(WorkflowGraphNode startNode, WorkflowGraphNode driverNode)
         throws ComponentExecutionException {
-        if (driverNode != null) {
-            if (determinedDriverNodes.get(startNode.getExecutionIdentifier()) == null) {
-                determinedDriverNodes.put(startNode.getExecutionIdentifier(), driverNode);
-            } else if (!determinedDriverNodes.get(startNode.getExecutionIdentifier()).getExecutionIdentifier()
-                .equals(driverNode.getExecutionIdentifier())) {
-                throw new ComponentExecutionException(
-                    "Error in workflow graph search: newly determined driver node differs from driver node determined earlier");
-            }
+
+        final WorkflowGraphNode previousDriverNode = determinedDriverNodes.put(startNode.getExecutionIdentifier(), driverNode);
+        if (previousDriverNode != null && !previousDriverNode.getExecutionIdentifier().equals(driverNode.getExecutionIdentifier())) {
+            // We guard against programmer errors here
+            throw new ComponentExecutionException(
+                "Error in workflow graph search: newly determined driver node differs from driver node determined earlier");
         }
     }
 
@@ -510,7 +497,7 @@ public class WorkflowGraph implements Serializable {
             builder.addVertexProperty(node.getExecutionIdentifier().toString(), "fontname", "Consolas");
         }
 
-        for (Set<WorkflowGraphEdge> edgesSet : edges.values()) {
+        for (Set<WorkflowGraphEdge> edgesSet : edges.getAllEdges()) {
             for (WorkflowGraphEdge edge : edgesSet) {
                 Map<String, String> edgeProps = new HashMap<>();
                 edgeProps.put("fontsize", "10");
@@ -522,7 +509,8 @@ public class WorkflowGraph implements Serializable {
                     edgeProps.put(propNameColor, "#4B698B");
                 }
                 String label = StringUtils.format("%s > %s", nodes.get(edge.getSourceExecutionIdentifier())
-                    .getEndpointName(edge.getOutputIdentifier()), nodes.get(edge.getTargetExecutionIdentifier())
+                    .getEndpointName(edge.getOutputIdentifier()),
+                    nodes.get(edge.getTargetExecutionIdentifier())
                         .getEndpointName(edge.getInputIdentifier()));
                 builder.addEdge(edge.getSourceExecutionIdentifier().toString(), edge.getTargetExecutionIdentifier().toString(), label,
                     edgeProps);
@@ -530,27 +518,6 @@ public class WorkflowGraph implements Serializable {
 
         }
         return builder.getScriptContent();
-    }
-
-    /**
-     * Creates a key out of the {@link WorkflowGraphEdge}, which can be used as key of a map.
-     * 
-     * @param edge {@link WorkflowGraphEdge} to get the identifier for
-     * @return key for the {@link WorkflowGraphEdge}
-     */
-    private static String createEdgeKey(WorkflowGraphEdge edge) {
-        return StringUtils.escapeAndConcat(edge.getSourceExecutionIdentifier().toString(), edge.getOutputIdentifier());
-    }
-
-    /**
-     * Creates a key out of the {@link WorkflowGraphNode}, which can be used as key of a map.
-     * 
-     * @param node source {@link WorkflowGraphNode} of the edge to get the identifier for
-     * @param outputIdentifier source endpoint of the edge to get the identifier for
-     * @return key for the {@link WorkflowGraphEdge}
-     */
-    private static String createEdgeKey(WorkflowGraphNode node, String outputIdentifier) {
-        return StringUtils.escapeAndConcat(node.getExecutionIdentifier().toString(), outputIdentifier);
     }
 
 }

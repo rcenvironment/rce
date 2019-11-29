@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.excel.gui.view;
@@ -61,7 +61,6 @@ import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * View of Excel component during run of workflow.
@@ -394,79 +393,76 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
      */
     private void exportToExcel(final File saveTo) {
         final ExcelService excel = ExcelServiceAccess.get();
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Export values to Excel", () -> {
 
-            @Override
-            @TaskDescription("Export values to Excel")
-            public void run() {
-                try {
-                    // Fill Excel with all input values
-                    List<ChannelValue> allValues = model.getChannelValues();
+            try {
+                // Fill Excel with all input values
+                List<ChannelValue> allValues = model.getChannelValues();
 
-                    FileUtils.copyFile(allValues.get(0).getFile(), saveTo);
+                FileUtils.copyFile(allValues.get(0).getFile(), saveTo);
 
-                    // Execute same macros as during component execution
-                    String preMacroName = allValues.get(0).getPreMacro();
-                    if (preMacroName != null && !preMacroName.isEmpty()) {
-                        excel.runMacro(saveTo, preMacroName);
-                    }
-
-                    for (ChannelValue cval : allValues) {
-                        if (!cval.isInputValue()) {
-                            continue;
-                        }
-                        excel.setValues(saveTo, cval.getExcelAddress(), cval.getValues());
-                    }
-
-                    // Execute same macros as during component execution
-                    String runMacroName = allValues.get(0).getRunMacro();
-                    if (runMacroName != null && !runMacroName.isEmpty()) {
-                        excel.runMacro(saveTo, runMacroName);
-                    }
-
-                    // Execute same macros as during component execution
-                    String postMacroName = allValues.get(0).getPostMacro();
-                    if (postMacroName != null && !postMacroName.isEmpty()) {
-                        excel.runMacro(saveTo, postMacroName);
-                    }
-
-                    // Show message box - action done
-                    parentComposite.getDisplay().asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
-                            MessageDialog md = new MessageDialog(parentComposite.getShell(),
-                                Messages.exportExcel,
-                                image,
-                                Messages.actionDone,
-                                MessageDialog.INFORMATION,
-                                new String[] { Messages.actionButton }, 0);
-                            md.open();
-                        }
-                    });
-                } catch (RuntimeException re) {
-                    LOGGER.error("Could not interact with Excel.", re);
-
-                    // Show message box - action error
-                    parentComposite.getDisplay().asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
-                            MessageDialog md = new MessageDialog(parentComposite.getShell(),
-                                Messages.exportExcel,
-                                image,
-                                Messages.actionError,
-                                MessageDialog.ERROR,
-                                new String[] { Messages.actionButton }, 0);
-                            md.open();
-                        }
-                    });
-                } catch (IOException e) {
-                    LOGGER.error("Cannot copy origin file to exporting directory.", e);
+                // Execute same macros as during component execution
+                String preMacroName = allValues.get(0).getPreMacro();
+                if (preMacroName != null && !preMacroName.isEmpty()) {
+                    excel.runMacro(saveTo, preMacroName);
                 }
+
+                for (ChannelValue cval : allValues) {
+                    if (!cval.isInputValue()) {
+                        continue;
+                    }
+                    excel.setValues(saveTo, cval.getExcelAddress(), cval.getValues());
+                }
+
+                // Execute same macros as during component execution
+                String runMacroName = allValues.get(0).getRunMacro();
+                if (runMacroName != null && !runMacroName.isEmpty()) {
+                    excel.runMacro(saveTo, runMacroName);
+                }
+
+                // Execute same macros as during component execution
+                String postMacroName = allValues.get(0).getPostMacro();
+                if (postMacroName != null && !postMacroName.isEmpty()) {
+                    excel.runMacro(saveTo, postMacroName);
+                }
+
+                // Show message box - action done
+                parentComposite.getDisplay().asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
+                        MessageDialog md = new MessageDialog(parentComposite.getShell(),
+                            Messages.exportExcel,
+                            image,
+                            Messages.actionDone,
+                            MessageDialog.INFORMATION,
+                            new String[] { Messages.actionButton }, 0);
+                        md.open();
+                    }
+                });
+            } catch (RuntimeException re) {
+                LOGGER.error("Could not interact with Excel.", re);
+
+                // Show message box - action error
+                parentComposite.getDisplay().asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
+                        MessageDialog md = new MessageDialog(parentComposite.getShell(),
+                            Messages.exportExcel,
+                            image,
+                            Messages.actionError,
+                            MessageDialog.ERROR,
+                            new String[] { Messages.actionButton }, 0);
+                        md.open();
+                    }
+                });
+            } catch (IOException e) {
+                LOGGER.error("Cannot copy origin file to exporting directory.", e);
             }
+
         });
     }
 

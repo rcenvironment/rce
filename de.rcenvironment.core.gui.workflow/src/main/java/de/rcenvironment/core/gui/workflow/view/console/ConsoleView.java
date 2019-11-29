@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.view.console;
@@ -62,6 +62,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Enrico Tappert
  * @author Doreen Seider
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class ConsoleView extends ViewPart {
 

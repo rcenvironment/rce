@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.xml.loader.gui.properties;
@@ -38,6 +38,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * @author Arne Bachmann
  * @author Markus Litz
  * @author Jan Flink
+ * @author Brigitte Boden
+ * @author Kathrin Schaffert
  */
 public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySection {
 

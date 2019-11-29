@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.sshconnection;
@@ -149,4 +149,10 @@ public interface SshConnectionService {
      * @return the password
      */
     String retrieveSshConnectionPassword(String connectionId);
+    
+    /**
+     * @param context the {@link SshConnectionContext}
+     * @return if a connection with this host and port already exists
+     */
+    boolean sshConnectionAlreadyExists(SshConnectionContext context);
 }

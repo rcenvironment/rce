@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -12,15 +12,24 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.FileUtils;
+
+import de.rcenvironment.core.instancemanagement.InstanceStatus;
+import de.rcenvironment.core.instancemanagement.InstanceStatus.InstanceState;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
@@ -31,6 +40,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * 
  * @author Robert Mischke
  * @author David Scholz
+ * @author Brigitte Boden
+ * @author Lukas Rosenbach
  * 
  */
 public class InstanceOperationsImpl {
@@ -43,6 +54,8 @@ public class InstanceOperationsImpl {
     private static final int WAIT_TIMEOUT_SEC = 60;
 
     private static final String STARTUP_INTERRUPTED_EXCEPTION = "Interrupted while waiting for the RCE startup to complete";
+
+    private static final String COMMAND_ARGUMENTS_FILE_NAME = "im_command_arguments";
 
     private Map<String, BlockingQueue<Runnable>> profileNameToStartShutdownTasksQueue = new ConcurrentHashMap<>();
 
@@ -58,13 +71,15 @@ public class InstanceOperationsImpl {
      * 
      * @param profileDirList the list of profile directories, as expected by the "--profile" parameter.
      * @param installationDir the directory containing the installation (the main executable, /plugins, /configuration, ...).
+     * @param profileIdToInstanceStatusMap map of InstanceStatus-objects linked to their instances
      * @param timeout maximum time for the start up process.
      * @param userOutputReceiver provides output for the user.
      * @param startWithGUI <code>true</code> if the instance shall be started with the GUI, <code>false</code> otherwise.
      * @throws InstanceOperationException on startup failures.
      * 
      */
-    public void startInstanceUsingInstallation(final List<File> profileDirList, final File installationDir, final long timeout,
+    public void startInstanceUsingInstallation(final List<File> profileDirList, final File installationDir,
+        final ConcurrentMap<String, InstanceStatus> profileIdToInstanceStatusMap, final long timeout,
         final TextOutputReceiver userOutputReceiver, final boolean startWithGUI) throws InstanceOperationException {
 
         final File installationConfigDir = new File(installationDir, "configuration");
@@ -79,24 +94,67 @@ public class InstanceOperationsImpl {
 
         long tempTimeout = calcTimeout(timeout);
 
+        Map<String, InstanceOperationsWorkerTask> profileToWorkerTask = new HashMap<>();
+        Map<String, Runnable> profileToStarterTask = new HashMap<>();
+
         for (File profile : profileDirList) {
 
             final CountDownLatch individualLatch = new CountDownLatch(1);
+            final InstanceStatus status = profileIdToInstanceStatusMap.get(profile.getName());
+
+            String commandArguments;
+            try {
+                if (hasCommandArgumentsFile(profile)) {
+                    commandArguments = readCommandArguments(profile);
+                } else {
+                    // introduced to fix #0016945
+                    commandArguments = "";
+                }
+            } catch (IOException e) {
+                throw new InstanceOperationException("Failed to read command arguments file in profile directory: " + profile.getName());
+            }
 
             Runnable r = new InstanceStarterTask(tempTimeout, startWithGUI,
-                userOutputReceiver, profile, installationDir, individualLatch, startupOutputDetected,
-                startuptOutputIndicatesSuccess);
+                userOutputReceiver, profile, installationDir, commandArguments, individualLatch, startupOutputDetected,
+                startuptOutputIndicatesSuccess, status);
+            profileToStarterTask.put(profile.getName(), r);
 
             synchronized (taskToLatchMap) {
                 taskToLatchMap.put(r, individualLatch);
             }
 
-            doInstanceOperationStep(r, profile, tempTimeout, userOutputReceiver);
+            InstanceOperationsWorkerTask workerTask = doInstanceOperationStep(r, profile, tempTimeout, userOutputReceiver);
+            if (workerTask != null) {
+                profileToWorkerTask.put(profile.getName(), workerTask);
+            }
         }
 
         try {
             if (!startupOutputDetected.await(tempTimeout, TimeUnit.SECONDS)) {
-                throw new InstanceOperationException("Timeout reached while waiting for startup to finish, aborting...");
+                List<String> failedInstances = new ArrayList<>();
+                for (File profile : profileDirList) {
+                    String instanceName = profile.getName();
+                    InstanceStatus instanceStatus = profileIdToInstanceStatusMap.get(instanceName);
+                    if (instanceStatus.getInstanceState() == InstanceState.STARTING) {
+                        instanceStatus.setInstanceState(InstanceState.NOTRUNNING);
+                        failedInstances.add(instanceName);
+
+                        InstanceOperationsWorkerTask workerTask = profileToWorkerTask.get(instanceName);
+                        if (workerTask != null) {
+                            Future<?> future = workerTask.getFutureOfTask(profileToStarterTask.get(instanceName));
+                            if (future != null) {
+                                future.cancel(true);
+                            }
+                        }
+                    }
+                }
+
+                String message = "Timeout reached while waiting for startup to finish, aborting...(failed instances: ";
+                for (String name : failedInstances) {
+                    message += name + " ";
+                }
+                message += ")";
+                throw new InstanceOperationException(message);
             }
 
             if (!startuptOutputIndicatesSuccess.get()) {
@@ -149,7 +207,34 @@ public class InstanceOperationsImpl {
 
     }
 
-    private void doInstanceOperationStep(Runnable r, File profile, long timeout,
+    private String readCommandArguments(File profile) throws IOException {
+        File commandArgumentsFile = new File(profile.getPath(), COMMAND_ARGUMENTS_FILE_NAME);
+        return FileUtils.readFileToString(commandArgumentsFile, Charsets.UTF_8);
+    }
+
+    /**
+     * Writes the given command argument string into the standard file within the given profile.
+     * 
+     * @param profile the profile root directory
+     * @param argumentsToWrite the argument string
+     * @throws IOException on error
+     */
+    public void writeCommandArguments(File profile, String argumentsToWrite) throws IOException {
+        File commandArgumentsFile = new File(profile.getPath(), COMMAND_ARGUMENTS_FILE_NAME);
+        FileUtils.writeStringToFile(commandArgumentsFile, argumentsToWrite, Charsets.UTF_8);
+    }
+
+    /**
+     * Tests whether a standard command arguments file exists within the given profile directory.
+     * 
+     * @param profile the profile root directory
+     * @return true if a standard command arguments file exists within the given profile
+     */
+    public boolean hasCommandArgumentsFile(File profile) {
+        return new File(profile, COMMAND_ARGUMENTS_FILE_NAME).exists();
+    }
+
+    private InstanceOperationsWorkerTask doInstanceOperationStep(Runnable r, File profile, long timeout,
         TextOutputReceiver userOutputReceiver) throws InstanceOperationException {
 
         // TODO possible bottleneck?
@@ -160,6 +245,8 @@ public class InstanceOperationsImpl {
                 try {
 
                     profileNameToStartShutdownTasksQueue.get(profile.getName()).put(r);
+                    // TODO solution without returning null
+                    return null;
 
                 } catch (InterruptedException e) {
                     throw new InstanceOperationException(STARTUP_INTERRUPTED_EXCEPTION);
@@ -180,7 +267,7 @@ public class InstanceOperationsImpl {
 
                 ConcurrencyUtils.getAsyncTaskService().submit(workerTask);
                 profileNameToStartShutdownTasksQueue.put(profile.getName(), instanceStartupTaskQueue);
-
+                return workerTask;
             }
 
         }
@@ -213,12 +300,15 @@ public class InstanceOperationsImpl {
 
         private final File profile;
 
+        private Map<Runnable, Future<?>> submittedRunnableToFutureMap;
+
         InstanceOperationsWorkerTask(BlockingQueue<Runnable> sharedQueue, long timeout, TextOutputReceiver userOutputreceiver,
             File profile) {
             this.sharedQueue = sharedQueue;
             this.timeout = timeout;
             this.userOutputReceiver = userOutputreceiver;
             this.profile = profile;
+            this.submittedRunnableToFutureMap = new HashMap<>();
         }
 
         @Override
@@ -242,7 +332,10 @@ public class InstanceOperationsImpl {
                 }
 
                 if (task != null) {
-                    ConcurrencyUtils.getAsyncTaskService().submit(task);
+                    Future<?> future = ConcurrencyUtils.getAsyncTaskService().submit(task);
+                    synchronized (submittedRunnableToFutureMap) {
+                        submittedRunnableToFutureMap.put(task, future);
+                    }
                     try {
                         if (latch != null) {
                             latch.await(timeout, TimeUnit.SECONDS);
@@ -265,6 +358,12 @@ public class InstanceOperationsImpl {
 
             }
 
+        }
+
+        public Future<?> getFutureOfTask(Runnable task) {
+            synchronized (submittedRunnableToFutureMap) {
+                return submittedRunnableToFutureMap.get(task);
+            }
         }
 
         private boolean doCleanUp() {

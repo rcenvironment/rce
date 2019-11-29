@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.internal;
@@ -21,6 +21,8 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
+import de.rcenvironment.core.utils.common.osgi.BundleUtils;
 
 /**
  * Resolves arbitrary ids to the location of a directory of unpacked files.
@@ -105,27 +107,13 @@ public class UnpackedFilesDirectoryResolver {
 
         final Log log = LogFactory.getLog(getClass());
 
-        final String expectedLocationStringPrefix = "reference:file:";
-
-        final String locationString = bundleCandidate.getLocation();
+        File absoluteBundleLocation;
+        try {
+            absoluteBundleLocation = BundleUtils.resolveAbsolutePathToUnpackedBundle(bundleCandidate, installationRootPath);
+        } catch (OperationFailureException e) {
+            throw new ConfigurationException(e.getMessage());
+        }
         final String symbolicName = bundleCandidate.getSymbolicName();
-        if (!locationString.startsWith(expectedLocationStringPrefix)) {
-            throw new ConfigurationException(
-                "Unexpected bundle location (expected prefix '" + expectedLocationStringPrefix + "') for bundle "
-                    + symbolicName + ": " + locationString);
-        }
-        // cut away the prefix and convert to File for examination
-        final String bundleLocationString = locationString.substring(expectedLocationStringPrefix.length());
-        final File bundleLocation = new File(bundleLocationString);
-
-        // resolve against the installation root path if the returned bundle location is
-        // a relative path (which is the standard behavior in standalone product builds)
-        final File absoluteBundleLocation;
-        if (bundleLocation.isAbsolute()) {
-            absoluteBundleLocation = bundleLocation;
-        } else {
-            absoluteBundleLocation = new File(installationRootPath, bundleLocationString);
-        }
 
         final String relativePathValue = bundleCandidate.getHeaders().get(MANIFEST_PROPERTY_BUNDLE_RELATIVE_PATH);
         if (StringUtils.isNullorEmpty(relativePathValue)) {

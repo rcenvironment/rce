@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.rpc.internal;
@@ -112,7 +112,7 @@ public class ReliableRPCStreamSender {
                     }
 
                     result = RemoteServiceCallSenderServiceImpl.deserializeSCRNetworkResponse(serviceCallRequest, response);
-                    if (result.isSuccess()) {
+                    if (result.isSuccess()) { // TODO check: is this correct in case of method-level exceptions? -- misc_ro
                         break;
                     }
 

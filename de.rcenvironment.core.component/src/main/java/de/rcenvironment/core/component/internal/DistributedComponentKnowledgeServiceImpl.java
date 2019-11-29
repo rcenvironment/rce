@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.internal;
@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
@@ -26,7 +25,6 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
-import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
 import de.rcenvironment.core.authorization.api.AuthorizationAccessGroupListener;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
@@ -40,6 +38,7 @@ import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChan
 import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.api.DistributedNodeComponentKnowledge;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntryType;
 import de.rcenvironment.core.component.management.internal.ComponentDataConverter;
@@ -51,7 +50,6 @@ import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
@@ -78,10 +76,7 @@ public class DistributedComponentKnowledgeServiceImpl
     private volatile DistributedComponentKnowledgeSnapshot currentSnapshot;
 
     // TODO could be made more specific by using InstanceNodeSessionId as map key; requires change of query methods first, though
-    // Note: this map currently only contains accessible remote components; it is not tracking those without local authorization!
-    private Map<String, Map<String, DistributedComponentEntry>> mutableMapOfRemoteEntriesForNextSnapshot = new HashMap<>();
-
-    private Map<String, Map<String, DistributedComponentEntry>> mutableMapOfInaccessibleRemoteEntriesForNextSnapshot = new HashMap<>();
+    private Map<String, DistributedNodeComponentKnowledge> mutableMapOfRemoteEntriesForNextSnapshot = new HashMap<>();
 
     // keeps track of all component-related node properties to re-parse them when local group authorization changes
     private Map<String, NodeProperty> knownComponentNodeProperties = new HashMap<>();
@@ -105,6 +100,7 @@ public class DistributedComponentKnowledgeServiceImpl
      * Note that this class is intended to be immutable for thread-safety, but the contained objects are not immutable yet.
      * 
      * @author Robert Mischke
+     * @author Alexander Weinert (keeping track of inaccessible remote entries)
      */
     private static final class DistributedComponentKnowledgeSnapshot implements DistributedComponentKnowledge {
 
@@ -119,10 +115,7 @@ public class DistributedComponentKnowledgeServiceImpl
         // keys are instance id strings for now; switch to logical node ids to enable publishing by logical node id
         // This map only contains those remote components that are accessible to the local instance, i.e., those components that are
         // published either publicly or in a publication group that the current instance has access to
-        private final Map<String, Map<String, DistributedComponentEntry>> remoteEntriesByNodeId;
-
-        // keys are instance id strings for now; switch to logical node ids to enable publishing by logical node id
-        private final Map<String, Map<String, DistributedComponentEntry>> inaccessibleRemoteEntriesByNodeId;
+        private final Map<String, DistributedNodeComponentKnowledge> remoteEntriesByNodeId;
 
         private final InstanceNodeSessionId localInstanceSessionId;
 
@@ -132,8 +125,7 @@ public class DistributedComponentKnowledgeServiceImpl
             Collection<DistributedComponentEntry> allLocalEntriesParam,
             Collection<DistributedComponentEntry> localAccessEntriesParam, Collection<DistributedComponentEntry> sharedAccessEntriesParam,
             Collection<DistributedComponentEntry> remoteEntriesParam,
-            Map<String, Map<String, DistributedComponentEntry>> remoteEntriesByNodeIdParam,
-            Map<String, Map<String, DistributedComponentEntry>> inaccessibleRemoteEntriesByNodeIdParam) {
+            Map<String, DistributedNodeComponentKnowledge> remoteEntriesByNodeIdParam) {
 
             this.localInstanceSessionId = localInstanceSessionIdParam;
 
@@ -143,7 +135,6 @@ public class DistributedComponentKnowledgeServiceImpl
             this.sharedAccessEntries = Collections.unmodifiableCollection(sharedAccessEntriesParam);
             this.remoteEntries = Collections.unmodifiableCollection(remoteEntriesParam);
             this.remoteEntriesByNodeId = Collections.unmodifiableMap(remoteEntriesByNodeIdParam);
-            this.inaccessibleRemoteEntriesByNodeId = Collections.unmodifiableMap(inaccessibleRemoteEntriesByNodeIdParam);
         }
 
         /**
@@ -154,8 +145,7 @@ public class DistributedComponentKnowledgeServiceImpl
         private DistributedComponentKnowledgeSnapshot(InstanceNodeSessionId localInstanceSessionIdParam) {
             this(localInstanceSessionIdParam, new ArrayList<DistributedComponentEntry>(), new ArrayList<DistributedComponentEntry>(),
                 new ArrayList<DistributedComponentEntry>(), new ArrayList<DistributedComponentEntry>(),
-                new HashMap<String, Map<String, DistributedComponentEntry>>(),
-                new HashMap<String, Map<String, DistributedComponentEntry>>());
+                new HashMap<String, DistributedNodeComponentKnowledge>());
         }
 
         public DistributedComponentKnowledgeSnapshot updateWithNewLocalInstallations(
@@ -188,20 +178,17 @@ public class DistributedComponentKnowledgeServiceImpl
             }
 
             return new DistributedComponentKnowledgeSnapshot(this.localInstanceSessionId, allLocalInstallations, tempLocalAccessEntries,
-                tempLocalSharedAccessEntries, this.remoteEntries, this.remoteEntriesByNodeId, this.inaccessibleRemoteEntriesByNodeId);
+                tempLocalSharedAccessEntries, this.remoteEntries, this.remoteEntriesByNodeId);
         }
 
         public DistributedComponentKnowledgeSnapshot updateWithNewRemoteEntryMap(
-            Map<String, Map<String, DistributedComponentEntry>> newMapOfRemoteEntries,
-            Map<String, Map<String, DistributedComponentEntry>> newMapOfInaccessibleRemoteEntries) {
+            Map<String, DistributedNodeComponentKnowledge> newMapOfRemoteEntries) {
             Collection<DistributedComponentEntry> tempListOfRemoteEntries = new ArrayList<>();
-            for (Map<String, DistributedComponentEntry> nodeMap : newMapOfRemoteEntries.values()) {
-                for (DistributedComponentEntry e : nodeMap.values()) {
-                    tempListOfRemoteEntries.add(e);
-                }
+            for (DistributedNodeComponentKnowledge nodeMap : newMapOfRemoteEntries.values()) {
+                tempListOfRemoteEntries.addAll(nodeMap.getAccessibleComponents());
             }
             return new DistributedComponentKnowledgeSnapshot(this.localInstanceSessionId, this.allLocalEntries, this.localAccessEntries,
-                this.sharedAccessEntries, tempListOfRemoteEntries, newMapOfRemoteEntries, newMapOfInaccessibleRemoteEntries);
+                this.sharedAccessEntries, tempListOfRemoteEntries, newMapOfRemoteEntries);
         }
 
         @Override
@@ -209,23 +196,19 @@ public class DistributedComponentKnowledgeServiceImpl
             boolean includeInaccessible) {
             if (nodeId.isSameInstanceNodeAs(localInstanceSessionId)) {
                 return sharedAccessEntries;
-            } else {
-                Map<String, DistributedComponentEntry> remoteEntriesOfNode =
-                    remoteEntriesByNodeId.get(nodeId.getInstanceNodeIdString());
-                if (remoteEntriesOfNode != null) {
-                    if (includeInaccessible) {
-                        final Map<String, DistributedComponentEntry> inaccessibleRemoteEntries =
-                            inaccessibleRemoteEntriesByNodeId.get(nodeId.getInstanceNodeIdString());
-                        remoteEntriesOfNode = new HashMap<>(remoteEntriesOfNode);
-                        if (inaccessibleRemoteEntries != null) {
-                            remoteEntriesOfNode.putAll(inaccessibleRemoteEntries);
-                        }
-                    }
-                    return remoteEntriesOfNode.values(); // value set of an immutable map
-                } else {
-                    return new ArrayList<>();
-                }
             }
+
+            DistributedNodeComponentKnowledge remoteEntriesOfNode = remoteEntriesByNodeId.get(nodeId.getInstanceNodeIdString());
+            if (remoteEntriesOfNode == null) {
+                return new ArrayList<>();
+            }
+
+            final Collection<DistributedComponentEntry> returnValue = new ArrayList<>();
+            returnValue.addAll(remoteEntriesOfNode.getAccessibleComponents());
+            if (includeInaccessible) {
+                returnValue.addAll(remoteEntriesOfNode.getInaccessibleComponents());
+            }
+            return returnValue;
         }
 
         @Override
@@ -269,13 +252,9 @@ public class DistributedComponentKnowledgeServiceImpl
 
     public DistributedComponentKnowledgeServiceImpl() {
 
-        addDistributedComponentKnowledgeListener(new DistributedComponentKnowledgeListener() {
-
-            @Override
-            public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
-                if (verboseLogging) {
-                    log.debug("Component knowledge updated: " + newState);
-                }
+        addDistributedComponentKnowledgeListener(newState -> {
+            if (verboseLogging) {
+                log.debug("Component knowledge updated: " + newState);
             }
         });
 
@@ -304,17 +283,12 @@ public class DistributedComponentKnowledgeServiceImpl
 
     @Reference(unbind = "unbindObjectBindingsService")
     protected void bindObjectBindingsService(ObjectBindingsService objectBindingsService) {
-        objectBindingsService.addBinding(AuthorizationAccessGroupListener.class, new AuthorizationAccessGroupListener() {
-
-            @Override
-            public void onAvailableAuthorizationAccessGroupsChanged(List<AuthorizationAccessGroup> accessGroups) {
-                synchronized (internalStateLock) {
-                    // re-parse all remote node properties by triggering "property updated" code on each of them; "false" = internal update
-                    updateOnReachableNodePropertiesChanged(new ArrayList<NodeProperty>(),
-                        new ArrayList<>(knownComponentNodeProperties.values()), new ArrayList<NodeProperty>(), false);
-                }
+        objectBindingsService.addBinding(AuthorizationAccessGroupListener.class, accessGroups -> {
+            synchronized (internalStateLock) {
+                // re-parse all remote node properties by triggering "property updated" code on each of them; "false" = internal update
+                updateOnReachableNodePropertiesChanged(new ArrayList<NodeProperty>(),
+                    new ArrayList<>(knownComponentNodeProperties.values()), new ArrayList<NodeProperty>(), false);
             }
-
         }, this); // this = owner
     }
 
@@ -356,29 +330,27 @@ public class DistributedComponentKnowledgeServiceImpl
             DistributedComponentKnowledgeSnapshot newSnapshot =
                 currentSnapshot.updateWithNewLocalInstallations(allLocalInstallations, publicationEnabled);
 
-            // new DistributedComponentKnowledgeSnapshot(internalModel, allLocalInstallations, localInstanceSessionId);
-
             // note: callbacks are asynchronous, so triggering them with locks held is safe
             setNewSnapshot(newSnapshot);
 
             // update the publication data if necessary
-            SortedSet<String> uniqueIds = new TreeSet<>();
+            final Collection<String> uniqueIds = new TreeSet<>();
             for (DistributedComponentEntry entry : newSnapshot.getSharedAccessInstallations()) {
-                ComponentInstallation installation = entry.getComponentInstallation();
+                final ComponentInstallation installation = entry.getComponentInstallation();
                 // ignore/skip non-shared component entries
                 if (entry.getType() != DistributedComponentEntryType.SHARED) {
                     // TODO decide whether these should have been filtered out already, or if filtering is supposed to happen here
                     continue;
                 }
-                String uniqueId = installation.getInstallationId();
+                final String uniqueId = installation.getInstallationId();
                 uniqueIds.add(SINGLE_INSTALLATION_PROPERTY_PREFIX + uniqueId);
                 // TODO add installation data hash for more efficient change detection
-                String serializedEntryData = entry.getPublicationData();
+                final String serializedEntryData = entry.getPublicationData();
                 if (serializedEntryData == null) {
                     log.error("Skipping component publishing of " + uniqueId + " as it was not properly serialized");
                     continue;
                 }
-                String propertyId = SINGLE_INSTALLATION_PROPERTY_PREFIX + uniqueId;
+                final String propertyId = SINGLE_INSTALLATION_PROPERTY_PREFIX + uniqueId;
                 if (!serializedEntryData.equals(lastPublishedProperties.get(propertyId))) {
                     // new or modified
                     log.debug("Publishing component descriptor " + uniqueId);
@@ -386,11 +358,11 @@ public class DistributedComponentKnowledgeServiceImpl
                 }
             }
 
-            for (String oldId : lastPublishedProperties.keySet()) {
-                if (!uniqueIds.contains(oldId) && lastPublishedProperties.get(oldId) != null) {
+            for (Map.Entry<String, String> entry : lastPublishedProperties.entrySet()) {
+                if (!uniqueIds.contains(entry.getKey()) && entry.getValue() != null) {
                     // already published, but not public anymore -> remove
-                    log.debug("Unpublishing component id " + oldId);
-                    propertiesDelta.put(oldId, null);
+                    log.debug("Unpublishing component id " + entry.getKey());
+                    propertiesDelta.put(entry.getKey(), null);
                 }
             }
 
@@ -475,8 +447,7 @@ public class DistributedComponentKnowledgeServiceImpl
 
             if (modified) {
                 DistributedComponentKnowledgeSnapshot newSnapshot =
-                    currentSnapshot.updateWithNewRemoteEntryMap(mutableMapOfRemoteEntriesForNextSnapshot,
-                        mutableMapOfInaccessibleRemoteEntriesForNextSnapshot);
+                    currentSnapshot.updateWithNewRemoteEntryMap(mutableMapOfRemoteEntriesForNextSnapshot);
                 // note: callbacks are asynchronous, so triggering them with locks held is safe
                 setNewSnapshot(newSnapshot);
             }
@@ -486,15 +457,9 @@ public class DistributedComponentKnowledgeServiceImpl
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC, // force line break
         unbind = "removeDistributedComponentKnowledgeListener")
     protected void addDistributedComponentKnowledgeListener(DistributedComponentKnowledgeListener listener) {
-        final DistributedComponentKnowledge knowledgeOnRegistrationTime = currentSnapshot;
+        final DistributedComponentKnowledge knowledgeAtRegistrationTime = currentSnapshot;
         componentKnowledgeCallbackManager.addListenerAndEnqueueCallback(listener,
-            new AsyncCallback<DistributedComponentKnowledgeListener>() {
-
-                @Override
-                public void performCallback(DistributedComponentKnowledgeListener listener) {
-                    listener.onDistributedComponentKnowledgeChanged(knowledgeOnRegistrationTime);
-                }
-            });
+            knowledgeListener -> knowledgeListener.onDistributedComponentKnowledgeChanged(knowledgeAtRegistrationTime));
     }
 
     protected void removeDistributedComponentKnowledgeListener(DistributedComponentKnowledgeListener listener) {
@@ -519,7 +484,6 @@ public class DistributedComponentKnowledgeServiceImpl
     // TODO this method has grown too big; should be refactored -- misc_ro, Dec 2018
     private boolean processAddedOrUpdatedProperty(NodeProperty property, boolean isUpdate) {
         final InstanceNodeSessionId sourceNodeId = property.getInstanceNodeSessionId();
-        final String remoteNodeKey = sourceNodeId.getInstanceNodeIdString();
 
         if (sourceNodeId.equals(localInstanceSessionId)) {
             // log.debug("Ignoring component property update published by the local node");
@@ -531,27 +495,46 @@ public class DistributedComponentKnowledgeServiceImpl
         try {
             newEntry = ComponentDataConverter.deserializeRemoteDistributedComponentEntry(jsonData, authorizationService);
         } catch (OperationFailureException e) {
-            log.warn("Ignoring invalid component installation entry published by " + sourceNodeId + ": " + jsonData);
+            log.warn(
+                "Ignoring invalid component installation entry published by " + sourceNodeId + "(" + e.getMessage() + "): " + jsonData);
             return false;
         }
 
-        if (!newEntry.isAccessible()) {
-            Map<String, DistributedComponentEntry> nodeState = mutableMapOfRemoteEntriesForNextSnapshot.get(remoteNodeKey);
-            final boolean wasPreviouslyAccessible;
-            if (nodeState != null) {
-                wasPreviouslyAccessible = (nodeState.remove(propertyKey) != null);
-                // TODO remove empty sub-maps?
-            } else {
-                wasPreviouslyAccessible = false;
+        final boolean newEntryIsAccessible = newEntry.isAccessible();
+        if (newEntryIsAccessible) {
+            // We only validate the component installation is the entry is accessible, since otherwise no information on the published
+            // component is transmitted, i.e., in particular not the component installation
+            final boolean componentInstallationValid = validateDistributedComponentEntry(newEntry, sourceNodeId);
+            if (!componentInstallationValid) {
+                return false;
             }
+        }
 
-            if (!mutableMapOfInaccessibleRemoteEntriesForNextSnapshot.containsKey(remoteNodeKey)) {
-                mutableMapOfInaccessibleRemoteEntriesForNextSnapshot.put(remoteNodeKey, new HashMap<>());
+        final String remoteNodeKey = sourceNodeId.getInstanceNodeIdString();
+        // Map#getOrDefault does not enter the given default into the map if the key is not yet associated. Since we, however, enter a
+        // new value for the given key into the map in the next step, we do not care about this.
+        final DistributedNodeComponentKnowledge nodeState =
+            mutableMapOfRemoteEntriesForNextSnapshot.getOrDefault(remoteNodeKey, DistributedNodeComponentKnowledgeImpl.createEmpty());
+
+        final DistributedComponentEntry previousEntry = nodeState.getComponent(propertyKey);
+        if (newEntryIsAccessible) {
+            mutableMapOfRemoteEntriesForNextSnapshot.put(remoteNodeKey, nodeState.putAccessibleComponent(propertyKey, newEntry));
+
+            // Logging. Not refactored to own method due to overly specific set of parameters.
+            final boolean previousEntryExists = previousEntry != null;
+            if (isUpdate && !previousEntryExists) {
+                log.debug("Added a new local entry for remote component id " + propertyKey
+                    + " after a remote node property update; typically, this is because local or remote "
+                    + "authorization settings have changed, and now allow access to this component");
+            } else if (!isUpdate && previousEntryExists) {
+                log.warn("Unexpected state: received a new property, but there was a previously registered component already; key="
+                    + propertyKey);
             }
-            final Map<String, DistributedComponentEntry> nodeStateForInaccessibleRemoteEntries =
-                mutableMapOfInaccessibleRemoteEntriesForNextSnapshot.get(remoteNodeKey);
-            nodeStateForInaccessibleRemoteEntries.put(propertyKey, newEntry);
+        } else {
+            mutableMapOfRemoteEntriesForNextSnapshot.put(remoteNodeKey, nodeState.putInaccessibleComponent(propertyKey, newEntry));
 
+            // Logging. Not refactored to own method due to overly specific set of parameters.
+            final boolean wasPreviouslyAccessible = nodeState.componentExists(propertyKey) && nodeState.isComponentAccessible(propertyKey);
             if (wasPreviouslyAccessible) {
                 log.debug("Removing remote component entry " + propertyKey + " from " + sourceNodeId
                     + " as there is no matching local access group anymore; authorized remote access groups are: "
@@ -560,35 +543,29 @@ public class DistributedComponentKnowledgeServiceImpl
                 log.debug("Ignoring remote component entry " + propertyKey + " from " + sourceNodeId
                     + " as there is no local authorized group matching its access groups " + newEntry.getDeclaredPermissionSet());
             }
+        }
 
-            return true;
-        }
+        return true;
+    }
+
+    /**
+     * A distributed component entry is valid if - its contained component installation is valid according to
+     * {@link #validateComponentInstallation(ComponentInstallation, InstanceNodeSessionId)}, and - the ids contained in its component
+     * interface are valid according to
+     * {@link ComponentIdRules#validateComponentInterfaceIds(de.rcenvironment.core.component.model.api.ComponentInterface)}. As a side
+     * effect, this method logs a debugging- or error message denoting either the reason for validation errors or the successful parse.
+     * 
+     * @param newEntry The DistributedComponentEntry to be checked
+     * @param sourceNodeId
+     * @return True if the given distributed component entry is valid, false otherwise.
+     */
+    private boolean validateDistributedComponentEntry(final DistributedComponentEntry newEntry,
+        final InstanceNodeSessionId sourceNodeId) {
         final ComponentInstallation componentInstallation = newEntry.getComponentInstallation();
-        // sanity check: installation property published by same node?
-        final LogicalNodeId declaredNodeIdObject = componentInstallation.getNodeIdObject();
         // TODO >=8.0: improve in case of potential instance id collisions?
-        if (!declaredNodeIdObject.isSameInstanceNodeAs(sourceNodeId)) {
-            log.error("Ignoring invalid component installation entry: published by node " + sourceNodeId
-                + ", but allegedly installed on node " + componentInstallation.getNodeId());
-            return false;
-        }
-        if (componentInstallation.getComponentRevision() == null) {
-            log.error("Ignoring invalid component installation entry: 'null' component revision");
-            return false;
-        }
-        if (componentInstallation.getComponentInterface() == null) {
-            log.error("Ignoring invalid component installation entry: 'null' component interface");
-            return false;
-        }
-        if (componentInstallation.getComponentInterface().getIdentifierAndVersion() == null) {
-            log.error("Ignoring invalid component installation entry: 'null' component interface id");
-            return false;
-        }
-        final String componentDescriptionId;
-        try {
-            componentDescriptionId = componentInstallation.getComponentInterface().getIdentifierAndVersion();
-        } catch (NullPointerException e) {
-            log.warn("Parsed component installation data caused a NPE; ignoring", e);
+        final Optional<String> componentInstallationError = validateComponentInstallation(componentInstallation, sourceNodeId);
+        if (componentInstallationError.isPresent()) {
+            log.error("Ignoring invalid component installation entry: " + componentInstallationError.get());
             return false;
         }
 
@@ -600,72 +577,56 @@ public class DistributedComponentKnowledgeServiceImpl
             return false;
         }
 
+        final String componentDescriptionId = componentInstallation.getComponentInterface().getIdentifierAndVersion();
         log.debug("Successfully parsed component installation published by " + sourceNodeId + ": " + componentDescriptionId);
-        final Map<String, DistributedComponentEntry> nodeState;
-        if (mutableMapOfRemoteEntriesForNextSnapshot.containsKey(remoteNodeKey)) {
-            nodeState = mutableMapOfRemoteEntriesForNextSnapshot.get(remoteNodeKey);
-        } else {
-            nodeState = new HashMap<>();
-            mutableMapOfRemoteEntriesForNextSnapshot.put(remoteNodeKey, nodeState);
-        }
-        
-        if (mutableMapOfInaccessibleRemoteEntriesForNextSnapshot.containsKey(remoteNodeKey)) {
-            final Map<String, DistributedComponentEntry> inaccessibleNodeState =
-                mutableMapOfInaccessibleRemoteEntriesForNextSnapshot.get(remoteNodeKey);
-            inaccessibleNodeState.remove(propertyKey);
-        }
+        return true;
+    }
 
-        final DistributedComponentEntry previousEntry = nodeState.put(propertyKey, newEntry);
-        // internal consistency checks
-        if (isUpdate) {
-            if (previousEntry == null) {
-                log.debug("Added a new local entry for remote component id " + propertyKey
-                    + " after a remote node property update; typically, this is because local or remote "
-                    + "authorization settings have changed, and now allow access to this component");
-            }
-        } else {
-            if (previousEntry != null) {
-                log.warn("Unexpected state: received a new property, but there was a previously registered component already; key="
-                    + propertyKey);
-            }
+    /**
+     * A component installation is valid if - the node it claims to be installed on is equal to the node actually publishing the component -
+     * its component revision is not null - its component interface is not null - its identifier and version are not null.
+     * 
+     * @param componentInstallation The component installation to check
+     * @param sourceNodeId The id of the node that published this component installation
+     * @return An empty optional if the given component installation is valid, an optional containing a human-readable error message
+     *         otherwise.
+     */
+    private Optional<String> validateComponentInstallation(ComponentInstallation componentInstallation,
+        InstanceNodeSessionId sourceNodeId) {
+        final LogicalNodeId declaredNodeIdObject = componentInstallation.getNodeIdObject();
+        if (!declaredNodeIdObject.isSameInstanceNodeAs(sourceNodeId)) {
+            return Optional
+                .of("published by node " + sourceNodeId + ", but allegedly installed on node " + componentInstallation.getNodeId());
         }
-        return true; // map modified
+        if (componentInstallation.getComponentRevision() == null) {
+            return Optional.of("'null' component revision");
+        }
+        if (componentInstallation.getComponentInterface() == null) {
+            return Optional.of("'null' component interface");
+        }
+        if (componentInstallation.getComponentInterface().getIdentifierAndVersion() == null) {
+            return Optional.of("'null' component interface id");
+        }
+        return Optional.empty();
     }
 
     private boolean processRemovedProperty(NodeProperty property) {
         final InstanceNodeSessionId sourceNodeId = property.getInstanceNodeSessionId();
         final String remoteNodeKey = sourceNodeId.getInstanceNodeIdString();
-        final String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
-        
-        boolean modified = false;
 
-        // There are three possibilities for the just removed property: Either it was not known to this node before, it was known, but the
-        // component it referred to was inaccessible, or it was known and the component was accessible. In the former case, there is nothing
-        // to do. In the second case, the entry is stored in the mutableMapOfInaccessibleRemoteEntriesForNextSnapshot, in the third case it
-        // is stored it the mutableMapOfRemoteEntriesForNextSnapshot.
-        modified |=
-            tryRemovePropertyFromMap(sourceNodeId, remoteNodeKey, propertyKey, mutableMapOfRemoteEntriesForNextSnapshot);
-        modified |=
-            tryRemovePropertyFromMap(sourceNodeId, remoteNodeKey, propertyKey, mutableMapOfInaccessibleRemoteEntriesForNextSnapshot);
-        
-        return modified;
-    }
-
-    /**
-     * @return True if the given property of the given remoteNode was contained in the given map, false otherwise
-     */
-    private boolean tryRemovePropertyFromMap(final InstanceNodeSessionId sourceNodeId, final String remoteNodeKey, final String propertyKey,
-        final Map<String, Map<String, DistributedComponentEntry>> map) {
-        Map<String, DistributedComponentEntry> nodeState = map.get(remoteNodeKey);
+        DistributedNodeComponentKnowledge nodeState = mutableMapOfRemoteEntriesForNextSnapshot.get(remoteNodeKey);
         if (nodeState == null) {
+            // a component was unpublished, but the node was not known to this node before, so ignore it
+            return false;
+        }
+
+        final String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
+        if (!nodeState.componentExists(propertyKey)) {
             // a component was unpublished, but it was not known to this node before, so ignore it
             return false;
         }
-        DistributedComponentEntry previousEntry = nodeState.remove(propertyKey);
-        if (previousEntry == null) {
-            // a component was unpublished, but it was not known to this node before, so ignore it
-            return false;
-        }
+
+        mutableMapOfRemoteEntriesForNextSnapshot.put(remoteNodeKey, nodeState.removeComponent(propertyKey));
         log.debug("Successfully removed a component installation previously published by " + sourceNodeId + " (key: " + propertyKey + ")");
         return true; // map modified
     }
@@ -677,15 +638,7 @@ public class DistributedComponentKnowledgeServiceImpl
     private void setNewSnapshot(final DistributedComponentKnowledgeSnapshot newSnapshot) {
         currentSnapshot = newSnapshot;
         mutableMapOfRemoteEntriesForNextSnapshot = new HashMap<>(newSnapshot.remoteEntriesByNodeId);
-        mutableMapOfInaccessibleRemoteEntriesForNextSnapshot = new HashMap<>(newSnapshot.inaccessibleRemoteEntriesByNodeId);
-
-        componentKnowledgeCallbackManager.enqueueCallback(new AsyncCallback<DistributedComponentKnowledgeListener>() {
-
-            @Override
-            public void performCallback(DistributedComponentKnowledgeListener listener) {
-                listener.onDistributedComponentKnowledgeChanged(newSnapshot);
-            }
-        });
+        componentKnowledgeCallbackManager.enqueueCallback(listener -> listener.onDistributedComponentKnowledgeChanged(newSnapshot));
     }
 
 }

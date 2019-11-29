@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.configuration.testutils;
 
@@ -99,6 +99,11 @@ public class ConfigurationServiceDefaultStub implements ConfigurationService {
 
     @Override
     public File initializeSubDirInConfigurablePath(ConfigurablePathId pathId, String relativePath) {
+        return null;
+    }
+
+    @Override
+    public File getStandardImportDirectory(String subdir) {
         return null;
     }
 

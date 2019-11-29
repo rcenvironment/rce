@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.api;
@@ -53,6 +53,7 @@ public interface ComponentInterface {
 
     /**
      * @return 24x24 icon data (TODO specify format)
+     *Note: It seems that no component needs this icon (call hierarchy), but data flow componenticons are not displayed correct without it
      */
     byte[] getIcon24();
 

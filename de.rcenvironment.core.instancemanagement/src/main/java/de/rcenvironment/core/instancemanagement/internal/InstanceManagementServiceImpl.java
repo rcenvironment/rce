@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -26,10 +26,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.Log;
@@ -55,6 +56,8 @@ import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
+import de.rcenvironment.core.instancemanagement.InstanceStatus;
+import de.rcenvironment.core.instancemanagement.InstanceStatus.InstanceState;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -74,10 +77,22 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.JSchRCECommandLineExecutor;
  * @author Robert Mischke
  * @author David Scholz
  * @author Brigitte Boden
+ * @author Lukas Rosenbach
+ * @author Alexander Weinert
  */
 public class InstanceManagementServiceImpl implements InstanceManagementService {
 
-    private static final String DEFAULT_DOWNLOAD_URL_PATTERN = "https://software.dlr.de/updates/rce/9.x/products/standard/*/zip/";
+    private static final String FROM_INSTANCE = " from instance ";
+
+    private static final String UTF_8 = "utf-8";
+
+    private static final String PASSWORD_FILE_IMPORT_SUBDIRECTORY = "import/uplink-pws";
+
+    private static final String PROBLEM_WITH_PROFILE_VERSION_FILE = "Problem with profile-version-file: ";
+
+    private static final String COMMAND_ARGUMENTS_FILE_NAME = File.separator + "commandArguments";
+
+    private static final String DEFAULT_DOWNLOAD_URL_PATTERN = "https://software.dlr.de/updates/rce/10.x/products/standard/*/zip/";
 
     private static final String DEFAULT_DOWNLOAD_FILENAME_PATTERN_WINDOWS = "rce-*-standard-win32.x86_64.zip";
 
@@ -100,13 +115,17 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private static final String VERSION = ".version";
 
-    private static final Pattern VALID_IDS_REGEXP_PATTERN = Pattern.compile("[a-zA-Z0-9-_]+");
+    private static final Pattern VALID_IDS_REGEXP_PATTERN = Pattern.compile("[a-zA-Z0-9-_\\.]+");
+
+    private static final Pattern VALID_PATH_REGEXP_PATTERN = Pattern.compile("[a-zA-Z0-9-_\\./]+");
 
     private static final String GENERIC_PLACEHOLDER_STRING = "*";
 
     private static final String CONFIGURATION_SUBTREE_PATH = "instanceManagement";
 
     private static final String CONFIGURATION_FILENAME = "configuration.json";
+
+    private static final String COMPONENTS_FILENAME = "configuration" + File.separator + "components.json";
 
     // TODO find actual value through testing
     private static final int MAX_INSTALLATION_ROOT_PATH_LENGTH = 30;
@@ -117,13 +136,15 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private static final String INSTALLATIONS_ROOT_DIR_DEFAULT_SUBDIR_PATH = "inst"; // kept short due to Windows filesystem length issues
 
-    private static final Map<String, InstanceConfigurationImpl> CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP = new HashMap<>();
-
     private static final String SUCCESS = " was successful.";
 
     private static final String TO_INSTANCE = " to instance ";
 
     private static final String OF_INSTANCE = " of instance ";
+
+    // Only the first mayor-version of a new profile version has to be entered. If the next mayor-versions use the
+    // same profile-version, it is not necessary to include these mayor-version in this array.
+    private static final int[][] MAYOR_TO_PROFILE_VERSION = { { 8, 1 }, { 9, 2 } };
 
     private File dataRootDir;
 
@@ -143,7 +164,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private String reasonInstanceManagementNotStarted = "";
 
-    private ConcurrentHashMap<String, String> profileIdToInstallationIdMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, InstanceStatus> profileIdToInstanceStatusMap = new ConcurrentHashMap<>();
 
     private ConfigurationService configurationService;
 
@@ -153,6 +174,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private final InstanceOperationsImpl instanceOperations = new InstanceOperationsImpl();
 
     private final DeploymentOperationsImpl deploymentOperations = new DeploymentOperationsImpl();
+
+    private final Map<String, InstanceConfigurationImpl> instanceConfigurationsByInstanceId = new HashMap<>();
 
     private TempFileService tfs;
 
@@ -192,7 +215,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         try {
             applyConfiguration(configuration);
             if (hasValidLocalConfiguration) {
-                initProfileIdToInstallationMap();
+                initProfileIdToInstanceStatusMap();
                 instanceManagementStarted = true;
             }
         } catch (IOException e) {
@@ -224,6 +247,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     public void setupInstallationFromUrlQualifier(String installationId, String urlQualifier, InstallationPolicy installationPolicy,
         TextOutputReceiver userOutputReceiver, final long timeout) throws IOException {
         validateInstallationId(installationId);
+        validatePath(urlQualifier);
         validateConfiguration(true, true);
         userOutputReceiver = ensureUserOutputReceiverDefined(userOutputReceiver);
         deploymentOperations.setUserOutputReceiver(userOutputReceiver);
@@ -237,16 +261,16 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         switch (installationPolicy) {
         case IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT:
-            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver);
+            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         case FORCE_NEW_DOWNLOAD_AND_REINSTALL:
-            forceDownloadAndReinstall(installationId, urlQualifier, userOutputReceiver);
+            forceDownloadAndReinstall(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         case FORCE_REINSTALL:
-            forceReinstall(installationId, urlQualifier, userOutputReceiver);
+            forceReinstall(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         case ONLY_INSTALL_IF_NOT_PRESENT:
-            installIfNotPresent(installationId, urlQualifier, userOutputReceiver);
+            installIfNotPresent(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         default:
             throw new IOException("Not supported yet: " + installationPolicy);
@@ -257,6 +281,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     public void reinstallFromUrlQualifier(String installationId, String urlQualifier, InstallationPolicy installationPolicy,
         TextOutputReceiver userOutputReceiver, final long timeout) throws IOException {
         validateInstallationId(installationId);
+        validatePath(urlQualifier);
         validateConfiguration(true, true);
         userOutputReceiver = ensureUserOutputReceiverDefined(userOutputReceiver);
         deploymentOperations.setUserOutputReceiver(userOutputReceiver);
@@ -272,13 +297,13 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         // Reinstall
         switch (installationPolicy) {
         case IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT:
-            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver);
+            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         case FORCE_NEW_DOWNLOAD_AND_REINSTALL:
-            forceDownloadAndReinstall(installationId, urlQualifier, userOutputReceiver);
+            forceDownloadAndReinstall(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         case FORCE_REINSTALL:
-            forceReinstall(installationId, urlQualifier, userOutputReceiver);
+            forceReinstall(installationId, urlQualifier, userOutputReceiver, (int) timeout);
             break;
         default:
             throw new IOException("Not supported yet: " + installationPolicy);
@@ -286,7 +311,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
         // Start instances with new installation
         if (!instancesForInstallation.isEmpty()) {
-            startInstance(installationId, instancesForInstallation, userOutputReceiver, timeout, false);
+            startInstance(installationId, instancesForInstallation, userOutputReceiver, timeout, false, null);
         }
     }
 
@@ -306,26 +331,52 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         TextOutputReceiver userOutputReceiver) throws InstanceConfigurationException, IOException {
 
         validateConfiguration(true, false);
-        final File destinationConfigFile = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
-
-        // TODO this seems redundant with the creation steps below
-        createProfileWithEmptyConfigFileIfNotPresent(destinationConfigFile);
+        final ConfigFilesCollection configFiles = createConfigFilesCollection(instanceId);
 
         List<InstanceConfigurationOperationDescriptor> changeEntries =
             ((InstanceConfigurationOperationSequenceImpl) changeSequence).getConfigurationSteps();
         if (changeEntries.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one configuration step to perform");
         }
-
-        // perform commands "reset" or "apply template" that can only reasonably happen as the first step,
-        // and before creating the in-memory configuration modification class
         InstanceConfigurationOperationDescriptor firstEntry = changeEntries.get(0);
+
+        if (firstEntry.getFlag().equals(InstanceManagementConstants.SET_RCE_VERSION)) {
+            if (!profileVersionFileExists(instanceId)) {
+                String rceVersion = (String) firstEntry.getSingleParameter();
+                int profileVersion = convertRCEVersionToProfileVersion(rceVersion);
+                userOutputReceiver.addOutput("Setting rce-version" + OF_INSTANCE + instanceId + " to " + rceVersion);
+                writeProfileVersionFile(instanceId, profileVersion);
+            } else {
+                throw new InstanceConfigurationException("It is not possible to set the profile version of an allready existing instance.");
+            }
+        }
+        int profileVersion = determineProfileVersion(instanceId);
+
+        createConfigurationFileIfMissing(configFiles.getConfigurationFile());
+        if (profileVersion >= 2) {
+            createConfigurationFileIfMissing(configFiles.getComponentsFile());
+        }
+
+        if (!configFiles.getConfigurationFile().exists()) {
+            throw new InstanceConfigurationException(configFiles.getConfigurationFile().getName()
+                + " is missing. Is this profile already created?");
+        }
+        if (!configFiles.getComponentsFile().exists() && profileVersion >= 2) {
+            throw new InstanceConfigurationException(configFiles.getComponentsFile().getName()
+                + " is missing. Is this profile already created?");
+        }
+
+        // perform commands "wipe","reset" or "apply template" that can only reasonably happen as the first step,
+        // and before creating the in-memory configuration modification class
         switch (firstEntry.getFlag()) {
         case InstanceManagementConstants.SUBCOMMAND_RESET:
             // TODO (p2) review: create a backup first?
-            writeEmptyConfigFile(destinationConfigFile);
+            writeEmptyConfigFile(configFiles.getConfigurationFile());
+            if (profileVersion >= 2) {
+                writeEmptyConfigFile(configFiles.getComponentsFile());
+            }
             addProfileVersionInformationUnlessPresent(instanceId);
-            userOutputReceiver.addOutput("Clearing/resetting the configuration" + OF_INSTANCE + instanceId);
+            userOutputReceiver.addOutput("Resetting the configuration" + OF_INSTANCE + instanceId);
             break;
         case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
             final Object templateParameter = firstEntry.getSingleParameter();
@@ -341,32 +392,71 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             }
             Path src = templateConfigurationFile.toPath();
             // TODO (p2) review: create a backup first?
-            Files.copy(src, destinationConfigFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(src, configFiles.getConfigurationFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
             addProfileVersionInformationUnlessPresent(instanceId); // TODO this should be made optional to allow testing version upgrades
+            break;
+        case InstanceManagementConstants.SUBCOMMAND_WIPE:
+            if (resolveRelativePathWithinProfileDirectory(instanceId, "").exists()) {
+                FileUtils.deleteDirectory(new File(profilesRootDir, instanceId));
+            }
+            createConfigurationFileIfMissing(configFiles.getConfigurationFile());
+            if (profileVersion >= 2) {
+                createConfigurationFileIfMissing(configFiles.getComponentsFile());
+            }
+            userOutputReceiver.addOutput("Wiping the configuration" + OF_INSTANCE + instanceId);
             break;
         default:
             // ignore standard commands here
         }
 
-        applyChangeEntries(changeEntries, destinationConfigFile, instanceId, userOutputReceiver);
+        applyChangeEntries(changeEntries, configFiles, instanceId, userOutputReceiver);
+    }
+
+    private int convertRCEVersionToProfileVersion(String rceVersion) throws InstanceConfigurationException {
+        String[] rceVersionParts = rceVersion.split("\\.");
+        int mayorVersion;
+        try {
+            mayorVersion = Integer.parseInt(rceVersionParts[0]);
+        } catch (NumberFormatException e) {
+            throw new InstanceConfigurationException(rceVersion + "is not a valid RCE-Version.");
+        }
+        int profileVersion = 0;
+        for (int i = 0; i < MAYOR_TO_PROFILE_VERSION.length; i++) {
+            if (MAYOR_TO_PROFILE_VERSION[i][0] <= mayorVersion) {
+                profileVersion = MAYOR_TO_PROFILE_VERSION[i][1];
+            } else {
+                break;
+            }
+        }
+        return profileVersion;
+    }
+
+    private void createConfigurationFileIfMissing(File file) throws InstanceConfigurationException {
+        try {
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+                writeEmptyConfigFile(file);
+            }
+        } catch (IOException e) {
+            throw new InstanceConfigurationException("Problem with " + file.getName()
+                + ": " + e.getMessage());
+        }
+    }
+
+    private ConfigFilesCollection createConfigFilesCollection(String instanceId) {
+        File configuration = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
+        File components = resolveRelativePathWithinProfileDirectory(instanceId, COMPONENTS_FILENAME);
+        return new ConfigFilesCollection(configuration, components);
     }
 
     // TODO change exceptions types
-    private void applyChangeEntries(List<InstanceConfigurationOperationDescriptor> changeEntries, final File destinationConfigFile,
+    private void applyChangeEntries(List<InstanceConfigurationOperationDescriptor> changeEntries, final ConfigFilesCollection configFiles,
         String instanceId, TextOutputReceiver userOutputReceiver) throws InstanceConfigurationException {
-        final InstanceConfigurationImpl configOperations;
-        if (CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(destinationConfigFile) == null) {
-            configOperations = new InstanceConfigurationImpl(destinationConfigFile);
-            CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.put(destinationConfigFile.getName(), configOperations);
-        } else {
-            configOperations = CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(destinationConfigFile.getName());
-        }
-
+        InstanceConfigurationImpl configOperations = prepareConfigOperations(configFiles, instanceId);
         boolean isFirstCommand = true;
         for (InstanceConfigurationOperationDescriptor entry : changeEntries) {
-
             final Object[] parameters = entry.getParameters();
-
             switch (entry.getFlag()) {
             case InstanceManagementConstants.SUBCOMMAND_SET_NAME:
                 configOperations.setInstanceName((String) entry.getSingleParameter());
@@ -393,7 +483,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 break;
             case InstanceManagementConstants.SUBCOMMAND_REMOVE_CONNECTION:
                 configOperations.removeConnection((String) entry.getSingleParameter());
-                userOutputReceiver.addOutput("Removing connection " + entry.getSingleParameter() + " from instance " + instanceId);
+                userOutputReceiver.addOutput("Removing connection " + entry.getSingleParameter() + FROM_INSTANCE + instanceId);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_ADD_SERVER_PORT:
                 if (parameters.length != 3) {
@@ -430,17 +520,27 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 configOperations.setSshServerIP((String) parameters[0]);
                 configOperations.setSshServerPort((Integer) parameters[1]);
                 break;
+            case InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT:
+                configOperations.addSshAccount((String) parameters[0], (String) parameters[1], (Boolean) parameters[2], 
+                    (String) parameters[3]);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT:
+                configOperations.removeSshAccount((String) entry.getSingleParameter());
+                break;
             case InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION:
                 configOperations.setIpFilterFlag((Boolean) entry.getSingleParameter());
                 userOutputReceiver.addOutput("Set ip filter flag" + OF_INSTANCE + instanceId + TO + entry.getSingleParameter());
                 break;
-            case InstanceManagementConstants.SUBCOMMAND_RESET:
-            case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
-                // these operations were already performed; only run a consistency check here
+            case InstanceManagementConstants.SET_RCE_VERSION:
                 if (!isFirstCommand) {
-                    throw new InstanceConfigurationException("Resetting the configuration or applying a template "
+                    throw new InstanceConfigurationException("Setting the profile version "
                         + "must take place *before* applying any other configuration commands");
                 }
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_RESET:
+            case InstanceManagementConstants.SUBCOMMAND_WIPE:
+            case InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE:
+                configOperations = applytemplate(configFiles, instanceId, isFirstCommand);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT:
                 configOperations.setRequestTimeout((Long) entry.getSingleParameter());
@@ -465,7 +565,17 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 break;
             case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION:
                 configOperations.removeSshConnection((String) entry.getSingleParameter());
-                userOutputReceiver.addOutput("Removing SSH connection " + entry.getSingleParameter() + " from instance " + instanceId);
+                userOutputReceiver.addOutput("Removing SSH connection " + entry.getSingleParameter() + FROM_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION:
+                final ConfigurationUplinkConnection uplinkConnectionData = (ConfigurationUplinkConnection) entry.getSingleParameter();
+                configOperations.addUplinkConnection(uplinkConnectionData);
+                preparePasswordImport(instanceId, uplinkConnectionData);
+                userOutputReceiver.addOutput("Adding uplink connection " + uplinkConnectionData.getId() + TO_INSTANCE + instanceId);
+                break;
+            case InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION:
+                configOperations.removeUplinkConnection((String) entry.getSingleParameter());
+                userOutputReceiver.addOutput("Removing uplink connection " + entry.getSingleParameter() + FROM_INSTANCE + instanceId);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT:
                 configOperations.publishComponent((String) entry.getSingleParameter());
@@ -490,11 +600,48 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         userOutputReceiver.addOutput("Updated the configuration file" + OF_INSTANCE + instanceId);
     }
 
-    private void createProfileWithEmptyConfigFileIfNotPresent(File config) throws IOException {
-        if (!config.exists()) {
-            config.getParentFile().mkdir();
-            writeEmptyConfigFile(config);
+    private InstanceConfigurationImpl applytemplate(final ConfigFilesCollection configFiles, String instanceId, boolean isFirstCommand)
+        throws InstanceConfigurationException {
+        InstanceConfigurationImpl configOperations;
+        // We first run a consistency check to guard against user errors
+        if (!isFirstCommand) {
+            throw new InstanceConfigurationException("Wiping/Resetting the configuration or applying a template "
+                + "must take place *before* applying any other configuration commands");
         }
+        // Since these commands have already been performed, altering the configuration on disk, we re-parse the configuration
+        int profileVersion = determineProfileVersion(instanceId);
+        configOperations = new InstanceConfigurationImpl(configFiles, profileVersion);
+        instanceConfigurationsByInstanceId.put(instanceId, configOperations);
+        return configOperations;
+    }
+
+    private void preparePasswordImport(String instanceId, ConfigurationUplinkConnection uplinkConnectionData) {
+        if (uplinkConnectionData.getPassword() != null) {
+            File standardImportDirectory = resolveRelativePathWithinProfileDirectory(instanceId, PASSWORD_FILE_IMPORT_SUBDIRECTORY);
+            if (!standardImportDirectory.isDirectory()) {
+                standardImportDirectory.mkdirs();
+            }
+            File passwordFile = new File(standardImportDirectory, uplinkConnectionData.getId());
+            try {
+                FileUtils.writeStringToFile(passwordFile, uplinkConnectionData.getPassword(), Charsets.UTF_8);
+            } catch (IOException e) {
+                log.warn("Could not create password import file. ", e);
+            }
+        }
+    }
+
+    private InstanceConfigurationImpl prepareConfigOperations(final ConfigFilesCollection configFiles, String instanceId)
+        throws InstanceConfigurationException {
+        InstanceConfigurationImpl configOperations;
+        // TODO merge this block with the other two and encapsulate the operation; requires review of "configFiles" handling
+        if (instanceConfigurationsByInstanceId.get(instanceId) == null) {
+            int profileVersion = determineProfileVersion(instanceId);
+            configOperations = new InstanceConfigurationImpl(configFiles, profileVersion);
+            instanceConfigurationsByInstanceId.put(instanceId, configOperations);
+        } else {
+            configOperations = instanceConfigurationsByInstanceId.get(instanceId);
+        }
+        return configOperations;
     }
 
     private void writeEmptyConfigFile(File config) throws FileNotFoundException {
@@ -505,7 +652,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     }
 
     private void addProfileVersionInformationUnlessPresent(String instanceId) throws IOException {
-        File versionInfoFile = resolveRelativePathWithinProfileDirectory(instanceId, "internal/profile.version");
+        File versionInfoFile = resolveRelativePathWithinProfileDirectory(instanceId, "internal" + File.separator + "profile.version");
         if (!versionInfoFile.exists()) {
             FileUtils.write(versionInfoFile, Profile.PROFILE_VERSION_NUMBER.toString());
         }
@@ -535,8 +682,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     }
 
     @Override
-    public void startInstance(String installationId, List<String> instanceIdList,
-        TextOutputReceiver userOutputReceiver, final long timeout, boolean startWithGui) throws InstanceOperationException, IOException {
+    public void startInstance(String installationId, List<String> instanceIdList, TextOutputReceiver userOutputReceiver,
+        final long timeout, boolean startWithGui, String commandArguments) throws InstanceOperationException, IOException {
 
         // the list may be modified, so replace it with a local copy
         instanceIdList = new ArrayList<>(instanceIdList);
@@ -575,15 +722,22 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 userOutputReceiver.addOutput("Profile with id: " + s + " is already running.");
             }
         }
+
         List<File> profileDirList = resolveAndCheckProfileDirList(instanceIdList);
+
+        writeCommandArgumentsToProfile(profileDirList, commandArguments);
+
+        setInstanceStatusInMap(profileDirList, installationId, InstanceState.STARTING);
+
         writeInstallationIdToFile(installationId, profileDirList, userOutputReceiver);
+
         try {
-            instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, timeout, userOutputReceiver, startWithGui);
+            instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir,
+                profileIdToInstanceStatusMap, timeout, userOutputReceiver, startWithGui);
         } catch (InstanceOperationException e) {
             throw new IOException("An error occured on the startup process of some instances. Aborted with message: " + e.getMessage());
         }
 
-        addInstanceToMap(instanceIdList, installationId);
     }
 
     @Override
@@ -611,15 +765,83 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         if (profileDirList.isEmpty()) {
             return;
         }
+        setInstanceStatusInMap(profileDirList, "no installation", InstanceState.NOTRUNNING);
         try {
             instanceOperations.shutdownInstance(profileDirList, timeout, userOutputReceiver);
         } catch (IOException e) {
             checkAndRemoveInstanceLock(profileDirList, instanceIdList, e);
         } finally {
             checkAndRemoveInstanceLock(profileDirList, instanceIdList, null);
-            removeInstanceTopMap(instanceIdList);
             removeInstallationFileIfProfileIsNotRunning(resolveAndCheckProfileDirList(instanceIdList));
         }
+    }
+
+    private void writeCommandArgumentsToProfile(List<File> profileDirList, String commandArguments) throws IOException {
+        for (File profile : profileDirList) {
+            String argumentsToWrite;
+            // TODO this logic should be reviewed, and if it is correct, its reasoning documented.
+            // also, the if clause could be checked outside the "for" loop. -- misc_ro
+            if (commandArguments == null) {
+                if (instanceOperations.hasCommandArgumentsFile(profile)) {
+                    continue;
+                } else {
+                    argumentsToWrite = "";
+                }
+            } else {
+                argumentsToWrite = commandArguments;
+            }
+            instanceOperations.writeCommandArguments(profile, argumentsToWrite);
+        }
+    }
+
+    private int determineProfileVersion(String profileName) throws InstanceConfigurationException {
+        int version;
+        try {
+            version = readProfileVersion(profileName);
+        } catch (IOException e) {
+            version = Profile.PROFILE_VERSION_NUMBER;
+            writeProfileVersionFile(profileName, version);
+        }
+        return version;
+    }
+
+    private void writeProfileVersionFile(String profileName, int version) throws InstanceConfigurationException {
+        File profileVersionFile = getProfileVersionFile(profileName);
+        profileVersionFile.getParentFile().mkdirs();
+        try {
+            profileVersionFile.createNewFile();
+        } catch (IOException e) {
+            throw new InstanceConfigurationException("Can not create profile-version-file: " + e.getMessage());
+        }
+        try (PrintWriter writer = new PrintWriter(profileVersionFile)) {
+            writer.print(version);
+        } catch (FileNotFoundException e) {
+            throw new InstanceConfigurationException("Can not write profile-version to the new created file: " + e.getMessage());
+        }
+    }
+
+    private int readProfileVersion(String profileName) throws InstanceConfigurationException, IOException {
+        File profileVersionFile = getProfileVersionFile(profileName);
+        if (profileVersionFile.exists()) {
+            String value;
+            try {
+                value = FileUtils.readFileToString(profileVersionFile);
+            } catch (IOException e) {
+                throw new InstanceConfigurationException(PROBLEM_WITH_PROFILE_VERSION_FILE + e.getMessage());
+            }
+            return Integer.parseInt(value);
+        } else {
+            throw new IOException("Profile version file does not exist");
+        }
+    }
+
+    private boolean profileVersionFileExists(String profileName) {
+        File profileVersionFile = getProfileVersionFile(profileName);
+        return profileVersionFile.exists();
+    }
+
+    private File getProfileVersionFile(String profileName) {
+        return new File(profilesRootDir, profileName + File.separator + "internal" + File.separator + "profile.version");
     }
 
     private void removeInstallationFileIfProfileIsNotRunning(List<File> profileDirList) throws IOException {
@@ -674,8 +896,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * @throws IOException
      */
     private boolean isInstallationRunning(String installationId) throws IOException {
-        for (Map.Entry<String, String> entry : profileIdToInstallationIdMap.entrySet()) {
-            if (entry.getValue().equals(installationId)) {
+        for (Map.Entry<String, InstanceStatus> entry : profileIdToInstanceStatusMap.entrySet()) {
+            if (entry.getValue().getInstallation().equals(installationId)) {
                 if (isInstanceRunning(entry.getKey())) {
                     return true;
                 }
@@ -693,8 +915,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      */
     private List<String> getInstancesRunningInstallation(String installationId) throws IOException {
         List<String> instances = new ArrayList<String>();
-        for (Map.Entry<String, String> entry : profileIdToInstallationIdMap.entrySet()) {
-            if (entry.getValue().equals(installationId)) {
+        for (Map.Entry<String, InstanceStatus> entry : profileIdToInstanceStatusMap.entrySet()) {
+            if (entry.getValue().getInstallation().equals(installationId)) {
                 if (isInstanceRunning(entry.getKey())) {
                     instances.add(entry.getKey());
                 }
@@ -784,7 +1006,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     }
 
     @Override
-    public void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout)
+    public void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, final long timeout,
+        final String commandArguments)
         throws InstanceOperationException, IOException {
         List<String> instanceIdList = new ArrayList<>();
         try {
@@ -792,7 +1015,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         } catch (IOException e) {
             throw new InstanceOperationException("Failed to add profile. Aborted with message: " + e.getMessage());
         }
-        startInstance(installationId, instanceIdList, userOutputReceiver, timeout, false);
+        startInstance(installationId, instanceIdList, userOutputReceiver, timeout, false, commandArguments);
     }
 
     @Override
@@ -800,9 +1023,9 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         throws InstanceOperationException, IOException {
         List<String> instanceIdList = new ArrayList<>();
         if (!installationId.isEmpty()) {
-            synchronized (profileIdToInstallationIdMap) {
-                for (Map.Entry<String, String> entry : profileIdToInstallationIdMap.entrySet()) {
-                    if (entry.getValue().equals(installationId)) {
+            synchronized (profileIdToInstanceStatusMap) {
+                for (Map.Entry<String, InstanceStatus> entry : profileIdToInstanceStatusMap.entrySet()) {
+                    if (entry.getValue().getInstallation().equals(installationId)) {
                         instanceIdList.add(entry.getKey());
                     }
                 }
@@ -845,22 +1068,37 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         hasValidLocalConfiguration = true;
     }
 
-    protected String fetchVersionInformationFromDownloadSourceFolder(String urlQualifier) throws IOException {
+    private String getSourceFolderUrl(String urlQualifier) {
+        if (urlQualifier.matches(".?[0-9]+\\.x/.+")) { // Mayor version is given
+            String[] urlParts = urlQualifier.split("/");
+
+            // downloadSourceFolderUrlPattern with correct mayor version
+            String newDownloadSourceFolderUrlPattern = downloadSourceFolderUrlPattern.replaceFirst("[0-9]+\\.x", urlParts[0]);
+
+            // UrlQualifier without Mayor version
+            String newUrlQualifier = urlQualifier.substring(urlParts[0].length() + 1);
+
+            return newDownloadSourceFolderUrlPattern.replace(GENERIC_PLACEHOLDER_STRING, newUrlQualifier);
+        } else { // No Mayor version is given
+            return downloadSourceFolderUrlPattern.replace(GENERIC_PLACEHOLDER_STRING, urlQualifier);
+        }
+    }
+
+    protected String fetchVersionInformationFromDownloadSourceFolder(String urlQualifier, int timeout) throws IOException {
         validateConfiguration(false, true);
         File tempVersionFile = tfs.createTempFileFromPattern("versionfile-*.tmp");
-        String versionFileUrl = downloadSourceFolderUrlPattern.replace(GENERIC_PLACEHOLDER_STRING, urlQualifier) + "VERSION";
+        String versionFileUrl = getSourceFolderUrl(urlQualifier) + "VERSION";
         log.debug("Fetching remote version information from " + versionFileUrl);
-        deploymentOperations.downloadFile(versionFileUrl, tempVersionFile, true, false); // allow overwrite as temp file already exists
+        deploymentOperations.downloadFile(versionFileUrl, tempVersionFile,
+            true, false, timeout); // allow overwrite as temp file already exists
         return FileUtils.readFileToString(tempVersionFile).trim();
     }
 
-    protected void downloadInstallationPackage(String urlQualifier, String version, File localFile) throws IOException {
+    protected void downloadInstallationPackage(String urlQualifier, String version, File localFile, int timeout) throws IOException {
         validateConfiguration(false, true);
-        String remoteFileUrl =
-            downloadSourceFolderUrlPattern.replace(GENERIC_PLACEHOLDER_STRING, urlQualifier)
-                + downloadFilenamePattern.replace(GENERIC_PLACEHOLDER_STRING, version);
+        String remoteFileUrl = getSourceFolderUrl(urlQualifier) + downloadFilenamePattern.replace(GENERIC_PLACEHOLDER_STRING, version);
         log.debug("Downloading installation package from '" + remoteFileUrl + "' to local file '" + localFile.getAbsolutePath() + "'");
-        deploymentOperations.downloadFile(remoteFileUrl, localFile, true, true); // allow overwrite
+        deploymentOperations.downloadFile(remoteFileUrl, localFile, true, true, timeout); // allow overwrite
     }
 
     private void applyConfiguration(final ConfigurationSegment configuration) throws IOException {
@@ -941,7 +1179,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
-    private File forceFetchingProductZip(String urlQualifier, String remoteVersion) throws IOException {
+    private File forceFetchingProductZip(String urlQualifier, String remoteVersion, int timeout) throws IOException {
         File downloadFile = new File(downloadsCacheDir, remoteVersion + ZIP);
         int i = 1;
         while (downloadFile.exists()) {
@@ -950,52 +1188,54 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             downloadFile = new File(newFilePath);
         }
 
-        downloadInstallationPackage(urlQualifier, remoteVersion, downloadFile);
+        downloadInstallationPackage(urlQualifier, remoteVersion, downloadFile, timeout);
         return downloadFile;
     }
 
-    private String fetchVersionInformation(TextOutputReceiver userOutputReceiver, String urlQualifier) throws IOException {
+    private String fetchVersionInformation(TextOutputReceiver userOutputReceiver, String urlQualifier, int timeout) throws IOException {
         // get remote version
         userOutputReceiver.addOutput("Fetching remote version information");
-        return fetchVersionInformationFromDownloadSourceFolder(urlQualifier);
+        return fetchVersionInformationFromDownloadSourceFolder(urlQualifier, timeout);
     }
 
-    private File fetchProductZipIfNecessary(String urlQualifier, String remoteVersion) throws IOException {
+    private File fetchProductZipIfNecessary(String urlQualifier, String remoteVersion, int timeout) throws IOException {
         File downloadFile = new File(downloadsCacheDir, remoteVersion + ZIP);
         if (downloadFile.exists()) {
             log.info("Version " + remoteVersion + " is already present in downloads cache, not downloading");
         } else {
-            downloadInstallationPackage(urlQualifier, remoteVersion, downloadFile);
+            downloadInstallationPackage(urlQualifier, remoteVersion, downloadFile, timeout);
         }
         return downloadFile;
     }
 
-    private void forceDownloadAndReinstall(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver)
+    private void forceDownloadAndReinstall(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver, int timeout)
         throws IOException {
-        String version = fetchVersionInformation(userOutputReceiver, urlQualifier);
-        reinstall(installationId, version, urlQualifier, userOutputReceiver, true);
+        String version = fetchVersionInformation(userOutputReceiver, urlQualifier, timeout);
+        reinstall(installationId, version, urlQualifier, userOutputReceiver, true, timeout);
     }
 
-    private void forceReinstall(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver) throws IOException {
-        String version = fetchVersionInformation(userOutputReceiver, urlQualifier);
+    private void forceReinstall(String installationId, String urlQualifier,
+        TextOutputReceiver userOutputReceiver, int timeout) throws IOException {
+        String version = fetchVersionInformation(userOutputReceiver, urlQualifier, timeout);
         // TODO validate remote version: not empty, plausible major version
         log.info(StringUtils.format("Identified version of remote installation package '%s': %s", urlQualifier, version));
-        reinstall(installationId, version, urlQualifier, userOutputReceiver, false);
+        reinstall(installationId, version, urlQualifier, userOutputReceiver, false, timeout);
     }
 
-    private void installIfNotPresent(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver) throws IOException {
+    private void installIfNotPresent(String installationId, String urlQualifier,
+        TextOutputReceiver userOutputReceiver, int timeout) throws IOException {
         File installationDir = new File(installationsRootDir, installationId);
         if (installationDir.exists()) {
             userOutputReceiver.addOutput("Installation with ID " + installationId + " already exists.");
         } else {
-            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver);
+            installIfVersionIsDifferent(installationId, urlQualifier, userOutputReceiver, timeout);
         }
     }
 
-    private void installIfVersionIsDifferent(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver)
+    private void installIfVersionIsDifferent(String installationId, String urlQualifier, TextOutputReceiver userOutputReceiver, int timeout)
         throws IOException {
 
-        String newVersion = fetchVersionInformation(userOutputReceiver, urlQualifier);
+        String newVersion = fetchVersionInformation(userOutputReceiver, urlQualifier, timeout);
         // TODO validate remote version: not empty, plausible major version
         log.info(StringUtils.format("Identified version of remote installation package '%s': %s", urlQualifier, newVersion));
 
@@ -1011,19 +1251,19 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             return;
         }
 
-        reinstall(installationId, newVersion, urlQualifier, userOutputReceiver, false);
+        reinstall(installationId, newVersion, urlQualifier, userOutputReceiver, false, timeout);
     }
 
     private void reinstall(String installationId, String version, String urlQualifier,
-        TextOutputReceiver userOutputReceiver, boolean force) throws IOException {
+        TextOutputReceiver userOutputReceiver, boolean force, int timeout) throws IOException {
 
         File zipFile;
         if (force) {
             log.info("Reinstalling with 'force new download' option set");
-            zipFile = forceFetchingProductZip(urlQualifier, version);
+            zipFile = forceFetchingProductZip(urlQualifier, version, timeout);
         } else {
             // download installation package if not already present
-            zipFile = fetchProductZipIfNecessary(urlQualifier, version);
+            zipFile = fetchProductZipIfNecessary(urlQualifier, version, timeout);
         }
 
         File installationDir = new File(installationsRootDir, installationId);
@@ -1038,24 +1278,37 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         storeVersionOfInstallation(installationId, version);
     }
 
-    private void listInstances(TextOutputReceiver userOutputReceiver) {
+    private void listInstances(TextOutputReceiver userOutputReceiver) throws IOException {
         if (profilesRootDir == null) {
             userOutputReceiver.addOutput("Instances' root directory not defined.");
             return;
         }
-        if (profilesRootDir.listFiles().length == 0) {
+        final File[] files = profilesRootDir.listFiles();
+        if (files.length == 0) {
             userOutputReceiver.addOutput("No instances found.");
             return;
         }
         userOutputReceiver.addOutput("Instances: ");
-        for (File instanceFile : profilesRootDir.listFiles()) {
+        Arrays.sort(files);
+        for (File instanceFile : files) {
             if (instanceFile.isDirectory()) {
-                String runningState = "Not running";
-                for (File fileInProfile : instanceFile.listFiles()) {
-                    synchronized (profileIdToInstallationIdMap) {
-                        if (fileInProfile.isFile() && fileInProfile.getName().equals(Profile.PROFILE_DIR_LOCK_FILE_NAME)) {
-                            runningState = "Running (" + profileIdToInstallationIdMap.get(instanceFile.getName()) + ")";
 
+                String runningState = "Not running";
+                synchronized (profileIdToInstanceStatusMap) {
+                    InstanceStatus status = profileIdToInstanceStatusMap.get(instanceFile.getName());
+                    if (status != null) {
+                        String installationName = status.getInstallation();
+                        switch (status.getInstanceState()) {
+                        case NOTRUNNING:
+                            break;
+                        case STARTING:
+                            runningState = "Starting (" + installationName + ")";
+                            break;
+                        case RUNNING:
+                            runningState = "Running (" + installationName + ")";
+                            break;
+                        default:
+                            runningState = "unknown State";
                         }
                     }
                 }
@@ -1069,12 +1322,14 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             userOutputReceiver.addOutput("Installations' root directory not defined.");
             return;
         }
-        if (installationsRootDir.listFiles().length == 0) {
+        final File[] files = installationsRootDir.listFiles();
+        if (files.length == 0) {
             userOutputReceiver.addOutput("No installations found.");
             return;
         }
         userOutputReceiver.addOutput("Installations: ");
-        for (File installationFile : installationsRootDir.listFiles()) {
+        Arrays.sort(files);
+        for (File installationFile : files) {
             if (installationFile.isFile() && installationFile.getName().endsWith(VERSION)) {
                 String installationsId = installationFile.getName().replace(VERSION, "");
                 String version = FileUtils.readFileToString(installationFile);
@@ -1088,12 +1343,14 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             userOutputReceiver.addOutput("Templates' root directory not defined.");
             return;
         }
-        if (templatesRootDir.listFiles().length == 0) {
+        final File[] files = templatesRootDir.listFiles();
+        if (files.length == 0) {
             userOutputReceiver.addOutput("No templates found.");
             return;
         }
         userOutputReceiver.addOutput("Templates: ");
-        for (File templateFile : templatesRootDir.listFiles()) {
+        Arrays.sort(files);
+        for (File templateFile : files) {
             if (templateFile.isDirectory()) {
                 userOutputReceiver.addOutput(INDENT + templateFile.getName());
             }
@@ -1201,6 +1458,10 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         return true;
     }
 
+    private boolean isPathValid(String path) {
+        return VALID_PATH_REGEXP_PATTERN.matcher(path).matches();
+    }
+
     private boolean isProfilePresent(String id) {
         File possibleProfile = new File(profilesRootDir + SLASH + id);
         return possibleProfile.exists();
@@ -1211,6 +1472,14 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             // note: this assumes that even malformed ids are safe to print, as it should only affect the user
             // that issued the command anyway
             throw new IOException("Malformed id: " + id);
+        }
+    }
+
+    private void validatePath(String path) throws IOException {
+        if (!isPathValid(path)) {
+            // note: this assumes that even malformed paths are safe to print, as it should only affect the user
+            // that issued the command anyway
+            throw new IOException("Malformed path: " + path);
         }
     }
 
@@ -1230,14 +1499,23 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
-    private void initProfileIdToInstallationMap() throws IOException {
+    private void initProfileIdToInstanceStatusMap() throws IOException {
         for (File instanceFile : profilesRootDir.listFiles()) {
             if (instanceFile.isDirectory()) {
                 for (File fileInProfile : instanceFile.listFiles()) {
                     if (fileInProfile.getName().equals("installation")) {
                         try (BufferedReader br = new BufferedReader(new FileReader(fileInProfile))) {
-                            synchronized (profileIdToInstallationIdMap) {
-                                profileIdToInstallationIdMap.put(instanceFile.getName(), br.readLine());
+                            String installation = br.readLine();
+                            String instance = instanceFile.getName();
+                            InstanceState state;
+                            if (isInstanceRunning(instance)) {
+                                state = InstanceState.RUNNING;
+                            } else {
+                                state = InstanceState.NOTRUNNING;
+                            }
+                            synchronized (profileIdToInstanceStatusMap) {
+                                profileIdToInstanceStatusMap.put(instance,
+                                    new InstanceStatus(installation, state));
                             }
                         }
                     }
@@ -1246,19 +1524,23 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
-    private void addInstanceToMap(List<String> instanceIds, String installationId) {
+    private void addInstanceToMap(List<String> instanceIds, String installationId, InstanceState instanceState) {
         for (String instanceId : instanceIds) {
-            synchronized (profileIdToInstallationIdMap) {
-                profileIdToInstallationIdMap.put(instanceId, installationId);
+            synchronized (profileIdToInstanceStatusMap) {
+                profileIdToInstanceStatusMap.put(instanceId, new InstanceStatus(installationId, instanceState));
             }
         }
     }
 
-    private void removeInstanceTopMap(List<String> instanceIds) throws IOException {
-        for (Iterator<String> iterator = instanceIds.iterator(); iterator.hasNext();) {
-            synchronized (profileIdToInstallationIdMap) {
-                if (profileIdToInstallationIdMap.remove(iterator.next()) == null) {
-                    iterator.remove();
+    private void setInstanceStatusInMap(List<File> profileDirList, String installationId, InstanceState instanceState) {
+        for (File profile : profileDirList) {
+            synchronized (profileIdToInstanceStatusMap) {
+                InstanceStatus instanceStatus = profileIdToInstanceStatusMap.get(profile.getName());
+                if (instanceStatus != null) {
+                    instanceStatus.setInstallation(installationId);
+                    instanceStatus.setInstanceState(instanceState);
+                } else {
+                    profileIdToInstanceStatusMap.put(profile.getName(), new InstanceStatus(installationId, instanceState));
                 }
             }
         }
@@ -1298,7 +1580,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         for (File profile : profileDirList) {
             try (Writer writer =
                 new BufferedWriter(new OutputStreamWriter(new FileOutputStream(profile.getAbsolutePath() + SLASH + "installation"),
-                    "utf-8"))) {
+                    UTF_8))) {
                 writer.write(installationId);
             }
         }
@@ -1357,16 +1639,20 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * @throws InstanceConfigurationException
      */
     private Integer getSshPortForInstance(String instanceId) throws IOException, InstanceConfigurationException {
-        File config = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
-        if (!config.exists()) {
-            log.warn("No config file for instance " + instanceId + " exists.");
-            return null;
-        }
         InstanceConfigurationImpl configOperations;
-        if (CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(config) == null) {
-            configOperations = new InstanceConfigurationImpl(config);
+        // TODO merge this block with the other two and encapsulate the operation; requires review of "configFiles" handling
+        if (instanceConfigurationsByInstanceId.get(instanceId) == null) {
+            ConfigFilesCollection configFiles = createConfigFilesCollection(instanceId);
+            if (!configFiles.getConfigurationFile().exists()) {
+                log.warn("No config file for instance " + instanceId + " exists.");
+                return null;
+            }
+
+            int profileVersion = determineProfileVersion(instanceId);
+            configOperations = new InstanceConfigurationImpl(configFiles, profileVersion);
+            instanceConfigurationsByInstanceId.put(instanceId, configOperations);
         } else {
-            configOperations = CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(config.getName());
+            configOperations = instanceConfigurationsByInstanceId.get(instanceId);
         }
         return configOperations.getSshServerPort();
     }
@@ -1378,16 +1664,19 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * @throws InstanceConfigurationException
      */
     private String getSshIpForInstance(String instanceId) throws InstanceConfigurationException {
-        File config = resolveRelativePathWithinProfileDirectory(instanceId, CONFIGURATION_FILENAME);
-        if (!config.exists()) {
-            log.warn("No config file for instance " + instanceId + " exists.");
-            return null;
-        }
         InstanceConfigurationImpl configOperations;
-        if (CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(config) == null) {
-            configOperations = new InstanceConfigurationImpl(config);
+        // TODO merge this block with the other two and encapsulate the operation; requires review of "configFiles" handling
+        if (instanceConfigurationsByInstanceId.get(instanceId) == null) {
+            ConfigFilesCollection configFiles = createConfigFilesCollection(instanceId);
+            if (!configFiles.getConfigurationFile().exists()) {
+                log.warn("No config file for instance " + instanceId + " exists.");
+                return null;
+            }
+            int profileVersion = determineProfileVersion(instanceId);
+            configOperations = new InstanceConfigurationImpl(configFiles, profileVersion);
+            instanceConfigurationsByInstanceId.put(instanceId, configOperations);
         } else {
-            configOperations = CONFIG_FILE_NAME_TO_CONFIG_STORE_MAP.get(config.getName());
+            configOperations = instanceConfigurationsByInstanceId.get(instanceId);
         }
         return configOperations.getSshServerIp();
     }

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.testutils;
@@ -111,6 +111,11 @@ public abstract class MockConfigurationService implements ConfigurationService {
 
         @Override
         public File initializeSubDirInConfigurablePath(ConfigurablePathId pathId, String relativePath) {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public File getStandardImportDirectory(String subdir) {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
         }
 

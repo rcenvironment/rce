@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -127,47 +127,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     @Activate
     protected void activate(BundleContext context) {
 
-        heartbeatSendFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            @TaskDescription("Send heartbeat for active workflows")
-            public void run() {
-                Set<WorkflowExecutionInformation> wfExeInfoSnapshot = getWorkflowExecutionInformation();
-                for (WorkflowExecutionInformation wfExeInfo : wfExeInfoSnapshot) {
-                    String wfExeId = wfExeInfo.getExecutionIdentifier();
-                    switch (wfExeInfo.getWorkflowState()) {
-                    case INIT:
-                    case PREPARING:
-                    case STARTING:
-                    case RUNNING:
-                    case PAUSING:
-                    case PAUSED:
-                    case RESUMING:
-                    case CANCELING:
-                    case CANCELING_AFTER_FAILED:
-                        if (verboseLogging) {
-                            LOG.debug(StringUtils.format("Sending heartbeat notification for active workflow '%s' (%s)",
-                                wfExeInfo.getInstanceName(), wfExeId));
-                        }
-                        notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeId, WorkflowState.IS_ALIVE.name());
-                        break;
-                    default:
-                        // do nothing
-                        break;
-                    }
-                }
-            }
-
-            private Set<WorkflowExecutionInformation> getWorkflowExecutionInformation() {
-                Set<WorkflowExecutionInformation> wfExeInfoSnapshot = new HashSet<>();
-                try {
-                    wfExeInfoSnapshot.addAll(wfExeCtrlService.getWorkflowExecutionInformations());
-                } catch (ExecutionControllerException | RemoteOperationException e) {
-                    LOG.error("Failed to fetch local workflow execution informations: " + e.getMessage());
-                }
-                return wfExeInfoSnapshot;
-            }
-        }, ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC);
+        heartbeatSendFuture =
+            ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedInterval("Send heartbeat for active workflows",
+                this::sendHeartbeatForActiveWorkflows, ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC);
     }
 
     @Deactivate
@@ -592,6 +554,43 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             }
         }
         return Optional.empty();
+    }
+
+    private void sendHeartbeatForActiveWorkflows() {
+        Set<WorkflowExecutionInformation> wfExeInfoSnapshot = getWorkflowExecutionInformation();
+        for (WorkflowExecutionInformation wfExeInfo : wfExeInfoSnapshot) {
+            String wfExeId = wfExeInfo.getExecutionIdentifier();
+            switch (wfExeInfo.getWorkflowState()) {
+            case INIT:
+            case PREPARING:
+            case STARTING:
+            case RUNNING:
+            case PAUSING:
+            case PAUSED:
+            case RESUMING:
+            case CANCELING:
+            case CANCELING_AFTER_FAILED:
+                if (verboseLogging) {
+                    LOG.debug(StringUtils.format("Sending heartbeat notification for active workflow '%s' (%s)",
+                        wfExeInfo.getInstanceName(), wfExeId));
+                }
+                notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeId, WorkflowState.IS_ALIVE.name());
+                break;
+            default:
+                // do nothing
+                break;
+            }
+        }
+    }
+
+    private Set<WorkflowExecutionInformation> getWorkflowExecutionInformation() {
+        Set<WorkflowExecutionInformation> wfExeInfoSnapshot = new HashSet<>();
+        try {
+            wfExeInfoSnapshot.addAll(wfExeCtrlService.getWorkflowExecutionInformations());
+        } catch (ExecutionControllerException | RemoteOperationException e) {
+            LOG.error("Failed to fetch local workflow execution informations: " + e.getMessage());
+        }
+        return wfExeInfoSnapshot;
     }
 
 }

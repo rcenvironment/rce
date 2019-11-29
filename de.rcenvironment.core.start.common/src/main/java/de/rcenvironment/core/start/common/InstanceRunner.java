@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common;
@@ -40,6 +40,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * @author Robert Mischke
  * @author Doreen Seider
  * @author David Scholz (minor change: added check for shutdown request)
+ * @author Brigitte Boden
  */
 public abstract class InstanceRunner {
 

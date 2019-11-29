@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
@@ -11,13 +11,11 @@ package de.rcenvironment.core.component.execution.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -32,6 +30,7 @@ import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -274,34 +273,15 @@ public class ComponentContextBridge {
     }
 
     /**
-     * Calculates for a sequence of {@link WorkflowGraphHop}s, if they form a circle.
-     */
-    private boolean circular(Queue<WorkflowGraphHop> hops) {
-
-        WorkflowGraphHop firstElement = hops.peek();
-        WorkflowGraphHop lastElement = null;
-
-        for (WorkflowGraphHop hop : hops) {
-            lastElement = hop;
-        }
-
-        if (lastElement == null) {
-            return false;
-        }
-
-        return firstElement.getHopExecutionIdentifier().equals(lastElement.getTargetExecutionIdentifier());
-    }
-
-    /**
      * This method should only be called, if the given output has the SAME LOOP characteristic.
      */
     private void writeResetOutputData() {
 
-        Set<Deque<WorkflowGraphHop>> hopsSet = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
+        Set<WorkflowGraphPath> hopsSet = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
             .getHopsToTraverseWhenResetting(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()));
         
-        for (Queue<WorkflowGraphHop> hops : hopsSet) {
-            boolean circular = circular(hops);
+        for (WorkflowGraphPath hops : hopsSet) {
+            boolean circular = hops.isCircular();
 
             WorkflowGraphHop firstHop = hops.poll();
             InternalTDImpl resetDatum = new InternalTDImpl(InternalTDImpl.InternalTDType.NestedLoopReset, hops);

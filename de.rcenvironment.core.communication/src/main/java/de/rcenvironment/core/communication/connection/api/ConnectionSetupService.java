@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.connection.api;
@@ -52,4 +52,9 @@ public interface ConnectionSetupService {
      */
     ConnectionSetup getConnectionSetupById(long id);
 
+    /**
+     * @param ncp a network contact point
+     * @return true iff this connection already exists
+     */
+    boolean connectionAlreadyExists(NetworkContactPoint ncp);
 }

@@ -3,15 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.rcenvironment.core.component.execution.api.ComponentExecutionIdentifier;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -61,7 +60,7 @@ public class InternalTDImpl implements InternalTD {
 
     private final InternalTDType type;
 
-    private Queue<WorkflowGraphHop> hopsToTraverse = null;
+    private WorkflowGraphPath hopsToTraverse = null;
 
     private String payload = null;
 
@@ -74,20 +73,20 @@ public class InternalTDImpl implements InternalTD {
         this.type = type;
     }
 
-    public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse) {
+    public InternalTDImpl(InternalTDType type, WorkflowGraphPath hopsToTraverse) {
         this(type, UUID.randomUUID().toString(), hopsToTraverse);
     }
 
-    public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse) {
+    public InternalTDImpl(InternalTDType type, String identifier, WorkflowGraphPath hopsToTraverse) {
         this(type, identifier);
         this.hopsToTraverse = hopsToTraverse;
     }
 
-    public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
+    public InternalTDImpl(InternalTDType type, WorkflowGraphPath hopsToTraverse, String payload) {
         this(type, UUID.randomUUID().toString(), hopsToTraverse, payload);
     }
 
-    public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
+    public InternalTDImpl(InternalTDType type, String identifier, WorkflowGraphPath hopsToTraverse, String payload) {
         this(type, identifier);
         this.hopsToTraverse = hopsToTraverse;
         this.payload = payload;
@@ -106,7 +105,7 @@ public class InternalTDImpl implements InternalTD {
         return type;
     }
 
-    public Queue<WorkflowGraphHop> getHopsToTraverse() {
+    public WorkflowGraphPath getHopsToTraverse() {
         return hopsToTraverse;
     }
 
@@ -128,7 +127,7 @@ public class InternalTDImpl implements InternalTD {
         rootNode.put(SERIALIZE_KEY_TYPE, getType().name());
         rootNode.put(SERIALIZE_KEY_IDENTIFIER, getIdentifier());
         ArrayNode hopsArrayNode = mapper.createArrayNode();
-        Queue<WorkflowGraphHop> hops = getHopsToTraverse();
+        WorkflowGraphPath hops = getHopsToTraverse();
         if (hops != null) {
             for (WorkflowGraphHop hop : getHopsToTraverse()) {
                 ArrayNode hopArrayNode = mapper.createArrayNode();
@@ -168,15 +167,16 @@ public class InternalTDImpl implements InternalTD {
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(typeStr);
         String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).textValue();
-        Queue<WorkflowGraphHop> hops = null;
+        WorkflowGraphPath hops = null;
         if (rootNode.has(SERIALIZE_KEY_HOPS)) {
             ArrayNode hopsArrayNode = (ArrayNode) rootNode.get(SERIALIZE_KEY_HOPS);
-            hops = new LinkedList<>();
+            hops = WorkflowGraphPath.createEmpty();
             Iterator<JsonNode> hopsElements = hopsArrayNode.elements();
             while (hopsElements.hasNext()) {
                 ArrayNode hopArrayNode = (ArrayNode) hopsElements.next();
-                hops.add(new WorkflowGraphHop(new ComponentExecutionIdentifier(hopArrayNode.get(0).asText()), hopArrayNode.get(1).asText(),
-                    new ComponentExecutionIdentifier(hopArrayNode.get(2).asText()), hopArrayNode.get(3).asText()));
+                hops.append(
+                    new WorkflowGraphHop(new ComponentExecutionIdentifier(hopArrayNode.get(0).asText()), hopArrayNode.get(1).asText(),
+                        new ComponentExecutionIdentifier(hopArrayNode.get(2).asText()), hopArrayNode.get(3).asText()));
             }
         }
         String pyld = null;

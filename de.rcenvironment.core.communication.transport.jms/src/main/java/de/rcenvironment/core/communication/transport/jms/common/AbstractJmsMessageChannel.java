@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.communication.transport.jms.common;
 
@@ -192,31 +192,28 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
      * @throws JMSException on JMS errors
      */
     protected void asyncSendShutdownMessageToB2CJmsQueue() throws JMSException {
-        threadPool.execute(new Runnable() {
+        threadPool.execute("JMS Network Transport: Send shutdown signal to Client-to-Broker queue", () -> {
 
-            @Override
-            @TaskDescription("JMS Network Transport: Send shutdown signal to Client-to-Broker queue")
-            public void run() {
-                Session session;
+            Session session;
+            try {
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 try {
-                    session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                    try {
-                        final Queue destinationQueue = session.createQueue(outgoingRequestQueueName);
-                        Message shutdownMessage = JmsProtocolUtils.createQueueShutdownMessage(session, shutdownSecurityToken);
-                        session.createProducer(destinationQueue).send(shutdownMessage); // disposed in finally block (part of the session)
-                    } finally {
-                        session.close();
-                    }
-                } catch (JMSException e) {
-                    String message = e.toString();
-                    // ignore exceptions that just report that the temporary queue is already gone,
-                    // which is normal on client connection breakdown - misc_ro
-                    if (!message.contains("")) {
-                        log.warn(StringUtils.format("Exception on sending shutdown signal to Client-to-Broker JMS queue %s: %s",
-                            outgoingRequestQueueName, message));
-                    }
+                    final Queue destinationQueue = session.createQueue(outgoingRequestQueueName);
+                    Message shutdownMessage = JmsProtocolUtils.createQueueShutdownMessage(session, shutdownSecurityToken);
+                    session.createProducer(destinationQueue).send(shutdownMessage); // disposed in finally block (part of the session)
+                } finally {
+                    session.close();
+                }
+            } catch (JMSException e) {
+                String message = e.toString();
+                // ignore exceptions that just report that the temporary queue is already gone,
+                // which is normal on client connection breakdown - misc_ro
+                if (!message.contains("")) {
+                    log.warn(StringUtils.format("Exception on sending shutdown signal to Client-to-Broker JMS queue %s: %s",
+                        outgoingRequestQueueName, message));
                 }
             }
+
         });
     }
 

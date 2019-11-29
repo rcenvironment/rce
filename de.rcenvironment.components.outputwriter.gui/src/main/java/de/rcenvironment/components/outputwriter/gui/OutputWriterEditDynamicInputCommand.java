@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.outputwriter.gui;
@@ -30,6 +30,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * simple data input..
  *
  * @author Brigitte Boden
+ * @author Kathrin Schaffert
  */
 public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointCommand {
     
@@ -41,6 +42,8 @@ public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointComm
     //The outputLocation affected by the change, if any.
     private String outputLocationId;
     
+    private boolean removeInput;
+
     /**
      * Constructor.
      * 
@@ -50,11 +53,12 @@ public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointComm
      * @param refreshable
      */
     public OutputWriterEditDynamicInputCommand(EndpointType direction, EndpointDescription oldDescription,
-        EndpointDescription newDescription, String outputLocationId, Refreshable... refreshable) {
+        EndpointDescription newDescription, String outputLocationId, boolean removeInput, Refreshable... refreshable) {
         super(direction, oldDescription, newDescription, refreshable);
         mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
         this.outputLocationId = outputLocationId;
+        this.removeInput = removeInput;
     }
 
     @Override
@@ -66,7 +70,9 @@ public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointComm
             if (inputJsonString != null && !inputJsonString.equals("") && outputLocationId != null && !outputLocationId.equals("")) {
                 list = mapper.readValue(inputJsonString, OutputLocationList.class);
                 OutputLocation location = list.getOutputLocationById(outputLocationId);
-                location.getInputs().remove(oldDesc.getName());
+                if (this.removeInput) {
+                    location.getInputs().remove(oldDesc.getName());
+                }
                 String outputJsonString = mapper.writeValueAsString(list);
                 getProperties().getConfigurationDescription().setConfigurationValue(
                     OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS,

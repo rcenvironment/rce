@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.testutils;
@@ -37,6 +37,7 @@ import de.rcenvironment.toolkit.utils.common.AutoCreationMap;
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class ComponentContextMock extends ComponentContextDefaultStub {
 

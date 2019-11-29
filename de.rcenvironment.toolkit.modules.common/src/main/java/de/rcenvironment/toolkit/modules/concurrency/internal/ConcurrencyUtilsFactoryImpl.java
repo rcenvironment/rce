@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.toolkit.modules.concurrency.internal;
@@ -14,6 +14,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQue
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
 import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
+import de.rcenvironment.toolkit.modules.concurrency.api.BlockingResponseMapper;
 import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
 import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
@@ -71,5 +72,10 @@ public final class ConcurrencyUtilsFactoryImpl implements ConcurrencyUtilsFactor
     public RunnablesGroup createRunnablesGroup() {
         counterCategory.countStacktrace();
         return new RunnablesGroupImpl(asyncTaskService);
+    }
+
+    @Override
+    public <TKey, TResponse> BlockingResponseMapper<TKey, TResponse> createBlockingResponseMapper() {
+        return new BlockingResponseMapperImpl<>(asyncTaskService);
     }
 }

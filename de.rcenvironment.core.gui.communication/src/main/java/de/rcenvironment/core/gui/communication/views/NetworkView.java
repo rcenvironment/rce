@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.gui.communication.views;
 
@@ -54,6 +54,7 @@ import de.rcenvironment.core.gui.communication.views.contributors.ConnectionSetu
 import de.rcenvironment.core.gui.communication.views.contributors.InstanceComponentsInfoContributor;
 import de.rcenvironment.core.gui.communication.views.contributors.MonitoringDataContributor;
 import de.rcenvironment.core.gui.communication.views.contributors.SshConnectionSetupsListContributor;
+import de.rcenvironment.core.gui.communication.views.contributors.SshUplinkConnectionSetupsListContributor;
 import de.rcenvironment.core.gui.communication.views.internal.AnchorPoints;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext.Context;
@@ -91,6 +92,9 @@ public class NetworkView extends ViewPart {
     private static final ImageDescriptor ADDSSH =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/newSshConnection.png"));
 
+    private static final ImageDescriptor ADDUPLINK =
+        ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/newUplinkConnection.png"));
+
     private static final ImageDescriptor EDIT =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/edit16.gif"));
 
@@ -114,9 +118,13 @@ public class NetworkView extends ViewPart {
 
     private Action toggleRawNodePropertiesVisibleAction;
 
+    private Action toggleFullGroupNamesAction;
+
     private Action addNetworkConnectionAction;
 
     private Action addSSHConnectionAction;
+
+    private Action addUplinkConnectionAction;
 
     private Action copyToClipBoardAction;
 
@@ -142,7 +150,11 @@ public class NetworkView extends ViewPart {
 
     private SshConnectionSetupsListContributor sshConnectionsContributor;
 
+    private SshUplinkConnectionSetupsListContributor sshUplinkConnectionsContributor;
+
     private List<NetworkViewContributor> allContributors;
+
+    private InstanceComponentsInfoContributor infoContributer;
 
     public NetworkView() {
         serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
@@ -198,6 +210,16 @@ public class NetworkView extends ViewPart {
                 viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
             }
         };
+        //add "show group ids next to group names" option
+        // TODO add icon
+        toggleFullGroupNamesAction = new Action("Show Group IDs Next to Group Names", SWT.TOGGLE) {
+            
+            @Override
+            public void run() {
+                infoContributer.setShowFullId(this.isChecked());
+                viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, true);
+            }
+        };
         // copies the selected raw node properties to the clipboard
         copyToClipBoardAction = new Action("Copy to Clipboard" + TAB + "Ctrl+C", COPY) {
 
@@ -237,6 +259,15 @@ public class NetworkView extends ViewPart {
             @Override
             public void run() {
                 networkConnectionsContributor.showAddConnectionDialog();
+            }
+        };
+        
+        // add "add uplink connection" option
+        addUplinkConnectionAction = new Action("Add Uplink Connection...", ADDUPLINK) {
+
+            @Override
+            public void run() {
+                sshUplinkConnectionsContributor.showAddConnectionDialog();
             }
         };
 
@@ -351,9 +382,6 @@ public class NetworkView extends ViewPart {
     @Override
     public void dispose() {
         serviceRegistryAccess.dispose();
-        for (NetworkViewContributor contributor : allContributors) {
-            contributor.dispose();
-        }
         super.dispose();
     }
 
@@ -393,11 +421,14 @@ public class NetworkView extends ViewPart {
 
         // note: saving contributors in a field is usually not required, but we don't go for a full-blown plugin structure here - misc_ro
         networkConnectionsContributor = new ConnectionSetupsListContributor();
-        sshConnectionsContributor = new SshConnectionSetupsListContributor();
+        sshUplinkConnectionsContributor = new SshUplinkConnectionSetupsListContributor(node -> updatePossibleActionsForSelection(node));
+        sshConnectionsContributor = new SshConnectionSetupsListContributor(node -> updatePossibleActionsForSelection(node));
+        infoContributer = new InstanceComponentsInfoContributor();
 
         result.add(networkConnectionsContributor);
         result.add(new MonitoringDataContributor());
-        result.add(new InstanceComponentsInfoContributor());
+        result.add(infoContributer);
+        result.add(sshUplinkConnectionsContributor);
         result.add(sshConnectionsContributor);
 
         return result;
@@ -465,19 +496,20 @@ public class NetworkView extends ViewPart {
         // a lambda expression, since doing so in the current state would incur a nested lambda expression. For the sake of readability we
         // opt for this slightly more verbose variant pending further refactoring
         serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class, new DistributedComponentKnowledgeListener() {
-                @Override
-                public void onDistributedComponentKnowledgeChanged(final DistributedComponentKnowledge newKnowledge) {
-                    display.asyncExec(() -> {
-                        model.componentKnowledge = newKnowledge;
-                        if (viewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
-                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
-                        viewer.setExpandedTreePaths(expandedTreePaths);
-                    });
-                }
-            });
+
+            @Override
+            public void onDistributedComponentKnowledgeChanged(final DistributedComponentKnowledge newKnowledge) {
+                display.asyncExec(() -> {
+                    model.componentKnowledge = newKnowledge;
+                    if (viewer.getControl().isDisposed()) {
+                        return;
+                    }
+                    TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
+                    viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
+                    viewer.setExpandedTreePaths(expandedTreePaths);
+                });
+            }
+        });
         // TODO move this listener into the contributor for better separation
         // We again refrain from refactoring the ConnectionSetupListenerAdapter into a lambda expression for similar reasons as above.
         serviceRegistryAccess.registerService(ConnectionSetupListener.class, new ConnectionSetupListenerAdapter() {
@@ -580,6 +612,7 @@ public class NetworkView extends ViewPart {
         // add toolbar actions (right top of view)
         final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
         toolBarManager.add(addNetworkConnectionAction);
+        toolBarManager.add(addUplinkConnectionAction);
         toolBarManager.add(addSSHConnectionAction);
         toolBarManager.add(new Separator());
         toolBarManager.add(startAction);
@@ -594,9 +627,11 @@ public class NetworkView extends ViewPart {
         final MenuManager subMenuManager = new MenuManager("Advanced");
         subMenuManager.add(toggleNodeIdsVisibleAction);
         subMenuManager.add(toggleRawNodePropertiesVisibleAction);
+        subMenuManager.add(toggleFullGroupNamesAction);
 
         final MenuManager menuManager = new MenuManager();
         menuManager.add(addNetworkConnectionAction);
+        menuManager.add(addUplinkConnectionAction);
         menuManager.add(addSSHConnectionAction);
         menuManager.add(new Separator());
         menuManager.add(startAction);

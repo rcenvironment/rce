@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.other</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - Other</name>
-	<version>9.1.0-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -14,7 +14,17 @@
 		<relativePath>../../maven/parent/mavenLibraryBundle</relativePath>
 	</parent>
 
+	<properties>
+		<!-- last updated: 2019-11-06, misc_ro -->
+		<versions.jackson>2.10.0</versions.jackson>
+	</properties>
+
 	<dependencies>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
 		<dependency>
 			<!-- used by SSH bundle for SCP operations -->
 			<!-- TODO add license information; add to release info file -->
@@ -63,7 +73,8 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.18</version>
+			<!-- last updated: 2019-11-06, misc_ro -->
+			<version>1.19</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
@@ -108,18 +119,18 @@
 		<dependency>
 			<!-- License: Apache 2.0 (http://wiki.fasterxml.com/JacksonDownload) -->
 			<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
-			<!-- last updated: 2019-05-25, wein_al -->
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.9.9</version>
+			<!-- see property declaration for 'last update' information -->
+			<version>${versions.jackson}</version>
 		</dependency>
 		<dependency>
 			<!-- License: Apache 2.0 (http://wiki.fasterxml.com/JacksonDownload) -->
 			<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
-			<!-- last updated: 2019-05-25, wein_al -->
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.9.9</version>
+			<!-- see property declaration for 'last update' information -->
+			<version>${versions.jackson}</version>
 		</dependency>
 
 		<dependency>

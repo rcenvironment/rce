@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.datamanagement.internal;
@@ -62,7 +62,7 @@ public class FileDataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        nodeId = NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy");
+        nodeId = NodeIdentifierTestUtils.createTestDefaultLogicalNodeId();
         drId = UUID.randomUUID();
 
         binaryReference = new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1");
@@ -89,8 +89,11 @@ public class FileDataServiceImplTest {
         backendSupport.activate(BackendSupportTest.createBundleContext(metaDataBackendService, new DummyDataBackend()));
     }
 
-    /** Test. 
-     * @throws IOException */
+    /**
+     * Test.
+     * 
+     * @throws IOException on unexpected errors
+     */
     @Test
     public void testGetStreamFromDataReference() throws IOException {
         InputStream stream = fileDataService.getStreamFromDataReference(dr, true);

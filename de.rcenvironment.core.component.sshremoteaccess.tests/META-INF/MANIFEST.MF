@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component SSH Remote Access Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.sshremoteaccess.tests
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.core.component.sshremoteaccess
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -10,13 +10,15 @@ Import-Package: de.rcenvironment.core.authorization.testutils,
  de.rcenvironment.core.communication.testutils,
  de.rcenvironment.core.component.authorization.impl,
  de.rcenvironment.core.utils.common.exception,
- org.apache.sshd.client.auth;version="1.7.0",
- org.apache.sshd.common;version="1.7.0",
- org.apache.sshd.common.kex;version="1.7.0",
- org.apache.sshd.common.keyprovider;version="1.7.0",
- org.apache.sshd.server;version="1.7.0",
- org.apache.sshd.server.auth;version="1.7.0",
- org.apache.sshd.server.auth.password;version="1.7.0",
- org.apache.sshd.server.keyprovider;version="1.7.0",
- org.apache.sshd.server.session;version="1.7.0"
+ org.apache.sshd.client.auth;version="2.2.0",
+ org.apache.sshd.common;version="2.2.0",
+ org.apache.sshd.common.kex;version="2.2.0",
+ org.apache.sshd.common.keyprovider;version="2.2.0",
+ org.apache.sshd.server;version="2.2.0",
+ org.apache.sshd.server.auth;version="2.2.0",
+ org.apache.sshd.server.auth.password;version="2.2.0",
+ org.apache.sshd.server.channel;version="2.3.0",
+ org.apache.sshd.server.command;version="2.2.0",
+ org.apache.sshd.server.keyprovider;version="2.2.0",
+ org.apache.sshd.server.session;version="2.2.0"
 Require-Bundle: de.rcenvironment.core.utils.testing;bundle-version="7.1.0"

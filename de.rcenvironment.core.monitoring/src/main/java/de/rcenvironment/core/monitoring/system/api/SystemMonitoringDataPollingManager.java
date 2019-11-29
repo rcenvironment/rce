@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.monitoring.system.api;
@@ -66,7 +66,9 @@ public class SystemMonitoringDataPollingManager {
         }
         final AsyncSystemMonitoringDataFetchTask backgroundTask =
             new AsyncSystemMonitoringDataFetchTask(callbackListener, remoteService);
-        final Future<?> newFuture = asyncTaskService.scheduleAtFixedRate(backgroundTask, REFRESH_INTERVAL_MSEC);
+        final Future<?> newFuture =
+            asyncTaskService.scheduleAtFixedInterval("System Monitoring: Background fetching of system data", backgroundTask,
+                REFRESH_INTERVAL_MSEC);
         futureMap.put(nodeId, newFuture);
         log.debug("Started system monitoring background task for node " + nodeId);
     }

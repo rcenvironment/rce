@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -11,6 +11,8 @@ package de.rcenvironment.core.instancemanagement.internal;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
@@ -29,7 +31,9 @@ import de.rcenvironment.core.utils.incubator.FileSystemOperations;
  * I/O operations for managing external installations, like downloading, unpacking, deleting etc.
  * 
  * @author Robert Mischke
+ * @author Brigitte Boden
  * @author Thorsten Sommer (integration of {@link FileCompressionService})
+ * @author Lukas Rosenbach
  */
 public class DeploymentOperationsImpl {
 
@@ -44,6 +48,8 @@ public class DeploymentOperationsImpl {
     private final Log log = LogFactory.getLog(getClass());
 
     private volatile boolean downloadRunning = false;
+    
+    private volatile boolean downloadFinished = false;
 
     private TextOutputReceiver userOutputReceiver;
 
@@ -54,9 +60,11 @@ public class DeploymentOperationsImpl {
      * @param targetFile the file to write to
      * @param allowOverwrite whether the target file is allowed to already exist
      * @param showProgress whether the progress should be shown on console
+     * @param timeout time in milliseconds until download is canceled
      * @throws IOException on download failure, or if the target file already exists with "allowOverwrite" set to false
      */
-    public void downloadFile(final String url, final File targetFile, boolean allowOverwrite, boolean showProgress) throws IOException {
+    public void downloadFile(final String url, final File targetFile, boolean allowOverwrite,
+            boolean showProgress, int timeout) throws IOException {
         // - MUST detect the case if the URL is invalid or does not exist (e.g., do not just return an empty file)
         // - SHOULD try to detect incomplete downloads (disk full etc), if possible
         final String targetPath = targetFile.getAbsolutePath();
@@ -78,10 +86,19 @@ public class DeploymentOperationsImpl {
             throw new IOException("Download failed, not enough diskspace.");
         }
 
-        // FIXME validate URL and file strings for security
-
+        // FIXME validate file strings for security
+        
+        //validate URL
+        try {
+            new URI(url);
+        } catch (URISyntaxException e){
+            throw new IOException("URL is not valid: " + e.getMessage());
+        }
+        
+        
         downloadRunning = true;
-
+        downloadFinished = false;
+        
         if (showProgress) {
             // spawn background task to show download progress
             ConcurrencyUtils.getAsyncTaskService().execute("Instance Management: Print download progress to console", () -> {
@@ -102,18 +119,37 @@ public class DeploymentOperationsImpl {
                         log.error("InterruptedException while download progress thread sleeps.");
                     }
                 }
-                userOutputReceiver.addOutput("Download finished.");
+                
+                if (downloadFinished) {
+                    userOutputReceiver.addOutput("Download finished.");
+                }
             });
 
         }
-
+        
+        
         try {
-            FileUtils.copyURLToFile(new URL(url), tempDownloadFile);
-            if (!tempDownloadFile.renameTo(targetFile)) {
+            try {
+                FileUtils.copyURLToFile(new URL(url), tempDownloadFile, timeout, timeout);
+            } catch (IOException e) {
+                downloadFinished = false;
+                throw new IOException("Download failed: " + e.getMessage());
+            }
+            boolean renamedSucessfully;
+            try {
+                renamedSucessfully = tempDownloadFile.renameTo(targetFile);
+            } catch (SecurityException e) {
+                downloadFinished = false;
+                throw new IOException(
+                        "Not allowed to write to " + tempDownloadFile.getAbsolutePath() + " or " + targetPath);
+            }
+            if (!renamedSucessfully) {
+                downloadFinished = false;
                 throw new IOException(
                     "Failed to move the completed download file " + tempDownloadFile.getAbsolutePath() + " to " + targetPath);
+            } else {
+                downloadFinished = true;
             }
-
         } finally {
             downloadRunning = false;
         }

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.internal;
@@ -52,6 +52,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Heinrich Wendel
  * @author Tobias Menden
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
 public class ConfigurationServiceImplTest {
 

@@ -53,6 +53,13 @@
                         </itemizedlist></para>
                 </listitem>
                 <listitem>
+                	<para>
+                		In the eclipse preferences (avaible from "Window"-> "Preferences"), open the page 
+                		"Plugin-Development" -> "DS Annotations" and check the box for "Generate descriptors
+                		for annotated sources." Set the descriptor directory to "OSGI-INF/generated".
+                	</para>
+                </listitem>
+                <listitem>
                     <para>Optionally, install these plugins (for example using "Help > Eclipse
                         Marketplace"): </para>
                     <itemizedlist>

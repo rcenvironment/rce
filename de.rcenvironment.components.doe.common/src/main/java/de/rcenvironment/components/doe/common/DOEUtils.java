@@ -3,11 +3,12 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.doe.common;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -49,16 +50,18 @@ public final class DOEUtils {
         try {
             if (path != null) {
                 FileWriter fw = new FileWriter(new File(path));
+                BufferedWriter bw = new BufferedWriter(fw);
                 CSVPrinter printer = CSVFormat.newFormat(';')
-                    .withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n").print(fw);
+                    .withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n").print(bw);
                 for (String head : header) {
                     printer.print(head);
                 }
                 printer.println();
                 for (int i = 0; i < tableValues.length; i++) {
                     printer.printRecord(tableValues[i]);
-                    printer.flush();
                 }
+
+                printer.flush();
                 printer.close();
             }
         } catch (IOException e) {
@@ -88,8 +91,9 @@ public final class DOEUtils {
                 List<String> orderedInputs = new LinkedList<>(results.get(0).keySet());
                 Collections.sort(orderedInputs);
                 FileWriter fw = new FileWriter(new File(path));
+                BufferedWriter bw = new BufferedWriter(fw);
                 CSVPrinter printer = CSVFormat.newFormat(';')
-                    .withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n").print(fw);
+                    .withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n").print(bw);
                 for (String outputName : outputs) {
                     printer.print(outputName);
                 }
@@ -107,8 +111,8 @@ public final class DOEUtils {
                         }
                     }
                     printer.println();
-                    printer.flush();
                 }
+                printer.flush();
                 printer.close();
             }
         } catch (IOException e) {

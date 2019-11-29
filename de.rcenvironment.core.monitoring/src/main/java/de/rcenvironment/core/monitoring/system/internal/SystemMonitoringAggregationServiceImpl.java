@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.monitoring.system.internal;
@@ -45,7 +45,6 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
 import de.rcenvironment.toolkit.utils.common.DefaultTimeSource;
 
@@ -134,8 +133,10 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         systemLoadInformationCollector =
             new SystemLoadInformationCollector(systemDataService, SYSTEM_LOAD_INFORMATION_COLLECTION_BUFFER_SIZE, new DefaultTimeSource(),
                 MINIMUM_TIME_DELTA_TO_ACCEPT_BETWEEN_UPDATES, MAXIMUM_TIME_DELTA_TO_ACCEPT_BEFORE_STARTING_OVER);
-        systemLoadCollectorFuture = asyncTaskService.scheduleAtFixedRate(systemLoadInformationCollector,
-            SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC);
+        // this is one of the few places where "scheduleAtFixedRate()" is actually appropriate -- misc_ro
+        systemLoadCollectorFuture =
+            asyncTaskService.scheduleAtFixedRate("System Monitoring: Collect system load information", systemLoadInformationCollector,
+                SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC);
         log.debug("System load collector initialized");
     }
 
@@ -203,36 +204,27 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         final Semaphore finishCounter = new Semaphore(0); // not using a CDL as it does not provide a "release all" method
 
         for (final T nodeId : nodeIds) {
-            asyncTaskService.execute(new Runnable() {
+            asyncTaskService.execute("Fetch system load data from a single node", () -> {
 
-                @Override
-                @TaskDescription("Fetch system load data from a single node")
-                public void run() {
-                    final RemotableSystemMonitoringService remotableService =
-                        communicationService.getRemotableService(RemotableSystemMonitoringService.class, nodeId);
-                    SystemLoadInformation systemLoadInformation;
-                    try {
-                        // note: the division relies on the assumption that all nodes use the same polling interval
-                        systemLoadInformation =
-                            remotableService.getSystemLoadInformation(timeSpanMsec / SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC);
-                        concurrentResultMap.put(nodeId, systemLoadInformation);
-                    } catch (RemoteOperationException e) {
-                        log.warn("Error while fetching remote system load data: " + e.toString());
-                    }
-                    finishCounter.release();
+                final RemotableSystemMonitoringService remotableService =
+                    communicationService.getRemotableService(RemotableSystemMonitoringService.class, nodeId);
+                SystemLoadInformation systemLoadInformation;
+                try {
+                    // note: the division relies on the assumption that all nodes use the same polling interval
+                    systemLoadInformation =
+                        remotableService.getSystemLoadInformation(timeSpanMsec / SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC);
+                    concurrentResultMap.put(nodeId, systemLoadInformation);
+                } catch (RemoteOperationException e) {
+                    log.warn("Error while fetching remote system load data: " + e.toString());
                 }
+                finishCounter.release();
+
             });
         }
 
         // trigger standard timeout
-        asyncTaskService.scheduleAfterDelay(new Runnable() {
-
-            @Override
-            @TaskDescription("Enforce time limit while waiting for system load information responses")
-            public void run() {
-                finishCounter.release(nodeCount);
-            }
-        }, timeLimitMsec);
+        asyncTaskService.scheduleAfterDelay("Enforce time limit while waiting for system load information responses",
+            () -> finishCounter.release(nodeCount), timeLimitMsec);
 
         // use twice the individual limit as a hard fallback time limit (arbitrary)
         if (!finishCounter.tryAcquire(nodeCount, timeLimitMsec * 2, TimeUnit.MILLISECONDS)) {

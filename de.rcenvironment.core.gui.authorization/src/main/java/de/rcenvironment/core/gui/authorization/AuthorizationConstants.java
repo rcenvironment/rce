@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 package de.rcenvironment.core.gui.authorization;
@@ -31,6 +31,13 @@ final class AuthorizationConstants {
     protected static final ImageDescriptor SORT_DESC =
         ImageDescriptor.createFromURL(AuthorizationGroupDialog.class.getResource("/resources/icons/sortAlphaDesc.gif"));
 
+    //TODO find and insert fitting icons
+    protected static final ImageDescriptor LABEL_TYPE_INTERNAL =
+        ImageDescriptor.createFromURL(AuthorizationGroupDialog.class.getResource("/resources/icons/lock.png"));
+
+    protected static final ImageDescriptor LABEL_TYPE_DISPLAY =
+        ImageDescriptor.createFromURL(AuthorizationGroupDialog.class.getResource("/resources/icons/lock.png"));
+    
     protected static final ImageDescriptor COLLAPSE_ALL_ICON = PlatformUI.getWorkbench().getSharedImages()
         .getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL);
 

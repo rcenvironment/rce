@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.model.api;
@@ -73,6 +73,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Marc Stammerjohann
  * @author Oliver Seebach
  * @author Robert Mischke (8.0.0 id adaptations)
+ * @author Brigitte Boden
  * 
  *         Note: Very low-level parsing. See issue
  *         https://mantis.sc.dlr.de/view.php?id=11849 that covers the rework.

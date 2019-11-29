@@ -3,58 +3,57 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.utils.ssh.jsch;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 
 /**
  * Provides test behavior for incoming commands.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (fixed issue after upgrading to SSHD 2.x)
  */
 public class DummyCommand implements Command {
-    
+
     /** Test constant. */
     public static final String EMPTY_STRING = "";
-    
+
     protected ExitCallback exitCallback;
 
     private String stdout;
-    
+
     private String stderr;
-    
+
     private int exitValue;
-    
+
     private OutputStream stdoutStream;
 
     private OutputStream stderrStream;
-    
 
     public DummyCommand() {
         this(null, null, 0);
     }
-    
+
     public DummyCommand(String stdout, String stderr) {
         this(stdout, stderr, 0);
     }
-    
+
     public DummyCommand(String stdout, String stderr, int exitValue) {
         this.stdout = stdout;
         this.stderr = stderr;
         this.exitValue = exitValue;
     }
-    
+
     @Override
     public void setInputStream(InputStream in) {}
 
@@ -74,8 +73,7 @@ public class DummyCommand implements Command {
     }
 
     @Override
-    public void start(Environment env) throws IOException {
-
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         if (stdout != null) {
             stdoutStream.write(stdout.getBytes());
         } else {
@@ -88,12 +86,19 @@ public class DummyCommand implements Command {
         }
         stdoutStream.flush();
         stderrStream.flush();
-        IOUtils.closeQuietly(stdoutStream);
-        IOUtils.closeQuietly(stderrStream);
         exitCallback.onExit(exitValue);
     }
 
     @Override
-    public void destroy() {}
-    
+    public void destroy(ChannelSession channelSession) throws IOException {
+        // not necessary for the test to work, but as it is done similarly
+        // in live code, do it here too to catch related errors -- misc_ro
+        if (stdoutStream != null) {
+            stdoutStream.close();
+        }
+        if (stderrStream != null) {
+            stderrStream.close();
+        }
+    }
+
 }

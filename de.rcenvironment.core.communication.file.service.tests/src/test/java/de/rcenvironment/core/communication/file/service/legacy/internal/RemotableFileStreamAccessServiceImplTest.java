@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.file.service.legacy.internal;
@@ -77,7 +77,7 @@ public class RemotableFileStreamAccessServiceImplTest {
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
         dataRef =
-            new DataReference(dmUuid.toString(), NodeIdentifierTestUtils.createTestDefaultLogicalNodeIdWithDisplayName("dummy"), birefs);
+            new DataReference(dmUuid.toString(), NodeIdentifierTestUtils.createTestDefaultLogicalNodeId(), birefs);
         inputStream = EasyMock.createNiceMock(InputStream.class);
         EasyMock.expect(inputStream.read()).andReturn(noOfBytes).anyTimes();
         EasyMock.expect(inputStream.read(EasyMock.aryEq(new byte[noOfBytes]),
@@ -306,8 +306,7 @@ public class RemotableFileStreamAccessServiceImplTest {
 
         @Override
         public void finishUpload(String id, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,
-            RemoteOperationException {
-        }
+            RemoteOperationException {}
 
         @Override
         public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet, Boolean alreadyCompressed) throws IOException,

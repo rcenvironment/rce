@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -15,11 +15,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.instancemanagement.InstanceStatus;
+import de.rcenvironment.core.instancemanagement.InstanceStatus.InstanceState;
 import de.rcenvironment.core.utils.testing.ParameterizedTestUtils;
 import de.rcenvironment.core.utils.testing.TestParametersProvider;
 
@@ -28,6 +32,7 @@ import de.rcenvironment.core.utils.testing.TestParametersProvider;
  * it requires certain external resources.
  * 
  * @author Robert Mischke
+ * @author Lukas Rosenbach
  */
 public class InstanceOperationsImplManualTests {
 
@@ -75,10 +80,16 @@ public class InstanceOperationsImplManualTests {
         InstanceOperationsImpl instanceOperations = new InstanceOperationsImpl();
 
         assertFalse(InstanceOperationsUtils.isProfileLocked(profileDir));
-
+        
+        ConcurrentMap<String, InstanceStatus> profileIdToInstanceStatusMap = new ConcurrentHashMap<>();
+        for (File profile : profileDirList) {
+            profileIdToInstanceStatusMap.put(profile.getName(), new InstanceStatus(installationDir.getName(), InstanceState.NOTRUNNING));
+        }
+        
         for (int i = 0; i < repetitions; i++) {
 
-            instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, 0, null, false);
+            instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, profileIdToInstanceStatusMap,
+                    0, null, false);
             assertTrue("profile not locked after start", InstanceOperationsUtils.isProfileLocked(profileDir));
 
             instanceOperations.shutdownInstance(profileDirList, 0, null);

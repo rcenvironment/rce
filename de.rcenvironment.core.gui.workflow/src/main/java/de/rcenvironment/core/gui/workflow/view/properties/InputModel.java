@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.view.properties;
@@ -28,7 +28,6 @@ import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides central access to input values, processed and pending ones.
@@ -68,15 +67,12 @@ public final class InputModel {
                 serviceRegistry.getService(CommunicationService.class),
                 serviceRegistry.getService(WorkflowHostService.class),
                 serviceRegistry.getService(DistributedNotificationService.class));
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute("Initial inputs subscriptions", () -> {
 
-                @Override
-                @TaskDescription("Initial inputs subscriptions")
-                public void run() {
-                    currentInputManager
-                        .updateSubscriptionsForPrefixes(new String[] { ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT });
-                    initialSubscriptionLatch.countDown();
-                }
+                currentInputManager
+                    .updateSubscriptionsForPrefixes(new String[] { ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT });
+                initialSubscriptionLatch.countDown();
+
             });
         }
         return instance;

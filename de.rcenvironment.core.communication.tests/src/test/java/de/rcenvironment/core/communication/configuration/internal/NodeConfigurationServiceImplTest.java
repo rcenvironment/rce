@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.configuration.internal;
@@ -50,6 +50,8 @@ public class NodeConfigurationServiceImplTest {
      */
     private class DummyConfigurationService extends MockConfigurationService.ThrowExceptionByDefault {
 
+        private static final String ERROR_LOADING_CONFIGURATION = "Error loading configuration";
+
         @Override
         public ConfigurationSegment getConfigurationSegment(String relativePath) {
             if ("network".equals(relativePath)) {
@@ -57,14 +59,21 @@ public class NodeConfigurationServiceImplTest {
                     return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
                         "/config-tests/example1.json"));
                 } catch (IOException e) {
-                    throw new AssertionError("Error loading configuration", e);
+                    throw new AssertionError(ERROR_LOADING_CONFIGURATION, e);
                 }
             } else if ("sshRemoteAccess".equals(relativePath)) {
                 try {
                     return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
                         "/config-tests/exampleSsh.json"));
                 } catch (IOException e) {
-                    throw new AssertionError("Error loading configuration", e);
+                    throw new AssertionError(ERROR_LOADING_CONFIGURATION, e);
+                }
+            } else if ("uplink".equals(relativePath)) {
+                try {
+                    return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
+                        "/config-tests/exampleUplink.json"));
+                } catch (IOException e) {
+                    throw new AssertionError(ERROR_LOADING_CONFIGURATION, e);
                 }
             } else {
                 fail("relativePath must be \"network\" or \"ssh\"");

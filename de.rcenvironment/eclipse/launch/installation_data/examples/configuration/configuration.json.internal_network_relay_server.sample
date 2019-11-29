@@ -1,0 +1,27 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is an example config for a relay in the internal network.
+// Because the "isRelay" option is set, RCE instances that connect to this instance will see each other
+// as if they were directly connected.
+//
+{
+	"general" : {
+		"instanceName" : "Example relay started by \"${systemUser}\" on ${hostName}",
+		"isRelay": true
+	},
+	"network" : {
+		"serverPorts" : {
+			"relayPort1" : {
+				"ip" : "127.0.0.1",
+				"port" : 21000
+			}
+		},
+		"ipFilter" : {
+			"enabled" : false,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	}
+}

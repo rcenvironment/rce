@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.internal;
@@ -32,7 +32,6 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Periodically checks whether any nodes/instances hosting at least one component have been restarted since the start of the workflow. If
@@ -111,8 +110,8 @@ public class NodeRestartWatcher implements Runnable {
         }
     }
 
+    // Periodically check for restarts of nodes running workflow components (old task description)
     @Override
-    @TaskDescription("Periodically check for restarts of nodes running workflow components")
     public synchronized void run() {
         Set<String> lostComponentExecIds = null;
         for (Map.Entry<InstanceNodeSessionId, List<String>> entry : instanceSessionIdsAndHostedComponentExecIds.entrySet()) {

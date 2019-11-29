@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.communication.views.contributors;
@@ -36,7 +36,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Contributes the subtree showing the list of current SSH connections.
@@ -107,53 +106,29 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                                 }
                             }
                             final String passphraseToConnect = passphrase;
-                            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-
-                                @TaskDescription("Connect SSH session.")
-                                @Override
-                                public void run() {
-                                    sshConnectionService.connectSession(connectionId, passphraseToConnect);
-                                }
-                                
-                            });
+                            ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
+                                () -> sshConnectionService.connectSession(connectionId, passphraseToConnect));
 
                         } else {
-                            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-                                
-                                @TaskDescription("Connect SSH session.")
-                                @Override
-                                public void run() {
-                                    sshConnectionService.connectSession(connectionId);
-                                }
-                            });
+                            ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
+                                () -> sshConnectionService.connectSession(connectionId));
+
                         }
                     }
                 });
                 break;
             case STOP:
-                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                ConcurrencyUtils.getAsyncTaskService().execute("Disconnect SSH Connection.",
+                    () -> sshConnectionService.disconnectSession(connectionId));
 
-                    @TaskDescription("Disconnect SSH Connection.")
-                    @Override
-                    public void run() {
-                        sshConnectionService.disconnectSession(connectionId);
-                    }
-                    
-                });
                 break;
             case EDIT:
                 performEdit();
                 break;
             case DELETE:
-                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+                ConcurrencyUtils.getAsyncTaskService().execute("Dispose SSH Connection.",
+                    () -> sshConnectionService.disposeConnection(connectionId));
 
-                    @TaskDescription("Dispose SSH Connection.")
-                    @Override
-                    public void run() {
-                        sshConnectionService.disposeConnection(connectionId);
-                    }
-                    
-                });
                 break;
             default:
                 break;
@@ -161,19 +136,21 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
         }
 
         private void performEdit() {
+            String storedPassphrase = null;
+            if (sshConnectionSetup.getUsePassphrase()) {
+                // Retrieve stored passphrase, if it exists
+                storedPassphrase = sshConnectionService.retrieveSshConnectionPassword(sshConnectionSetup.getId());
+
+            }
             EditSshConnectionDialog dialog =
                 new EditSshConnectionDialog(treeViewer.getTree().getShell(), sshConnectionSetup.getDisplayName(),
                     sshConnectionSetup.getHost(), sshConnectionSetup.getPort(), sshConnectionSetup.getUsername(),
                     sshConnectionSetup.getKeyfileLocation(), sshConnectionSetup.getUsePassphrase(),
-                    sshConnectionSetup.getStorePassphrase(),
+                    storedPassphrase != null,
                     sshConnectionSetup.getConnectOnStartUp(),
                     sshConnectionSetup.getAutoRetry());
-            if (sshConnectionSetup.getStorePassphrase()) {
-                // Retrieve stored passphrase
-                String passphrase = sshConnectionService.retrieveSshConnectionPassword(sshConnectionSetup.getId());
-                if (passphrase != null) {
-                    dialog.setPassphrase(passphrase);
-                }
+            if (storedPassphrase != null) {
+                dialog.setPassphrase(storedPassphrase);
             }
 
             final String id = sshConnectionSetup.getId();
@@ -189,17 +166,12 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 final String keyfileLocation = dialog.getKeyfileLocation();
                 final boolean usePassphrase = dialog.getUsePassphrase();
                 final boolean autoRetry = dialog.getAutoRetry();
-                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-
-                    @TaskDescription("Edit SSH Connection.")
-                    @Override
-                    public void run() {
-                        sshConnectionService.editSshConnection(new SshConnectionContext(id, connectionName, host, port, username,
-                            keyfileLocation, usePassphrase, connectImmediately, autoRetry));
-                        sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
-                        if (connectImmediately) {
-                            sshConnectionService.connectSession(id, passphrase);
-                        }
+                ConcurrencyUtils.getAsyncTaskService().execute("Edit SSH Connection.", () -> {
+                    sshConnectionService.editSshConnection(new SshConnectionContext(id, connectionName, "", host, port, username,
+                        keyfileLocation, usePassphrase, connectImmediately, autoRetry, false));
+                    sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
+                    if (connectImmediately) {
+                        sshConnectionService.connectSession(id, passphrase);
                     }
                 });
             }
@@ -232,7 +204,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
         }
     }
 
-    private static final int ROOT_PRIORITY = 30;
+    private static final int ROOT_PRIORITY = 40;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -250,7 +222,9 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
     private final WeakHashMap<SshConnectionSetup, SshConnectionSetupNode> wrapperMap = new WeakHashMap<>();
 
-    public SshConnectionSetupsListContributor() {
+    private NetworkViewCallback callback;
+
+    public SshConnectionSetupsListContributor(NetworkViewCallback callback) {
         super();
         connectedImage = ImageDescriptor.createFromURL(
             getClass().getResource("/resources/icons/connectSsh.png")).createImage(); //$NON-NLS-1$
@@ -264,6 +238,8 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
         sshConnectionSetups = sshConnectionService.getAllSshConnectionSetups();
 
         registerListeners();
+
+        this.callback = callback;
     }
 
     @Override
@@ -306,20 +282,35 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             final String keyfileLocation = dialog.getKeyfileLocation();
             final boolean usePassphrase = dialog.getUsePassphrase();
 
-            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            //
+            SshConnectionContext contextSsh = new SshConnectionContext(null, connectionName, keyfileLocation, host, port, username,
+                keyfileLocation, usePassphrase, connectImmediately, autoRetry, usePassphrase);
 
-                @TaskDescription("Create new SSH Connection.")
-                @Override
-                public void run() {
-                    String id =
-                        sshConnectionService.addSshConnection(new SshConnectionContext(null, connectionName, host, port, username,
-                            keyfileLocation, usePassphrase, connectImmediately, autoRetry));
-                    sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
-                    if (connectImmediately) {
-                        sshConnectionService.connectSession(id, passphrase);
+            if (sshConnectionService.sshConnectionAlreadyExists(contextSsh)) {
+                display.asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                        errorDialog.setMessage(StringUtils.format("SSH connection with host %s and port %d already exists.",
+                            host, port));
+                        errorDialog.open();
                     }
+                });
+                return;
+            }
+            //
+
+            ConcurrencyUtils.getAsyncTaskService().execute("Create new SSH Connection.", () -> {
+                // add contextSsh here instead of new SshConnectionContext
+                String id = sshConnectionService.addSshConnection(contextSsh);
+                sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
+                if (connectImmediately) {
+                    sshConnectionService.connectSession(id, passphrase);
                 }
             });
+            //
+
         }
     }
 
@@ -408,6 +399,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                         Object node = getSetupNodeForSetup(setup);
                         treeViewer.refresh(node);
                         treeViewer.setExpandedState(node, true);
+                        callback.onStateChanged(node);
                     }
                 });
             }
@@ -443,6 +435,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                         }
                         Object node = getSetupNodeForSetup(setup);
                         treeViewer.refresh(node);
+                        callback.onStateChanged(node);
                     }
                 });
             }
@@ -458,6 +451,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                         }
                         Object node = getSetupNodeForSetup(setup);
                         treeViewer.refresh(node);
+                        callback.onStateChanged(node);
                     }
                 });
             }

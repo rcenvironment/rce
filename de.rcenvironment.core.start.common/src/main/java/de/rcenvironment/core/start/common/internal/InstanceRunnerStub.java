@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.start.common.internal;
@@ -11,6 +11,10 @@ package de.rcenvironment.core.start.common.internal;
 import java.util.List;
 
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.start.common.InstanceRunner;
@@ -25,17 +29,20 @@ import de.rcenvironment.core.start.common.validation.api.InstanceValidationServi
  * 
  * @author Robert Mischke
  */
+@Component
 public class InstanceRunnerStub extends InstanceRunner {
 
     private static final String THIS_METHOD_SHOULD_NEVER_BE_CALLED = "This method should never be called";
 
     @Override
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, name = "Command Execution Service", policy = ReferencePolicy.STATIC)
     public void bindCommandExecutionService(CommandExecutionService newService) {
         LogFactory.getLog(getClass()).debug("Injecting shared CommandExecutionService");
         super.bindCommandExecutionService(newService);
     }
     
     @Override
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, name = "Instance Validation Service", policy = ReferencePolicy.STATIC)
     public void bindInstanceValidationService(InstanceValidationService newService) {
         LogFactory.getLog(getClass()).debug("Injecting shared InstanceStartupValidationService");
         super.bindInstanceValidationService(newService);

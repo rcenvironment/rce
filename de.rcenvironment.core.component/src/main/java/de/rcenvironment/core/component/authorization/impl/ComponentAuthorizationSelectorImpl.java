@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.authorization.impl;
@@ -18,9 +18,16 @@ import de.rcenvironment.core.component.authorization.api.ComponentAuthorizationS
 public class ComponentAuthorizationSelectorImpl implements ComponentAuthorizationSelector {
 
     private String id;
+    
+    private boolean assignable;
 
     public ComponentAuthorizationSelectorImpl(String identifier) {
+        this(identifier, true);
+    }
+    
+    public ComponentAuthorizationSelectorImpl(String identifier, boolean assignable) {
         this.id = identifier;
+        this.assignable = assignable;
     }
 
     @Override
@@ -45,6 +52,11 @@ public class ComponentAuthorizationSelectorImpl implements ComponentAuthorizatio
     @Override
     public String toString() {
         return id;
+    }
+
+    @Override
+    public boolean isAssignable() {
+        return assignable;
     }
 
 }

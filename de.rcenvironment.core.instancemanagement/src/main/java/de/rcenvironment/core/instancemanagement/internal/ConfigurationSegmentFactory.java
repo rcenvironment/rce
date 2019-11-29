@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -87,7 +87,11 @@ public final class ConfigurationSegmentFactory {
 
         private final SshRemoteAccessSegment remoteAccess;
 
+        private final UplinkSegment uplink;
+
         private final PublishingSegment publishing;
+
+        private final AuthorizationSegment authorization;
 
         private final ComponentSettingsSegment componentSettings;
 
@@ -98,7 +102,9 @@ public final class ConfigurationSegmentFactory {
             backgroundMonitoringSegment = new BackgroundMonitoringSegment();
             network = new NetworkSegment();
             publishing = new PublishingSegment();
+            authorization = new AuthorizationSegment();
             remoteAccess = new SshRemoteAccessSegment();
+            uplink = new UplinkSegment();
             componentSettings = new ComponentSettingsSegment();
             sshServer = new SshServerSegment();
         }
@@ -119,8 +125,16 @@ public final class ConfigurationSegmentFactory {
             return publishing;
         }
 
+        public AuthorizationSegment getAuthorizationSegment() {
+            return authorization;
+        }
+
         public SshRemoteAccessSegment getRemoteAccess() {
             return remoteAccess;
+        }
+        
+        public UplinkSegment getUplink() {
+            return uplink;
         }
 
         public ComponentSettingsSegment getComponentSettings() {
@@ -188,6 +202,13 @@ public final class ConfigurationSegmentFactory {
         public SshRemoteAccessSegment sshRemoteAccess() {
             return container.getRemoteAccess();
         }
+        
+        /**
+         * @return the uplink segment.
+         */
+        public UplinkSegment uplink() {
+            return container.getUplink();
+        }
 
         /**
          * 
@@ -197,6 +218,16 @@ public final class ConfigurationSegmentFactory {
          */
         public PublishingSegment publishing() {
             return container.getPublishingSegment();
+        }
+
+        /**
+         * 
+         * Get authorization segment.
+         * 
+         * @return authorization segment.
+         */
+        public AuthorizationSegment authorization() {
+            return container.getAuthorizationSegment();
         }
 
         /**
@@ -612,7 +643,7 @@ public final class ConfigurationSegmentFactory {
                 }
             };
         }
-        
+
         /**
          * 
          * Get the autoRetryMaximumDelay {@link ConfigurationKey}.
@@ -621,7 +652,7 @@ public final class ConfigurationSegmentFactory {
          */
         public ConfigurationKey autoRetryMaximumDelay() {
             return new ConfigurationKey() {
-                
+
                 @Override
                 public String getConfigurationKey() {
                     return "autoRetryMaximumDelay";
@@ -796,6 +827,33 @@ public final class ConfigurationSegmentFactory {
 
     /**
      * 
+     * SshRemoteAccess field in the config.
+     *
+     * @author Brigitte Boden
+     */
+    public class UplinkSegment implements Segment {
+
+        private final UplinkConnectionListSegment uplinkConnections = new UplinkConnectionListSegment();
+
+        @Override
+        public String getPath() {
+            return "uplink/";
+        }
+
+        /**
+         * 
+         * Get exisiting {@link UplinkConnectionSegment}s.
+         * 
+         * @return all existing {@link UplinkConnectionSegment}s.
+         */
+        public UplinkConnectionListSegment uplinkConnections() {
+            return uplinkConnections;
+        }
+
+    }
+
+    /**
+     * 
      * Ssh connection list in the config.
      *
      * @author David Scholz
@@ -823,6 +881,42 @@ public final class ConfigurationSegmentFactory {
                 } else {
                     SshConnectionSegment segment = new SshConnectionSegment(connectionName);
                     sshConnectionNameToSegmentMap.put(connectionName, segment);
+                    return segment;
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 
+     * Uplink connection list in the config.
+     *
+     * @author Brigitte Boden
+     */
+    public class UplinkConnectionListSegment implements Segment {
+
+        private Map<String, UplinkConnectionSegment> uplinkConnectionNameToSegmentMap = new HashMap<>();
+
+        @Override
+        public String getPath() {
+            return "uplink/uplinkConnections";
+        }
+
+        /**
+         * 
+         * Gets existing or create a new {@link UplinkConnectionSegment}.
+         * 
+         * @param connectionId the connection name.
+         * @return the desired {@link SshConnectionSegment}.
+         */
+        public UplinkConnectionSegment getOrCreateUplinkConnection(String connectionId) {
+            synchronized (uplinkConnectionNameToSegmentMap) {
+                if (uplinkConnectionNameToSegmentMap.containsKey(connectionId)) {
+                    return uplinkConnectionNameToSegmentMap.get(connectionId);
+                } else {
+                    UplinkConnectionSegment segment = new UplinkConnectionSegment(connectionId);
+                    uplinkConnectionNameToSegmentMap.put(connectionId, segment);
                     return segment;
                 }
             }
@@ -916,6 +1010,107 @@ public final class ConfigurationSegmentFactory {
 
     /**
      * 
+     * Represents an uplink connection in the {@link UplinkConnectionListSegment}.
+     *
+     * @author Brigitte Boden
+     */
+    public class UplinkConnectionSegment implements Segment {
+
+        private final String id;
+
+        public UplinkConnectionSegment(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getPath() {
+            return "uplink/uplinkConnections/" + id;
+        }
+
+        /**
+         * 
+         * Get the display name {@link ConfigurationKey}.
+         * 
+         * @return display name key.
+         */
+        public ConfigurationKey displayName() {
+            return () -> "displayName";
+        }
+
+        
+        /**
+         * 
+         * Get the host {@link ConfigurationKey}.
+         * 
+         * @return host key.
+         */
+        public ConfigurationKey host() {
+            return () -> HOST;
+        }
+
+        /**
+         * 
+         * Get the port {@link ConfigurationKey}.
+         * 
+         * @return port key.
+         */
+        public ConfigurationKey port() {
+            return () -> PORT;
+        }
+
+        /**
+         * 
+         * Get the login name {@link ConfigurationKey}.
+         * 
+         * @return login name key.
+         */
+        public ConfigurationKey loginName() {
+            return () -> "loginName";
+        }
+
+        /**
+         * 
+         * Get the client ID {@link ConfigurationKey}.
+         * 
+         * @return client id key.
+         */
+        public ConfigurationKey clientID() {
+            return () -> "clientID";
+        }
+
+        /**
+         * 
+         * Get the connectOnStartup key {@link ConfigurationKey}.
+         * 
+         * @return connect on startup key.
+         */
+        public ConfigurationKey connectOnStartup() {
+            return () -> "connectOnStartup";
+        }
+
+        /**
+         * 
+         * Get the isRetry key {@link ConfigurationKey}.
+         * 
+         * @return retry key.
+         */
+        public ConfigurationKey autoRetry() {
+            return () -> "autoRetry";
+        }
+
+        /**
+         * 
+         * Get the isGateway key {@link ConfigurationKey}.
+         * 
+         * @return isGateway key.
+         */
+        public ConfigurationKey isGateway() {
+            return () -> "isGateway";
+        }
+    }
+
+    /**
+     * 
      * The published components of the instance.
      *
      * @author David Scholz
@@ -941,6 +1136,20 @@ public final class ConfigurationSegmentFactory {
                     return "components";
                 }
             };
+        }
+    }
+
+    /**
+     * 
+     * The published components of the instance in profile version >= 2.
+     *
+     * @author Alexander Weinert
+     */
+    public class AuthorizationSegment implements Segment {
+
+        @Override
+        public String getPath() {
+            return "authorization/";
         }
     }
 
@@ -1138,7 +1347,7 @@ public final class ConfigurationSegmentFactory {
                 }
             };
         }
-        
+
         /**
          * 
          * Get the password hash {@link ConfigurationKey}.

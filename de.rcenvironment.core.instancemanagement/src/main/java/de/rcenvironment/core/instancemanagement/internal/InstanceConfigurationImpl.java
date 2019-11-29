@@ -3,15 +3,16 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.mindrot.jbcrypt.BCrypt;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -28,23 +29,46 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Provides operations to configure the configuration.json via the {@link InstanceManagementCommandPlugin}.
  * 
  * @author David Scholz
+ * @author Lukas Rosenbach
  */
 public class InstanceConfigurationImpl {
+
+    private static final String SLASH = "/";
+
+    private static final String DOT = ".";
+
+    private static final String TO_UNPUBLISH_COMPONENT = "to unpublish component ";
+
+    private static final String TO_PUBLISH_NEW_COMPONENT = "to publish new component.";
 
     private static final String ERROR_PATTERN = "Failed to %s";
 
     private final SegmentBuilder builder = ConfigurationSegmentFactory.getSegmentBuilder();
 
-    private ConfigurationStore configStore;
+    private ConfigurationStore configurationStore;
 
-    private ConfigurationSegment snapshot;
+    private ConfigurationSegment configurationSnapshot;
 
-    public InstanceConfigurationImpl(final File config) throws InstanceConfigurationException {
-        configStore = ConfigurationStoreFactory.getConfigurationStore(config);
+    private ConfigurationStore componentsStore;
+
+    private ConfigurationSegment componentsSnapshot;
+
+    private int profileVersion;
+
+    public InstanceConfigurationImpl(final ConfigFilesCollection files, int profileVersion)
+        throws InstanceConfigurationException {
+        this.profileVersion = profileVersion;
+        configurationStore = ConfigurationStoreFactory.getConfigurationStore(files.getConfigurationFile());
         try {
-            snapshot = configStore.getSnapshotOfRootSegment();
+            configurationSnapshot = configurationStore.getSnapshotOfRootSegment();
         } catch (IOException e) {
             throw new InstanceConfigurationException("Failed to create a snapshot of the configuration root segment.");
+        }
+        componentsStore = ConfigurationStoreFactory.getConfigurationStore(files.getComponentsFile());
+        try {
+            componentsSnapshot = componentsStore.getSnapshotOfRootSegment();
+        } catch (IOException e) {
+            throw new InstanceConfigurationException("Failed to create a snapshot of the components root segment.");
         }
     }
 
@@ -56,7 +80,7 @@ public class InstanceConfigurationImpl {
      */
     public void setInstanceComment(String comment) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.general().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.general().getPath());
             writableSegment.setString(builder.general().comment().getConfigurationKey(), comment);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set a comment."), e);
@@ -73,7 +97,7 @@ public class InstanceConfigurationImpl {
     public void setInstanceName(String name) throws InstanceConfigurationException {
         try {
             WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.general().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.general().getPath());
             writableSegment.setString(builder.general().instanceName().getConfigurationKey(), name);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set an instance name."), e);
@@ -89,7 +113,7 @@ public class InstanceConfigurationImpl {
      */
     public void setRelayFlag(boolean isRelay) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.general().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.general().getPath());
             writableSegment.setBoolean(builder.general().isRelay().getConfigurationKey(), isRelay);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set the relay flag."), e);
@@ -105,7 +129,7 @@ public class InstanceConfigurationImpl {
      */
     public void setWorkflowHostFlag(boolean isWorkflowHost) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.general().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.general().getPath());
             writableSegment.setBoolean(builder.general().isWorkflowHost().getConfigurationKey(), isWorkflowHost);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set the workflow host flag."), e);
@@ -120,7 +144,7 @@ public class InstanceConfigurationImpl {
      */
     public void setCustomNodeId(String customNodeId) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.network().getPath());
             // note: not using the unnecessarily complex builder approach for new code here
             writableSegment.setString("customNodeId", customNodeId);
         } catch (ConfigurationException e) {
@@ -137,7 +161,7 @@ public class InstanceConfigurationImpl {
      */
     public void setTempDirectory(String path) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.general().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.general().getPath());
             writableSegment.setString(builder.general().tempDirectory().getConfigurationKey(), path);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "set the temp directory"), e);
@@ -153,7 +177,8 @@ public class InstanceConfigurationImpl {
      */
     public void setIpFilterFlag(boolean isFilterEnabled) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
             writableSegment.setBoolean(builder.network().ipFilter().enabled().getConfigurationKey(), isFilterEnabled);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to set the ip filter flag for a server instance."),
@@ -170,7 +195,8 @@ public class InstanceConfigurationImpl {
      */
     public void addAllowedIp(String ip) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
 
             List<String> ipList = new LinkedList<>();
             for (String presentIP : writableSegment.getStringArray(builder.network().ipFilter().allowedIps().getConfigurationKey())) {
@@ -197,7 +223,8 @@ public class InstanceConfigurationImpl {
      */
     public void removeAllowedIp(String ip) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().ipFilter().getPath());
             List<String> ipList = writableSegment.getStringArray(builder.network().ipFilter().allowedIps().getConfigurationKey());
             for (String s : ipList) {
                 if (s.equals(ip)) {
@@ -225,7 +252,8 @@ public class InstanceConfigurationImpl {
      */
     public void setBackgroundMonitoring(String id, int interval) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.backgroundMonitoring().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.backgroundMonitoring().getPath());
             writableSegment.setString(builder.backgroundMonitoring().enableIds().getConfigurationKey(), id);
             writableSegment.setInteger(builder.backgroundMonitoring().intervalSeconds().getConfigurationKey(), interval);
         } catch (ConfigurationException e) {
@@ -244,7 +272,7 @@ public class InstanceConfigurationImpl {
     public void addConnection(ConfigurationConnection connection) throws InstanceConfigurationException {
         try {
             WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.network().connections().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().connections().getPath());
             ConfigurationSegment subsegment = writableSegment.getSubSegment(connection.getConnectionName());
             WritableConfigurationSegment newConnectionSegment;
             if (!subsegment.isPresentInCurrentConfiguration()) {
@@ -280,7 +308,7 @@ public class InstanceConfigurationImpl {
     public void removeConnection(String connection) throws InstanceConfigurationException {
         try {
             WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.network().connections().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().connections().getPath());
             ConfigurationSegment subsegment = writableSegment.getSubSegment(connection);
             if (!subsegment.isPresentInCurrentConfiguration()) {
                 return;
@@ -303,7 +331,7 @@ public class InstanceConfigurationImpl {
      */
     public void setRequestTimeout(long timeout) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.network().getPath());
             writableSegment.setLong(builder.network().requestTimeoutMsec().getConfigurationKey(), timeout);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to set request timeout."));
@@ -319,7 +347,7 @@ public class InstanceConfigurationImpl {
      */
     public void setForwardingTimeout(long timeout) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().getPath());
+            WritableConfigurationSegment writableSegment = configurationSnapshot.getOrCreateWritableSubSegment(builder.network().getPath());
             writableSegment.setLong(builder.network().forwardingTimeoutMsec().getConfigurationKey(), timeout);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to set forwarding timeout."));
@@ -337,7 +365,8 @@ public class InstanceConfigurationImpl {
      */
     public void addServerPort(String portName, String ip, Integer port) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().ports().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().ports().getPath());
             WritableConfigurationSegment newPort = writableSegment.createElement(portName);
             newPort.setString(builder.network().ports().getOrCreateServerPort(portName).ip().getConfigurationKey(), ip);
             newPort.setInteger(builder.network().ports().getOrCreateServerPort(portName).port().getConfigurationKey(), port);
@@ -356,7 +385,7 @@ public class InstanceConfigurationImpl {
     public void addSshConnection(ConfigurationSshConnection sshConnection) throws InstanceConfigurationException {
         try {
             WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.sshRemoteAccess().sshConnections().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshRemoteAccess().sshConnections().getPath());
             ConfigurationSegment subSegment = writableSegment.getSubSegment(sshConnection.getName());
             WritableConfigurationSegment newSegment;
             if (!subSegment.isPresentInCurrentConfiguration()) {
@@ -389,7 +418,7 @@ public class InstanceConfigurationImpl {
     public void removeSshConnection(String configName) throws InstanceConfigurationException {
         try {
             WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.sshRemoteAccess().sshConnections().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshRemoteAccess().sshConnections().getPath());
             ConfigurationSegment toRemove = writableSegment.getSubSegment(configName);
             if (!toRemove.isPresentInCurrentConfiguration()) {
                 return;
@@ -405,13 +434,81 @@ public class InstanceConfigurationImpl {
 
     /**
      * 
+     * Adds an uplink connection.
+     * 
+     * @param uplinkConnection the connection object.
+     * @throws InstanceConfigurationException on failure.
+     */
+    public void addUplinkConnection(ConfigurationUplinkConnection uplinkConnection) throws InstanceConfigurationException {
+        try {
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.uplink().uplinkConnections().getPath());
+            ConfigurationSegment subSegment = writableSegment.getSubSegment(uplinkConnection.getId());
+            WritableConfigurationSegment newSegment;
+            if (!subSegment.isPresentInCurrentConfiguration()) {
+                newSegment = writableSegment.createElement(uplinkConnection.getId());
+            } else {
+                newSegment = writableSegment.getOrCreateWritableSubSegment(uplinkConnection.getId());
+            }
+            newSegment.setString(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId())
+                .displayName()
+                .getConfigurationKey(), uplinkConnection.getDisplayName());
+            newSegment.setString(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId()).host()
+                .getConfigurationKey(), uplinkConnection.getHost());
+            newSegment.setInteger(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId()).port()
+                .getConfigurationKey(), uplinkConnection.getPort());
+            newSegment.setString(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId())
+                .loginName()
+                .getConfigurationKey(), uplinkConnection.getUser());
+            newSegment.setString(
+                builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId()).clientID().getConfigurationKey(),
+                uplinkConnection.getClientID());
+            newSegment.setBoolean(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId()).isGateway()
+                .getConfigurationKey(), uplinkConnection.isGateway());
+            newSegment.setBoolean(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId())
+                .connectOnStartup().getConfigurationKey(), uplinkConnection.getConnectOnStartup());
+            newSegment.setBoolean(builder.uplink().uplinkConnections().getOrCreateUplinkConnection(uplinkConnection.getId()).autoRetry()
+                .getConfigurationKey(), uplinkConnection.getAutoRetry());
+
+        } catch (ConfigurationException e) {
+            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to add new ssh connection."), e);
+        }
+    }
+
+    /**
+     * 
+     * Removes an uplink connection.
+     * 
+     * @param id the name of the uplink connection in the configuration to remove.
+     * @throws InstanceConfigurationException on failure.
+     */
+    public void removeUplinkConnection(String id) throws InstanceConfigurationException {
+        try {
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.uplink().uplinkConnections().getPath());
+            ConfigurationSegment toRemove = writableSegment.getSubSegment(id);
+            if (!toRemove.isPresentInCurrentConfiguration()) {
+                return;
+            }
+            boolean success = writableSegment.deleteElement(id);
+            if (!success) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to remove uplink connection: " + id));
+            }
+        } catch (ConfigurationException e) {
+            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to remove uplink connection: " + id));
+        }
+    }
+
+    /**
+     * 
      * Disables ssh server.
      * 
      * @throws InstanceConfigurationException on failure.
      */
     public void disableSshServer() throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
             writableSegment.setBoolean(builder.sshServer().enabled().getConfigurationKey(), false);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to disable ssh server."));
@@ -426,7 +523,8 @@ public class InstanceConfigurationImpl {
      */
     public void enableSshServer() throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
             writableSegment.setBoolean(builder.sshServer().enabled().getConfigurationKey(), true);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to enable ssh server."));
@@ -442,7 +540,8 @@ public class InstanceConfigurationImpl {
      */
     public void setSshServerIP(String ip) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
             writableSegment.setString(builder.sshServer().ip().getConfigurationKey(), ip);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to set ssh server ip adress."));
@@ -458,10 +557,61 @@ public class InstanceConfigurationImpl {
      */
     public void setSshServerPort(int port) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getPath());
             writableSegment.setInteger(builder.sshServer().port().getConfigurationKey(), port);
         } catch (ConfigurationException e) {
             throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to set ssh server port."));
+        }
+    }
+
+    /**
+     * Adds an SSH account.
+     * 
+     * @param username The username
+     * @param role The role
+     * @param enabled if the account should be enabled
+     * @param password the password
+     * @throws InstanceConfigurationException on failure
+     */
+    public void addSshAccount(String username, String role, Boolean enabled, String password) throws InstanceConfigurationException {
+        WritableConfigurationSegment writableSegment;
+        try {
+            writableSegment = configurationSnapshot
+                .getOrCreateWritableSubSegment(builder.sshServer().getSshAccounts().getOrCreateSshAccount(username).getPath());
+            writableSegment.setString(builder.sshServer().getSshAccounts().getOrCreateSshAccount(username).role().getConfigurationKey(),
+                role);
+            writableSegment.setBoolean(builder.sshServer().getSshAccounts().getOrCreateSshAccount(username).enabled().
+                getConfigurationKey(), enabled);
+            String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt(10));
+            writableSegment.setString(builder.sshServer().getSshAccounts().getOrCreateSshAccount(username).passwordHash().
+                getConfigurationKey(), passwordHash);
+        } catch (ConfigurationException e) {
+            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to add SSH account."));
+        }
+
+    }
+
+    /**
+     * Removes an SSH account.
+     * 
+     * @param username the username of the account to be removed.
+     * @throws InstanceConfigurationException on failure
+     */
+    public void removeSshAccount(String username) throws InstanceConfigurationException {
+        try {
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getSshAccounts().getPath());
+            ConfigurationSegment toRemove = writableSegment.getSubSegment(username);
+            if (!toRemove.isPresentInCurrentConfiguration()) {
+                return;
+            }
+            boolean success = writableSegment.deleteElement(username);
+            if (!success) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to remove SSH account: " + username));
+            }
+        } catch (ConfigurationException e) {
+            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to remove SSH account: " + username));
         }
     }
 
@@ -483,7 +633,7 @@ public class InstanceConfigurationImpl {
         try {
             // Create account; note that this makes use of the predefined role introduced in 8.0.0, so it will not work for 7.x.x
             WritableConfigurationSegment writableAccountsSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.sshServer().getSshAccounts().getPath());
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.sshServer().getSshAccounts().getPath());
             ConfigurationSegment accountSegment = writableAccountsSegment.getSubSegment(InstanceManagementConstants.IM_MASTER_USER_NAME);
             WritableConfigurationSegment newSegment;
             if (!accountSegment.isPresentInCurrentConfiguration()) {
@@ -514,7 +664,8 @@ public class InstanceConfigurationImpl {
      */
     public void removeServerPort(String name) throws InstanceConfigurationException {
         try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.network().ports().getPath());
+            WritableConfigurationSegment writableSegment =
+                configurationSnapshot.getOrCreateWritableSubSegment(builder.network().ports().getPath());
             boolean success = writableSegment.deleteElement(builder.network().ports().getOrCreateServerPort(name).getPath());
             if (!success) {
                 throw new InstanceConfigurationException("Failed to remove server port :" + name);
@@ -532,22 +683,39 @@ public class InstanceConfigurationImpl {
      * @throws InstanceConfigurationException on failure.
      */
     public void publishComponent(String name) throws InstanceConfigurationException {
-        try {
-            WritableConfigurationSegment writableSegment =
-                snapshot.getOrCreateWritableSubSegment(builder.publishing().getPath());
-            List<String> componentList = new LinkedList<>();
-            for (String component : writableSegment.getStringArray(builder.publishing().components().getConfigurationKey())) {
-                if (component.equals(name)) {
-                    continue;
-                }
-                componentList.add(component);
+        if (profileVersion <= 1) {
+            if (name.contains(SLASH)) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_PUBLISH_NEW_COMPONENT
+                    + " Use the name of the component instead of its component-id to publish the component."));
             }
-            componentList.add(name);
-            String[] array = new String[componentList.size()];
-            array = componentList.toArray(array);
-            writableSegment.setStringArray(builder.publishing().components().getConfigurationKey(), array);
-        } catch (ConfigurationException e) {
-            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to publish new component."), e);
+            try {
+                WritableConfigurationSegment writableSegment =
+                    configurationSnapshot.getOrCreateWritableSubSegment(builder.publishing().getPath());
+                List<String> componentList = new LinkedList<>();
+                for (String component : writableSegment.getStringArray(builder.publishing().components().getConfigurationKey())) {
+                    if (component.equals(name)) {
+                        continue;
+                    }
+                    componentList.add(component);
+                }
+                componentList.add(name);
+                String[] array = new String[componentList.size()];
+                array = componentList.toArray(array);
+                writableSegment.setStringArray(builder.publishing().components().getConfigurationKey(), array);
+            } catch (ConfigurationException e) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_PUBLISH_NEW_COMPONENT), e);
+            }
+        } else if (profileVersion >= 2) {
+            if (!name.contains(SLASH)) {
+                name = "rce/" + name;
+            }
+            try {
+                WritableConfigurationSegment writableSegment =
+                    componentsSnapshot.getOrCreateWritableSubSegment(InstanceManagementConstants.AUTHORIZATION_SEGMENT);
+                writableSegment.setString(name, "public");
+            } catch (ConfigurationException e) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_PUBLISH_NEW_COMPONENT), e);
+            }
         }
     }
 
@@ -559,22 +727,41 @@ public class InstanceConfigurationImpl {
      * @throws InstanceConfigurationException on failure.
      */
     public void unPublishComponent(String name) throws InstanceConfigurationException {
-        try {
-            WritableConfigurationSegment writableSegment = snapshot.getOrCreateWritableSubSegment(builder.publishing().getPath());
-            List<String> ipList = writableSegment.getStringArray(builder.publishing().components().getConfigurationKey());
-            for (String s : ipList) {
-                if (s.equals(name)) {
-                    ipList.remove(name);
-                    String[] componentArray = new String[ipList.size()];
-                    componentArray = ipList.toArray(componentArray);
-                    writableSegment.setStringArray(builder.publishing().components().getConfigurationKey(), componentArray);
-                    return;
+        if (profileVersion <= 1) {
+            try {
+                WritableConfigurationSegment writableSegment =
+                    configurationSnapshot.getOrCreateWritableSubSegment(builder.publishing().getPath());
+                List<String> ipList = writableSegment.getStringArray(builder.publishing().components().getConfigurationKey());
+                for (String s : ipList) {
+                    if (s.equals(name)) {
+                        ipList.remove(name);
+                        String[] componentArray = new String[ipList.size()];
+                        componentArray = ipList.toArray(componentArray);
+                        writableSegment.setStringArray(builder.publishing().components().getConfigurationKey(), componentArray);
+                        return;
+                    }
                 }
+            } catch (ConfigurationException e) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_UNPUBLISH_COMPONENT + name + DOT), e);
             }
             throw new InstanceConfigurationException(
                 "Couldn't unpublish component: " + name + " as it isn't present in the current configuration.");
-        } catch (ConfigurationException e) {
-            throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, "to unpublish component " + name + "."), e);
+        } else if (profileVersion >= 2) {
+            if (!name.contains(SLASH)) {
+                name = "rce/" + name;
+            }
+            boolean deleted = false;
+            try {
+                WritableConfigurationSegment writableSegment =
+                    componentsSnapshot.getOrCreateWritableSubSegment(InstanceManagementConstants.AUTHORIZATION_SEGMENT);
+                deleted = writableSegment.deleteElement(name);
+            } catch (ConfigurationException e) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_UNPUBLISH_COMPONENT + name + DOT), e);
+            }
+            if (!deleted) {
+                throw new InstanceConfigurationException(StringUtils.format(ERROR_PATTERN, TO_UNPUBLISH_COMPONENT + name + DOT
+                    + " This component is not published."));
+            }
         }
     }
 
@@ -585,7 +772,7 @@ public class InstanceConfigurationImpl {
      * @throws InstanceConfigurationException on failure.
      */
     public Integer getSshServerPort() throws InstanceConfigurationException {
-        ConfigurationSegment segment = snapshot.getSubSegment(builder.sshServer().getPath());
+        ConfigurationSegment segment = configurationSnapshot.getSubSegment(builder.sshServer().getPath());
         return segment.getInteger(builder.sshServer().port().getConfigurationKey());
     }
 
@@ -596,7 +783,7 @@ public class InstanceConfigurationImpl {
      * @throws InstanceConfigurationException on failure.
      */
     public String getSshServerIp() throws InstanceConfigurationException {
-        ConfigurationSegment segment = snapshot.getSubSegment(builder.sshServer().getPath());
+        ConfigurationSegment segment = configurationSnapshot.getSubSegment(builder.sshServer().getPath());
         return segment.getString(builder.sshServer().ip().getConfigurationKey());
     }
 
@@ -608,7 +795,10 @@ public class InstanceConfigurationImpl {
      */
     public void update() throws InstanceConfigurationException {
         try {
-            configStore.update(snapshot);
+            configurationStore.update(configurationSnapshot);
+            if (profileVersion >= 2) {
+                componentsStore.update(componentsSnapshot);
+            }
         } catch (ConfigurationException | IOException e) {
             throw new InstanceConfigurationException("Failed to update configuration.");
         }

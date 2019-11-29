@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="de.rcenvironment.core.component.integration.documentation.internal.ToolIntegrationDocumentationServiceImpl">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" immediate="true" name="de.rcenvironment.core.component.integration.documentation.internal.ToolIntegrationDocumentationServiceImpl">
    <service>
       <provide interface="de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService"/>
       <provide interface="de.rcenvironment.core.component.integration.documentation.RemoteToolIntegrationDocumentationService"/>
@@ -9,5 +9,6 @@
    <reference bind="bindDistributedComponentKnowledgeService" interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" name="DistributedComponentKnowledgeService" unbind="unbindDistributedComponentKnowledgeService"/>
    <reference bind="bindSshRemoteAccessClientService" interface="de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientService" name="SshRemoteAccessClientService"/>
    <reference bind="bindToolIntegrationService" interface="de.rcenvironment.core.component.integration.ToolIntegrationService" name="ToolIntegrationService"/>
+   <reference cardinality="1..1" field="toolIntegrationService" interface="de.rcenvironment.core.component.integration.ToolIntegrationService" name="toolIntegrationService"/>
    <implementation class="de.rcenvironment.core.component.integration.documentation.internal.ToolIntegrationDocumentationServiceImpl"/>
 </scr:component>

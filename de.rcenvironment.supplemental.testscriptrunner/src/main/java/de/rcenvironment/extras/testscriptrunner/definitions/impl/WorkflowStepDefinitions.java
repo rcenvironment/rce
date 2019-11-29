@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.extras.testscriptrunner.definitions.impl;
@@ -99,7 +99,7 @@ public class WorkflowStepDefinitions extends AbstractStepDefinitionBase {
 
         this.lastWorkflowLogContent = wfLogFileContent;
         this.lastWorkflowInitiatingInstance = instance;
-        
+
         // TODO delete temporary workflow file and logs directory
     }
 
@@ -154,11 +154,16 @@ public class WorkflowStepDefinitions extends AbstractStepDefinitionBase {
      * 
      * @param compName the workflow name of the component to test for
      * @param nodeName the node name to test for
+     * @param uplinkFlag name of the uplink instance via which the component is made accessible
      * @param nodeId optionally, the node id to test for
      * @throws Throwable on failure
      */
-    @Then("^workflow component \"([^\"]+)\" should have been run on \"([^\"]+)\"(?: using node id \"(\\w+)\")?$")
-    public void workflowComponentShouldHaveBeenRunOn(String compName, String nodeName, String nodeId) throws Throwable {
+    @Then("^workflow component \"([^\"]+)\" should have been run on \"([^\"]+)\"( via uplink)?(?: using node id \"(\\w+)\")?$")
+    public void workflowComponentShouldHaveBeenRunOn(String compName, String nodeName, String uplinkFlag, String nodeId) throws Throwable {
+        if (uplinkFlag != null) {
+            ManagedInstance instance = resolveInstance(nodeName);
+            nodeName += " \\(via " + instance.getUplinkUserName() + "\\/" + nodeName + "\\)";
+        }
         String regexp = "Location of workflow component \"" + compName + "\" [^:]+: \"" + nodeName + ESCAPED_DOUBLE_QUOTE;
         if (nodeId != null) {
             regexp += " \\[" + nodeId + ":0\\]";

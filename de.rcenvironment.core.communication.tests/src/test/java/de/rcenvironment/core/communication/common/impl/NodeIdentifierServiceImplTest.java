@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.common.impl;
@@ -34,19 +34,32 @@ public class NodeIdentifierServiceImplTest {
      */
     @Test
     public void testDisplayNameSharing() throws IdentifierException {
-        final InstanceNodeId instanceId1 = service.generateInstanceNodeId();
-        final InstanceNodeId instanceId1Clone = service.parseInstanceNodeIdString(instanceId1.getInstanceNodeIdString());
-        final InstanceNodeId instanceId2 = service.generateInstanceNodeId();
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId1.getAssociatedDisplayName());
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId1Clone.getAssociatedDisplayName());
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId2.getAssociatedDisplayName());
 
-        final String testName = "name1";
-        service.associateDisplayName(instanceId1, testName);
-        assertEquals(testName, instanceId1.getAssociatedDisplayName());
-        assertEquals(testName, instanceId1Clone.getAssociatedDisplayName());
-        // the other id should not have been affected
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId2.getAssociatedDisplayName());
+        // first, test the basic behavior: an instance session's name should be shared between ids of the same instance,
+        // but should not affect a different instance's ids
+
+        final InstanceNodeId instance1Id = service.generateInstanceNodeId();
+        final InstanceNodeId instance2Id = service.generateInstanceNodeId();
+        final InstanceNodeSessionId instance1Session1Id = service.generateInstanceNodeSessionId(instance1Id);
+        // generate a new id object pointing to the same instance session
+        final InstanceNodeSessionId instance1Session1IdClone =
+            service.parseInstanceNodeSessionIdString(instance1Session1Id.getInstanceNodeSessionIdString());
+
+        // no explicit name set -> all should be at default
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Session1Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Session1IdClone.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
+
+        final String testName = "instance1_session1";
+        service.associateDisplayName(instance1Session1Id, testName);
+        // should be set for the exact instance session id object
+        assertEquals(testName, instance1Session1Id.getAssociatedDisplayName());
+        // should be set for the cloned instance session id object, too
+        assertEquals(testName, instance1Session1IdClone.getAssociatedDisplayName());
+        // should NOT affect a different instance id
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
     }
 
     /**
@@ -56,36 +69,63 @@ public class NodeIdentifierServiceImplTest {
      */
     @Test
     public void testTransitiveDisplayNameSetting() throws IdentifierException {
-        final InstanceNodeId instanceId1 = service.generateInstanceNodeId();
-        final InstanceNodeSessionId instanceId1Session = service.generateInstanceNodeSessionId(instanceId1);
-        final InstanceNodeId instanceId2 = service.generateInstanceNodeId();
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId1.getAssociatedDisplayName());
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId1Session.getAssociatedDisplayName());
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId2.getAssociatedDisplayName());
+
+        // same general setup as in basic test
+
+        final InstanceNodeId instance1Id = service.generateInstanceNodeId();
+        final InstanceNodeId instance2Id = service.generateInstanceNodeId();
+        final InstanceNodeSessionId instance1Session1Id = service.generateInstanceNodeSessionId(instance1Id);
+        final InstanceNodeSessionId instance1Session2Id = service.generateInstanceNodeSessionId(instance1Id);
+
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Session1Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance1Session2Id.getAssociatedDisplayName());
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
 
         final String testName1 = "name1";
         final String testName2 = "name2";
         final String testName3 = "name3";
 
-        service.associateDisplayName(instanceId1Session, testName1); // note: setting for the instance *session* id
+        // attach an explicit name to the *older* instance session
+        service.associateDisplayName(instance1Session1Id, testName1);
 
-        // sanity check
-        assertEquals(testName1, instanceId1Session.getAssociatedDisplayName());
-        // now test the transitive setting
-        assertEquals(testName1, instanceId1.getAssociatedDisplayName());
-        // the other id should not have been affected
-        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instanceId2.getAssociatedDisplayName());
+        // test the name that was explicitly set (sanity check)
+        assertEquals(testName1, instance1Session1Id.getAssociatedDisplayName());
+        // the session's name should have propagated to the underlying instance
+        assertEquals(testName1, instance1Id.getAssociatedDisplayName());
+        // it should also have propagated to the future session with no explicit name association yet (inherited from instance)
+        assertEquals(testName1, instance1Session2Id.getAssociatedDisplayName());
+        // the other instance should not have been affected (sanity check)
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
 
-        // replace the name for the instanceId only; it should not propagate back the the session id
-        service.associateDisplayName(instanceId1, testName2); // note: setting for the *instance* id
+        // now attach an explicit name to the *newer* instance session
+        service.associateDisplayName(instance1Session2Id, testName2);
 
-        assertEquals(testName1, instanceId1Session.getAssociatedDisplayName());
-        assertEquals(testName2, instanceId1.getAssociatedDisplayName());
+        // test the name that was explicitly set (sanity check)
+        assertEquals(testName2, instance1Session2Id.getAssociatedDisplayName());
+        // the session's name should have propagated to the underlying instance, as the session id is *newer*
+        assertEquals(testName2, instance1Id.getAssociatedDisplayName());
+        // it should have propagated to the outdated session, too, but the name should have the "outdated" marker attached
+        assertEquals(testName2 + CommonIdBase.DISPLAY_NAME_SUFFIX_FOR_OUTDATED_SESSIONS, instance1Session1Id.getAssociatedDisplayName());
+        // the other instance should not have been affected (sanity check)
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
 
-        service.associateDisplayName(instanceId1Session, testName3); // note: setting for the instance *session* id
+        // now try to attach a different explicit name to the *older* instance session again (which should NOT work)
+        service.associateDisplayName(instance1Session1Id, testName3); // note: setting for the instance *session* id
 
-        assertEquals(testName3, instanceId1Session.getAssociatedDisplayName());
-        assertEquals(testName3, instanceId1.getAssociatedDisplayName());
+        // the name change request for the outdated session should have been ignored (only store the latest session's data)
+        assertEquals(testName2 + CommonIdBase.DISPLAY_NAME_SUFFIX_FOR_OUTDATED_SESSIONS, instance1Session1Id.getAssociatedDisplayName());
+        // the older session's name change request should NOT have propagated to the underlying instance (should keep the second name)
+        assertEquals(testName2, instance1Id.getAssociatedDisplayName());
+
+        // the other instance should not have been affected (sanity check)
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
+        // the session's name should have propagated to the underlying instance, as the session id is *newer*
+        assertEquals(testName2, instance1Id.getAssociatedDisplayName());
+        // it should also NOT have affected the newer session
+        assertEquals(testName2, instance1Session2Id.getAssociatedDisplayName());
+        // the other instance should not have been affected (sanity check)
+        assertEquals(CommonIdBase.DEFAULT_DISPLAY_NAME, instance2Id.getAssociatedDisplayName());
     }
 
 }

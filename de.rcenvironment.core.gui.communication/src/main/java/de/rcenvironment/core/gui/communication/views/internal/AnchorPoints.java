@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.communication.views.internal;
@@ -34,5 +34,10 @@ public enum AnchorPoints {
     /**
      * The root node of the "SSH Remote Access" section.
      */
-    SSH_REMOTE_ACCESS_SECTION_PARENT_NODE;
+    SSH_REMOTE_ACCESS_SECTION_PARENT_NODE,
+    
+    /**
+     * The root node of the "SSH Uplink" section.
+     */
+    SSH_UPLINK_SECTION_PARENT_NODE;
 }

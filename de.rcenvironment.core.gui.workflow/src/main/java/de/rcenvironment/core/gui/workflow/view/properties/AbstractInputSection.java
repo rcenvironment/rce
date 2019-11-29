@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.view.properties;
@@ -45,7 +45,6 @@ import de.rcenvironment.core.gui.workflow.editor.connections.EndpointTreeViewer;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Property section for displaying and editing inputs.
@@ -85,7 +84,6 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
      */
     private class RefreshTask implements Runnable {
 
-        @TaskDescription("Refresh inputs processed by components")
         @Override
         public void run() {
             if (inputTreeViewer != null && !inputTreeViewer.getTree().isDisposed()) {
@@ -222,7 +220,8 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
      * Schedules the refresh timer responsible for refreshing the view every 500 milliseconds.
      */
     public void scheduleRefreshTimer() {
-        refreshFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new RefreshTask(), REFRESH_INTERVAL);
+        refreshFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedInterval("Refresh inputs processed by components",
+            new RefreshTask(), REFRESH_INTERVAL);
     }
 
     /**

@@ -2,12 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Cluster
 Bundle-SymbolicName: de.rcenvironment.core.utils.cluster
-Bundle-Version: 9.1.1.qualifier
+Bundle-Version: 10.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.utils.cluster
-Import-Package: com.jcraft.jsch;version="0.1.54",
+Import-Package: com.jcraft.jsch;version="0.1.55",
  de.rcenvironment.core.utils.cluster,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.ssh.jsch,

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.api;
@@ -94,14 +94,28 @@ public interface NodeIdentifierService {
     LogicalNodeSessionId parseLogicalNodeSessionIdString(String input) throws IdentifierException;
 
     /**
-     * Sets the display name to associate with the given id, which can be of any subtype of {@link CommonIdBase}; note that certain subtypes
-     * may cause the same display name to be implicitly associated for other ids as well. The given display name is shared between all
-     * instances with the same internal canonical string representation.
+     * Sets the display name to associate with the given {@link InstanceNodeSessionId}. If the specified session is the most "recent" one,
+     * it will be considered as the canonical session for the given instance, and the given name will also propagate as the default display
+     * name for that instance.
+     * <p>
+     * Display names are always shared between all instances with the same internal canonical string representation.
      * 
      * @param id the id to set the display name for
      * @param displayName the display name to set
      */
-    void associateDisplayName(CommonIdBase id, String displayName);
+    void associateDisplayName(InstanceNodeSessionId id, String displayName);
+
+    /**
+     * Sets the display name to associate with the given {@link LogicalNodeSessionId}. Note that this assignment will be ignored if the
+     * session that this {@link LogicalNodeSessionId} belongs to is not the "current" session (i.e. the one with the most "recent" id
+     * encountered) that has been registered at this service so far.
+     * <p>
+     * Display names are always shared between all instances with the same internal canonical string representation.
+     * 
+     * @param id the id to set the display name for
+     * @param displayName the display name to set
+     */
+    void associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String displayName);
 
     /**
      * Debug method; prints all registered id-to-displayName associations.

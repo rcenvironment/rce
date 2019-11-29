@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.model.impl;
@@ -91,6 +91,9 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
     private String documentationHash = "";
 
     private String iconHash;
+    
+   
+    
 
     @Override
     public String getDisplayName() {

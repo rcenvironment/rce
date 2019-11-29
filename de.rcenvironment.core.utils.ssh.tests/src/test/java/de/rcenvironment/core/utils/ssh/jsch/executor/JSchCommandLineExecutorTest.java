@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.utils.ssh.jsch.executor;
@@ -21,11 +21,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.junit.After;
@@ -49,6 +50,7 @@ import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
  * Test case for {@link JSchCommandLineExecutor}.
  * 
  * @author Doreen Seider
+ * @author Brigitte Boden
  */
 public class JSchCommandLineExecutorTest {
 
@@ -67,7 +69,7 @@ public class JSchCommandLineExecutorTest {
     private File remoteWorkdir;
 
     private TempFileService tempFileService = TempFileServiceAccess.getInstance();
-    
+
     /**
      * Initial set up of test environment.
      * 
@@ -98,7 +100,7 @@ public class JSchCommandLineExecutorTest {
         });
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.start();
-        
+
         remoteWorkdir = tempFileService.createManagedTempDir();
         localWorkdir = tempFileService.createManagedTempDir();
     }
@@ -133,7 +135,7 @@ public class JSchCommandLineExecutorTest {
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
-            public Command createCommand(String commandString) {
+            public Command createCommand(ChannelSession session, String commandString) {
                 if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStdout))) {
                     return new DummyCommand(out, null, 0);
                 } else {
@@ -173,7 +175,7 @@ public class JSchCommandLineExecutorTest {
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
-            public Command createCommand(String commandString) {
+            public Command createCommand(ChannelSession session, String commandString) {
                 if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStdoutStderr))) {
                     return new DummyCommand(out, err, 0);
                 } else {
@@ -212,7 +214,7 @@ public class JSchCommandLineExecutorTest {
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
-            public Command createCommand(String commandString) {
+            public Command createCommand(ChannelSession session, String commandString) {
                 if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStderr))) {
                     return new DummyCommand(null, err, 1);
                 } else {
@@ -340,12 +342,12 @@ public class JSchCommandLineExecutorTest {
         sshServer.setCommandFactory(new ScpCommandFactory() {
 
             @Override
-            public Command createCommand(String command) {
+            public Command createCommand(ChannelSession session, String command) throws IOException {
                 if (command.startsWith("mkdir")) {
                     new File(command.split(" ")[2]).mkdirs();
                     return new DummyCommand();
                 } else {
-                    return super.createCommand(command);
+                    return super.createCommand(session, command);
                 }
             }
         });
@@ -427,12 +429,12 @@ public class JSchCommandLineExecutorTest {
         sshServer.setCommandFactory(new ScpCommandFactory() {
 
             @Override
-            public Command createCommand(String command) {
+            public Command createCommand(ChannelSession session, String command) throws IOException {
                 if (command.startsWith("mkdir")) {
                     new File(command.split(" ")[2]).mkdirs();
                     return new DummyCommand();
                 } else {
-                    return super.createCommand(command);
+                    return super.createCommand(session, command);
                 }
             }
         });

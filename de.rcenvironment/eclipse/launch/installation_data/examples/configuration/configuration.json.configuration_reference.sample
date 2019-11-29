@@ -1,3 +1,7 @@
+// --- DO NOT COPY THIS COMMENT BLOCK ---
+//
+// This is a reference file demonstrating all available settings; it is not intended for out-of-the-box usage.
+//
 {
 	"general" : {
 		"comment" : "This is a reference file demonstrating all available settings; it is not intended for out-of-the-box usage",
@@ -38,6 +42,44 @@
 			]
 		}
 	},
+	"uplink" : {
+		"uplinkConnections" : {
+			"exampleUplinkConnectionID" : {
+				"displayName" : "example",
+				"clientID": "client1",
+				"host" : "127.0.0.1",
+				"port" : 31055,
+				"connectOnStartup": false,
+				"autoRetry" : false,
+				"isGateway" : true,
+				"loginName" : "ra_demo"
+				//The passphrase is not stored here, it has to be entered when connecting.
+			},
+			"exampleUplinkConnectionWithKeyFileAuthenticationID" : {
+				"displayName" : "example",
+				"clientID": "client1",
+				"host" : "127.0.0.1",
+				"port" : 31055,
+				"connectOnStartup": false,
+				"autoRetry" : false,
+				"isGateway" : true,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file"				
+			},
+			"exampleUplinkConnectionWithKeyFileAuthenticationWithoutPassphraseID" : {
+				"displayName" : "example",
+				"clientID": "client1",
+				"host" : "127.0.0.1",
+				"port" : 31055,
+				"connectOnStartup": false,
+				"autoRetry" : false,
+				"isGateway" : true,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file",
+				"noPassphrase" : true				
+			}
+		}
+	},
 	"sshRemoteAccess" : {
 		"sshConnections" : {
 			"exampleSSHConnection" : {
@@ -76,6 +118,12 @@
 		"port" : 31005,
 		"idleTimeoutSeconds" : 10,
 		"accounts" : {
+			"uplink_client" : {
+				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
+				"role" : "uplink_client", //Allowed commands: none (meant for using uplink connections)
+				"enabled" : false
+			},
 			"ra_demo" : {
 				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
@@ -102,19 +150,19 @@
 			"admin" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "local_admin", //Allowed commands: cn|components|mail|net|restart|shutdown|stop|stats|tasks
+				"role" : "local_admin", //Allowed commands: cn|components|mail|net|restart|shutdown|stop|stats|tasks|auth
 				"enabled" : false
 			},
 			"im_admin" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "instance_management_admin", //Allowed commands: im|net info
+				"role" : "instance_management_admin", //Allowed commands: im|net info|auth
 				"enabled" : false
 			},
 			"im_delegate" : {
 				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-				"role" : "instance_management_delegate_user", //Allowed commands: cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin
+				"role" : "instance_management_delegate_user", //Allowed commands: cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin|auth
 				"enabled" : false
 			},
 			"developer" : {
@@ -127,9 +175,7 @@
 	},
 	"thirdPartyIntegration": {
 		"tiglViewer":{
-			"binaryPath" : "/path/to/tiglViewer.exe",
-			"startupTimeoutSeconds" : 10, //optional, default = 10
-			"embedWindow" : true //optional, default = true
+			"binaryPath": "/path/to/tiglViewer/executable"
 		}
 	}
 }

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
@@ -32,6 +32,7 @@ import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
  * Config gui for behavior in case of loop failure.
  * 
  * @author Doreen Seider
+ * @author Kathrin Schaffert
  */
 public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySection {
 

@@ -3,13 +3,14 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.configuration;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Comparator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -60,7 +61,7 @@ public class ConfigurationInformationDialog extends Dialog {
 
     private final ConfigurationService configurationService;
 
-    private final SortedMap<String, File> exampleConfigFileNamesAndPaths = new TreeMap<>();
+    private SortedMap<String, File> exampleConfigFileNamesAndPaths;
 
     private String profileConfigPath = "";
 
@@ -258,6 +259,23 @@ public class ConfigurationInformationDialog extends Dialog {
     }
 
     private void initConfigurationFileAndPathMapping() {
+        //Sort remote access entries to the end of the list.
+        exampleConfigFileNamesAndPaths = new TreeMap<>(new Comparator<String>() {
+            
+            private static final String REMOTE_ACCESS = "Remote Access";
+            private static final int MINUS_ONE = -1;
+            
+            @Override
+            public int compare(String s1, String s2) {
+                if (s1.startsWith(REMOTE_ACCESS) && !s2.startsWith(REMOTE_ACCESS)) {
+                    return 1;
+                } else if (s2.startsWith(REMOTE_ACCESS) && !s1.startsWith(REMOTE_ACCESS)) {
+                    return MINUS_ONE;
+                }
+                return s1.compareTo(s2);
+            }
+            
+        });
         File examplesDir = configurationService.getConfigurablePath(ConfigurablePathId.CONFIGURATION_SAMPLES_LOCATION);
         if (!examplesDir.isDirectory()) {
             log.warn("Expected location for configuration example files does not exist: " + examplesDir.getAbsolutePath());

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 package de.rcenvironment.core.communication.common.impl;
 
@@ -55,7 +55,7 @@ public class NodeIdentifierImplTest {
      */
     @Test
     public void instanceNodeIdSerializationRoundtrip() throws SerializationException {
-        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("test1a");
+        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeId();
         NodeIdentifierImpl reconstructed =
             (NodeIdentifierImpl) MessageUtils.deserializeObject(MessageUtils.serializeObject(original),
                 NodeIdentifierImpl.class);
@@ -77,17 +77,15 @@ public class NodeIdentifierImplTest {
     }
 
     /**
-     * Verifies that {@link NodeIdentifierTestUtils#createTestInstanceNodeIdWithDisplayName(String)} returns an instance with the expected
-     * properties.
+     * Verifies that {@link NodeIdentifierTestUtils#createTestInstanceNodeId()} returns an instance with the expected properties.
      */
     @Test
     public void validateTestInstanceIdProperties() {
-        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("proptest1");
+        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeId();
         assertTrue(original instanceof InstanceNodeId);
         assertEquals(CommonIdBase.INSTANCE_ID_STRING_LENGTH, original.getInstanceNodeIdString().length());
         assertEquals(CommonIdBase.INSTANCE_ID_STRING_LENGTH, original.getFullIdString().length());
         assertNull(original.getSessionIdPart());
-        assertEquals("proptest1", original.getAssociatedDisplayName());
     }
 
     /**
@@ -222,7 +220,7 @@ public class NodeIdentifierImplTest {
      */
     @Test
     public void reconstructionOfInstanceIdFromFullId() throws IdentifierException {
-        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("test2");
+        NodeIdentifierImpl original = (NodeIdentifierImpl) NodeIdentifierTestUtils.createTestInstanceNodeId();
         final String stringForm = original.getFullIdString();
         NodeIdentifierImpl reconstructed =
             (NodeIdentifierImpl) NodeIdentifierUtils.parseInstanceNodeIdString(stringForm);
@@ -255,8 +253,6 @@ public class NodeIdentifierImplTest {
         assertEquals(reference.getSessionIdPart(), toTest.getSessionIdPart());
         assertEquals(reference.getLogicalNodePart(), toTest.getLogicalNodePart());
         assertEquals(reference.getAssociatedDisplayName(), toTest.getAssociatedDisplayName());
-        // check object identity of the assigned meta information holder
-        assertTrue(reference.getMetaInformationHolder() == toTest.getMetaInformationHolder());
         // test comparison methods
         assertTrue(reference.isSameInstanceNodeAs(toTest));
         assertTrue(toTest.isSameInstanceNodeAs(reference));

@@ -3,15 +3,13 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
 
-import java.util.Deque;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -39,6 +37,7 @@ import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphNode;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataModelConstants;
@@ -443,11 +442,11 @@ public class ComponentExecutor {
     }
 
     private void writeFailureOutputData() throws ComponentExecutionException {
-        Map<String, Set<Deque<WorkflowGraphHop>>> hopsToTraverseOnFailure =
+        Map<String, Set<WorkflowGraphPath>> hopsToTraverseOnFailure =
             compExeRelatedInstances.compExeCtx.getWorkflowGraph()
                 .getHopsToTraverseOnFailure(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()));
         for (String outputName : hopsToTraverseOnFailure.keySet()) {
-            for (Queue<WorkflowGraphHop> hops : hopsToTraverseOnFailure.get(outputName)) {
+            for (WorkflowGraphPath hops : hopsToTraverseOnFailure.get(outputName)) {
                 WorkflowGraphHop firstHop = hops.poll();
                 NotAValueTD notAValue = typedDatumService.getFactory().createNotAValue(
                     UUID.randomUUID().toString(), NotAValueTD.Cause.Failure);

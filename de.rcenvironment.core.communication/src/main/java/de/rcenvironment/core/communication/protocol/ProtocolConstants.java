@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.protocol;
@@ -27,7 +27,7 @@ public final class ProtocolConstants {
      * Note that there are no "higher/lower version" semantics for the content of this string. On a connection attempt, the strings provided
      * by both nodes are only checked for equality, and possibly displayed as part of the error message if they do not match.
      */
-    public static final String PROTOCOL_COMPATIBILITY_VERSION = "9.0.0-final";
+    public static final String PROTOCOL_COMPATIBILITY_VERSION = "10.0.0";
 
     /**
      * Represents possible return codes contained in {@link NetworkResponse}s.

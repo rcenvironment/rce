@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.instancemanagement.internal;
@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.instancemanagement.InstanceStatus;
+import de.rcenvironment.core.instancemanagement.InstanceStatus.InstanceState;
 import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -32,6 +34,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  *
  * @author David Scholz
  * @author Robert Mischke
+ * @author Lukas Rosenbach
  */
 public class InstanceStarterTask implements Runnable {
 
@@ -56,10 +59,14 @@ public class InstanceStarterTask implements Runnable {
     private final CountDownLatch startupOutputDetected;
 
     private final AtomicBoolean startupOutputIndicatesSuccess;
+    
+    private final InstanceStatus status;
+    
+    private final String parameters;
 
     public InstanceStarterTask(long timeout, boolean startWithGUI, TextOutputReceiver userOutputReceiver, File profile,
-        File installationDir, CountDownLatch globalLatch, CountDownLatch startuputOutputDetected,
-        AtomicBoolean startupOutputIndicatesSucess) {
+        File installationDir, String parameters, CountDownLatch globalLatch, CountDownLatch startuputOutputDetected,
+        AtomicBoolean startupOutputIndicatesSucess, InstanceStatus status) {
         this.timeout = timeout;
         this.startWithGUI = startWithGUI;
         this.userOutputReceiver = userOutputReceiver;
@@ -68,6 +75,12 @@ public class InstanceStarterTask implements Runnable {
         this.globalLatch = globalLatch;
         this.startupOutputDetected = startuputOutputDetected;
         this.startupOutputIndicatesSuccess = startupOutputIndicatesSucess;
+        this.status = status;
+        if (parameters == null) {
+            this.parameters = "";
+        } else {
+            this.parameters = parameters;
+        }  
     }
 
     @Override
@@ -119,10 +132,10 @@ public class InstanceStarterTask implements Runnable {
                 if (!startWithGUI) {
                     // note: using "-p" because "--profile" was not available in 6.0.x
                     userOutputReceiver.addOutput(StringUtils.format(START_UP_HEADLESS_MESSAGE, profile.getName()));
-                    executor.start(StringUtils.format("rce --headless -nosplash -p \"%s\"", profile.getAbsolutePath()));
+                    executor.start(StringUtils.format("rce --headless -nosplash -p \"%s\" %s", profile.getAbsolutePath(), parameters));
                 } else {
                     userOutputReceiver.addOutput(StringUtils.format(START_UP_GUI_MESSAGE, profile.getName()));
-                    executor.start(StringUtils.format("rce -p \"%s\" --use-default-workspace", profile.getAbsolutePath()));
+                    executor.start(StringUtils.format("rce -p \"%s\" --use-default-workspace %s", profile.getAbsolutePath(), parameters));
                 }
 
             } else {
@@ -130,10 +143,10 @@ public class InstanceStarterTask implements Runnable {
                 if (!startWithGUI) {
                     // note: using "-p" because "--profile" was not available in 6.0.x
                     userOutputReceiver.addOutput(StringUtils.format(START_UP_HEADLESS_MESSAGE, profile.getName()));
-                    executor.start(StringUtils.format("./rce --headless -nosplash -p \"%s\"", profile.getAbsolutePath()));
+                    executor.start(StringUtils.format("./rce --headless -nosplash -p \"%s\" %s", profile.getAbsolutePath(), parameters));
                 } else {
                     userOutputReceiver.addOutput(StringUtils.format(START_UP_GUI_MESSAGE, profile.getName()));
-                    executor.start(StringUtils.format("./rce -p \"%s\" --use-default-workspace", profile.getAbsolutePath()));
+                    executor.start(StringUtils.format("./rce -p \"%s\" --use-default-workspace %s", profile.getAbsolutePath(), parameters));
                 }
 
             }
@@ -149,15 +162,17 @@ public class InstanceStarterTask implements Runnable {
 
         startStdOutStreamWatcher(executor, profile.getName());
         startStdErrStreamWatcher(executor, profile.getName());
-
+        
         try {
 
             executor.waitForTermination();
 
             // TODO add useroutput
         } catch (IOException e) {
+            executor.cancel();
             releaseLockIfErrorOccurs();
         } catch (InterruptedException e) {
+            executor.cancel();
             releaseLockIfErrorOccurs();
         }
 
@@ -178,6 +193,7 @@ public class InstanceStarterTask implements Runnable {
                     startupOutputDetected.countDown();
                     globalLatch.countDown();
                     userOutputReceiver.addOutput("Successfully started instance " + profileName);
+                    status.setInstanceState(InstanceState.RUNNING);
                 }
             }
 

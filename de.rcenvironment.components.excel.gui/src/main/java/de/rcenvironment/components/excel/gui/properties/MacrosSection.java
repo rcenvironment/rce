@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.excel.gui.properties;
@@ -27,8 +27,8 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelService;
-import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.components.excel.common.ExcelServiceAccess;
+import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -44,7 +44,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 public class MacrosSection extends ValidatingWorkflowNodePropertySection {
 
     private Object lock = new Object();
-    
+
     private Composite macroGroup;
 
     private CCombo comboMacroPre;
@@ -75,7 +75,7 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
     /**
      * Initialize macro choosing section.
      * 
-     * @param toolkit the toolkit to create section content
+     * @param toolkit   the toolkit to create section content
      * @param container parent
      */
     private void initMacrosChoosingSection(final TabbedPropertySheetWidgetFactory toolkit, final Composite container) {
@@ -124,40 +124,34 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
         section.setClient(client);
 
     }
-    
 
     /**
      * Discover all macros available in Excel file and fill Combo-lists with them.
      * 
      */
     private void discoverMacros() {
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Browses the given excel file for macros", () -> {
 
-            @Override
-            @TaskDescription("Browses the given excel file for macros")
-            public void run() {
-                ExcelService excelService = ExcelServiceAccess.get();
-                File xlFile = ExcelUtils.getAbsoluteFile(getProperty(ExcelComponentConstants.XL_FILENAME));
-                if (xlFile != null) {
-                    final String[] macrosAvailable;
-                    synchronized (lock) {
-                        macrosAvailable = excelService.getMacros(xlFile);
-                    }
-                    Display.getDefault().asyncExec(new Runnable() {
-
-                        @Override
-                        @TaskDescription("Sets the items of the macro combo boxes")
-                        public void run() {
-                            synchronized (lock) {
-                                if (!comboMacroPre.isDisposed() && !comboMacroRun.isDisposed() && !comboMacroPost.isDisposed()) {
-                                    comboMacroPre.setItems(macrosAvailable);
-                                    comboMacroRun.setItems(macrosAvailable);
-                                    comboMacroPost.setItems(macrosAvailable);
-                                }
+            ExcelService excelService = ExcelServiceAccess.get();
+            File xlFile = ExcelUtils.getAbsoluteFile(getProperty(ExcelComponentConstants.XL_FILENAME));
+            if (xlFile != null) {
+                final String[] macrosAvailable;
+                synchronized (lock) {
+                    macrosAvailable = excelService.getMacros(xlFile);
+                }
+                Display.getDefault().asyncExec(new Runnable() {
+                    @Override
+                    @TaskDescription("Sets the items of the macro combo boxes")
+                    public void run() {
+                        synchronized (lock) {
+                            if (!comboMacroPre.isDisposed() && !comboMacroRun.isDisposed() && !comboMacroPost.isDisposed()) {
+                                comboMacroPre.setItems(macrosAvailable);
+                                comboMacroRun.setItems(macrosAvailable);
+                                comboMacroPost.setItems(macrosAvailable);
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         });
     }

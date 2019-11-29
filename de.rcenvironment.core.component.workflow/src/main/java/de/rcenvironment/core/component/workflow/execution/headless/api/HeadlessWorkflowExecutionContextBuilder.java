@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.workflow.execution.headless.api;
@@ -13,6 +13,7 @@ import java.io.File;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DeletionBehavior;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DisposalBehavior;
+import de.rcenvironment.core.component.workflow.execution.headless.internal.ExtendedHeadlessWorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionContextImpl;
 import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.InvalidFilenameException;
@@ -105,10 +106,31 @@ public class HeadlessWorkflowExecutionContextBuilder {
     }
 
     /**
-     * @return {@link HeadlessWorkflowExecutionContext} to support method chaining
+     * @return An {@link HeadlessWorkflowExecutionContext} as configured by preceding method calls
      */
     public HeadlessWorkflowExecutionContext build() {
         return headlessWfExeCtx;
+    }
+    
+    /**
+     * @return An {@link ExtendedHeadlessWorkflowExecutionContext} as configured by preceding method calls
+     */
+    public ExtendedHeadlessWorkflowExecutionContext buildExtended() {
+        final HeadlessWorkflowExecutionContext parent = this.build();
+        
+        final ExtendedHeadlessWorkflowExecutionContext retval = new ExtendedHeadlessWorkflowExecutionContext();
+
+        retval.setWfFile(parent.getWorkflowFile());
+        retval.setLogDirectory(parent.getLogDirectory());
+        retval.setPlaceholdersFile(parent.getPlaceholdersFile());
+        retval.setTextOutputReceiver(parent.getTextOutputReceiver());
+        retval.setIsCompactOutput(parent.isCompactOutput());
+        retval.setSingleConsoleRowsProcessor(parent.getSingleConsoleRowReceiver());
+        retval.setDisposeBehavior(parent.getDisposalBehavior());
+        retval.setDeletionBehavior(parent.getDeletionBehavior());
+        retval.setAbortIfWorkflowUpdateRequired(parent.shouldAbortIfWorkflowUpdateRequired());
+
+        return retval;
     }
 
 }

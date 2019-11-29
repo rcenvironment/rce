@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.configuration.bootstrap;
@@ -27,6 +27,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  * @author Oliver Seebach
+ * @author Brigitte Boden
  * @author Tobias Brieden
  */
 public final class BootstrapConfiguration {
@@ -111,7 +112,7 @@ public final class BootstrapConfiguration {
             System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
                 || launchParameters.containsToken("--batch");
 
-        final boolean profileUpgradeRequested = launchParameters.containsToken("--upgradeprofile");
+        final boolean profileUpgradeRequested = launchParameters.containsToken("--upgrade-profile");
 
         // In case of error either start in fallback profile or don't start
         if (!preliminaryProfile.hasCurrentVersion()) {

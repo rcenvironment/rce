@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
@@ -50,8 +50,8 @@ import org.eclipse.ui.help.IWorkbenchHelpSystem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.component.api.ComponentIdRules;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -492,6 +492,13 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                 textChosenConfig.setText("");
             }
             wizard.setPreviousConfiguration(configurationMap, configJson);
+            // if tool is active, the integration wizard is supposed to behave like an edit wizard
+            // otherwise it should behave as if the tool is integrated -schr_m
+            if ((Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE)) {
+                wizard.setIsEdit(true);
+            } else {
+                wizard.setIsEdit(false);
+            }
             wizard.removeAdditionalPages();
             if (configurationMap != null) {
                 wizard.setAdditionalPages((String) configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
@@ -544,7 +551,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     /**
-     * @param context    The integration context for which to find the configuration file. Must not be null.
+     * @param context The integration context for which to find the configuration file. Must not be null.
      * @param toolFolder The folder to search for the configuration file. toolFolder.isDirectory() must be true.
      * @return The configuration file for the given context if such a file exists in the given toolFolder, null otherwise.
      */

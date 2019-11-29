@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.internal;
@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +39,7 @@ import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
+import de.rcenvironment.core.component.execution.api.WorkflowGraphPath;
 import de.rcenvironment.core.component.execution.impl.ComponentContextImpl;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionContextImpl;
 import de.rcenvironment.core.component.execution.internal.ComponentExecutor.ComponentExecutionType;
@@ -208,7 +208,6 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private Runnable heartbeatRunnable = new Runnable() {
 
         @Override
-        @TaskDescription("Send component heartbeat to workflow controller")
         public void run() {
             if (VERBOSE_LOGGING) {
                 LOG.debug("Sending component heartbeat: " + compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
@@ -241,8 +240,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         compExeRelatedInstances.compCtxBridge = compExeInstancesFactory.createComponentContextBridge(compExeRelatedInstances);
 
         heartbeatFuture =
-            threadPool.scheduleAtFixedRateAfterDelay(heartbeatRunnable, Math.round(Math.random() * MAX_INITIAL_HEARTBEAT_SEND_DELAY_MSEC),
-                HEARTBEAT_SEND_INTERVAL_MSEC);
+            threadPool.scheduleAtFixedIntervalAfterInitialDelay("Send component heartbeat to workflow controller", heartbeatRunnable,
+                Math.round(Math.random() * MAX_INITIAL_HEARTBEAT_SEND_DELAY_MSEC), HEARTBEAT_SEND_INTERVAL_MSEC);
 
         initializeEventProcessors();
     }
@@ -1255,7 +1254,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
 
         private void forwardInternalTD(InternalTDImpl internalTD) {
 
-            Queue<WorkflowGraphHop> hopsToTraverse = internalTD.getHopsToTraverse();
+            WorkflowGraphPath hopsToTraverse = internalTD.getHopsToTraverse();
             WorkflowGraphHop currentHop = hopsToTraverse.poll();
             compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutputConsideringOnlyCertainInputs(
                 currentHop.getHopOuputName(), internalTD,

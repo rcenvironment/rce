@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.connection.internal;
@@ -114,6 +114,12 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
         } else {
             displayName = "<" + contactPointStr + ">";
         }
+
+        if (connectionSetupService.connectionAlreadyExists(ncp)) {
+            context.println(StringUtils.format("Connection setup to host '%s:%d' already exists.", ncp.getHost(), ncp.getPort()));
+            return;
+        }
+
         ConnectionSetup setup = connectionSetupService.createConnectionSetup(ncp, displayName, true);
         context.println("Connection added, id=" + setup.getId());
         performList(context);
@@ -172,5 +178,5 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
 
         // TODO add synchronous option as well; decide which should be default
     }
-    
+
 }

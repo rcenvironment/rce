@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.communication.connection.impl;
@@ -68,8 +68,22 @@ public class ConnectionSetupServiceImpl implements ConnectionSetupService, Addit
         return result;
     }
 
+    /**
+     * @param ncp the {@link NetworkContactPoint}
+     * @return if a connection with this host and port already exists
+     */
+    public boolean connectionAlreadyExists(NetworkContactPoint ncp) {
+        for (int i = 0; i < setups.size(); i++) {
+            if (setups.get(i).equalsHostAndPort(ncp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public ConnectionSetup createConnectionSetup(NetworkContactPoint ncp, String displayName, boolean connnectOnStartup) {
+
         // create minimal adapter to delegate/forward state changes to all listeners
         ConnectionSetupListenerAdapter stateChangeListenerAdapter = new ConnectionSetupListenerAdapter() {
 

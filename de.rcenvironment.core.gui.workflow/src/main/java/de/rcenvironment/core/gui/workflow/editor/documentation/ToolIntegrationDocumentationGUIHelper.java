@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.gui.workflow.editor.documentation;
@@ -27,6 +27,8 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+
 import de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService;
 import de.rcenvironment.core.gui.utils.common.EditorsHelper;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -156,7 +158,8 @@ public final class ToolIntegrationDocumentationGUIHelper {
 
                         @Override
                         public void run() {
-                            FileDialog fileDialog = new FileDialog(Display.getDefault().getActiveShell(), SWT.SAVE);
+                            FileDialog fileDialog =
+                                new FileDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.SAVE);
                             fileDialog.setText("Save tool documentation to file system...");
                             fileDialog.setFileName(fileToSave.getName());
                             String path = fileDialog.open();
@@ -178,7 +181,8 @@ public final class ToolIntegrationDocumentationGUIHelper {
 
                         @Override
                         public void run() {
-                            DirectoryDialog dirDialog = new DirectoryDialog(Display.getDefault().getActiveShell(), SWT.SAVE);
+                            DirectoryDialog dirDialog =
+                                new DirectoryDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.SAVE);
                             dirDialog.setText("Save tool documentation to file system...");
                             String path = dirDialog.open();
                             if (path == null) {

@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.outputwriter.gui;
@@ -45,6 +45,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeProperty
  * Creates a "Properties" view tab for configuring output writer root location properties.
  * 
  * @author Oliver Seebach
+ * @author Kathrin Schaffert
  * 
  */
 public class OutputWriterRootLocationSection extends WorkflowNodePropertySection {

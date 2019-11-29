@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.components.parametricstudy.execution;
@@ -897,18 +897,16 @@ public class ParametricStudyComponentTest {
     public void testCancelStart() throws ComponentException {
         Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, "100000", false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
-            
-            @Override
-            public void run() {
-                try {
-                    final int hundred = 100;
-                    Thread.sleep(hundred);
-                } catch (InterruptedException e) {
-                    return; // test timeout will apply as onStartInterrupted is not called
-                }
-                component.onStartInterrupted(null);    
+        ConcurrencyUtils.getAsyncTaskService().execute(() -> {
+
+            try {
+                final int hundred = 100;
+                Thread.sleep(hundred);
+            } catch (InterruptedException e) {
+                return; // test timeout will apply as onStartInterrupted is not called
             }
+            component.onStartInterrupted(null);
+
         });
         component.start();
 

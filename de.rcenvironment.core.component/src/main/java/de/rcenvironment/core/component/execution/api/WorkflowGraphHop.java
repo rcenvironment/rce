@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
 
 package de.rcenvironment.core.component.execution.api;
@@ -34,9 +34,9 @@ public class WorkflowGraphHop implements Serializable {
 
     private final String hopOutputId;
 
-    public WorkflowGraphHop(ComponentExecutionIdentifier hopExecutionIdentifier, String hopOuputName,
+    public WorkflowGraphHop(ComponentExecutionIdentifier sourceExecutionIdentifier, String sourceOutputName,
         ComponentExecutionIdentifier targetExecutionIdentifier, String targetInputName) {
-        this(hopExecutionIdentifier, hopOuputName, targetExecutionIdentifier, targetInputName, null);
+        this(sourceExecutionIdentifier, sourceOutputName, targetExecutionIdentifier, targetInputName, null);
     }
 
     public WorkflowGraphHop(ComponentExecutionIdentifier hopExecutionIdentifier, String hopOuputName,
@@ -72,6 +72,16 @@ public class WorkflowGraphHop implements Serializable {
     @Override
     public String toString() {
         return StringUtils.format("%s@%s -> %s@%s", ouputName, executionIdentifier, targetInputName, targetExecutionIdentifier);
+    }
+
+    /**
+     * @param other Some other graph hop in the same {@link WorkflowGraph} as this one.
+     * @return True if the source node and the target node of this vertex and the other have the same execution identifiers. False
+     *         otherwise.
+     */
+    public boolean connectsSameNodes(final WorkflowGraphHop other) {
+        return this.executionIdentifier.equals(other.executionIdentifier)
+            && this.targetExecutionIdentifier.equals(other.targetExecutionIdentifier);
     }
 
 }
