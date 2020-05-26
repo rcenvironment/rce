@@ -2,8 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Extensions - Test Script Runner - JUnit Self Test
 Bundle-SymbolicName: de.rcenvironment.supplemental.testscriptrunner.tests
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Fragment-Host: de.rcenvironment.supplemental.testscriptrunner
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.easymock
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.supplemental.testscriptrunner.tests

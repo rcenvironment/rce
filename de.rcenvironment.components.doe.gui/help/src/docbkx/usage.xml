@@ -16,7 +16,7 @@
             upper bound. The definition of inputs is optional. If inputs are defined, the DOE
             component maps one set of output values to one set of input values. I.e., output values
             are sent as soon as input values (corresponding to previously sent output values) are
-            received. Queuing of input values as not allowed. If no inputs are defined, the output
+            received. Queuing of input values is not allowed. If no inputs are defined, the output
             values are sent all at once at workflow start.</para>
         <para>Second, the design method must be selected. You can choose between four
             methods:</para>

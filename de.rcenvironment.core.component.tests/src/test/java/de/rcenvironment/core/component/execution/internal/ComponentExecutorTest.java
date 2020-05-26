@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -125,7 +125,7 @@ public class ComponentExecutorTest {
         EasyMock.replay(compMock);
         compExeRelatedInstancesStub.component.set(compMock);
 
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         ComponentStateMachine compStateMachineMock = createComponentStateMachineEventForRuns(compStateMachineEventCapture);
         compExeRelatedInstancesStub.compStateMachine = compStateMachineMock;
 
@@ -251,8 +251,8 @@ public class ComponentExecutorTest {
 
         compExeRelatedInstancesStub.compExeScheduler = createComponentExecutionSchedulerMock(false);
 
-        Capture<ConsoleRow.Type> consoleRowTypeCapture = new Capture<>();
-        Capture<String> logMessageCapture = new Capture<>();
+        Capture<ConsoleRow.Type> consoleRowTypeCapture = Capture.newInstance();
+        Capture<String> logMessageCapture = Capture.newInstance();
         ConsoleRowsSender consoleRowsSenderMock = createConsoleRowsSenderMock(consoleRowTypeCapture, logMessageCapture);
         compExeRelatedInstancesStub.consoleRowsSender = consoleRowsSenderMock;
 
@@ -293,7 +293,7 @@ public class ComponentExecutorTest {
         EasyMock.replay(compMock);
         compExeRelatedInstancesStub.component.set(compMock);
 
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         ComponentStateMachine compStateMachineMock = createComponentStateMachineEventForRuns(compStateMachineEventCapture);
         compExeRelatedInstancesStub.compStateMachine = compStateMachineMock;
 
@@ -450,7 +450,7 @@ public class ComponentExecutorTest {
         EasyMock.replay(compMock);
         compExeRelatedInstancesStub.component.set(compMock);
 
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         ComponentStateMachine compStateMachineMock = createComponentStateMachineEventForRuns(compStateMachineEventCapture);
         compExeRelatedInstancesStub.compStateMachine = compStateMachineMock;
 
@@ -465,8 +465,8 @@ public class ComponentExecutorTest {
 
         compExeRelatedInstancesStub.compExeScheduler = createComponentExecutionSchedulerMock(false);
 
-        Capture<ConsoleRow.Type> consoleRowTypeCapture = new Capture<>();
-        Capture<String> logMessageCapture = new Capture<>();
+        Capture<ConsoleRow.Type> consoleRowTypeCapture = Capture.newInstance();
+        Capture<String> logMessageCapture = Capture.newInstance();
         ConsoleRowsSender consoleRowsSenderMock = createConsoleRowsSenderMock(consoleRowTypeCapture, logMessageCapture);
         compExeRelatedInstancesStub.consoleRowsSender = consoleRowsSenderMock;
 
@@ -540,7 +540,7 @@ public class ComponentExecutorTest {
         };
         compExeRelatedInstancesStub.component.set(compStub);
 
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         ComponentStateMachine compStateMachineMock = createComponentStateMachineEventForRuns(compStateMachineEventCapture);
         compExeRelatedInstancesStub.compStateMachine = compStateMachineMock;
 
@@ -634,7 +634,7 @@ public class ComponentExecutorTest {
         compExeRelatedInstancesStub.component.set(compStub);
 
         ComponentStateMachine compStateMachineMock = EasyMock.createStrictMock(ComponentStateMachine.class);
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         compStateMachineMock.postEvent(EasyMock.capture(compStateMachineEventCapture));
         EasyMock.expectLastCall();
         EasyMock.replay(compStateMachineMock);
@@ -651,8 +651,8 @@ public class ComponentExecutorTest {
 
         compExeRelatedInstancesStub.compExeScheduler = createComponentExecutionSchedulerMock(false);
 
-        Capture<ConsoleRow.Type> consoleRowTypeCapture = new Capture<>();
-        Capture<String> logMessageCapture = new Capture<>();
+        Capture<ConsoleRow.Type> consoleRowTypeCapture = Capture.newInstance();
+        Capture<String> logMessageCapture = Capture.newInstance();
         ConsoleRowsSender consoleRowsSenderMock = createConsoleRowsSenderMock(consoleRowTypeCapture, logMessageCapture);
         compExeRelatedInstancesStub.consoleRowsSender = consoleRowsSenderMock;
 
@@ -705,7 +705,7 @@ public class ComponentExecutorTest {
             compExeRelatedInstancesStub.compExeRelatedStates.executionCount.get());
         EasyMock.expectLastCall();
         EasyMock.expect(compExeStorageBridgeMock.hasUnfinishedComponentExecution()).andReturn(true);
-        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
+        Capture<FinalComponentRunState> finalStateCapture = Capture.newInstance();
         compExeStorageBridgeMock.setComponentExecutionFinished(EasyMock.capture(finalStateCapture));
         EasyMock.expectLastCall();
         EasyMock.replay(compExeStorageBridgeMock);
@@ -727,7 +727,7 @@ public class ComponentExecutorTest {
         EasyMock.expect(compExeStorageBridgeMock.hasUnfinishedComponentExecution()).andReturn(false);
         compExeStorageBridgeMock.addComponentExecution(compExeRelatedInstancesStub.compExeCtx, exeCount);
         EasyMock.expectLastCall();
-        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
+        Capture<FinalComponentRunState> finalStateCapture = Capture.newInstance();
         compExeStorageBridgeMock.setComponentExecutionFinished(EasyMock.capture(finalStateCapture));
         EasyMock.expectLastCall();
         EasyMock.replay(compExeStorageBridgeMock);

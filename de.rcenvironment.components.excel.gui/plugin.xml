@@ -84,7 +84,7 @@
    <extension point="org.eclipse.ui.views">
         <view allowMultiple="true"
             name="Excel"
-            icon="resources/excel_16.png"
+            icon="resources/excel16.png"
             class="de.rcenvironment.components.excel.gui.view.ExcelView"
             id="de.rcenvironment.components.excel.gui.view.ExcelView"
             restorable="false">
@@ -119,8 +119,6 @@
    		<toc file="help/toc.xml"/>
  	</extension>
    
-
-  
 	<extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.excel.gui.dm.ExcelHistoryDataItemSubtreeBuilder"/>
    </extension>

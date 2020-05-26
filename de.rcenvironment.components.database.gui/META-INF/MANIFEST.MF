@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Database Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.database.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ui,
@@ -36,3 +36,4 @@ Import-Package: de.rcenvironment.components.database.common,
  org.eclipse.ui.views.properties.tabbed
 Export-Package: de.rcenvironment.components.database.gui
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.database.gui

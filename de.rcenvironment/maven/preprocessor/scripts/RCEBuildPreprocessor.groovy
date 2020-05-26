@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -22,12 +22,12 @@ class RCEBuildPreprocessor {
 
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
-			'platform': 'snapshots/trunk',
-			'intermediate': 'snapshots/trunk'
+			'platform': 'snapshots/trunk/',
+			'intermediate': 'snapshots/trunk/'
 		],
 		'rc_or_release': [
-			'platform': 'releases/10.0.0',
-			'intermediate': 'releases/10.0.0'
+			'platform': 'releases/10.1.0',
+			'intermediate': 'releases/10.1.0'
 		]
 	]
 	

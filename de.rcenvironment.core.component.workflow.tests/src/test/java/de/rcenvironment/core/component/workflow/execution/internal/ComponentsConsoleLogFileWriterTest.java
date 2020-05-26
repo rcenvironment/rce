@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -53,20 +53,32 @@ public class ComponentsConsoleLogFileWriterTest {
         
         WorkflowExecutionStorageBridge wfDataManagementStorage = EasyMock.createNiceMock(WorkflowExecutionStorageBridge.class);
         LogFileCapture fileCapture1 = new LogFileCapture();
-        Capture<String> fileNameCapture1 = new Capture<>();
-        Capture<String> compRunIdCapture1 = new Capture<>();
-        wfDataManagementStorage.addComponentCompleteLog(EasyMock.capture(fileCapture1), EasyMock.capture(fileNameCapture1), 
+        Capture<String> fileNameCapture1 = Capture.newInstance();
+        Capture<String> compRunIdCapture1 = Capture.newInstance();
+        wfDataManagementStorage.addComponentCompleteLog(EasyMock.capture(fileCapture1.getCapture()), EasyMock.capture(fileNameCapture1), 
             EasyMock.capture(compRunIdCapture1));
+        EasyMock.expectLastCall().andAnswer(() -> {
+            fileCapture1.onCapture();
+            return null;
+        });
         
         LogFileCapture fileCapture2 = new LogFileCapture();
-        Capture<String> fileNameCapture2 = new Capture<>();
-        Capture<String> compRunIdCapture2 = new Capture<>();
-        wfDataManagementStorage.addComponentErrorLog(EasyMock.capture(fileCapture2), EasyMock.capture(fileNameCapture2), 
+        Capture<String> fileNameCapture2 = Capture.newInstance();
+        Capture<String> compRunIdCapture2 = Capture.newInstance();
+        wfDataManagementStorage.addComponentErrorLog(EasyMock.capture(fileCapture2.getCapture()), EasyMock.capture(fileNameCapture2), 
             EasyMock.capture(compRunIdCapture2));
+        EasyMock.expectLastCall().andAnswer(() -> {
+            fileCapture2.onCapture();
+            return null;
+        });
         
         LogFileCapture fileCapture3 = new LogFileCapture();
-        Capture<String> fileNameCapture3 = new Capture<>();
-        wfDataManagementStorage.addWorkflowErrorLog(EasyMock.capture(fileCapture3), EasyMock.capture(fileNameCapture3));
+        Capture<String> fileNameCapture3 = Capture.newInstance();
+        wfDataManagementStorage.addWorkflowErrorLog(EasyMock.capture(fileCapture3.getCapture()), EasyMock.capture(fileNameCapture3));
+        EasyMock.expectLastCall().andAnswer(() -> {
+            fileCapture3.onCapture();
+            return null;
+        });
         EasyMock.replay(wfDataManagementStorage);
 
         final String wfName = "wf:1";
@@ -171,21 +183,33 @@ public class ComponentsConsoleLogFileWriterTest {
      *
      * @author Doreen Seider
      */
-    protected class LogFileCapture extends Capture<File> {
-        
-        private static final long serialVersionUID = -7974017366664173839L;
+    protected class LogFileCapture {
         
         protected File copiedLogFile;
         
-        @Override
-        public void setValue(File value) {
-            super.setValue(value);
+        private final Capture<File> fileCapture = Capture.newInstance();
+        
+        public Capture<File> getCapture() {
+            return fileCapture;
+        }
+        
+        public boolean hasCaptured() {
+            return this.fileCapture.hasCaptured();
+        }
+        
+        public File getValue() {
+            return this.fileCapture.getValue();
+        }
+        
+        public void onCapture() {
+            final File value = fileCapture.getValue();
             copiedLogFile = new File(value.getAbsolutePath() + "_c");
             try {
                 FileUtils.copyFile(value, copiedLogFile);
             } catch (IOException e) {
                 LogFactory.getLog(getClass()).error("Failed to copy log file", e);
             }
+            
         }
     }
     

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration Bootstrap Tests
 Bundle-SymbolicName: de.rcenvironment.core.configuration.bootstrap.tests
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Fragment-Host: de.rcenvironment.core.configuration.bootstrap
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
@@ -17,3 +17,4 @@ Import-Package: com.googlecode.lanterna.input;version="2.1.9",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.0.4"
+Automatic-Module-Name: de.rcenvironment.core.configuration.bootstrap.tests

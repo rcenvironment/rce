@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.configuration,
@@ -38,3 +38,4 @@ Service-Component: OSGI-INF/*.xml,
  OSGI-INF/generated/*.xml
 Bundle-Activator: de.rcenvironment.core.configuration.internal.Activator
 Require-Bundle: org.eclipse.core.runtime
+Automatic-Module-Name: de.rcenvironment.core.configuration

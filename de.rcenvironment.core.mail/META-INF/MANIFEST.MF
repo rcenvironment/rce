@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Mail
 Bundle-SymbolicName: de.rcenvironment.core.mail;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
@@ -25,3 +25,4 @@ Import-Package: com.icegreen.greenmail.util;version="1.5.1",
 Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.platform.maven.mail
 Export-Package: de.rcenvironment.core.mail
+Automatic-Module-Name: de.rcenvironment.core.mail

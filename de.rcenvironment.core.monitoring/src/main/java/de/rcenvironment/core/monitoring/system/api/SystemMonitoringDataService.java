@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -11,8 +11,6 @@ package de.rcenvironment.core.monitoring.system.api;
 import java.util.List;
 import java.util.Map;
 
-import org.hyperic.sigar.ProcState;
-
 import de.rcenvironment.core.monitoring.system.api.model.ProcessInformation;
 
 /**
@@ -23,6 +21,12 @@ import de.rcenvironment.core.monitoring.system.api.model.ProcessInformation;
  * @author Robert Mischke
  */
 public interface SystemMonitoringDataService {
+
+    /**
+     * @return true if this service's return values represent actual system data, false if system monitoring is disabled for some reason and
+     *         the returned values are placeholders
+     */
+    boolean isProvidingActualSystemData();
 
     /**
      * Get total system CPU usage in percent. Guaranteed to be either 0%..100%, or NaN in case of failure.
@@ -100,22 +104,6 @@ public interface SystemMonitoringDataService {
     double getProcessRAMPercentage(Long pid) throws OperatingSystemException;
 
     /**
-     * Get local disk usage in kiB.
-     * 
-     * @return local disk usage.
-     * @throws OperatingSystemException if getting local disk usage fails.
-     */
-    long getUsedLocalDiskSpace() throws OperatingSystemException;
-
-    /**
-     * Get free local disk space in kiB.
-     * 
-     * @throws OperatingSystemException if getting local free disk space fails.
-     * @return free local disk space.
-     */
-    long getFreeLocalDiskSpace() throws OperatingSystemException;
-
-    /**
      * Get a map of all running processes. PID is mapped to the process name.
      * 
      * @throws OperatingSystemException if getting process list fails.
@@ -133,15 +121,6 @@ public interface SystemMonitoringDataService {
     Map<Long, String> getChildProcessesAndIds(Long ppid) throws OperatingSystemException;
 
     /**
-     * Kills a specific process.
-     * 
-     * @param pid process id of process which should be killed.
-     * @param force Force the process to be killed with signum -9.
-     * @throws OperatingSystemException if killing a specific process fails.
-     */
-    void kill(Long pid, Boolean force) throws OperatingSystemException;
-
-    /**
      * Get detail information about the given process' child processes.
      * 
      * @param pid the ID of the parent process
@@ -150,12 +129,4 @@ public interface SystemMonitoringDataService {
      */
     List<ProcessInformation> getFullChildProcessInformation(long pid) throws OperatingSystemException;
 
-    /**
-     * Internal method: Get the {@link ProcState} object for a given process ID.
-     * 
-     * @param pid the PID of the target process
-     * @return the state object
-     * @throws OperatingSystemException on failure
-     */
-    ProcState fetchProcessState(long pid) throws OperatingSystemException;
 }

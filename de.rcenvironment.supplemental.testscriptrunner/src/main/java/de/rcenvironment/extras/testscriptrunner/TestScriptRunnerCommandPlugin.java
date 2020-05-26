@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -27,7 +27,13 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.RceTestLifeCycleHooks;
-import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceManagementStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.AssertOutputStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.CommonStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.ComponentStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceCommandStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceInstantiationStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceNetworkingStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceStateStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.definitions.impl.WorkflowStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ExecutionResult;
@@ -36,6 +42,7 @@ import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAd
  * {@link CommandPlugin} for executing BDD test scripts via the "run-test" command.
  *
  * @author Robert Mischke
+ * @author Marlon Schroeter (minor alterations)
  */
 public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
@@ -56,8 +63,14 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
     public TestScriptRunnerCommandPlugin() throws IOException {
         testFrameworkAdapter = new CucumberTestFrameworkAdapter(
+            AssertOutputStepDefinitions.class,
+            CommonStepDefinitions.class,
+            ComponentStepDefinitions.class,
+            InstanceCommandStepDefinitions.class,
+            InstanceInstantiationStepDefinitions.class,
+            InstanceNetworkingStepDefinitions.class,
+            InstanceStateStepDefinitions.class,
             RceTestLifeCycleHooks.class,
-            InstanceManagementStepDefinitions.class,
             WorkflowStepDefinitions.class);
         reportsRootDir = TempFileServiceAccess.getInstance().createManagedTempDir("tsr_reports");
     }

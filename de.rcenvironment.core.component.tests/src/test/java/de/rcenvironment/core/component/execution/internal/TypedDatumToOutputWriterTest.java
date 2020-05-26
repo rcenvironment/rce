@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -99,9 +99,9 @@ public class TypedDatumToOutputWriterTest {
     private void testWritingTypedDatumToOutput(Long dmId) {
 
         EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
-        Capture<EndpointDatum> epCapture1 = new Capture<>();
+        Capture<EndpointDatum> epCapture1 = Capture.newInstance();
         epDispatcherMock.dispatchEndpointDatum(EasyMock.capture(epCapture1));
-        Capture<EndpointDatum> epCapture2 = new Capture<>();
+        Capture<EndpointDatum> epCapture2 = Capture.newInstance();
         epDispatcherMock.dispatchEndpointDatum(EasyMock.capture(epCapture2));
         EasyMock.replay(epDispatcherMock);
 
@@ -158,7 +158,7 @@ public class TypedDatumToOutputWriterTest {
     public void testWritingTypedDatumToConnectedOutputConsideringTargetInput() {
 
         EndpointDatumDispatchService epDispatcherMock = EasyMock.createStrictMock(EndpointDatumDispatchService.class);
-        Capture<EndpointDatum> epCapture = new Capture<>();
+        Capture<EndpointDatum> epCapture = Capture.newInstance();
         epDispatcherMock.dispatchEndpointDatum(EasyMock.capture(epCapture));
         EasyMock.replay(epDispatcherMock);
 

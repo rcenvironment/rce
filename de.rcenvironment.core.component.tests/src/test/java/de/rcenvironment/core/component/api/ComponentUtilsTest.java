@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -268,6 +268,19 @@ public class ComponentUtilsTest {
         assertEquals("error message 8" + causeMessage + "error message 9" + causeMessage + "error message 10",
             ComponentUtils.createErrorLogMessage(new RuntimeException("error message 8",
                 new RuntimeException("error message 9", new RuntimeException("error message 10")))));
+    }
+    
+    @Test
+    public void testPlaceholderRegexp() {
+        assertFalse("".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertFalse("$".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertFalse("${".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertFalse("$}".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertFalse("{}".matches(ComponentUtils.PLACEHOLDER_REGEX));
+
+        assertTrue("Placeholder with empty name does not match placeholder regex", "${}".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertTrue("${someName}".matches(ComponentUtils.PLACEHOLDER_REGEX));
+        assertTrue("${someName.someSuffix}".matches(ComponentUtils.PLACEHOLDER_REGEX));
     }
 
 }

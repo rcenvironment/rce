@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -47,7 +47,7 @@ public class ComponentDisconnectWatcherTest {
 
         ComponentStatesChangedEntirelyVerifier compStatesChangedVerifierMock =
             EasyMock.createStrictMock(ComponentStatesChangedEntirelyVerifier.class);
-        Capture<Set<String>> compExeIdsCapture = new Capture<>();
+        Capture<Set<String>> compExeIdsCapture = Capture.newInstance();
         EasyMock.expect(compStatesChangedVerifierMock.isComponentInFinalState(COMP_EXE_ID_1)).andStubReturn(false);
         EasyMock.expect(compStatesChangedVerifierMock.isComponentInFinalState(COMP_EXE_ID_2)).andStubReturn(true);
         EasyMock.expect(compStatesChangedVerifierMock.isComponentInFinalState(COMP_EXE_ID_3)).andStubReturn(false);

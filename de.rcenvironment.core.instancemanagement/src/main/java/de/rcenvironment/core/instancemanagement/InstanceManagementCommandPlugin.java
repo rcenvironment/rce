@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -281,7 +281,6 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 InstanceManagementConstants.SUBCOMMAND_RESET + " - resets the instance to an empty configuration",
                 InstanceManagementConstants.SUBCOMMAND_APPLY_TEMPLATE
                     + " <template id> - applies (i.e. copies) the given template as the new configuration",
-
                 InstanceManagementConstants.SUBCOMMAND_SET_NAME + " <name> - sets the name of the instance",
                 InstanceManagementConstants.SUBCOMMAND_SET_COMMENT + " <comment> - sets a general comment",
                 InstanceManagementConstants.SUBCOMMAND_SET_WORKFLOW_HOST_OPTION + " [<true/false>] - sets or clears the workflow host flag",
@@ -290,56 +289,42 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                     + " <node id> - adds an override value for the node's network id; use with caution!",
                 InstanceManagementConstants.SUBCOMMAND_SET_TEMPDIR_PATH
                     + " <path> - sets the root path for RCE's temporary files directory",
-
                 InstanceManagementConstants.SUBCOMMAND_ADD_SERVER_PORT
                     + " <id> <ip> <port> - adds a new server port and sets the ip and port number to bind to",
                 // TODO restore reconnect parameters
                 InstanceManagementConstants.SUBCOMMAND_ADD_CONNECTION + " <id> <host> <port> <true/false> - adds new connection "
                     + "to the given ip/hostname and port, and whether it should auto-connect",
-
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_CONNECTION + " <id> removes a connection",
-
                 InstanceManagementConstants.SUBCOMMAND_SET_IP_FILTER_OPTION
                     + " [<true/false>] - enables or disables the ip filter; default: true",
                 InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS + " <port> - enables and configures SSH forwarding of "
                     + "RCE console commands by the IM \"master\" instance",
-
                 InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER
                     + " <ip> <port> - enables the ssh server and sets the ip and port to bind to",
                 InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER + " - disables the ssh server",
                 InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT
                     + " <username> <role> <enabled: true/false> password - adds an SSH account",
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT + " <username> - removes an SSH account",
-
                 InstanceManagementConstants.SUBCOMMAND_SET_REQUEST_TIMEOUT + " - sets the request timeout in msec",
-
                 InstanceManagementConstants.SUBCOMMAND_SET_FORWARDING_TIMEOUT + " - sets the forwarding timeout in msec",
-
                 InstanceManagementConstants.SUBCOMMAND_ADD_ALLOWED_INBOUND_IP + " <ip> - adds/allows an inbound IP address to the filter",
-
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_ALLOWED_INBOUND_IP
                     + " <ip> - removes/disallows an inbound IP address from the filter",
-
                 InstanceManagementConstants.SUBCOMMAND_ADD_SSH_CONNECTION
                     + " <name> <displayName> <host> <port> <loginName> - adds a new ssh connection",
-
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION
                     + " <name> - removes a ssh connection",
-
                 InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION
                     + " <id> <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> "
                     + "password <password>",
-
                 InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION
                     + " <id> - removes an uplink connection",
-
                 InstanceManagementConstants.SUBCOMMAND_PUBLISH_COMPONENT + " <name> - publishes a new component",
-
                 InstanceManagementConstants.SUBCOMMAND_UNPUBLISH_COMPONENT + " <name> - unpublishes a component",
-
                 InstanceManagementConstants.SUBCOMMAND_SET_BACKGROUND_MONITORING
-                    + " <id> <interval> - Enables background monitoring with the given interval (in seconds)"
-
+                    + " <id> <interval> - Enables background monitoring with the given interval (in seconds)",
+                InstanceManagementConstants.SUBCOMMAND_WIPE
+                    + " - wipes the instance, i.e. recursively deletes everything in the profile folder"
             ));
 
         contributions.add(new CommandDescription(ROOT_COMMAND + " start",

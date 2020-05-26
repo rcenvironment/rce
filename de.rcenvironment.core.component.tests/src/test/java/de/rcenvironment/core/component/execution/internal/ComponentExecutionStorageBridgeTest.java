@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -101,19 +101,19 @@ public class ComponentExecutionStorageBridgeTest {
 
         MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
-        Capture<Long> instanceDmIdCapture = new Capture<>();
-        Capture<String> nodeIdStringCapture = new Capture<>();
-        Capture<Integer> exeCountCapture = new Capture<>();
-        Capture<Long> startTimeCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture1 = new Capture<>();
+        Capture<Long> instanceDmIdCapture = Capture.newInstance();
+        Capture<String> nodeIdStringCapture = Capture.newInstance();
+        Capture<Integer> exeCountCapture = Capture.newInstance();
+        Capture<Long> startTimeCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture1 = Capture.newInstance();
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.captureLong(instanceDmIdCapture),
             EasyMock.capture(nodeIdStringCapture), EasyMock.captureInt(exeCountCapture), EasyMock.captureLong(startTimeCapture),
             EasyMock.capture(storageNodeIdCapture1))).andReturn(compExeDmId);
 
-        Capture<Long> compExeDmIdCapture = new Capture<>();
-        Capture<Long> endTimeCapture = new Capture<>();
-        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
+        Capture<Long> compExeDmIdCapture = Capture.newInstance();
+        Capture<Long> endTimeCapture = Capture.newInstance();
+        Capture<FinalComponentRunState> finalStateCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = Capture.newInstance();
         metaDataServiceMock.setComponentRunFinished(EasyMock.captureLong(compExeDmIdCapture), EasyMock.captureLong(endTimeCapture),
             EasyMock.capture(finalStateCapture), EasyMock.capture(storageNodeIdCapture2));
 
@@ -332,20 +332,20 @@ public class ComponentExecutionStorageBridgeTest {
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
-        Capture<Long> compExeDmIdCapture = new Capture<>();
-        Capture<Long> typedDatumIdCapture = new Capture<>();
-        Capture<Long> endpointInstanceIdCapture = new Capture<>();
-        Capture<Integer> inputCountCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
+        Capture<Long> compExeDmIdCapture = Capture.newInstance();
+        Capture<Long> typedDatumIdCapture = Capture.newInstance();
+        Capture<Long> endpointInstanceIdCapture = Capture.newInstance();
+        Capture<Integer> inputCountCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = Capture.newInstance();
         metaDataServiceMock.addInputDatum(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.captureLong(typedDatumIdCapture), EasyMock.captureLong(endpointInstanceIdCapture),
             EasyMock.captureInt(inputCountCapture), EasyMock.capture(storageNodeIdCapture));
 
-        Capture<Long> compExeDmIdCapture2 = new Capture<>();
-        Capture<Long> typedDatumIdCapture2 = new Capture<>();
-        Capture<Long> endpointInstanceIdCapture2 = new Capture<>();
-        Capture<Integer> inputCountCapture2 = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
+        Capture<Long> compExeDmIdCapture2 = Capture.newInstance();
+        Capture<Long> typedDatumIdCapture2 = Capture.newInstance();
+        Capture<Long> endpointInstanceIdCapture2 = Capture.newInstance();
+        Capture<Integer> inputCountCapture2 = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = Capture.newInstance();
         metaDataServiceMock.addInputDatum(EasyMock.captureLong(compExeDmIdCapture2),
             EasyMock.captureLong(typedDatumIdCapture2), EasyMock.captureLong(endpointInstanceIdCapture2),
             EasyMock.captureInt(inputCountCapture2), EasyMock.capture(storageNodeIdCapture2));
@@ -399,20 +399,20 @@ public class ComponentExecutionStorageBridgeTest {
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
-        Capture<Long> compExeDmIdCapture = new Capture<>();
-        Capture<Long> endpointInstanceIdCapture = new Capture<>();
-        Capture<String> typedDatumStringCapture = new Capture<>();
-        Capture<Integer> outputCountCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
+        Capture<Long> compExeDmIdCapture = Capture.newInstance();
+        Capture<Long> endpointInstanceIdCapture = Capture.newInstance();
+        Capture<String> typedDatumStringCapture = Capture.newInstance();
+        Capture<Integer> outputCountCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = Capture.newInstance();
         EasyMock.expect(metaDataServiceMock.addOutputDatum(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.captureLong(endpointInstanceIdCapture), EasyMock.capture(typedDatumStringCapture),
             EasyMock.captureInt(outputCountCapture), EasyMock.capture(storageNodeIdCapture))).andReturn(Long.valueOf(5));
 
-        Capture<Long> compExeDmIdCapture2 = new Capture<>();
-        Capture<Long> endpointInstanceIdCapture2 = new Capture<>();
-        Capture<String> typedDatumStringCapture2 = new Capture<>();
-        Capture<Integer> outputCountCapture2 = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
+        Capture<Long> compExeDmIdCapture2 = Capture.newInstance();
+        Capture<Long> endpointInstanceIdCapture2 = Capture.newInstance();
+        Capture<String> typedDatumStringCapture2 = Capture.newInstance();
+        Capture<Integer> outputCountCapture2 = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = Capture.newInstance();
         EasyMock.expect(metaDataServiceMock.addOutputDatum(EasyMock.captureLong(compExeDmIdCapture2),
             EasyMock.captureLong(endpointInstanceIdCapture2), EasyMock.capture(typedDatumStringCapture2),
             EasyMock.captureInt(outputCountCapture2), EasyMock.capture(storageNodeIdCapture2))).andReturn(Long.valueOf(9));
@@ -459,9 +459,9 @@ public class ComponentExecutionStorageBridgeTest {
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
-        Capture<Long> compExeDmIdCapture = new Capture<>();
-        Capture<String> historyDataItemCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
+        Capture<Long> compExeDmIdCapture = Capture.newInstance();
+        Capture<String> historyDataItemCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = Capture.newInstance();
         metaDataServiceMock.setOrUpdateHistoryDataItem(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.capture(historyDataItemCapture), EasyMock.capture(storageNodeIdCapture));
 
@@ -494,9 +494,9 @@ public class ComponentExecutionStorageBridgeTest {
 
         MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
-        Capture<Long> compInstanceDmIdCapture = new Capture<>();
-        Capture<FinalComponentState> finalCompStateCapture = new Capture<>();
-        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
+        Capture<Long> compInstanceDmIdCapture = Capture.newInstance();
+        Capture<FinalComponentState> finalCompStateCapture = Capture.newInstance();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = Capture.newInstance();
         metaDataServiceMock.setComponentInstanceFinalState(EasyMock.captureLong(compInstanceDmIdCapture),
             EasyMock.capture(finalCompStateCapture), EasyMock.capture(storageNodeIdCapture));
 

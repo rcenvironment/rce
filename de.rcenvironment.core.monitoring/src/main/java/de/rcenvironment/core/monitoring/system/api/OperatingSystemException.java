@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -34,6 +34,28 @@ public class OperatingSystemException extends Exception {
     public OperatingSystemException(ErrorType errorType, String message) {
         super(errorType.getMessage() + ": " + message);
         this.errorType = errorType;
+    }
+
+    /**
+     * Factory method for process-related ACCESS_DENIED exceptions.
+     * 
+     * @param pid the PID of the inaccessible process
+     * @return the generated exception
+     */
+    public static OperatingSystemException createAccessDeniedException(long pid) {
+        return new OperatingSystemException(OperatingSystemException.ErrorType.ACCESS_DENIED, " to process with pid: " + pid
+            + ". You may not have the appropriate permissions.");
+    }
+
+    /**
+     * Factory method for NO_SUCH_PROCESS exceptions.
+     * 
+     * @param pid the PID of the missing process
+     * @return the generated exception
+     */
+    public static OperatingSystemException createNoSuchProcessException(long pid) {
+        return new OperatingSystemException(OperatingSystemException.ErrorType.NO_SUCH_PROCESS, ". The process with pid: " + pid
+            + " may not exist.");
     }
 
     /**

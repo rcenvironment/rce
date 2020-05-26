@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -93,7 +93,7 @@ public class HostSection extends ValidatingWorkflowNodePropertySection {
                         pingLabel.setText("Pinging host " + host + " ...");
                     }
                     hostSection.layout();
-                    ConcurrencyUtils.getAsyncTaskService().execute(() -> {
+                    ConcurrencyUtils.getAsyncTaskService().execute("Ping a single host on GUI selection", () -> {
 
                         try {
                             Process p1 = java.lang.Runtime.getRuntime().exec("ping " + host);

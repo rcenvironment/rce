@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -102,7 +102,9 @@ final class ProcessUtils {
 
         if (Platform.isWindows()) {
             commandTokens = Arrays.copyOf(ProcessUtils.WINDOWS_SHELL_TOKENS, ProcessUtils.WINDOWS_SHELL_TOKENS.length);
-            commandTokens[ProcessUtils.WINDOWS_SHELL_TOKENS.length - 1] = command;
+            //Surround the complete command with quotation marks. This was added to fix the bug in Mantis issue 16497, where 
+            //the CommandLineExecutor seems to remove quotes at the beginning and the end of a command (bode_br)
+            commandTokens[ProcessUtils.WINDOWS_SHELL_TOKENS.length - 1] = "\"" + command + "\"";
         } else if (Platform.isLinux()) {
             commandTokens = Arrays.copyOf(ProcessUtils.LINUX_SHELL_TOKENS, ProcessUtils.LINUX_SHELL_TOKENS.length);
             commandTokens[ProcessUtils.LINUX_SHELL_TOKENS.length - 1] = command;

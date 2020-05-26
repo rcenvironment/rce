@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 DLR, Germany
+ * Copyright 2019-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -200,7 +200,7 @@ public class IconHelperRetrieveTest {
         EasyMock.expect(imageService.resize(toolIconUnscaled, IconSize.ICONSIZE16.getSize())).andReturn(toolIconScaled);
         // The file used for writing the scaled tool icon is obtained from the TempFileService, which is not injected - hence, we have to
         // expect any File here.
-        final Capture<File> tempFileCapture = new Capture<>();
+        final Capture<File> tempFileCapture = Capture.newInstance();
         imageService.write(EasyMock.eq(toolIconScaled), EasyMock.eq("PNG"), EasyMock.capture(tempFileCapture));
 
         final byte[] expectedResult = {};
@@ -252,7 +252,7 @@ public class IconHelperRetrieveTest {
         EasyMock.expect(imageService.resize(toolIconUnscaled, IconSize.ICONSIZE16.getSize())).andReturn(toolIconScaled);
         // The file used for writing the scaled tool icon is obtained from the TempFileService, which is not injected - hence, we have to
         // expect any File here.
-        final Capture<File> tempFileCapture = new Capture<>();
+        final Capture<File> tempFileCapture = Capture.newInstance();
         imageService.write(EasyMock.eq(toolIconScaled), EasyMock.eq("PNG"), EasyMock.capture(tempFileCapture));
 
         final byte[] expectedResult = {};

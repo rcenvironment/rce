@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -72,7 +72,7 @@ public class CommonProfile {
          * 'shutdown-warnings.log'. Such profile directories are created if the startup of RCE fails at some point and is aborted.
          * 
          * @param createParam Set to true if the given profile directory shall be created and initialized as a profile directory if it is
-         *                    non-existent or functionally empty. Set to false by default.
+         *        non-existent or functionally empty. Set to false by default.
          * @return This object for daisy-chaining.
          */
         public Builder create(boolean createParam) {
@@ -87,7 +87,7 @@ public class CommonProfile {
          * version of RCE with no clear way to revert to an earlier version.
          * 
          * @param migrateParam Set to true if, in case the given profile directory contains a profile with a non-current version, the
-         *                     profile shall be silently upgraded to the most current version.
+         *        profile shall be silently upgraded to the most current version.
          * @return This object for daisy-chaining.
          */
         public Builder migrate(boolean migrateParam) {
@@ -102,7 +102,7 @@ public class CommonProfile {
          * 
          * @return An instantiated instance of CommonProfile. Is never null.
          * @throws ProfileException If the instantiation of CommonProfile failed. See, among others, {@link #create(boolean)} and
-         *                          {@link #migrate(boolean)} for more information on the possible errors.
+         *         {@link #migrate(boolean)} for more information on the possible errors.
          */
         public CommonProfile build() throws ProfileException {
             processBuildOptions();
@@ -120,9 +120,8 @@ public class CommonProfile {
          * 
          * @return An instantiated instance of CommonProfile. Is never null.
          * @throws ProfileException If the instantiation of CommonProfile failed. See, among others, {@link #create(boolean)} and
-         *                          {@link #migrate(boolean)} for more information on the possible errors. In particular, the profile
-         *                          directory supplied upon creation of this Builder must be called "common" in order for construction of
-         *                          CommonProfile to succeed.
+         *         {@link #migrate(boolean)} for more information on the possible errors. In particular, the profile directory supplied upon
+         *         creation of this Builder must be called "common" in order for construction of CommonProfile to succeed.
          */
         public CommonProfile buildCommonProfile() throws ProfileException {
             processBuildOptions();
@@ -143,9 +142,8 @@ public class CommonProfile {
          * 
          * @return An instantiated instance of Profile. Is never null.
          * @throws ProfileException If the instantiation of Profile failed. See, among others, {@link #create(boolean)} and
-         *                          {@link #migrate(boolean)} for more information on the possible errors. In particular, the profile
-         *                          directory supplied upon creation of this Builder must not be called "common" in order for construction
-         *                          of Profile to succeed.
+         *         {@link #migrate(boolean)} for more information on the possible errors. In particular, the profile directory supplied upon
+         *         creation of this Builder must not be called "common" in order for construction of Profile to succeed.
          */
         public Profile buildUserProfile() throws ProfileException {
             processBuildOptions();
@@ -221,8 +219,8 @@ public class CommonProfile {
          * file are created, where the most current profile version is written to the version file.
          * 
          * @throws ProfileException Thrown if the profile directory was functionally empty, but either the internal directory or the version
-         *                          file could not be created, either due to the user not asking for creation of these objects, or due to an
-         *                          error during their creation.
+         *         file could not be created, either due to the user not asking for creation of these objects, or due to an error during
+         *         their creation.
          */
         private void ensureProfileDirectoryIsInitialized() throws ProfileException {
             if (profileDirectoryIsFunctionallyEmpty()) {
@@ -247,7 +245,7 @@ public class CommonProfile {
          * exist, although it is not guaranteed to be empty.
          * 
          * @throws ProfileException If the profile directory does not exist and could not be created, either due to the user not asking for
-         *                          nonexistent profiles to be created, or due to an IOException occurring during the attempted creation.
+         *         nonexistent profiles to be created, or due to an IOException occurring during the attempted creation.
          */
         private void ensureProfileDirectoryExists() throws ProfileException {
             if (!profileDirectory.exists()) {
@@ -256,7 +254,11 @@ public class CommonProfile {
                         createProfileDirectory();
                     } catch (IOException e) {
                         throw new ProfileException(
-                            String.format("Could not create profile directory for profile \"%s\"", profileDirectory.getName()), e);
+                            String.format(
+                                "Could not create profile directory for profile \"%s\". Please ensure that the parent directory of "
+                                    + "the specified profile directory exists and that you have writing access to that location.",
+                                profileDirectory.getName()),
+                            e);
                     }
                 } else {
                     throw new ProfileException(
@@ -276,8 +278,8 @@ public class CommonProfile {
          * 
          * @return True if the chosen profile directory is functionally empty.
          * @throws SecurityException If a {@link SecurityManager} prevents this method from determining the contents of the chosen profile
-         *                           directory.
-         * @throws ProfileException  If the contents of the chosen profile directory cannot be determined for some other reason.
+         *         directory.
+         * @throws ProfileException If the contents of the chosen profile directory cannot be determined for some other reason.
          */
         private boolean profileDirectoryIsFunctionallyEmpty() throws ProfileException {
             if (!profileDirectory.exists()) {
@@ -317,7 +319,7 @@ public class CommonProfile {
                 if (!warningsLog.isFile()) {
                     return false;
                 }
-                
+
                 return true;
             } else {
                 // Profile directory contains more than one file system object, hence it is not functionally empty by definition
@@ -380,12 +382,12 @@ public class CommonProfile {
          * 
          * @param versionFile The file containing the version number, i.e., 'internal/profile.version'.
          * @return The integer written to 'internal/profile.version'
-         * @throws IOException           If the given version file could not be read, e.g., because it does not exist, because its parent
-         *                               directory does not exist, or because the file is, in fact, a directory. Since this exception is
-         *                               thrown both if the directory 'internal' does not exist and if the file 'profile.version' does not
-         *                               exist, it does not allow to conclude that the profile is corrupt or a Legacy profile.
+         * @throws IOException If the given version file could not be read, e.g., because it does not exist, because its parent directory
+         *         does not exist, or because the file is, in fact, a directory. Since this exception is thrown both if the directory
+         *         'internal' does not exist and if the file 'profile.version' does not exist, it does not allow to conclude that the
+         *         profile is corrupt or a Legacy profile.
          * @throws NumberFormatException If the content of the given versionFile could be read, but it could not be parsed to an integer. By
-         *                               definition, this implies that the profile is corrupted.
+         *         definition, this implies that the profile is corrupted.
          */
         private int tryReadAndParseVersionNumber(File versionFile) throws IOException {
             final String versionFileContent = new String(Files.readAllBytes(versionFile.toPath()));
@@ -652,7 +654,7 @@ public class CommonProfile {
      * 
      * @return true if the lock was acquired, false if the lock is already held by another JVM application
      * @throws ProfileException Either if an IOException occurs while trying to access the lock file or if this method was called twice.
-     *                          Does not occur on a simple failure to acquire the lock.
+     *         Does not occur on a simple failure to acquire the lock.
      */
     public boolean attemptToLockProfileDirectory() throws ProfileException {
         File lockfile = new File(profileDirectory, PROFILE_DIR_LOCK_FILE_NAME);
@@ -722,19 +724,25 @@ public class CommonProfile {
         // Currently, it suffices to write the current version number to the version file in order to implement an upgrade. This may change
         // in future versions!
         final File versionFile = getVersionFile();
-    
+
         if (!versionFile.exists()) {
-            // As an invariant, we know that the internal directory exists on the file system, hence, we do not need to create it
-            // Moreover, we do not call createNewFile only for its return value, but also for its obvious side effect of creating the file.
-            // Hence, following the CheckStyle advice of merging the two conditions of the if-statements, while retaining correctness, would
-            // decrease readability since we would rely on short-circuiting of the || operator in order to obtain the correct behavior
-            if (!versionFile.createNewFile()) {
+            /*
+             * SonarCube complains about the following line and suggests merging the two nested if-statements. Doing so would, however,
+             * decrease the readability in my opinion, as it would merge a query (`versionFile.exists()`) and a command
+             * (`ensureInternalDirectoryExists() && versionFile.createNewFile()`) in a single if-condition. Hence, we split the query and
+             * the command and disable SonarCube on the following line.
+             */
+            if (!(ensureInternalDirectoryExists() && versionFile.createNewFile())) { // NOSONAR
                 throw new IOException(String.format("Could not create version file for profile \"%s\"", getProfileDirectory().getName()));
             }
         }
-    
+
         try (FileWriter fw = new FileWriter(versionFile)) {
             fw.write(String.valueOf(PROFILE_VERSION_NUMBER));
         }
+    }
+
+    private boolean ensureInternalDirectoryExists() {
+        return getInternalDirectory().isDirectory() || getInternalDirectory().mkdirs();
     }
 }

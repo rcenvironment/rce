@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication File Service
 Bundle-SymbolicName: de.rcenvironment.core.communication.file.service.tests
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Fragment-Host: de.rcenvironment.core.communication.file.service
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
@@ -12,3 +12,4 @@ Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.datamanagement.testutils,
  de.rcenvironment.core.datamodel.api
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.communication.file.service.tests

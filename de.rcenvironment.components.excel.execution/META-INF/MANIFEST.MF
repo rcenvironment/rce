@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.excel.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: de.rcenvironment.components.excel.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
@@ -32,3 +32,4 @@ Bundle-ClassPath: .
 Bundle-Vendor: DLR
 Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) )
 Export-Package: de.rcenvironment.components.excel.execution
+Automatic-Module-Name: de.rcenvironment.components.excel.execution

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.embedded.ssh.api,
@@ -44,6 +44,7 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.ssh.jsch,
  de.rcenvironment.toolkit.modules.concurrency.api,
+ de.rcenvironment.toolkit.utils.common,
  org.apache.commons.codec;version="1.4.0",
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.io;version="2.2.0",
@@ -70,3 +71,4 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
 Service-Component: OSGI-INF/*.xml,
  OSGI-INF/generated/*.xml
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: de.rcenvironment.core.embedded.ssh

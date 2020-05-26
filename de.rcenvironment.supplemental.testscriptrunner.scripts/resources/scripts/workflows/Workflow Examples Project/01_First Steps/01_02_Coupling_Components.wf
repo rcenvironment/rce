@@ -1,0 +1,66 @@
+{
+  "identifier" : "8232ac4c-39f7-4ae0-bc43-49f5d9e22559",
+  "workflowVersion" : "5",
+  "name" : "01_02_Coupling_Components_2020-03-04_09:45:57_02",
+  "nodes" : [ {
+    "identifier" : "7ecc6b51-dcc3-4140-abcf-fe45e6c20b06",
+    "name" : "First",
+    "location" : "424:343",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"word\", \"Hello\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "41a04455-f765-445d-8d01-8bd70f8988e5",
+      "name" : "word",
+      "epIdentifier" : "default",
+      "datatype" : "ShortText"
+    } ]
+  }, {
+    "identifier" : "a41df7fe-cbee-4b0d-bde2-b79a07c643e8",
+    "name" : "Second",
+    "location" : "668:343",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print(RCE.read_input(\"incoming_word\") + \" World\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f80edd69-8511-458c-a04f-bf721b2701a3",
+      "name" : "incoming_word",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "ShortText",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "7ecc6b51-dcc3-4140-abcf-fe45e6c20b06",
+    "output" : "41a04455-f765-445d-8d01-8bd70f8988e5",
+    "target" : "a41df7fe-cbee-4b0d-bde2-b79a07c643e8",
+    "input" : "f80edd69-8511-458c-a04f-bf721b2701a3"
+  } ],
+  "labels" : "[{\"identifier\":\"1242f1ea-82f3-4d33-8322-cd93976e47e0\",\"headerText\":\"See section \\\"Workflows\\\" in the user guide for details.\",\"text\":\"\",\"location\":\"711:563\",\"size\":\"432:39\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"9\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"9b3e1499-3329-4117-aa38-68ca5710e1ba\",\"headerText\":\"\",\"text\":\"Execute the workflow. First, the workflow component \\\"First\\\" is executed. Afterwards, the workflow component \\\"Second\\\" is executed. Between the two executions, a datum was transferred from \\\"First\\\" to \\\"Second\\\" via the connection between them. In the \\\"Workflow Data Browser\\\" tab which is placed below the workflow editor, you can trace the data sent and received by workflow components.\",\"location\":\"30:456\",\"size\":\"1113:86\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"b1aa1889-ad91-4fea-aa85-bbd208c3212e\",\"headerText\":\"Introducing coupling among workflow components\",\"text\":\"This workflow consists of a workflow component named \\\"First\\\" that sends data to the workflow component named \\\"Second\\\" via the connection between them represented by the arrow. The connection is created between the output named \\\"word\\\" of the workflow component \\\"First\\\" and the input named \\\"incoming_word\\\" of the workflow component \\\"Second\\\".\\r\\n\\r\\nInputs and outputs of workflow components are added/edited/removed in the \\\"Inputs/Outputs\\\" tab of the workflow components \\\"Properties\\\" tab. Connections are created by switching to the \\\"Draw connections\\\" mode in the workflow editor's palette. It is the second item from the top. In the \\\"Draw connections\\\" mode, click on the workflow component \\\"First\\\" and afterwards on the workflow component \\\"Second\\\". A dialog appears. On the left-hand side you see the outputs of the workflow component clicked first and on the right-hand side you see the inputs of the workflow component clicked afterwards. Outputs are connected to inputs via drag&drop. For your convenience, connections are automatically created in the dialog for some obvious cases (like same name and same data type, etc.).\\r\\n\\r\\nTo see all connections of a workflow, click on the button \\\"Open Connection Editor\\\" in the tool bar (next to the \\\"Execute Workflow\\\" button).\",\"location\":\"30:13\",\"size\":\"1113:288\",\"alpha\":\"202\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+}

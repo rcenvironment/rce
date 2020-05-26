@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -45,7 +45,7 @@ public class PropertiesChangeSupportTest {
     @Before
     public void setUpMockObjects() {
         listener = EasyMock.createStrictMock(PropertyChangeListener.class);
-        capture = new Capture<PropertyChangeEvent>(CaptureType.ALL);
+        capture = Capture.newInstance(CaptureType.ALL);
         listener.propertyChange(EasyMock.capture(capture));
         EasyMock.replay(listener);
     }

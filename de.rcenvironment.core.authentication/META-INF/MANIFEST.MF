@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Authentication
 Bundle-SymbolicName: de.rcenvironment.core.authentication;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.authentication
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -14,3 +14,4 @@ Import-Package: de.rcenvironment.core.configuration,
 Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/authenticationService.xml
 Bundle-ClassPath: .
+Automatic-Module-Name: de.rcenvironment.core.authentication

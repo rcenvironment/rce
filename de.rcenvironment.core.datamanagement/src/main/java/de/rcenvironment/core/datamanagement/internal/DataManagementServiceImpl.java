@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -46,6 +46,10 @@ public class DataManagementServiceImpl implements DataManagementService {
     private static final String STRING_FILENAME_NOT_VALID =
         "Filename/path '%s' contains characters that are not valid for all operating systems; "
             + "it might lead to problems when accessing the file on another operating system";
+
+    private static final String STRING_DIR_NAME_NOT_VALID =
+        "Directory name/path '%s' contains characters that are not valid for all operating systems; "
+            + "it might lead to problems when accessing the directory on another operating system";
 
     private static final String ARCHIVE_TAR_GZ = "archive.tar.gz";
 
@@ -96,6 +100,10 @@ public class DataManagementServiceImpl implements DataManagementService {
     @Override
     public String createReferenceFromLocalDirectory(final File dir, final MetaDataSet additionalMetaData, final NetworkDestination nodeId)
         throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+
+        if (!CrossPlatformFilenameUtils.isFilenameValid(dir.getName())) {
+            LOGGER.warn(StringUtils.format(STRING_DIR_NAME_NOT_VALID, dir.getName()));
+        }
 
         final File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
 

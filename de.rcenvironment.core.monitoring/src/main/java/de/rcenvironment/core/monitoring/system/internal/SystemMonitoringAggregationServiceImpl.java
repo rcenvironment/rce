@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,8 +26,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hyperic.sigar.Humidor;
-import org.hyperic.sigar.ProcState;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
@@ -40,6 +39,7 @@ import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService;
 import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 import de.rcenvironment.core.monitoring.system.api.model.ProcessInformation;
 import de.rcenvironment.core.monitoring.system.api.model.SystemLoadInformation;
+import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
@@ -61,6 +61,8 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
 
     private static final int SYSTEM_LOAD_INFORMATION_COLLECTION_BUFFER_SIZE = 30;
 
+    private SystemIntegrationAdapter adapter;
+
     /**
      * The low-level service to fetch system data from.
      */
@@ -78,14 +80,6 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
 
     // description of provided data sources
     private Map<String, String> topicIdToDescriptionMap = new HashMap<>();
-
-    private long selfLauncherPid = 0;
-
-    private ProcState selfLauncherProcState = null;
-
-    private long selfJavaPid = 0;
-
-    private ProcState selfJavaProcState = null;
 
     private FullSystemAndProcessDataSnapshot cachedFullSnapshot;
 
@@ -108,25 +102,11 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         Objects.requireNonNull(objectBindingsService);
         Objects.requireNonNull(asyncTaskService);
 
-        initializeSelfPidsIfNecessary();
+        adapter = SystemIntegrationEntryPoint.getAdapter();
+        Objects.requireNonNull(adapter); // split for readability
 
-        try {
-            // note: this is never updated if the PID was not available on activation; move this into the initialization method? --misc_ro
-            if (selfLauncherPid != 0) {
-                selfLauncherProcState = systemDataService.fetchProcessState(selfLauncherPid);
-            }
-            if (selfJavaPid != 0) {
-                selfJavaProcState = systemDataService.fetchProcessState(selfJavaPid);
-            }
-            topicIdToDescriptionMap.put(SystemMonitoringConstants.PERIODIC_MONITORING_TOPIC_SIMPLE_SYSTEM_INFO,
-                "Logs basic system monitoring data (total CPU and RAM usage)");
-            // topicIdToDescriptionMap
-            // .put(SystemMonitoringConstants.PERIODIC_MONITORING_TOPIC_DETAILED_SYSTEM_INFO,
-            // "Logs monitoring data in more detail. Information such as CPU-usage, "
-            // + "RAM-usage ect. of rce and rce sub-processes will be logged.");
-        } catch (OperatingSystemException e) {
-            log.error("Failed to initialize process states for system monitoring : " + e.toString());
-        }
+        topicIdToDescriptionMap.put(SystemMonitoringConstants.PERIODIC_MONITORING_TOPIC_SIMPLE_SYSTEM_INFO,
+            "Logs basic system monitoring data (total CPU and RAM usage)");
 
         objectBindingsService.addBinding(PeriodicMonitoringDataContributor.class, setUpPeriodicMonitoringDataContributorAdapter(), this);
 
@@ -175,9 +155,6 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         if (hasValidCachedFullSnapshot()) {
             return cachedFullSnapshot;
         }
-
-        // this may have failed on initialization, so retry if necessary; if it was already initialized, then this method returns fast
-        initializeSelfPidsIfNecessary();
 
         FullSystemAndProcessDataSnapshot newSnapshot = createFullSnapshot();
 
@@ -258,18 +235,35 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
 
         long systemRAMUsage = systemDataService.getTotalUsedRAM();
 
-        final List<ProcessInformation> subProcesses = systemDataService.getFullChildProcessInformation(selfJavaPid);
-        final List<ProcessInformation> ownProcesses = new ArrayList<>();
-        if (selfLauncherProcState != null) {
-            ownProcesses.add(new ProcessInformation(selfLauncherPid, selfLauncherProcState.getName(), Collections
-                .<ProcessInformation> emptyList(),
-                systemDataService.getProcessCPUUsage(selfLauncherPid), systemDataService.getProcessRAMUsage(selfLauncherPid)));
-        }
+        final List<ProcessInformation> subProcesses;
+        final List<ProcessInformation> ownProcesses;
 
-        if (selfJavaProcState != null) {
-            ownProcesses.add(new ProcessInformation(selfJavaPid, selfJavaProcState.getName(), Collections
+        // process info may or may not be already available
+        if (adapter.areSelfPidsAndProcessStatesAvailable()) {
+            subProcesses = systemDataService.getFullChildProcessInformation(adapter.getSelfJavaPid());
+            ownProcesses = new ArrayList<>();
+            ownProcesses.add(new ProcessInformation(adapter.getSelfJavaPid(), adapter.getSelfJavaProcessName(), Collections
                 .<ProcessInformation> emptyList(),
-                systemDataService.getProcessCPUUsage(selfJavaPid), systemDataService.getProcessRAMUsage(selfJavaPid)));
+                systemDataService.getProcessCPUUsage(adapter.getSelfJavaPid()),
+                systemDataService.getProcessRAMUsage(adapter.getSelfJavaPid())));
+            if (!OSFamily.isWindows()) {
+                ownProcesses.add(new ProcessInformation(adapter.getSelfLauncherPid(), adapter.getSelfLauncherProcessName(), Collections
+                    .<ProcessInformation> emptyList(),
+                    systemDataService.getProcessCPUUsage(adapter.getSelfLauncherPid()),
+                    systemDataService.getProcessRAMUsage(adapter.getSelfLauncherPid())));
+                // Place RCE help processes (on Linux systems) into own processes
+                for (Iterator<ProcessInformation> it = subProcesses.iterator(); it.hasNext();) {
+                    ProcessInformation proc = it.next();
+                    if (proc.getName().startsWith("WebKit")) {
+                        ownProcesses.add(proc);
+                        it.remove();
+                    }
+                }
+            }
+
+        } else {
+            subProcesses = new ArrayList<>();
+            ownProcesses = new ArrayList<>();
         }
 
         return new FullSystemAndProcessDataSnapshot(systemCPUUsage, systemRAMUsage, systemDataService.getTotalSystemRAM(),
@@ -311,23 +305,6 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
             } catch (OperatingSystemException e) {
                 log.error(e);
                 return "<error>";
-            }
-        }
-    }
-
-    private void initializeSelfPidsIfNecessary() {
-        if (selfJavaPid == 0) {
-            selfJavaPid = Humidor.getInstance().getSigar().getPid();
-            log.debug("Java process ID: " + selfJavaPid);
-        }
-        if (selfJavaPid != 0 && selfLauncherPid == 0) {
-            try {
-                selfLauncherPid = systemDataService.fetchProcessState(selfJavaPid).getPpid();
-                log.debug("Launcher process ID: " + selfLauncherPid);
-            } catch (OperatingSystemException e) {
-                // note: if this happens repeatedly "in the wild", add a failure limit here
-                log.error("Failed to determine the ID of the launcher process; "
-                    + "a new attempt will be made on the next monitoring data request: " + e.toString());
             }
         }
     }

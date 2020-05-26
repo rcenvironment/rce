@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -39,7 +39,7 @@ public class SaveUserInput implements IIntroAction {
 
     private static final String RELATIVE_PATH_TO_SCRIPT = "content/script/intro.js";
 
-    private static final Log log = LogFactory.getLog(SaveUserInput.class);
+    private static final Log LOG = LogFactory.getLog(SaveUserInput.class);
 
     private static String getPathToScriptFile() {
         Bundle bundle = Platform.getBundle("de.rcenvironment.core.gui.introduction");
@@ -54,7 +54,7 @@ public class SaveUserInput implements IIntroAction {
 //            log.info("Path to script file intro.js: " + resolvedPath);
             return resolvedPath;
         } catch (URISyntaxException | IOException e) {
-            log.error("Unable to locate script file 'intro.js'", e);
+            LOG.error("Unable to locate script file 'intro.js'", e);
             return "";
         }
 
@@ -66,13 +66,12 @@ public class SaveUserInput implements IIntroAction {
     @Override
     public void run(IIntroSite site, Properties properties) {
         final SaveUserInputParameters parameters = SaveUserInputParameters.createFromProperties(properties);
-        // REVIEW (AW): Why is the value first stored to preferences and subsequently read from preferences again?
+        // TODO (RD): Comment on the design decision to write the user choice to parameters and to subsequently read it from there again
+        // instead of passing the choice directly into the method
         storeCheckboxValueToPreferences(parameters.isCheckboxChecked());
         persistUserPreferenceToScriptFile();
     }
 
-    // REVIEW (AW): It would be possible and cleaner to pass the user choice into this method instead of having it determine this itself
-    // from preferences
     private void persistUserPreferenceToScriptFile() {
         try {
             final boolean preferencesContainShowIntroKey = preferencesContainShowIntroKey();
@@ -87,8 +86,7 @@ public class SaveUserInput implements IIntroAction {
         final IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode("org.eclipse.ui");
         preferences.flush();
         final List<String> prefKeyList = Arrays.asList(preferences.keys());
-        // REVIEW (AW): This used to be the string literal "showIntro" instead of the string constant
-        // REVIEW (AW): Only the existence of the key is tested, but not the value itself
+        // TODO (RD): Comment on the sufficiency to only check the existence of the key, but not its value
         return prefKeyList.contains(IWorkbenchPreferenceConstants.SHOW_INTRO);
     }
 
@@ -97,6 +95,6 @@ public class SaveUserInput implements IIntroAction {
     }
     
     private void logExceptionAsError(BackingStoreException e) {
-        log.error("Preferences operation could not be completed", e);
+        LOG.error("Preferences operation could not be completed", e);
     }
 }

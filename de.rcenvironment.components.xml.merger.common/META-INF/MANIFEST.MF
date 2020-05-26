@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component Common
 Bundle-SymbolicName: de.rcenvironment.components.xml.merger.common
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Export-Package: de.rcenvironment.components.xml.merger.common;version="6.0.0"
 RCE-Component: false
 Bundle-ClassPath: .
@@ -15,3 +15,4 @@ Import-Package: de.rcenvironment.core.component.api,
  org.apache.commons.logging;provider=paxlogging,
  org.eclipse.jface.resource,
  org.eclipse.swt.graphics
+Automatic-Module-Name: de.rcenvironment.components.xml.merger.common

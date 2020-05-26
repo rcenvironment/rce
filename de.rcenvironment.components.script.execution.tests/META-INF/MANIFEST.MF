@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.tests
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Fragment-Host: de.rcenvironment.components.script.execution
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
@@ -28,3 +28,4 @@ Import-Package: de.rcenvironment.components.script.common,
  org.apache.commons.io;version="2.0.1"
 Export-Package: de.rcenvironment.components.script.execution.testutils
 Require-Bundle: de.rcenvironment.core.utils.testing
+Automatic-Module-Name: de.rcenvironment.components.script.execution.tests

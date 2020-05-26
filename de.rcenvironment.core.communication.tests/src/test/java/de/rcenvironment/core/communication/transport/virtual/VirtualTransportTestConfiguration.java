@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -19,7 +19,7 @@ import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualNe
  */
 public class VirtualTransportTestConfiguration extends TestConfigurationImpl {
 
-    private static final int DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC = 1000;
+    private static final int DEFAULT_TRAFFIC_WAIT_TIMEOUT_MSEC = 2000;
 
     private static final int DEFAULT_NETWORK_SILENCE_WAIT_TIME_MSEC = 1000;
 

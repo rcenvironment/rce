@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -116,7 +116,7 @@ public class WorkflowPlaceholderHandlerTest {
         Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID2));
         Assert.assertFalse(weph.getPlaceholderNameSetOfComponentInstance(componentUUID1).contains(
             WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3)));
-        Assert.assertTrue(weph.getPlaceholderNameSetOfComponentID(componentID1).contains(
+        Assert.assertTrue(weph.getGlobalPlaceholdersForComponentID(componentID1).contains(
             WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3)));
         Assert.assertTrue(weph.getPlaceholderNamesOfComponentInstance(componentUUID1).contains(placeholder1));
         Assert.assertFalse(weph.getPlaceholderNamesOfComponentInstance(componentUUID1).contains(placeholder3));
@@ -124,7 +124,7 @@ public class WorkflowPlaceholderHandlerTest {
         Assert.assertFalse(weph.getPlaceholderOfComponent(componentID1).contains(placeholder1));
         Assert.assertTrue(weph.getPlaceholderOfComponent(componentID1).contains(placeholder3));
         Assert.assertFalse(weph.getPlaceholderOfComponent(componentID1).contains(placeholder4));
-        Assert.assertNull(weph.getPlaceholderNameSetOfComponentID(null));
+        Assert.assertNull(weph.getGlobalPlaceholdersForComponentID(null));
         Assert.assertNotNull(weph.getComponentInstances(componentID1));
         Assert.assertNull(weph.getComponentInstances(componentID2));
     }

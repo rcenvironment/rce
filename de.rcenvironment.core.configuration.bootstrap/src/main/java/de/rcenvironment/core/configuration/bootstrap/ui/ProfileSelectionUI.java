@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -46,6 +46,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * UI that allows the user to select a profile to start from and to select a default profile.
  *
  * @author Tobias Brieden
+ * @author Kathrin Schaffert (#17159, #15457)
  */
 public class ProfileSelectionUI {
 
@@ -82,17 +83,23 @@ public class ProfileSelectionUI {
 
     private static final String BACKGROUND_MESSAGE = "Profile Selection";
 
-    private static final int PROFILE_LIST_WIDTH = 60;
+    private static final int PROFILE_LIST_WIDTH = 100;
 
     private static final String DEFAULT_WARNING_TEXT =
-        "Note: If you select a default profile here, RCE will use this profile on the next start (or restart), if you do not use the "
-            + "profile option (\"-p\"). This is also the case if you have configured RCE as a service.";
+        "Note: If you select a default profile here, RCE will use this profile on the next start or restart. By using the "
+            + "profile option (\"-p\"), you can still start RCE with a specific profile. "
+            + "This is also the case if you have configured RCE as a service.";
+
+    private static final String WARNING_TEXT_COULD_NOT_DETERMINE_VERSION_OF_PROFILE = "Could not determine version of profile \"%s\".";
+
+    private static final String WARNING_TEXT_SEE_LOG = " See log for more details.";
 
     private GUIScreen guiScreen;
 
     private Profile selectedProfile = null;
 
-    // TODO it should be possible to combine this dialog with the configuration ui dialog. There should be a modular way to do that.
+    // TODO it should be possible to combine this dialog with the configuration ui
+    // dialog. There should be a modular way to do that.
 
     private Terminal terminal;
 
@@ -147,7 +154,8 @@ public class ProfileSelectionUI {
                 public void execute() {
                     try {
                         File profilesParentDirectory = ProfileUtils.getProfilesParentDirectory();
-                        guiScreen.showWindow(new SelectProfileWindow(profilesParentDirectory), GUIScreen.Position.CENTER);
+                        guiScreen.showWindow(new SelectProfileWindow(profilesParentDirectory),
+                            GUIScreen.Position.CENTER);
 
                         // check if a profile was selected
                         if (selectedProfile != null) {
@@ -183,7 +191,8 @@ public class ProfileSelectionUI {
      * @return The action chosen by the user. May be null if the user cancels the menu.
      */
     private MainMenuAction showMainMenu(MainMenuAction selectProfileAction, MainMenuAction selectDefaultProfileAction) {
-        return ListSelectDialog.showDialog(guiScreen, "Select Action", null, selectProfileAction, selectDefaultProfileAction);
+        return ListSelectDialog.showDialog(guiScreen, "Select Action", null, selectProfileAction,
+            selectDefaultProfileAction);
     }
 
     /**
@@ -216,7 +225,8 @@ public class ProfileSelectionUI {
 
             });
 
-            // if one of the panels uses more space than preferred, because its content is bigger, make sure that the other panels have the
+            // if one of the panels uses more space than preferred, because its content is
+            // bigger, make sure that the other panels have the
             // same width
             int w1 = defaultProfilePanel.getPreferredSize().getColumns();
             int w2 = recentProfilePanel.getPreferredSize().getColumns();
@@ -238,7 +248,8 @@ public class ProfileSelectionUI {
                 final File defaultProfilePath = ProfileUtils.getDefaultProfilePath();
                 Action startWithDefaultProfileAction = () -> {
                     try {
-                        selectedProfile = new Profile.Builder(defaultProfilePath).create(true).migrate(false).buildUserProfile();
+                        selectedProfile = new Profile.Builder(defaultProfilePath).create(true).migrate(false)
+                            .buildUserProfile();
                         SelectProfileWindow.this.close();
                     } catch (ProfileException e) {
                         LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
@@ -247,7 +258,8 @@ public class ProfileSelectionUI {
                 defaultProfileListBox.addAction(defaultProfilePath.getAbsolutePath(), startWithDefaultProfileAction);
                 defaultProfilePanel.addComponent(defaultProfileListBox);
             } catch (ProfileException e) {
-                defaultProfilePanel.addComponent(new Label("Unable to determine the default profile.", PROFILE_LIST_WIDTH));
+                defaultProfilePanel
+                    .addComponent(new Label("Unable to determine the default profile.", PROFILE_LIST_WIDTH));
             }
             return defaultProfilePanel;
         }
@@ -267,19 +279,22 @@ public class ProfileSelectionUI {
 
             // ... check if the previous call was successful
             if (recentlyUsedProfiles == null) {
-                recentProfilePanel.addComponent(new Label("Unable to load most recently used profiles.", PROFILE_LIST_WIDTH));
+                recentProfilePanel
+                    .addComponent(new Label("Unable to load most recently used profiles.", PROFILE_LIST_WIDTH));
             } else {
-                // We only want to show those profiles to the user that they may actually be able to open.
+                // We only want to show those profiles to the user that they may actually be
+                // able to open.
                 final List<Profile> compatibleProfiles = new LinkedList<>();
 
                 for (final Profile recentlyUsedProfile : recentlyUsedProfiles) {
                     try {
-                        if (recentlyUsedProfile.hasUpgradeableVersion()) {
+                        if (recentlyUsedProfile.hasUpgradeableVersion() || recentlyUsedProfile.hasCurrentVersion()) {
                             compatibleProfiles.add(recentlyUsedProfile);
                         }
                     } catch (ProfileException e) {
-                        final String errorMessage = "Could not determine version of profile \"%s\".";
-                        recentProfilePanel.addComponent(new Label(errorMessage + " See log for more details.", PROFILE_LIST_WIDTH));
+                        final String errorMessage = WARNING_TEXT_COULD_NOT_DETERMINE_VERSION_OF_PROFILE;
+                        recentProfilePanel.addComponent(
+                            new Label(errorMessage + WARNING_TEXT_SEE_LOG, PROFILE_LIST_WIDTH));
                         log.error(String.format(errorMessage, recentlyUsedProfile.getName()), e);
                     }
                 }
@@ -291,7 +306,8 @@ public class ProfileSelectionUI {
                         SelectProfileWindow.this.close();
                     };
 
-                    recentProfileListBox.addAction(profile.getProfileDirectory().getAbsolutePath(), startWithProfileAction);
+                    recentProfileListBox.addAction(profile.getProfileDirectory().getAbsolutePath(),
+                        startWithProfileAction);
                 }
                 recentProfilePanel.addComponent(recentProfileListBox);
             }
@@ -300,28 +316,15 @@ public class ProfileSelectionUI {
 
         private Panel createAllProfilesPanel(File profileParentDirectory) {
             // all profiles in the profiles home
-            String allProfilesPanelLabel = StringUtils.format("All available profiles in %s", profileParentDirectory.getAbsolutePath());
+            String allProfilesPanelLabel = StringUtils.format("All available profiles in %s",
+                profileParentDirectory.getAbsolutePath());
             Panel allProfilesPanel = new Panel(allProfilesPanelLabel);
             allProfilesPanel.setBorder(new Border.Standard());
             ActionListBox allProfilesListBox = new ActionListBox();
 
             final List<Profile> allProfiles = ProfileUtils.listProfiles(profileParentDirectory);
 
-            final List<Profile> compatibleProfiles = new LinkedList<>();
-
             for (final Profile profile : allProfiles) {
-                try {
-                    if (profile.hasCurrentVersion() || profile.hasUpgradeableVersion()) {
-                        compatibleProfiles.add(profile);
-                    }
-                } catch (ProfileException e) {
-                    final String errorMessage = "Could not determine version of profile \"%s\".";
-                    allProfilesPanel.addComponent(new Label(errorMessage + " See log for more details.", PROFILE_LIST_WIDTH));
-                    log.error(String.format(errorMessage, profile.getName()), e);
-                }
-            }
-
-            for (final Profile profile : compatibleProfiles) {
 
                 final Action startWithProfileAction = () -> {
                     selectedProfile = profile;
@@ -338,112 +341,39 @@ public class ProfileSelectionUI {
     }
 
     /**
-     * This RadioCheckBoxList allows to toggle the selection of a previously selected entry by checking it again.
-     *
-     * @author Tobias Brieden
-     */
-    public class DeselectableRadioCheckBoxList extends RadioCheckBoxList {
-
-        private static final int UNSELECTED = -1;
-
-        // Override this method to make the background of the List grey (as opposed to blue)
-        @Override
-        protected Theme.Definition getListItemThemeDefinition(Theme theme) {
-            return theme.getDefinition(Theme.Category.DIALOG_AREA);
-        }
-
-        @Override
-        protected Interactable.Result unhandledKeyboardEvent(Key key) {
-            if (getSelectedIndex() == UNSELECTED) {
-                return Interactable.Result.EVENT_NOT_HANDLED;
-            }
-
-            if (key.getKind() == Key.Kind.Enter || key.getCharacter() == ' ') {
-
-                if (isChecked(getSelectedIndex())) {
-                    setCheckedItemIndex(UNSELECTED);
-                } else {
-                    setCheckedItemIndex(getSelectedIndex());
-                }
-
-                return Result.EVENT_HANDLED;
-            }
-
-            return Result.EVENT_NOT_HANDLED;
-        }
-    }
-
-    /**
      * Window to select the default profile which should be used to start RCE by default.
      * 
      * @author Tobias Brieden
      */
     private class SelectDefaultProfileWindow extends Window {
 
+        private final RadioCheckBoxList allProfilesListBox = new DeselectableRadioCheckBoxList();
+
+        private final RadioCheckBoxList recentProfilesListBox = new DeselectableRadioCheckBoxList();
+
         SelectDefaultProfileWindow() throws ProfileException {
             super(OPTION_SELECT_DEFAULT_PROFILE);
 
             File profileParentDirectory = ProfileUtils.getProfilesParentDirectory();
 
-            String allProfilesPanelLabel = StringUtils.format("All available profiles in %s", profileParentDirectory.getAbsolutePath());
-            Panel allProfilesPanel = new Panel(allProfilesPanelLabel);
-            allProfilesPanel.setBorder(new Border.Standard());
-            final RadioCheckBoxList allProfilesListBox = new DeselectableRadioCheckBoxList();
-            allProfilesListBox.setPreferredSize(new TerminalSize(PROFILE_LIST_WIDTH, 10));
+            Panel recentProfilePanel = createRecentProfilePanel();
+            addComponent(recentProfilePanel);
 
-            File savedDefaultProfile = null;
-            try {
-                savedDefaultProfile = CommonProfileUtils.getSavedDefaultProfile();
-            } catch (CommonProfileException e) {
-                LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
-            }
-
-            for (final Profile profile : ProfileUtils.listProfiles(profileParentDirectory)) {
-                allProfilesListBox.addItem(profile);
-                // mark the default profile
-                if (savedDefaultProfile != null
-                    && savedDefaultProfile.getAbsolutePath().equals(profile.getProfileDirectory().getAbsolutePath())) {
-
-                    int index = allProfilesListBox.getNrOfItems() - 1;
-                    allProfilesListBox.setCheckedItemIndex(index);
-                }
-            }
-
-            allProfilesPanel.addComponent(allProfilesListBox);
+            Panel allProfilesPanel = createAllProfilesPanel(profileParentDirectory);
             addComponent(allProfilesPanel);
 
-            int width = allProfilesPanel.getPreferredSize().getColumns();
+            int w1 = allProfilesPanel.getPreferredSize().getColumns();
+            int w2 = recentProfilePanel.getPreferredSize().getColumns();
+            int width = Math.max(Math.max(PROFILE_LIST_WIDTH, w1), w2);
+            allProfilesPanel.setPreferredSize(new TerminalSize(width, 7));
+            recentProfilePanel.setPreferredSize(new TerminalSize(width, 7));
+
+            markDefaultProfile();
+
             Label warning = new Label(LanternaUtils.applyWordWrapping(DEFAULT_WARNING_TEXT, width));
             addComponent(warning);
 
-            final Action okAction = new Action() {
-
-                @Override
-                public void doAction() {
-                    Object checkedItem = allProfilesListBox.getCheckedItem();
-                    if (checkedItem == null) {
-                        try {
-                            CommonProfileUtils.clearDefaultProfile();
-                            LanternaUtils.showSuccessMessageBox(guiScreen, "No profile is selected as default profile.");
-                        } catch (CommonProfileException e) {
-                            // exception is never thrown by the method
-                        }
-
-                    } else {
-                        Profile checkedProfile = (Profile) checkedItem;
-                        try {
-                            checkedProfile.markAsDefaultProfile();
-                            LanternaUtils.showSuccessMessageBox(guiScreen,
-                                StringUtils.format("Marked \"%s\" as the default profile.", checkedProfile.getName()));
-                        } catch (ProfileException e) {
-                            LanternaUtils.showErrorMessageBox(guiScreen, "Unable to store default profile selection.");
-                        }
-
-                    }
-
-                    SelectDefaultProfileWindow.this.close();
-                }
-            };
+            final Action okAction = this::performOKAction;
 
             final Action cancelAction = SelectDefaultProfileWindow.this::close;
             addComponent(LanternaUtils.createOkCancelButtonPanel(okAction, cancelAction));
@@ -456,9 +386,176 @@ public class ProfileSelectionUI {
                         cancelAction.doAction();
                     }
                 }
-
             });
         }
 
+        private void markDefaultProfile() {
+            File savedDefaultProfile = null;
+            try {
+                savedDefaultProfile = CommonProfileUtils.getSavedDefaultProfile();
+            } catch (CommonProfileException e) {
+                LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
+            }
+
+            boolean checked = false;
+            if (savedDefaultProfile == null) {
+                return;
+            }
+            for (int i = 0; i < allProfilesListBox.getNrOfItems(); i++) {
+                Profile profile = (Profile) allProfilesListBox.getItemAt(i);
+                if (savedDefaultProfile.getAbsolutePath().equals(profile.getProfileDirectory().getAbsolutePath())) {
+                    allProfilesListBox.setCheckedItemIndex(i);
+                    checked = true;
+                }
+            }
+            // mark recently used profile only if the profile is not located in the .rce profile directory
+            if (!checked) {
+                for (int i = 0; i < recentProfilesListBox.getNrOfItems(); i++) {
+                    String path = (String) recentProfilesListBox.getItemAt(i);
+                    if (savedDefaultProfile.getAbsolutePath().equals(path)) {
+                        recentProfilesListBox.setCheckedItemIndex(i);
+                    }
+                }
+            }
+
+        }
+
+        private void performOKAction() {
+
+            Profile checkedProfile = getCheckedProfile();
+
+            if (checkedProfile == null) {
+                try {
+                    CommonProfileUtils.clearDefaultProfile();
+                    LanternaUtils.showSuccessMessageBox(guiScreen,
+                        "No profile is selected as default profile.");
+                } catch (CommonProfileException e) {
+                    // exception is never thrown by the method
+                }
+            } else {
+                try {
+                    checkedProfile.markAsDefaultProfile();
+                    LanternaUtils.showSuccessMessageBox(guiScreen, StringUtils
+                        .format("Marked \"%s\" as the default profile.", checkedProfile.getName()));
+                } catch (ProfileException e) {
+                    LanternaUtils.showErrorMessageBox(guiScreen, "Unable to store default profile selection.");
+                }
+            }
+
+            SelectDefaultProfileWindow.this.close();
+        }
+
+        private Profile getCheckedProfile() {
+            Profile checkedProfile = null;
+            if (allProfilesListBox.getCheckedItem() != null) {
+                // the return value is already a Profile
+                checkedProfile = (Profile) allProfilesListBox.getCheckedItem();
+            }
+            if (recentProfilesListBox.getCheckedItem() != null) {
+                // the return value is the path to the Profile
+                try {
+                    new File((String) recentProfilesListBox.getCheckedItem());
+                    checkedProfile =
+                        new Profile.Builder(new File((String) recentProfilesListBox.getCheckedItem())).create(true).migrate(false)
+                            .buildUserProfile();
+                } catch (ProfileException e) {
+                    LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
+                }
+            }
+            return checkedProfile;
+        }
+
+        /**
+         * This RadioCheckBoxList allows to toggle the selection of a previously selected entry by checking it again.
+         *
+         * @author Tobias Brieden
+         */
+        public class DeselectableRadioCheckBoxList extends RadioCheckBoxList {
+
+            private static final int UNSELECTED = -1;
+
+            // Override this method to make the background of the List grey (as opposed to
+            // blue)
+            @Override
+            protected Theme.Definition getListItemThemeDefinition(Theme theme) {
+                return theme.getDefinition(Theme.Category.DIALOG_AREA);
+            }
+
+            @Override
+            protected Interactable.Result unhandledKeyboardEvent(Key key) {
+                if (getSelectedIndex() == UNSELECTED) {
+                    return Interactable.Result.EVENT_NOT_HANDLED;
+                }
+
+                if (key.getKind() == Key.Kind.Enter || key.getCharacter() == ' ') {
+
+                    if (Boolean.TRUE.equals(isChecked(getSelectedIndex()))) {
+                        setCheckedItemIndex(UNSELECTED);
+                    } else {
+                        if (allProfilesListBox.getCheckedItem() != null) {
+                            allProfilesListBox.setCheckedItemIndex(UNSELECTED);
+                        }
+                        if (recentProfilesListBox.getCheckedItem() != null) {
+                            recentProfilesListBox.setCheckedItemIndex(UNSELECTED);
+                        }
+                        setCheckedItemIndex(getSelectedIndex());
+                    }
+
+                    return Result.EVENT_HANDLED;
+                }
+
+                return Result.EVENT_NOT_HANDLED;
+            }
+        }
+
+        private Panel createAllProfilesPanel(File profileParentDirectory) {
+            String allProfilesPanelLabel = StringUtils.format("All available profiles in %s",
+                profileParentDirectory.getAbsolutePath());
+            Panel allProfilesPanel = new Panel(allProfilesPanelLabel);
+            allProfilesPanel.setBorder(new Border.Standard());
+
+            for (final Profile profile : ProfileUtils.listProfiles(profileParentDirectory)) {
+                allProfilesListBox.addItem(profile);
+            }
+
+            allProfilesPanel.addComponent(allProfilesListBox);
+            return allProfilesPanel;
+        }
+
+        private Panel createRecentProfilePanel() {
+            Panel recentProfilePanel = new Panel("Recently used profiles");
+            recentProfilePanel.setBorder(new Border.Standard());
+
+            List<Profile> recentlyUsedProfiles = null;
+
+            try {
+                recentlyUsedProfiles = CommonProfileUtils.getRecentlyUsedProfiles();
+            } catch (CommonProfileException e) {
+                LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());
+            }
+
+            final List<Profile> compatibleProfiles = new LinkedList<>();
+            if (recentlyUsedProfiles != null) {
+                for (final Profile recentlyUsedProfile : recentlyUsedProfiles) {
+                    try {
+                        if (recentlyUsedProfile.hasUpgradeableVersion() || recentlyUsedProfile.hasCurrentVersion()) {
+                            compatibleProfiles.add(recentlyUsedProfile);
+                        }
+                    } catch (ProfileException e) {
+                        final String errorMessage = WARNING_TEXT_COULD_NOT_DETERMINE_VERSION_OF_PROFILE;
+                        recentProfilePanel.addComponent(
+                            new Label(errorMessage + WARNING_TEXT_SEE_LOG, PROFILE_LIST_WIDTH));
+                        log.error(String.format(errorMessage, recentlyUsedProfile.getName()), e);
+                    }
+                }
+            }
+
+            for (final Profile profile : compatibleProfiles) {
+                recentProfilesListBox.addItem(profile.getProfileDirectory().getAbsolutePath());
+            }
+
+            recentProfilePanel.addComponent(recentProfilesListBox);
+            return recentProfilePanel;
+        }
     }
 }

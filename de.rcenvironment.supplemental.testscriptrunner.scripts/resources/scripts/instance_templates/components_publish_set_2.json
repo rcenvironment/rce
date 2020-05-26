@@ -1,9 +1,0 @@
-{
-  "publishing": {
-      "components": [
-          "de.rcenvironment.optimizer",
-          "de.rcenvironment.parametricstudy",
-          "de.rcenvironment.xmlmerger"
-      ]
-  }	
-}

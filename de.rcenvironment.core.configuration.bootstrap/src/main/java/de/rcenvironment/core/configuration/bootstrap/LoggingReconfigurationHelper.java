@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -88,9 +88,15 @@ public final class LoggingReconfigurationHelper {
             String earlyDebugLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_DEBUG_LOG_DESTINATION));
             String earlyWarningsLogLocation = StrSubstitutor.replaceSystemProperties(properties.get(PROPERTY_KEY_WARNINGS_LOG_DESTINATION));
 
-            if (earlyDebugLogLocation == null || earlyWarningsLogLocation == null) {
+            if (earlyDebugLogLocation == null && earlyWarningsLogLocation == null) {
                 // prevent follow-up errors if console-only logging is configured by deleting the log file entries
-                LOG.info("Standard debug and/or warning log file writing is disabled");
+                LOG.info("Profile log file writing is disabled; only logging to standard output");
+                return;
+            }
+
+            if (earlyDebugLogLocation == null || earlyWarningsLogLocation == null) {
+                // unusual case; may be useful in very specific setups, but is not actively supported at the moment
+                LOG.warn("Standard log file writing is partially disabled (warning or debug file, but not both)");
                 return;
             }
 

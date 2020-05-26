@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 DLR, Germany
+ * Copyright 2019-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -557,12 +557,12 @@ public abstract class AbstractUplinkIntegrationTest {
         // no error during execution "expected"
         eventHandlerMock.onExecutionStarting();
         eventHandlerMock.processToolExecutionEvent("mockEventType", "mockEventData");
-        Capture<ToolExecutionResult> toolExecutionResultCapture = new Capture<>();
+        Capture<ToolExecutionResult> toolExecutionResultCapture = Capture.newInstance();
         eventHandlerMock.onExecutionFinished(EasyMock.capture(toolExecutionResultCapture));
 
         eventHandlerMock.onOutputDownloadsStarting();
         // expect the single output file callback
-        Capture<FileDataSource> outputFileCapture = new Capture<>();
+        Capture<FileDataSource> outputFileCapture = Capture.newInstance();
         DirectoryDownloadReceiver mockOutputFileReceiver = EasyMock.createMock(DirectoryDownloadReceiver.class);
         mockOutputFileReceiver.receiveDirectoryListing(null);
         mockOutputFileReceiver.receiveFile(EasyMock.capture(outputFileCapture));

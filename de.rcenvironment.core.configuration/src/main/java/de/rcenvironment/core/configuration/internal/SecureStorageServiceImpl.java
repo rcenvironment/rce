@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -177,7 +177,9 @@ public final class SecureStorageServiceImpl implements SecureStorageService {
             String fileContent = FileUtils.readFileToString(keyFile).trim();
             if (fileContent.length() != EXPECTED_KEY_LENGTH) {
                 throw new IOException("Unexpected content in key file " + keyFile.getAbsolutePath()
-                    + ": expected an auto-generated password of " + EXPECTED_KEY_LENGTH + " characters");
+                    + ": expected an auto-generated password of " + EXPECTED_KEY_LENGTH
+                    + " characters. You can fix this error by deleting the key file if it is actually broken, "
+                    + "or restoring it from a backup if one is available.");
             }
             log.debug("Reusing existing cross-profile keyfile");
             return fileContent; // success

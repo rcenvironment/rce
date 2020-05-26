@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Joiner Component Execution Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.components.joiner.execution.tests
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Bundle-ActivationPolicy: lazy
@@ -11,3 +11,4 @@ Import-Package: de.rcenvironment.core.component.testutils,
  org.junit,
  org.junit.rules
 Require-Bundle: de.rcenvironment.core.utils.testing
+Automatic-Module-Name: de.rcenvironment.components.joiner.execution.tests

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.help</artifactId>
 	<name>RCE Core GUI Help Bundle</name>
-	<version>10.0.0-SNAPSHOT</version>
+	<version>10.1.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Common
 Bundle-SymbolicName: de.rcenvironment.core.start.common
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Service-Component: OSGI-INF/generated/*.xml
 Import-Package: de.rcenvironment.core.command.api,
@@ -21,3 +21,4 @@ Export-Package: de.rcenvironment.core.start.common,
  de.rcenvironment.core.start.common.validation.spi
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.start.common

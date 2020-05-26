@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -117,6 +117,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
 
     /** The icon sizes used in RCE. */
     enum IconSize {
+
         /** Icon size 16 * 16. */
         ICONSIZE16(16, "icon16.png"),
         /** Icon size 24 * 24. */
@@ -674,7 +675,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) { // to review: why is this "null"
                                                                                         // check needed?
                     log.debug("Initializing tool directory " + toolFolder.getAbsolutePath());
-                    readToolDirectory(toolFolder, context);
+                    try {
+                        readToolDirectory(toolFolder, context);
+                    } catch (RuntimeException e) {
+                        final String errorMessage =
+                            StringUtils.format("Exception caught during integration of tool directory %s", toolFolder.getAbsolutePath());
+                        log.error(errorMessage, e);
+                    }
                 }
             }
         }

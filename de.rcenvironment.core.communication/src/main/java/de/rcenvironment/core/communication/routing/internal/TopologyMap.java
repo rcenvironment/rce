@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -461,7 +461,6 @@ public final class TopologyMap {
      * @param source The source node.
      * @param destination The destination node
      * @param connectionId The id of the connection
-     * @param string
      * @return Whether adding the link was successful.
      */
     public synchronized TopologyLink addLink(InstanceNodeSessionId source, InstanceNodeSessionId destination, String connectionId) {

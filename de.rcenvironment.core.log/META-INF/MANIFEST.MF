@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Log
 Bundle-SymbolicName: de.rcenvironment.core.log;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -24,3 +24,4 @@ Import-Package: de.rcenvironment.core.communication.api,
  org.osgi.service.log
 Export-Package: de.rcenvironment.core.log
 Service-Component: OSGI-INF/*xml
+Automatic-Module-Name: de.rcenvironment.core.log

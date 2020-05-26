@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.launcher.tests</artifactId>
 	<name>RCE Launcher - Tests</name>
-	<version>10.0.0-SNAPSHOT</version>
+	<version>10.1.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<!-- sharing the RCE core parent POM for now -->

@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Executor
 Bundle-SymbolicName: de.rcenvironment.core.utils.executor
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: com.sun.jna;version="4.2.2",
+Import-Package: com.sun.jna;version="5.0.0",
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.textstream,
@@ -21,3 +21,4 @@ Export-Package: de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.executor.fileinfo,
  de.rcenvironment.core.utils.executor.testutils
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.utils.executor

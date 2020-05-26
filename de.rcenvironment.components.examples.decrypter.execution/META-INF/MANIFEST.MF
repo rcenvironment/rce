@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Decrypter Component Execution (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.examples.decrypter.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.examples.decrypter.common,
@@ -26,3 +26,4 @@ Import-Package: de.rcenvironment.components.examples.decrypter.common,
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Export-Package: de.rcenvironment.components.examples.decrypter.execution
+Automatic-Module-Name: de.rcenvironment.components.examples.decrypter.execution

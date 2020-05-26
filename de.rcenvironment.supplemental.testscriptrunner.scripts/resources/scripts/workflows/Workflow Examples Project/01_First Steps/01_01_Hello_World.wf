@@ -1,0 +1,25 @@
+{
+  "identifier" : "2b09e33f-b2a5-4c12-98bc-61ae5fa6dab9",
+  "workflowVersion" : "5",
+  "name" : "01_01_Hello_World_2020-03-04_09:45:43_01",
+  "nodes" : [ {
+    "identifier" : "9bfefdd4-5030-41a5-b81b-9cc993cc259b",
+    "name" : "Hello World",
+    "location" : "543:294",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print(\"Hello World\")",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    }
+  } ],
+  "labels" : "[{\"identifier\":\"1976d329-2d8a-47aa-bb26-b3851ef52543\",\"headerText\":\"\",\"text\":\"To execute the workflow, click on \\\"Execute Workflow\\\" in the workflow editor's context menu (right-click on the workflow component). You can also use the green-colored button in the toolbar above with the \\\"play\\\" symbol. A dialog appears that lets you configure some workflow execution details. For now, just click \\\"OK\\\". The workflow starts. As it is a rather small one, it will terminate quickly. The state of the workflow and of each component is indicated by proper state icons. If you move your mouse cursor over it, you see the textual representation of the state.\",\"location\":\"676:187\",\"size\":\"432:228\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"3\"},{\"identifier\":\"31c08d5b-6287-4ea1-b652-ed54b076331f\",\"headerText\":\"\",\"text\":\"Log output of a workflow is printed in the \\\"Workflow Console\\\" tab which is also placed below the workflow editor. In this case, you see the output \\\"Hello World\\\".\",\"location\":\"247:469\",\"size\":\"674:62\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"4\"},{\"identifier\":\"76f37333-8bc8-46be-9b88-c97b2690d6b1\",\"headerText\":\"\",\"text\":\"The workflow component \\\"Hello World\\\" below is a \\\"Script\\\" workflow component. The \\\"Script\\\" workflow component executes user-defined Python scripts. You can find it in the palette group \\\"Execution\\\". Workflow components are configured in the \\\"Properties\\\" tab which is placed below the workflow editor. Double-click on the \\\"Hello World\\\" workflow component in the workflow editor to open its \\\"Properties\\\" tab. In the \\\"Script\\\" tab you see the Python script configured and you can directly edit it if you like.\",\"location\":\"60:187\",\"size\":\"417:228\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"2\"},{\"identifier\":\"cbe83bf3-d10b-43b4-abb8-26c73da222c2\",\"headerText\":\"See section \\\"Workflows\\\" in the user guide for details.\",\"text\":\"\",\"location\":\"676:557\",\"size\":\"432:39\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"9\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"ffe41b66-433d-4762-aed2-99d5c8cebc26\",\"headerText\":\"Introducing workflows\",\"text\":\"This workflow consists of a workflow component, the square below named \\\"Hello World\\\" and a workflow label, this green-colored rectangle with text. On the right-hand side you see the palette with all of the workflow components that are available in your RCE instance. They are grouped by purpose. You can add workflow components to your workflow via double-click, drag&drop or point&click. Open the integrated help for a selected workflow component by pressing F1 or click on \\\"Show Contextual Help\\\" via Help in the toolbar.\",\"location\":\"60:21\",\"size\":\"1048:132\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+}

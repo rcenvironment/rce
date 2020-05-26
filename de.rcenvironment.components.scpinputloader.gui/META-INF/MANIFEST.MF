@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SCP Input Loader Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.scpinputloader.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin
@@ -37,3 +37,4 @@ Require-Bundle: org.eclipse.ui.views.properties.tabbed,
  org.eclipse.gef;bundle-version="3.6.2"
 Export-Package: de.rcenvironment.components.scpinputloader.gui
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.scpinputloader.gui

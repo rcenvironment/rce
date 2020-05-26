@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Jython
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.jython
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: 
  de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
@@ -27,3 +27,4 @@ Bundle-ClassPath: .
 Bundle-Vendor: DLR
 Require-Bundle: de.rcenvironment.core.utils.common
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.script.execution.jython

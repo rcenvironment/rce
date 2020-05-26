@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -20,11 +20,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
+import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitionConstants;
 
 /**
  * Represents an instance (ie, a profile) managed by these test steps.
  * 
  * @author Robert Mischke
+ * @author Marlon Schroeter 
  */
 public final class ManagedInstance {
 
@@ -32,9 +34,7 @@ public final class ManagedInstance {
 
     private String installationId; // the id of the installation to run this instance/profile with
 
-    private Integer serverPort; // currently only supporting one server port; could be changed later
-    
-    private String uplinkUserName;
+    private Map<String, Integer> serverPorts = new HashMap<String, Integer>();
 
     private final List<String> configuredAutostartConnectionIds = new ArrayList<>();
 
@@ -73,12 +73,28 @@ public final class ManagedInstance {
         this.installationId = installationId;
     }
 
-    public synchronized Integer getServerPort() {
-        return serverPort;
+    /**
+     * @param connectionType one of the possible connection types
+     * @param serverNumber number of the server of this connection type (not the serverPort)
+     * @return the serverPort associated with connection type and serverNumber. Null if none is specified yet.
+     */
+    public synchronized Integer getServerPort(String connectionType, int serverNumber) {
+        if (connectionType.equals(StepDefinitionConstants.CONNECTION_TYPE_SSH)
+            || connectionType.equals(StepDefinitionConstants.CONNECTION_TYPE_UPLINK)) {
+            // currently there is only one ssh server supported and the server for ssh and uplink is handled the same way.
+            connectionType = StepDefinitionConstants.CONNECTION_TYPE_SSH;
+            serverNumber = 0;
+        }
+        return serverPorts.get(connectionType + serverNumber);
     }
 
-    public synchronized void setServerPort(Integer serverPort) {
-        this.serverPort = serverPort;
+    /**
+     * @param connectionType one of the possible connection types
+     * @param serverNumber number of the server of this connection type (not the serverPort)
+     * @param serverPort server port to be set
+     */
+    public synchronized void setServerPort(String connectionType, int serverNumber, Integer serverPort) {
+        serverPorts.put(connectionType + serverNumber, serverPort);
     }
 
     /**
@@ -126,7 +142,7 @@ public final class ManagedInstance {
         }
         return content;
     }
-    
+
     /**
      * @param relativePath A path relative to the profile directory of this instance
      * @return A file representing the absolute path to the given relative path
@@ -152,13 +168,5 @@ public final class ManagedInstance {
 
     public synchronized boolean getPotentiallyRunning() {
         return potentiallyRunning;
-    }
-
-    public String getUplinkUserName() {
-        return uplinkUserName;
-    }
-
-    public void setUplinkUserName(String uplinkUserName) {
-        this.uplinkUserName = uplinkUserName;
     }
 }

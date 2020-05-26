@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven_extensions.bdd.feature"
       label="RCE Platform - Maven Plain Java BDD Libraries Feature"
-      version="10.0.0.qualifier"
+      version="10.1.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Toolkit-OSGi Bridge
 Bundle-SymbolicName: de.rcenvironment.core.toolkitbridge;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Activator: de.rcenvironment.core.toolkitbridge.internal.Activator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -20,3 +20,4 @@ Import-Package:
  org.osgi.framework
 Export-Package: de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.toolkitbridge.transitional
+Automatic-Module-Name: de.rcenvironment.core.toolkitbridge

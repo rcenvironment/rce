@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -182,6 +182,16 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_DISABLE_SSH_SERVER));
         return this;
     }
+    
+    @Override
+    public InstanceConfigurationOperationSequence addSshAccount(SSHAccountParameters parameters) {
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT, 
+            parameters.getUserName(), 
+            parameters.getUserRole(),
+            parameters.isEnabled(), 
+            parameters.getPassword()));
+        return this;
+    }
 
     @Override
     public InstanceConfigurationOperationSequence addSshAccountFromStringParameters(List<String> parameters) {
@@ -286,6 +296,16 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
         }
         final ConfigurationUplinkConnection uplinkConnection = new ConfigurationUplinkConnection(connectionId, hostName, port, userName,
             connectionId, clientId, null, connectOnStartup, autoRetry, isGateway, password);
+        appendStep(
+            new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION, uplinkConnection));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence addUplinkConnection(UplinkConnectionParameters parameters) {
+        final ConfigurationUplinkConnection uplinkConnection = new ConfigurationUplinkConnection(parameters.getConnectionId(),
+            parameters.getHost(), parameters.getPort(), parameters.getUserName(), parameters.getConnectionId(), parameters.getClientId(),
+            null, parameters.getAutoStartFlag(), parameters.getAutoRetryFlag(), parameters.getGatewayFlag(), parameters.getPassword());
         appendStep(
             new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION, uplinkConnection));
         return this;

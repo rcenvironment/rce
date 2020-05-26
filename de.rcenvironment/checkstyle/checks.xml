@@ -1,249 +1,170 @@
-<?xml version="1.0"?>
-<!DOCTYPE module PUBLIC
-      "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
-          "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
 <!--
-  Checkstyle configuration that checks the sun coding conventions from:
-
-    - the Java Language Specification at
-      http://java.sun.com/docs/books/jls/second_edition/html/index.html
-
-    - the Sun Code Conventions at http://java.sun.com/docs/codeconv/
-
-    - the Javadoc guidelines at
-      http://java.sun.com/j2se/javadoc/writingdoccomments/index.html
-
-    - the JDK Api documentation http://java.sun.com/j2se/docs/api/index.html
-
-    - some best practices
-
-  Checkstyle is very configurable. Be sure to read the documentation at
-  http://checkstyle.sf.net (or in your downloaded distribution).
+    This configuration file was written by the eclipse-cs plugin configuration editor
 -->
-
+<!--
+    Checkstyle-Configuration: RCE
+    Description: none
+-->
 <module name="Checker">
-
-  <!-- Override/ignore the local machine's language settings -->
+  <property name="severity" value="warning"/>
   <property name="localeCountry" value="US"/>
   <property name="localeLanguage" value="en"/>
-
   <module name="TreeWalker">
-  
-    <!-- Annotations -->
     <module name="MissingOverride"/>
     <module name="SuppressWarnings"/>
-    
-    <!-- Block Checks, you know, those {}'s -->
-    <module name="EmptyBlock" />
-    <module name="LeftCurly" />
-    <module name="NeedBraces" />
-    <module name="RightCurly" />
-    <module name="AvoidNestedBlocks" />
-    
-    <!-- Class design -->
-    <!--  TODO: Add DesignForExtension -->
+    <module name="EmptyBlock"/>
+    <module name="LeftCurly"/>
+    <module name="NeedBraces"/>
+    <module name="RightCurly"/>
+    <module name="AvoidNestedBlocks"/>
     <module name="VisibilityModifier">
-      <property name="protectedAllowed" value="true" />
+      <property name="protectedAllowed" value="true"/>
       <property name="publicMemberPattern" value="^*$"/>
     </module>
-    <module name="FinalClass" />
-    <module name="InterfaceIsType">
-    	<property name="allowMarkerInterfaces" value="true"/>
-    </module>
-    <module name="HideUtilityClassConstructor" />
-    <module name="MutableException" />
-  
-    <!-- Coding -->
-    <!--  TODO: Add CovariantEquals, EqualsAvoidNull, FinalLocalVariable, NoClone, NoFinalizer, IllegalThrows, -->
-    <!--        UnnecessaryParentheses, PackageDeclaration, ParameterAssignment, ExplicitInitialization -->
-    <module name="AvoidInlineConditionals" />
-    <module name="EmptyStatement" />
-    <module name="EqualsHashCode" />
+    <module name="FinalClass"/>
+    <module name="InterfaceIsType"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="MutableException"/>
+    <module name="AvoidInlineConditionals"/>
+    <module name="EmptyStatement"/>
+    <module name="EqualsHashCode"/>
     <module name="HiddenField">
-    	<property name="ignoreConstructorParameter" value="true"/>
-    	<property name="ignoreSetter" value="true"/>
+      <property name="ignoreConstructorParameter" value="true"/>
+      <property name="ignoreSetter" value="true"/>
     </module>
     <module name="IllegalInstantiation">
-      <property name="classes" value="java.lang.Boolean" />
+      <property name="classes" value="java.lang.Boolean"/>
     </module>
-    <module name="InnerAssignment" />
+    <module name="InnerAssignment"/>
     <module name="MagicNumber">
-      <property name="ignoreNumbers" value="0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10" />
+      <property name="ignoreNumbers" value="0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10"/>
     </module>
-    <module name="MissingSwitchDefault" />
-    <module name="ModifiedControlVariable" />
-    <!--<module name="RedundantThrows" />-->
-    <module name="SimplifyBooleanExpression" />
-    <module name="SimplifyBooleanReturn" />
-    <module name="StringLiteralEquality" />
+    <module name="MissingSwitchDefault"/>
+    <module name="ModifiedControlVariable"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="StringLiteralEquality"/>
     <module name="NestedIfDepth">
-      <property name="max" value="3" />
+      <property name="max" value="3"/>
     </module>
     <module name="NestedTryDepth">
-      <property name="max" value="3" />
+      <property name="max" value="3"/>
     </module>
     <module name="IllegalCatch">
-      <property name="illegalClassNames"
-        value="java.lang.Exception, java.lang.Throwable" />
+      <property name="illegalClassNames" value="java.lang.Exception, java.lang.Throwable"/>
     </module>
     <module name="IllegalType">
-      <!-- a temporary fix to avoid CI failures due to issues that do not show up in Eclipse-CS (see issue #16637); 
-      this should be set back to "error" once that inconsistency is fixed - misc_ro, Mar 2019 -->
-      <property name="severity" value="warning" />
+      <property name="severity" value="warning"/>
     </module>
-    <module name="DeclarationOrder" />
-    <module name="DefaultComesLast" />
+    <module name="DeclarationOrder"/>
+    <module name="DefaultComesLast"/>
     <module name="MultipleStringLiterals">
-      <property name="allowedDuplicates" value="2" />
-      <property name="ignoreStringsRegexp" value='^(("")|(", ")|(" ")|("\\n")||("\)")|("\(")|("Dialog"))$' />
+      <property name="allowedDuplicates" value="2"/>
+      <property name="ignoreStringsRegexp" value="^((&quot;&quot;)|(&quot;, &quot;)|(&quot; &quot;)|(&quot;\\n&quot;)||(&quot;\)&quot;)|(&quot;\(&quot;)|(&quot;Dialog&quot;))$"/>
     </module>
-    <module name="MultipleVariableDeclarations" />
-  
-    <!-- Imports -->
-    <module name="AvoidStarImport" />
-    <module name="IllegalImport" />
-    <module name="RedundantImport" />
-    <module name="UnusedImports">
-      <property name="processJavadoc" value="true" />
-    </module>
-    
-    <!-- Javadoc Comments -->
+    <module name="MultipleVariableDeclarations"/>
+    <module name="AvoidStarImport"/>
+    <module name="IllegalImport"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports"/>
     <module name="JavadocType">
-      <property name="scope" value="anoninner" />
-      <property name="authorFormat" value="[A-Z][\-\p{L}]*\s+[\p{L}\.\s]*[A-Z][\-\p{L}]*" />
+      <property name="scope" value="anoninner"/>
+      <property name="authorFormat" value="[A-Z][\-\p{L}]*\s+[\p{L}\.\s]*[A-Z][\-\p{L}]*"/>
     </module>
     <module name="JavadocMethod">
-      <property name="scope" value="public" />
-      <property name="allowMissingPropertyJavadoc" value="true" />
-      <property name="tokens" value="METHOD_DEF" />
-      <property name="logLoadErrors" value="true" />
-      <property name="suppressLoadErrors" value="true" />
+      <property name="scope" value="public"/>
+      <property name="tokens" value="METHOD_DEF"/>
     </module>
     <module name="JavadocVariable">
-      <property name="scope" value="public" />
+      <property name="scope" value="public"/>
     </module>
-    <module name="JavadocStyle" />
-    
-    <!-- Miscellaneous other checks. -->
-    <!--  TODO: FinalParameters -->
+    <module name="JavadocStyle"/>
     <module name="TodoComment"/>
-    <module name="UpperEll" />
-    <module name="ArrayTypeStyle" />
+    <module name="UpperEll"/>
+    <module name="ArrayTypeStyle"/>
     <module name="Indentation">
-      <property name="caseIndent" value="0" />
+      <property name="caseIndent" value="0"/>
     </module>
-    
-    <!-- Modifiers -->
-    <module name="ModifierOrder" />
+    <module name="ModifierOrder"/>
     <module name="RedundantModifier">
-      <property name="severity" value="warning" />
+      <property name="severity" value="warning"/>
     </module>
-    
-    <!-- Naming Conventions -->
     <module name="ConstantName">
-    	<!-- use the default naming convention for constants, but also allow static final fields 
-    		like "sharedInstance" or "sharedThreadPool" -->
-    	<property name="format" value="^([A-Z][A-Z0-9]*(_[A-Z0-9]+)*)|(shared[A-Z][a-zA-Z0-9]+)$"/>
+      <property name="format" value="^([A-Z][A-Z0-9]*(_[A-Z0-9]+)*)|(shared[A-Z][a-zA-Z0-9]+)$"/>
     </module>
-    <module name="LocalFinalVariableName" />
-    <module name="LocalVariableName" />
-    <module name="MemberName" />
+    <module name="LocalFinalVariableName"/>
+    <module name="LocalVariableName"/>
+    <module name="MemberName"/>
     <module name="MethodName">
-    	<property name="format" value="^[_a-z][a-zA-Z0-9]*$"/>
+      <property name="format" value="^[_a-z][a-zA-Z0-9]*$"/>
     </module>
-    <module name="PackageName" />
-    <module name="ParameterName" />
-    <module name="StaticVariableName" />
-    <module name="TypeName" />
-    
-    <!--  Regexp -->
+    <module name="PackageName"/>
+    <module name="ParameterName"/>
+    <module name="StaticVariableName"/>
+    <module name="TypeName"/>
     <module name="RegexpSinglelineJava">
-      <property name="format" value="e\.printStackTrace" />
-      <property name="message" value="Provide a useful error message (instead of e.printStackTrace())." />
+      <property name="format" value="e\.printStackTrace"/>
+      <property name="message" value="Provide a useful error message (instead of e.printStackTrace())."/>
     </module>
     <module name="RegexpSinglelineJava">
-      <property name="format" value="System[.]out[.]print" />
-      <property name="message" value="Usage of print and println is not allowed." />
-    </module>
-  
-    <!-- Size Violations -->
-    <property name="tabWidth" value="4" />
-    <module name="LineLength">
-      <property name="max" value="140" />
+      <property name="format" value="System[.]out[.]print"/>
+      <property name="message" value="Usage of print and println is not allowed."/>
     </module>
     <module name="MethodLength">
-      <property name="tokens" value="METHOD_DEF" />
-      <property name="max" value="150" />
-      <property name="countEmpty" value="true" />
+      <property name="tokens" value="METHOD_DEF"/>
     </module>
     <module name="ParameterNumber">
-      <property name="max" value="7" />
-      <property name="tokens" value="METHOD_DEF" />
+      <property name="tokens" value="METHOD_DEF"/>
     </module>
-    
-    <!-- Cyclomatic Complexity -->
     <module name="CyclomaticComplexity">
       <property name="severity" value="warning"/>
-      <!-- Provide warnings for a relatively low threshold, but do not consider them as errors. -->
       <property name="max" value="20"/>
       <property name="switchBlockAsSingleDecisionPoint" value="true"/>
-    </module> 
-
-    <!-- Cyclomatic Complexity -->
+    </module>
     <module name="CyclomaticComplexity">
       <property name="severity" value="error"/>
-      <!-- This value should be continuously lowered as we eliminate/refactor the worst methods. -->
       <property name="max" value="45"/>
       <property name="switchBlockAsSingleDecisionPoint" value="true"/>
-    </module> 
-    
-    <!-- Whitespaces -->
-    <!--  TODO: NoWhitespaceAfter, NoWhitespaceBefore -->
-    <module name="EmptyForIteratorPad" />
-    <module name="MethodParamPad" />
-    <module name="OperatorWrap" />
-    <module name="ParenPad" />
-    <module name="TypecastParenPad" />
-    <module name="WhitespaceAfter" />
-    <module name="WhitespaceAround">
-      <property name="tokens"
-        value="ASSIGN,MINUS,PLUS,PLUS_ASSIGN,MINUS_ASSIGN,STAR_ASSIGN,DIV_ASSIGN,QUESTION,LOR,LAND,NOT_EQUAL,EQUAL,LT,GT,LE,GE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE" />
     </module>
-
-    <!-- Comment-based local suppression of CheckStyle rules -->
+    <module name="EmptyForIteratorPad"/>
+    <module name="MethodParamPad"/>
+    <module name="OperatorWrap"/>
+    <module name="ParenPad"/>
+    <module name="TypecastParenPad"/>
+    <module name="WhitespaceAfter"/>
+    <module name="WhitespaceAround">
+      <property name="tokens" value="ASSIGN,MINUS,PLUS,PLUS_ASSIGN,MINUS_ASSIGN,STAR_ASSIGN,DIV_ASSIGN,QUESTION,LOR,LAND,NOT_EQUAL,EQUAL,LT,GT,LE,GE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE"/>
+    </module>
     <module name="SuppressionCommentFilter">
       <property name="offCommentFormat" value="CHECKSTYLE\:DISABLE \((\w+)\)"/>
       <property name="onCommentFormat" value="CHECKSTYLE\:ENABLE \((\w+)\)"/>
       <property name="checkFormat" value="$1"/>
     </module>
-
   </module>
-
-  <!-- Global exclusion filter; mostly used to exclude external source files (e.g. our patched Eclipse launcher code) -->
+  <module name="LineLength">
+    <property name="fileExtensions" value="java"/>
+    <property name="max" value="140"/>
+  </module>
   <module name="SuppressionFilter">
-    <property name="file" value="${config_loc}/suppressions.xml" />
+    <property name="file" value="${config_loc}/suppressions.xml"/>
   </module>
-  
   <module name="NewlineAtEndOfFile">
-    <property name="lineSeparator" value="lf"/>
+    <property name="lineSeparator" value="crlf"/>
     <property name="fileExtensions" value="java,properties,pom,MF"/>
   </module>
-  <module name="Translation" />
+  <module name="Translation"/>
   <module name="FileLength">
-    <property name="max" value="2000" />
     <property name="fileExtensions" value="java,properties,pom,MF"/>
   </module>
   <module name="FileTabCharacter">
     <property name="fileExtensions" value="java,properties,pom,MF"/>
   </module>
-  
   <module name="RegexpHeader">
     <property name="header" value="^/\*\n \* Copyright (\([cC]\) )?\d\d\d\d[\-, ][\w\d\s,\.\-]+\n \* Copyright (\([cC]\) )?\d\d\d\d[\-, ][\w\d\s,\.\-]+\n \* \n \* (All rights reserved|SPDX-License-Identifier: \S+)\n \* \n \* https://rcenvironment.de/\n \*/"/>
-    <!-- Allow multiple copyright lines; this approach is required as apparently, the Checkstyle parser splits the pattern into lines first, 
-         then performs matching per line. Note that to enforce at least one copyright line being present, the line pattern must be duplicated 
-         in the regexp, as the multiLines option is interpreted as "zero or more occurrences". - misc_ro -->
-    <property name="multiLines" value="3"/> 
+    <property name="multiLines" value="3"/>
     <property name="fileExtensions" value="java"/>
   </module>
-
 </module>

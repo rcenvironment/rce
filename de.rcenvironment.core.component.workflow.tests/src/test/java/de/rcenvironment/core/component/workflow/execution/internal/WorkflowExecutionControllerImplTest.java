@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -155,7 +155,7 @@ public class WorkflowExecutionControllerImplTest {
 
     private Capture<WorkflowStateMachineEvent> resetAndSetupWorkflowStateMachineMock() {
         EasyMock.reset(wfStateMachineMock);
-        Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = new Capture<>();
+        Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = Capture.newInstance();
         wfStateMachineMock.postEvent(EasyMock.capture(wfStateMachineEveCapture));
         EasyMock.replay(wfStateMachineMock);
         return wfStateMachineEveCapture;
@@ -186,7 +186,7 @@ public class WorkflowExecutionControllerImplTest {
     @Test
     public void testComponentStateChangeProcessingOnFailure() throws InterruptedException {
         EasyMock.reset(wfStateMachineMock);
-        Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = new Capture<>();
+        Capture<WorkflowStateMachineEvent> wfStateMachineEveCapture = Capture.newInstance();
         wfStateMachineMock.postEvent(EasyMock.capture(wfStateMachineEveCapture));
         EasyMock.replay(wfStateMachineMock);
 
@@ -202,16 +202,16 @@ public class WorkflowExecutionControllerImplTest {
         final String executionCountOnReset = "3";
 
         EasyMock.reset(notificationServiceMock);
-        Capture<String> notificationBodyCapture = new Capture<>(CaptureType.ALL);
-        Capture<String> notificationIdCapture = new Capture<>(CaptureType.ALL);
+        Capture<String> notificationBodyCapture = Capture.newInstance(CaptureType.ALL);
+        Capture<String> notificationIdCapture = Capture.newInstance(CaptureType.ALL);
         notificationServiceMock.send(EasyMock.capture(notificationIdCapture), EasyMock.capture(notificationBodyCapture));
         EasyMock.expectLastCall().times(2);
         EasyMock.replay(notificationServiceMock);
 
         EasyMock.reset(compStatesChangedVerifierMock);
         compStatesChangedVerifierMock.addListener(EasyMock.anyObject(ComponentStatesChangedEntirelyListener.class));
-        Capture<String> compExeIdCapture = new Capture<>();
-        Capture<ComponentState> compStateCapture = new Capture<>();
+        Capture<String> compExeIdCapture = Capture.newInstance();
+        Capture<ComponentState> compStateCapture = Capture.newInstance();
         compStatesChangedVerifierMock.announceComponentState(EasyMock.capture(compExeIdCapture), EasyMock.capture(compStateCapture));
         EasyMock.replay(compStatesChangedVerifierMock);
 

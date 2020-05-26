@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -23,7 +23,7 @@ import de.rcenvironment.core.instancemanagement.InstanceManagementService;
 import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutReceiver;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.ExternalServiceHolder;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.RceTestLifeCycleHooks;
-import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceManagementStepDefinitions;
+import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceInstantiationStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.definitions.impl.WorkflowStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ExecutionResult;
@@ -45,7 +45,7 @@ public class TestScriptRunnerBackendTest {
     public TestScriptRunnerBackendTest() {
         testFrameworkAdapter = new CucumberTestFrameworkAdapter(
             RceTestLifeCycleHooks.class,
-            InstanceManagementStepDefinitions.class,
+            InstanceInstantiationStepDefinitions.class,
             WorkflowStepDefinitions.class,
             SelfTestSteps.class);
     }

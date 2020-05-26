@@ -1,0 +1,55 @@
+{
+  "identifier" : "70e185e8-7c86-4dea-8bde-2e5e358a797a",
+  "workflowVersion" : "5",
+  "name" : "test_2020-01-09_11:45:34_01",
+  "nodes" : [ {
+    "identifier" : "db028ba6-294a-4b61-b549-13cf7b96895b",
+    "name" : "Input Provider",
+    "location" : "408:305",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "7e99ca9b-804d-49ab-8215-a3f7ab75def9",
+      "name" : "runtime",
+      "epIdentifier" : "default",
+      "datatype" : "Integer",
+      "metadata" : {
+        "startValue" : "60"
+      }
+    } ]
+  }, {
+    "identifier" : "045de07f-0853-4dfe-93e9-a2df1744e863",
+    "name" : "LongTestTool",
+    "location" : "537:277",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.integration.common.LongTestTool",
+      "version" : "1.0",
+      "name" : "LongTestTool"
+    },
+    "configuration" : {
+      "chosenDeleteTempDirBehavior" : "deleteWorkingDirectoriesNever",
+      "storeComponentHistoryData" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "1d229ed5-a7d2-455e-8c16-4b0d7b150871",
+      "name" : "runtime",
+      "datatype" : "Integer"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "db028ba6-294a-4b61-b549-13cf7b96895b",
+    "output" : "7e99ca9b-804d-49ab-8215-a3f7ab75def9",
+    "target" : "045de07f-0853-4dfe-93e9-a2df1744e863",
+    "input" : "1d229ed5-a7d2-455e-8c16-4b0d7b150871"
+  } ]
+}

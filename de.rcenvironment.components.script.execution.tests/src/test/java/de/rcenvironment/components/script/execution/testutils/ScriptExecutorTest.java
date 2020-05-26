@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -102,7 +102,7 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(scriptEngine.getContext()).andReturn(cont).anyTimes();
         List<Capture<String>> captures = new LinkedList<>();
         for (int i = 0; i < 5; i++) {
-            Capture<String> evalCapture = new Capture<>();
+            Capture<String> evalCapture = Capture.newInstance();
             EasyMock.expect(scriptEngine.eval(EasyMock.capture(evalCapture))).andReturn(0);
             captures.add(evalCapture);
         }

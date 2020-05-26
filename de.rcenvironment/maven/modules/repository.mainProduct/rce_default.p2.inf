@@ -19,12 +19,15 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dosgi.module.lock.timeout=30);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dorg.ops4j.pax.logging.DefaultServiceLog.level=WARN);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-clean);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-nl);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:en);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.8);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dosgi.module.lock.timeout=30);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dorg.ops4j.pax.logging.DefaultServiceLog.level=WARN);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xms512m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);

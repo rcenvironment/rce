@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -48,9 +48,9 @@ public class SplashHandler extends BasicSplashHandler {
 
     private static final int WHITE = 255;
 
-    private static final int XCOORD = 246;
+    private static final int XCOORD = 249;
 
-    private static final int YCOORD = 224;
+    private static final int YCOORD = 225;
 
     private static String releasename;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -306,7 +306,7 @@ public class DistributedComponentKnowledgeServiceTest {
         NodePropertiesService nodePropertiesService = EasyMock.createStrictMock(NodePropertiesService.class);
         service.bindNodePropertiesService(nodePropertiesService);
 
-        Capture<Map<String, String>> firstDelta = new Capture<Map<String, String>>();
+        Capture<Map<String, String>> firstDelta = Capture.newInstance();
         nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(firstDelta));
         EasyMock.replay(nodePropertiesService);
 
@@ -329,7 +329,7 @@ public class DistributedComponentKnowledgeServiceTest {
                 publicPermissionSet, authorizationServiceStub);
 
         EasyMock.reset(nodePropertiesService);
-        Capture<Map<String, String>> secondDelta = new Capture<Map<String, String>>();
+        Capture<Map<String, String>> secondDelta = Capture.newInstance();
         nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(secondDelta));
         EasyMock.replay(nodePropertiesService);
 
@@ -346,7 +346,7 @@ public class DistributedComponentKnowledgeServiceTest {
         assertNotNull(delta.get(createDeltaKey(entry4)));
 
         EasyMock.reset(nodePropertiesService);
-        Capture<Map<String, String>> thirdDelta = new Capture<Map<String, String>>();
+        Capture<Map<String, String>> thirdDelta = Capture.newInstance();
         nodePropertiesService.addOrUpdateLocalNodeProperties(EasyMock.capture(thirdDelta));
         EasyMock.replay(nodePropertiesService);
 

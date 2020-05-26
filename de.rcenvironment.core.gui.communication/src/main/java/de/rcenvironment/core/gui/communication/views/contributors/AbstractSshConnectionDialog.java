@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -37,6 +37,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Brigitte Boden
  * @author Oliver Seebach
+ * @author Kathrin Schaffert (#16953)
  */
 public abstract class AbstractSshConnectionDialog extends Dialog implements PasteListener, VerifyListener {
 
@@ -65,8 +66,6 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
     private static final String KEYFILE_LABEL = "SSH key file:";
 
     private static final String PASSPHRASE_LABEL = "Passphrase:";
-
-    private static final int CHECKBOX_LABEL_WIDTH = 300;
 
     private static Text portTextField;
 
@@ -157,16 +156,12 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
         container.setLayoutData(containerGridData);
         container.setLayout(layout);
         GridData useDefaultCheckboxGridData = new GridData();
-        useDefaultCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         useDefaultCheckboxGridData.horizontalSpan = 1;
         GridData storePassphraseCheckboxGridData = new GridData();
-        storePassphraseCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         storePassphraseCheckboxGridData.horizontalSpan = 1;
         GridData connectImmediateCheckboxGridData = new GridData();
-        connectImmediateCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         connectImmediateCheckboxGridData.horizontalSpan = 2;
         GridData autoRetryCheckboxGridData = new GridData();
-        autoRetryCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         autoRetryCheckboxGridData.horizontalSpan = 2;
 
         Label cpLabelHost = new Label(container, SWT.NULL);

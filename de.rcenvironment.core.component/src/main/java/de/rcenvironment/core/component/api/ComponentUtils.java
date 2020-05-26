@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -92,7 +92,7 @@ public final class ComponentUtils {
     public static final String OUTPUT_TAG = "_rce_output_";
 
     /**
-     * Suffix for identifier of missong component. Introduced to cut the link to the configuration GUI of the missing component.
+     * Suffix for identifier of missing component. Introduced to cut the link to the configuration GUI of the missing component.
      */
     public static final String MISSING_COMPONENT_PREFIX = "20ca0171b5e24e10a284af7c1d6d94e9missing_";
 

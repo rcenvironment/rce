@@ -1,0 +1,212 @@
+{
+  "identifier" : "9b0711ec-fbeb-4abf-98de-e2407d4ec12d",
+  "workflowVersion" : "5",
+  "name" : "03_01_Simple_Loop_2020-03-04_09:47:15_09",
+  "nodes" : [ {
+    "identifier" : "0f55eebe-2c5f-4b5e-a631-83478336efe1",
+    "name" : "Analysis",
+    "location" : "414:297",
+    "zIndex" : "2",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"evaluation_result\", RCE.read_input(\"simulation_result\") * 2)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7bca39ff-d773-40b6-9594-89f42da3d534",
+      "name" : "simulation_result",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "e3febc81-8968-46f4-a596-0aab57130bcc",
+      "name" : "evaluation_result",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "73800f5f-e181-4c74-84ed-7c462289373f",
+    "name" : "Design of Experiments",
+    "location" : "414:158",
+    "zIndex" : "3",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "4.1",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "behaviourFailedRun" : "Skip sample and continue",
+      "endSample" : "0",
+      "faultTolerance-NAV_5e0ed1cd" : "Fail",
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "method" : "Full factorial design",
+      "runNumber" : "10",
+      "seedNumber" : "0",
+      "startSample" : "0",
+      "storeComponentHistoryData" : "true",
+      "table" : ""
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "909754de-87f4-471a-ae34-8669b4f4b052",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "63874965-ddc3-47bb-8531-2ea925adfea7",
+      "name" : "Done",
+      "datatype" : "Boolean"
+    }, {
+      "identifier" : "f182695e-0bec-435b-b9c3-cee95abd759e",
+      "name" : "Number of samples",
+      "datatype" : "Integer"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "4d365586-fa28-40b2-8ff6-0bea020f2ab8",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-10",
+        "upper" : "10"
+      }
+    }, {
+      "identifier" : "494e8744-eff1-48ce-812b-b84ebba12293",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "lower" : "-10",
+        "upper" : "10"
+      }
+    } ]
+  }, {
+    "identifier" : "57b989e8-4236-4434-96e9-dfd02d6f07b1",
+    "name" : "Preparing",
+    "location" : "614:158",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"prepared_value\", RCE.read_input(\"x\")**2 + RCE.read_input(\"y\"))",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c82013a5-ecc3-4304-846d-9ac4fd2521a0",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "48e3a98f-302e-4d20-8b42-ed5b887f94a7",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "e030c2a5-0d15-4694-90f4-fc0fd8f0af75",
+      "name" : "prepared_value",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "bd3c4441-d47f-49a5-8284-48308b8a787a",
+    "name" : "Simulation",
+    "location" : "614:297",
+    "zIndex" : "1",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "import math\r\nRCE.write_output(\"simulation_result\", math.sin(RCE.read_input(\"simulation_start_value\"))**2)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "94160a38-53a8-4823-a26e-a5c7e0ab6044",
+      "name" : "simulation_start_value",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "07bf93cd-ca93-4c81-b874-4983b4c8308e",
+      "name" : "simulation_result",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "0f55eebe-2c5f-4b5e-a631-83478336efe1",
+    "output" : "e3febc81-8968-46f4-a596-0aab57130bcc",
+    "target" : "73800f5f-e181-4c74-84ed-7c462289373f",
+    "input" : "909754de-87f4-471a-ae34-8669b4f4b052"
+  }, {
+    "source" : "73800f5f-e181-4c74-84ed-7c462289373f",
+    "output" : "4d365586-fa28-40b2-8ff6-0bea020f2ab8",
+    "target" : "57b989e8-4236-4434-96e9-dfd02d6f07b1",
+    "input" : "c82013a5-ecc3-4304-846d-9ac4fd2521a0"
+  }, {
+    "source" : "73800f5f-e181-4c74-84ed-7c462289373f",
+    "output" : "494e8744-eff1-48ce-812b-b84ebba12293",
+    "target" : "57b989e8-4236-4434-96e9-dfd02d6f07b1",
+    "input" : "48e3a98f-302e-4d20-8b42-ed5b887f94a7"
+  }, {
+    "source" : "57b989e8-4236-4434-96e9-dfd02d6f07b1",
+    "output" : "e030c2a5-0d15-4694-90f4-fc0fd8f0af75",
+    "target" : "bd3c4441-d47f-49a5-8284-48308b8a787a",
+    "input" : "94160a38-53a8-4823-a26e-a5c7e0ab6044"
+  }, {
+    "source" : "bd3c4441-d47f-49a5-8284-48308b8a787a",
+    "output" : "07bf93cd-ca93-4c81-b874-4983b4c8308e",
+    "target" : "0f55eebe-2c5f-4b5e-a631-83478336efe1",
+    "input" : "7bca39ff-d773-40b6-9594-89f42da3d534"
+  } ],
+  "labels" : "[{\"identifier\":\"95aed198-ce60-416c-8c15-6dd39105f6a6\",\"headerText\":\"\",\"text\":\"In this example, the driver is the \\\"Design of Experiments\\\" (short: DOE) workflow component. It sends two values (outputs: x and y) as pre-defined in the table.  It waits until it receives the result values at its inputs and sends the the next values. As soon as all values of the table are sent, it finishes the loop.\\r\\n\\r\\nThe Script workflow components represent different tools that can be used in such a loop. For example: The \\\"Preparing\\\" Script workflow component could prepare some template input file with the values received at \\\"x\\\" and \\\"y\\\". Afterwards, the \\\"Simulation\\\" Script workflow component does some calculations with those values and sends the result to \\\"Analysis\\\". It could extract relevant values as result and feeds it back to the DOE workflow component.\",\"location\":\"107:406\",\"size\":\"953:192\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"98a9138e-60d8-4408-b6fe-365acee01993\",\"headerText\":\"Introducing loops in workflows\",\"text\":\"See example workflow '02_02_Evaluation_Drivers' for details about workflow components that are required to drive a loop in a workflow.\",\"location\":\"107:16\",\"size\":\"953:93\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+}

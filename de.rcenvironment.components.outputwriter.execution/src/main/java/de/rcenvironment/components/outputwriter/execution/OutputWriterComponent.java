@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -11,13 +11,16 @@ package de.rcenvironment.components.outputwriter.execution;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -51,6 +54,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Sascha Zur
  * @author Brigitte Boden
  * @author Oliver Seebach
+ * @author Kathrin Schaffert (#16787)
  * 
  */
 public class OutputWriterComponent extends DefaultComponent {
@@ -330,6 +334,17 @@ public class OutputWriterComponent extends DefaultComponent {
             if (forbiddenFilenames.contains(filename) || filename.contains("/") || filename.contains("\\")) {
                 throw new ComponentException(StringUtils.format("Failed to write file of input '%s' because '%s' "
                     + "is a forbidden filename", inputName, filename));
+            }
+            String inputFileName = ((FileReferenceTD) input).getFileName();
+            ArrayList<String> inputExtensions = new ArrayList<>();
+            Collections.addAll(inputExtensions, inputFileName.split("\\."));
+            inputExtensions.remove(0);
+            StringBuilder extension = new StringBuilder();
+            for (String inputExtension : inputExtensions) {
+                extension.append(DOT + inputExtension);
+            }
+            if (FilenameUtils.getExtension(filename).isEmpty()) {
+                path = path + extension.toString();
             }
             incFileOrDir = new File(path);
             try {

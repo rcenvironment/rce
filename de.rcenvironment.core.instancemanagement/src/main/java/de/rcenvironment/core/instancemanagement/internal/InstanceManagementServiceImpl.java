@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.Charsets;
@@ -66,6 +67,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.AbstractTextOutputReceiver;
+import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
@@ -79,8 +81,11 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.JSchRCECommandLineExecutor;
  * @author Brigitte Boden
  * @author Lukas Rosenbach
  * @author Alexander Weinert
+ * @author Marlon Schroeter
  */
 public class InstanceManagementServiceImpl implements InstanceManagementService {
+
+    private static final int THREAD_SLEEP_DEFAULT_IN_MILLIS = 500;
 
     private static final String FROM_INSTANCE = " from instance ";
 
@@ -115,7 +120,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
 
     private static final String VERSION = ".version";
 
-    private static final Pattern VALID_IDS_REGEXP_PATTERN = Pattern.compile("[a-zA-Z0-9-_\\.]+");
+    private static final Pattern VALID_IDS_REGEXP_PATTERN = Pattern.compile("(_(legacy|base_major)/)?[a-zA-Z0-9-_\\.]+");
 
     private static final Pattern VALID_PATH_REGEXP_PATTERN = Pattern.compile("[a-zA-Z0-9-_\\./]+");
 
@@ -141,6 +146,9 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
     private static final String TO_INSTANCE = " to instance ";
 
     private static final String OF_INSTANCE = " of instance ";
+
+    private static final Pattern WORKFLOW_START_PATTERN =
+        Pattern.compile("Loading: '(.+)'; log directory: (\\S+) .*\\nExecuting: '[^']+'; id: ([^\\s]+)");
 
     // Only the first mayor-version of a new profile version has to be entered. If the next mayor-versions use the
     // same profile-version, it is not necessary to include these mayor-version in this array.
@@ -521,7 +529,7 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 configOperations.setSshServerPort((Integer) parameters[1]);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT:
-                configOperations.addSshAccount((String) parameters[0], (String) parameters[1], (Boolean) parameters[2], 
+                configOperations.addSshAccount((String) parameters[0], (String) parameters[1], (Boolean) parameters[2],
                     (String) parameters[3]);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_ACCOUNT:
@@ -1357,7 +1365,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
-    private String getVersionOfInstallation(String installationId) throws IOException {
+    @Override
+    public String getVersionOfInstallation(String installationId) throws IOException {
         String oldVersion;
         File installationVersionFile = new File(installationsRootDir, installationId + VERSION);
         if (installationVersionFile.exists()) {
@@ -1586,9 +1595,78 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
         }
     }
 
-    @Override
-    public void executeCommandOnInstance(String instanceId, String command, TextOutputReceiver userOutputReceiver) throws JSchException,
-        SshParameterException, IOException, InterruptedException {
+    /**
+     * 
+     * @author Marlon Schroeter
+     *
+     * @param <T>
+     */
+    private interface AfterInstancePerformance<T> {
+
+        T after(JSchRCECommandLineExecutor rceExecutor, TextOutputReceiver userOutputReceiver)
+            throws IOException, InterruptedException;
+    }
+
+    /**
+     * 
+     * @author Marlon Schroeter
+     *
+     */
+    private class AfterWorkflowStarting implements AfterInstancePerformance<String[]> {
+
+        @Override
+        public String[] after(JSchRCECommandLineExecutor rceExecutor, TextOutputReceiver userOutputReceiver)
+            throws IOException, InterruptedException {
+            try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
+                String[] workflowInfo = new String[3];
+                TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver);
+                TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderrStream, userOutputReceiver);
+                stdoutWatcher.start();
+                stderrWatcher.start();
+
+                // wait until commandOutput contains workflow ID
+                while (true) {
+                    String output = ((CapturingTextOutReceiver) userOutputReceiver).getBufferedOutput();
+                    Matcher m = WORKFLOW_START_PATTERN.matcher(output);
+                    if (m.find()) {
+                        workflowInfo[0] = m.group(1);
+                        workflowInfo[1] = m.group(2);
+                        workflowInfo[2] = m.group(3);
+                        break;
+                    }
+                    Thread.sleep(THREAD_SLEEP_DEFAULT_IN_MILLIS);
+                }
+                return workflowInfo;
+            }
+        }
+    }
+
+    /**
+     * 
+     * @author Marlon Schroeter
+     *
+     */
+    private class AfterCommandExecution implements AfterInstancePerformance<Void> {
+
+        @Override
+        public Void after(JSchRCECommandLineExecutor rceExecutor, TextOutputReceiver userOutputReceiver)
+            throws IOException, InterruptedException {
+            try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
+                TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver);
+                TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderrStream, userOutputReceiver);
+                stdoutWatcher.start();
+                stderrWatcher.start();
+                rceExecutor.waitForTermination();
+                stdoutWatcher.waitForTermination();
+                stderrWatcher.waitForTermination();
+            }
+            return null;
+        }
+    }
+
+    private Object performOnInstance(String instanceId, String command, TextOutputReceiver userOutputReceiver,
+        AfterInstancePerformance<?> afterInstancePerformance)
+        throws IOException, JSchException, SshParameterException, InterruptedException {
         Objects.requireNonNull(instanceId); // sanity check
         if (isInstanceRunning(instanceId)) {
             Logger logger = JschSessionFactory.createDelegateLogger(log);
@@ -1612,23 +1690,43 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                         null, passphrase, logger);
                 JSchRCECommandLineExecutor rceExecutor = new JSchRCECommandLineExecutor(session);
                 rceExecutor.start(command);
-                try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
-                    TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver);
-                    TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderrStream, userOutputReceiver);
-                    stdoutWatcher.start();
-                    stderrWatcher.start();
-                    rceExecutor.waitForTermination();
-                    stdoutWatcher.waitForTermination();
-                    stderrWatcher.waitForTermination();
-                }
-                session.disconnect();
+                Object returnValue = afterInstancePerformance.after(rceExecutor, userOutputReceiver);
+                //session.disconnect();
                 userOutputReceiver.addOutput("Finished executing command " + command + ON_INSTANCE + instanceId);
+                return returnValue;
             } else {
                 userOutputReceiver.addOutput("Could not retrieve password and/or port for instance " + instanceId + ".");
             }
         } else {
             userOutputReceiver.addOutput("Cannot execute command on instance " + instanceId + " because it is not running.");
         }
+        return null;
+    }
+
+    @Override
+    public void executeCommandOnInstance(String instanceId, String command, TextOutputReceiver userOutputReceiver) throws JSchException,
+        SshParameterException, IOException, InterruptedException {
+        AfterCommandExecution test = new AfterCommandExecution();
+        performOnInstance(instanceId, command, userOutputReceiver, test);
+    }
+
+    @Override
+    public String[] startWorkflowOnInstance(String instanceId, Path workflowFileLocation, CapturingTextOutReceiver userOutputReceiver)
+        throws JSchException, SshParameterException, IOException, InterruptedException {
+        AfterWorkflowStarting test = new AfterWorkflowStarting();
+        return (String[]) performOnInstance(instanceId,
+            StringUtils.format("wf run --dispose never --delete never \"%s\"", workflowFileLocation), userOutputReceiver, test);
+    }
+
+    @Override
+    public String[] startWorkflowOnInstance(String instanceId, Path workflowFileLocation, Path placeholderFileLocation,
+        CapturingTextOutReceiver userOutputReceiver)
+        throws JSchException, SshParameterException, IOException, InterruptedException {
+        AfterWorkflowStarting test = new AfterWorkflowStarting();
+        return (String[]) performOnInstance(instanceId,
+            StringUtils.format("wf run --dispose never --delete never -p \"%s\" \"%s\"", placeholderFileLocation,
+                workflowFileLocation),
+            userOutputReceiver, test);
     }
 
     /**
@@ -1694,5 +1792,15 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             throw new IOException("Installation path of IM master instance is either null or empty");
         }
         return runningIMInstallationPath;
+    }
+
+    @Override
+    public File getInstallationsRootDir() {
+        return installationsRootDir;
+    }
+
+    @Override
+    public File getDownloadsCacheDir() {
+        return downloadsCacheDir;
     }
 }

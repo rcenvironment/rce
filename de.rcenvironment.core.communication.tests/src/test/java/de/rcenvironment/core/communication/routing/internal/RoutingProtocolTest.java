@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -394,9 +394,10 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
         client2.addServerConfigurationEntry(client2ContactPoint);
 
         MessageChannelLifecycleListener connectionListener = EasyMock.createMock(MessageChannelLifecycleListener.class);
-        // FIXME why does this not work?
-        // connectionListener.onOutgoingConnectionEstablished(EasyMock.createMock(MessageChannel.class));
-        // connectionListener.onOutgoingConnectionEstablished(EasyMock.createMock(MessageChannel.class));
+        connectionListener.setInitialMessageChannels(EasyMock.anyObject());
+        EasyMock.expectLastCall();
+        connectionListener.onOutgoingChannelEstablished(EasyMock.anyObject());
+        EasyMock.expectLastCall();
         EasyMock.replay(connectionListener);
         client1.getMessageChannelService().addChannelLifecycleListener(connectionListener);
 

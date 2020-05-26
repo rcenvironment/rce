@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -363,7 +363,7 @@ public class WfCommandPlugin implements CommandPlugin {
      * -> should be improved (https://mantis.sc.dlr.de/view.php?id=14716).
      * 
      * @param context {@link CommandContext} to use
-     * @param wfFile  workflow to validate
+     * @param wfFile workflow to validate
      * @return <code>true</code> if workflow is valid, otherwise <code>false</code>
      */
     private boolean preValidateWorkflow(CommandContext context, File wfFile, boolean printNonErrorProgressMessages) {
@@ -728,7 +728,7 @@ public class WfCommandPlugin implements CommandPlugin {
 
     /**
      * 
-     * @param compExecInfo                     must not be null
+     * @param compExecInfo must not be null
      * @param componentRunsByComponentInstance must not be null
      * @return Set of Component Runs for the given Component or null if component has not run
      */
@@ -1379,7 +1379,13 @@ public class WfCommandPlugin implements CommandPlugin {
         }
         try {
             WorkflowGraph workflowGraph = createWorkflowGraph(wfDesc);
-            cmdCtx.getOutputReceiver().addOutput(workflowGraph.toDotScript());
+            if (workflowGraph != null) {
+                cmdCtx.getOutputReceiver().addOutput(workflowGraph.toDotScript());
+            } else {
+                throw CommandException.executionError(
+                    "The wf graph command is not implemented yet. See " + getClass().getTypeName() + " for more informations.",
+                    cmdCtx);
+            }
         } catch (WorkflowExecutionException e) {
             throw CommandException.executionError("Failed to create workflow graph: " + e.getMessage(), cmdCtx);
         }
@@ -1390,6 +1396,7 @@ public class WfCommandPlugin implements CommandPlugin {
     // final testing for 8.0; code will be cleaned up with: https://mantis.sc.dlr.de/view.php?id=14847
     private WorkflowGraph createWorkflowGraph(WorkflowDescription workflowDescription) throws WorkflowExecutionException {
         return null; // TODO
+
         // Map<String, WorkflowGraphNode> workflowGraphNodes = new HashMap<>();
         // Map<String, Set<WorkflowGraphEdge>> workflowGraphEdges = new HashMap<>();
         // for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {

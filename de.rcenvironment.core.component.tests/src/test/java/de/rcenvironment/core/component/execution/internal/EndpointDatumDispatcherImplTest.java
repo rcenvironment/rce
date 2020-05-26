@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -179,20 +179,22 @@ public class EndpointDatumDispatcherImplTest {
         componentExecutionControllerMock.onSendingEndointDatumFailed(endpointDatumToForwardFailingMock3, remoteOperationException);
         componentExecutionControllerMock.onEndpointDatumReceived(endpointDatumToProcessMock2);
         componentExecutionControllerMock.onEndpointDatumReceived(endpointDatumToProcessMock1);
-        Capture<EndpointDatum> finalEndpointDatumSentCapture = new Capture<>();
+        Capture<EndpointDatum> finalEndpointDatumSentCapture = Capture.newInstance();
         componentExecutionControllerMock.onEndpointDatumReceived(EasyMock.capture(finalEndpointDatumSentCapture));
         EasyMock.replay(componentExecutionControllerMock);
 
         RemotableComponentExecutionControllerService remotableCompExeCtrlServiceMock =
             createRemotableExecutionControllerService(serializedEndpointDatumToForwardFailing4);
         // code disabled as long as retrying is disabled
-        RemotableEndpointDatumDispatcher endpointDatumDispatcherMock = EasyMock.createStrictMock(RemotableEndpointDatumDispatcher.class);
+        RemotableEndpointDatumDispatcher endpointDatumDispatcherMock = EasyMock.createNiceMock(RemotableEndpointDatumDispatcher.class);
         endpointDatumDispatcherMock.dispatchEndpointDatum(serializedEndpointDatumToForward1);
+        EasyMock.expectLastCall();
         // for (int i = 0; i < 5; i++) {
         endpointDatumDispatcherMock.dispatchEndpointDatum(serializedEndpointDatumToForwardFailing3);
         EasyMock.expectLastCall().andThrow(remoteOperationException);
         // }
         endpointDatumDispatcherMock.dispatchEndpointDatum(serializedEndpointDatumToForward2);
+        EasyMock.expectLastCall();
         // endpointDatumDispatcherMock.dispatchEndpointDatum(serializedEndpointDatumToForwardFailing1);
         // EasyMock.expectLastCall().andThrow(remoteOperationException);
         // endpointDatumDispatcherMock.dispatchEndpointDatum(serializedEndpointDatumToForwardFailing1);
@@ -235,7 +237,7 @@ public class EndpointDatumDispatcherImplTest {
             Thread.sleep(sleepInterval);
         }
 
-        finalEndpointDatumSentCapture.getValue().equals(endpointDatumToProcessMock3);
+        assertEquals(endpointDatumToProcessMock3, finalEndpointDatumSentCapture.getValue());
 
         EasyMock.verify(componentExecutionControllerMock);
         EasyMock.verify(endpointDatumDispatcherMock);
@@ -414,10 +416,10 @@ public class EndpointDatumDispatcherImplTest {
     @Ignore // TODO (p1) test needs to be adapted to RCE 9 rRPC changes
     public void testDispatchEndpointDatumViaWorkflowController() throws InterruptedException, RemoteOperationException {
 
-        Capture<String> captSerialEpDtsOnCompNode1 = new Capture<>();
-        Capture<String> captSerialEpDtsOnCompNode2 = new Capture<>();
-        Capture<String> captSerialEpDtsOnCompNode3 = new Capture<>();
-        Capture<String> captSerialEpDtsOnCompNode4 = new Capture<>();
+        Capture<String> captSerialEpDtsOnCompNode1 = Capture.newInstance();
+        Capture<String> captSerialEpDtsOnCompNode2 = Capture.newInstance();
+        Capture<String> captSerialEpDtsOnCompNode3 = Capture.newInstance();
+        Capture<String> captSerialEpDtsOnCompNode4 = Capture.newInstance();
         RemotableEndpointDatumDispatcher compDispatcherMock = EasyMock.createStrictMock(RemotableEndpointDatumDispatcher.class);
         compDispatcherMock.dispatchEndpointDatum(EasyMock.capture(captSerialEpDtsOnCompNode1));
         compDispatcherMock.dispatchEndpointDatum(EasyMock.capture(captSerialEpDtsOnCompNode2));
@@ -425,9 +427,9 @@ public class EndpointDatumDispatcherImplTest {
         compDispatcherMock.dispatchEndpointDatum(EasyMock.capture(captSerialEpDtsOnCompNode4));
         EasyMock.replay(compDispatcherMock);
 
-        Capture<String> captSerialEpDtsOnWfCtrl1 = new Capture<>();
-        Capture<String> captSerialEpDtsOnWfCtrl2 = new Capture<>();
-        Capture<String> captSerialEpDtsOnWfCtrl3 = new Capture<>();
+        Capture<String> captSerialEpDtsOnWfCtrl1 = Capture.newInstance();
+        Capture<String> captSerialEpDtsOnWfCtrl2 = Capture.newInstance();
+        Capture<String> captSerialEpDtsOnWfCtrl3 = Capture.newInstance();
         RemotableEndpointDatumDispatcher wfCtrlDispatcherMock = EasyMock.createStrictMock(RemotableEndpointDatumDispatcher.class);
         wfCtrlDispatcherMock.dispatchEndpointDatum(EasyMock.capture(captSerialEpDtsOnWfCtrl1));
         wfCtrlDispatcherMock.dispatchEndpointDatum(EasyMock.capture(captSerialEpDtsOnWfCtrl2));

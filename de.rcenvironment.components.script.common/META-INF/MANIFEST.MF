@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.common
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry
@@ -19,3 +19,4 @@ Import-Package: de.rcenvironment.core.component.api,
 Service-Component: OSGI-INF/*.xml 
 Bundle-Vendor: DLR
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.script.common

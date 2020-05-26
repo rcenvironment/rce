@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -10,6 +10,9 @@ package de.rcenvironment.core.instancemanagement;
 
 import java.io.File;
 import java.util.List;
+
+import de.rcenvironment.core.instancemanagement.internal.SSHAccountParameters;
+import de.rcenvironment.core.instancemanagement.internal.UplinkConnectionParameters;
 
 /**
  * Provides a builder-style interface to construct sequences of steps to modify an instance's configuration.
@@ -173,6 +176,14 @@ public interface InstanceConfigurationOperationSequence {
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence disableSshServer();
+    
+    /**
+     * Adds an operation to add an SSH account to an embedded SSH server. The individual parameters are passed by a parameter object
+     * 
+     * @param parameters parameter object containing parameters
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence addSshAccount(SSHAccountParameters parameters);
 
     /**
      * Adds an operation to add an SSH account to an embedded SSH server.
@@ -262,10 +273,18 @@ public interface InstanceConfigurationOperationSequence {
     InstanceConfigurationOperationSequence removeSshConnection(String name);
     
     /**
+     * Adds an operation to add an uplink connection. The individual parameters are passed by a parameter object.
+     * 
+     * @param parameters parameter object containing parameters
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence addUplinkConnection(UplinkConnectionParameters parameters);
+    
+    /**
      * Adds an operation to add an uplink connection. The individual parameters are parsed from a list of string parameters.
      * 
      * @param parameters the list of string parameter tokens; in the format:
-     *  <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> password <password>
+     *  <id> <hostname> <port> <clientid> <gateway> <connectOnStartup> <autoRetry> <user_name> password <password>
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
     InstanceConfigurationOperationSequence addUplinkConnectionFromStringParameters(List<String> parameters);

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start
 Bundle-SymbolicName: de.rcenvironment.core.start;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.configuration,
@@ -18,3 +18,4 @@ Require-Bundle: org.eclipse.core.runtime
 Bundle-ActivationPolicy: lazy
 Export-Package: de.rcenvironment.core.start
 Bundle-Localization: plugin
+Automatic-Module-Name: de.rcenvironment.core.start

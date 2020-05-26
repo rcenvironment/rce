@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -570,8 +570,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // INSTALLATION_DATA_ROOT (default: "${osgi.install.area}/..")
         if (!configurePathFromOverridePropertyIfSet(ConfigurablePathId.INSTALLATION_DATA_ROOT,
             SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE)) {
-            File installationDirectory = bootstrapSettings.getInstallationDir();
-            log.info("Set installation data root directory to: " + installationDirectory.getAbsolutePath());
+            File installationDirectory = BootstrapConfiguration.getInstallationDir();
+            log.info("Using installation data root directory " + installationDirectory.getAbsolutePath());
             configurablePathMap.put(ConfigurablePathId.INSTALLATION_DATA_ROOT, installationDirectory);
         }
         // get final value for internal usage

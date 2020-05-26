@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -32,8 +32,6 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Alexander Weinert
  */
-// REVIEW (AW): If I understand this correctly, then there only exists a single script file per installation of RCE. What happens if there
-// are multiple users, some of which want to have the welcome screen displayed, while others do not?
 final class WelcomeScreenScriptFile {
 
     private static final String CHECKBOX_LINE_MARKER = "checkbox.checked = ";
@@ -77,7 +75,6 @@ final class WelcomeScreenScriptFile {
     }
 
     private byte[] readFileAndReplaceCheckboxLine(final Stream<String> lines, final String replacementCheckboxLine) throws IOException {
-        // REVIEW: Used to iterate ``manually'' over all lines via while-loop, very C-like
         return lines
             .map(line -> replaceLineIfCheckboxLine(line, replacementCheckboxLine))
             .collect(Collectors.joining("\n"))
@@ -100,7 +97,6 @@ final class WelcomeScreenScriptFile {
         try (FileOutputStream scriptFileOutputStream = buildFileOutputStream()) {
             scriptFileOutputStream.write(newFileContents);
         } catch (IOException e) {
-            // REVIEW (AW): This used to log an error message stating there was an error while reading instead of writing
             logWritingExceptionAsError(e);
         }
     }

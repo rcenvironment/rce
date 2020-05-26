@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -244,7 +244,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
             String nodeName = currentNode.getName();
             if (placeholderPage.getPlaceholderValidators().containsKey(nodeName)) {
                 for (String placeholderName : placeholderPage.getPlaceholderValidators().get(nodeName)) {
-                    String dataType = placeholderPage.placeholderHelper.getPlaceholdersDataType().get(nodeName + "." + placeholderName);
+                    String dataType = placeholderPage.getPlaceholderDataType(nodeName, placeholderName);
                     if (dataType != null && dataType.equals("text")) {
                         addMessageItem(currentNode, Type.ERROR, Messages.textExceedsMaxLength + placeholderName);
                     } else {

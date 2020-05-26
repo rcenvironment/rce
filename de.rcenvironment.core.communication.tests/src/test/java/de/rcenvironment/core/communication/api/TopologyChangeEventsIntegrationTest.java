@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -57,9 +57,9 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
         final VirtualCommunicationBundle communicationBundle = initialNode.getVirtualCommunicationBundle();
         final NetworkRoutingServiceImpl networkRoutingService =
             (NetworkRoutingServiceImpl) communicationBundle.getService(NetworkRoutingService.class);
-        Capture<Set<InstanceNodeSessionId>> reachableNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
-        Capture<Set<InstanceNodeSessionId>> addedNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
-        Capture<Set<InstanceNodeSessionId>> removedNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
+        Capture<Set<InstanceNodeSessionId>> reachableNodesCapture = Capture.newInstance();
+        Capture<Set<InstanceNodeSessionId>> addedNodesCapture = Capture.newInstance();
+        Capture<Set<InstanceNodeSessionId>> removedNodesCapture = Capture.newInstance();
         final NetworkTopologyChangeListener topologyChangeListener = EasyMock.createMock(NetworkTopologyChangeListener.class);
 
         // set expectation on subscription

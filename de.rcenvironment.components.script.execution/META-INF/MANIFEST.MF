@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
@@ -42,3 +42,4 @@ Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-Vendor: DLR
 Eclipse-ExtensibleAPI: true
+Automatic-Module-Name: de.rcenvironment.components.script.execution

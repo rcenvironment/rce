@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -19,14 +19,13 @@ import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TreeItem;
 
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 
@@ -339,9 +338,8 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
         }
         if (noChildrenWithDifferentInst) {
 
-            String text = father.getChildrenNodes().get(0).getWorkflowNode().getComponentDescription().getNode().toString();
-            String finalText = text.substring(1, text.indexOf(Messages.bracket) - 2);
-            father.getCombo().setText(finalText);
+            LogicalNodeId nodeId = father.getChildrenNodes().get(0).getWorkflowNode().getComponentDescription().getNode();
+            father.getCombo().setText(nodeId.getAssociatedDisplayName());
 
             if (missingTargetInstancesList != null) {
 
@@ -366,17 +364,13 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
 
     private void updateFather(ViewerCell cell) {
 
-        Font font = new Font(Display.getCurrent(), "Arial", 10, SWT.ITALIC);
-        // disposed in provider
-        instanceProvider.getResources().add(font);
-
         final TreeNode treeNodeCell = (TreeNode) cell.getElement();
         final CCombo combo = new CCombo(treeViewer.getTree(), SWT.DROP_DOWN);
-        combo.setFont(font);
 
         final TreeItem item = (TreeItem) cell.getItem();
         TreeEditor editor = new TreeEditor(treeViewer.getTree());
         editor.grabHorizontal = true;
+        editor.horizontalAlignment = SWT.BEGINNING;
 
         Color secondRow = ColorPalette.getInstance().getSecondRowColor();
 
@@ -384,10 +378,10 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
         cell.getViewerRow().setBackground(1, secondRow);
         cell.getViewerRow().setBackground(2, secondRow);
 
-        combo.setEditable(false);
-        combo.setBackground(secondRow);
         combo.setData(treeNodeCell);
         combo.setData(EDITOR, editor);
+        combo.setBackground(secondRow);
+        combo.setEditable(false);
 
         combo.addListener(SWT.Resize, new Listener() {
 
@@ -403,9 +397,8 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
         if (!comboList.contains(combo)) {
             comboList.add(combo);
         }
-        treeNodeCell.setCombo(combo);
         editor.setEditor(combo, item, 2);
-
+        treeNodeCell.setCombo(combo);
         for (String value : editingSupport.getValues(treeNodeCell.getChildrenNodes().get(0).getWorkflowNode())) {
             combo.add(value);
         }
@@ -455,7 +448,6 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
         if (allChildrenDisabled) {
             combo.setEnabled(false);
         }
-
     }
 
     @Override

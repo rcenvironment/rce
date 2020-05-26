@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component GUI Bundle
 Bundle-SymbolicName: de.rcenvironment.components.excel.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: com.jacob.activeX,
  com.jacob.com,
  de.rcenvironment.components.excel.common,
@@ -50,3 +50,4 @@ Require-Bundle: org.eclipse.ui.views.properties.tabbed,
 Bundle-Localization: plugin
 Export-Package: de.rcenvironment.components.excel.gui.view
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.excel.gui

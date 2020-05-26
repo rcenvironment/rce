@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -12,8 +12,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,9 +41,6 @@ public final class TestScenarioExecutionContext {
 
     private final String buildUnderTestId;
 
-    // note: only supposed to be accessed from the main thread, so no synchronization is performed or necessary
-    private final Map<String, ManagedInstance> instancesById = new HashMap<>();
-
     // TODO rename or replace with multi-instance setup
     private ExecutionResult currentExecutionResult;
 
@@ -50,6 +49,16 @@ public final class TestScenarioExecutionContext {
     private final Log log = LogFactory.getLog(getClass());
 
     private File testScriptLocation;
+    
+    // TODO review: contains test state; move into separate class?
+    private ManagedInstance lastInstanceWithSingleCommandExecution;
+
+    // note: only supposed to be accessed from the main thread, so no synchronization is performed or necessary
+    // TODO review: contains test state; move into separate class?
+    private Map<String, ManagedInstance> instancesById = new HashMap<>();
+
+    // note: only supposed to be accessed from the main thread, so no synchronization is performed or necessary
+    private Set<ManagedInstance> enabledInstances = new HashSet<>();
 
     public TestScenarioExecutionContext() {
         this.outputReceiver = Objects.requireNonNull(THREAD_LOCAL_PARAMETER_OUTPUT_RECEIVER.get());
@@ -141,7 +150,46 @@ public final class TestScenarioExecutionContext {
         return testScriptLocation;
     }
 
-    public Map<String, ManagedInstance> getSharedInstancesByIdMap() {
+    public ManagedInstance getLastInstanceWithSingleCommandExecution() {
+        return lastInstanceWithSingleCommandExecution;
+    }
+
+    public void setLastInstanceWithSingleCommandExecution(ManagedInstance lastInstanceWithSingleCommandExecution) {
+        this.lastInstanceWithSingleCommandExecution = lastInstanceWithSingleCommandExecution;
+    }
+    
+    /**
+     * @param id id of instance
+     * @param instance instance to be identified by id
+     */
+    public void putInstance(String id, ManagedInstance instance) {
+        instancesById.put(id, instance);
+    }
+    
+    /**
+     * @param id key for map
+     * @return instance belonging to key
+     */
+    public ManagedInstance getInstanceFromId(String id) {
+        return instancesById.get(id);
+    }
+
+    public Map<String, ManagedInstance> getInstancesById() {
         return instancesById;
+    }
+    
+    /**
+     * @param instance instance to add to set of all enabled instances
+     */
+    public void addInstance(ManagedInstance instance) {
+        enabledInstances.add(instance);
+    }
+
+    public Set<ManagedInstance> getEnabledInstances() {
+        return enabledInstances;
+    }
+
+    public void setEnabledInstances(Set<ManagedInstance> enabledInstances) {
+        this.enabledInstances = enabledInstances;
     }
 }

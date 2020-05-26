@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Scripting
 Bundle-SymbolicName: de.rcenvironment.core.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.internal,
@@ -43,3 +43,4 @@ Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/*.xml
 Require-Bundle: org.eclipse.core.runtime,
  de.rcenvironment.platform.maven.other
+Automatic-Module-Name: de.rcenvironment.core.scripting

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Optimizer Component Execution Dakota
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.dakota.execution;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.components.optimizer.common.execution,
@@ -26,3 +26,4 @@ Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.components.optimizer.execution
 RCE-ComponentExtension-Configuration: /resources/configuration_dakota.json
+Automatic-Module-Name: de.rcenvironment.components.optimizer.dakota.execution

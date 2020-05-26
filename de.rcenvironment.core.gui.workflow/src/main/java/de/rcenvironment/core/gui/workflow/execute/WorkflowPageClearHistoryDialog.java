@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -156,9 +156,9 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
             PlaceholdersMetaDataDefinition metaData = getPlaceholderAttributes(componentName);
             componentIDTreeItem.setExpanded(true);
 
-            if (weph.getPlaceholderNameSetOfComponentID(componentID) != null) {
+            if (weph.getGlobalPlaceholdersForComponentID(componentID) != null) {
                 List<String> globalPlaceholderOrder =
-                    PlaceholderSortUtils.getPlaceholderOrder(weph.getPlaceholderNameSetOfComponentID(componentID), metaData);
+                    PlaceholderSortUtils.sortGlobalPlaceholders(weph.getGlobalPlaceholdersForComponentID(componentID), metaData);
                 if (globalPlaceholderOrder == null) {
                     globalPlaceholderOrder = new LinkedList<String>();
                 }
@@ -177,7 +177,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
                     String compInstances = instancesWithPlaceholder.get(0);
                     Set<String> unsortedInstancePlaceholder = weph.getPlaceholderNameSetOfComponentInstance(compInstances);
                     List<String> sortedInstancePlaceholder =
-                        PlaceholderSortUtils.getPlaceholderOrder(unsortedInstancePlaceholder, metaData);
+                        PlaceholderSortUtils.sortGlobalPlaceholders(unsortedInstancePlaceholder, metaData);
                     for (String instancePlaceholder : sortedInstancePlaceholder) {
                         TreeItem instancePHTreeItem = new TreeItem(componentIDTreeItem, 0);
                         String guiName = metaData.getGuiName(instancePlaceholder);

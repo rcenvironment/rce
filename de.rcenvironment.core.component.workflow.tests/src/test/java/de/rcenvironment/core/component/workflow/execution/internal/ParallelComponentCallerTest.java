@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -54,9 +54,9 @@ public class ParallelComponentCallerTest {
     public void testCallingComponentSucceeding() throws ExecutionControllerException, RemoteOperationException {
         
         Callbacks callbacksMock = EasyMock.createStrictMock(Callbacks.class);
-        Capture<String> capturedCompExeId1 = new Capture<>();
+        Capture<String> capturedCompExeId1 = Capture.newInstance();
         callbacksMock.callSingleComponent(EasyMock.capture(capturedCompExeId1));
-        Capture<String> capturedCompExeId2 = new Capture<>();
+        Capture<String> capturedCompExeId2 = Capture.newInstance();
         callbacksMock.callSingleComponent(EasyMock.capture(capturedCompExeId2));
         EasyMock.expect(callbacksMock.getMethodToCallAsString()).andStubReturn(METHOD_NAME);
         EasyMock.replay(callbacksMock);
@@ -86,9 +86,9 @@ public class ParallelComponentCallerTest {
     private void testCallingComponentThrowingAnException(Exception e) throws ExecutionControllerException, RemoteOperationException {
         
         Callbacks callbacksMock = EasyMock.createStrictMock(Callbacks.class);
-        Capture<String> capturedCompExeId1 = new Capture<>();
+        Capture<String> capturedCompExeId1 = Capture.newInstance();
         callbacksMock.callSingleComponent(EasyMock.capture(capturedCompExeId1));
-        Capture<String> capturedCompExeId2 = new Capture<>();
+        Capture<String> capturedCompExeId2 = Capture.newInstance();
         callbacksMock.callSingleComponent(EasyMock.capture(capturedCompExeId2));
         EasyMock.expectLastCall().andThrow(e);
         EasyMock.expect(callbacksMock.getMethodToCallAsString()).andStubReturn(METHOD_NAME);

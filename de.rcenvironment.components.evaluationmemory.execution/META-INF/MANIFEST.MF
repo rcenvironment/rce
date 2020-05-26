@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Evaluation Memory Execution
 Bundle-SymbolicName: de.rcenvironment.components.evaluationmemory.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Service-Component: OSGI-INF/*.xml
@@ -26,3 +26,4 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  de.rcenvironment.core.utils.common,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1"
+Automatic-Module-Name: de.rcenvironment.components.evaluationmemory.execution

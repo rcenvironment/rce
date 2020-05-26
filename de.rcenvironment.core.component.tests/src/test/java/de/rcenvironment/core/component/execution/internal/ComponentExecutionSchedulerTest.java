@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -92,7 +92,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -120,7 +120,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -143,7 +143,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -179,7 +179,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -220,7 +220,7 @@ public class ComponentExecutionSchedulerTest {
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required, "AndSingle", CONNECTED));
 
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
@@ -243,7 +243,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -279,7 +279,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.NotRequired, CONNECTED));
         inputMockInfos.add(new InputMockInformation(INPUT_7, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.NotRequired, NOT_CONNECTED));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsToSend1 = new ArrayList<>();
@@ -328,7 +328,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -357,7 +357,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required, NOT_CONNECTED));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance();
         ExecutionSpecificComponentExecutionContextMock compExeCtxMock = new ExecutionSpecificComponentExecutionContextMock(inputMockInfos);
         ComponentExecutionScheduler compExeScheduler =
             new ComponentExecutionScheduler(createCompExeRelatedInstancesStub(compExeCtxMock,
@@ -387,7 +387,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
 
@@ -445,7 +445,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -485,7 +485,7 @@ public class ComponentExecutionSchedulerTest {
         inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.LogicOperation.Or));
         inputGroupMockInfos.add(new InputGroupMockInformation(AND_GROUP, EndpointGroupDefinition.LogicOperation.And, OR_GROUP));
 
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
@@ -579,7 +579,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
 
@@ -619,7 +619,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionIdentifier executionId = new ComponentExecutionIdentifier(UUID.randomUUID().toString());
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -661,7 +661,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputGroupMockInformation> inputGroupMockInfos = new ArrayList<>();
         inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.LogicOperation.Or));
 
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance();
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent);
 
@@ -696,7 +696,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance();
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -721,7 +721,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -761,7 +761,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance();
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
@@ -792,7 +792,7 @@ public class ComponentExecutionSchedulerTest {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
         compExeScheduler.disable();
 
@@ -823,7 +823,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, false, false);
 
         EndpointDatum endpointDatum1 = new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.WorkflowFinish));
@@ -850,7 +850,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.OUTER_LOOP));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, capturedEvent, true, false);
 
@@ -895,7 +895,7 @@ public class ComponentExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.OUTER_LOOP));
         inputMockInfos.add(new InputMockInformation(INPUT_3, EndpointDefinition.InputDatumHandling.Single,
             EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        Capture<ComponentStateMachineEvent> capturedEvent = Capture.newInstance(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler =
             setUpExecutionScheduler(inputMockInfos, capturedEvent, isNestedLoopDriver, isNestedLoopDriver);
 

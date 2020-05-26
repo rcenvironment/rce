@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -347,12 +347,12 @@ public enum StandardImages implements ImageSource {
     /**
      * Excel icon (small).
      */
-    EXCEL_SMALL(fromLocalBundle("Excel/excel_16.png")),
+    EXCEL_SMALL(fromLocalBundle("Excel/excel16.png")),
 
     /**
      * Excel icon (large).
      */
-    EXCEL_LARGE(fromLocalBundle("Excel/excel_64.png")),
+    EXCEL_LARGE(fromLocalBundle("Excel/excel64.png")),
 
     /**
      * Scroll lock disabled icon.

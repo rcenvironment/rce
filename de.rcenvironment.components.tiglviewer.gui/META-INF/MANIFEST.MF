@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE TiGL Viewer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Activator: de.rcenvironment.components.tiglviewer.gui.internal.Activator
@@ -22,3 +22,4 @@ Import-Package: de.rcenvironment.components.tiglviewer.execution,
  org.eclipse.ui.internal.views.properties.tabbed.view
 Export-Package: de.rcenvironment.components.tiglviewer.gui.runtime
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.tiglviewer.gui

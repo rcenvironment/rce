@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -31,7 +31,6 @@ final class WorkflowFile {
     }
 
     public static WorkflowFile fromPath(IPath path) {
-        // TODO Auto-generated method stub
         return new WorkflowFile(path);
     }
 

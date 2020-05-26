@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Optimizer Component Common
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.common
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Export-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.components.optimizer.common.execution
 Bundle-ClassPath: .
@@ -35,3 +35,4 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  org.apache.commons.logging;version="1.1.1",
  org.osgi.framework;version="1.5.0"
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.optimizer.common

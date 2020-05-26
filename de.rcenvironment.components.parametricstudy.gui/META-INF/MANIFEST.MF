@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
@@ -43,3 +43,4 @@ Export-Package: de.rcenvironment.components.parametricstudy.gui.view,
  de.rcenvironment.components.parametricstudy.gui
 Bundle-ClassPath: .
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.parametricstudy.gui

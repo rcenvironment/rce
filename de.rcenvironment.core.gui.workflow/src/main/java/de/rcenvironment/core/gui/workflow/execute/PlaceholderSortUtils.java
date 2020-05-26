@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -57,18 +57,14 @@ public final class PlaceholderSortUtils {
      * @param metaData contains ordering information
      * @return sorted List
      */
-    public static List<String> getPlaceholderOrder(Set<String> placeholderNameKeysOfComponentID,
+    public static List<String> sortGlobalPlaceholders(Set<String> placeholderNameKeysOfComponentID,
         PlaceholdersMetaDataDefinition metaData) {
         Map<Integer, List<String>> prioLists = new HashMap<>();
 
         if (placeholderNameKeysOfComponentID != null) {
             for (String componentPlaceholder : placeholderNameKeysOfComponentID) {
                 int prio = metaData.getGuiPosition(componentPlaceholder);
-                List<String> prioList = prioLists.get(prio);
-                if (prioList == null) {
-                    prioList = new ArrayList<>();
-                    prioLists.put(prio, prioList);
-                }
+                List<String> prioList = prioLists.computeIfAbsent(prio, key -> new ArrayList<>());
                 prioList.add(componentPlaceholder);
             }
         } else {

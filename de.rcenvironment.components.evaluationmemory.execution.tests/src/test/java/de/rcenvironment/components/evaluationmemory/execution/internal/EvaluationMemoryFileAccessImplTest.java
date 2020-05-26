@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -203,7 +203,7 @@ public class EvaluationMemoryFileAccessImplTest {
             .expect(toleranceHandling.isInToleranceInterval(EasyMock.eq(inputValues2), EasyMock.eq(tolerances),
                 FloatVectorMatcher.eqVec(inputValues1)))
             .andReturn(false);
-        Capture<Collection<SortedMap<String, TypedDatum>>> toleratedInputsCapture = new Capture<>();
+        Capture<Collection<SortedMap<String, TypedDatum>>> toleratedInputsCapture = Capture.newInstance();
         EasyMock.expect(toleranceHandling.pickMostToleratedInputs(EasyMock.capture(toleratedInputsCapture), EasyMock.eq(inputValues2)))
             .andReturn(null);
         EasyMock.replay(toleranceHandling);
@@ -219,7 +219,7 @@ public class EvaluationMemoryFileAccessImplTest {
             .expect(toleranceHandling.isInToleranceInterval(EasyMock.eq(inputValues2), EasyMock.eq(tolerances),
                 FloatVectorMatcher.eqVec(inputValues1)))
             .andReturn(true);
-        toleratedInputsCapture = new Capture<>();
+        toleratedInputsCapture = Capture.newInstance();
         EasyMock.expect(toleranceHandling.pickMostToleratedInputs(EasyMock.capture(toleratedInputsCapture), EasyMock.eq(inputValues2)))
             .andReturn(inputValues1);
         EasyMock.replay(toleranceHandling);

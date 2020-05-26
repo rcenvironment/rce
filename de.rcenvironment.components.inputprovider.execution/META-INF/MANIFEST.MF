@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
@@ -34,3 +34,4 @@ Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.components.inputprovider.execution

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch GUI
 Bundle-SymbolicName: de.rcenvironment.components.switch.gui;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.switchcmp.common,
@@ -33,3 +33,4 @@ Import-Package: de.rcenvironment.components.switchcmp.common,
 Export-Package: de.rcenvironment.components.switchcmp.gui
 Require-Bundle: org.eclipse.ui.views.properties.tabbed
 RCE-Component: true
+Automatic-Module-Name: de.rcenvironment.components.switch.gui

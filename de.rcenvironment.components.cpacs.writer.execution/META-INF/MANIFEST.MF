@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS Writer Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.cpacs.writer.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  com.fasterxml.jackson.databind;version="2.9.9",
  com.fasterxml.jackson.databind.node;version="2.9.9",
@@ -35,3 +35,4 @@ Service-Component: OSGI-INF/*.xml
 Export-Package: de.rcenvironment.components.cpacs.writer.execution;version="6.0.0"
 RCE-Component: true
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.components.cpacs.writer.execution

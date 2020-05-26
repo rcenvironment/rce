@@ -2,30 +2,32 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Monitoring
 Bundle-Vendor: DLR 
 Bundle-SymbolicName: de.rcenvironment.core.monitoring;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: de.rcenvironment.core.command.common,
+Import-Package: com.sun.jna;version="5.5.0",
+ de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.exception,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.modules.objectbindings.api,
  de.rcenvironment.toolkit.utils.common,
- org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.apache.log4j,
- org.hyperic.sigar;version="1.6.4",
- org.hyperic.sigar.cmd;version="1.6.4",
- org.hyperic.sigar.ptql;version="1.6.4",
- org.osgi.framework;version="1.6.0"
+ org.osgi.framework;version="1.6.0",
+ oshi;version="4.3.0",
+ oshi.hardware;version="4.3.0",
+ oshi.software.os;version="4.3.0",
+ oshi.util;version="4.3.0"
 Export-Package: de.rcenvironment.core.monitoring.system.api,
  de.rcenvironment.core.monitoring.system.api.model
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: de.rcenvironment.core.monitoring

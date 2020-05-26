@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -84,7 +84,7 @@ public class CommonToolIntegratorComponentTest {
     public void testVerificationTokenFileHandling() throws IOException, ComponentException {
 
         ComponentLog compLogMock = EasyMock.createStrictMock(ComponentLog.class);
-        Capture<String> logMessageCapture = new Capture<>(CaptureType.ALL);
+        Capture<String> logMessageCapture = Capture.newInstance(CaptureType.ALL);
         compLogMock.componentInfo(EasyMock.capture(logMessageCapture));
         EasyMock.expectLastCall().times(2);
         EasyMock.replay(compLogMock);
@@ -116,7 +116,7 @@ public class CommonToolIntegratorComponentTest {
 
         // file succeeds, mail fails
         ComponentLog compLogMock = EasyMock.createStrictMock(ComponentLog.class);
-        Capture<String> logInfoMessageCapture = new Capture<>(CaptureType.ALL);
+        Capture<String> logInfoMessageCapture = Capture.newInstance(CaptureType.ALL);
         compLogMock.componentInfo(EasyMock.capture(logInfoMessageCapture));
         EasyMock.expectLastCall().times(2);
         EasyMock.replay(compLogMock);
@@ -135,8 +135,8 @@ public class CommonToolIntegratorComponentTest {
         EasyMock.reset(compLogMock);
         EasyMock.reset(compEveAnnDispatcherMock);
         EasyMock.reset(compCtxMock);
-        Capture<String> logErrorMessageCapture = new Capture<>(CaptureType.ALL);
-        logInfoMessageCapture = new Capture<>(CaptureType.ALL);
+        Capture<String> logErrorMessageCapture = Capture.newInstance(CaptureType.ALL);
+        logInfoMessageCapture = Capture.newInstance(CaptureType.ALL);
         compLogMock.componentError(EasyMock.capture(logErrorMessageCapture));
         EasyMock.expectLastCall().once();
         compLogMock.componentInfo(EasyMock.capture(logInfoMessageCapture));
@@ -158,8 +158,8 @@ public class CommonToolIntegratorComponentTest {
 
         // file succeeds, mails fails
         EasyMock.reset(compLogMock);
-        logErrorMessageCapture = new Capture<>(CaptureType.ALL);
-        logInfoMessageCapture = new Capture<>(CaptureType.ALL);
+        logErrorMessageCapture = Capture.newInstance(CaptureType.ALL);
+        logInfoMessageCapture = Capture.newInstance(CaptureType.ALL);
         compLogMock.componentError(EasyMock.capture(logErrorMessageCapture));
         EasyMock.replay(compLogMock);
 

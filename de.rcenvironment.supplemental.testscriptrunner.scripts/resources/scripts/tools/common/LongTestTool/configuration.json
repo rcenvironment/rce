@@ -1,0 +1,41 @@
+{
+  "commandScriptLinux" : "echo \"${in:runtime} seconds have passed\"",
+  "commandScriptWindows" : "echo \"${in:runtime} seconds have passed\"",
+  "copyToolBehavior" : "never",
+  "deleteWorkingDirectoriesNever" : true,
+  "enableCommandScriptLinux" : true,
+  "enableCommandScriptWindows" : true,
+  "groupName" : "Testing",
+  "imitationScript" : "",
+  "imitationToolOutputFilename" : "",
+  "inputs" : [ {
+    "inputHandling" : "Constant",
+    "endpointFileName" : "",
+    "endpointDataType" : "Integer",
+    "defaultInputExecutionConstraint" : "Required",
+    "endpointName" : "runtime",
+    "defaultInputHandling" : "Constant",
+    "inputExecutionConstraint" : "Required",
+    "endpointFolder" : ""
+  } ],
+  "integrationType" : "Common",
+  "isActive" : true,
+  "launchSettings" : [ {
+    "limitInstallationInstancesNumber" : "10",
+    "limitInstallationInstances" : "true",
+    "rootWorkingDirectory" : "",
+    "host" : "RCE",
+    "toolDirectory" : "C:\\\\",
+    "version" : "1.0"
+  } ],
+  "outputs" : [ ],
+  "postScript" : "",
+  "preScript" : "import time\r\ntime.sleep(${in:runtime})",
+  "toolDescription" : "This Tool takes x seconds to run and is used for testing cancelling behavior.",
+  "toolIntegrationVersion" : 1,
+  "toolName" : "LongTestTool",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "uploadIcon" : true
+}

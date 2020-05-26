@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -624,20 +624,9 @@ final class WorkflowPage extends WizardPage {
 
                 @Override
                 public void widgetSelected(SelectionEvent e) {
-
                     tableUpdater.saveIndexOfComboBeforeRefresh();
                     treeUpdater.saveIndexOfComboBeforeRefresh();
-
-                    changeTable();
-
-                    if (componentsTableViewer.getTable().isVisible()) {
-                        refreshTable();
-
-                    } else {
-                        refreshTree();
-
-                    }
-
+                    changeTable(groupbyComponentCheck.getSelection());
                     tableUpdater.setSavedComboIndex();
                     treeUpdater.setSavedComboIndex();
                 }
@@ -807,39 +796,29 @@ final class WorkflowPage extends WizardPage {
 
         }
 
-        private void changeTable() {
+        private void changeTable(boolean selected) {
 
             GridData dataTable = (GridData) componentsTableViewer.getTable().getLayoutData();
             GridData dataTree = (GridData) componentsTreeViewer.getTree().getLayoutData();
 
-            if (componentsTreeViewer.getTree().isVisible()) {
-                dataTree.exclude = true;
-                componentsTreeViewer.getTree().setVisible(false);
-            } else {
-                dataTree.exclude = false;
-                filterTree.setSearchText(search.getText());
+            dataTree.exclude = !selected;
+            dataTable.exclude = selected;
+            tableViewActive = !selected;
+            componentsTableViewer.getTable().setVisible(!selected);
+            componentsTreeViewer.getTree().setVisible(selected);
+            if (selected) {
                 refreshTree();
-                componentsTreeViewer.getTree().setVisible(true);
-                tableViewActive = false;
-            }
-            if (componentsTableViewer.getTable().isVisible()) {
-                dataTable.exclude = true;
-                componentsTableViewer.getTable().setVisible(false);
+                filterTree.setSearchText(search.getText());
+                componentsTreeViewer.getControl().getParent().getParent().pack();
+
             } else {
+                refreshTable();
                 filterTable.setSearchText(search.getText());
-                tableUpdater.setCurrentlyUsedSortingColumn(1); // back to
-                                                               // default after
-                                                               // change of
-                                                               // view.
+                // back to default after change of view.
+                tableUpdater.setCurrentlyUsedSortingColumn(1);
                 tableUpdater.refreshColumns();
-                dataTable.exclude = false;
-                componentsTableViewer.getTable().setVisible(true);
-                tableViewActive = true;
-
+                componentsTableViewer.getControl().getParent().getParent().pack();
             }
-            componentsTableViewer.getControl().getParent().getParent().pack();
-            componentsTableViewer.getControl().getParent().getParent().layout(true, true);
-
         }
 
         private void buildTree() {

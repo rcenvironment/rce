@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -10,6 +10,7 @@ package de.rcenvironment.core.instancemanagement;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import com.jcraft.jsch.JSchException;
@@ -17,6 +18,7 @@ import com.jcraft.jsch.JSchException;
 import de.rcenvironment.core.instancemanagement.internal.InstanceConfigurationException;
 import de.rcenvironment.core.instancemanagement.internal.InstanceOperationException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
 /**
@@ -27,6 +29,7 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
  * @author David Scholz
  * @author Brigitte Boden
  * @author Lukas Rosenbach
+ * @author Marlon Schroeter
  */
 public interface InstanceManagementService {
 
@@ -222,24 +225,59 @@ public interface InstanceManagementService {
         SshParameterException, IOException, InterruptedException;
 
     /**
+     * Attempts to start a workflow on a managed instance via SSH. Will not wait for completion of the workflow.
+     * {@link #executeCommandOnInstance(String, String, TextOutputReceiver) executeCommandOnInstance} it does not wait for the command to be
+     * executed.
+     * 
+     * @param instanceId The instance on which the workflow will be started
+     * @param workflowFileLocation path to the workflow file to be started
+     * @param userOutputReceiver {@link TextOutputReceiver} where the output from the instance will be forwarded
+     * @throws SshParameterException on invalid SSH parameters
+     * @throws JSchException on SSH command execution errors
+     * @throws IOException on on SSH command execution errors
+     * @throws InterruptedException on SSH command execution errors
+     * @return string array, containing info about started workflow. [0]:workflowName [1]:workflowLogDir [2]:workflowId
+     */
+    String[] startWorkflowOnInstance(String instanceId, Path workflowFileLocation, CapturingTextOutReceiver userOutputReceiver)
+        throws JSchException, SshParameterException, IOException, InterruptedException;
+
+    /**
+     * Attempts to start a workflow using a placeholder file on a managed instance via SSH. Will not wait for completion of the workflow.
+     * {@link #executeCommandOnInstance(String, String, TextOutputReceiver) executeCommandOnInstance} it does not wait for the command to be
+     * executed.
+     * 
+     * @param instanceId The instance on which the workflow will be started
+     * @param workflowFileLocation path to the workflow file to be started
+     * @param placeholderFileLocation path to the placeholder file
+     * @param userOutputReceiver {@link TextOutputReceiver} where the output from the instance will be forwarded
+     * @throws SshParameterException on invalid SSH parameters
+     * @throws JSchException on SSH command execution errors
+     * @throws IOException on on SSH command execution errors
+     * @throws InterruptedException on SSH command execution errors
+     * @return string array, containing info about started workflow. [0]:workflowName [1]:workflowLogDir [2]:workflowId
+     */
+    String[] startWorkflowOnInstance(String instanceId, Path workflowFileLocation, Path placeholderFileLocation,
+        CapturingTextOutReceiver userOutputReceiver) throws JSchException, SshParameterException, IOException, InterruptedException;
+
+    /**
      * @param input the string to test
      * @return true if the given string is either a symbolic or otherwise special installation id, e.g.
      *         {@link #MASTER_INSTANCE_SYMBOLIC_INSTALLATION_ID} or beginning with
      *         {@link #CUSTOM_LOCAL_INSTALLATION_PATH_INSTALLATION_ID_PREFIX}
      */
     boolean isSpecialInstallationId(String input);
-    
+
     /**
      * Checks if the instance management service was correctly started.
+     * 
      * @return true if the instance management was correctly initiliazed (i.e. the config was correct)
      */
     boolean isInstanceManagementStarted();
-    
+
     /**
      * @return Error message in case of not started instance management.
      */
     String getReasonInstanceManagementNotStarted();
-    
 
     /**
      * @param instanceId the profile to use
@@ -247,6 +285,24 @@ public interface InstanceManagementService {
      * @return the absolute {@link File} pointing to the relative path within the given instance's profile directory; may or may not exist
      */
     File resolveRelativePathWithinProfileDirectory(String instanceId, String relativePath);
+
+    /**
+     * 
+     * @param installationId the profile to use
+     * @return version string of given installation
+     * @throws IOException on I/O failure
+     */
+    String getVersionOfInstallation(String installationId) throws IOException;
+
+    /**
+     * @return root directory of IM installations
+     */
+    File getInstallationsRootDir();
+
+    /**
+     * @return directory in which IM downloads are cached
+     */
+    File getDownloadsCacheDir();
 
     // map: state -> list of instanceIds
     // Map<String, List<String>> listinstances(boolean onlyRunning) throws IOException;

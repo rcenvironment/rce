@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -28,7 +28,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Riccardo Dusi
  */
 public class ShowNewsletter implements IIntroAction {
-    
     private static final String URL_STRING = "mailto:listserv@dlr.de?Subject=Subscribe&body=subscribe RCE-NEWS";
 
     private final Log log = LogFactory.getLog(getClass());

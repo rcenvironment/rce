@@ -51,8 +51,4 @@
 		<project>de.rcenvironment.sdk</project>
 		<project>de.rcenvironment.sdk.gui</project>
 	</projects>
-	<natures>
-		<nature>net.sf.eclipsecs.core.CheckstyleNature</nature>
-		<nature>org.maven.ide.eclipse.maven2Nature</nature>
-	</natures>
 </projectDescription>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -36,6 +36,7 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationMetaDataDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
@@ -54,7 +55,7 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
 
     private static final int LIST_WIDTH = 150;
 
-    private static final int COMLUMN_WIDTH = 200;
+    private static final int COLUMN_WIDTH = 200;
 
     private static final int COMLUMN_WIDTH_PLACEHOLDER = 140;
 
@@ -107,11 +108,11 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         nameColumn = new TableColumn(propertyTable, SWT.NONE);
         nameColumn.setText(Messages.name);
         nameColumn.setResizable(true);
-        nameColumn.setWidth(COMLUMN_WIDTH);
+        nameColumn.setWidth(COLUMN_WIDTH);
         valueColumn = new TableColumn(propertyTable, SWT.NONE);
         valueColumn.setText(Messages.value);
         valueColumn.setResizable(false);
-        valueColumn.setWidth(COMLUMN_WIDTH);
+        valueColumn.setWidth(COLUMN_WIDTH);
         valueColumn.setAlignment(SWT.CENTER);
 
         placeholderColumn = new TableColumn(propertyTable, SWT.NONE);
@@ -154,83 +155,97 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             Collections.sort(groupKeys);
             previousValues = new HashMap<>();
             for (final String groupKey : groupKeys) {
-                TableItem configItem = new TableItem(propertyTable, SWT.NONE);
-                configItem.setText(metadata.getGuiName(groupKey));
-                TableEditor editor = new TableEditor(propertyTable);
-                final Text textField = new Text(propertyTable, SWT.NONE);
-                textField.setData(CONTROL_PROPERTY_KEY, groupKey);
-                final Button checkBox = new Button(propertyTable, SWT.CHECK | SWT.CENTER);
-                checkBox.setData(CONTROL_PROPERTY_KEY, groupKey);
-                // because of technical issues, we have to distinguish empty string "" and space character string " " here
-                // empty string "", if checkbox "Define at workflow start" is checked (default situation)
-                // space character string " ", if checkbox is not checked, but no value is set during execution
-                // K. Schaffert, 30.04.2019
-                if (!config.get(groupKey).equals("")) { // checkbox unchecked
-                    textField.setText(config.get(groupKey));
-                    textField.setEnabled(true);
-                    checkBox.setSelection(false);
-                    previousValues.put(groupKey, config.get(groupKey));
-                } else { // checkbox checked
-                    textField.setEnabled(false);
-                    checkBox.setSelection(true);
-                    previousValues.put(groupKey, " "); // has to be stored, in case checkbox will be unchecked later
-                                                       // but no default value available
-                }
-
-                textField.addFocusListener(new FocusListener() {
-
-                    @Override
-                    public void focusLost(FocusEvent arg0) {
-                        getPreviousValues().put(groupKey, ((Text) arg0.getSource()).getText());
-                        setProperty(groupKey, ((Text) arg0.getSource()).getText());
-                    }
-
-                    @Override
-                    public void focusGained(FocusEvent arg0) {
-                        // currently not needed
-                    }
-                });
-
-                editor.grabHorizontal = true;
-                editor.setEditor(textField, configItem, 1);
-
-                TableEditor boxEditor = new TableEditor(propertyTable);
-
-                checkBox.pack();
-                boxEditor.minimumWidth = checkBox.getSize().x;
-                boxEditor.horizontalAlignment = SWT.CENTER;
-                checkBox.addSelectionListener(new SelectionListener() {
-
-                    @Override
-                    public void widgetSelected(SelectionEvent evt) {
-
-                        String defValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
-                            .getDefaultValue(groupKey);
-
-                        if (checkBox.getSelection()) {
-                            setProperty(groupKey, ""); // empty string for checkbox checked
-                        } else {
-                            previousValues = getPreviousValues();
-                            // default value available && previous value is empty string
-                            if (!defValue.equals("") && previousValues.get(groupKey).equals(" ")) {
-                                // default value is set
-                                setProperty(groupKey, defValue);
-                            } else {
-                                // previous value is set
-                                setProperty(groupKey, previousValues.get(groupKey));
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void widgetDefaultSelected(SelectionEvent evt) {
-                        widgetSelected(evt);
-                    }
-                });
-                boxEditor.horizontalAlignment = SWT.CENTER;
-                boxEditor.setEditor(checkBox, configItem, 2);
+                addSinglePropertyLine(config, groupKey, metadata.getGuiName(groupKey));
             }
         }
+    }
+
+    protected void addSinglePropertyLine(Map<String, String> config, final String propertyKey, final String displayName) {
+        TableItem configItem = new TableItem(propertyTable, SWT.NONE);
+        configItem.setText(displayName);
+        TableEditor editor = new TableEditor(propertyTable);
+        final Text textField = new Text(propertyTable, SWT.NONE);
+        textField.setData(CONTROL_PROPERTY_KEY, propertyKey);
+        final Button checkBox = new Button(propertyTable, SWT.CHECK | SWT.CENTER);
+        checkBox.setData(CONTROL_PROPERTY_KEY, propertyKey);
+        // because of technical issues, we have to distinguish empty string "" and space character string " " here
+        // empty string "", if checkbox "Define at workflow start" is checked (default situation)
+        // space character string " ", if checkbox is not checked, but no value is set during execution
+        // K. Schaffert, 30.04.2019
+        if (!(config.get(propertyKey).equals("") || config.get(propertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX))) { // checkbox
+                                                                                                                    // unchecked
+            textField.setText(config.get(propertyKey));
+            textField.setEnabled(true);
+            checkBox.setSelection(false);
+            previousValues.put(propertyKey, config.get(propertyKey));
+        } else { // checkbox checked
+            if (config.get(propertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
+                textField.setText(config.get(propertyKey));
+            }
+            textField.setEnabled(false);
+            checkBox.setSelection(true);
+            previousValues.put(propertyKey, " "); // has to be stored, in case checkbox will be unchecked later
+                                               // but no default value available
+        }
+
+        textField.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent arg0) {
+                getPreviousValues().put(propertyKey, ((Text) arg0.getSource()).getText());
+                setProperty(propertyKey, ((Text) arg0.getSource()).getText());
+            }
+
+            @Override
+            public void focusGained(FocusEvent arg0) {
+                // currently not needed
+            }
+        });
+
+        editor.grabHorizontal = true;
+        editor.setEditor(textField, configItem, 1);
+
+        TableEditor boxEditor = new TableEditor(propertyTable);
+
+        checkBox.pack();
+        boxEditor.minimumWidth = checkBox.getSize().x;
+        boxEditor.horizontalAlignment = SWT.CENTER;
+        checkBox.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent evt) {
+
+                if (checkBox.getSelection()) {
+                    onCheckboxChecked(propertyKey);
+                } else {
+                    onCheckboxUnchecked(propertyKey);
+                }
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent evt) {
+                widgetSelected(evt);
+            }
+
+            protected void onCheckboxChecked(final String groupKey) {
+                setProperty(groupKey, "${property." + groupKey + "}");
+            }
+
+            protected void onCheckboxUnchecked(final String groupKey) {
+                String defaultValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
+                    .getDefaultValue(groupKey);
+                // default value available && previous value is empty string
+                if (!defaultValue.equals("") && previousValues.get(groupKey).equals(" ")) {
+                    // default value is set
+                    setProperty(groupKey, defaultValue);
+                } else {
+                    // previous value is set
+                    setProperty(groupKey, previousValues.get(groupKey));
+                }
+            }
+        });
+        boxEditor.horizontalAlignment = SWT.CENTER;
+        boxEditor.setEditor(checkBox, configItem, 2);
     }
 
     @Override
@@ -349,7 +364,7 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
                         continue;
                     }
 
-                    if (newValue.equals("")) { // checkbox checked
+                    if (newValue == null || newValue.equals("") || newValue.matches(ComponentUtils.PLACEHOLDER_REGEX)) { // checkbox checked
                         ((Text) c).setEnabled(false);
                         ((Button) control).setSelection(true);
                     } else { // checkbox unchecked
@@ -361,7 +376,11 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             }
 
             if (control instanceof Text) {
-                ((Text) control).setText(newValue);
+                if (newValue == null || newValue.equals("")) {
+                    ((Text) control).setText("${placeholder." + propertyName + "}");
+                } else {
+                    ((Text) control).setText(newValue);
+                }
             }
             propertyTable.setRedraw(true);
         }

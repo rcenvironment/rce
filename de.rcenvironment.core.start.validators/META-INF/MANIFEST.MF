@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Validators
 Bundle-SymbolicName: de.rcenvironment.core.start.validators
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.core.runtime
 Bundle-ClassPath: .
 Service-Component: OSGI-INF/*.xml,
- OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.JavaVersionValidator.xml,
- OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryVersionValidator.xml,
  OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoriesAccessibleValidator.xml,
+ OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryVersionValidator.xml,
+ OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.JavaVersionValidator.xml,
  OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryNotInUseValidator.xml
 Import-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.configuration.bootstrap,
@@ -26,3 +26,4 @@ Import-Package: de.rcenvironment.core.configuration,
  org.osgi.service.component.annotations;version="1.3.0"
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.start.validators

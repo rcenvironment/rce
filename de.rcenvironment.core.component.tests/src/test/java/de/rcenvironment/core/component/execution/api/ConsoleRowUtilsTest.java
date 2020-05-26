@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -51,8 +51,8 @@ public class ConsoleRowUtilsTest {
     @Before
     public void setUp() {
         
-        firstConsoleLineCapture = new Capture<String>();
-        secondConsoleLineCapture = new Capture<String>();
+        firstConsoleLineCapture = Capture.newInstance();
+        secondConsoleLineCapture = Capture.newInstance();
 
         componentLog = EasyMock.createStrictMock(ComponentLog.class);
         componentLog.toolStdout(EasyMock.capture(firstConsoleLineCapture));

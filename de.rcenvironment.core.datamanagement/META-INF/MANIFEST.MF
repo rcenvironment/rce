@@ -2,17 +2,23 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Data Management
 Bundle-SymbolicName: de.rcenvironment.core.datamanagement;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Export-Package: 
  de.rcenvironment.core.datamanagement,
  de.rcenvironment.core.datamanagement.backend,
  de.rcenvironment.core.datamanagement.commons,
+ de.rcenvironment.core.datamanagement.export.matching,
+ de.rcenvironment.core.datamanagement.export.objects,
  de.rcenvironment.core.datamanagement.testutils
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
-Import-Package: de.rcenvironment.core.authorization,
+Import-Package: com.fasterxml.jackson.annotation;version="2.10.0",
+ com.fasterxml.jackson.core;version="2.10.0",
+ com.fasterxml.jackson.databind;version="2.10.0",
+ com.fasterxml.jackson.databind.annotation;version="2.10.0",
+ de.rcenvironment.core.authorization,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
@@ -21,6 +27,8 @@ Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.management,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.testutils,
+ de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.rpc,
@@ -37,3 +45,4 @@ Import-Package: de.rcenvironment.core.authorization,
  org.osgi.framework
 Require-Bundle: org.eclipse.core.runtime
 Service-Component: OSGI-INF/*.xml
+Automatic-Module-Name: de.rcenvironment.core.datamanagement

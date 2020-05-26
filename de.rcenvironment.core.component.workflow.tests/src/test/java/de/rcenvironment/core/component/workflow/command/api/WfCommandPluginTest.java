@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -130,7 +130,7 @@ public class WfCommandPluginTest {
         TextOutputReceiver outputReceiver = EasyMock.createNiceMock(LoggingTextOutReceiver.class);
 
         // define mock expectation
-        Capture<String> capture = new Capture<String>(CaptureType.ALL);
+        Capture<String> capture = Capture.newInstance(CaptureType.ALL);
         outputReceiver.addOutput(EasyMock.capture(capture));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(outputReceiver);
@@ -193,7 +193,7 @@ public class WfCommandPluginTest {
         TextOutputReceiver outputReceiver = EasyMock.createNiceMock(LoggingTextOutReceiver.class);
 
         // define mock expectation
-        Capture<String> capture = new Capture<String>(CaptureType.ALL);
+        Capture<String> capture = Capture.newInstance(CaptureType.ALL);
         outputReceiver.addOutput(EasyMock.capture(capture));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(outputReceiver);
@@ -255,7 +255,7 @@ public class WfCommandPluginTest {
         TextOutputReceiver outputReceiver = EasyMock.createNiceMock(LoggingTextOutReceiver.class);
 
         // define mock expectation
-        Capture<String> capture = new Capture<String>(CaptureType.ALL);
+        Capture<String> capture = Capture.newInstance(CaptureType.ALL);
         outputReceiver.addOutput(EasyMock.capture(capture));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(outputReceiver);

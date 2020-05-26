@@ -136,13 +136,20 @@
 			</itemizedlist>
 			<para>Other data types</para>
 			<itemizedlist>
+			<listitem>
+				<para>
+					<emphasis role="italic">Small Table:</emphasis> The RCE syntax for Small Tables
+					is [[a,b,...],[c,d,...],...], whereat the table values a,b,c,d are restricted to
+					values of type Short Text, Integer, Float, Boolean (primitive data types) as
+					well as File and Directory. Be aware, that in case of File and Directory simply
+					the path to the Files or Directories will be stored in the Small Table. Each
+					column holds the same number of entries. The total number of possible cells is
+					up to 100.000. </para>
+			</listitem>
 				<listitem>
 					<para>
-						<emphasis role="italic">Small Table:</emphasis>Table restricted to values of type Short Text, Integer, Float, Boolean (primitive data types) (up to 100.000 cells)</para>
-				</listitem>
-				<listitem>
-					<para>
-					<emphasis role="italic">Vector:</emphasis>one-dimensional "Small Table" (one column) restricted to values of type Float</para>
+					<emphasis role="italic">Vector:</emphasis>one-dimensional "Small Table" (one
+					column) restricted to values of type Float i.e. [x,y,z,...]</para>
 				</listitem>
 				<listitem>
 					<para>

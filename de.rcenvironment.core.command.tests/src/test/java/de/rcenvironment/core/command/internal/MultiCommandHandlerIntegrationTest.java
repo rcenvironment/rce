@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -71,7 +71,7 @@ public class MultiCommandHandlerIntegrationTest {
 
         // define mock expectation
         outputReceiver.onStart();
-        Capture<CommandException> capture = new Capture<CommandException>();
+        Capture<CommandException> capture = Capture.newInstance();
         outputReceiver.onFatalError(EasyMock.capture(capture));
 
         EasyMock.replay(outputReceiver);
@@ -96,7 +96,7 @@ public class MultiCommandHandlerIntegrationTest {
 
         // define mock expectation
         outputReceiver.onStart();
-        Capture<String> capture = new Capture<String>();
+        Capture<String> capture = Capture.newInstance();
         outputReceiver.addOutput(EasyMock.capture(capture));
         outputReceiver.onFinished();
 
@@ -170,7 +170,7 @@ public class MultiCommandHandlerIntegrationTest {
 
         // define mock expectation
         outputReceiver.onStart();
-        Capture<String> capture = new Capture<String>();
+        Capture<String> capture = Capture.newInstance();
         outputReceiver.addOutput(EasyMock.capture(capture));
         outputReceiver.onFinished();
 

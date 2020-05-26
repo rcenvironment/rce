@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Output Writer Execution
 Bundle-SymbolicName: de.rcenvironment.components.outputwriter.execution
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
@@ -35,3 +35,4 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  org.eclipse.core.runtime;version="3.4.0",
  org.eclipse.osgi.util;version="1.1.0"
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.components.outputwriter.execution

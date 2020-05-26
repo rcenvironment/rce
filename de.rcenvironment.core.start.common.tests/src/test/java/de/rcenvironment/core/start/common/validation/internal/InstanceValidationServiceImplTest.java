@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -46,13 +46,13 @@ public class InstanceValidationServiceImplTest {
     /**
      * Dummy class to make sure the class names differ.
      */
-    abstract class ValidatorA implements InstanceValidator {
+    public abstract class ValidatorA implements InstanceValidator {
     }
 
     /**
      * Dummy class to make sure the class names differ.
      */
-    abstract class ValidatorB implements InstanceValidator {
+    public abstract class ValidatorB implements InstanceValidator {
     }
 
     private void validateInstanceAndCheckResults(int numPassed, int numFailedProceed, int numFailedShutdown) {

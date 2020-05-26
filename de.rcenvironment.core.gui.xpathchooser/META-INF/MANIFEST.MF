@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI XPath Chooser
 Bundle-SymbolicName: de.rcenvironment.core.gui.xpathchooser;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.history,
@@ -30,3 +30,4 @@ Export-Package: de.rcenvironment.core.gui.xpathchooser,
  de.rcenvironment.core.gui.xpathchooser.model
 Bundle-ClassPath: .
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: de.rcenvironment.core.gui.xpathchooser

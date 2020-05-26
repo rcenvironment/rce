@@ -2,24 +2,22 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Native Code Libraries - Cross-Platform
 Bundle-SymbolicName: de.rcenvironment.platform.maven.native.common;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-ClassPath: lib/maven/sigar-1.6.4.jar,
- lib/maven/jna-5.0.0.jar, lib/maven/jna-platform-5.0.0.jar
-Bundle-NativeCode: 
- native/sigar-amd64-winnt.dll;osname=win32;processor=x86_64,
- native/libsigar-amd64-linux.so;osname=Linux;processor=x86_64
-Export-Package: com.sun.jna;version="5.0.0",
- com.sun.jna.platform.win32;version="5.0.0",
- com.sun.jna.darwin;version="5.0.0",
- com.sun.jna.ptr;version="5.0.0",
- com.sun.jna.win32;version="5.0.0",
- org.hyperic.sigar;version="1.6.4",
- org.hyperic.sigar.cmd;version="1.6.4",
- org.hyperic.sigar.jmx;version="1.6.4",
- org.hyperic.sigar.pager;version="1.6.4",
- org.hyperic.sigar.ptql;version="1.6.4",
- org.hyperic.sigar.util;version="1.6.4",
- org.hyperic.sigar.win32;version="1.6.4"
+Bundle-ClassPath: lib/maven/oshi-core-4.7.0.jar,
+ lib/maven/jna-5.5.0.jar,
+ lib/maven/jna-platform-5.5.0.jar
+Export-Package: com.sun.jna;version="5.5.0",
+ com.sun.jna.darwin;version="5.5.0",
+ com.sun.jna.platform.win32;version="5.5.0",
+ com.sun.jna.ptr;version="5.5.0",
+ com.sun.jna.win32;version="5.5.0",
+ oshi;version="4.7.0",
+ oshi.hardware;version="4.7.0",
+ oshi.software.os;version="4.7.0",
+ oshi.util;version="4.7.0"
 Eclipse-BundleShape: dir
+Import-Package: org.slf4j;version="1.7.25",
+ org.slf4j.helpers;version="1.7.25",
+ org.slf4j.spi;version="1.7.25"

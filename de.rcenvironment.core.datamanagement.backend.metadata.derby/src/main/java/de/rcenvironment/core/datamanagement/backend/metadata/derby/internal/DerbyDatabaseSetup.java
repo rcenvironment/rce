@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -98,7 +98,7 @@ public abstract class DerbyDatabaseSetup {
 
     private static final int MAX_RETRIES = 3;
 
-    private static final Log LOGGER = LogFactory.getLog(DerbyMetaDataBackendServiceImpl.class);
+    private static final Log LOGGER = LogFactory.getLog(DerbyDatabaseSetup.class);
 
     private static final String WHERE = " WHERE ";
 
@@ -369,7 +369,7 @@ public abstract class DerbyDatabaseSetup {
             stmt = connection.createStatement();
             stmt.executeUpdate(StringUtils.format(sql, dbVersion));
             stmt.close();
-            LOGGER.info(StringUtils.format("Set database version to %s", dbVersion));
+            LOGGER.debug(StringUtils.format("Set database version to %s", dbVersion));
         } catch (SQLException e) {
             throw new RuntimeException("Failed to set database version.", e);
         }
@@ -698,7 +698,7 @@ public abstract class DerbyDatabaseSetup {
         }
 
         private void waitForRetry() {
-            LOGGER.info("Waiting half o a second to retry SQL statement execution");
+            LOGGER.debug("Waiting 500 msec to retry SQL statement execution");
             final int halfOfASecond = 500;
             try {
                 Thread.sleep(halfOfASecond);

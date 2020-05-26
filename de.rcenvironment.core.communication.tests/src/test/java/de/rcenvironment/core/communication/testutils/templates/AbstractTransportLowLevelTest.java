@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -150,7 +150,7 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         // set up mock client response handler
         MessageChannelResponseHandler responseHandler = EasyMock.createMock(MessageChannelResponseHandler.class);
         // define expected callback
-        Capture<NetworkResponse> responseCapture = new Capture<NetworkResponse>(CaptureType.ALL);
+        Capture<NetworkResponse> responseCapture = Capture.newInstance(CaptureType.ALL);
         responseHandler.onResponseAvailable(EasyMock.capture(responseCapture));
         EasyMock.expectLastCall().times(messageRepetitions);
 

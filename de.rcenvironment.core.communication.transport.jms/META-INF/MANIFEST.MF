@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication - JMS/ActiveMQ Transport
 Bundle-SymbolicName: de.rcenvironment.core.communication.transport.jms
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
@@ -22,3 +22,4 @@ Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
 Require-Bundle: de.rcenvironment.core.communication
 Service-Component: OSGI-INF/*.xml
 Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.communication.transport.jms

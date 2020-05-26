@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 DLR, Germany
+ * Copyright 2019-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -85,8 +85,8 @@ public class DataTransferUtilsTest {
     public void testUpload() throws Exception {
         DirectoryUploadContext uploadContextMock = EasyMock.createMock(DirectoryUploadContext.class);
 
-        Capture<FileDataSource> uploadFileCapture1 = new Capture<>();
-        Capture<FileDataSource> uploadFileCapture2 = new Capture<>();
+        Capture<FileDataSource> uploadFileCapture1 = Capture.newInstance();
+        Capture<FileDataSource> uploadFileCapture2 = Capture.newInstance();
         uploadContextMock.provideFile(capture(uploadFileCapture1));
         uploadContextMock.provideFile(capture(uploadFileCapture2));
 

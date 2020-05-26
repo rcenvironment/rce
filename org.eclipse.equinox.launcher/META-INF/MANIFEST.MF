@@ -11,3 +11,4 @@ Export-Package: de.rcenvironment.core.launcher.integration,
  org.eclipse.equinox.internal.launcher;x-internal:=true,
  org.eclipse.equinox.launcher;x-internal:=true
 Bundle-Vendor: DLR
+Automatic-Module-Name: org.eclipse.equinox.launcher

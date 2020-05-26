@@ -57,6 +57,8 @@
 											<include name="de.rcenvironment.common.parent/**/pom.xml" />
 											<include name="de.rcenvironment.binaries.*/pom.xml" />
 											<include name="de.rcenvironment.extensions.testscriptrunner/**/pom.xml" />
+											<include name="de.rcenvironment.supplemental.*/pom.xml" />
+											<include name="de.rcenvironment.toolkit.*/pom.xml" />
 										</replace>
 										
 										<!-- MANIFEST.MF versions -->
@@ -66,6 +68,8 @@
 											<include name="de.rcenvironment.core.*/META-INF/MANIFEST.MF" />
 											<include name="de.rcenvironment.components.*/META-INF/MANIFEST.MF" />
 											<include name="de.rcenvironment.binaries.*/META-INF/MANIFEST.MF" />
+											<include name="de.rcenvironment.supplemental.*/META-INF/MANIFEST.MF" />
+											<include name="de.rcenvironment.toolkit.*/META-INF/MANIFEST.MF" />
 										</replace>			
 																	
 										<!-- feature.xml versions -->

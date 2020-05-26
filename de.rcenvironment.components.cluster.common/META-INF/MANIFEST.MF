@@ -2,10 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Cluster Component Common
 Bundle-SymbolicName: de.rcenvironment.components.cluster.common
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.components.cluster.common
 Import-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy
+Automatic-Module-Name: de.rcenvironment.components.cluster.common

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -11,6 +11,7 @@ package de.rcenvironment.toolkit.utils.common;
 import java.security.SecureRandom;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 
 /**
@@ -55,6 +56,35 @@ public final class IdGenerator {
         }
         String string = endodeBytesAsHexAndValidateLength(bytes, length);
         return string;
+    }
+
+    /**
+     * Generates a random String of base64url characters. The requested String length must be even and must not exceed
+     * {@link #MAX_RANDOM_STRING_LENGTH}. The {@link IdGeneratorType} parameter select between computationally cheap or cryptographically
+     * secure random generation.
+     * 
+     * @param length the requested string length
+     * @param generatorType whether to prioritize speed {@link IdGeneratorType#FAST} or security ( {@link IdGeneratorType#SECURE})
+     * @return the generated string
+     */
+    public static String createRandomBase64UrlString(int length, IdGeneratorType generatorType) {
+        validateRequestedLength(length);
+        byte[] bytes = new byte[length * 6 / 8 + 1]; // over-generate to be sure
+        switch (generatorType) {
+        case FAST:
+            ThreadLocalRandom.current().nextBytes(bytes);
+            break;
+        case SECURE:
+            sharedSecureRandom.nextBytes(bytes);
+            break;
+        default:
+            throw new IllegalArgumentException();
+        }
+        String string = Base64.encodeBase64URLSafeString(bytes);
+        if (string.length() < length) {
+            throw new IllegalStateException("Expected at least " + length + " chars of encoded data, but got " + string);
+        }
+        return string.substring(0, length); // truncate to requested length
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -10,6 +10,7 @@ package de.rcenvironment.core.monitoring.system.internal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -54,11 +55,14 @@ import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService
  * @author David Scholz
  * @author Robert Mischke
  */
+// IMPORTANT: as of 10.x, this test fails when run as a plain (non-plugin) JUnit test from Eclipse, as its JNA 
+// dependency collides with the one provided by the Jython JAR, which is also in the test classpath. We decided against 
+// restructuring the TP to fix this for 10.1.0+, as we plan to remove Jython completely in 11.0. -- misc_ro, April 2020
 public class SystemMonitoringServiceImplTest {
 
     private static final Log LOGGER = LogFactory.getLog(SystemMonitoringDataServiceImpl.class);
 
-    private static final long MAX_DELAY = 9000;
+    private static final long MAX_DELAY = 15000;
 
     /**
      * Expected exception for {@link OperatingSystemException}.
@@ -70,6 +74,8 @@ public class SystemMonitoringServiceImplTest {
 
     private SystemMonitoringAggregationServiceImpl aggregationService;
 
+    private boolean receivingActualSystemData;
+
     /**
      * Common setup.
      * 
@@ -80,6 +86,8 @@ public class SystemMonitoringServiceImplTest {
     public void setUp() throws IOException, OperatingSystemException {
         systemDataService = new SystemMonitoringDataServiceImpl();
         systemDataService.activate(EasyMock.createStrictMock(BundleContext.class));
+
+        receivingActualSystemData = systemDataService.isProvidingActualSystemData();
 
         aggregationService = new SystemMonitoringAggregationServiceImpl();
         aggregationService.bindSystemMonitoringDataService(systemDataService);
@@ -106,10 +114,18 @@ public class SystemMonitoringServiceImplTest {
     @Test
     public void testMonitoringDataModelContent() throws OperatingSystemException {
         FullSystemAndProcessDataSnapshot model = aggregationService.getCompleteSnapshot();
-        boolean success =
-            model != null && model.getNodeSystemRAM() != 0 && model.getRceProcessesInfo() != null
-                && model.getRceSubProcesses() != null;
-        assertTrue(success);
+        assertNotNull(model);
+        assertNotNull(model.getRceProcessesInfo());
+        assertNotNull(model.getRceSubProcesses());
+        if (receivingActualSystemData) {
+            assertFalse(model.getNodeSystemRAM() == 0);
+            assertFalse(model.getRceProcessesInfo().isEmpty());
+            assertTrue(model.getRceSubProcesses().isEmpty()); // should be actually empty
+        } else {
+            assertTrue(model.getNodeSystemRAM() == 0);
+            assertTrue(model.getRceProcessesInfo().isEmpty());
+            assertTrue(model.getRceSubProcesses().isEmpty()); // should be empty due to replacement
+        }
     }
 
     /**
@@ -156,32 +172,6 @@ public class SystemMonitoringServiceImplTest {
     }
 
     /**
-     * Test thread safety of kill method.
-     * 
-     * @throws ExecuteException if process execution fails.
-     * @throws IOException if opening file fails.
-     */
-    @Test
-    public void testKillMethodThreadSafety() throws ExecuteException, IOException {
-        final String processMarkerString = startDummyProcess();
-        final RunnablesGroup group = ConcurrencyUtils.getFactory().createRunnablesGroup();
-
-        final int threadCount = 16;
-        for (int i = 0; i <= threadCount; i++) {
-            final Runnable killTask = new Runnable() {
-
-                @Override
-                @TaskDescription("Killing test process...")
-                public void run() {
-                    killDummyProcess(processMarkerString, true);
-                }
-            };
-            group.add(killTask);
-        }
-        group.executeParallel();
-    }
-
-    /**
      * 
      * Test for null values.
      * 
@@ -191,24 +181,12 @@ public class SystemMonitoringServiceImplTest {
     @Test
     public void testNullValues() throws OperatingSystemException {
         assertTrue(systemDataService.getChildProcessesAndIds(null).isEmpty());
-        exception.expect(OperatingSystemException.class);
-        exception.expectMessage(OperatingSystemException.ErrorType.NO_SUCH_PROCESS.getMessage());
-        systemDataService.getProcessRAMUsage(null);
-        systemDataService.getProcessCPUUsage(null);
-    }
-
-    /**
-     * Test the two different kill signums of {@link SystemMonitoringDataServiceImpl#kill(Long, Boolean)}.
-     * 
-     * @throws IOException on unexpected failure.
-     * @throws ExecuteException on unexpected failure.
-     */
-    @Test
-    public void testKillSignums() throws ExecuteException, IOException {
-        String process = startDummyProcess();
-        killDummyProcess(process, true);
-        process = startDummyProcess();
-        killDummyProcess(process, false);
+        if (receivingActualSystemData) {
+            exception.expect(OperatingSystemException.class);
+            exception.expectMessage(OperatingSystemException.ErrorType.NO_SUCH_PROCESS.getMessage());
+            systemDataService.getProcessRAMUsage(null);
+            systemDataService.getProcessCPUUsage(null);
+        }
     }
 
     /**
@@ -220,8 +198,10 @@ public class SystemMonitoringServiceImplTest {
     public void testCpuValuesAreValidOnSingleFetch() throws OperatingSystemException {
         double totalCpu = systemDataService.getTotalCPUUsage();
         assertIsValidZeroToOneValue(totalCpu);
-        double idle = systemDataService.getReportedCPUIdle();
-        assertIsValidZeroToOneValue(idle);
+
+        // Do not test because this is currently not implemented and not used in RCE code
+        // double idle = systemDataService.getReportedCPUIdle();
+        // assertIsValidZeroToOneValue(idle);
     }
 
     /**
@@ -243,22 +223,25 @@ public class SystemMonitoringServiceImplTest {
     }
 
     /**
-     * Test total ram usage with some tolerance.
-     * 
-     * TODO review; what exactly is compared against each other here?
+     * Test total ram usage with some tolerance (consistency check).
      * 
      * @throws OperatingSystemException on unexpected failure.
      */
     @Test
     public void testRamGathering() throws OperatingSystemException {
-        long ram = systemDataService.getTotalSystemRAM();
-        long totalUsedRam = aggregationService.getCompleteSnapshot().getNodeRAMUsage();
-        double usedRamSigar = systemDataService.getTotalUsedRAMPercentage() * ram;
-        double usedRamModel = totalUsedRam;
-        final float tolerance = 0.5f;
+        if (receivingActualSystemData) {
+            long ram = systemDataService.getTotalSystemRAM();
+            long totalUsedRam = aggregationService.getCompleteSnapshot().getNodeRAMUsage();
+            double usedRamSigar = systemDataService.getTotalUsedRAMPercentage() * ram;
+            double usedRamModel = totalUsedRam;
+            final float tolerance = 0.5f;
 
-        boolean equal = Math.abs(usedRamSigar / usedRamModel - 1.0f) <= tolerance;
-        assertTrue(equal);
+            assertTrue(Math.abs(usedRamSigar / usedRamModel - 1.0f) <= tolerance);
+        } else {
+            assertEquals(0L, systemDataService.getTotalSystemRAM());
+            assertEquals(0L, aggregationService.getCompleteSnapshot().getNodeRAMUsage());
+            assertTrue(systemDataService.getTotalUsedRAMPercentage() == 0.0d); // for zero, precise equality is fine
+        }
     }
 
     /**
@@ -273,8 +256,12 @@ public class SystemMonitoringServiceImplTest {
         final int loop = CommonTestOptions.selectStandardOrExtendedValue(10, 100);
         for (int i = 0; i < loop; i++) {
             Map<Long, String> map = systemDataService.getProcesses();
-            boolean success = !map.isEmpty() && map != null;
-            assertTrue(success);
+            assertNotNull(map);
+            if (receivingActualSystemData) {
+                assertFalse(map.isEmpty());
+            } else {
+                assertTrue(map.isEmpty());
+            }
         }
     }
 
@@ -282,8 +269,11 @@ public class SystemMonitoringServiceImplTest {
      * 
      * Operating system.
      * 
+     * TODO replace with {@link de.rcenvironment.core.utils.common.OSFamily}
+     * 
      * @author David Scholz
      */
+    @Deprecated
     public enum OSType {
         /**
          * Operating system.
@@ -338,30 +328,6 @@ public class SystemMonitoringServiceImplTest {
             break;
         }
         return line;
-    }
-
-    private void killDummyProcess(String processMarkerString, boolean force) {
-        Map<Long, String> processes = null;
-        try {
-            processes = systemDataService.getProcesses();
-        } catch (OperatingSystemException e1) {
-            LOGGER.error(e1);
-        }
-
-        if (processes != null) {
-            for (Map.Entry<Long, String> process : processes.entrySet()) {
-                if (process.getValue().contains(processMarkerString)) {
-                    LOGGER.info("Found " + processMarkerString + " with id [" + process.getKey() + "] - killing it");
-                    try {
-                        systemDataService.kill(process.getKey(), force);
-                    } catch (OperatingSystemException e) {
-                        if (e.getErrorType().equals(OperatingSystemException.ErrorType.ACCESS_DENIED)) {
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
     }
 
 }

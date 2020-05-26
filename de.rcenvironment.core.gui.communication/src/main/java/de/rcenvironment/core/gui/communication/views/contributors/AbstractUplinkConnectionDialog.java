@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -35,6 +35,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Abstract class for UplinkConnectionDialogs, such as AddSshUplinkConnectionDialog and EditSshUplinkConnectionDialog.
  * 
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (#16953)
  */
 public abstract class AbstractUplinkConnectionDialog extends Dialog implements PasteListener, VerifyListener {
 
@@ -65,8 +66,6 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
     private static final String KEYFILE_LABEL = "SSH key file:";
 
     private static final String PASSPHRASE_LABEL = "Passphrase:";
-
-    private static final int CHECKBOX_LABEL_WIDTH = 300;
 
     private static Text portTextField;
 
@@ -165,26 +164,21 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         container.setLayoutData(containerGridData);
         container.setLayout(layout);
         GridData useDefaultCheckboxGridData = new GridData();
-        useDefaultCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         useDefaultCheckboxGridData.horizontalSpan = 1;
         GridData storePassphraseCheckboxGridData = new GridData();
-        storePassphraseCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         storePassphraseCheckboxGridData.horizontalSpan = 1;
         GridData isGatewayCheckboxGridData = new GridData();
-        isGatewayCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         isGatewayCheckboxGridData.horizontalSpan = 2;
         GridData connectImmediateCheckboxGridData = new GridData();
-        connectImmediateCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         connectImmediateCheckboxGridData.horizontalSpan = 2;
         GridData autoRetryCheckboxGridData = new GridData();
-        autoRetryCheckboxGridData.widthHint = CHECKBOX_LABEL_WIDTH;
         autoRetryCheckboxGridData.horizontalSpan = 2;
         GridData experimentalNoticeGridData = new GridData();
         experimentalNoticeGridData.horizontalSpan = 2;
 
         Label experimentalNotice = new Label(container, SWT.None);
         experimentalNotice.setLayoutData(experimentalNoticeGridData);
-        experimentalNotice.setText("Currently experimental feature!");
+        experimentalNotice.setText("Please note that Uplink is still an experimental feature!");
         experimentalNotice.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
 
         Label cpLabelHost = new Label(container, SWT.NULL);

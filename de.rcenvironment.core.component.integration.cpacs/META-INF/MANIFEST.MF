@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Integration CPACS
 Bundle-SymbolicName: de.rcenvironment.core.component.integration.cpacs;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.component.integration.cpacs
@@ -48,3 +48,4 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
 Service-Component: OSGI-INF/*.xml
 Require-Bundle: de.rcenvironment.core.component.integration
 Bundle-ClassPath: .
+Automatic-Module-Name: de.rcenvironment.core.component.integration.cpacs

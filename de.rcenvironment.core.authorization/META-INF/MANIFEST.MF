@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Authorization
 Bundle-SymbolicName: de.rcenvironment.core.authorization;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.authorization.api,
@@ -27,3 +27,4 @@ Import-Package: de.rcenvironment.core.command.common,
  org.osgi.service.component.annotations
 Bundle-ActivationPolicy: lazy
 Service-Component: OSGI-INF/generated/*
+Automatic-Module-Name: de.rcenvironment.core.authorization

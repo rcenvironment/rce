@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -268,8 +268,8 @@ public class EvaluationMemoryComponentTest {
     }
 
     private void testForwardingWithValuesOfTypeNotAValue(boolean considerNotAValue) throws IOException, ComponentException {
-        Capture<SortedMap<String, TypedDatum>> inputValuesCapture = new Capture<>();
-        Capture<SortedMap<String, TypedDatum>> outputCapture = new Capture<>();
+        Capture<SortedMap<String, TypedDatum>> inputValuesCapture = Capture.newInstance();
+        Capture<SortedMap<String, TypedDatum>> outputCapture = Capture.newInstance();
         Map<Capture<SortedMap<String, TypedDatum>>, Capture<SortedMap<String, TypedDatum>>> captures = new HashMap<>();
         captures.put(inputValuesCapture, outputCapture);
 
@@ -370,8 +370,8 @@ public class EvaluationMemoryComponentTest {
     @Test
     public void testStore() throws ComponentException, IOException {
         
-        Capture<SortedMap<String, TypedDatum>> inputValuesCapture = new Capture<>();
-        Capture<SortedMap<String, TypedDatum>> outputCapture = new Capture<>();
+        Capture<SortedMap<String, TypedDatum>> inputValuesCapture = Capture.newInstance();
+        Capture<SortedMap<String, TypedDatum>> outputCapture = Capture.newInstance();
         Map<Capture<SortedMap<String, TypedDatum>>, Capture<SortedMap<String, TypedDatum>>> captures = new HashMap<>();
         captures.put(inputValuesCapture, outputCapture);
         EvaluationMemoryFileAccessService accessService = createFileAccessHandlerService(

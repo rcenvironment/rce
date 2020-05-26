@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.workflow.execution.api;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -61,6 +61,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     private static final String PLACEHOLDERINSTANCE_HISTORYFILE = "placeholderInstanceHistory.json";
 
+    private static final String DOT = ".";
+
     private static PersistentSettingsService persistentSettingsService;
 
     private static SecureStorageSection secureStorageSection;
@@ -84,8 +86,6 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     private Map<String, List<String>> componentInstancesOfType;
 
-    private final String dot = "."; // TODO convert to constant
-
     @Deprecated
     /**
      * Because of OSGi.
@@ -103,32 +103,45 @@ public class WorkflowPlaceholderHandler implements Serializable {
         String preferencesUUID) {
         WorkflowPlaceholderHandler weph = new WorkflowPlaceholderHandler();
         placeholderPersistentSettingsUUID = preferencesUUID;
+
+        initializePlaceholders(wd, weph);
+        initializeHistory(weph);
+
+        return weph;
+    }
+
+    protected static void initializePlaceholders(WorkflowDescription wd, WorkflowPlaceholderHandler weph) {
         weph.setComponentInstancePlaceholders(new HashMap<String, Map<String, String>>());
         weph.setComponentTypePlaceholders(new HashMap<String, Map<String, String>>());
         weph.setComponentInstancesOfType(new HashMap<String, List<String>>());
         weph.setPlaceholdersDataType(new HashMap<String, String>());
-        encryptedPlaceholder = new LinkedList<String>();
+
+        encryptedPlaceholder = new LinkedList<>();
         for (WorkflowNode node : wd.getWorkflowNodes()) {
-            ConfigurationDescription configDesc = node.getComponentDescription().getConfigurationDescription();
+            ConfigurationDescription configDesc = node.getConfigurationDescription();
             for (String key : configDesc.getConfiguration().keySet()) {
                 if (configDesc.isPlaceholderSet(key)) {
                     weph.addPlaceholder(configDesc.getActualConfigurationValue(key), node.getComponentDescription().getIdentifier(),
-                        node.getIdentifier());
+                        node.getIdentifierAsObject().toString());
                     String placeholder = getNameOfPlaceholder(configDesc.getActualConfigurationValue(key));
                     String dataType = configDesc.getComponentConfigurationDefinition().getPlaceholderMetaDataDefinition()
                         .getDataType(placeholder);
                     if (dataType != null) {
-                        weph.placeholdersDataType.put(node.getName() + weph.dot + placeholder, dataType);
+                        weph.placeholdersDataType.put(node.getName() + DOT + placeholder, dataType);
                     }
                 } else if (key.contains(PlaceholdersMetaDataConstants.DATA_TYPE)) {
                     String dataType = configDesc.getActualConfigurationValue(key);
-                    weph.placeholdersDataType.put(node.getName() + weph.dot + key.replace(PlaceholdersMetaDataConstants.DATA_TYPE, ""),
+                    weph.placeholdersDataType.put(node.getName() + DOT + key.replace(PlaceholdersMetaDataConstants.DATA_TYPE, ""),
                         dataType);
                 }
             }
         }
+    }
+
+    protected static void initializeHistory(WorkflowPlaceholderHandler weph) {
         weph.setComponentInstanceHistory(new HashMap<String, List<String>>());
         weph.setComponentTypeHistory(new HashMap<String, List<String>>());
+
         if (!placeholderPersistentSettingsUUID.isEmpty()) {
             String id = WORKFLOW_PLACEHOLDER_PATH + placeholderPersistentSettingsUUID;
             Map<String, List<String>> compHist =
@@ -137,6 +150,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 compHist = persistentSettingsService.readMapWithStringList(PLACEHOLDERINSTANCE_HISTORYFILE);
             }
             weph.setComponentInstanceHistory(compHist); // load
+
             Map<String, List<String>> compTypeHist =
                 persistentSettingsService.readMapWithStringList(id + File.separator + PLACEHOLDERCOMPONENT_HISTORYFILE);
             if (compTypeHist == null) {
@@ -144,7 +158,6 @@ public class WorkflowPlaceholderHandler implements Serializable {
             }
             weph.setComponentTypeHistory(compTypeHist); // load
         }
-        return weph;
     }
 
     /**
@@ -154,13 +167,14 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @param componentHistory the map with password placeholder
      */
     public static void restorePasswords(Map<String, List<String>> componentHistory) {
-        for (String key : componentHistory.keySet()) {
-            List<String> currentList = componentHistory.get(key);
+        for (final Map.Entry<String, List<String>> entry : componentHistory.entrySet()) {
+            final String key = entry.getKey();
+            List<String> currentList = entry.getValue();
             if (!currentList.isEmpty() && currentList.get(0).equals(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL)) {
                 try {
                     String path = key;
                     String value = secureStorageSection.read(path, "");
-                    List<String> list = new LinkedList<String>();
+                    List<String> list = new LinkedList<>();
                     list.add(value);
                     componentHistory.put(key, list);
                 } catch (OperationFailureException e) {
@@ -187,7 +201,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                     componentInstanceList.add(componentUUID);
                 }
             } else {
-                componentInstanceList = new LinkedList<String>();
+                componentInstanceList = new LinkedList<>();
                 componentInstanceList.add(componentUUID);
                 componentInstancesOfType.put(componentID, componentInstanceList);
             }
@@ -201,7 +215,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 && matcher.group(ComponentUtils.ATTRIBUTE1).equals(ComponentUtils.ENCODEDATTRIBUTE))
                 || (matcher.group(ComponentUtils.ATTRIBUTE2) != null
                     && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
-                encryptedPlaceholder.add(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME));
+                encryptedPlaceholder.add(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME));
             }
         }
 
@@ -216,11 +230,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     }
 
     private void addPlaceholderKeyToMap(Map<String, Map<String, String>> map, String key, String placeholderName) {
-        Map<String, String> placeholderMap = map.get(key);
-        if (placeholderMap == null) {
-            placeholderMap = new HashMap<String, String>();
-            map.put(key, placeholderMap);
-        }
+        Map<String, String> placeholderMap = map.computeIfAbsent(key, absentKey -> new HashMap<>());
         if (!placeholderMap.containsKey(placeholderName)) {
             placeholderMap.put(placeholderName, null);
         }
@@ -240,13 +250,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
         boolean addToHistory) {
         if (placeholder.matches(ComponentUtils.PLACEHOLDER_REGEX)) {
             Matcher matcher = ComponentUtils.getMatcherForPlaceholder(placeholder);
-            if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+            if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                 encryptedPlaceholder)) {
-                try {
-                    value = new String(new Base64().encode(value.toString().getBytes("UTF-8")));
-                } catch (UnsupportedEncodingException e) {
-                    LOGGER.warn("Could not encode placeholder " + placeholder, e);
-                }
+                value = new String(new Base64().encode(value.getBytes(StandardCharsets.UTF_8)));
             }
             if (isGlobalPlaceholder(matcher)) {
                 if (componentTypePlaceholders.get(componentID) != null) {
@@ -258,26 +264,26 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 }
             }
 
-            String tail = dot + matcher.group(ComponentUtils.PLACEHOLDERNAME);
+            String tail = DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME);
             if (addToHistory) {
                 // do save -> add to history
 
                 // placeholder component history
-                String placeholderCompHistory = wfID + dot + componentID + tail;
+                String placeholderCompHistory = wfID + DOT + componentID + tail;
                 List<String> placeholderCompHistoryList = null;
-                if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory.toString()) != null) {
-                    placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory.toString());
+                if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory) != null) {
+                    placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory);
                     if (placeholderCompHistoryList.contains(value)) {
                         placeholderCompHistoryList.remove(value);
                     }
                 } else {
-                    placeholderCompHistoryList = new LinkedList<String>();
+                    placeholderCompHistoryList = new LinkedList<>();
                 }
-                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                     encryptedPlaceholder)) {
                     storePassword(value, componentID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderCompHistoryList);
                 } else {
-                    placeholderCompHistoryList.add(value.toString());
+                    placeholderCompHistoryList.add(value);
                 }
                 if (componentTypeHistory != null) {
                     componentTypeHistory.put(placeholderCompHistory, placeholderCompHistoryList);
@@ -292,13 +298,13 @@ public class WorkflowPlaceholderHandler implements Serializable {
                         placeholderHistoryList.remove(value);
                     }
                 } else {
-                    placeholderHistoryList = new LinkedList<String>();
+                    placeholderHistoryList = new LinkedList<>();
                 }
-                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                     encryptedPlaceholder)) {
                     storePassword(value, componentUUID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderHistoryList);
                 } else {
-                    placeholderHistoryList.add(value.toString());
+                    placeholderHistoryList.add(value);
                 }
                 if (componentInstanceHistory != null) {
                     componentInstanceHistory.put(placeholderInstanceHistory, placeholderHistoryList);
@@ -307,17 +313,17 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 // don't save === remove from history
 
                 // placeholder component history
-                String placeholderCompHistory = wfID + dot + componentID + tail;
+                String placeholderCompHistory = wfID + DOT + componentID + tail;
                 List<String> placeholderCompHistoryList = null;
-                if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory.toString()) != null) {
-                    placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory.toString());
+                if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory) != null) {
+                    placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory);
                     if (placeholderCompHistoryList.contains(value)) {
                         placeholderCompHistoryList.remove(value);
                     }
                 } else {
-                    placeholderCompHistoryList = new LinkedList<String>();
+                    placeholderCompHistoryList = new LinkedList<>();
                 }
-                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                     encryptedPlaceholder)) {
                     clearPassword(componentID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderCompHistoryList);
                 }
@@ -331,9 +337,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
                         placeholderHistoryList.remove(value);
                     }
                 } else {
-                    placeholderHistoryList = new LinkedList<String>();
+                    placeholderHistoryList = new LinkedList<>();
                 }
-                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                     encryptedPlaceholder)) {
                     clearPassword(componentUUID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderHistoryList);
                 }
@@ -344,7 +350,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private void clearPassword(String componentID, String placeholderName, List<String> placeholderList) {
         placeholderList.clear();
         try {
-            String path = componentID + dot + placeholderName;
+            String path = componentID + DOT + placeholderName;
             secureStorageSection.delete(path);
         } catch (OperationFailureException e) {
             LOGGER.warn("Could not remove password", e);
@@ -354,7 +360,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private void storePassword(Serializable value, String componentID, String placeholderName, List<String> placeholderList) {
         placeholderList.clear();
         try {
-            String path = componentID + dot + placeholderName;
+            String path = componentID + DOT + placeholderName;
             secureStorageSection.store(path, value.toString());
             placeholderList.add(ComponentUtils.PLACEHOLDER_PASSWORD_SYMBOL);
         } catch (OperationFailureException e) {
@@ -374,13 +380,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
     public void setGlobalPlaceholderValue(String placeholder, String componentID, String value, String wfID, boolean addToHistory) {
         if (placeholder.matches(ComponentUtils.PLACEHOLDER_REGEX)) {
             Matcher matcher = ComponentUtils.getMatcherForPlaceholder(placeholder);
-            if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+            if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME),
                 encryptedPlaceholder)) {
-                try {
-                    value = new String(new Base64().encode(value.toString().getBytes("UTF-8")));
-                } catch (UnsupportedEncodingException e) {
-                    LOGGER.warn("Could not encode placeholder " + placeholder, e);
-                }
+                value = new String(new Base64().encode(value.getBytes(StandardCharsets.UTF_8)));
             }
             if (isGlobalPlaceholder(matcher)) {
                 if (componentTypePlaceholders.get(componentID) != null) {
@@ -388,7 +390,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 }
             }
             if (addToHistory) {
-                String placeholderCompHistory = wfID + dot + componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME);
+                String placeholderCompHistory = wfID + DOT + componentID + DOT + matcher.group(ComponentUtils.PLACEHOLDERNAME);
                 List<String> placeholderCompHistoryList = null;
                 if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory) != null) {
                     placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory);
@@ -396,9 +398,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
                         placeholderCompHistoryList.remove(value);
                     }
                 } else {
-                    placeholderCompHistoryList = new LinkedList<String>();
+                    placeholderCompHistoryList = new LinkedList<>();
                 }
-                placeholderCompHistoryList.add(value.toString());
+                placeholderCompHistoryList.add(value);
                 if (componentTypeHistory != null) {
                     componentTypeHistory.put(placeholderCompHistory, placeholderCompHistoryList);
                 }
@@ -479,16 +481,13 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @return the value of the placeholder, if found, else null
      */
     public Serializable getValueByPlaceholder(String placeholder, String componentID) {
-        Serializable result = null;
         if (placeholder.matches(ComponentUtils.PLACEHOLDER_REGEX)) {
             Matcher matcher = ComponentUtils.getMatcherForPlaceholder(placeholder);
-            if (isGlobalPlaceholder(matcher)) {
-                if (componentTypePlaceholders.get(componentID) != null) {
-                    result = componentTypePlaceholders.get(componentID).get(matcher.group(ComponentUtils.PLACEHOLDERNAME));
-                }
+            if (isGlobalPlaceholder(matcher) && componentTypePlaceholders.get(componentID) != null) {
+                return componentTypePlaceholders.get(componentID).get(matcher.group(ComponentUtils.PLACEHOLDERNAME));
             }
         }
-        return result;
+        return null;
     }
 
     /**
@@ -543,7 +542,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @param componentID : the compoent id
      * @return set of placeholders
      */
-    public Set<String> getPlaceholderNameSetOfComponentID(String componentID) {
+    public Set<String> getGlobalPlaceholdersForComponentID(String componentID) {
         if (componentTypePlaceholders.get(componentID) != null) {
             return componentTypePlaceholders.get(componentID).keySet();
         }
@@ -557,18 +556,17 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @return set of placeholders
      */
     public Set<String> getPlaceholderNamesOfComponentInstance(String componentUUID) {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         if (componentInstancePlaceholders != null) {
             String compKey = "";
-            for (String compKeyIt : componentInstancesOfType.keySet()) {
-                List<String> instances = componentInstancesOfType.get(compKeyIt);
-                if (instances.contains(componentUUID)) {
-                    compKey = compKeyIt;
+            for (Map.Entry<String, List<String>> entry : componentInstancesOfType.entrySet()) {
+                if (entry.getValue().contains(componentUUID)) {
+                    compKey = entry.getKey();
                 }
             }
             for (String placeholderName : componentInstancePlaceholders.get(componentUUID).keySet()) {
                 final String closeBracket = "}";
-                if (ComponentUtils.isEncryptedPlaceholder(compKey + dot + placeholderName, encryptedPlaceholder)) {
+                if (ComponentUtils.isEncryptedPlaceholder(compKey + DOT + placeholderName, encryptedPlaceholder)) {
                     result.add("${*." + placeholderName + closeBracket);
                 } else {
                     result.add("${" + placeholderName + closeBracket);
@@ -585,17 +583,15 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @return set of placeholders
      */
     public Set<String> getPlaceholderOfComponent(String componentID) {
-        Set<String> result = new HashSet<String>();
-        if (componentTypePlaceholders != null) {
-            if (componentTypePlaceholders.get(componentID) != null) {
-                for (String placeholderName : componentTypePlaceholders.get(componentID).keySet()) {
-                    final String closeBracket = "}";
-                    if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + placeholderName, encryptedPlaceholder)) {
-                        result.add("${global.*." + placeholderName + closeBracket);
-                    } else {
-                        result.add("${global." + placeholderName + closeBracket);
+        Set<String> result = new HashSet<>();
+        if (componentTypePlaceholders != null && componentTypePlaceholders.get(componentID) != null) {
+            for (String placeholderName : componentTypePlaceholders.get(componentID).keySet()) {
+                final String closeBracket = "}";
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + DOT + placeholderName, encryptedPlaceholder)) {
+                    result.add("${global.*." + placeholderName + closeBracket);
+                } else {
+                    result.add("${global." + placeholderName + closeBracket);
 
-                    }
                 }
             }
         }
@@ -650,8 +646,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
      */
     public String[] getInstancePlaceholderHistory(String placeholder, String componentUUID) {
         String[] result = new String[0];
-        if (componentInstanceHistory.containsKey(componentUUID + dot + placeholder)) {
-            List<String> history = componentInstanceHistory.get(componentUUID + dot + placeholder);
+        if (componentInstanceHistory.containsKey(componentUUID + DOT + placeholder)) {
+            List<String> history = componentInstanceHistory.get(componentUUID + DOT + placeholder);
             result = history.toArray(result);
         }
 
@@ -668,8 +664,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
      */
     public String[] getComponentPlaceholderHistory(String placeholder, String componentID, String wfID) {
         String[] result = new String[0];
-        if (componentTypeHistory.containsKey(wfID + dot + componentID + dot + placeholder)) {
-            List<String> history = componentTypeHistory.get(wfID + dot + componentID + dot + placeholder);
+        if (componentTypeHistory.containsKey(wfID + DOT + componentID + DOT + placeholder)) {
+            List<String> history = componentTypeHistory.get(wfID + DOT + componentID + DOT + placeholder);
             result = history.toArray(result);
         }
         return result;
@@ -694,7 +690,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @param placeholderName : name of the placeholder to delete history from
      */
     public void deletePlaceholderHistory(String componentDescriptionIdentifier, String placeholderName) {
-        Set<String> setToDelete = new HashSet<String>();
+        Set<String> setToDelete = new HashSet<>();
         for (String key : componentInstanceHistory.keySet()) {
             if (key != null && placeholderName != null && key.endsWith(placeholderName)) {
                 setToDelete.add(key);
@@ -711,9 +707,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
             }
             componentInstanceHistory.remove(key);
         }
-        setToDelete = new HashSet<String>();
+        setToDelete = new HashSet<>();
         for (String key : componentTypeHistory.keySet()) {
-            if (key.endsWith(componentDescriptionIdentifier + dot + placeholderName)) {
+            if (key.endsWith(componentDescriptionIdentifier + DOT + placeholderName)) {
                 setToDelete.add(key);
             }
         }
@@ -738,10 +734,10 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @return proposals of this placeholder
      */
     public String[] getOtherPlaceholderHistoryValues(String placeholderName) {
-        List<String> proposals = new LinkedList<String>();
-        for (String key : componentTypeHistory.keySet()) {
-            if (key.endsWith(placeholderName)) {
-                for (String newValue : componentTypeHistory.get(key)) {
+        List<String> proposals = new LinkedList<>();
+        for (Map.Entry<String, List<String>> entry : componentTypeHistory.entrySet()) {
+            if (entry.getKey().endsWith(placeholderName)) {
+                for (String newValue : entry.getValue()) {
                     if (!proposals.contains(newValue)) {
                         proposals.add(newValue);
                     }
@@ -856,11 +852,9 @@ public class WorkflowPlaceholderHandler implements Serializable {
         Set<String> activeConfigKeys = configDesc.getActiveConfigurationDefinition().getConfigurationKeys();
         boolean isActivePlaceholder = false;
         for (String configKey : configDesc.getConfiguration().keySet()) {
-            if ((activeConfigKeys.contains(configKey) || !configKeys
-                .contains(configKey))
+            if ((activeConfigKeys.contains(configKey) || !configKeys.contains(configKey))
                 && configDesc.isPlaceholderSet(configKey)) {
-                String configValue = configDesc
-                    .getActualConfigurationValue(configKey);
+                String configValue = configDesc.getActualConfigurationValue(configKey);
                 if (configValue.contains(instancePlaceholder)) {
                     isActivePlaceholder = true;
                     break;

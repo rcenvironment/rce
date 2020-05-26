@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>10.0.0-SNAPSHOT</version>
+		<version>10.1.0-SNAPSHOT</version>
 		<relativePath>../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
 	</parent>
 

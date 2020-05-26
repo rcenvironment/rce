@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -59,7 +59,7 @@ public class ComponentExecutionControllerImplTest {
         assertFalse(comExeCtrl.verifyResults(INVALID_VERIFICATION_TOKEN, false));
         EasyMock.verify(compStateMachineMock);
 
-        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = Capture.newInstance();
         compStateMachineMock =
             createComponentStateMachineMockAndApply(TEST_VERIFICATION_TOKEN, comExeCtrl.geComponentExecutionRelatedInstances(),
                 compStateMachineEventCapture);
@@ -67,7 +67,7 @@ public class ComponentExecutionControllerImplTest {
         EasyMock.verify(compStateMachineMock);
         assertEquals(ComponentStateMachineEventType.RESULTS_APPROVED, compStateMachineEventCapture.getValue().getType());
 
-        compStateMachineEventCapture = new Capture<>();
+        compStateMachineEventCapture = Capture.newInstance();
         compStateMachineMock =
             createComponentStateMachineMockAndApply(TEST_VERIFICATION_TOKEN, comExeCtrl.geComponentExecutionRelatedInstances(),
                 compStateMachineEventCapture);

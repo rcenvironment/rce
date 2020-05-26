@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Uplink Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.component.uplinktoolaccess;singleton:=true
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.fasterxml.jackson.databind;version="2.9.8",
@@ -48,3 +48,4 @@ Service-Component: OSGI-INF/generated/*.xml
 Export-Package: de.rcenvironment.core.component.uplinktoolaccess
 Bundle-ActivationPolicy: lazy
 Require-Bundle: de.rcenvironment.core.authorization
+Automatic-Module-Name: de.rcenvironment.core.component.uplinktoolaccess

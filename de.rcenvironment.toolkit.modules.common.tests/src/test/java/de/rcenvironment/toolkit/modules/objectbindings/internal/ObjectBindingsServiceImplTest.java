@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 DLR, Germany
+ * Copyright 2006-2020 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -159,8 +159,8 @@ public class ObjectBindingsServiceImplTest {
         service.addBinding(String.class, instance3, this);
         allMocks.verify();
 
-        Capture<String> captureX = new Capture<>(); // required as default EasyMock check is by equals()
-        Capture<String> captureY = new Capture<>(); // required as default EasyMock check is by equals()
+        Capture<String> captureX = Capture.newInstance(); // required as default EasyMock check is by equals()
+        Capture<String> captureY = Capture.newInstance(); // required as default EasyMock check is by equals()
 
         // test sanity check
         assertTrue(instance1.equals(instance2));

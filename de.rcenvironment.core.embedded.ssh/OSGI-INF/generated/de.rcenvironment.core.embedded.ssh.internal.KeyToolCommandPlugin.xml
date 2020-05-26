@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" name="de.rcenvironment.core.embedded.ssh.internal.KeyToolCommandPlugin">
+   <service>
+      <provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+   </service>
+   <reference cardinality="1..1" field="sshAccountService" interface="de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService" name="sshAccountService"/>
+   <implementation class="de.rcenvironment.core.embedded.ssh.internal.KeyToolCommandPlugin"/>
+</scr:component>

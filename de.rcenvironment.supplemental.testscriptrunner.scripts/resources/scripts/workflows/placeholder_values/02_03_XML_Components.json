@@ -1,0 +1,5 @@
+{
+"de.rcenvironment.outputwriter/2.0" : {
+	"targetRootFolder" : $$TEMP_DIR$$
+}
+}
