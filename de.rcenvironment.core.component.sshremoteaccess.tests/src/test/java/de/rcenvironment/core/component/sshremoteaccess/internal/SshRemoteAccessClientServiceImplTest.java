@@ -24,6 +24,7 @@ import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.UserAuthFactory;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.channel.ChannelSession;
@@ -87,7 +88,7 @@ public class SshRemoteAccessClientServiceImplTest {
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(SshRemoteAccessClientTestConstants.PORT);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
+        sshServer.setUserAuthFactories(new ArrayList<UserAuthFactory>() {
 
             {
                 add(new UserAuthPasswordFactory());

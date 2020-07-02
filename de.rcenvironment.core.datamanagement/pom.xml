@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.datamanagement</artifactId>
 	<name>RCE Core Data Management Bundle</name>
-	<version>10.1.0-SNAPSHOT</version>
+	<version>10.1.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

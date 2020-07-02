@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.extensions.testscriptrunner.feature_10.0.0.qualifier.jar" id="de.rcenvironment.extensions.testscriptrunner.feature" version="10.0.0.qualifier"/>
+   <feature url="features/de.rcenvironment.extensions.testscriptrunner.feature_10.1.1.qualifier.jar" id="de.rcenvironment.extensions.testscriptrunner.feature" version="10.1.1.qualifier"/>
 </site>

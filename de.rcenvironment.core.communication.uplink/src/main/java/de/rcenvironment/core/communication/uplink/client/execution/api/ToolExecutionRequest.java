@@ -12,6 +12,8 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Represents the information that is transmitted between the initiator and the receiver of a request for a published tool's execution.
  *
@@ -38,6 +40,8 @@ public class ToolExecutionRequest implements Serializable {
 
     private Map<String, String> properties;
 
+    //TODO This field is not used anymore, but has to be kept for compatibility within 10.x. Remove in RCE 11 release.
+    @JsonIgnore
     private String isMockMode;
 
     // TODO add an authorization confirmation token etc.
@@ -48,8 +52,7 @@ public class ToolExecutionRequest implements Serializable {
     }
 
     public ToolExecutionRequest(String toolId, String toolVersion, String authGroupId, String destinationId, Set<String> nonRequiredInputs,
-        Set<Map<String, Object>> dynamicInputs, Set<Map<String, Object>> dynamicOutputs, Map<String, String> properties,
-        String isMockMode) {
+        Set<Map<String, Object>> dynamicInputs, Set<Map<String, Object>> dynamicOutputs, Map<String, String> properties) {
         this.toolId = toolId;
         this.toolVersion = toolVersion;
         this.authGroupId = authGroupId;
@@ -58,7 +61,6 @@ public class ToolExecutionRequest implements Serializable {
         this.dynamicInputs = dynamicInputs;
         this.dynamicOutputs = dynamicOutputs;
         this.properties = properties;
-        this.isMockMode = isMockMode;
     }
 
     /**
@@ -107,7 +109,7 @@ public class ToolExecutionRequest implements Serializable {
         return properties;
     }
 
-    public String isMockMode() {
+    public String getIsMockMode() {
         return isMockMode;
     }
 }

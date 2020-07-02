@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Configuration
 Bundle-SymbolicName: de.rcenvironment.core.gui.configuration;singleton:=true
-Bundle-Version: 10.1.0.qualifier
+Bundle-Version: 10.1.1.qualifier
 Bundle-Activator: de.rcenvironment.core.gui.configuration.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,

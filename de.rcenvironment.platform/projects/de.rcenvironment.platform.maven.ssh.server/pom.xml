@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.ssh.server</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - SSH Server</name>
-	<version>10.1.0-SNAPSHOT</version>
+	<version>10.1.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -15,8 +15,8 @@
 	</parent>
 
 	<properties>
-		<!-- last updated: 2019-11-06, misc_ro -->
-		<versions.sshd>2.3.0</versions.sshd>
+		<!-- last updated: 2020-06-25, bode_br -->
+		<versions.sshd>2.5.0</versions.sshd>
 	</properties>
 
 	<dependencies>

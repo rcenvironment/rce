@@ -3,7 +3,7 @@
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  *
  * Author: Robert Mischke
  */
@@ -22,12 +22,12 @@ class RCEBuildPreprocessor {
 
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
-			'platform': 'snapshots/trunk/',
-			'intermediate': 'snapshots/trunk/'
+			'platform': 'releases/10.1.1',
+			'intermediate': 'releases/10.1.1'
 		],
 		'rc_or_release': [
-			'platform': 'releases/10.1.0',
-			'intermediate': 'releases/10.1.0'
+			'platform': 'releases/10.1.1',
+			'intermediate': 'releases/10.1.1'
 		]
 	]
 	

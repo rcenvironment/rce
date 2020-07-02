@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.supplemental.testscriptrunner.tests</artifactId>
 	<name>RCE Extensions - Test Script Runner - JUnit Self Test</name>
-	<version>10.1.0-SNAPSHOT</version>
+	<version>10.1.1-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

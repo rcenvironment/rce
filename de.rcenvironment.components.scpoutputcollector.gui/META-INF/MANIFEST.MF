@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE ScpOutputCollector GUI
 Bundle-SymbolicName: de.rcenvironment.components.scpoutputcollector.gui;singleton:=true
-Bundle-Version: 10.1.0.qualifier
+Bundle-Version: 10.1.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Localization: plugin
 Import-Package: de.rcenvironment.components.scpoutputcollector.common,

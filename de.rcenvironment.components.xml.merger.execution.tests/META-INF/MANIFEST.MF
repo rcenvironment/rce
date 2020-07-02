@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component Tests
 Bundle-SymbolicName: de.rcenvironment.components.xml.merger.execution.tests
-Bundle-Version: 10.1.0.qualifier
+Bundle-Version: 10.1.1.qualifier
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.components.xml.merger.execution;bundle-version="6.2.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

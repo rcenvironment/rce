@@ -266,9 +266,6 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
             tool.getConfigurationDescription().setConfigurationValue(entry.getKey(), entry.getValue());
         }
 
-        // Set imitation mode
-        tool.getConfigurationDescription().setConfigurationValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED, request.isMockMode());
-
         // Configure InputLoader with the tools inputs and create connections
         EndpointDescriptionsManager inputLoaderOutputs = inputloader.getOutputDescriptionsManager();
         for (EndpointDescription inputDesc : tool.getInputDescriptionsManager().getEndpointDescriptions()) {

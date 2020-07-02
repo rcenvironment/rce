@@ -1,3 +1,21 @@
+RCE 10.1.1 (July 01, 2020)
+
+# Network
+
+- Fixed a rare issue with Uplink connections that caused remote tool execution to fail
+
+# Security and Third-Party Libraries
+
+- Upgraded to Jackson 2.11.1, Bouncy Castle 1.65.01, ActiveMQ 5.3.13, 
+  Apache SSHD 2.5.0, and Commons Collections 4.4
+
+# Other
+
+- Minor documentation fixes
+
+
+
+
 RCE 10.1.0 (May 11, 2020)
 
 # Profile Management and UI

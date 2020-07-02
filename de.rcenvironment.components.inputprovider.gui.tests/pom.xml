@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.inputprovider.gui.tests</artifactId>
 	<name>RCE InputProvider Component GUI Tests</name>
-	<version>10.1.0-SNAPSHOT</version>
+	<version>10.1.1-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

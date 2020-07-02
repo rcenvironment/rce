@@ -1,14 +1,17 @@
 ##### RCE 7.1.5 - Blue Cobra (released at 10 November 2016)
+
 * Fixed a bug that caused integrated tools with a dot in their name not to open their tool documentation correctly.
 * Fixed a bug in the Workflow Data Browser where workflow data was shown incorrect under some rare circumstances.
 
 ##### RCE 7.1.4 - Blue Cobra (released at 28 September 2016)
+
 * Fixed a bug with very large float entries in data type Smalltable, Vector and Matrix. It could make workflows hang indefinitely.
 * Fixed a value overflow in data type Integer
 * Fixed a bug in the Design of Experiments component when loading custom tables. When using scientific notation the first entry was misinterpreted.
 
 ##### RCE 7.1.3 - Blue Cobra (released at 31 August 2016)
-**Note: We highly recommend to update to RCE 7.1.3. In prior versions a bug could make your workflow unusable (see first bullet for details)**
+
+** Note: We highly recommend to update to RCE 7.1.3. In prior versions a bug could make your workflow unusable (see first bullet for details)**
 
 * Fixed a bug in the workflow file encoding mechanism. It caused workflow files to grow until they couldn't be opened anymore. This happened when workflow labels contained special characters like umlauts.
 * Fixed a bug in Parametric Study component's runtime view that prevented forwarding values from being shown

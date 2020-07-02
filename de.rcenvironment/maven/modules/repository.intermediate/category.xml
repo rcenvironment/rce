@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_10.1.0.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_10.1.0.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_10.1.0.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_10.1.0.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_10.1.0.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.tiglviewer.feature_10.1.0.qualifier.jar" id="de.rcenvironment.core.gui.tiglviewer.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.documentation.core.feature_10.1.0.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.extras.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.cpacs.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.licensing.self.epl.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.licensing.self.epl.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.licensing.thirdparty.default.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.licensing.thirdparty.default.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.logging.default.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.logging.default.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.filesets.sql.connectors.mysql.feature_10.1.0.qualifier.jar" id="de.rcenvironment.filesets.sql.connectors.mysql.feature" version="10.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.help.feature_10.1.0.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="10.1.0.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_10.1.1.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.special.feature_10.1.1.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.standard.feature_10.1.1.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.combined.feature_10.1.1.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_10.1.1.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.tiglviewer.feature_10.1.1.qualifier.jar" id="de.rcenvironment.core.gui.tiglviewer.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.documentation.core.feature_10.1.1.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.extras.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.cpacs.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.licensing.self.epl.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.licensing.self.epl.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.licensing.thirdparty.default.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.licensing.thirdparty.default.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.logging.default.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.logging.default.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.filesets.sql.connectors.mysql.feature_10.1.1.qualifier.jar" id="de.rcenvironment.filesets.sql.connectors.mysql.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.help.feature_10.1.1.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="10.1.1.qualifier"/>
    <feature url="features/de.vonloesch.pdf4eclipse_1.1.0.jar" id="de.vonloesch.pdf4eclipse" version="1.1.0"/>
    <feature url="features/nu.psnet.quickimage_1.0.3.2.jar" id="nu.psnet.quickimage" version="1.0.3.2"/>
-   <feature url="features/de.rcenvironment.binaries.dakota.feature_10.1.0.qualifier.jar" id="de.rcenvironment.binaries.dakota.feature" version="10.1.0.qualifier"/>
+   <feature url="features/de.rcenvironment.binaries.dakota.feature_10.1.1.qualifier.jar" id="de.rcenvironment.binaries.dakota.feature" version="10.1.1.qualifier"/>
 </site>

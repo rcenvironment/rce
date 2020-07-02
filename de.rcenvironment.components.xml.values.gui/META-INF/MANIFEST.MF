@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Modifier Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.xml.values.gui;singleton:=true
-Bundle-Version: 10.1.0.qualifier
+Bundle-Version: 10.1.1.qualifier
 Import-Package: de.rcenvironment.components.xml.values.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,

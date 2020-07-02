@@ -43,8 +43,6 @@ public final class ToolExecutionClientSideSetup {
 
         private Map<String, String> properties;
 
-        private String isMockMode;
-
         /**
          * Transfers all relevant values from an existing {@link ToolMetadata} object.
          * 
@@ -149,15 +147,6 @@ public final class ToolExecutionClientSideSetup {
         }
 
         /**
-         * @param value if mock mode is set
-         * @return the builder instance (for call chaining)
-         */
-        public Builder isMockMode(String value) {
-            this.isMockMode = value;
-            return this;
-        }
-
-        /**
          * Creates the configured {@link ToolExecutionClientSideSetup} instance.
          * 
          * @return a new {@link ToolExecutionClientSideSetup}
@@ -172,7 +161,7 @@ public final class ToolExecutionClientSideSetup {
 
     private ToolExecutionClientSideSetup(Builder builder) {
         this.executionRequest = new ToolExecutionRequest(builder.toolId, builder.toolVersion, builder.authGroupId, builder.destinationId,
-            builder.nonRequiredInputs, builder.dynamicInputs, builder.dynamicOutputs, builder.properties, builder.isMockMode);
+            builder.nonRequiredInputs, builder.dynamicInputs, builder.dynamicOutputs, builder.properties);
     }
 
     /**

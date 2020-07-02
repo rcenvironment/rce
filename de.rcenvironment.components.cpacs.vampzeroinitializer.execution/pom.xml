@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.cpacs.vampzeroinitializer.execution</artifactId>
 	<name>RCE CPACS Generator Component Execution</name>
-	<version>10.1.0-SNAPSHOT</version>
+	<version>10.1.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

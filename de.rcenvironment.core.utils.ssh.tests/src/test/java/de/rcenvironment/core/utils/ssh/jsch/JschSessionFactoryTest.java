@@ -18,6 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.UserAuthFactory;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
@@ -51,7 +52,7 @@ public class JschSessionFactoryTest {
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPasswordFactory()); }});
+        sshServer.setUserAuthFactories(new ArrayList<UserAuthFactory>() {{ add(new UserAuthPasswordFactory()); }});
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.start();
     }

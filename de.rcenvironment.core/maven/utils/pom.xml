@@ -57,6 +57,7 @@
 											<include name="de.rcenvironment.common.parent/**/pom.xml" />
 											<include name="de.rcenvironment.binaries.*/pom.xml" />
 											<include name="de.rcenvironment.extensions.testscriptrunner/**/pom.xml" />
+											<include name="de.rcenvironment.extensions.testscriptrunner.feature/pom.xml" />
 											<include name="de.rcenvironment.supplemental.*/pom.xml" />
 											<include name="de.rcenvironment.toolkit.*/pom.xml" />
 										</replace>
@@ -82,6 +83,7 @@
 												<include name="de.rcenvironment.documentation.*.feature/feature.xml" />
 												<include name="de.rcenvironment.componentgroups.*.feature/feature.xml" />
 												<include name="de.rcenvironment.binaries.*.feature/feature.xml" />
+												<include name="de.rcenvironment.extensions.testscriptrunner.feature/feature.xml" />
 											</fileset>
 										</replaceregexp>
 										
@@ -93,6 +95,10 @@
 											<fileset dir="${rce.core.rootpath}">
 												<include
 													name="de.rcenvironment/maven/modules/repository.intermediate/category.xml" />
+													<include
+													name="de.rcenvironment/maven/modules/repository.mainProduct/category.xml" />
+													<include
+													name="de.rcenvironment.extensions.testscriptrunner/maven/repository/category.xml" />
 											</fileset>
 										</replaceregexp>
 										

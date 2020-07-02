@@ -45,7 +45,6 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ThreadHandler;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
@@ -88,8 +87,6 @@ public class UplinkToolAccessClientComponent extends DefaultComponent {
 
     private String authGroupId;
 
-    private String isMockMode;
-
     private ComponentLog componentLog;
 
     private TypedDatumSerializer serializer;
@@ -118,13 +115,6 @@ public class UplinkToolAccessClientComponent extends DefaultComponent {
         toolVersion = componentContext.getConfigurationValue(UplinkToolAccessConstants.KEY_TOOL_VERSION);
         connectionId = componentContext.getConfigurationValue(UplinkToolAccessConstants.KEY_CONNECTION);
         authGroupId = componentContext.getConfigurationValue(UplinkToolAccessConstants.KEY_AUTH_GROUP_ID);
-        if (Boolean.valueOf(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED))
-            && componentContext
-                .getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE) != null) {
-            isMockMode = componentContext.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE);
-        } else {
-            isMockMode = Boolean.toString(false);
-        }
 
         if (toolId == null || toolVersion == null || connectionId == null) {
             throw new ComponentException("Configuration for remote tool is not valid.");
@@ -175,7 +165,7 @@ public class UplinkToolAccessClientComponent extends DefaultComponent {
                 .authGroupId(authGroupId).destinationId(destinationId)
                 .nonRequiredInputs(createNotRequiredInputsSet())
                 .dynamicInputs(createDynamicInputsSet(inputsMap)).dynamicOutputs(createDynamicOutputsSet())
-                .properties(properties).isMockMode(isMockMode).build();
+                .properties(properties).build();
 
         // Directory for collecting all of the outputs of the tool
         File downloadDir = new File(tempRootDir, "output");

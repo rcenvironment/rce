@@ -73,7 +73,6 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	QuickImage (quickimage-plugin:p2 - http://psnet.nu/c/quickimage)
 	Servlet Specification API (org.mortbay.jetty:servlet-api:2.5-20081211 - http://jetty.mortbay.org/servlet-api)
 	Servlet 2.5 (org.apache.geronimo.specs:geronimo-servlet_2.5_spec:1.2 - http://geronimo.apache.org/maven/specs/servlet-2.5/1.2)
-	sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
 	StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
 	Streaming API for XML (STAX API 1.0) (org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-stax-api_1.0_spec)
 	Web Services Metadata 2.0 (org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2 - http://geronimo.apache.org/specs/geronimo-ws-metadata_2.0_spec)
@@ -159,6 +158,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
     jython (org.python:jython-standalone:2.7.0 - http://www.jython.org/)
 
  MIT License
+    OSHI (oshi:oshi-core:4.7.0 - https://github.com/oshi/oshi)
     SLF4J API Module (org.slf4j:slf4j-api:1.7.21 - http://www.slf4j.org)
 
  New BSD License
