@@ -270,4 +270,8 @@ public class WorkflowNode extends PropertiesChangeSupport
         this.zIndex = zIndexD;
     }
 
+    public ConfigurationDescription getComponentConfiguration() {
+        return this.getComponentDescription().getConfigurationDescription();
+    }
+
 }

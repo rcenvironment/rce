@@ -9,10 +9,13 @@
 package de.rcenvironment.core.command.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.easymock.Capture;
@@ -24,6 +27,9 @@ import org.junit.Test;
 import de.rcenvironment.core.authentication.Session;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.internal.handlers.BuiltInCommandPlugin;
+import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -33,8 +39,42 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * @author Robert Mischke
  * @author Sascha Zur
  * @author Jan Flink
+ * @author Alexander Weinert (testPluginOverlap)
  */
 public class MultiCommandHandlerIntegrationTest {
+
+    private static final class MockCommandPlugin implements CommandPlugin {
+
+        private final Capture<CommandContext> capturedContext = Capture.newInstance();
+        
+        private final String[] commands;
+        
+        public MockCommandPlugin(String... commands) {
+            this.commands = commands;
+        }
+
+        @Override
+        public void execute(CommandContext commandContext) throws CommandException {
+            capturedContext.setValue(commandContext);
+        }
+
+        @Override
+        public Collection<CommandDescription> getCommandDescriptions() {
+            final Collection<CommandDescription> returnValue = new LinkedList<>();
+            for(String command : commands) {
+                returnValue.add(new CommandDescription(command, "", false, ""));
+            }
+            return returnValue;
+        }
+        
+        public boolean wasExecuted() {
+            return this.capturedContext.hasCaptured();
+        }
+        
+        public void resetExecutionStatus() {
+            this.capturedContext.reset();
+        }
+    }
 
     private static final String EXPLAIN_COMMAND_TOKEN = "explain";
 
@@ -182,6 +222,34 @@ public class MultiCommandHandlerIntegrationTest {
         String capturedText = capture.getValue();
         EasyMock.verify(outputReceiver);
         return capturedText;
+    }
+    
+    /**
+     * When two command plugins serve the same top level command, the command dispatcher should pick the closest match.
+     * @throws CommandException 
+     */
+    @Test
+    public void testPluginOverlap() throws CommandException {
+        final CommandPluginDispatcher dispatcher = new CommandPluginDispatcher();
+
+        final MockCommandPlugin wfPlugin = new MockCommandPlugin("wf", "wf list");
+        dispatcher.registerPlugin(wfPlugin);
+
+        final MockCommandPlugin wfIntegratePlugin = new MockCommandPlugin("wf integrate");
+        dispatcher.registerPlugin(wfIntegratePlugin);
+        
+        dispatcher.execute(new CommandContext(Arrays.asList("wf"), null, null));
+        
+        assertTrue(wfPlugin.wasExecuted());
+        assertFalse(wfIntegratePlugin.wasExecuted());
+        
+        wfPlugin.resetExecutionStatus();
+        wfIntegratePlugin.resetExecutionStatus();
+
+        dispatcher.execute(new CommandContext(Arrays.asList("wf", "integrate"), null, null));
+        
+        assertFalse(wfPlugin.wasExecuted());
+        assertTrue(wfIntegratePlugin.wasExecuted());
     }
 
 }

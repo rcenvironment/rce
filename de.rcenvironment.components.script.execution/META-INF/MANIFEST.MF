@@ -2,9 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Execution Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.execution
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Import-Package: de.rcenvironment.components.script.common,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
@@ -18,6 +21,7 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.core.component.update.spi,
  de.rcenvironment.core.component.validation.api,
  de.rcenvironment.core.component.validation.spi,
+ de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.python,
@@ -30,9 +34,6 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.collections4.map;version="4.0.0",
  org.apache.commons.logging;provider=paxlogging,
- com.fasterxml.jackson.core;version="2.9.9",
- com.fasterxml.jackson.databind;version="2.9.9",
- com.fasterxml.jackson.databind.node;version="2.9.9",
  org.eclipse.osgi.util;version="1.1.0",
  org.osgi.framework;version="1.6.0",
  org.osgi.service.component;version="1.1.0"

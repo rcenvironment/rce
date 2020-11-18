@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.utils.scripting;
 
-
 /**
  * Enumeration of all supported scripting languages. Usually the set of
  * supported languages should be determined dynamically based on the registered
@@ -22,12 +21,15 @@ package de.rcenvironment.core.utils.scripting;
  */
 public enum ScriptLanguage {
 
-    /** Jython. */
-    Jython("Jython", "py"),
-    /** JavaScript. */
-    JavaScript("JavaScript", "js"),
+   
     /** Python. */
-    Python("Python", "py");
+    Python("Python", ScriptableComponentConstants.PY),
+    /** Python experimental. */
+    PythonExp("Python (Python Agent)", ScriptableComponentConstants.PY),
+    /** Jython. */
+    Jython("Jython", ScriptableComponentConstants.PY), 
+    /**JavaScript. */
+    JavaScript("JavaScript" , "js"); 
 
     private final String name;
 
@@ -65,20 +67,13 @@ public enum ScriptLanguage {
             }
         }
         /*
-        final List<ScriptEngineFactory> factories = ENGINE_MANAGER
-                .getEngineFactories();
-    factoriesLoop:
-        for (final ScriptEngineFactory factory : factories) {
-            if (factory.getNames().contains(name)) {
-                for (final ScriptLanguage language : values()) {
-                    if (factory.getNames().contains(language.getName())) {
-                        result = language;
-                        break factoriesLoop;
-                    }
-                }
-            }
-        }
-        */
+         * final List<ScriptEngineFactory> factories = ENGINE_MANAGER
+         * .getEngineFactories(); factoriesLoop: for (final ScriptEngineFactory
+         * factory : factories) { if (factory.getNames().contains(name)) { for
+         * (final ScriptLanguage language : values()) { if
+         * (factory.getNames().contains(language.getName())) { result =
+         * language; break factoriesLoop; } } } }
+         */
         if (result == null) {
             throw new IllegalArgumentException();
         }
@@ -94,8 +89,7 @@ public enum ScriptLanguage {
      * @throws IllegalArgumentException
      *             if the specified extension is unknown
      */
-    public static ScriptLanguage getByExtension(final String extension)
-        throws IllegalArgumentException {
+    public static ScriptLanguage getByExtension(final String extension) throws IllegalArgumentException {
         assert extension != null && !extension.isEmpty();
         assert extension.matches("^[-_a-zA-Z0-9]+$");
         ScriptLanguage result = null;
@@ -127,20 +121,17 @@ public enum ScriptLanguage {
             this.language = language;
         }
 
-        public NoEngineException(final ScriptLanguage language,
-                final Throwable cause) {
+        public NoEngineException(final ScriptLanguage language, final Throwable cause) {
             super(cause);
             this.language = language;
         }
 
-        public NoEngineException(final String message,
-                final ScriptLanguage language) {
+        public NoEngineException(final String message, final ScriptLanguage language) {
             super(message);
             this.language = language;
         }
 
-        public NoEngineException(final String message, final Throwable cause,
-                final ScriptLanguage language) {
+        public NoEngineException(final String message, final Throwable cause, final ScriptLanguage language) {
             super(message, cause);
             this.language = language;
         }

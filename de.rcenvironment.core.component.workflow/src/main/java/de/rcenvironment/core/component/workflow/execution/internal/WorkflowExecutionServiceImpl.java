@@ -333,7 +333,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
                             @Override
                             @TaskDescription("Distributed query: getWorkflowInformations()")
-                            public Collection call() throws Exception {
+                            public Collection<WorkflowExecutionInformation> call() throws Exception {
                                 RemotableWorkflowExecutionControllerService executionControllerService =
                                     getExecutionControllerService(finalNode);
                                 try {
@@ -354,7 +354,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                         }
                     });
                     // merge results
-                    for (Collection singleResult : results) {
+                    for (Collection<WorkflowExecutionInformation> singleResult : results) {
                         if (singleResult != null) {
                             tempWfExeInfos.addAll(singleResult);
                         }
@@ -508,7 +508,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             Optional<DistributedComponentEntry> distrComponentEntryResult =
                 resolveComponentIdToDistributedComponentEntry(distrCompKnowledge, compLocation, compIdWithoutVersion);
             if (!distrComponentEntryResult.isPresent()) {
-                throw new OperationFailureException("Could  not resolve component id " + compIdWithoutVersion
+                throw new OperationFailureException("Could not resolve component id " + compIdWithoutVersion
                     + " to an accessible component on instance " + compLocation.getAssociatedDisplayName());
             }
             DistributedComponentEntry distrComponentEntry = distrComponentEntryResult.get();

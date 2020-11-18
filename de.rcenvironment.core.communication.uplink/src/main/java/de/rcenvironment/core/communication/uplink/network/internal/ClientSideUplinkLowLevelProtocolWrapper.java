@@ -8,18 +8,12 @@
 
 package de.rcenvironment.core.communication.uplink.network.internal;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 
 /**
@@ -29,87 +23,83 @@ import de.rcenvironment.core.utils.common.exception.ProtocolException;
  */
 public class ClientSideUplinkLowLevelProtocolWrapper extends CommonUplinkLowLevelProtocolWrapper {
 
-    private final UplinkConnection connection;
-
-    private CompletableFuture<MessageBlock> handshakeResponseFuture;
-
     private boolean connectionClosedWithError; // used to prevent duplicate error events sent to the caller; synchronized on "this"
 
     /**
-     * @param connection a pluggable abstraction for the bidirectional data streams to send low-level protocol data over; note that this
-     *        protocol wrapper does *not* manage the underlying connection's life cycle!
      * @param eventHandler the callback interface for incoming events, including received {@link MessageBlock}s
+     * @param logIdentity a name that can be optionally attached to log messages for identification
      */
-    public ClientSideUplinkLowLevelProtocolWrapper(UplinkConnection connection, UplinkConnectionLowLevelEventHandler eventHandler) {
-        super(eventHandler, "client session protocol wrapper");
-        this.connection = connection;
+    public ClientSideUplinkLowLevelProtocolWrapper(StreamConnectionEndpoint connectionEndpoint,
+        UplinkConnectionLowLevelEventHandler eventHandler, String logIdentity) {
+        super(connectionEndpoint, eventHandler, logIdentity);
     }
 
     @Override
-    public void runSession() {
+    protected void runHandshakeSequence() throws UplinkConnectionRefusedException {
 
-        handshakeResponseFuture = new CompletableFuture<>();
+        final MessageBlock handshakeData;
+        try {
+            handshakeData = generateHandshakeData();
+        } catch (ProtocolException e) {
+            log.error("Unexpected error during handshake data generation: " + e.toString());
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.INTERNAL_CLIENT_ERROR,
+                "Error generating the local data to send to the server", false);
+        }
 
         try {
-            this.dataOutputStream = new DataOutputStream(connection.open(this::onIncomingStreamAvailable, this::onRemoteErrorMessage));
-
             sendHandshakeInit();
-            sendHandshakeData(generateHandshakeData());
-            MessageBlock responseMessageBlock;
-            try {
-                responseMessageBlock = awaitHandshakeResponseDataFromInputThread(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
-            } catch (InterruptedException | ExecutionException e) {
-                throw new IOException("Error while waiting for the server's handshake response: " + e.toString());
-            } catch (TimeoutException e) {
-                throw new IOException("The server did not send a handshake response within "
-                    + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC + " msec");
-            }
-            processHandshakeResponse(responseMessageBlock);
-            
-            sendHandshakeConfirmation();
-
-            eventHandler.onHandshakeComplete();
-
-            runMessageReceiveLoop();
+            sendHandshakeData(handshakeData);
         } catch (IOException e) {
-            if (registerAsFirstCriticalError()) {
-                eventHandler.onNonProtocolError(e);
-            }
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error sending the initial data to the server", false);
         }
 
-    }
-
-    @Override
-    public void closeOutgoingMessageStream() {
-        closeOutgoingDataStream();
-    }
-
-    private void onIncomingStreamAvailable(InputStream incomingStream) {
         try {
-            dataInputStream = new DataInputStream(incomingStream);
             expectHandshakeInit();
-            final MessageBlock response = expectHandshakeData();
-            handshakeResponseFuture.complete(response);
-        } catch (IOException e) {
-            if (registerAsFirstCriticalError()) {
-                eventHandler.onNonProtocolError(e);
-            }
-        } catch (UplinkConnectionRefusedException e) {
-            if (registerAsFirstCriticalError()) {
-                eventHandler.onErrorGoodbyeMessage(e.getType(), e.getRawMessage());
-            }
+        } catch (IOException e1) {
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error receiving the server's initial response; most likely, the connection has been closed by the server. "
+                    + "Make sure that you connecting to an Uplink server, and that the server's version is generally compatible.",
+                false);
+        } catch (TimeoutException e) {
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "No initial response received from the server within the expected time. This may be caused by a firewall "
+                    + "blocking the connection attempt, or because you accidentally connected to a different kind of server.",
+                false);
         }
-    }
 
-    private void onRemoteErrorMessage(String errorMessage) {
-        log.warn("Uplink connection error: " + errorMessage);
-    }
+        MessageBlock responseMessageBlock;
+        try {
+            responseMessageBlock = expectHandshakeData();
+        } catch (IOException e) {
+            // unusual case, so embed the exception info
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error reading the connection response from the server: " + e.toString(), false);
+        } catch (UplinkConnectionRefusedException e) {
+            // rethrow
+            throw e;
+        } catch (TimeoutException e) {
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR,
+                "Received an initial response from the server, but reached the timeout while waiting for further data - "
+                    + "assuming an internal server error",
+                false);
+        }
+        try {
+            processHandshakeResponse(responseMessageBlock);
+        } catch (IOException e) {
+            // unusual case, so embed the exception info
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.INVALID_HANDSHAKE_DATA,
+                "Failed to process the response received from the server: " + e.toString(), false);
+        }
 
-    private MessageBlock awaitHandshakeResponseDataFromInputThread(long timeoutMsec)
-        throws InterruptedException, TimeoutException, ExecutionException {
-        MessageBlock responseBytes = handshakeResponseFuture.get(timeoutMsec, TimeUnit.MILLISECONDS);
-        handshakeResponseFuture = null;
-        return responseBytes;
+        try {
+            sendHandshakeConfirmation();
+        } catch (IOException e) {
+            // unusual case, so embed the exception info
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Failed to send the final confirmation to the server after a successful message exchange: " + e.toString(), false);
+        }
+
     }
 
     private MessageBlock generateHandshakeData() throws ProtocolException {

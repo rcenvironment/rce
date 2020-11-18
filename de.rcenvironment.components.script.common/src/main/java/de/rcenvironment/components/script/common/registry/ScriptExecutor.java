@@ -81,6 +81,11 @@ public interface ScriptExecutor {
      * Deletes all temp files after the run.
      */
     void deleteTempFiles();
+    
+    /**
+     * Called when the component reached any of its final states.
+     */
+    void tearDown();
 
     /**
      * Reset method for nested loops.

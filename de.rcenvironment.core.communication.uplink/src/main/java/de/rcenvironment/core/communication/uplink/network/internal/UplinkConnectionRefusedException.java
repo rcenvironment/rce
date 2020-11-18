@@ -8,8 +8,12 @@
 
 package de.rcenvironment.core.communication.uplink.network.internal;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * An exception transporting additional reason information when a client connection is refused.
+ *
+ * TODO consider renaming this to UplinkHandshakeFailureException (or similar) for clarity
  *
  * @author Robert Mischke
  */
@@ -21,9 +25,12 @@ public final class UplinkConnectionRefusedException extends Exception {
 
     private final String rawMessage;
 
-    public UplinkConnectionRefusedException(UplinkProtocolErrorType type, String rawMessage) {
+    private final boolean attemptToSendErrorGoodbye;
+
+    public UplinkConnectionRefusedException(UplinkProtocolErrorType type, String rawMessage, boolean attemptToSendErrorGoodbye) {
         this.type = type;
         this.rawMessage = rawMessage;
+        this.attemptToSendErrorGoodbye = attemptToSendErrorGoodbye;
     }
 
     public UplinkProtocolErrorType getType() {
@@ -34,8 +41,12 @@ public final class UplinkConnectionRefusedException extends Exception {
         return rawMessage;
     }
 
+    public boolean shouldAttemptToSendErrorGoodbye() {
+        return attemptToSendErrorGoodbye;
+    }
+
     @Override
     public String getMessage() {
-        return type.wrapErrorMessage(rawMessage); // only construct when needed
+        return StringUtils.format("[%d] %s", type.getCode(), rawMessage);
     }
 }

@@ -21,6 +21,7 @@ import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
 import de.rcenvironment.core.configuration.bootstrap.ui.ProfileSelectionUI;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
  * Helper class that chooses the profile directory and related paths to use, based on command-line or .ini file parameters.
@@ -74,11 +75,13 @@ public final class BootstrapConfiguration {
     // note: not using the singleton pattern so it can be reset by unit tests - misc_ro
     private static volatile BootstrapConfiguration instance;
 
-    private final Profile originalProfile;
+    private Profile originalProfile;
 
-    private final Profile finalProfile;
+    private Profile finalProfile;
 
-    private final boolean shutdownRequested;
+    private final boolean runningInTestEnvironment;
+
+    private final boolean launchedAsShutdownTrigger;
 
     private String profileOptionHintToPrint;
 
@@ -92,17 +95,30 @@ public final class BootstrapConfiguration {
      * @throws SystemExitException
      * @throws BootstrapException
      * 
-     * @throws IOException         on bootstrap profile path errors
+     * @throws IOException on bootstrap profile path errors
      */
     private BootstrapConfiguration() throws ProfileException, ParameterException, SystemExitException {
 
+        EclipseLaunchParameters launchParameters = EclipseLaunchParameters.getInstance();
+
+        launchedAsShutdownTrigger = launchParameters.containsToken("--shutdown");
+
+        runningInTestEnvironment = RuntimeDetection.isImplicitServiceActivationDenied();
+        if (!runningInTestEnvironment) {
+            // do not activate this in a default test environment
+            initializeProfileAndRelatedOptions();
+            redirectLoggingToProfileDir();
+        }
+
+    }
+
+    private void initializeProfileAndRelatedOptions() throws ProfileException, ParameterException, SystemExitException {
         // TODO which of these calls should be replaced by log calls?
         // circumvent CheckStyle rule to generate basic output before the log system is initialized
         PrintStream stderr = System.err;
         PrintStream stdout = System.out;
 
-        LaunchParameters launchParameters = LaunchParameters.getInstance();
-
+        EclipseLaunchParameters launchParameters = EclipseLaunchParameters.getInstance();
         originalProfile = openOriginalProfileDir(launchParameters);
 
         Profile preliminaryProfile = originalProfile;
@@ -144,8 +160,7 @@ public final class BootstrapConfiguration {
             }
         }
 
-        shutdownRequested = launchParameters.containsToken("--shutdown");
-        if (shutdownRequested) {
+        if (launchedAsShutdownTrigger) {
             // the stub profile location for the process sending the shutdown signal is located in the data sub-directory
             preliminaryProfile = new CommonProfile.Builder(new File(originalProfile.getInternalDirectory(), "shutdown"))
                 .create(true).migrate(true).buildUserProfile();
@@ -189,15 +204,13 @@ public final class BootstrapConfiguration {
                 log.warn("Unable to mark the profile as recently used.", e);
             }
         }
-
-        loggingSetup();
     }
 
     /**
      * Initializes the singleton instance from system properties and launch parameters.
      * 
-     * @throws ParameterException  re-thrown
-     * @throws ProfileException    re-thrown
+     * @throws ParameterException re-thrown
+     * @throws ProfileException re-thrown
      * @throws SystemExitException re-thrown
      */
     public static void initialize() throws ProfileException, ParameterException, SystemExitException {
@@ -215,9 +228,12 @@ public final class BootstrapConfiguration {
                 throw new RuntimeException("No " + BootstrapConfiguration.class.getSimpleName()
                     + " instance available, and creating an implicit instance failed as well; aborting", e);
             }
-            LogFactory.getLog(BootstrapConfiguration.class).error("No " + BootstrapConfiguration.class.getSimpleName()
-                + " instance available - most likely, its containing bundle has not been properly initialized, "
-                + "or the instance is not accessible due to a classloading issue; created an implicit one to proceed");
+            if (!instance.runningInTestEnvironment) {
+                // normal during integration testing, so only log this in other environments
+                LogFactory.getLog(BootstrapConfiguration.class).error("No " + BootstrapConfiguration.class.getSimpleName()
+                    + " instance available - most likely, its containing bundle has not been properly initialized, "
+                    + "or the instance is not accessible due to a classloading issue; created an implicit one to proceed");
+            }
         }
         return instance;
     }
@@ -233,7 +249,7 @@ public final class BootstrapConfiguration {
      * 
      * @throws SystemExitException Thrown if the Profile Selection Dialog was exited without a selection.
      */
-    private Profile openOriginalProfileDir(LaunchParameters launchParams)
+    private Profile openOriginalProfileDir(EclipseLaunchParameters launchParams)
         throws ProfileException, ParameterException, SystemExitException {
 
         String profilePath = null;
@@ -257,6 +273,16 @@ public final class BootstrapConfiguration {
                     profilePath = selectedProfile.getProfileDirectory().getAbsolutePath();
                     this.profileOptionHintToPrint = "(as specified by the profile selection dialog)";
                 }
+            } else if (runningInTestEnvironment) {
+                // this normally shouldn't be used at all, as profile initialization is completely disabled in test mode now; but if this
+                // method is called anyway, use a temporary profile path
+                TempFileServiceAccess.setupUnitTestEnvironment();
+                try {
+                    profilePath = TempFileServiceAccess.getInstance().createManagedTempDir("launchProfile").getAbsolutePath();
+                } catch (IOException e) {
+                    throw new ProfileException("Failed to initialize temporary test profile", e);
+                }
+                this.profileOptionHintToPrint = "(temporary launch profile for test environment)";
             }
         }
 
@@ -284,12 +310,12 @@ public final class BootstrapConfiguration {
      * final profile is known, the logging will be reconfigured to write new log messages into log files within the profile directory.
      * Furthermore, all logged messages from the old log file will be copied to the start of the new log file.
      */
-    private void loggingSetup() {
+    private void redirectLoggingToProfileDir() {
 
         // deletes the old previous log and renames the existing old log to the new previous log
         LogArchiver.run(finalProfile.getProfileDirectory());
         String logfilesPrefix = "";
-        if (shutdownRequested) {
+        if (launchedAsShutdownTrigger) {
             logfilesPrefix = "shutdown-";
         }
         LoggingReconfigurationHelper.reconfigure(finalProfile.getProfileDirectory(), logfilesPrefix);
@@ -333,8 +359,9 @@ public final class BootstrapConfiguration {
         return originalProfile;
     }
 
+    // TODO rename
     public boolean isShutdownRequested() {
-        return shutdownRequested;
+        return launchedAsShutdownTrigger;
     }
 
     /**

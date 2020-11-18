@@ -34,6 +34,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * 
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Niklas Foerst
  */
 public class ScriptPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
@@ -48,10 +49,14 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
     private static final String V3_2 = "3.2";
 
     private static final String V3_3 = "3.3";
-    
+
     private static final String V3_4 = "3.4";
 
+    private static final String V3_5 = "3.5";
+
     private static final String USAGE_OF_SCRIPT = "usage of script";
+
+    private static final String SCRIPT_LANGUAGE = "scriptLanguage";
 
     private static final String CONFIGURATION = "configuration";
 
@@ -69,7 +74,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
                 versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
             }
             if (persistentComponentDescriptionVersion.compareTo(V3_1) >= 0
-                && persistentComponentDescriptionVersion.compareTo(V3_4) < 0) {
+                && persistentComponentDescriptionVersion.compareTo(V3_5) < 0) {
                 versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
             }
         }
@@ -94,11 +99,14 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
                 if (description.getComponentVersion().compareTo(V3_4) < 0) {
                     description = updateFromV33ToV34(description);
                 }
+                if (description.getComponentVersion().compareTo(V3_5) < 0) {
+                    description = updateFromV34ToV35(description);
+                }
             }
         }
         return description;
     }
-    
+
     private PersistentComponentDescription updateFromV33ToV34(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         description = PersistentComponentDescriptionUpdaterUtils.updateSchedulingInformation(description);
@@ -106,9 +114,29 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
         return description;
     }
 
+    private PersistentComponentDescription updateFromV34ToV35(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+
+        ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
+        if (configNode.get(SCRIPT_LANGUAGE) != null) {
+            if (configNode.get(SCRIPT_LANGUAGE).textValue().equals("Python")) {
+                configNode.set(SCRIPT_LANGUAGE, TextNode.valueOf("Jython"));
+            }
+        }
+
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+
+        description.setComponentVersion(V3_5);
+        return description;
+    }
+
     /**
      * Updates the component from version 3.2 to 3.3.
-     * */
+     */
     private PersistentComponentDescription fourthUpdate(PersistentComponentDescription description) throws JsonParseException, IOException {
 
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
@@ -128,7 +156,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
         description.setComponentVersion(V3_3);
         return description;
     }
-    
+
     /**
      * Updates the component from version 3.1 to 3.2.
      **/
@@ -170,7 +198,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
 
     /**
      * Updates the component from version 0 to 3.0.
-     * */
+     */
     private PersistentComponentDescription secondUpdate(PersistentComponentDescription description) throws JsonParseException, IOException {
 
         description =

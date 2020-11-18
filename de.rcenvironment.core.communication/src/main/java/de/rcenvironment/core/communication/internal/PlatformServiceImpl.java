@@ -17,6 +17,7 @@ import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
@@ -46,6 +47,11 @@ public class PlatformServiceImpl implements PlatformService {
      * Initialization; called by OSGi-DS and integration tests.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         localInitialNodeInformation = nodeConfigurationService.getInitialNodeInformation();
 
         // perform all conversions once as they may be fetched frequently

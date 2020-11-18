@@ -58,6 +58,7 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointH
 import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -677,6 +678,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         ownNodeInformation = configurationService.getInitialNodeInformation();
         localNodeId = ownNodeInformation.getInstanceNodeSessionId();
         localNodeIsRelay = configurationService.isRelay();

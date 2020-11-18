@@ -8,15 +8,13 @@
 
 package de.rcenvironment.core.communication.uplink.network.internal;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import de.rcenvironment.core.utils.common.LogUtils;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 
 /**
@@ -31,92 +29,107 @@ public class ServerSideUplinkLowLevelProtocolWrapper extends CommonUplinkLowLeve
      */
     public static final String ERROR_MESSAGE_CONNECTION_SETUP_FAILED = "Error during connection setup";
 
-    public ServerSideUplinkLowLevelProtocolWrapper(InputStream inputStream, OutputStream outputStream,
+    public ServerSideUplinkLowLevelProtocolWrapper(StreamConnectionEndpoint connectionEndpoint,
         UplinkConnectionLowLevelEventHandler eventHandler, String logIdentity) {
-        super(eventHandler, "server session protocol wrapper");
-        this.dataInputStream = new DataInputStream(inputStream);
-        this.dataOutputStream = new DataOutputStream(outputStream);
+        super(connectionEndpoint, eventHandler, logIdentity);
     }
 
     @Override
-    public void runSession() {
+    protected void runHandshakeSequence() throws UplinkConnectionRefusedException {
         // TODO ensure proper session teardown on handshake failure
-        if (verboseLoggingEnabled) {
-            log.debug("Expecting handshake init");
-        }
         try {
+            if (verboseLoggingEnabled) {
+                log.debug(logPrefix + "Expecting handshake init");
+            }
             expectHandshakeInit();
+        } catch (ProtocolException e) {
+            // internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VERSION_MISMATCH,
+                e.getMessage(), false);
         } catch (IOException e) {
-            log.warn("Handshake init failed, closing incoming connection: " + e.toString());
-            // simply close the connection; there is no point in sending a response if this basic init fails
-            return;
+            // internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error while receiving remote handshake initialization" + e.toString(), false);
+        } catch (TimeoutException e) {
+            // internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Timeout while receiving remote handshake initialization", false);
         }
+
         // not strictly required yet, as the protocol expects the client to send its handshake data right away,
         // but this allows more flexibility on the client side
         try {
             sendHandshakeInit();
         } catch (IOException e) {
-            // if this fails, the connection has broken down, so there is no point in sending an additional response
-            log.warn("Failed to send handshake init response, closing incoming connection: " + e.toString());
-            return;
+            // internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error while trying to send initial handshake reponse: " + e.toString(), false);
         }
 
         MessageBlock handshakeData;
         try {
             handshakeData = expectHandshakeData();
-        } catch (IOException e) {
-            final String errorMessage = e.toString();
-            log.warn("Error while expecting handshake data, closing incoming connection: " + errorMessage);
-            eventHandler.onNonProtocolError(e);
-            attemptToSendErrorGoodbyeMessage(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR, errorMessage);
-            return;
         } catch (UplinkConnectionRefusedException e) {
-            log.warn("Unexpected behavior: The client sent an error goodbye message instead of handshake data: " + e.getMessage());
-            eventHandler.onErrorGoodbyeMessage(e.getType(), e.getRawMessage());
-            return;
+            // rethrow
+            throw e;
+        } catch (TimeoutException e) {
+            // remote error message
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VIOLATION,
+                "Failed to receive client data within " + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC
+                    + " msec, closing the connection",
+                true);
+        } catch (IOException e) {
+            // no point in sending a goodbye if the confirmation could not be read -> internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error receiving client handshake data: " + e.toString(), false);
+        }
+
+        MessageBlock responseData;
+        try {
+            responseData = processHandshakeDataAndGenerateResponse(handshakeData);
+        } catch (ProtocolException e) {
+            // generate a sanitized message that can be sent back to the client
+            final String errorMarker = LogUtils.logExceptionAsSingleLineAndAssignUniqueMarker(log,
+                logPrefix + "Error while processing handshake data, closing incoming connection", e);
+            // generate an exception that causes an error message to be sent
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR,
+                ERROR_MESSAGE_CONNECTION_SETUP_FAILED + " (internal error log marker " + errorMarker + ")", true);
+        } catch (UplinkConnectionRefusedException e) {
+            // rethrow
+            throw e;
         }
 
         try {
-            final MessageBlock responseData = processHandshakeDataAndGenerateResponse(handshakeData);
             sendHandshakeData(responseData);
         } catch (IOException e) {
-            final String errorMarker = LogUtils.logExceptionAsSingleLineAndAssignUniqueMarker(log,
-                "Error while processing or responding to handshake data, closing incoming connection", e);
-            attemptToSendErrorGoodbyeMessage(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR,
-                ERROR_MESSAGE_CONNECTION_SETUP_FAILED + " (internal error log marker " + errorMarker + ")");
-            return;
-        } catch (UplinkConnectionRefusedException e) {
-            // not necessarily an error; the handshake handling has decided to gracefully refuse the connection
-            // TODO log with more connection information
-            log.warn("Refusing connection: " + e.toString());
-            attemptToSendErrorGoodbyeMessage(e.getType(), "Connection refused: " + e.getRawMessage());
-            return;
+            // if we can't send the handshake data, don't try to send an error goodbye -> internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error while trying to send handshake reponse data: " + e.toString(), false);
         }
 
         // expect handshake confirmation from the client
         try {
-            handshakeData = expectHandshakeData(); // contains no data, just an empty "handshake" message block
+            handshakeData = expectHandshakeData();
         } catch (IOException e) {
-            final String errorMessage = e.toString();
-            log.info("Error while expecting handshake confirmation, closing incoming connection: " + errorMessage);
-            eventHandler.onNonProtocolError(e);
-            attemptToSendErrorGoodbyeMessage(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR, errorMessage);
-            return;
+            // no point in sending a goodbye if the confirmation could not be read -> internal exception
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
+                "Error while waiting for the client's handshake confirmation: " + e.getMessage(), false);
         } catch (UplinkConnectionRefusedException e) {
-            log.debug("Received an error goodbye message instead of handshake data from a client: " + e.getMessage());
-            eventHandler.onErrorGoodbyeMessage(e.getType(), e.getRawMessage());
-            return;
-        }
-
-        eventHandler.onHandshakeComplete();
-
-        runMessageReceiveLoop();
+            // rethrow
+            throw e;
+        } catch (TimeoutException e) {
+            // remote error message
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VIOLATION,
+                "Failed to receive the client's handshake confirmation within " + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC
+                    + " msec, closing the connection",
+                true);
+        } // contains no data, just an empty "handshake" message block
     }
 
     private MessageBlock processHandshakeDataAndGenerateResponse(MessageBlock handshakeData)
         throws ProtocolException, UplinkConnectionRefusedException {
         if (verboseLoggingEnabled) {
-            log.debug("Processing handshake data: " + new String(handshakeData.getData()));
+            log.debug(logPrefix + "Processing handshake data: " + new String(handshakeData.getData()));
         }
         // parse received JSON
         final Map<String, String> incomingData = messageConverter.decodeHandshakeData(handshakeData);
@@ -127,11 +140,6 @@ public class ServerSideUplinkLowLevelProtocolWrapper extends CommonUplinkLowLeve
 
         // encode to JSON message
         return messageConverter.encodeHandshakeData(responseMap);
-    }
-
-    @Override
-    public void closeOutgoingMessageStream() {
-        closeOutgoingDataStream();
     }
 
 }

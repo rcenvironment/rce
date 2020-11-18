@@ -64,8 +64,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
         this.weph = pd;
         this.wd = workflowDescription;
         guiNameToPlaceholder = new HashMap<String, String>();
-        setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MAX
-            | SWT.APPLICATION_MODAL);
+        setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MAX | SWT.APPLICATION_MODAL);
     }
 
     @Override
@@ -73,8 +72,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
 
         container = (Composite) super.createDialogArea(parent);
         container.setLayout(new GridLayout(1, false));
-        GridData containergridData = new GridData(GridData.FILL, GridData.FILL,
-            true, true);
+        GridData containergridData = new GridData(GridData.FILL, GridData.FILL, true, true);
         container.setLayoutData(containergridData);
 
         componentPlaceholderTree = new Tree(container, SWT.MULTI | SWT.CHECK);
@@ -134,7 +132,14 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
     private void clearHistory(TreeItem itComp, String parent, boolean isGlobal) {
         for (WorkflowNode wn : wd.getWorkflowNodes()) {
             if (wn.getComponentDescription().getName().equals(itComp.getParentItem().getText())) {
-                weph.deletePlaceholderHistory(wn.getComponentDescription().getIdentifier(), guiNameToPlaceholder.get(itComp.getText()));
+                final String placeholderName;
+
+                if (guiNameToPlaceholder.containsKey(itComp.getText())) {
+                    placeholderName = guiNameToPlaceholder.get(itComp.getText());
+                } else {
+                    placeholderName = itComp.getText();
+                }
+                weph.deletePlaceholderHistory(wn.getComponentDescription().getIdentifier(), placeholderName);
             }
         }
     }
@@ -143,22 +148,21 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
         TreeColumn column1 = new TreeColumn(componentPlaceholderTree, SWT.LEFT);
         column1.setText("");
         Set<String> componentTypesWithPlaceholder = weph.getIdentifiersOfPlaceholderContainingComponents();
-        String[] componentTypesWithPlaceholderArray =
-            componentTypesWithPlaceholder.toArray(new String[componentTypesWithPlaceholder.size()]);
+        String[] componentTypesWithPlaceholderArray = componentTypesWithPlaceholder
+            .toArray(new String[componentTypesWithPlaceholder.size()]);
         Arrays.sort(componentTypesWithPlaceholderArray);
         for (String componentID : componentTypesWithPlaceholderArray) {
             TreeItem componentIDTreeItem = new TreeItem(componentPlaceholderTree, 0);
             String componentName = wd.getWorkflowNode(weph.getComponentInstances(componentID).get(0))
                 .getComponentDescription().getName();
             componentIDTreeItem.setText(0, componentName);
-            componentIDTreeItem.setImage(getImage(
-                wd.getWorkflowNode(weph.getComponentInstances(componentID).get(0))));
+            componentIDTreeItem.setImage(getImage(wd.getWorkflowNode(weph.getComponentInstances(componentID).get(0))));
             PlaceholdersMetaDataDefinition metaData = getPlaceholderAttributes(componentName);
             componentIDTreeItem.setExpanded(true);
 
             if (weph.getGlobalPlaceholdersForComponentID(componentID) != null) {
-                List<String> globalPlaceholderOrder =
-                    PlaceholderSortUtils.sortGlobalPlaceholders(weph.getGlobalPlaceholdersForComponentID(componentID), metaData);
+                List<String> globalPlaceholderOrder = PlaceholderSortUtils
+                    .sortGlobalPlaceholders(weph.getGlobalPlaceholdersForComponentID(componentID), metaData);
                 if (globalPlaceholderOrder == null) {
                     globalPlaceholderOrder = new LinkedList<String>();
                 }
@@ -172,12 +176,14 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
             }
             if (weph.getComponentInstances(componentID) != null) {
                 List<String> instancesWithPlaceholder = weph.getComponentInstances(componentID);
-                instancesWithPlaceholder = PlaceholderSortUtils.sortInstancesWithPlaceholderByName(instancesWithPlaceholder, wd);
+                instancesWithPlaceholder = PlaceholderSortUtils
+                    .sortInstancesWithPlaceholderByName(instancesWithPlaceholder, wd);
                 if (instancesWithPlaceholder != null) {
                     String compInstances = instancesWithPlaceholder.get(0);
-                    Set<String> unsortedInstancePlaceholder = weph.getPlaceholderNameSetOfComponentInstance(compInstances);
-                    List<String> sortedInstancePlaceholder =
-                        PlaceholderSortUtils.sortGlobalPlaceholders(unsortedInstancePlaceholder, metaData);
+                    Set<String> unsortedInstancePlaceholder = weph
+                        .getPlaceholderNameSetOfComponentInstance(compInstances);
+                    List<String> sortedInstancePlaceholder = PlaceholderSortUtils
+                        .sortGlobalPlaceholders(unsortedInstancePlaceholder, metaData);
                     for (String instancePlaceholder : sortedInstancePlaceholder) {
                         TreeItem instancePHTreeItem = new TreeItem(componentIDTreeItem, 0);
                         String guiName = metaData.getGuiName(instancePlaceholder);
@@ -199,8 +205,8 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
     private PlaceholdersMetaDataDefinition getPlaceholderAttributes(String name) {
         for (WorkflowNode wn : wd.getWorkflowNodes()) {
             if (wn.getComponentDescription().getName().equals(name)) {
-                return wn.getComponentDescription().getConfigurationDescription()
-                    .getComponentConfigurationDefinition().getPlaceholderMetaDataDefinition();
+                return wn.getComponentDescription().getConfigurationDescription().getComponentConfigurationDefinition()
+                    .getPlaceholderMetaDataDefinition();
             }
         }
         return null;
@@ -251,8 +257,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog {
     }
 
     @Override
-    protected Button createButton(Composite parent, int id,
-        String label, boolean defaultButton) {
+    protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
         if (id == IDialogConstants.OK_ID) {
             label = Messages.clear;
         }

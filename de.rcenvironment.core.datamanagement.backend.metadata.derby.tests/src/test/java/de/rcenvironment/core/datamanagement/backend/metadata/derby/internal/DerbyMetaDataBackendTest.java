@@ -37,6 +37,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
 import de.rcenvironment.core.datamanagement.DataManagementIdMapping;
 import de.rcenvironment.core.datamanagement.FileDataService;
@@ -105,6 +106,8 @@ public class DerbyMetaDataBackendTest {
      */
     @BeforeClass
     public static void setUpTestcase() throws IOException, RemoteOperationException {
+        RuntimeDetection.allowSimulatedServiceActivation();
+
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempDirectory = TempFileServiceAccess.getInstance().createManagedTempDir("derby-metadata");
         // perform db startup so the time is not added to the run time of the first test case

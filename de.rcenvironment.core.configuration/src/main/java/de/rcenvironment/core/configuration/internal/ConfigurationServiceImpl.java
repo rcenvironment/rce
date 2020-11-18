@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -38,8 +39,12 @@ import de.rcenvironment.core.configuration.ConfigurationServiceMessageEvent;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener;
 import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
+import de.rcenvironment.core.utils.common.AuditLog;
+import de.rcenvironment.core.utils.common.AuditLogFileBackend;
+import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -133,11 +138,21 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public void activate(BundleContext context) {
         bootstrapSettings = BootstrapConfiguration.getInstance();
 
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not implicitly initialize a profile and related settings in test environments; our testing
+            // approach is that relevant tests should do this themselves in a controlled way instead.
+            // if disabling this causes downstream problems, these need to be fixed on a case-by-case basis,
+            // typically by checking for the test environment in the activator and exiting early.
+            return;
+        }
+
         initializeProfileDirFromBootstrapSettings();
         initializeConfigurablePaths();
         loadRootConfiguration(false);
         exportConfigIfConfigured(false);
         initializeGeneralSettings();
+
+        initializeAuditLog();
 
         // initialize parent temp directory root
         initializeParentTempDirectoryRoot(generalSettings.getTempDirectoryOverride());
@@ -240,6 +255,31 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // initializeInstanceDataDirectory();
     }
 
+    private void initializeAuditLog() {
+        try {
+            Path profileRootPath = getConfigurablePath(ConfigurablePathId.PROFILE_ROOT).toPath();
+            AuditLog.initialize(new AuditLogFileBackend(profileRootPath.resolve("event.log")));
+
+            // log a separate event for visual separation
+            AuditLog.append(AuditLogIds.APPLICATION_START, "", AuditLogIds.SEPARATOR_LINE_VALUE);
+
+            AuditLog.append(AuditLog.newEntry(AuditLogIds.APPLICATION_SESSION_STARTING)
+                .set("profile_location", profileRootPath.toString()) // e.g. for logging to non-default locations
+                .set("os_name", System.getProperty("os.name") + "; " + System.getProperty("os.version"))
+                .set("user_name", System.getProperty("user.name"))
+                .set("user_home", System.getProperty("user.home"))
+                .set("work_dir", System.getProperty("user.dir")));
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                // dummy data as visual separator
+                AuditLog.append(AuditLogIds.APPLICATION_TERMINATING, null);
+                AuditLog.close();
+            }));
+        } catch (IOException e) {
+            log.error("Failed to initialize audit log: " + e.toString());
+        }
+    }
+
     /**
      * Unit test initialization method.
      */
@@ -328,6 +368,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public void reloadConfiguration() {
         loadRootConfiguration(true);
+    }
+
+    @Override
+    public ConfigurationSegment loadCustomConfigurationFile(Path path) throws IOException {
+        return new ConfigurationStoreImpl(path.toFile()).getSnapshotOfRootSegment();
     }
 
     protected <T> T parseConfigurationFile(Class<T> clazz, File configFile) throws IOException, JsonParseException, JsonMappingException {
@@ -593,6 +638,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_INTEGRATION_DATA, INTEGRATION_SUBDIRECTORY_PATH);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_OUTPUT, RELATIVE_PATH_TO_OUTPUT_ROOT);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_DATA_MANAGEMENT, RELATIVE_PATH_TO_STORAGE_ROOT);
+        initializeRelativeProfilePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA, CONFIGURATION_SUBDIRECTORY_PATH);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_INTERNAL_DATA, RELATIVE_PATH_TO_INTERNAL_DATA_ROOT);
 
         // definePathAlias(ConfigurablePathId.DEFAULT_WRITEABLE_CONFIGURATION_ROOT,

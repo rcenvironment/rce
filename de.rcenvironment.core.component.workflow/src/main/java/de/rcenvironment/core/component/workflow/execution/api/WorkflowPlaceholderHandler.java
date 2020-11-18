@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -29,9 +31,11 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDesc
 import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaDataConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
-import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.configuration.SecureStorageSection;
+import de.rcenvironment.core.configuration.SecureStorageService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
@@ -86,6 +90,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     private Map<String, List<String>> componentInstancesOfType;
 
+    private WorkflowDescription workflowDescription;
+
     @Deprecated
     /**
      * Because of OSGi.
@@ -106,6 +112,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
         initializePlaceholders(wd, weph);
         initializeHistory(weph);
+
+        weph.workflowDescription = wd;
 
         return weph;
     }
@@ -625,6 +633,11 @@ public class WorkflowPlaceholderHandler implements Serializable {
     }
 
     protected void bindSecureStorageService(SecureStorageService secureStorageService) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // skip implicit bind actions if is was spawned as part of a default test environment;
+            // note that this may cause side effects if tests explicitly rely on this behavior
+            return;
+        }
         try {
             secureStorageSection = secureStorageService.getSecureStorageSection(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
         } catch (IOException e) {
@@ -837,6 +850,35 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     public Map<String, String> getPlaceholdersDataType() {
         return placeholdersDataType;
+    }
+
+    /**
+     * @return True if there are any active placeholders, i.e., placeholders that have to be filled by the user prior to execution
+     */
+    public boolean hasActivePlaceholders() {
+        Set<String> componentTypesWithPlaceholder = this.getIdentifiersOfPlaceholderContainingComponents();
+
+        for (String componentID : componentTypesWithPlaceholder) {
+            List<WorkflowNodeIdentifier> instancesWithPlaceholder = this.getComponentInstances(componentID).stream()
+                .map(WorkflowNodeIdentifier::new)
+                .collect(Collectors.toList());
+
+            for (WorkflowNodeIdentifier componentInstanceID : instancesWithPlaceholder) {
+                final ConfigurationDescription configDesc =
+                    workflowDescription.getWorkflowNode(componentInstanceID).getComponentDescription().getConfigurationDescription();
+
+                final Collection<String> instancePlaceholders =
+                    this.getPlaceholderNameSetOfComponentInstance(componentInstanceID.toString());
+
+                final boolean containsActivePlaceholder = instancePlaceholders.stream()
+                    .anyMatch(instancePlaceholder -> isActivePlaceholder(instancePlaceholder, configDesc));
+
+                if (containsActivePlaceholder) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

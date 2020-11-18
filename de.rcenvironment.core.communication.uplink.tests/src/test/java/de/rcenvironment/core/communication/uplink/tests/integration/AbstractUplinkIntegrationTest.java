@@ -18,6 +18,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -36,7 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import org.apache.commons.io.IOUtils;
@@ -63,6 +67,7 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ToolExecuti
 import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.client.session.internal.ClientSideUplinkSessionParameters;
 import de.rcenvironment.core.communication.uplink.client.session.internal.LocalUplinkSessionServiceImpl;
+import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
 import de.rcenvironment.core.communication.uplink.network.internal.ServerSideUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.relay.internal.ServerSideUplinkEndpointServiceImpl;
@@ -71,6 +76,7 @@ import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Integration tests for the call chain through the layers of the "uplink" mechanism.
@@ -111,16 +117,25 @@ public abstract class AbstractUplinkIntegrationTest {
 
     private static final int DOCUMENTATION_SIZE_LARGER_THAN_MESSAGE_BLOCK = 1000000;
 
-    // TODO there are fairly consistent single-test failures with 200 msec; find out why
-    private static final int SHORT_TIME = 300; // msec to wait for lightweight asynchronous operations to complete
+    // TODO investigate why for some tests, shorter times (e.g. 200 msec) are not enough for reliably completing
+    // a handshake exchange and session activation; not a real problem, just curious
+    private static final int SHORT_TIME = 500; // msec to wait for lightweight asynchronous operations to complete
+
+    private static final int STATE_WAITING_CHECK_INTERVAL = 50;
+
+    private static final int STATE_WAITING_TIMEOUT = 2000; // fairly high for slow test environments; only used when necessary
 
     protected final Log log = LogFactory.getLog(getClass());
 
+    private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
+
     private LocalUplinkSessionServiceImpl mockUplinkSessionService;
+
+    private ServerSideUplinkEndpointServiceImpl mockServerSideUplinkEndpointService;
 
     private ServerSideUplinkSessionServiceImpl mockServerSideUplinkSessionService;
 
-    private UplinkTestContext testContext;
+    private volatile UplinkTestContext testContext;
 
     /**
      * Holds the context of a single test run, e.g. established connections, and provides utility methods.
@@ -132,24 +147,29 @@ public abstract class AbstractUplinkIntegrationTest {
         private final List<ClientSideUplinkSession> clientSessions = new ArrayList<>();
 
         public synchronized ClientSideUplinkSession setUpSession(MockClientStateHolder clientMock, String sessionQualifier) {
+
             UplinkConnection uplinkConnection = setUpClientConnection();
+            clientMock.setUplinkConnection(uplinkConnection); // store for test access
+            try {
+                uplinkConnection.open(errorMessage -> {
+                    log.warn("Unhandled connection error message: " + errorMessage);
+                });
+            } catch (IOException e) {
+                throw new AssertionError("Failed to setup mock connection", e); // should never happen
+            }
 
             final ClientSideUplinkSessionParameters sessionParameters =
-                new ClientSideUplinkSessionParameters("Test session", sessionQualifier, clientMock.getCustomHandshakeParameters());
+                new ClientSideUplinkSessionParameters("Test session", sessionQualifier, null, clientMock.getCustomHandshakeParameters());
             final ClientSideUplinkSession session =
                 mockUplinkSessionService.createSession(uplinkConnection, sessionParameters, clientMock);
+
             clientSessions.add(session);
             return session;
         }
 
         public void startSession(final ClientSideUplinkSession session) {
-            ConcurrencyUtils.getAsyncTaskService().execute("Run mock client Uplink session", () -> {
-                try {
-                    session.runSession();
-                } catch (IOException e) {
-                    // TODO improve
-                    log.error("Caught error from runSession()", e);
-                }
+            asyncTaskService.execute("Run mock client Uplink session", () -> {
+                session.runSession();
             });
         }
 
@@ -163,7 +183,7 @@ public abstract class AbstractUplinkIntegrationTest {
         public synchronized void closeAllClientSessions() {
             for (ClientSideUplinkSession session : clientSessions) {
                 try {
-                    session.close();
+                    session.initiateCleanShutdownIfRunning();
                 } catch (IllegalStateException e) {
                     log.warn("Session " + session.getLogDescriptor() + " was already closed");
                 }
@@ -180,7 +200,7 @@ public abstract class AbstractUplinkIntegrationTest {
         mockUplinkSessionService = new LocalUplinkSessionServiceImpl();
         mockUplinkSessionService.bindConcurrencyUtilsFactory(ConcurrencyUtils.getFactory());
 
-        final ServerSideUplinkEndpointServiceImpl mockServerSideUplinkEndpointService = new ServerSideUplinkEndpointServiceImpl();
+        mockServerSideUplinkEndpointService = new ServerSideUplinkEndpointServiceImpl();
         mockServerSideUplinkEndpointService.bindConcurrencyUtilsFactory(ConcurrencyUtils.getFactory());
 
         mockServerSideUplinkSessionService = new ServerSideUplinkSessionServiceImpl();
@@ -216,18 +236,19 @@ public abstract class AbstractUplinkIntegrationTest {
         ClientSideUplinkSession clientSession1 = testContext.setUpSession(client1, SESSION_QUALIFIER_CLIENT1);
         assertEquals(UplinkSessionState.INITIAL, clientSession1.getState());
         testContext.startSession(clientSession1);
-        client1.waitForSessionActivation(SHORT_TIME);
+        client1.waitForSessionInitCompletion(SHORT_TIME);
         assertEquals(UplinkSessionState.ACTIVE, clientSession1.getState());
         assertTrue(client1.isSessionActive());
         assertTrue(clientSession1.isActive());
         assertNull(client1.getSessionErrorMessage());
 
-        clientSession1.close();
-        assertEquals(UplinkSessionState.PARTIALLY_CLOSED_BY_LOCAL, clientSession1.getState());
-        waitFor(SHORT_TIME); // wait for asynchronous execution
-        assertEquals(UplinkSessionState.FULLY_CLOSED, clientSession1.getState());
+        assertFalse(clientSession1.isShuttingDownOrShutDown());
+        clientSession1.initiateCleanShutdownIfRunning();
+        assertTrue(clientSession1.isShuttingDownOrShutDown());
+        awaitStateOrFail(UplinkSessionState.CLEAN_SHUTDOWN, clientSession1);
         assertFalse(client1.isSessionActive());
         assertFalse(clientSession1.isActive());
+        assertTrue(clientSession1.isShuttingDownOrShutDown()); // should still be true
         assertNull(client1.getSessionErrorMessage()); // regular shutdown, no error
     }
 
@@ -245,12 +266,48 @@ public abstract class AbstractUplinkIntegrationTest {
         customHandshakeParameters.put(UplinkProtocolConstants.HANDSHAKE_KEY_SIMULATE_REFUSED_CONNECTION, testMessage);
         client1.setCustomHandshakeParameters(customHandshakeParameters);
         ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
-        waitFor(SHORT_TIME); // do not wait for session activation as it is not expected to happen
-        assertEquals(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1.getState());
+        awaitStateOrFail(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1);
         assertFalse(client1.isSessionActive());
         assertFalse(clientSession1.isActive());
         assertNotNull(client1.getSessionErrorMessage());
         assertTrue(client1.getSessionErrorMessage().endsWith(testMessage)); // allow message prefixing
+    }
+
+    /**
+     * Connects normally, then sends an invalid message, verifies that the local session has terminated, and then validates that a second
+     * client can connect using the same namespace (login + clientId).
+     * 
+     * @throws Exception on unexpected failure
+     */
+    @Test
+    public void errorHandlingOnClientSendingInvalidMessageAfterHandshake() throws Exception {
+        // handler = null because there is no need to handle tool execution requests here
+        MockClientStateHolder client1 = new MockClientStateHolder(null);
+        ClientSideUplinkSession clientSession1 = testContext.setUpSession(client1, SESSION_QUALIFIER_CLIENT1);
+        testContext.startSession(clientSession1);
+        client1.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals(UplinkSessionState.ACTIVE, clientSession1.getState());
+
+        client1.getUplinkConnection().getOutputStream()
+            // arbitrary error content: regular header size of 13 bytes, but 0x09090909 (bytes 8-11) is an invalid message size
+            .write(new byte[] { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9 });
+        client1.getUplinkConnection().getOutputStream().flush();
+
+        waitFor(SHORT_TIME); // wait for asynchronous execution
+        // assertEquals(UplinkSessionState.UNCLEAN_SHUTDOWN, clientSession1.getState());
+        assertFalse(client1.isSessionActive());
+        assertFalse(clientSession1.isActive());
+        assertTrue(clientSession1.isShuttingDownOrShutDown()); // should still be true
+        assertNotNull(client1.getSessionErrorMessage());
+        assertTrue(client1.getSessionErrorMessage(), client1.getSessionErrorMessage().contains("E#"));
+        // TODO (p2) >10.2: consider validating that the error should indicate a protocol violation; currently not the case
+
+        // validate that a second client can connect using the previously held namespace (login+clientId)
+        MockClientStateHolder client2 = new MockClientStateHolder(null);
+        ClientSideUplinkSession clientSession2 = testContext.setUpSession(client2, SESSION_QUALIFIER_CLIENT1);
+        testContext.startSession(clientSession2);
+        client2.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals(UplinkSessionState.ACTIVE, clientSession2.getState());
     }
 
     /**
@@ -275,7 +332,7 @@ public abstract class AbstractUplinkIntegrationTest {
             // handler = null because there is no need to handle tool execution requests here
             clients[i] = new MockClientStateHolder(null);
             // note: using the local virtual connection which always uses the same login name
-            ClientSideUplinkSession clientSession = testContext.setUpAndStartSession(clients[i], "sharedQ");
+            testContext.setUpAndStartSession(clients[i], "sharedQ");
         }
         waitFor(SHORT_TIME);
 
@@ -285,7 +342,7 @@ public abstract class AbstractUplinkIntegrationTest {
             if (clients[i].isSessionActive()) {
                 numActive++;
             }
-            if (clients[i].isSessionInFinalState()) {
+            if (clients[i].isSessionInTerminalState()) {
                 numRefused++;
             }
         }
@@ -298,7 +355,7 @@ public abstract class AbstractUplinkIntegrationTest {
 
         for (int i = 0; i < numClients; i++) {
             assertFalse(clients[i].isSessionActive());
-            assertTrue(clients[i].isSessionInFinalState());
+            assertTrue(clients[i].isSessionInTerminalState());
         }
     }
 
@@ -312,12 +369,11 @@ public abstract class AbstractUplinkIntegrationTest {
         // handler = null because there is no need to handle tool execution requests here
         MockClientStateHolder client1 = new MockClientStateHolder(null);
         final Map<String, String> customHandshakeParameters = new HashMap<>();
-        final String testMessage = "hf message";
+        final String testMessage = "failure test message";
         customHandshakeParameters.put(UplinkProtocolConstants.HANDSHAKE_KEY_SIMULATE_HANDSHAKE_FAILURE, testMessage);
         client1.setCustomHandshakeParameters(customHandshakeParameters);
         ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
-        waitFor(SHORT_TIME); // do not wait for session activation as it is not expected to happen
-        assertEquals(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1.getState());
+        awaitStateOrFail(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1);
         assertFalse(client1.isSessionActive());
         assertFalse(clientSession1.isActive());
         assertNotNull(client1.getSessionErrorMessage());
@@ -332,7 +388,10 @@ public abstract class AbstractUplinkIntegrationTest {
     }
 
     /**
-     * Error handling test that simulates the server side closing the connection due to a handshake error (e.g. protocol version mismatch).
+     * Error handling test that simulates the server side failing to send a handshake response in time while keeping the connection itself
+     * open. The client should react to this by closing the connection due to timeout, and closing the stream. This, in turn, should cause
+     * the server-side session to be closed if it wasn't already. As the final result, the server-side session should not hold a lock on the
+     * namespace id (login name + client id), either because it was never assigned in the first place, or because it has been released.
      * 
      * @throws Exception on unexpected failure
      */
@@ -344,13 +403,14 @@ public abstract class AbstractUplinkIntegrationTest {
         customHandshakeParameters.put(UplinkProtocolConstants.HANDSHAKE_KEY_SIMULATE_HANDSHAKE_RESPONSE_DELAY_ABOVE_TIMEOUT, null);
         client1.setCustomHandshakeParameters(customHandshakeParameters);
         ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
-        client1.waitForSessionActivation(
+        // the client-side code should return after the time given by the constant, so wait twice that time to avoid test timeouts
+        client1.waitForSessionInitCompletion(
             UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
         assertEquals(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1.getState());
         assertFalse(client1.isSessionActive());
         assertFalse(clientSession1.isActive());
         assertNotNull(client1.getSessionErrorMessage());
-        assertTrue(client1.getSessionErrorMessage().contains("handshake response within"));
+        assertTrue(client1.getSessionErrorMessage(), client1.getSessionErrorMessage().contains("timeout"));
         // verify that no redundant "handshake timeout" errors were reported
         assertFalse(client1.getInconsistentStateFlag()); // set true on duplicate callbacks
 
@@ -360,11 +420,44 @@ public abstract class AbstractUplinkIntegrationTest {
         // verify that another client can connect using the same qualifier (which fails if the first session was not properly cleaned up)
         MockClientStateHolder client1b = new MockClientStateHolder(null);
         ClientSideUplinkSession clientSession1b = testContext.setUpAndStartSession(client1b, SESSION_QUALIFIER_CLIENT1);
-        client1b.waitForSessionActivation(
+        client1b.waitForSessionInitCompletion(
             UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
         assertEquals(UplinkSessionState.ACTIVE, clientSession1b.getState());
         assertTrue(clientSession1b.isActive());
         assertNull(client1b.getSessionErrorMessage());
+
+        // wait a little, and verify that the failing session has not asynchronously changed state again (regression check)
+        waitFor(SHORT_TIME);
+        assertEquals(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR, clientSession1.getState());
+        assertFalse(clientSession1.isActive());
+    }
+
+    /**
+     * Error handling test that simulates the client side unexpectedly closing the data stream. Note that when testing with a simulated
+     * connection, this can only test a part of the actual live error behavior. For example, certain exceptions being thrown by the
+     * low-level network layer may cause different errors.
+     * 
+     * @throws Exception on unexpected failure
+     */
+    @Test
+    public void errorHandlingOnClientEOFDuringActiveSession() throws Exception {
+        // handler = null because there is no need to handle tool execution requests here
+        MockClientStateHolder client1 = new MockClientStateHolder(null);
+        final Map<String, String> customHandshakeParameters = new HashMap<>();
+        client1.setCustomHandshakeParameters(customHandshakeParameters);
+        ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
+        awaitStateOrFail(UplinkSessionState.ACTIVE, clientSession1);
+        assertTrue(client1.isSessionActive());
+        assertTrue(clientSession1.isActive());
+
+        final String expectedNamespaceId = "test----client1-";
+        assertTrue(mockServerSideUplinkEndpointService.isNamespaceAssigned(expectedNamespaceId));
+
+        simulateClientSideEOF(client1.getUplinkConnection());
+
+        waitFor(SHORT_TIME);
+
+        assertFalse(mockServerSideUplinkEndpointService.isNamespaceAssigned(expectedNamespaceId));
     }
 
     /**
@@ -377,14 +470,14 @@ public abstract class AbstractUplinkIntegrationTest {
         // handler = null because there is no need to handle tool execution requests here
         MockClientStateHolder client1 = new MockClientStateHolder(null);
         ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
-        client1.waitForSessionActivation(SHORT_TIME);
+        client1.waitForSessionInitCompletion(SHORT_TIME);
         assertEquals(UplinkSessionState.ACTIVE, clientSession1.getState());
         assertTrue(clientSession1.isActive());
 
         MockClientStateHolder client2 = new MockClientStateHolder(null);
         // set a different "session qualifier"/"client id" to simulate a second client using the same login
         ClientSideUplinkSession clientSession2 = testContext.setUpAndStartSession(client2, SESSION_QUALIFIER_CLIENT2);
-        client2.waitForSessionActivation(SHORT_TIME);
+        client2.waitForSessionInitCompletion(SHORT_TIME);
         assertEquals(UplinkSessionState.ACTIVE, clientSession2.getState());
         assertTrue(clientSession2.isActive());
 
@@ -396,9 +489,13 @@ public abstract class AbstractUplinkIntegrationTest {
 
         // client 1 sends an empty update
         final String client1DefaultDestinationId = client1.getAssignedDestinationIdPrefix();
-        // final String client2DefaultDestinationId = client2.getAssignedDestinationIdRoot();
-        // log.debug("Client 1's default destination id: " + client1DefaultDestinationId);
-        // log.debug("Client 2's default destination id: " + client2DefaultDestinationId);
+
+        // Briefly wait, as client2 receiving its session information does not mean the server has already fully activated the session yet.
+        // For non-empty updates, this would not happen (and is not the client's responsibly to wait for!), but here we are actively
+        // testing the forwarding of empty updates. If client2's session activates after this empty update, it will not receive the update,
+        // as empty tool list are not cached (by design), and therefore not sent to newly activating sessions; see #17410. -- misc_ro
+        waitFor(SHORT_TIME);
+        // TODO (p3) alternatively, add a mechanism to check/wait for server-side session activation to avoid waiting
 
         // publish an EMPTY descriptor list from client 1
         clientSession1
@@ -407,11 +504,12 @@ public abstract class AbstractUplinkIntegrationTest {
         waitFor(SHORT_TIME); // wait for asynchronous execution
 
         // only clients in other networks should see the update
-        assertThat(client1.getKnownComponentsByDestinationId().size(), is(0));
-        assertThat(client1.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), nullValue());
-        assertThat(client2.getKnownComponentsByDestinationId().size(), is(1));
-        assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), notNullValue());
-        assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(0));
+        assertThat("c1 visible tool lists = 0", client1.getKnownComponentsByDestinationId().size(), is(0));
+        assertThat("c1->c1 tool list = null", client1.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), nullValue());
+        assertThat("c2 visible tool lists = 1", client2.getKnownComponentsByDestinationId().size(), is(1));
+        assertThat("c2->c1 tool list != null", client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId),
+            notNullValue());
+        assertThat("c2->c1 tool list empty", client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(0));
 
         Set<String> groupSet = new HashSet<String>();
         groupSet.add(TEST_GROUP_A_ID);
@@ -425,16 +523,17 @@ public abstract class AbstractUplinkIntegrationTest {
         waitFor(SHORT_TIME); // wait for asynchronous execution
 
         // only clients in other networks should see the update
-        assertThat(client1.getKnownComponentsByDestinationId().size(), is(0));
-        assertThat(client1.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), nullValue());
-        assertThat(client2.getKnownComponentsByDestinationId().size(), is(1));
-        assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
-        assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).get(0).getToolId(), is(TEST_TOOL_1_ID));
+        assertThat("c1 visible tool lists = 0", client1.getKnownComponentsByDestinationId().size(), is(0));
+        assertThat("c1->c1 tool list = null", client1.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), nullValue());
+        assertThat("c2 visible tool lists = 1", client2.getKnownComponentsByDestinationId().size(), is(1));
+        assertThat("c2->c1 tool list: 1 entry", client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
+        assertThat("c2->c1 tool list: correct tool id",
+            client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).get(0).getToolId(), is(TEST_TOOL_1_ID));
 
         // connect another client to check that it receives the last cached updates
         MockClientStateHolder client3 = new MockClientStateHolder(null);
         ClientSideUplinkSession clientSession3 = testContext.setUpAndStartSession(client3, "client3"); // as above for client2
-        client3.waitForSessionActivation(SHORT_TIME);
+        client3.waitForSessionInitCompletion(SHORT_TIME);
         final String client3DefaultDestinationId = client3.getAssignedDestinationIdPrefix();
 
         // publish an single-entry descriptor list from client 3
@@ -453,15 +552,15 @@ public abstract class AbstractUplinkIntegrationTest {
         // client 2 should see client 1's and client 3's descriptors
         assertThat(client2.getKnownComponentsByDestinationId().size(), is(2));
         assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId), notNullValue());
-        assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
+        assertThat("c2->c1 tool list: 1 entry", client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
         assertThat(client2.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).get(0).getToolId(), is(TEST_TOOL_1_ID));
         assertThat(client2.getKnownComponentsByDestinationId().get(client3DefaultDestinationId), notNullValue());
-        assertThat(client2.getKnownComponentsByDestinationId().get(client3DefaultDestinationId).size(), is(1));
+        assertThat("c2->c3 tool list: 1 entry", client2.getKnownComponentsByDestinationId().get(client3DefaultDestinationId).size(), is(1));
         assertThat(client2.getKnownComponentsByDestinationId().get(client3DefaultDestinationId).get(0).getToolId(), is(TEST_TOOL_1_ID));
 
         // client 3 should see client 1's descriptor
         assertThat(client3.getKnownComponentsByDestinationId().size(), is(1));
-        assertThat(client3.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
+        assertThat("c3->c1 tool list: 1 entry", client3.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).size(), is(1));
         assertThat(client3.getKnownComponentsByDestinationId().get(client1DefaultDestinationId).get(0).getToolId(), is(TEST_TOOL_1_ID));
     }
 
@@ -506,17 +605,17 @@ public abstract class AbstractUplinkIntegrationTest {
 
         MockClientStateHolder client1 = new MockClientStateHolder(null);
         ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
-        client1.waitForSessionActivation(SHORT_TIME);
-        assertEquals(UplinkSessionState.ACTIVE, clientSession1.getState());
-        assertTrue(clientSession1.isActive());
+        client1.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals("client 1 ACTIVE?", UplinkSessionState.ACTIVE, clientSession1.getState());
+        assertTrue("clientSession1.isActive?", clientSession1.isActive());
 
         // register and connect client 2 with the mock tool execution handler
         MockClientStateHolder client2 = new MockClientStateHolder(actualToolExecutionMapper);
         // set a different "session qualifier"/"client id" to simulate a second client using the same login
         ClientSideUplinkSession clientSession2 = testContext.setUpAndStartSession(client2, SESSION_QUALIFIER_CLIENT2);
-        client2.waitForSessionActivation(SHORT_TIME);
-        assertEquals(UplinkSessionState.ACTIVE, clientSession2.getState());
-        assertTrue(clientSession2.isActive());
+        client2.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals("client2 ACTIVE?", UplinkSessionState.ACTIVE, clientSession2.getState());
+        assertTrue("clientSession2.isActive?", clientSession2.isActive());
 
         // the following code configures the part *requesting/calling* the test tool's execution from client 1
         DirectoryUploadProvider inputUploadProvider = new DirectoryUploadProvider() {
@@ -544,7 +643,7 @@ public abstract class AbstractUplinkIntegrationTest {
                 .authGroupId("MyGroup:22348asdbc")
                 // set a destination id from client 2's id namespace; note that beyond the assigned namespace prefix,
                 // the destination id has no meaning here; it would be interpreted by the actual ToolExecutionProvider
-                .destinationId(client2.getAssignedDestinationIdPrefix() + "arbitrary")
+                .destinationId(client2.getAssignedDestinationIdPrefix() + "toolLocationPart")
                 .build();
 
         // from here, the event expectations on the *requesting/calling* side are defined
@@ -576,7 +675,7 @@ public abstract class AbstractUplinkIntegrationTest {
 
         // trigger the actual execution chain from client 1
         final Optional<ToolExecutionHandle> executionHandleResult = clientSession1.initiateToolExecution(setup, eventHandlerMock);
-        assertTrue(executionHandleResult.isPresent());
+        assertTrue("executionHandleResult.isPresent?", executionHandleResult.isPresent());
         waitFor(SHORT_TIME); // wait for asynchronous execution
 
         if (testCancellation) {
@@ -585,7 +684,7 @@ public abstract class AbstractUplinkIntegrationTest {
         }
 
         // verify that client 2 received the execution request and created an execution provider
-        assertNull(client1.getLastExecutionProvider());
+        assertNull("client1.getLastExecutionProvider == null?", client1.getLastExecutionProvider());
         final MockToolExecutionProvider targetExecutionProvider = client2.getLastExecutionProvider();
         assertNotNull(targetExecutionProvider);
 
@@ -599,38 +698,40 @@ public abstract class AbstractUplinkIntegrationTest {
         EasyMock.verify(eventHandlerMock);
 
         // verify that execute() was called
-        assertTrue(targetExecutionProvider.wasExecuteCalled());
+        assertTrue("targetExecutionProvider.wasExecuteCalled?", targetExecutionProvider.wasExecuteCalled());
 
         if (testCancellation) {
-            assertTrue(targetExecutionProvider.wasCancelCalled());
+            assertTrue("targetExecutionProvider.wasCancelCalled?", targetExecutionProvider.wasCancelCalled());
         } else {
-            assertFalse(targetExecutionProvider.wasCancelCalled());
+            assertFalse("targetExecutionProvider.wasCancelCalled == false?", targetExecutionProvider.wasCancelCalled());
         }
 
         // verify that the execution provider received the input files
-        assertEquals(2, targetExecutionProvider.getReceivedInputFiles().size());
+        assertEquals("received expected input files", 2, targetExecutionProvider.getReceivedInputFiles().size());
         // verify that the execution provider received the input directory sub-directories
-        assertNotNull(targetExecutionProvider.getReceivedListOfInputSubDirectories());
-        assertEquals(2, targetExecutionProvider.getReceivedListOfInputSubDirectories().size());
-        assertTrue(targetExecutionProvider.getReceivedListOfInputSubDirectories().contains("subdir1"));
-        assertTrue(targetExecutionProvider.getReceivedListOfInputSubDirectories().contains("subdir2"));
+        assertNotNull("received list if input subdirs", targetExecutionProvider.getReceivedListOfInputSubDirectories());
+        assertEquals("received expected number of input subdirs", 2, targetExecutionProvider.getReceivedListOfInputSubDirectories().size());
+        assertTrue("subdir1 present", targetExecutionProvider.getReceivedListOfInputSubDirectories().contains("subdir1"));
+        assertTrue("subdir2 present", targetExecutionProvider.getReceivedListOfInputSubDirectories().contains("subdir2"));
         // note: these file assertions rely on the file list currently having a stable ordering; if this changes,
         // adapt these lines as this is not an actual error
-        assertEquals(TEST_INPUT_FILE_PATH + ":" + TEST_INPUT_FILE_CONTENT_BYTES.length + ":" + TEST_INPUT_FILE_CONTENT,
+        assertEquals("input file 1 signature",
+            TEST_INPUT_FILE_PATH + ":" + TEST_INPUT_FILE_CONTENT_BYTES.length + ":" + TEST_INPUT_FILE_CONTENT,
             targetExecutionProvider.getReceivedInputFiles().get(0).getSignature());
-        assertEquals(TEST_EMPTY_INPUT_FILE_PATH + ":0:",
+        assertEquals("input file 2 (empty) signature", TEST_EMPTY_INPUT_FILE_PATH + ":0:",
             targetExecutionProvider.getReceivedInputFiles().get(1).getSignature());
 
         // verify that the execution caller received the output file
         final FileDataSource receivedOutputFile = outputFileCapture.getValue();
-        assertEquals(TEST_OUTPUT_FILE_PATH, receivedOutputFile.getRelativePath());
-        assertEquals(TEST_OUTPUT_FILE_CONTENT_BYTES.length, receivedOutputFile.getSize());
-        assertArrayEquals(TEST_OUTPUT_FILE_CONTENT_BYTES, IOUtils.toByteArray(receivedOutputFile.getStream()));
+        assertEquals("output file path", TEST_OUTPUT_FILE_PATH, receivedOutputFile.getRelativePath());
+        assertEquals("output file size", TEST_OUTPUT_FILE_CONTENT_BYTES.length, receivedOutputFile.getSize());
+        assertArrayEquals("output file content", TEST_OUTPUT_FILE_CONTENT_BYTES, IOUtils.toByteArray(receivedOutputFile.getStream()));
 
         // verify the content of the ToolExecutionResult object
         ToolExecutionResult toolExecutionResult = toolExecutionResultCapture.getValue();
-        assertEquals(true, toolExecutionResult.successful); // mock result
-        assertEquals(false, toolExecutionResult.cancelled); // mock result
+        assertEquals("result.successful == true?", true, toolExecutionResult.successful); // mock result
+        // FIXME: shouldn't this be "true" in the cancellation test case? at least mocked? -- misc_ro, 2020-09-01
+        assertEquals("result.cancelled == false?", false, toolExecutionResult.cancelled); // mock result
 
         // TODO (p1) 11.0: enable this check once ChannelEndpoint.dispose() is actually being called
         // assertTrue(targetExecutionProvider.wasContextClosingCalled());
@@ -664,7 +765,7 @@ public abstract class AbstractUplinkIntegrationTest {
                         final PipedOutputStream providerOutputStream = new PipedOutputStream();
                         final PipedInputStream providerInputStream = new PipedInputStream(providerOutputStream);
                         // spawn a thread to asynchronously create the documentation data
-                        ConcurrencyUtils.getAsyncTaskService().execute("Provide test docs data stream", () -> {
+                        asyncTaskService.execute("Provide test docs data stream", () -> {
                             try {
                                 // wait for a bit so that the stream data is not already available when the return object is processed
                                 Thread.sleep(SHORT_TIME);
@@ -686,8 +787,8 @@ public abstract class AbstractUplinkIntegrationTest {
 
         // set a different "session qualifier"/"client id" to simulate a second client using the same login
         ClientSideUplinkSession clientSession2 = testContext.setUpAndStartSession(client2, SESSION_QUALIFIER_CLIENT2);
-        client1.waitForSessionActivation(SHORT_TIME);
-        client2.waitForSessionActivation(SHORT_TIME);
+        client1.waitForSessionInitCompletion(SHORT_TIME);
+        client2.waitForSessionInitCompletion(SHORT_TIME);
 
         // create an arbitrary destination id within the virtual network connected via client 2
         String destinationId = client2.getAssignedDestinationIdPrefix() + "netInternalId";
@@ -715,7 +816,78 @@ public abstract class AbstractUplinkIntegrationTest {
         validateMockDocumentationStream(result.get(), DOCUMENTATION_SIZE_LARGER_THAN_MESSAGE_BLOCK);
     }
 
+    @Test(timeout = 120000)
+    // regression test for issue #17448
+    public void regressionTestDeadlockOnToolUpdates() throws InterruptedException, TimeoutException, OperationFailureException {
+        MockClientStateHolder client1 = new MockClientStateHolder(null);
+        ClientSideUplinkSession clientSession1 = testContext.setUpAndStartSession(client1, SESSION_QUALIFIER_CLIENT1);
+        client1.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals("client 1 ACTIVE?", UplinkSessionState.ACTIVE, clientSession1.getState());
+        assertTrue("clientSession1.isActive?", clientSession1.isActive());
+
+        final AtomicBoolean shouldTerminate = new AtomicBoolean();
+        final AtomicBoolean encounteredError = new AtomicBoolean();
+        final UplinkProtocolMessageConverter messageConverter = new UplinkProtocolMessageConverter("Test util");
+
+        asyncTaskService.execute("Continuously trigger tool list updates", () -> {
+            // give the clients a little head start
+            waitFor(SHORT_TIME * 5);
+            log.debug("Starting to send continuous tool list updates from client " + SESSION_QUALIFIER_CLIENT1);
+            int count = 0;
+            while (!shouldTerminate.get()) {
+                try {
+                    ToolDescriptorListUpdate update = new ToolDescriptorListUpdate("dummy", "dummy", new ArrayList<>());
+                    clientSession1
+                        .enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
+                            messageConverter.encodeToolDescriptorListUpdate(update));
+                    Thread.sleep(1); // add a minimal wait time to avoid driving the other clients into timeout by sheer message volume
+                    count++;
+                } catch (IOException | InterruptedException e) {
+                    encounteredError.set(true);
+                    shouldTerminate.set(true);
+                    log.error("Failed to send tool update: " + e.toString());
+                }
+            }
+            log.debug("Total tool list updates sent from client " + SESSION_QUALIFIER_CLIENT1 + ": " + count);
+        });
+
+        final int numConnectCycleClients = 5;
+        final int connectCyclesPerClient = 20;
+        final int totalTimeoutSeconds = 60;
+
+        CountDownLatch cdl = new CountDownLatch(numConnectCycleClients);
+        for (int clientIndex = 1; clientIndex <= numConnectCycleClients; clientIndex++) {
+            final String clientId = "cycler" + Integer.toString(clientIndex);
+            asyncTaskService.execute("Simulate single client", () -> {
+                try {
+                    for (int i = 1; i <= connectCyclesPerClient; i++) {
+                        try {
+                            performAndVerifyConnectDisconnectCycle(clientId);
+                        } catch (OperationFailureException | InterruptedException | TimeoutException | AssertionError e) {
+                            // important: catch AssertionErrors here, too!
+                            encounteredError.set(true);
+                            log.error("Error during connect/disconnect cycle " + i + " of client " + clientId + ": " + e.toString());
+                            break; // exit loop
+                        }
+                    }
+                } finally {
+                    cdl.countDown();
+                }
+            });
+        }
+
+        try {
+            cdl.await(totalTimeoutSeconds, TimeUnit.SECONDS);
+            log.debug("All cycling threads terminated within the time limit (regardless of error status)");
+            assertFalse("A (potentially) async error has occurred; check the log output", encounteredError.get());
+        } finally {
+            shouldTerminate.set(true);
+        }
+    }
+
     protected abstract UplinkConnection setUpClientConnection();
+
+    protected abstract void simulateClientSideEOF(UplinkConnection connection);
 
     protected ServerSideUplinkSessionServiceImpl getMockServerSideUplinkSessionService() {
         return mockServerSideUplinkSessionService;
@@ -727,6 +899,35 @@ public abstract class AbstractUplinkIntegrationTest {
         } catch (InterruptedException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private void awaitStateOrFail(UplinkSessionState targetState, ClientSideUplinkSession clientSession) {
+        int totalTimeWaited = 0;
+        while (clientSession.getState() != targetState) {
+            totalTimeWaited += STATE_WAITING_CHECK_INTERVAL;
+            if (totalTimeWaited < STATE_WAITING_TIMEOUT) {
+                try {
+                    Thread.sleep(STATE_WAITING_CHECK_INTERVAL);
+                } catch (InterruptedException e) {
+                    throw new AssertionError("Interrupted while waiting for state change of " + clientSession.getLogDescriptor() + " to "
+                        + targetState + ": " + e.toString());
+                }
+            } else {
+                fail("Client session " + clientSession.getLogDescriptor() + " did not reach its target state " + targetState + " within "
+                    + STATE_WAITING_TIMEOUT + " msec; final state: " + clientSession.getState());
+            }
+        }
+    }
+
+    private void performAndVerifyConnectDisconnectCycle(String clientId)
+        throws OperationFailureException, InterruptedException, TimeoutException, AssertionError {
+        MockClientStateHolder cylceTestClient = new MockClientStateHolder(null);
+        ClientSideUplinkSession clientSessionCycleTest = testContext.setUpAndStartSession(cylceTestClient, clientId);
+        cylceTestClient.waitForSessionInitCompletion(SHORT_TIME);
+        assertEquals("cycle test client ACTIVE?", UplinkSessionState.ACTIVE, clientSessionCycleTest.getState());
+        assertTrue("cycle test client session isActive?", clientSessionCycleTest.isActive());
+        clientSessionCycleTest.initiateCleanShutdownIfRunning();
+        awaitStateOrFail(UplinkSessionState.CLEAN_SHUTDOWN, clientSessionCycleTest); // throws AssertionError
     }
 
     private void generateMockDocumentationStream(final OutputStream providerOutputStream, int dataLength) throws IOException {

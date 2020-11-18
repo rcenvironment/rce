@@ -20,11 +20,11 @@ public class Messages extends NLS {
     /** Validation Message. */
     public static String noRootChosen;
 
+    /** Validation Message. */
+    public static String nonExistingRootChosen;
+
     /** Warning if not input is connected to an output. */
     public static String noInputForOutput;
-
-    /** Warning if input does not exist. */
-    public static String missingInput;
 
     /** Warning if placeholder cannot be matched. */
     public static String unmatchedFormatPlaceholder;
@@ -37,6 +37,12 @@ public class Messages extends NLS {
 
     /** Warning if input is connected to no output. */
     public static String noOutputForInput;
+
+    /** Warning if no workspace available. */
+    public static String noWorkspace;
+
+    /** Warning if root dir is not an absolute path. */
+    public static String noAbsolutePath;
 
     /**
      * Warning if output location has connected as well as unconnected inputs.

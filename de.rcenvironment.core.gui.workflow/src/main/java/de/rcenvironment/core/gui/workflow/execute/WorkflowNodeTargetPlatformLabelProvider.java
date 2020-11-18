@@ -19,11 +19,13 @@ import org.eclipse.jface.viewers.StyledCellLabelProvider;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.wizard.IWizard;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.custom.TreeEditor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Resource;
+import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -113,9 +115,9 @@ public class WorkflowNodeTargetPlatformLabelProvider extends StyledCellLabelProv
         boolean exactMatch = editingSupport.isNodeExactMatchRegardingComponentVersion(wfNode);
 
         if (!exactMatch) {
-            combo.setForeground(ColorPalette.getInstance().getWarningColor());
+            combo.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
         } else {
-            combo.setForeground(ColorPalette.getInstance().getBlackColor());
+            combo.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
         }
 
         if (combo.getItemCount() <= 1 && exactMatch) {

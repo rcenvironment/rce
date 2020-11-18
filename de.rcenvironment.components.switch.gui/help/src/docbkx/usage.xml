@@ -5,49 +5,66 @@
     <title>Switch Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-        <para>The Switch component forwards an input value to one of two outputs.</para>
+        <para>The Switch component forwards input values to one or more outputs. Whether or not an input is forwarded to a specific output depends 
+        on user-specified conditions.</para>
     </sect1>
     <sect1>
         <title>Rationale</title>
         <para>The Switch component allows to direct the data flow within a workflow. It receives
-            input values at one pre-defined input and forwards them to one of two pre-defined
-            outputs. To which one the values are forwarded depends on a condition. The condition is
-            configured by the user within the Switch component. It can be based on the values
-            received at the pre-defined input or on values received at additional inputs.</para>
+            input values (so-called data input) and forwards them to at least one output (so-called data output). 
+            It depends on user-specified conditions to which output the values are forwarded.
+            Each condition may evaluate the data input values as well as so-called condition inputs.
+            These inputs can be defined but will not be forwarded.
+            </para>
     </sect1>
     <sect1>
         <title>Usage</title>
-        <para>The Switch component has a pre-defined input 'To forward'. Values, which are received
-            at that input are forwarded to one of the two outputs. That input is a so-called 'data
-            input'. The default data type of the data input is float. Change the data type to the
-            one you require to forward. Besides that input, you can create as many inputs as you
-            like. They are intended to be used within the condition definition and are so-called
-            'condition inputs'. Note: If you like to direct data of multiple inputs you need to add
-            multiple Switch components to your workflow.</para>
+        <para>On the 'Inputs/Outputs' tab the user can define the data inputs to be forwarded. 
+        	The default data type of a data input is float. Change the data type to the
+            one you require to forward. For each data input several data outputs will be generated automatically. 
+            The quantity depends on the number of conditions which can be defined on the 'Condition' tab.
+            For one condition, two outputs are created. One output is used to forward the input value in case the 
+            condition is true, the other in case the condition is false. For more than one condition there will 
+            be one output for each condition plus one output in case no condition evaluates to true. If several 
+            conditions evaluate to true, the default behavior is that all input values are written to all 
+            related outputs. Optionally the user can decide to write the values only to one related output.</para>
+        <para>The naming scheme for the automatically created data outputs is as follows: 
+            <code>&lt;data input name>_condition &lt;condition_number></code> and <code>&lt;data_input_name>_no match</code>.
+            In addition to the data input, you can create condition inputs. 
+            They can only be used within the condition and will therefore not be forwarded.
+            The permissible data types are integer, float or boolean.
+            </para>
         <para><inlinegraphic fileref="../../images/image001.png"/></para>
-        <para>Define your condition within the 'Condition' tab. A condition may contain input names,
-            numbers, relational operators, and parenthesis. You can either insert input names and
-            valid operators from the drop down list on the right-hand side or you can write them by
-            yourself. Inputs can only be used within conditions if their data type is either
-            integer, float or boolean. The data input automatically appears in the drop down list,
-            if it is of an allowed data type.</para>
+        <para>Define your conditions on the 'Condition' tab. A condition may contain data inputs, condition inputs,
+            numbers, relational operators and parentheses. You can insert inputs and
+            valid operators by hand or you can select them from the drop down list on the right-hand side.
+            Inputs can only be used within conditions, if their data type is either
+            integer, float or boolean. Only inputs of permissible data types are shown in the drop down list.
+            You can add or remove conditions using the plus and minus buttons on the left-hand side.</para>
+        <para>You can control to which output the values will be written in case several conditions 
+            hold true via the option 'Write values only for the first applicable condition'. If this option is set,
+            the data inputs will be forwarded only to the outputs related to the first applicable condition. Otherwise 
+            the values will be written to all outputs related to conditions that evaluate to true. You can adjust the order 
+            of the conditions via the arrow buttons on the left-hand side.    
+             </para>
         <para><inlinegraphic fileref="../../images/image002.png"/></para>
         <para>There are three options available that define the behavior of the Switch component within loops.
         In the 'Loop Control' tab you can choose between:
         <itemizedlist>
                     <listitem>
-                        <para>Never close outputs: Use this option if the switch component is used outside of a loop or if it is not supposed to control the loop.</para>
+                        <para>Never close outputs: Use this option if the switch component 
+                        is used outside of a loop or if it is not supposed to control the loop.</para>
                     </listitem>
                     <listitem>
-                        <para>Close outputs on 'True': Use this option if the switch component is
-                        supposed to control the loop. All inputs which are connected to the output
-                        'True' will be closed. Note that a component is finished if all of its
-                        inputs are closed.</para>
+                        <para>Close outputs on condition number: Select a condition number from the provided drop down menu.
+                        Use this option if the switch component is supposed to control a loop. All inputs of successive components in the workflow
+                        which are connected to any output ending with <code>_condition &lt;condition number></code> will be closed. 
+                        Note that a component is finished if all of its inputs are closed.</para>
                     </listitem>
                     <listitem>
-                        <para>Close outputs on 'False': Use this option if the switch component is
-                        supposed to control the loop. All inputs which are connected to the output
-                        'False' will be closed. Note that a component is finished if all of its
+                        <para>Close outputs if there is no match: Use this option if the switch component is
+                        supposed to control a loop. All inputs of successive components in the workflow which are connected to the outputs
+                        ending with <code>_no match</code> will be closed. Note that a component is finished if all of its
                         inputs are closed.</para>
                     </listitem>
                 </itemizedlist>

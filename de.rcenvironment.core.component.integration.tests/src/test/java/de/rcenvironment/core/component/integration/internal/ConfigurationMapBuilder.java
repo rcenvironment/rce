@@ -8,11 +8,9 @@
  
 package de.rcenvironment.core.component.integration.internal;
 
-import java.util.Map;
-
 import org.easymock.EasyMock;
 
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 
 /**
  * Utility class for constructing a configuration map for testing. For now, only certain values can be set, other setter functions may be
@@ -21,29 +19,15 @@ import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
  * @author Alexander Weinert
  */
 class ConfigurationMapBuilder {
-
-    private String toolIconPath = null;
-
-    private Boolean uploadIcon = null;
-
-    private String existingHash = null;
-
-    private String expectedHash = null;
-
-    private Long expectedModificationDate = null;
-
-    private String updatedToolIconPath = null;
-
-    private boolean expectUploadRemoval = false;
-
-    private Long modificationDate = null;
+    
+    private final ConfigurationMap mockedConfigurationMap = EasyMock.createMock(ConfigurationMap.class);
 
     /**
      * @param toolIconPathParam The value to be returned by configurationMap.get(KEY_TOOL_ICON_PATH).
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder toolIconPath(String toolIconPathParam) {
-        this.toolIconPath = toolIconPathParam;
+        EasyMock.expect(mockedConfigurationMap.getIconPath()).andStubReturn(toolIconPathParam);
         return this;
     }
 
@@ -52,7 +36,7 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder uploadIcon(Boolean uploadIconParam) {
-        this.uploadIcon = uploadIconParam;
+        EasyMock.expect(mockedConfigurationMap.shouldUploadIcon()).andStubReturn(uploadIconParam);
         return this;
     }
 
@@ -61,7 +45,7 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder hash(String hashParam) {
-        this.existingHash = hashParam;
+        EasyMock.expect(this.mockedConfigurationMap.getIconHash()).andStubReturn(hashParam);
         return this;
     }
 
@@ -70,7 +54,8 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder expectHash(String expectedHashParam) {
-        this.expectedHash = expectedHashParam;
+        this.mockedConfigurationMap.setIconHash(expectedHashParam);
+        EasyMock.expectLastCall();
         return this;
     }
 
@@ -79,7 +64,8 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder expectModificationDate(Long expectedModificationDateParam) {
-        this.expectedModificationDate = expectedModificationDateParam;
+        this.mockedConfigurationMap.setIconModificationDate(expectedModificationDateParam);
+        EasyMock.expectLastCall();
         return this;
     }
 
@@ -88,7 +74,8 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder expectToolIconPathUpdate(String toolIconPathParam) {
-        this.updatedToolIconPath = toolIconPathParam;
+        this.mockedConfigurationMap.setIconPath(toolIconPathParam);
+        EasyMock.expectLastCall();
         return this;
     }
 
@@ -98,58 +85,24 @@ class ConfigurationMapBuilder {
      * @return This builder for daisy-chaining.
      */
     public ConfigurationMapBuilder expectUploadRemoval() {
-        this.expectUploadRemoval = true;
+        this.mockedConfigurationMap.doNotUploadIcon();
+        EasyMock.expectLastCall();
         return this;
     }
 
     public ConfigurationMapBuilder modificationDate(long modificationDateParam) {
-        this.modificationDate = modificationDateParam;
+        EasyMock.expect(this.mockedConfigurationMap.getIconModificationDate()).andStubReturn(modificationDateParam);
         return this;
     }
 
     /**
      * @return A mock of map with the given configuration.
      */
-    public Map<String, Object> build() {
-        @SuppressWarnings("unchecked") final Map<String, Object> configurationMap = EasyMock.createMock(Map.class);
+    public ConfigurationMap build() {
 
-        if (toolIconPath != null) {
-            EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)).andStubReturn(toolIconPath);
-        }
+        EasyMock.replay(this.mockedConfigurationMap);
 
-        if (uploadIcon != null) {
-            EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON)).andStubReturn(uploadIcon);
-        }
-
-        if (existingHash != null) {
-            EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_ICON_HASH)).andStubReturn(existingHash);
-        }
-
-        if (expectedHash != null) {
-            EasyMock.expect(configurationMap.put(ToolIntegrationConstants.KEY_ICON_HASH, expectedHash)).andStubReturn(existingHash);
-        }
-
-        if (expectedModificationDate != null) {
-            EasyMock.expect(configurationMap.put(ToolIntegrationConstants.KEY_ICON_MODIFICATION_DATE, expectedModificationDate))
-                .andStubReturn(null);
-        }
-
-        if (updatedToolIconPath != null) {
-            EasyMock.expect(configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, updatedToolIconPath))
-                .andStubReturn(toolIconPath);
-        }
-
-        if (expectUploadRemoval) {
-            EasyMock.expect(configurationMap.remove(ToolIntegrationConstants.KEY_UPLOAD_ICON)).andStubReturn(uploadIcon);
-        }
-
-        if (modificationDate != null) {
-            EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_ICON_MODIFICATION_DATE)).andStubReturn(modificationDate);
-        }
-
-        EasyMock.replay(configurationMap);
-
-        return configurationMap;
+        return this.mockedConfigurationMap;
 
     }
 

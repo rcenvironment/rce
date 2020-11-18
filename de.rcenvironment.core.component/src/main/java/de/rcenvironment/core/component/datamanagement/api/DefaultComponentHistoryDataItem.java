@@ -48,9 +48,9 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
     /** Serialization key for value. */
     public static final String VALUE = "v";
 
-    private static final long serialVersionUID = -3420034372755242546L;
+    protected static final String FORMAT_VERSION_COMMON = "f_vc";
 
-    private static final String FORMAT_VERSION_COMMON = "f_vc";
+    private static final long serialVersionUID = -3420034372755242546L;
 
     private static final String FORMAT_VERSION_1 = "1";
 

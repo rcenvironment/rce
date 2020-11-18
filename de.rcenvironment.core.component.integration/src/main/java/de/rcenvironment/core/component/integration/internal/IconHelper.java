@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,8 +19,8 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationServiceImpl.IconSize;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -51,8 +50,8 @@ public final class IconHelper {
      * @param configurationMap The map describing the configuration of the tool to be integrated.
      * @param toolConfigFile The configuration.json-file.
      */
-    public void prescaleAndCopyIcon(Map<String, Object> configurationMap, File toolConfigFile) {
-        final String toolIconPath = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
+    public void prescaleAndCopyIcon(ConfigurationMap configurationMap, File toolConfigFile) {
+        final String toolIconPath = configurationMap.getIconPath();
         final boolean toolIconPathSpecified = (toolIconPath != null) && (!toolIconPath.isEmpty());
         if (!toolIconPathSpecified) {
             return;
@@ -76,7 +75,7 @@ public final class IconHelper {
         // We cannot guarantee that there is a value stored for whether or not the tool icon shall be copied to the tool integration folder,
         // as the configurationMap may result either from the tool integration wizard (which should contain a value for this option), or
         // from reading a configuration.json from the disk (which should not contain a value for this option).
-        final Object uploadIconSelection = (configurationMap.get(ToolIntegrationConstants.KEY_UPLOAD_ICON));
+        final Object uploadIconSelection = configurationMap.shouldUploadIcon();
         final boolean sourceIconShallBeCopied = (uploadIconSelection != null) && ((Boolean) uploadIconSelection);
 
         // In order to determine whether the icon file can be copied, we also have to check if the path to the file is absolute. A relative
@@ -89,10 +88,10 @@ public final class IconHelper {
                 fileAccess.copyFile(icon, destination);
                 // By only writing icon.getName() into the configuration map instead, we implicitly state that the path to the tool icon is
                 // relative to the tool configuration folder.
-                configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getName());
+                configurationMap.setIconPath(icon.getName());
                 // Since we have copied the icon to the tool integration folder, we can remove the obligation to do so from the
                 // configuration map
-                configurationMap.remove(ToolIntegrationConstants.KEY_UPLOAD_ICON);
+                configurationMap.doNotUploadIcon();
             } catch (IOException e) {
                 LOGGER.warn("Could not copy icon to tool directory: ", e);
             }
@@ -102,8 +101,8 @@ public final class IconHelper {
             tryPrescaleAndStoreIcon(iconImage, iconSize, toolConfigFile);
         }
 
-        configurationMap.put(ToolIntegrationConstants.KEY_ICON_HASH, md5Hash);
-        configurationMap.put(ToolIntegrationConstants.KEY_ICON_MODIFICATION_DATE, icon.lastModified());
+        configurationMap.setIconHash(md5Hash);
+        configurationMap.setIconModificationDate(icon.lastModified());
     }
 
     /**
@@ -138,7 +137,7 @@ public final class IconHelper {
      * @param toolDirFile A {@link File} describing the tool integration folder.
      * @return A byte array containing an icon of the given size or null, if no such icon could be found
      */
-    public byte[] getIcon(IconSize iconSize, Map<String, Object> configurationMap, File toolDirFile) {
+    public byte[] getIcon(IconSize iconSize, ConfigurationMap configurationMap, File toolDirFile) {
         final byte[] prescaledIcon = tryGetPrescaledIcon(iconSize, configurationMap, toolDirFile);
         if (prescaledIcon != null) {
             return prescaledIcon;
@@ -166,10 +165,10 @@ public final class IconHelper {
      * @return A byte array containing the icon for the component in the given file, or null, if no prescaled version of this icon exists or
      *         if there was an error during reading that version.
      */
-    private byte[] tryGetPrescaledIcon(IconSize iconSize, Map<String, Object> configurationMap, File toolDirFile) {
+    private byte[] tryGetPrescaledIcon(IconSize iconSize, ConfigurationMap configurationMap, File toolDirFile) {
         // First, if the content of the actual icon has not changed since the last write of the configuration file and the associated
         // pre-scaling, we try to load the pre-scaled version of the icon.
-        final String iconPath = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
+        final String iconPath = (String) configurationMap.getIconPath();
         if (iconPath == null || iconPath.isEmpty()) {
             return null;
         }
@@ -177,7 +176,7 @@ public final class IconHelper {
         // We first quickly check whether the file has been modified since the prescaled versions would have been created, if they exist.
         // This is faster than hashing the file later down the line to check for actual (likely) equality.
         final File icon = getIconFile(iconPath, toolDirFile);
-        final Long storedModifiedDate = (Long) configurationMap.get(ToolIntegrationConstants.KEY_ICON_MODIFICATION_DATE);
+        final Long storedModifiedDate = configurationMap.getIconModificationDate();
         if (storedModifiedDate == null || !storedModifiedDate.equals(icon.lastModified())) {
             return null;
         }
@@ -187,7 +186,7 @@ public final class IconHelper {
             return null;
         }
 
-        final String storedMd5Hash = (String) configurationMap.get(ToolIntegrationConstants.KEY_ICON_HASH);
+        final String storedMd5Hash = configurationMap.getIconHash();
         // Since the configurationMap may have been produced by reading a configuration file from the file system, we are not guaranteed to
         // obtain an icon hash from the configurationMap, i.e., storedMd5Hash may be null. We are, however, guaranteed that actualMd5Hash is
         // not null, as even an empty byte array has a non-null md5 hash. Thus, the expression actualMd5Hash.equals(storedMd5Hash) is
@@ -232,8 +231,8 @@ public final class IconHelper {
         }
     }
 
-    private byte[] getLivescaledIcon(int size, Map<String, Object> configurationMap, File toolDirFile) {
-        final String iconPath = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
+    private byte[] getLivescaledIcon(int size, ConfigurationMap configurationMap, File toolDirFile) {
+        final String iconPath = configurationMap.getIconPath();
         if (iconPath == null || iconPath.isEmpty()) {
             return null;
         }

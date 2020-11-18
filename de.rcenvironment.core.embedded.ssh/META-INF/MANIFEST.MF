@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.embedded.ssh.api,
@@ -35,6 +35,7 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  de.rcenvironment.core.component.workflow.execution.headless.api,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
@@ -51,10 +52,13 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
  org.apache.sshd.common;version="2.2.0",
+ org.apache.sshd.common.auth;version="2.5.0",
+ org.apache.sshd.common.channel;version="2.5.0",
  org.apache.sshd.common.file;version="2.2.0",
  org.apache.sshd.common.helpers;version="2.2.0",
  org.apache.sshd.common.kex;version="2.2.0",
  org.apache.sshd.common.keyprovider;version="2.2.0",
+ org.apache.sshd.common.session;version="2.5.0",
  org.apache.sshd.common.util;version="2.2.0",
  org.apache.sshd.server;version="2.2.0",
  org.apache.sshd.server.auth;version="2.2.0",

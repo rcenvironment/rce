@@ -93,5 +93,5 @@ public abstract class DataStreamDownloadWrapper<T extends SizeValidatedDataSourc
      * @param inputStream the input stream to wrap
      * @return the wrapper object
      */
-    public abstract T createReturnObject(long size, final PipedInputStream inputStream);
+    public abstract T createReturnObject(long size, PipedInputStream inputStream);
 }

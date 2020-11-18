@@ -40,6 +40,7 @@ import de.rcenvironment.core.configuration.ConfigurationServiceMessageEvent;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.bootstrap.ParameterException;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.bootstrap.SystemExitException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileUtils;
@@ -92,6 +93,8 @@ public class ConfigurationServiceImplTest {
      */
     @Before
     public void setup() throws IOException {
+        RuntimeDetection.allowSimulatedServiceActivation();
+        
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempFileService = TempFileServiceAccess.getInstance();
         mockInstallationDir = createTempDir("mockInstallationDir");

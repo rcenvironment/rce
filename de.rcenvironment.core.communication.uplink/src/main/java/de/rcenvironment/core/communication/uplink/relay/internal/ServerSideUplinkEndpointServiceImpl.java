@@ -10,6 +10,7 @@ package de.rcenvironment.core.communication.uplink.relay.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -153,6 +154,13 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
      */
     private final class DefaultChannelRelayEndpoint extends AbstractChannelEndpoint {
 
+        // the number of times to attempt finding an active session for an incoming request's destination;
+        // mostly to prevent (semantic) race conditions in automated setups
+        private static final int DEFAULT_CHANNEL_MATCH_ATTEMPTS = 3;
+
+        // the time to wait between attempts; this is mostly relevant for automated/scripted setups, so retry fairly quickly
+        private static final int DEFAULT_CHANNEL_MATCH_RETRY_INTERVAL = 500;
+
         private ServerSideUplinkSession initiatingSession;
 
         private DefaultChannelRelayEndpoint(ServerSideUplinkSession session) {
@@ -188,8 +196,11 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
             // decode the request
             ChannelCreationRequest request = messageConverter.decodeChannelCreationRequest(messageBlock);
             final String channelType = request.getType();
-            // determine the session responsible for the given destination id
-            Optional<ServerSideUplinkSession> optionalDestinationSession = determineSessionForDestinationId(request.getDestinationId());
+
+            // determine the session responsible for the given destination id, with a brief time window for retrying
+            Optional<ServerSideUplinkSession> optionalDestinationSession = findSessionForDestinationIdWithRetry(request.getDestinationId(),
+                DEFAULT_CHANNEL_MATCH_ATTEMPTS, DEFAULT_CHANNEL_MATCH_RETRY_INTERVAL);
+
             if (!optionalDestinationSession.isPresent()) {
                 log.warn("Received a channel creation request for destination id '" + request.getDestinationId()
                     + "', but there was no client session matching its destination prefix");
@@ -261,8 +272,8 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
 
     @Override
     public void setSessionActiveState(ServerSideUplinkSession session, boolean active) {
+        log.debug(StringUtils.format("[%s] Setting active state of session to %s", session.getLogDescriptor(), active));
         synchronized (crossSessionStateLock) {
-            log.debug("Setting the active state of session " + session + " to " + active);
             if (active) {
                 activeSessions.add(session);
                 sessionHandlers.put(session, new ServerSideSessionHandler(session));
@@ -280,7 +291,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     final ServerSideUplinkSession mappedSessionForNamespaceId = namespacesToSessionsMap.get(assignedNamespaceId.get());
                     if (mappedSessionForNamespaceId == session) {
                         // abnormal case; should not happen
-                        log.warn("Session " + session + " still had a namespace assigned when resetting its 'active' state");
+                        log.warn("[" + session + "] Session still had a namespace assigned when resetting its 'active' state");
                         // best-effort removal, as we are in an inconsistent state already
                         releaseNamespaceId(assignedNamespaceId.get(), session);
                     } else if (mappedSessionForNamespaceId != null) {
@@ -321,7 +332,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
             }
 
             namespacesToSessionsMap.put(namespaceId, newSession);
-            log.debug("Assigning namespace " + namespaceId + " to session " + newSession);
+            log.debug(StringUtils.format("[%s] Assigning namespace '%s'", newSession.getLogDescriptor(), namespaceId));
             return true;
         }
     }
@@ -331,7 +342,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
         synchronized (namespacesToSessionsMap) {
             final ServerSideUplinkSession existingSession = namespacesToSessionsMap.get(namespaceId);
             if (existingSession == null) {
-                // this can be regularily happen in cleanup/safeguard code; eliminate this message if it is logged too often
+                // this can be regularly happen in cleanup/safeguard code; eliminate this message if it is logged too often
                 log.debug("Ignoring request to release namespace " + namespaceId + FROM_SESSION + session
                     + " as it is not registered for any session");
                 return;
@@ -342,7 +353,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                 return;
             }
             namespacesToSessionsMap.remove(namespaceId);
-            log.debug("Releasing namespace " + namespaceId + FROM_SESSION + session);
+            log.debug(StringUtils.format("[%s] Releasing namespace '%s'", session.getLogDescriptor(), namespaceId));
         }
     }
 
@@ -358,10 +369,10 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
 
     private void processIncomingToolDescriptorUpdate(ToolDescriptorListUpdate update, ServerSideUplinkSession sourceSession,
         MessageBlock messageBlock) throws IOException {
+        log.debug(
+            "Forwarding a tool descriptor update from session " + sourceSession + " to " + activeSessions.size()
+                + " session(s)");
         synchronized (crossSessionStateLock) {
-            log.debug(
-                "Forwarding a tool descriptor update from session " + sourceSession + " to " + activeSessions.size()
-                    + " session(s)");
             if (!update.getToolDescriptors().isEmpty()) {
                 // non-empty update -> cache it
                 cachedToolDescriptorUpdatesByDestinationId.put(update.getDestinationId(), messageBlock);
@@ -455,7 +466,31 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
         return channelId;
     }
 
-    private Optional<ServerSideUplinkSession> determineSessionForDestinationId(String destinationId) {
+    private Optional<ServerSideUplinkSession> findSessionForDestinationIdWithRetry(String destinationId, int numAttempts,
+        int intervalMsec) {
+        Optional<ServerSideUplinkSession> result;
+        if (numAttempts < 1) {
+            throw new IllegalArgumentException();
+        }
+        int attempt = 1;
+        do {
+            if (attempt > 1) {
+                log.debug("Waiting " + intervalMsec + " msec for a matching session to become available");
+                try {
+                    Thread.sleep(intervalMsec);
+                } catch (InterruptedException e) {
+                    log.debug("Interrupted while waiting for retry; most likely, the application is shutting down");
+                    return Optional.empty();
+                }
+            }
+            result = findSessionForDestinationId(destinationId);
+
+        } while (!result.isPresent() && attempt < numAttempts);
+        return result;
+    }
+
+    private Optional<ServerSideUplinkSession> findSessionForDestinationId(String destinationId) {
+        // TODO could be optimized by extracting the session id substring and map lookup
         synchronized (activeSessions) {
             for (ServerSideUplinkSession session : activeSessions) {
                 // note: for this to work and be secure, it is important that the assigned prefixes can never be a prefix of each other,
@@ -464,6 +499,8 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     return Optional.of(session);
                 }
             }
+            log.debug("Received a destination id, but found no matching active session among "
+                + Arrays.toString(activeSessions.toArray()));
         }
         return Optional.empty();
     }
@@ -497,6 +534,18 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     + ", message type " + messageBlock.getType() + ",  channel id " + channelId);
             // TODO also close that session?
             return;
+        }
+    }
+
+    /**
+     * Introspection method for unit/integration tests.
+     * 
+     * @param namespace the namespace to check
+     * @return true if the namespace is assigned to a session, and therefore blocked for concurrent usage
+     */
+    public boolean isNamespaceAssigned(String namespace) {
+        synchronized (namespacesToSessionsMap) {
+            return namespacesToSessionsMap.containsKey(namespace);
         }
     }
 

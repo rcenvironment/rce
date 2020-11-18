@@ -38,6 +38,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.Platform;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -81,7 +85,10 @@ import de.rcenvironment.toolkit.utils.text.TextLinesReceiver;
  * @author Sascha Zur
  * @author Jascha Riedel (#14029)
  * @author Doreen Seider (tool run imitation, verification token handling)
+ * @author Kathrin Schaffert (#17088)
+ * @author Alexander Weinert (OSGI annotations)
  */
+@Component
 public class CommonToolIntegratorComponent extends DefaultComponent {
 
     private static final Object PLATFORM_ACCESS_LOCK = new Object();
@@ -244,7 +251,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.toURI().toString());
             } catch (URISyntaxException e) {
                 LOG.debug("Could not get installation dir with URI, trying URL. ", e);
-                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.getPath().toString());
+                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.getPath());
             }
         }
         sourceToolDirectory = new File(toolDirPath);
@@ -680,18 +687,34 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 script = replacePlaceholder(script, inputValues, inputNamesToLocalFile, SubstitutionContext.JYTHON);
                 try {
                     engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE);
+                    String inputFile;
                     if (!setToolDirectoryAsWorkingDirectory) {
                         engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
+                        // prepare the inputFile Script, which defines the InputFileFactory class (input_file_factory.py)
+                        String inputFileFactoryPath = workingPath + "Input";
+                        inputFile =
+                            ScriptingUtils.prepareInputFileFactoryScript(inputFileFactoryPath.replaceAll(ESCAPESLASH, SLASH));
                     } else {
                         engine.eval("RCE_Temp_working_path = " + QUOTE + createJythonPath(executionToolDirectory) + QUOTE);
+                        // prepare the inputFile Script, which defines the InputFileFactory class (input_file_factory.py)
+                        inputFile =
+                            ScriptingUtils
+                                .prepareInputFileFactoryScript(executionToolDirectory.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH));
                     }
                     String headerScript = ScriptingUtils.prepareHeaderScript(stateMap, componentContext, inputDirectory,
                         new LinkedList<File>());
                     engine.eval(headerScript);
+                    // prepare and execute the orderedDictionary Script, that we need for the InputFileFactory below
+                    // with upgrade to Jython > 2.7, the orderedDictionary will be obsolete
+                    // K. Schaffert, 13.03.2020
+                    String orderedDictionary = ScriptingUtils.prepareOrderedDictionaryScript();
+                    engine.eval(orderedDictionary);
+                    // execute the above defined inputFile Script (input_file_factory.py)
+                    engine.eval(inputFile);
                     engine.eval(prepareTableInput(inputValues));
                     exitCode = engine.eval(script);
                     String footerScript = "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = "
-                        + "RCE.get_closed_outputs_internal()\n"
+                        + "RCE.get_closed_outputs_internal()\nRCE_writtenInputFiles = RCE.get_written_input_files()\n"
                         + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                             WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
                     engine.eval(footerScript);
@@ -1024,10 +1047,12 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
     }
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     protected void bindScriptingService(final ScriptingService service) {
         scriptingService = service;
     }
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     protected void bindComponentDataManagementService(ComponentDataManagementService compDataManagementService) {
         datamanagementService = compDataManagementService;
     }
@@ -1059,7 +1084,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     }
 
     private String createJythonPath(File file) {
-        String path = file.getAbsolutePath().toString();
+        String path = file.getAbsolutePath();
         path = path.replaceAll(ESCAPESLASH, SLASH);
 
         String[] splitted = path.split(SLASH);

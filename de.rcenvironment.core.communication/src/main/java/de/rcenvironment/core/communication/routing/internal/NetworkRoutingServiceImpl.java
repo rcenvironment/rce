@@ -48,6 +48,7 @@ import de.rcenvironment.core.communication.routing.internal.v2.LinkStateKnowledg
 import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeException;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
@@ -223,6 +224,11 @@ public class NetworkRoutingServiceImpl
      * OSGi activate method.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         ownNodeInformation = nodeConfigurationService.getInitialNodeInformation();
         routedRequestTimeoutMsec = nodeConfigurationService.getRequestTimeoutMsec();
         forwardingTimeoutMsec = nodeConfigurationService.getForwardingTimeoutMsec();

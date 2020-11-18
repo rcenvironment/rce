@@ -24,6 +24,7 @@ import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecu
 import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideUplinkSessionEventHandler;
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescriptor;
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescriptorListUpdate;
+import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
 
@@ -44,43 +45,45 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
 
     private boolean sessionActiveState;
 
-    private CountDownLatch sessionActivationLatch = new CountDownLatch(1);
+    private CountDownLatch sessionInitCompleteLatch = new CountDownLatch(1);
 
     private Map<String, String> customHandshakeParameters;
 
-    private boolean sessionInFinalState;
+    private boolean sessionInTerminalState;
 
     private String sessionErrorMessage;
 
     // a general "something went wrong" flag that can be used to actively fail a surrounding test; not globally tested so far
     private boolean inconsistentStateFlag;
 
+    private UplinkConnection uplinkConnection;
+
     MockClientStateHolder(Function<ToolExecutionRequest, MockToolExecutionProvider> actualToolExecutionRequestHandler) {
         this.actualToolExecutionRequestHandler = actualToolExecutionRequestHandler;
     }
 
     @Override
-    public void onSessionReady(String namespaceId, String destinationIdPrefix) {
+    public void onSessionActivating(String namespaceId, String destinationIdPrefix) {
         assignedDestinationIdPrefix = destinationIdPrefix;
         if (sessionActiveState) { // consistency check
             inconsistentStateFlag = true;
             throw new IllegalStateException("Received more than one activation event");
         }
         sessionActiveState = true;
-        sessionActivationLatch.countDown();
+        sessionInitCompleteLatch.countDown();
     }
 
     @Override
-    public void onSessionTerminating() {
+    public void onActiveSessionTerminating() {
         if (!sessionActiveState) { // consistency check
             inconsistentStateFlag = true;
-            throw new IllegalStateException("Received more than one activation event");
+            throw new IllegalStateException("Received 'terminating' while not active");
         }
         sessionActiveState = false;
     }
 
     @Override
-    public synchronized void registerConnectionOrSessionError(UplinkProtocolErrorType errorType, String errorMessage) {
+    public synchronized void onFatalSessionError(UplinkProtocolErrorType errorType, String errorMessage) {
         Objects.requireNonNull(errorType); // consistency check
         if (sessionErrorMessage != null) {
             inconsistentStateFlag = true;
@@ -92,8 +95,8 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
 
     @Override
     public synchronized void onSessionInFinalState() {
-        this.sessionInFinalState = true;
-        sessionActivationLatch.countDown();
+        this.sessionInTerminalState = true;
+        sessionInitCompleteLatch.countDown();
     }
 
     public synchronized boolean isSessionActive() {
@@ -104,8 +107,8 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
         this.sessionErrorMessage = sessionErrorMessage;
     }
 
-    public synchronized boolean isSessionInFinalState() {
-        return sessionInFinalState;
+    public synchronized boolean isSessionInTerminalState() {
+        return sessionInTerminalState;
     }
 
     public synchronized String getSessionErrorMessage() {
@@ -145,8 +148,8 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
         return assignedDestinationIdPrefix;
     }
 
-    public void waitForSessionActivation(long timeoutMsec) throws InterruptedException, TimeoutException {
-        if (!sessionActivationLatch.await(timeoutMsec, TimeUnit.MILLISECONDS)) {
+    public void waitForSessionInitCompletion(long timeoutMsec) throws InterruptedException, TimeoutException {
+        if (!sessionInitCompleteLatch.await(timeoutMsec, TimeUnit.MILLISECONDS)) {
             throw new TimeoutException();
         }
     }
@@ -161,6 +164,14 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
 
     public boolean getInconsistentStateFlag() {
         return inconsistentStateFlag;
+    }
+
+    public UplinkConnection getUplinkConnection() {
+        return uplinkConnection;
+    }
+
+    public void setUplinkConnection(UplinkConnection uplinkConnection) {
+        this.uplinkConnection = uplinkConnection;
     }
 
 }

@@ -1,6 +1,6 @@
 {
   "identifier" : "eaa90fd6-875b-4d2b-b3e4-89d51e136a1e",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
     "name" : "API Jython",
@@ -110,13 +110,14 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "4"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "f69b4a80-0238-4833-8567-f60c987964b4",
@@ -126,8 +127,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "2a0c4386-32b0-4374-b626-6dda86a390a0",
@@ -137,8 +137,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     } ],
     "staticOutputs" : [ {
@@ -151,8 +150,7 @@
         "FromValue" : "1",
         "StepSize" : "1",
         "ToValue" : "1",
-        "fitStepSizeToBounds" : "true",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "fitStepSizeToBounds" : "true"
       }
     }, {
       "identifier" : "f667a57e-b0d2-4ed6-8b5c-b50c6dc721f1",
@@ -160,18 +158,7 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
-    }, {
-      "identifier" : "ad065ef6-c090-4884-877c-ac8387d6e347",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ]
   }, {
     "identifier" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
@@ -180,13 +167,14 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "4"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "870ba87a-4f36-4792-b2a2-4d05b86266e9",
@@ -196,8 +184,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "c12c0603-cee6-45c4-86e1-b3db532f2d79",
@@ -207,8 +194,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     } ],
     "staticOutputs" : [ {
@@ -221,8 +207,7 @@
         "FromValue" : "1",
         "StepSize" : "1",
         "ToValue" : "1",
-        "fitStepSizeToBounds" : "true",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "fitStepSizeToBounds" : "true"
       }
     }, {
       "identifier" : "d6bdc2ae-a01c-44e3-87cf-c95f1e5ddd28",
@@ -230,18 +215,7 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
-    }, {
-      "identifier" : "bba5fa7b-8e54-48b5-8bd4-a7464cd99061",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ]
   }, {
     "identifier" : "758dca4d-1250-4a49-abc9-f4c5e0d8b8b9",
@@ -250,13 +224,14 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "4"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "staticOutputs" : [ {
       "identifier" : "e3c076f8-ff90-47da-900a-8b69f5721fb6",
@@ -268,8 +243,7 @@
         "FromValue" : "0",
         "StepSize" : "1",
         "ToValue" : "10",
-        "fitStepSizeToBounds" : "true",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "fitStepSizeToBounds" : "true"
       }
     }, {
       "identifier" : "32149fad-ee1c-4d18-8689-db447a00f6cf",
@@ -277,18 +251,7 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
-    }, {
-      "identifier" : "ca7a6a53-c83a-4a16-9c5b-9dc7da9b3018",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ]
   }, {
     "identifier" : "d2793969-34f7-4e38-9693-5acdff148c6c",
@@ -297,13 +260,14 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "4"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "staticOutputs" : [ {
       "identifier" : "19fac3c3-fd34-4ede-860a-fe3e5e1ff36e",
@@ -315,8 +279,7 @@
         "FromValue" : "0",
         "StepSize" : "1",
         "ToValue" : "10",
-        "fitStepSizeToBounds" : "true",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "fitStepSizeToBounds" : "true"
       }
     }, {
       "identifier" : "40ce9b7a-2ac2-4ed1-b89c-62c95ab608a2",
@@ -324,18 +287,7 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
-    }, {
-      "identifier" : "02be207f-e46d-4cc4-947a-e0a4d50304d9",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ]
   }, {
     "identifier" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",

@@ -9,12 +9,12 @@
 package de.rcenvironment.components.outputwriter.gui;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 
@@ -39,8 +39,8 @@ public final class OutputWriterGuiUtils {
      * @param placeholders Array of possible placeholders
      * @return combo to select placeholders
      */
-    public static Combo createPlaceholderCombo(Composite parent, String[] placeholders) {
-        final Combo placeholderCombo = new Combo(parent, SWT.READ_ONLY);
+    public static CCombo createPlaceholderCombo(Composite parent, String[] placeholders) {
+        final CCombo placeholderCombo = new CCombo(parent, SWT.READ_ONLY | SWT.BORDER);
         placeholderCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
 
         placeholderCombo.setItems(placeholders);
@@ -57,7 +57,7 @@ public final class OutputWriterGuiUtils {
      * @param textfield The textfield into which the placeholders are inserted
      * @return button to insert placeholders
      */
-    public static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final Text textfield) {
+    public static Button createPlaceholderInsertButton(Composite parent, final CCombo placeholderCombo, final Text textfield) {
         Button insertButton = new Button(parent, SWT.PUSH);
         insertButton.setText(Messages.insertButtonText);
         insertButton.addSelectionListener(new SelectionListener() {
@@ -92,7 +92,7 @@ public final class OutputWriterGuiUtils {
      * @param textfield The textfield into which the placeholders are inserted
      * @return button to insert placeholders
      */
-    public static Button createPlaceholderInsertButton(Composite parent, final Combo placeholderCombo, final StyledText textfield) {
+    public static Button createPlaceholderInsertButton(Composite parent, final CCombo placeholderCombo, final StyledText textfield) {
         Button insertButton = new Button(parent, SWT.PUSH);
         insertButton.setText(Messages.insertButtonText);
         insertButton.addSelectionListener(new SelectionListener() {

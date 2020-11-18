@@ -21,6 +21,7 @@ import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualInstanceTestUtils;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualTopology;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -61,6 +62,7 @@ public abstract class AbstractVirtualInstanceTest extends AbstractTransportBased
      */
     @Before
     public void setUp() throws Exception {
+        RuntimeDetection.allowSimulatedServiceActivation();
         instanceUtils = new VirtualInstanceTestUtils(transportProvider, contactPointGenerator);
     }
 

@@ -8,15 +8,13 @@
 
 package de.rcenvironment.core.communication.uplink.relay.internal;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkEndpointService;
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSession;
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSessionService;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 
 /**
@@ -31,10 +29,11 @@ public class ServerSideUplinkSessionServiceImpl implements ServerSideUplinkSessi
 
     private ConcurrencyUtilsFactory concurrencyUtilsFactory;
 
+    
     @Override
-    public ServerSideUplinkSession createServerSideSession(String clientInformationString, String loginAccountName, InputStream inputStream,
-        OutputStream outputStream) {
-        return new ServerSideUplinkSessionImpl(clientInformationString, loginAccountName, inputStream, outputStream,
+    public ServerSideUplinkSession createServerSideSession(StreamConnectionEndpoint connectionEndpoint, String loginAccountName,
+        String clientInformationString) {
+        return new ServerSideUplinkSessionImpl(connectionEndpoint, loginAccountName, clientInformationString,
             serverSideUplinkEndpointService, concurrencyUtilsFactory);
     }
 

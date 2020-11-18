@@ -148,8 +148,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         }
 
         // Get SSH session
-        Session session;
-        session = sshService.getAvtiveSshSession(connectionId);
+        Session session = sshService.getAvtiveSshSession(connectionId);
 
         // Initialize scp context
         JSchRCECommandLineExecutor rceExecutor = new JSchRCECommandLineExecutor(session);

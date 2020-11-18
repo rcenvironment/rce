@@ -120,6 +120,7 @@ public class ScriptComponentTest {
         executor.deleteTempFiles();
         executor.reset();
         executor.deleteTempFiles();
+        executor.tearDown();
         EasyMock.replay(executor);
 
         context.addSimulatedInput("", "", DataType.Float, false, null);

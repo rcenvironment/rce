@@ -15,6 +15,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.authentication.AuthenticationService;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.login.AbstractLogin;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.NotificationService;
@@ -55,6 +56,11 @@ public class ServiceHandler {
      * @param context of the Bundle
      */
     public void activate(BundleContext context) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         bundleSymbolicName = context.getBundle().getSymbolicName();
 
         // LoginConfiguration loginConfiguration =
@@ -72,6 +78,11 @@ public class ServiceHandler {
      * @param context of the Bundle
      */
     public void deactivate(BundleContext context) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         notificationService.removePublisher(AbstractLogin.LOGIN_NOTIFICATION_ID);
     }
 

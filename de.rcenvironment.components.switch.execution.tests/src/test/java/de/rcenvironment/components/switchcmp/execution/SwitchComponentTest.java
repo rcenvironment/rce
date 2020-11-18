@@ -12,6 +12,9 @@ import static org.easymock.EasyMock.anyObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -24,7 +27,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.rcenvironment.components.switchcmp.common.Messages;
 import de.rcenvironment.components.switchcmp.common.SwitchComponentConstants;
+import de.rcenvironment.components.switchcmp.common.SwitchCondition;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
@@ -38,6 +46,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.testutils.ScriptingServiceStubFactory;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -47,6 +56,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author David Scholz
  * @author Doreen Seider
  * @author Alexander Weinert
+ * @author Kathrin Schaffert
  */
 public class SwitchComponentTest {
 
@@ -66,8 +76,6 @@ public class SwitchComponentTest {
 
     private static final String TRUE = "True";
 
-    private static final String FLOAT_11_1 = "11.1";
-
     private static final String RETURN_VALUE = "returnValue";
 
     private static final String SHIFT = " << 3";
@@ -83,6 +91,8 @@ public class SwitchComponentTest {
     private static final String NOT_DEFINED = "not defined";
 
     private static final String NOT_SUPPORTED_IN_SCRIPT = "not supported in script";
+    
+    private static final String DATA_INPUT_NAME = "Data_Input_Name";
 
     /**
      * Expected exception if script/validation fails.
@@ -127,31 +137,45 @@ public class SwitchComponentTest {
         component.dispose();
     }
 
+    // TODO: has to be replaced by a new mocking object SwitchComponentValidator
     /**
      * Tests behavior if no script is defined.
      * 
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testNoScriptInput() throws ComponentException {
-        final String condition = "";
+    public void testNoScriptInput() throws ComponentException, JsonProcessingException {
+
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition emptyCondition = new SwitchCondition(1, "");
+        conditionArray.add(emptyCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        Map<String, String> outputMetaData = new HashMap<>();
+
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID, DataType.Float,
+            true, outputMetaData);
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1",
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Float, true, null);
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH,
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Float, true, null);
 
         final ScriptEngine engine = createUnusedScriptEngineMock();
+
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
         context.addService(ScriptingService.class, scriptingService);
 
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
-            false,
-            null);
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
         context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, condition);
 
         scriptException.expect(ComponentException.class);
-        scriptException.expectMessage("No condition is defined");
+        scriptException.expectMessage(Messages.noConditionString);
 
         component.start();
 
-        EasyMock.verify(scriptingService, engine);
+        EasyMock.verify(scriptingService);
     }
 
     /**
@@ -159,13 +183,19 @@ public class SwitchComponentTest {
      * Test behavior if condition is true. (with historyDataItem)
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testTrueScript() throws ComponentException {
-        addSimpleInputAndOutput();
+    public void testTrueScript() throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(1);
 
-        final String condition = INPUT_X + " < " + INPUT_Y;
-        final String sanityCondition = createEvaluationScript("11.1 < 11.1");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition trueCondition = new SwitchCondition(1, INPUT_X + " < " + INPUT_Y);
+        conditionArray.add(trueCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition = varDefScript + createEvaluationScript(trueCondition.getConditionScript());
         final String actualCondition = createEvaluationScript("1.0 < 2.0");
 
         final ScriptEngine engine = createEvaluatingScriptEngineMock(sanityCondition, actualCondition, Boolean.TRUE);
@@ -179,8 +209,10 @@ public class SwitchComponentTest {
 
         EasyMock.verify(scriptingService, engine);
 
-        Assert.assertEquals(1, context.getCapturedOutput(SwitchComponentConstants.TRUE_OUTPUT).size());
-        Assert.assertEquals(0, context.getCapturedOutput(SwitchComponentConstants.FALSE_OUTPUT).size());
+        Assert.assertEquals(1,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1").size());
+        Assert.assertEquals(0,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH).size());
     }
 
     /**
@@ -188,13 +220,19 @@ public class SwitchComponentTest {
      * Test behavior if condition is false. (with historyDataItem)
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testFalseScript() throws ComponentException {
-        addSimpleInputAndOutput();
+    public void testFalseScript() throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(1);
 
-        final String condition = INPUT_X + " > " + INPUT_Y;
-        final String sanityCondition = createEvaluationScript("11.1 > 11.1");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition falseCondition = new SwitchCondition(1, INPUT_X + " > " + INPUT_Y);
+        conditionArray.add(falseCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition = varDefScript + createEvaluationScript(falseCondition.getConditionScript());
         final String actualCondition = createEvaluationScript("1.0 > 2.0");
 
         final ScriptEngine engine = createEvaluatingScriptEngineMock(sanityCondition, actualCondition, Boolean.FALSE);
@@ -208,8 +246,10 @@ public class SwitchComponentTest {
 
         EasyMock.verify(scriptingService, engine);
 
-        Assert.assertEquals(0, context.getCapturedOutput(SwitchComponentConstants.TRUE_OUTPUT).size());
-        Assert.assertEquals(1, context.getCapturedOutput(SwitchComponentConstants.FALSE_OUTPUT).size());
+        Assert.assertEquals(0,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1").size());
+        Assert.assertEquals(1,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH).size());
     }
 
     /**
@@ -217,13 +257,19 @@ public class SwitchComponentTest {
      * Test if syntax errors in script are recognized.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testSyntaxErrorInScript() throws ComponentException {
-        addSimpleInputAndOutput();
+    public void testSyntaxErrorInScript() throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(1);
 
-        final String condition = "(" + INPUT_Y + ">" + INPUT_X;
-        final String sanityCondition = createEvaluationScript("(11.1>11.1");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, "(" + INPUT_Y + ">" + INPUT_X);
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition = varDefScript + createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createThrowingScriptEngineMock(sanityCondition, SYNTAX_ERROR);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -241,13 +287,19 @@ public class SwitchComponentTest {
      * Test if invalid input names are recognized.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testUseOfInvalidInputNames() throws ComponentException {
-        addSimpleInputAndOutput();
+    public void testUseOfInvalidInputNames() throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(1);
 
-        final String condition = INPUT_Y + ">EvilName";
-        final String sanityCondition = createEvaluationScript("11.1>EvilName");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, INPUT_Y + "EvilName");
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+        
+        final String sanityCondition = varDefScript + createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createThrowingScriptEngineMock(sanityCondition, NOT_DEFINED);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -266,15 +318,21 @@ public class SwitchComponentTest {
      * Test behavior if invalid data types are used.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testUseOfInvalidDataTypesInScript() throws ComponentException {
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME,
-            DataType.Matrix, false, null);
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createMatrix(2, 2));
+    public void testUseOfInvalidDataTypesInScript() throws ComponentException, JsonProcessingException {
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID,
+            DataType.Matrix, true, null);
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createMatrix(2, 2));
 
-        final String condition = SwitchComponentConstants.DATA_INPUT_NAME + " < 3";
-        final String sanityCondition = createEvaluationScript("To_forward < 3");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, DATA_INPUT_NAME + " < 3");
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition = createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createThrowingScriptEngineMock(sanityCondition, NOT_SUPPORTED_IN_SCRIPT);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -292,44 +350,44 @@ public class SwitchComponentTest {
      * Test operators.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testAllOperators() throws ComponentException {
-        addSimpleInputAndOutput();
+    public void testAllOperators() throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(1);
         StringBuilder conditionBuilder = new StringBuilder();
-        StringBuilder sanityConditionBuilder = new StringBuilder();
         StringBuilder actualConditionBuilder = new StringBuilder();
 
         for (String operator : SwitchComponentConstants.OPERATORS) {
             conditionBuilder.append(INPUT_X);
-            sanityConditionBuilder.append(FLOAT_11_1);
             actualConditionBuilder.append(FLOAT_1_0);
             if (operator.equals(NOT)) {
                 conditionBuilder.append(AND + operator + SPACE);
-                sanityConditionBuilder.append(AND + operator + SPACE);
                 actualConditionBuilder.append(AND + operator + SPACE);
             } else if (operator.equals(FALSE) || operator.equals(TRUE)) {
                 conditionBuilder.append(EQUALS + operator + OR);
-                sanityConditionBuilder.append(EQUALS + operator + OR);
                 actualConditionBuilder.append(EQUALS + operator + OR);
             } else {
                 conditionBuilder.append(SPACE + operator + SPACE);
-                sanityConditionBuilder.append(SPACE + operator + SPACE);
                 actualConditionBuilder.append(SPACE + operator + SPACE);
             }
             conditionBuilder.append(INPUT_Y);
-            sanityConditionBuilder.append(FLOAT_11_1);
             actualConditionBuilder.append(FLOAT_2_0);
             conditionBuilder.append(AND);
-            sanityConditionBuilder.append(AND);
             actualConditionBuilder.append(AND);
         }
         conditionBuilder.append(INPUT_Y);
-        sanityConditionBuilder.append(FLOAT_11_1);
         actualConditionBuilder.append(FLOAT_2_0);
-        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, conditionBuilder.toString());
 
-        final String sanityConditionWithValues = createEvaluationScript(sanityConditionBuilder.toString());
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition allOperatorsCondition = new SwitchCondition(1, conditionBuilder.toString());
+        conditionArray.add(allOperatorsCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, condition);
+
+        final String sanityConditionWithValues = varDefScript + createEvaluationScript(conditionBuilder.toString());
         final String actualConditionWithValues = createEvaluationScript(actualConditionBuilder.toString());
 
         final ScriptEngine engine =
@@ -348,23 +406,37 @@ public class SwitchComponentTest {
      * Test valid data types in script.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testValidDataTypes() throws ComponentException {
+    public void testValidDataTypes() throws ComponentException, JsonProcessingException {
         context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
         context.addSimulatedInput(INPUT_Y, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Integer, true, null);
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME,
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID,
             DataType.Boolean, false, null);
-        context.addSimulatedOutput(SwitchComponentConstants.TRUE_OUTPUT, SwitchComponentConstants.TRUE_OUTPUT, DataType.Boolean, false,
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1",
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Boolean, false,
             null);
-        context.addSimulatedOutput(SwitchComponentConstants.FALSE_OUTPUT, SwitchComponentConstants.FALSE_OUTPUT, DataType.Boolean, false,
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH,
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Boolean, false,
             null);
         context.setInputValue(INPUT_X, typedDatumFactory.createFloat(1.0));
         context.setInputValue(INPUT_Y, typedDatumFactory.createInteger(2));
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createBoolean(true));
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createBoolean(true));
+        
+        StringBuilder varDefStringBuilder = new StringBuilder();
+        varDefStringBuilder.append(DATA_INPUT_NAME + " = True\n");
+        varDefStringBuilder.append(INPUT_X + " = 11.1\n");
+        varDefStringBuilder.append(INPUT_Y + " = 11\n");
+        String varDefScript = varDefStringBuilder.toString(); 
 
-        final String condition = INPUT_X + " < " + INPUT_Y + OR + SwitchComponentConstants.DATA_INPUT_NAME;
-        final String sanityCondition = createEvaluationScript("11.1 < 11 or True");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition allOperatorsCondition = new SwitchCondition(1, INPUT_X + " < " + INPUT_Y + OR + DATA_INPUT_NAME);
+        conditionArray.add(allOperatorsCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition = varDefScript + createEvaluationScript(allOperatorsCondition.getConditionScript());
         final String actualCondition = createEvaluationScript("1.0 < 2 or True");
 
         final ScriptEngine engine =
@@ -381,6 +453,7 @@ public class SwitchComponentTest {
         EasyMock.verify(engine, scriptingService);
     }
 
+    // TODO: has to be replaced by a new mocking object SwitchComponentValidator
     /**
      *
      * Test behavior if script is null.
@@ -389,20 +462,22 @@ public class SwitchComponentTest {
      */
     @Test
     public void testNullSwitch() throws ComponentException {
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
+
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID, DataType.Float,
             false,
             null);
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
         context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, null);
 
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(null);
         context.addService(ScriptingService.class, scriptingService);
 
         scriptException.expect(ComponentException.class);
-        scriptException.expectMessage("No condition is defined");
+        scriptException.expectMessage(Messages.noConditionKey);
         component.start();
 
         EasyMock.verify(scriptingService);
+
     }
 
     /**
@@ -410,12 +485,19 @@ public class SwitchComponentTest {
      * Test behavior if script contains "<<" or ">>".
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testScriptWithShiftAndFloatInputs() throws ComponentException {
+    public void testScriptWithShiftAndFloatInputs() throws ComponentException, JsonProcessingException {
 
-        final String condition = INPUT_X + SHIFT;
-        final String sanityCondition = createEvaluationScript("11.1 << 3");
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, INPUT_X + SHIFT);
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String varDefScript = INPUT_X + " = 11.1\n";
+        final String sanityCondition = varDefScript + createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createThrowingScriptEngineMock(sanityCondition, SYNTAX_ERROR);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -435,11 +517,19 @@ public class SwitchComponentTest {
      * Test behavior if script contains "<<" or ">>".
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testScriptWithShiftAndIntegerInputs() throws ComponentException {
-        final String condition = INPUT_X + SHIFT;
-        final String sanityCondition = createEvaluationScript("11 << 3");
+    public void testScriptWithShiftAndIntegerInputs() throws ComponentException, JsonProcessingException {
+
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, INPUT_X + SHIFT);
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String varDefScript = INPUT_X + " = 11\n";
+        final String sanityCondition = varDefScript + createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createSanityCheckScriptEngineMock(sanityCondition);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -457,11 +547,19 @@ public class SwitchComponentTest {
      * Test behavior if script contains "<<" or ">>".
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testScriptWithShiftAndBooleanInputs() throws ComponentException {
-        final String condition = INPUT_X + SHIFT;
-        final String sanityCondition = createEvaluationScript("True << 3");
+    public void testScriptWithShiftAndBooleanInputs() throws ComponentException, JsonProcessingException {
+
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition errorCondition = new SwitchCondition(1, INPUT_X + SHIFT);
+        conditionArray.add(errorCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String varDefScript = INPUT_X + " = True\n";
+        final String sanityCondition = varDefScript + createEvaluationScript(errorCondition.getConditionScript());
 
         final ScriptEngine engine = createSanityCheckScriptEngineMock(sanityCondition);
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
@@ -476,12 +574,37 @@ public class SwitchComponentTest {
 
     /**
      *
+     * Test behavior for more than one condition script. Output is written to all condition outputs.
+     *
+     * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
+     */
+    @Test
+    public void testWriteOutputToAllConditions() throws JsonProcessingException, ComponentException {
+        testWriteOutputOption(false);
+    }
+
+    /**
+     *
+     * Test behavior for more than one condition script and output is written only to first applicable condition.
+     *
+     * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
+     */
+    @Test
+    public void testWriteOutputToFirstCondition() throws JsonProcessingException, ComponentException {
+        testWriteOutputOption(true);
+    }
+
+    /**
+     *
      * Tests if outputs are closed properly based on the configuration set.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testOutputsNotClosed() throws ComponentException {
+    public void testOutputsNotClosed() throws ComponentException, JsonProcessingException {
         testClosingOutputs(SwitchComponentConstants.NEVER_CLOSE_OUTPUTS_KEY, true, false, false, false);
     }
 
@@ -490,10 +613,11 @@ public class SwitchComponentTest {
      * Tests if outputs are closed properly based on the configuration set.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testClosingOutputsOnTrue() throws ComponentException {
-        testClosingOutputs(SwitchComponentConstants.CLOSE_OUTPUTS_ON_TRUE_KEY, false, false, true, true);
+    public void testClosingOutputsOnTrue() throws ComponentException, JsonProcessingException {
+        testClosingOutputs(SwitchComponentConstants.CLOSE_OUTPUTS_ON_CONDITION_NUMBER_KEY, false, false, true, true);
     }
 
     /**
@@ -501,17 +625,24 @@ public class SwitchComponentTest {
      * Tests if outputs are closed properly based on the configuration set.
      *
      * @throws ComponentException on unexpected component failures.
+     * @throws JsonProcessingException
      */
     @Test
-    public void testClosingOutputsOnFalse() throws ComponentException {
-        testClosingOutputs(SwitchComponentConstants.CLOSE_OUTPUTS_ON_FALSE_KEY, true, false, false, true);
+    public void testClosingOutputsOnFalse() throws ComponentException, JsonProcessingException {
+        testClosingOutputs(SwitchComponentConstants.CLOSE_OUTPUTS_ON_NO_MATCH_KEY, true, false, false, true);
     }
 
     private void testClosingOutputs(String config, boolean firstValue, boolean outputsClosedAfterFirstRun,
-        boolean secondValue, boolean outputsClosedAfterSecondRun) throws ComponentException {
+        boolean secondValue, boolean outputsClosedAfterSecondRun) throws ComponentException, JsonProcessingException {
 
-        final String condition = SwitchComponentConstants.DATA_INPUT_NAME;
-        final String sanityCondition = createEvaluationScript(TRUE);
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition closingOutputCondition = new SwitchCondition(1, DATA_INPUT_NAME);
+        conditionArray.add(closingOutputCondition);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String varDefScript = DATA_INPUT_NAME + " = True\n";
+        final String sanityCondition = varDefScript + createEvaluationScript(closingOutputCondition.getConditionScript());
         final String actualConditionTrue = createEvaluationScript(TRUE);
         final String actualConditionFalse = createEvaluationScript(FALSE);
 
@@ -542,15 +673,19 @@ public class SwitchComponentTest {
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
         context.addService(ScriptingService.class, scriptingService);
 
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, null,
-            DataType.Boolean, false, null);
-        context.addSimulatedOutput(SwitchComponentConstants.TRUE_OUTPUT, null, DataType.Boolean, false, null);
-        context.addSimulatedOutput(SwitchComponentConstants.FALSE_OUTPUT, null, DataType.Boolean, false, null);
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID,DataType.Boolean, false, null);
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1",
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Boolean, false, null);
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH,
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Boolean, false, null);
         context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, condition);
         context.setConfigurationValue(config, "true");
+        if (config.equals(SwitchComponentConstants.CLOSE_OUTPUTS_ON_CONDITION_NUMBER_KEY)) {
+            context.setConfigurationValue(SwitchComponentConstants.SELECTED_CONDITION, "1");
+        }
         component.start();
 
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createBoolean(firstValue));
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createBoolean(firstValue));
         component.processInputs();
 
         if (outputsClosedAfterFirstRun) {
@@ -559,7 +694,7 @@ public class SwitchComponentTest {
             Assert.assertEquals(0, context.getCapturedOutputClosings().size());
         }
 
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createBoolean(secondValue));
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createBoolean(secondValue));
         component.processInputs();
 
         if (outputsClosedAfterSecondRun) {
@@ -569,29 +704,94 @@ public class SwitchComponentTest {
         }
     }
 
-    private void addSimpleInputAndOutput() {
+    private void testWriteOutputOption(boolean writeOutputOption) throws ComponentException, JsonProcessingException {
+        String varDefScript = addSimpleInputAndOutput(2);
+
+        // create conditions
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ArrayList<SwitchCondition> conditionArray = new ArrayList<>();
+        final SwitchCondition condition1 = new SwitchCondition(1, INPUT_X + "<" + DATA_INPUT_NAME);
+        final SwitchCondition condition2 = new SwitchCondition(2, INPUT_Y + "<" + DATA_INPUT_NAME);
+        conditionArray.add(condition1);
+        conditionArray.add(condition2);
+        String condition = mapper.writeValueAsString(conditionArray);
+
+        final String sanityCondition1 = varDefScript + createEvaluationScript(condition1.getConditionScript());
+        final String sanityCondition2 = varDefScript + createEvaluationScript(condition2.getConditionScript());
+        final String actualScript1 = createEvaluationScript("1.0<3.0");
+        final String actualScript2 = createEvaluationScript("2.0<3.0");
+
+        // create Mocking object
+        final ScriptEngine engine = EasyMock.createStrictMock(ScriptEngine.class);
+
+        try {
+            EasyMock.expect(engine.eval(sanityCondition1)).andReturn(null);
+            EasyMock.expect(engine.eval(sanityCondition2)).andReturn(null);
+
+            EasyMock.expect(engine.eval(actualScript1)).andReturn(null);
+            EasyMock.expect(engine.get(RETURN_VALUE)).andReturn(Boolean.TRUE);
+            if (Boolean.FALSE.equals(writeOutputOption)) {
+                EasyMock.expect(engine.eval(actualScript2)).andReturn(null);
+                EasyMock.expect(engine.get(RETURN_VALUE)).andReturn(Boolean.TRUE);
+            }
+
+        } catch (ScriptException e) {
+            // This will never happen, as we are calling eval(String) on a mocked ScriptEngine instead of the actual implementation
+        }
+        EasyMock.replay(engine);
+
+        final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
+        context.addService(ScriptingService.class, scriptingService);
+
+        // set configuration values
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, condition);
+        if (Boolean.FALSE.equals(writeOutputOption)) {
+            context.setConfigurationValue(SwitchComponentConstants.WRITE_OUTPUT_KEY, "false");
+        } else {
+            context.setConfigurationValue(SwitchComponentConstants.WRITE_OUTPUT_KEY, "true");
+        }
+
+        component.start();
+        component.processInputs();
+
+        EasyMock.verify(scriptingService, engine);
+        
+        Assert.assertEquals(1,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1").size());
+        Assert.assertEquals(0,
+            context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH).size());
+        if (Boolean.FALSE.equals(writeOutputOption)) {
+            Assert.assertEquals(1,
+                context.getCapturedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 2").size());
+        }
+    }
+
+    private String addSimpleInputAndOutput(int numberOfCOnditions) {
         context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
         context.addSimulatedInput(INPUT_Y, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
-            false,
-            null);
-        context.addSimulatedOutput(SwitchComponentConstants.TRUE_OUTPUT, SwitchComponentConstants.TRUE_OUTPUT, DataType.Float, false, null);
-        context.addSimulatedOutput(SwitchComponentConstants.FALSE_OUTPUT, SwitchComponentConstants.FALSE_OUTPUT, DataType.Float, false,
-            null);
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID, DataType.Float, true, null);
+        for (int i = 1; i <= numberOfCOnditions; i++) {
+            context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " " + i,
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Float, true, null);
+        }
+        context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH,
+            SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Float, true, null);
         context.setInputValue(INPUT_X, typedDatumFactory.createFloat(1.0));
         context.setInputValue(INPUT_Y, typedDatumFactory.createFloat(2.0));
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
+        context.setInputValue(DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
+        
+        StringBuilder varDefScript = new StringBuilder();
+        varDefScript.append(DATA_INPUT_NAME + " = 11.1\n");
+        varDefScript.append(INPUT_X + " = 11.1\n");
+        varDefScript.append(INPUT_Y + " = 11.1\n");
+        
+        return varDefScript.toString();
     }
 
     private String createEvaluationScript(String conditionWithValues) {
         return "if " + conditionWithValues + ":\n    returnValue=True\nelse:\n    returnValue=False";
     }
 
-    private ScriptEngine createUnusedScriptEngineMock() {
-        final ScriptEngine engine = EasyMock.createStrictMock(ScriptEngine.class);
-        EasyMock.replay(engine);
-        return engine;
-    }
 
     /**
      * @param sanityScript The script used by the switch component to check for basic syntax errors in the condition
@@ -652,5 +852,12 @@ public class SwitchComponentTest {
         EasyMock.replay(engine);
         return engine;
     }
+    
+    private ScriptEngine createUnusedScriptEngineMock() {
+        final ScriptEngine engine = EasyMock.createStrictMock(ScriptEngine.class);
+        EasyMock.replay(engine);
+        return engine;
+    }
 
 }
+

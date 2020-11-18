@@ -38,37 +38,9 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Sascha Zur
  * @author Doreen Seider
  * @author Markus Kunde
+ * @author Kathrin Schaffert
  */
 public final class PersistentComponentDescriptionUpdaterUtils {
-
-    /** json key. */
-    public static final String EP_IDENTIFIER = "epIdentifier";
-
-    private static final String INITIAL = "initial";
-
-    private static final String REQUIRED = "required";
-
-    private static final String CONFIGURATION = "configuration";
-
-    private static final String USAGE = "usage";
-
-    private static final String NAME = "name";
-
-    private static final String STATIC_OUTPUTS = "staticOutputs";
-
-    private static final String STATIC_INPUTS = "staticInputs";
-
-    private static final String DYNAMIC_INPUTS = "dynamicInputs";
-
-    private static final String DYNAMIC_OUTPUTS = "dynamicOutputs";
-
-    private static final String METADATA = "metadata";
-
-    private static final String DIRECTORY = "Directory";
-
-    private static final String DATATYPE = "datatype";
-
-    private static final String IDENTIFIER = "identifier";
 
     private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
@@ -89,10 +61,11 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         JsonNode dynEndpoints = node.get(direction);
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
-                if (endpoint.get(EP_IDENTIFIER) == null || endpoint.get(EP_IDENTIFIER).equals("null")
-                    || endpoint.get(EP_IDENTIFIER).isNull()) {
-                    ((ObjectNode) endpoint).remove(EP_IDENTIFIER);
-                    ((ObjectNode) endpoint).set(EP_IDENTIFIER, TextNode.valueOf(identifier));
+                if (endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER) == null
+                    || endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER).equals("null")
+                    || endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER).isNull()) {
+                    ((ObjectNode) endpoint).remove(PersistentComponentDescriptionConstants.EP_IDENTIFIER);
+                    ((ObjectNode) endpoint).set(PersistentComponentDescriptionConstants.EP_IDENTIFIER, TextNode.valueOf(identifier));
                 }
             }
         }
@@ -112,8 +85,10 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     public static PersistentComponentDescription removeOuterLoopDoneEndpoints(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
-        removeOuterLoopDoneEndpoint(node, STATIC_OUTPUTS, NAME, "Outer loop done");
-        removeOuterLoopDoneEndpoint(node, DYNAMIC_INPUTS, EP_IDENTIFIER, "outerLoopDone");
+        removeOuterLoopDoneEndpoint(node, PersistentComponentDescriptionConstants.STATIC_OUTPUTS,
+            PersistentComponentDescriptionConstants.NAME, "Outer loop done");
+        removeOuterLoopDoneEndpoint(node, PersistentComponentDescriptionConstants.DYNAMIC_INPUTS,
+            PersistentComponentDescriptionConstants.EP_IDENTIFIER, "outerLoopDone");
         return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
     }
 
@@ -142,10 +117,10 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     public static PersistentComponentDescription removeEndpointCharacterInfoFromMetaData(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
-        removeEndpointCharacterInfoFromMetaData(node, STATIC_INPUTS);
-        removeEndpointCharacterInfoFromMetaData(node, STATIC_OUTPUTS);
-        removeEndpointCharacterInfoFromMetaData(node, DYNAMIC_INPUTS);
-        removeEndpointCharacterInfoFromMetaData(node, DYNAMIC_OUTPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, PersistentComponentDescriptionConstants.STATIC_INPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, PersistentComponentDescriptionConstants.STATIC_OUTPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, PersistentComponentDescriptionConstants.DYNAMIC_INPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, PersistentComponentDescriptionConstants.DYNAMIC_OUTPUTS);
         return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
     }
 
@@ -155,8 +130,8 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 JsonNode endpointJsonNode = elements.next();
-                if (endpointJsonNode.has(METADATA)) {
-                    JsonNode metaDataJsonNode = endpointJsonNode.get(METADATA);
+                if (endpointJsonNode.has(PersistentComponentDescriptionConstants.METADATA)) {
+                    JsonNode metaDataJsonNode = endpointJsonNode.get(PersistentComponentDescriptionConstants.METADATA);
                     Iterator<Entry<String, JsonNode>> metaDataFields = metaDataJsonNode.fields();
                     while (metaDataFields.hasNext()) {
                         Entry<String, JsonNode> nextMetaDataField = metaDataFields.next();
@@ -191,10 +166,10 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             Iterator<JsonNode> elements = endpointsJsonNode.elements();
             while (elements.hasNext()) {
                 JsonNode endpointJsonNode = elements.next();
-                if (endpointJsonNode.has(EP_IDENTIFIER)) {
-                    if (endpointJsonNode.get(EP_IDENTIFIER).textValue().equals(epIdentifier)
-                        && endpointJsonNode.get(NAME).textValue().endsWith(epNameSuffix)) {
-                        ((ObjectNode) endpointJsonNode).put(EP_IDENTIFIER, epIdentifierToReplace);
+                if (endpointJsonNode.has(PersistentComponentDescriptionConstants.EP_IDENTIFIER)) {
+                    if (endpointJsonNode.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER).textValue().equals(epIdentifier)
+                        && endpointJsonNode.get(PersistentComponentDescriptionConstants.NAME).textValue().endsWith(epNameSuffix)) {
+                        ((ObjectNode) endpointJsonNode).put(PersistentComponentDescriptionConstants.EP_IDENTIFIER, epIdentifierToReplace);
                     }
                 }
             }
@@ -266,8 +241,8 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
 
-        updateInputNode(node.get(DYNAMIC_INPUTS));
-        updateInputNode(node.get(STATIC_INPUTS));
+        updateInputNode(node.get(PersistentComponentDescriptionConstants.DYNAMIC_INPUTS));
+        updateInputNode(node.get(PersistentComponentDescriptionConstants.STATIC_INPUTS));
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
@@ -292,7 +267,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         jsonParser.close();
 
         String oldConfigKey = "isNestedLoop";
-        ObjectNode configurationsNode = (ObjectNode) node.get(CONFIGURATION);
+        ObjectNode configurationsNode = (ObjectNode) node.get(PersistentComponentDescriptionConstants.CONFIGURATION);
         if (configurationsNode != null && configurationsNode.has(oldConfigKey)) {
             boolean isNestedLoop = configurationsNode.get(oldConfigKey).asBoolean();
             configurationsNode.remove(oldConfigKey);
@@ -310,18 +285,18 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             Iterator<JsonNode> nodeIterator = inputNode.elements();
             while (nodeIterator.hasNext()) {
                 JsonNode dynInputNode = nodeIterator.next();
-                ObjectNode jsonNode = (ObjectNode) dynInputNode.get(METADATA);
-                JsonNode usageJsonNode = jsonNode.get(USAGE);
+                ObjectNode jsonNode = (ObjectNode) dynInputNode.get(PersistentComponentDescriptionConstants.METADATA);
+                JsonNode usageJsonNode = jsonNode.get(PersistentComponentDescriptionConstants.USAGE);
                 if (usageJsonNode != null) {
                     String usage = usageJsonNode.textValue();
                     switch (usage) {
-                    case REQUIRED:
+                    case PersistentComponentDescriptionConstants.REQUIRED:
                         jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING,
                             EndpointDefinition.InputDatumHandling.Single.name());
                         jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                             EndpointDefinition.InputExecutionContraint.Required.name());
                         break;
-                    case INITIAL:
+                    case PersistentComponentDescriptionConstants.INITIAL:
                         jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING,
                             EndpointDefinition.InputDatumHandling.Constant.name());
                         jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
@@ -336,7 +311,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
                     default:
                         break;
                     }
-                    jsonNode.remove(USAGE);
+                    jsonNode.remove(PersistentComponentDescriptionConstants.USAGE);
                 }
             }
         }
@@ -357,18 +332,18 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
+        ArrayNode staticInputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.STATIC_INPUTS);
         if (staticInputs == null) {
             staticInputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).set(STATIC_INPUTS, staticInputs);
+            ((ObjectNode) node).set(PersistentComponentDescriptionConstants.STATIC_INPUTS, staticInputs);
         }
         ObjectNode staticCPACSIn = JsonNodeFactory.instance.objectNode();
         ObjectNode metaDataNode = JsonNodeFactory.instance.objectNode();
-        metaDataNode.set(USAGE, TextNode.valueOf(INITIAL));
-        staticCPACSIn.set(NAME, TextNode.valueOf(inputName));
-        staticCPACSIn.set(DATATYPE, TextNode.valueOf("FileReference"));
-        staticCPACSIn.set(METADATA, metaDataNode);
-        staticCPACSIn.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        metaDataNode.set(PersistentComponentDescriptionConstants.USAGE, TextNode.valueOf(PersistentComponentDescriptionConstants.INITIAL));
+        staticCPACSIn.set(PersistentComponentDescriptionConstants.NAME, TextNode.valueOf(inputName));
+        staticCPACSIn.set(PersistentComponentDescriptionConstants.DATATYPE, TextNode.valueOf("FileReference"));
+        staticCPACSIn.set(PersistentComponentDescriptionConstants.METADATA, metaDataNode);
+        staticCPACSIn.set(PersistentComponentDescriptionConstants.IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticInputs.add(staticCPACSIn);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -392,16 +367,16 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         String dataType) throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
+        ArrayNode staticOutputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.STATIC_OUTPUTS);
         if (staticOutputs == null) {
             staticOutputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).set(STATIC_OUTPUTS, staticOutputs);
+            ((ObjectNode) node).set(PersistentComponentDescriptionConstants.STATIC_OUTPUTS, staticOutputs);
         }
         ObjectNode newOutput = JsonNodeFactory.instance.objectNode();
-        newOutput.set(NAME, TextNode.valueOf(outputName));
-        newOutput.set(DATATYPE, TextNode.valueOf(dataType));
-        newOutput.set(METADATA, JsonNodeFactory.instance.objectNode());
-        newOutput.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        newOutput.set(PersistentComponentDescriptionConstants.NAME, TextNode.valueOf(outputName));
+        newOutput.set(PersistentComponentDescriptionConstants.DATATYPE, TextNode.valueOf(dataType));
+        newOutput.set(PersistentComponentDescriptionConstants.METADATA, JsonNodeFactory.instance.objectNode());
+        newOutput.set(PersistentComponentDescriptionConstants.IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticOutputs.add(newOutput);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -423,17 +398,87 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
+        ArrayNode staticOutputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.STATIC_OUTPUTS);
         if (staticOutputs == null) {
             staticOutputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).set(STATIC_OUTPUTS, staticOutputs);
+            ((ObjectNode) node).set(PersistentComponentDescriptionConstants.STATIC_OUTPUTS, staticOutputs);
         }
         ObjectNode staticCPACSOut = JsonNodeFactory.instance.objectNode();
-        staticCPACSOut.set(NAME, TextNode.valueOf(outputName));
-        staticCPACSOut.set(DATATYPE, TextNode.valueOf("FileReference"));
-        staticCPACSOut.set(METADATA, JsonNodeFactory.instance.objectNode());
-        staticCPACSOut.set(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        staticCPACSOut.set(PersistentComponentDescriptionConstants.NAME, TextNode.valueOf(outputName));
+        staticCPACSOut.set(PersistentComponentDescriptionConstants.DATATYPE, TextNode.valueOf("FileReference"));
+        staticCPACSOut.set(PersistentComponentDescriptionConstants.METADATA, JsonNodeFactory.instance.objectNode());
+        staticCPACSOut.set(PersistentComponentDescriptionConstants.IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticOutputs.add(staticCPACSOut);
+
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        return new PersistentComponentDescription(writer.writeValueAsString(node));
+    }
+
+    /**
+     * Adds dynamic Input.
+     * 
+     * @param description of the component
+     * @param inputName name of the static input to add
+     * @param dataType of the input to add
+     * @param metaData of the input to add
+     * @param identifier of the input to add
+     * @param epIdentifier endpoint identifier of the input to add or "default"
+     * @return updated description
+     * @throws IOException thrown on an error
+     */
+    public static PersistentComponentDescription addDynamicInput(PersistentComponentDescription description, String inputName,
+        String dataType, ObjectNode metaData, JsonNode identifier, String epIdentifier)
+        throws IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+
+        ArrayNode dynamicInputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.DYNAMIC_INPUTS);
+        if (dynamicInputs == null) {
+            dynamicInputs = JsonNodeFactory.instance.arrayNode();
+            ((ObjectNode) node).set(PersistentComponentDescriptionConstants.DYNAMIC_INPUTS, dynamicInputs);
+        }
+        ObjectNode newInput = JsonNodeFactory.instance.objectNode();
+        newInput.set(PersistentComponentDescriptionConstants.NAME, TextNode.valueOf(inputName));
+        newInput.set(PersistentComponentDescriptionConstants.DATATYPE, TextNode.valueOf(dataType));
+        newInput.set(PersistentComponentDescriptionConstants.METADATA, metaData);
+        newInput.set(PersistentComponentDescriptionConstants.IDENTIFIER, identifier);
+        newInput.set(PersistentComponentDescriptionConstants.EP_IDENTIFIER, TextNode.valueOf(epIdentifier));
+        dynamicInputs.add(newInput);
+
+
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        return new PersistentComponentDescription(writer.writeValueAsString(node));
+    }
+
+    /**
+     * 
+     * Adds a dynamic output.
+     * 
+     * @param description to change
+     * @param outputName of the output to add
+     * @param dataType of the output to add
+     * @param metaData of the output to add
+     * @param identifier of the output to add
+     * @param epIdentifier endpoint identifier of the output to add or "default"
+     * @return PersistentComponentDescription with added output
+     * @throws IOException thrown on an error
+     */
+    public static PersistentComponentDescription addDynamicOutput(PersistentComponentDescription description, String outputName,
+        String dataType, ObjectNode metaData, JsonNode identifier, String epIdentifier)
+        throws IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+
+        ArrayNode dynamicOutputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.DYNAMIC_OUTPUTS);
+        if (dynamicOutputs == null) {
+            dynamicOutputs = JsonNodeFactory.instance.arrayNode();
+            ((ObjectNode) node).set(PersistentComponentDescriptionConstants.DYNAMIC_OUTPUTS, dynamicOutputs);
+        }
+        ObjectNode newOutput = JsonNodeFactory.instance.objectNode();
+        newOutput.set(PersistentComponentDescriptionConstants.NAME, TextNode.valueOf(outputName));
+        newOutput.set(PersistentComponentDescriptionConstants.DATATYPE, TextNode.valueOf(dataType));
+        newOutput.set(PersistentComponentDescriptionConstants.METADATA, metaData);
+        newOutput.set(PersistentComponentDescriptionConstants.IDENTIFIER, identifier);
+        newOutput.set(PersistentComponentDescriptionConstants.EP_IDENTIFIER, TextNode.valueOf(epIdentifier));
+        dynamicOutputs.add(newOutput);
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
@@ -456,14 +501,16 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         final String consumeCPACSInputsConfigVersion3 = "consumeCPACS";
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
-        ObjectNode configuration = (ObjectNode) node.get(CONFIGURATION);
+        ArrayNode staticInputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.STATIC_INPUTS);
+        ObjectNode configuration = (ObjectNode) node.get(PersistentComponentDescriptionConstants.CONFIGURATION);
         if (configuration.get(consumeCPACSInputsConfigVersion3) != null
             && Boolean.valueOf(configuration.get(consumeCPACSInputsConfigVersion3).textValue())) {
             for (JsonNode staticInput : staticInputs) {
-                if (!(staticInput.get(NAME).textValue().equals(DIRECTORY))) {
-                    ObjectNode metadata = (ObjectNode) staticInput.get(METADATA);
-                    metadata.set(USAGE, TextNode.valueOf(REQUIRED));
+                if (!(staticInput.get(PersistentComponentDescriptionConstants.NAME).textValue()
+                    .equals(PersistentComponentDescriptionConstants.DIRECTORY))) {
+                    ObjectNode metadata = (ObjectNode) staticInput.get(PersistentComponentDescriptionConstants.METADATA);
+                    metadata.set(PersistentComponentDescriptionConstants.USAGE,
+                        TextNode.valueOf(PersistentComponentDescriptionConstants.REQUIRED));
                 }
             }
         }
@@ -487,11 +534,13 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
+        ArrayNode dynamicInputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.DYNAMIC_INPUTS);
         if (dynamicInputs != null) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (!(dynamicInput.get(NAME).textValue().equals(DIRECTORY))) {
-                    ((ObjectNode) dynamicInput.get(METADATA)).set(USAGE, TextNode.valueOf("optional"));
+                if (!(dynamicInput.get(PersistentComponentDescriptionConstants.NAME).textValue()
+                    .equals(PersistentComponentDescriptionConstants.DIRECTORY))) {
+                    ((ObjectNode) dynamicInput.get(PersistentComponentDescriptionConstants.METADATA))
+                        .set(PersistentComponentDescriptionConstants.USAGE, TextNode.valueOf("optional"));
                 }
             }
         }
@@ -514,22 +563,26 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         final String consumeDirectoryInputsConfigVersion3 = "consumeDirectory";
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
-        ObjectNode configuration = (ObjectNode) node.get(CONFIGURATION);
+        ArrayNode dynamicInputs = (ArrayNode) node.get(PersistentComponentDescriptionConstants.DYNAMIC_INPUTS);
+        ObjectNode configuration = (ObjectNode) node.get(PersistentComponentDescriptionConstants.CONFIGURATION);
         if (configuration.get(consumeDirectoryInputsConfigVersion3) != null
             && Boolean.valueOf(configuration.get(consumeDirectoryInputsConfigVersion3).textValue())) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (dynamicInput.get(NAME).textValue().equals(DIRECTORY)) {
-                    ObjectNode metadata = (ObjectNode) dynamicInput.get(METADATA);
-                    metadata.set(USAGE, TextNode.valueOf(REQUIRED));
+                if (dynamicInput.get(PersistentComponentDescriptionConstants.NAME).textValue()
+                    .equals(PersistentComponentDescriptionConstants.DIRECTORY)) {
+                    ObjectNode metadata = (ObjectNode) dynamicInput.get(PersistentComponentDescriptionConstants.METADATA);
+                    metadata.set(PersistentComponentDescriptionConstants.USAGE,
+                        TextNode.valueOf(PersistentComponentDescriptionConstants.REQUIRED));
                 }
             }
         } else if (configuration.get(consumeDirectoryInputsConfigVersion3) != null
             && !configuration.get(consumeDirectoryInputsConfigVersion3).booleanValue()) {
             for (JsonNode dynamicInput : dynamicInputs) {
-                if (dynamicInput.get(NAME).textValue().equals(DIRECTORY)) {
-                    ObjectNode metadata = (ObjectNode) dynamicInput.get(METADATA);
-                    metadata.set(USAGE, TextNode.valueOf(INITIAL));
+                if (dynamicInput.get(PersistentComponentDescriptionConstants.NAME).textValue()
+                    .equals(PersistentComponentDescriptionConstants.DIRECTORY)) {
+                    ObjectNode metadata = (ObjectNode) dynamicInput.get(PersistentComponentDescriptionConstants.METADATA);
+                    metadata.set(PersistentComponentDescriptionConstants.USAGE,
+                        TextNode.valueOf(PersistentComponentDescriptionConstants.INITIAL));
                 }
             }
         }
@@ -557,9 +610,10 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         JsonNode dynEndpoints = node.get(direction);
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
-                if (endpoint.get(NAME).textValue().equals(DIRECTORY)) {
-                    ((ObjectNode) endpoint).remove(EP_IDENTIFIER);
-                    ((ObjectNode) endpoint).set(EP_IDENTIFIER, TextNode.valueOf("directory"));
+                if (endpoint.get(PersistentComponentDescriptionConstants.NAME).textValue()
+                    .equals(PersistentComponentDescriptionConstants.DIRECTORY)) {
+                    ((ObjectNode) endpoint).remove(PersistentComponentDescriptionConstants.EP_IDENTIFIER);
+                    ((ObjectNode) endpoint).set(PersistentComponentDescriptionConstants.EP_IDENTIFIER, TextNode.valueOf("directory"));
                 }
             }
         }

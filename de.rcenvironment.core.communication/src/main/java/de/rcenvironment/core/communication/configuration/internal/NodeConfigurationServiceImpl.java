@@ -36,6 +36,7 @@ import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -169,6 +170,11 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
      * @param context OSGi {@link BundleContext}
      */
     public void activate(BundleContext context) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         ConfigurationSegment configurationSegment = configurationService.getConfigurationSegment("network");
         configuration = new CommunicationConfiguration(configurationSegment);
         createLocalNodeInformation();

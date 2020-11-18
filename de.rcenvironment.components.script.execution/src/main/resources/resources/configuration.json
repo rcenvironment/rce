@@ -10,8 +10,8 @@
         },
         {
             "key": "scriptLanguage",
-            "defaultValue": "Python"
-        },
+            "defaultValue": "Jython"
+		},
         {
             "key": "storeComponentHistoryData",
             "defaultValue": "false"

@@ -3,10 +3,19 @@ Created on 24.04.2013
 
 @author: Sascha Zur
 @author: Jascha Riedel (#14029)
+@author: Adrian Stock
+@author: Kathrin Schaffert (#17088)
 '''
 import simplejson as json
 import math
+import os
 from decimal import *
+from io import IOBase 
+
+import input_file_factory as IFF
+
+def create_input_file():
+	return IFF.InputFileFactory(json.OrderedDict(),RCE_INPUT_FILES)
 
 def readinput_internal():
     """ 
@@ -69,6 +78,8 @@ def writeoutput_internal():
     json.dump(RCE_CHANNEL_CLOSE, closeoutputsfile)
     statevariablesfile = open("pythonStateOutput.rces", "w")
     json.dump(RCE_STATE_VARIABLES, statevariablesfile)
+    writteninputfiles = open("pythonInputFileFactoryOutput.rced", "w")
+    json.dump(RCE_INPUT_FILES, writteninputfiles)
     
    
 def read_input(name, defaultValue = None):
@@ -206,6 +217,25 @@ def close_all_outputs():
     for output in RCE_CHANNEL_OUTPUT_NAMES:
         close_output(output)
 
+def init_module():
+    global RCE_CHANNEL_INPUT, RCE_CHANNEL_REQ_IF_CONNECTED, RCE_CHANNEL_OUTPUT_NAMES, RCE_CHANNEL_OUTPUT, RCE_CHANNEL_CLOSE, RCE_STATE_VARIABLES, RCE_CURRENT_RUN_NUMBER
+    RCE_CHANNEL_INPUT = readinput_internal()
+    RCE_CHANNEL_REQ_IF_CONNECTED = readinput_req_if_connected_internal()
+    RCE_CHANNEL_OUTPUT_NAMES = read_output_names_internal()
+    RCE_CHANNEL_OUTPUT = {}
+    RCE_CHANNEL_CLOSE = []
+    RCE_STATE_VARIABLES = read_state_variables_internal()
+    RCE_CURRENT_RUN_NUMBER = read_run_number_internal()
+    
+def show_variables():
+	print("RCE_CHANNEL_INPUT:",RCE_CHANNEL_INPUT)
+	print("RCE_CHANNEL_REQ_IF_CONNECTED:",RCE_CHANNEL_REQ_IF_CONNECTED)
+	print("RCE_CHANNEL_OUTPUT_NAMES:",RCE_CHANNEL_OUTPUT_NAMES)
+	print("RCE_CHANNEL_OUTPUT:",RCE_CHANNEL_OUTPUT)
+	print("RCE_CHANNEL_CLOSE:",RCE_CHANNEL_CLOSE)
+	print("RCE_STATE_VARIABLES:",RCE_STATE_VARIABLES)
+	print("RCE_CURRENT_RUN_NUMBER:",RCE_CURRENT_RUN_NUMBER)
+
 RCE_CHANNEL_INPUT = readinput_internal()
 RCE_CHANNEL_REQ_IF_CONNECTED = readinput_req_if_connected_internal()
 RCE_CHANNEL_OUTPUT_NAMES = read_output_names_internal()
@@ -213,3 +243,4 @@ RCE_CHANNEL_OUTPUT = {}
 RCE_CHANNEL_CLOSE = []
 RCE_STATE_VARIABLES = read_state_variables_internal()
 RCE_CURRENT_RUN_NUMBER = read_run_number_internal()
+RCE_INPUT_FILES = []

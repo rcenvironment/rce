@@ -36,12 +36,22 @@ public interface UplinkSession extends AsyncMessageBlockSender {
     String getLogDescriptor();
 
     /**
+     * Provides access to the relay-assigned prefix that must be attached to all "destination ids" representing nodes/locations in the local
+     * network. These ids can then be embedded in outgoing {@link ToolDescriptorListUpdate}s to specify where the given tool can be
+     * executed. Effectively, this prefix defines a destination id namespace per client-relay connection to prevent collisions between
+     * different network's nodes.
+     * 
      * @return the relay-assigned namespace id once it is available (typically after the client-server handshake has successfully
      *         completed); throws an {@link IllegalStateException} if it is requested before
      */
     String getAssignedNamespaceId();
 
     /**
+     * Provides access to the relay-assigned prefix that must be attached to all "destination ids" representing nodes/locations in the local
+     * network. These ids can then be embedded in outgoing {@link ToolDescriptorListUpdate}s to specify where the given tool can be
+     * executed. Effectively, this prefix defines a destination id namespace per client-relay connection to prevent collisions between
+     * different network's nodes.
+     * 
      * @return the relay-assigned namespace id once it is available (typically after the client-server handshake has successfully
      *         completed); returns {@link Optional#empty()} if none has been assigned (yet)
      */
@@ -59,21 +69,17 @@ public interface UplinkSession extends AsyncMessageBlockSender {
     boolean isActive();
 
     /**
-     * Requests to close the local end of this session.
-     * <p>
-     * If the session is {@link UplinkSessionState#ACTIVE}, this will typically cause it to enter state
-     * {@link UplinkSessionState#PARTIALLY_CLOSED_BY_LOCAL}; if it is {@link UplinkSessionState#PARTIALLY_CLOSED_BY_REMOTE}, this will
-     * typically cause it to enter state {@link UplinkSessionState#FULLY_CLOSED}.
+     * Requests to close the local end of this session, unless it is already shut down or in the process of shutting down.
      */
-    void close();
+    void initiateCleanShutdownIfRunning();
 
     /**
-     * Reports an event that is equivalent to the remote side closing the connection, including connection errors.
-     * <p>
-     * If the session is {@link UplinkSessionState#ACTIVE}, this will typically cause it to enter state
-     * {@link UplinkSessionState#PARTIALLY_CLOSED_BY_REMOTE}; if it is {@link UplinkSessionState#PARTIALLY_CLOSED_BY_LOCAL}, this will
-     * typically cause it to enter state {@link UplinkSessionState#FULLY_CLOSED}.
+     * Registers a listener to be executed after session shutdown.
+     * 
+     * @param run Runnable to be executed when the session shutdown is finished.
      */
-    void markAsCloseRequestedByRemoteEvent();
+    void registerOnShutdownFinishedListener(Runnable run);
+
+    boolean isShuttingDownOrShutDown();
 
 }

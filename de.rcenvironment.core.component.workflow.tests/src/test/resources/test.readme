@@ -23,8 +23,8 @@ This file describes the directory structure of /src/test/resources and explains 
  - ToolIntegration.wf:
      Standalone RCE:   
         - Create a folder "doalot" in your RCE folder (right beside rce.exe)
-		- Copy SirDoALot.png and SirDoALot.py from /src/test/resources/workflow_test/files/ToolIntegration into this folder
-		- Import /src/test/resources/workflow_test/files/ToolIntegration/configuration.json with the tool integration wizard, do not change anything
+		- Copy SirDoALot.png and SirDoALot.py from /src/test/resources/workflows_manual/files/ToolIntegration into this folder
+		- Import /src/test/resources/workflows_manual/files/ToolIntegration/configuration.json with the tool integration wizard, do not change anything
 		  (Import means opening the edit dialog and load a configuration, then press update)
 		- Copy ToolIntegration.wf to a project folder of your choice within RCE and run it
 		- Check if workflow becomes FINISHED
@@ -33,7 +33,7 @@ This file describes the directory structure of /src/test/resources and explains 
 	[From Eclipse: 
 	    - Go into your launch settings folder (e.g. de.rcenvironment/utils/launch/default) and create the directories
 	      ../configuration/integration/common/doalot
-	    - Copy the configuration.json from /src/test/resources/workflow_test/files/ToolIntegration/configuration.json into the
+	    - Copy the configuration.json from /src/test/resources/workflows_manual/files/ToolIntegration/configuration.json into the
 	      new doalot folder
 	    - Create a folder "doalot" in your .../<RCE workspace>/<launch config name> folder and copy SirDoALot.png and SirDoALot.py there
 	    - Start RCE, copy the Toolintegration.wf into a project and run it
@@ -43,8 +43,8 @@ This file describes the directory structure of /src/test/resources and explains 
 		
 - CPACSToolIntegration.wf:
      Standalone RCE:   
-		- Copy the folder /src/test/resources/workflow_test/files/CPACSToolIntegration/SimpleCPACSTool into your RCE folder (right beside rce.exe)
-		- Import /src/test/resources/workflow_test/files/CPACSToolIntegration/configuration.json with the tool integration wizard, do not change anything
+		- Copy the folder /src/test/resources/workflows_manual/files/CPACSToolIntegration/SimpleCPACSTool into your RCE folder (right beside rce.exe)
+		- Import /src/test/resources/workflows_manual/files/CPACSToolIntegration/configuration.json with the tool integration wizard, do not change anything
 		  (Import means opening the edit dialog and load a configuration, then press update)
 		- Copy CPACsToolIntegration.wf to a project folder of your choice within RCE and run it
 		- Check if workflow becomes FINISHED
@@ -54,22 +54,12 @@ This file describes the directory structure of /src/test/resources and explains 
 	[From Eclipse: 
 	    - Go into your launch settings folder (e.g. de.rcenvironment/utils/launch/default) and create the directories
 	      ../configuration/integration/cpacs/SimpleCPACSTool
-	    - Copy the configuration.json from /src/test/resources/workflow_test/files/CPACSToolIntegration/configuration.json into the
+	    - Copy the configuration.json from /src/test/resources/workflows_manual/files/CPACSToolIntegration/configuration.json into the
 	      new SimpleCPACSTool folder
-	    - Copy the folder src/test/resources/workflow_test/files/CPACSToolIntegration/SimpleCPACSTool in your .../<RCE workspace>/<launch config name> folder
+	    - Copy the folder src/test/resources/workflows_manual/files/CPACSToolIntegration/SimpleCPACSTool in your .../<RCE workspace>/<launch config name> folder
 	    - Start RCE, copy the CPACSToolintegration.wf into a project and run it
 	    - Check if workflow becomes FINISHED
 		- Check if there are no error log messages in Workflow Console View
 		- Check the Workflow Data Browser for Inputs, Outputs, Intermediate Inputs, Tool Input/Output of the Simple CPACS Tool in the corresponding workflow run.
 	]-> Currently not working due to changed launch configuration structure, needs to be updated! Workaround: Set the path to the tool directory in the configuration.json manually.  j.flink, nov. 2014
-	
- - Excel.wf:
- 		- Copy Excel.wf file into an Eclipse project named "workflows_test"
- 		- Create folder "files"
- 		- Copy all of the files from workflows_test.files into folder "files" 
- 		- Execute Excel.wf as it is
- 		- Check if workflow becomes FINISHED
- 		- Check if there are no error log messages in Workflow Console View
-        
-
-        
+      

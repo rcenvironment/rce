@@ -418,6 +418,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
                                 ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
                         } else {
                             PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), id);
+                            LogFactory.getLog(this.getClass()).debug(StringUtils.format("Set help ID to %s", id));
                         }
                     } else {
                         PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), null);

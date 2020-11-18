@@ -21,6 +21,7 @@ import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
  * Default implementation of @link {@link SshUplinkConnectionSetup}.
  *
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (added method setDisplayName to fix #17306)
  */
 
 public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
@@ -116,16 +117,22 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
 
     @Override
     public void setSession(ClientSideUplinkSession session) {
+        if (session != null && this.session != null) {
+            log.warn("Attaching new Uplink session " + session.getLocalSessionId() + " before the previous session "
+                + this.session.getLocalSessionId() + " was disposed");
+        }
         this.session = session;
     }
 
     @Override
     public void disconnect() {
-        session.close();
-        listener.onConnectionClosed(this, false);
-        session = null;
-        this.consecutiveConnectionFailures = 0;
-        this.waitingForRetry = false;
+        // This listener is used to prevent displaying a disconnected connection although the uplink session is not disconnected yet.
+        session.registerOnShutdownFinishedListener(() -> {
+            listener.onConnectionClosed(this, false);
+            this.consecutiveConnectionFailures = 0;
+            this.waitingForRetry = false;
+        });
+        session.initiateCleanShutdownIfRunning();
     }
 
     @Override
@@ -190,5 +197,10 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
     @Override
     public boolean isGateway() {
         return isGateway;
+    }
+
+    @Override
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

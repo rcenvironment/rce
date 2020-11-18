@@ -19,23 +19,21 @@
                 "RequiredIfConnected"
             ],
             "defaultInputExecutionConstraint":"Required"
-        }
-     ],
-	"staticInputs": [
-		{
-			"name": "To_forward",
-			"dataTypes": [
-				"Float",
-				"Integer",
-				"Boolean",
-				"ShortText",
-				"Vector",
-				"Matrix",
-				"SmallTable",
-				"FileReference",
-				"DirectoryReference"
-			],
-			"defaultDataType": "Float",
+        },
+        {
+            "identifier": "dataToInput",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector",
+                "Matrix"
+            ],
+            "defaultDataType": "Float",
             "inputHandlingOptions":[
 	            "Constant",
 	            "Single",
@@ -43,8 +41,10 @@
             ],
             "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
-                "Required"
-            ]
-		}
-	]
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+     ]
 }

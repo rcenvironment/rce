@@ -19,6 +19,7 @@ import java.util.Map;
 
 import org.easymock.EasyMock;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +45,6 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import org.junit.Assert;
 
 /**
  * Test class for the DOE execution.
@@ -81,7 +81,7 @@ public class DOEComponentTest {
     private static final long CANCEL_TEST_TIMEOUT_MSEC = 1500;
 
     private static final int STATIC_OUTPUTS_COUNT = 2;
-    
+
     private static final double DELTA = 0.000001;
 
     /**
@@ -856,11 +856,18 @@ public class DOEComponentTest {
      * Test if the components cancels sending new design variables in case the component run (start) was canceled.
      * 
      * @throws ComponentException on unexpected error.
+     * @throws InterruptedException on test interruption
      */
     @Test(timeout = CANCEL_TEST_TIMEOUT_MSEC)
-    public void testCancelStart() throws ComponentException {
+    public void testCancelStart() throws ComponentException, InterruptedException {
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, "200", ZERO, ZERO,
+        final int axisCount = 250;
+        final int maximumOutputCount = axisCount * axisCount; // how many outputs the component will generate unless cancelled
+
+        final int waitBeforeCancellation = 150;
+        final int waitBeforeTesting = 250;
+
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, Integer.toString(axisCount), ZERO, ZERO,
             LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         addStaticOutputs();
@@ -868,25 +875,33 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute("Cancel the tested component after a short wait", new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    final int hundred = 150;
-                    Thread.sleep(hundred);
+                    Thread.sleep(waitBeforeCancellation);
                 } catch (InterruptedException e) {
                     return; // test timeout will apply as onStartInterrupted is not called
                 }
                 component.onStartInterrupted(null);
             }
         });
-
         component.start();
-        final int outputCount = 40000;
-        assertTrue(context.getCapturedOutput(X).size() < outputCount);
-        assertTrue(context.getCapturedOutput(Y).size() < outputCount);
-        assertTrue(context.getCapturedOutput(X).size() == context.getCapturedOutput(Y).size());
+        Thread.sleep(waitBeforeTesting);
+
+        int generatedXOutputs = context.getCapturedOutput(X).size();
+        int generatedYOutputs = context.getCapturedOutput(Y).size();
+
+        final String errorText1 = "The component did not produce any output at all";
+        assertTrue(errorText1, generatedXOutputs > 0);
+        assertTrue(errorText1, generatedYOutputs > 0);
+        final String errorText2 = "The component actually produced the configured maximum number of outputs - "
+            + "either the simulated cancellation was too slow, or cancellation is actually broken";
+        assertTrue(errorText2, generatedXOutputs < maximumOutputCount);
+        assertTrue(errorText2, generatedYOutputs < maximumOutputCount);
+        assertTrue("Number of outputs after cancellation is not symmetrical", generatedXOutputs == generatedYOutputs);
+
         checkLoopDoneSent(true);
 
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);

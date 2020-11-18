@@ -14,7 +14,7 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ThreadHandler;
 
 /**
- * Default implementation of {@link Component}. Intended to be extended by components to avoid adaption on component implementation side of
+ * Default implementation of {@link Component}. Intended to be extended by components to avoid changes on component implementation side if
  * {@link Component} interface is extended.
  * 
  * @author Doreen Seider

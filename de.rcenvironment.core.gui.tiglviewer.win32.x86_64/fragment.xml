@@ -10,7 +10,8 @@
             category="de.rcenvironment.core"
             class="de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer"
             id="de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer" 
-            allowMultiple="true">
+            allowMultiple="true"
+            restorable="false">
       </view>
    </extension>
    

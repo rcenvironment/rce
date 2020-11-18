@@ -15,6 +15,7 @@ import org.eclipse.osgi.util.NLS;
  * 
  * @author Hendrik Abbenhaus
  * @author Brigitte Boden
+ * @author Kathrin Schaffert
  * 
  */
 public class Messages extends NLS {
@@ -78,8 +79,14 @@ public class Messages extends NLS {
     /** Text for root folder checkbox. */
     public static String selectAtStart;
 
+    /** Text for overwrite option checkbox. */
+    public static String overwriteOption;
+
     /** Text for root folder dialog. */
     public static String selectRootFolder;
+
+    /** Title for selection dialog. */
+    public static String selectDirectory;
 
     /**
      * Labels for settings in OutputWriterEndpointEditDialog and OutputLocation

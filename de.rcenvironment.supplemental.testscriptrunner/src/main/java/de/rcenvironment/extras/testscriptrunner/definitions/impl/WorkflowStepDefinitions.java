@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +42,7 @@ import de.rcenvironment.extras.testscriptrunner.definitions.common.InstanceManag
 import de.rcenvironment.extras.testscriptrunner.definitions.common.ManagedInstance;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioExecutionContext;
 import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitionConstants;
+import junit.framework.AssertionFailedError;
 
 /**
  * Steps for executing and testing single- and multi-instance workflows.
@@ -73,7 +74,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     private ManagedInstance lastWorkflowInitiatingInstance;
 
     // only contains workflows executed via dedicated teststep
-    private Map<String, String> runningWorkflows = new HashMap<String, String>();
+    private Map<String, String> runningWorkflows = new ConcurrentHashMap<String, String>();
 
     public WorkflowStepDefinitions(TestScenarioExecutionContext executionContext) {
         super(executionContext);
@@ -211,7 +212,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     private String injectValuesIntoPlaceholderFile(String placeholderTemplate) throws IOException {
 
         Path testLocation = executionContext.getTestScriptLocation().toPath();
-        Path subdir = testLocation.resolve("workflows\\placeholder_values");
+        Path subdir = testLocation.resolve(Paths.get("workflows", "placeholder_values"));
         Path originalPlaceholderFileLocation = subdir.resolve(placeholderTemplate);
 
         List<String> template = Files.readAllLines(originalPlaceholderFileLocation);
@@ -336,8 +337,14 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
                 while (true) {
                     try {
                         if (INSTANCE_MANAGEMENT_SERVICE.isInstanceRunning(instanceId)) {
-
-                            String commandOutput = executeCommandOnInstance(instance, LIST_WORKFLOWS_COMMAND, false);
+                            String commandOutput = null;
+                            try {
+                                commandOutput = executeCommandOnInstance(instance, LIST_WORKFLOWS_COMMAND, false);
+                            } catch (AssertionFailedError e) {
+                                // In this case the remote instance is already shut down and no workflows are running.
+                                runningWorkflows.remove(workflowKey);
+                                return Status.OK_STATUS;
+                            }
                             Matcher m = workflowFinishedPattern.matcher(commandOutput);
                             if (m.find()) {
                                 runningWorkflows.remove(workflowKey);
@@ -508,7 +515,6 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
         ManagedInstance instance = resolveInstance(instanceId);
         final File wfParentDir = instance.getAbsolutePathFromRelative(EXPORTED_WORKFLOW_RUNS_SUB_DIR);
 
-        boolean exists = wfParentDir.exists();
         File[] subdirectories = wfParentDir.listFiles(File::isDirectory);
         int length = subdirectories.length;
 
@@ -694,8 +700,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
 
     private String convertWorkflowPathToName(String workflowPath) {
         final String workflowName;
-        if (workflowPath.contains("\\")) {
-            workflowName = workflowPath.substring(workflowPath.lastIndexOf("\\") + 1);
+
+        if (workflowPath.contains(File.separator)) {
+            workflowName = workflowPath.substring(workflowPath.lastIndexOf(File.separator) + 1);
         } else {
             workflowName = workflowPath;
         }

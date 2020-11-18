@@ -63,6 +63,7 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationExte
 import de.rcenvironment.core.component.model.endpoint.api.ComponentEndpointModelFactory;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
+import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientComponent;
 import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientService;
 import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessConstants;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -362,50 +363,35 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         configuration =
             generateConfiguration(component.getToolName(), component.getToolVersion(), component.getHostName(), component.getHostId(),
                 component.getConnectionId(), component.isWorkflow());
-        ComponentInterface componentInterface;
+        final ComponentInterfaceBuilder componentInterfaceBuilder = new ComponentInterfaceBuilder()
+                    .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + component.getComponentId())
+                    .setIcon16(readDefaultToolIcon(SIZE_16))
+                    .setIcon32(readDefaultToolIcon(SIZE_32))
+                    .setGroupName(component.getGroup())
+                    .setVersion(component.getToolVersion())
+                    .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
+                    .setConfigurationDefinition(configuration)
+                    .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
+                    .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
+                    .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
+                    .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD);
         if (component.isWorkflow()) {
-            componentInterface =
-                new ComponentInterfaceBuilder()
-                    .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + component.getComponentId())
-                    // Add "WORKFLOW" to display name
-                    .setDisplayName(
-                        StringUtils.format("%s (%s) [workflow on %s]", component.getToolName(), component.getToolVersion(),
-                            component.getHostName()))
-                    .setIcon16(readDefaultToolIcon(SIZE_16))
-                    .setIcon32(readDefaultToolIcon(SIZE_32))
-                    .setGroupName(component.getGroup())
-                    .setVersion(component.getToolVersion())
-                    .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
-                    .setConfigurationDefinition(configuration)
-                    .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
-                    .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
-                    .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
-                    .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
-                    .build();
+                // Add "WORKFLOW" to display name
+            componentInterfaceBuilder .setDisplayName(
+                    StringUtils.format("%s (%s) [workflow on %s]", component.getToolName(), component.getToolVersion(),
+                        component.getHostName()));
         } else {
-            componentInterface =
-                new ComponentInterfaceBuilder()
-                    .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + component.getComponentId())
-                    .setDisplayName(StringUtils.format("%s [SSH forwarded]", component.getToolName()))
-                    .setIcon16(readDefaultToolIcon(SIZE_16))
-                    .setIcon32(readDefaultToolIcon(SIZE_32))
-                    .setGroupName(component.getGroup())
-                    .setVersion(component.getToolVersion())
-                    .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
-                    .setConfigurationDefinition(configuration)
-                    .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
-                    .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
-                    .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
-                    .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
-                    .build();
+            componentInterfaceBuilder
+                .setDisplayName(StringUtils.format("%s [SSH forwarded]", component.getToolName()));
         }
+        final ComponentInterface componentInterface = componentInterfaceBuilder.build();
 
         ComponentInstallation ci =
             new ComponentInstallationBuilder()
                 .setComponentRevision(
                     new ComponentRevisionBuilder()
                         .setComponentInterface(componentInterface)
-                        .setClassName("de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientComponent").build())
+                        .setClassName(SshRemoteAccessClientComponent.class.getCanonicalName()).build())
                 .setNodeId(getLocalLogicalNodeIdForRemoteNode(component.getHostId(), component.getConnectionId()))
                 .setInstallationId(
                     createUniqueToolAndHostId(componentInterface.getIdentifierAndVersion(), component.getHostId(),

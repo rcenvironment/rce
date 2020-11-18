@@ -46,6 +46,8 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author David Scholz
  * @author Doreen Seider (caching, first implementation)
  * @author Thorsten Sommer (fixed version parsing + caching, second implementation)
+ * @author Kathrin Schaffert (#14965)
+ * @author Niklas Först
  */
 public class ScriptComponentValidator extends AbstractComponentValidator {
 
@@ -70,7 +72,12 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
         final List<ComponentValidationMessage> messages = new ArrayList<>();
 
         String script = getProperty(componentDescription, SshExecutorConstants.CONFIG_KEY_SCRIPT);
-        if (script == null || script.isEmpty()) {
+
+        if (script == null) {
+            return messages;
+        }
+
+        if (script.trim().isEmpty()) {
             final ComponentValidationMessage noScriptMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, SshExecutorConstants.CONFIG_KEY_SCRIPT, Messages.noScript,
                 Messages.noScript + " defined");
@@ -135,6 +142,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     @Override
     public List<ComponentValidationMessage> validateOnWorkflowStart(ComponentDescription componentDescription) {
         final List<ComponentValidationMessage> messages = new ArrayList<>();
+        String property=getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE);
         if (getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE).equals("Python")) {
             final String pythonInstallation = getProperty(componentDescription, PythonComponentConstants.PYTHON_INSTALLATION);
             if (!pythonInstallation.isEmpty()) {
@@ -313,7 +321,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
             if (pythonPath == null) {
                 throw new NullPointerException("The given Python path cannot be null");
             }
-            
+
             if (pythonPath.isEmpty()) {
                 throw new IllegalArgumentException("The given Python path cannot be empty.");
             }
@@ -417,7 +425,7 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
             if (this.currentResult.isPythonExecutionSuccessful()) {
                 return;
             }
-            
+
             int majorPythonVersion = MINUS_ONE;
             int minorPythonVersion = MINUS_ONE;
             int microPythonVersion = MINUS_ONE;

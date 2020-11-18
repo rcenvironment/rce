@@ -16,9 +16,13 @@
     </sect1>
     <sect1>
         <title>Usage</title>
-        <para>Output to save must be send to the Output Writer via inputs. If you add a new input of
-            type file or directory, you must define the desired target name and path (of the file or
-            directory). Both of them can be created using placeholders:</para>
+        <para>The "Root Location" tab allows the user to define the location where the outputs
+            should be stored on the file system. Here the user can also configure whether
+            existing files or directories on the file system are to be overwritten or not.</para>
+        <para>Output to save must be send to the Output Writer via inputs that can be defined on the
+            "Inputs" tab. If you add a new input of type file or directory, you must define the
+            desired target name and path (of the file or directory). Both of them can be created
+            using placeholders:</para>
         <para><inlinegraphic fileref="../../images/image001.png"/></para>
         <para><emphasis role="bold">Target file/directory:</emphasis> The name the file will be
             given on the local file system. You can insert different placeholders by clicking the
@@ -62,11 +66,10 @@
             Defining a static folder might cause problems, if you execute the workflow on another
             RCE node (e.g. the defined hard drive doesn’t exist on the other machine).</para>
         <para> For inputs of simple data types, you only have to specify the type of the input in
-            the “add input” dialog. If you are using such inputs, you also have to specify targets
-            in the table below the “Inputs” table. A target receives the values of one or more
-            simple data inputs and writes them into a text file of user-specified format. Several
-            targets can be specified in one Output Writer. However, each input can only be written
-            into one target.<note>
+            the “add input” dialog. If you are using such inputs, you have to specify targets on the
+            “Data Sheet” tab. A target receives the values of one or more simple data inputs and
+            writes them into a text file of user-specified format. Several targets can be specified
+            in one Output Writer. However, each input can only be written into one target.<note>
                 <para>The Output Writer only writes output into a target file when values for ALL of
                     the selected inputs have arrived. I.e. it is expected that for each iteration
                     exactly one value for each of the inputs arrives. </para>

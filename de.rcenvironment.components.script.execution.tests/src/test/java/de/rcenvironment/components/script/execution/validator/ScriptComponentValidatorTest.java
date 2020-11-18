@@ -101,26 +101,7 @@ public class ScriptComponentValidatorTest {
         assertEquals(messages.get(0).getType(), ComponentValidationMessage.Type.WARNING);
     }
 
-    /**
-     * 
-     * Tests if validator identifies a wrong python execution path as error.
-     *
-     */
-    @Test
-    public void testWrongPythonInstallationPath() {
 
-        componentDescriptionHelper.addConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT, "glajerkleg");
-        componentDescriptionHelper.addConfigurationValue(ScriptComponentConstants.SCRIPT_LANGUAGE, PYTHON);
-        componentDescriptionHelper.addConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION, "dksljgil");
-
-        componentDescription = componentDescriptionHelper.createComponentDescriptionMock();
-
-        List<ComponentValidationMessage> messages = validator.validate(componentDescription, true);
-
-        assertEquals(messages.size(), 1);
-        assertEquals(messages.get(0).getType(), ComponentValidationMessage.Type.ERROR);
-
-    }
 
     /**
      * Tests if validator works correctly with different python versions which are provided with an absolut path defined in a properties

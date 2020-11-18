@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
@@ -39,6 +40,7 @@ import de.rcenvironment.core.communication.sshconnection.impl.SshConnectionSetup
 import de.rcenvironment.core.configuration.SecureStorageImportService;
 import de.rcenvironment.core.configuration.SecureStorageSection;
 import de.rcenvironment.core.configuration.SecureStorageService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
@@ -369,6 +371,10 @@ public class SshConnectionServiceImpl implements SshConnectionService {
      */
     @Activate
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
 
         // perform any file-based password imports
         final File importFilesDir =
@@ -390,6 +396,15 @@ public class SshConnectionServiceImpl implements SshConnectionService {
 
         ConcurrencyUtils.getAsyncTaskService().execute("Client-Side Remote Access: Add pre-configured SSH connections",
             () -> addAndConnectInitialSshConfigs(configurationService.getInitialSSHConnectionConfigs()));
+    }
+
+    @Deactivate
+    public void deactivate() {
+        //shutdown ssh connections cleanly
+        Map<String, SshConnectionSetup> activeSshConnectionSetups = getAllActiveSshConnectionSetups();
+        activeSshConnectionSetups.keySet()
+            .forEach(connectionId -> disconnectSession(connectionId));
+
     }
 
     private void addAndConnectInitialSshConfigs(List<InitialSshConnectionConfig> configs) {

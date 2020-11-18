@@ -34,11 +34,15 @@ public class HeadlessWorkflowExecutionContextBuilder {
      * @param logDirectory set the location for workflow log files
      * @throws InvalidFilenameException 
      */
-    public HeadlessWorkflowExecutionContextBuilder(File wfFile, File logDirectory) throws InvalidFilenameException {
+    public HeadlessWorkflowExecutionContextBuilder(File wfFile) throws InvalidFilenameException {
         headlessWfExeCtx = new HeadlessWorkflowExecutionContextImpl();
         headlessWfExeCtx.setWfFile(wfFile);
         CrossPlatformFilenameUtils.throwExceptionIfFilenameNotValid(wfFile.getName());
+    }
+    
+    public HeadlessWorkflowExecutionContextBuilder setLogDirectory(File logDirectory) {
         headlessWfExeCtx.setLogDirectory(logDirectory);
+        return this;
     }
 
     /**

@@ -8,15 +8,20 @@
 
 package de.rcenvironment.extras.testscriptrunner.definitions.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 
@@ -35,8 +40,21 @@ import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitio
  * 
  * @author Marlon Schroeter
  * @author Robert Mischke (based on code from)
+ * @author Alexander Weinert (component information steps)
  */
 public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBase {
+    
+    private String lastStaticInputQueried;
+    
+    private String lastStaticOutputQueried;
+
+    private final List<Endpoint> staticInputsOfLastComponent = new LinkedList<>();
+
+    private final List<Endpoint> dynamicInputsOfLastComponent = new LinkedList<>();
+
+    private final List<Endpoint> staticOutputsOfLastComponent = new LinkedList<>();
+
+    private final List<Endpoint> dynamicOutputsOfLastComponent = new LinkedList<>();
 
     public ComponentStepDefinitions(TestScenarioExecutionContext executionContext) {
         super(executionContext);
@@ -139,6 +157,55 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
 
     }
 
+    private static class Endpoint {
+
+        private String name;
+
+        private String defaultDatatype;
+
+        private String possibleDatatypes;
+
+        private String defaultInputHandling;
+
+        private String possibleInputHandlings;
+
+        private String defaultExecutionConstraint;
+
+        private String possibleExecutionConstraints;
+
+        /**
+         * Factory method for @{link {@link Endpoint}. Should be a static method of that class, which is not possible due to that class
+         * being an inner class, which may not
+         * 
+         * @param outputLine A line obtained from the output of `components show` describing a single endpoint
+         * @return
+         */
+        private static Endpoint parseComponentsShowOutputLine(String outputLine) {
+            final String[] outputComponents = outputLine.split("|");
+
+            // An endpoint is either an input or an output. An output has only a name, a default datatype, and a list of admissible
+            // datatypes, while an input additionally has a default and admissible input handlings and input execution constraints.
+            // Hence, the information about an endpoint consists of either three (for an output) or seven (for an input) items.
+            assertTrue(outputComponents.length == 3 || outputComponents.length == 7);
+
+            final Endpoint product = new Endpoint();
+
+            product.name = outputComponents[0];
+            product.defaultDatatype = outputComponents[1];
+            product.possibleDatatypes = outputComponents[2];
+
+            if (outputComponents.length == 7) {
+                product.defaultInputHandling = outputComponents[3];
+                product.possibleInputHandlings = outputComponents[4];
+
+                product.defaultExecutionConstraint = outputComponents[5];
+                product.possibleExecutionConstraints = outputComponents[6];
+            }
+
+            return product;
+        }
+    }
+
     /**
      * Adds one or more tools to one or more instances.
      * 
@@ -169,6 +236,19 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
     public void whenRemovingTools(String tools, String allFlag, String instanceIds) throws Throwable {
         RemoveToolIterator removeToolIterator = new RemoveToolIterator(tools);
         iterateInstances(removeToolIterator, allFlag, instanceIds);
+    }
+
+    @When("^integrating workflow \"([^\"]*)\" as component \"([^\"]*)\" on instance \"([^\"]*)\" with the following endpoint definitions:$")
+    public void whenIntegratingWorkflow(String workflowName, String componentName, String instanceId, DataTable endpointDefinitionTable) {
+        final List<List<String>> endpointDefinitions = endpointDefinitionTable.cells(0);
+        final String endpointsDefinitionsString = endpointDefinitions.stream()
+            .map(row -> row.get(0))
+            .collect(Collectors.joining(" "));
+
+        final Path originalWfFileLocation = executionContext.getTestScriptLocation().toPath().resolve("workflows").resolve(workflowName);
+        final String command =
+            StringUtils.format("wf integrate %s \"%s\" %s", componentName, originalWfFileLocation, endpointsDefinitionsString);
+        executeCommandOnInstance(resolveInstance(instanceId), command, false);
     }
 
     /**
@@ -245,5 +325,105 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
         }
     }
 
+    @Then("^instance \"([^\"]*)\" should see the component \"([^\"]*)\"$")
+    public void instanceShouldSeeTheComponent(String instanceId, String componentId) throws Throwable {
+        final ManagedInstance instance = resolveInstance(instanceId);
+        final String command = StringUtils.format("components show %s", componentId);
+        final String output = executeCommandOnInstance(instance, command, false);
 
+        final String[] outputLines = output.split("\n");
+
+        final String expectedExternalIdLine = StringUtils.format("External ID: %s", componentId);
+        assertEquals(expectedExternalIdLine, outputLines[0]);
+
+        // The second line of the output (i.e., outputLines[1]) contains the internal ID of the component. We skip validation of that line
+        // as it is irrelevant for user-observed behavior
+
+        assertTrue(outputLines[2].equals("Static Inputs:"));
+        final List<String> staticInputLines = new LinkedList<>();
+        int currentIndex = 3;
+        String currentLine = outputLines[currentIndex];
+        while (!currentLine.equals("Dynamic Inputs:")) {
+            staticInputLines.add(currentLine);
+            currentIndex += 1;
+            currentLine = outputLines[currentIndex];
+        }
+        currentIndex += 1;
+        currentLine = outputLines[currentIndex];
+
+        final List<String> dynamicInputLines = new LinkedList<>();
+        while (!currentLine.equals("Static Outputs:")) {
+            dynamicInputLines.add(currentLine);
+            currentIndex += 1;
+            currentLine = outputLines[currentIndex];
+        }
+        currentIndex += 1;
+        currentLine = outputLines[currentIndex];
+
+        final List<String> staticOutputLines = new LinkedList<>();
+        while (!currentLine.equals("Dynamic Outputs:")) {
+            staticOutputLines.add(currentLine);
+            currentIndex += 1;
+            currentLine = outputLines[currentIndex];
+        }
+        currentIndex += 1;
+        currentLine = outputLines[currentIndex];
+
+        final List<String> dynamicOutputLines = new LinkedList<>();
+        while (currentIndex < outputLines.length) {
+            dynamicOutputLines.add(currentLine);
+            currentIndex += 1;
+            currentLine = outputLines[currentIndex];
+        }
+
+    }
+
+    @Then("^that component should have a static input with name \"([^\"]*)\"$")
+    public void thatComponentShouldHaveInputWithName(String inputName) {
+        this.lastStaticInputQueried = inputName;
+        assertTrue(this.staticInputsOfLastComponent.stream().anyMatch(endpoint -> endpoint.name.equals(inputName)));
+    }
+    
+    @Then("^that input should have the default data type \"([^\"]*)\"$")
+    public void thatInputShouldBeOfType(String expectedDefaultDataType) throws Throwable {
+        final Endpoint lastInputQueried = getLastStaticInputQueried();
+        assertEquals(expectedDefaultDataType, lastInputQueried.defaultDatatype);
+    }
+
+    @Then("^that input should have the input handling \"([^\"]*)\"$")
+    public void thatInputShouldHaveTheInputHandling(String expectedInputHandling) throws Throwable {
+        final Endpoint lastInputQueried = getLastStaticInputQueried();
+        assertEquals(expectedInputHandling, lastInputQueried.defaultInputHandling);
+    }
+
+    @Then("^that input should have the execution constraint \"([^\"]*)\"$")
+    public void thatInputShouldHaveTheExecutionConstraint(String expectedExecutionConstraint) throws Throwable {
+        final Endpoint lastInputQueried = getLastStaticInputQueried();
+        assertEquals(expectedExecutionConstraint, lastInputQueried.defaultExecutionConstraint);
+    }
+
+    @Then("^that component should have a static output with name \"([^\"]*)\"$")
+    public void thatComponentShouldHaveAnOutputWithName(String outputName) throws Throwable {
+        this.lastStaticOutputQueried = outputName;
+        assertTrue(this.staticOutputsOfLastComponent.stream().anyMatch(endpoint -> endpoint.name.equals(outputName)));
+    }
+
+    @Then("^that output should have the default data type \"([^\"]*)\"$")
+    public void thatOutputShouldBeOfType(String expectedDefaultDataType) throws Throwable {
+        final Endpoint lastOutputQueried = getLastStaticOutputQueried();
+        assertEquals(expectedDefaultDataType, lastOutputQueried.defaultDatatype);
+    }
+
+    private Endpoint getLastStaticInputQueried() {
+        return this.staticInputsOfLastComponent.stream()
+            .filter(endpoint -> endpoint.name.equals(this.lastStaticInputQueried))
+            .findAny().get();
+    }
+    
+    private Endpoint getLastStaticOutputQueried() {
+        return this.staticOutputsOfLastComponent.stream()
+            .filter(endpoint -> endpoint.name.equals(this.lastStaticOutputQueried))
+            .findAny().get();
+    }
+        
 }

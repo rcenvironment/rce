@@ -10,6 +10,7 @@ package de.rcenvironment.core.configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
@@ -140,7 +141,6 @@ public interface ConfigurationService {
         /**
          * The configuration directory of the current instance/profile; default: "<PROFILE_ROOT>/configuration".
          */
-        // TODO >= 6.0.0 review: what is this actually used for anymore? - misc_ro
         PROFILE_CONFIGURATION_DATA,
 
         /**
@@ -263,6 +263,15 @@ public interface ConfigurationService {
      * Temporary method for 6.0.0 to force reloading, until configuration writing and file watching (for external changes) is implemented.
      */
     void reloadConfiguration();
+
+    /**
+     * Allows custom code to read JSON configuration files using the standard {@link ConfigurationSegment} API..
+     * 
+     * @param path the {@link Path} to the file to read
+     * @return the JSON contents of the file, parsed into a {@link ConfigurationSegment}
+     * @throws IOException on I/O errors, or if the file does not exist
+     */
+    ConfigurationSegment loadCustomConfigurationFile(Path path) throws IOException;
 
     // Object getConfigurationWriteLock();
 

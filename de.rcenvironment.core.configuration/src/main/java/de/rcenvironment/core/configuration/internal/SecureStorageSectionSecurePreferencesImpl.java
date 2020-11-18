@@ -61,7 +61,7 @@ public class SecureStorageSectionSecurePreferencesImpl implements SecureStorageS
             // write changes to disk; by default, Eclipse only persists updated entries on a clean shutdown
             securePrefsNode.flush();
         } catch (StorageException | IOException e) {
-            throw new OperationFailureException("Failed to write secure storage entry " + entryDescription(key), e);
+            throw new OperationFailureException("Failed to write secure storage entry " + entryDescription(key) + ": " + e.toString());
         }
     }
 
@@ -87,7 +87,7 @@ public class SecureStorageSectionSecurePreferencesImpl implements SecureStorageS
                     + "this is typically caused by a wrong or changed storage password");
             }
         } catch (StorageException e) {
-            throw new OperationFailureException("Failed to read secure storage entry " + entryDescription(key), e);
+            throw new OperationFailureException("Failed to read secure storage entry " + entryDescription(key) + ": " + e.toString());
         }
     }
 
@@ -99,7 +99,7 @@ public class SecureStorageSectionSecurePreferencesImpl implements SecureStorageS
             // write changes to disk; by default, Eclipse only persists updated entries on a clean shutdown
             securePrefsNode.flush();
         } catch (IOException e) {
-            throw new OperationFailureException("Failed to delete secure storage entry " + entryDescription(key), e);
+            throw new OperationFailureException("Failed to delete secure storage entry " + entryDescription(key) + ": " + e.toString());
         }
     }
 

@@ -82,6 +82,7 @@ public class BootstrapConfigurationTest {
      */
     @Before
     public void setUp() throws IOException {
+        RuntimeDetection.allowSimulatedServiceActivation();
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempFileService = TempFileServiceAccess.getInstance();
 
@@ -131,7 +132,7 @@ public class BootstrapConfigurationTest {
         throws ProfileException, ParameterException, IOException, CommonProfileException, SystemExitException {
         // setup
         startCaptureSystemStreams();
-        LaunchParameterTestUtils.setParameters();
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters();
 
         // execution
         BootstrapConfiguration.initialize();
@@ -172,7 +173,7 @@ public class BootstrapConfigurationTest {
         File profileDir = tempDir.toPath().resolve("profileDir").toFile();
         assertFalse(profileDir.exists());
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, profileDir.getAbsolutePath());
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, profileDir.getAbsolutePath());
 
         BootstrapConfiguration.initialize();
 
@@ -198,7 +199,7 @@ public class BootstrapConfigurationTest {
         File tempFile = tempFileService.createTempFileFromPattern("*");
         assertTrue(tempFile.exists());
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, tempFile.getAbsolutePath());
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, tempFile.getAbsolutePath());
 
         expectedException.expect(ProfileException.class);
         expectedException.expectMessage(containsString("points to a file"));
@@ -215,7 +216,7 @@ public class BootstrapConfigurationTest {
     @Test
     public void testConflicitingMixedProfilePathArguments() throws ProfileException, IOException, SystemExitException {
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, "test1", "--profile", "test2");
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, "test1", "--profile", "test2");
 
         try {
             BootstrapConfiguration.initialize();
@@ -235,7 +236,7 @@ public class BootstrapConfigurationTest {
     @Test
     public void testConflicitingShortProfilePathArguments() throws IOException, ProfileException, SystemExitException {
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, "test1", SHORT_PROFILE_FLAG, "test2");
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, "test1", SHORT_PROFILE_FLAG, "test2");
 
         try {
             BootstrapConfiguration.initialize();
@@ -255,7 +256,7 @@ public class BootstrapConfigurationTest {
     @Test
     public void testExceptionOnCommonProfile() throws IOException, ParameterException, SystemExitException {
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, "common");
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, "common");
 
         try {
             BootstrapConfiguration.initialize();
@@ -278,7 +279,7 @@ public class BootstrapConfigurationTest {
         String originalProfileParentDir = TestUtils.setSystemPropertyToTempFolder(PROPERTY_RCE_PROFILES_PARENT_DIR, tempFileService);
         File file = new File(System.getProperty(PROPERTY_RCE_PROFILES_PARENT_DIR), "common");
 
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, file.getAbsolutePath());
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, file.getAbsolutePath());
 
         try {
             BootstrapConfiguration.initialize();
@@ -304,7 +305,7 @@ public class BootstrapConfigurationTest {
         // setup
         String originalProfileParentDir = System.getProperty(PROPERTY_RCE_PROFILES_PARENT_DIR);
         System.setProperty(PROPERTY_RCE_PROFILES_PARENT_DIR, "this is not an absolute path");
-        LaunchParameterTestUtils.setParameters();
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters();
 
         try {
             BootstrapConfiguration.initialize();
@@ -340,7 +341,7 @@ public class BootstrapConfigurationTest {
             fw.write(String.valueOf(Profile.PROFILE_VERSION_NUMBER + 1));
         }
         
-        LaunchParameterTestUtils.setParameters(SHORT_PROFILE_FLAG, tempProfileDir.getAbsolutePath());
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters(SHORT_PROFILE_FLAG, tempProfileDir.getAbsolutePath());
 
         try {
             BootstrapConfiguration.initialize();
@@ -366,7 +367,7 @@ public class BootstrapConfigurationTest {
         throws ProfileException, ParameterException, CommonProfileException, IOException, SystemExitException {
 
         // setup
-        LaunchParameterTestUtils.setParameters("--shutdown");
+        EclipseLaunchParameterTestUtils.simulateLaunchParameters("--shutdown");
         startCaptureSystemStreams();
 
         // execution

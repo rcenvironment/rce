@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileSystem;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,6 +50,8 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     private static final String FORWARD_SLASH = "/";
 
     private static final String BACKSLASH = "\\";
+
+    private static final Pattern SCP_COMMAND_PATTERN = Pattern.compile("(scp (?:-[rtdf]+ +)+)'?(/ra/[^\\s']+)'?\\s*");
 
     private String command;
 
@@ -127,13 +131,15 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     }
 
     private String rewriteCommand(String originalCommand, ScpContext scpContext) {
-        // TODO make stricter by regexp parsing - misc_ro
-        int startOfPath = originalCommand.indexOf(FORWARD_SLASH);
-        String originalCommandStart = originalCommand.substring(0, startOfPath);
-        String originalPath = originalCommand.substring(startOfPath);
 
-        logger.debug(StringUtils.format("Rewriting access to logical file path '%s' (command prefix: '%s')",
-            originalPath, originalCommandStart));
+        Matcher m = SCP_COMMAND_PATTERN.matcher(originalCommand);
+
+        if (!m.matches()) {
+            throw new IllegalStateException("Unexpected/malformed command for Remote Access SCP (case 2): " + originalCommand);
+        }
+        String originalCommandStart = m.group(1);
+        String originalPath = m.group(2);
+
         if (!originalPath.startsWith(scpContext.getVirtualScpRootPath())) {
             throw new IllegalStateException("Virtual SCP path '" + originalPath + "' does not start with expected root path '"
                 + scpContext.getVirtualScpRootPath() + "'");
@@ -155,7 +161,8 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
             rewrittenPath = rewrittenPath + FORWARD_SLASH;
         }
 
-        logger.debug("Final SCP mapped path: " + rewrittenPath);
+        logger.debug(StringUtils.format("Mapped logical SCP path to '%s'; original command: %s",
+            rewrittenPath, originalCommand));
 
         // Create necessary parent directories, if not existing
         File rewrittenPathParentDir = new File(rewrittenPath).getParentFile();
@@ -165,19 +172,19 @@ public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware
     }
 
     private String getScpPathOfCommand() throws AuthenticationException {
-        // Apache Mina/ SSHD dows not hand over the complete SCP command as entered on Client side.
-        // the scp command looks like: scp -t (or -r) PFAD
-        int slashPos = command.indexOf(FORWARD_SLASH);
-        if (slashPos == NOT_FOUND_INDEX) {
-            throw new AuthenticationException("SCP path must contain at least one forward slash");
+        // Apache Mina/SSHD does not hand over the complete SCP command as entered on client side.
+        // SCP commands look like "scp [option set of -r/-t/-f/-d] <path>" ; recent libssh versions
+        // seem to always enclose the path in single quotes.
+
+        Matcher m = SCP_COMMAND_PATTERN.matcher(command);
+        if (!m.matches()) {
+            throw new AuthenticationException("Unexpected/malformed command for Remote Access SCP (case 1): " + command);
         }
-        if (command.charAt(slashPos - 1) != ' ') {
-            throw new AuthenticationException("SCP path must start with a forward slash");
-        }
-        String path = command.substring(slashPos).trim();
+        String path = m.group(2).trim();
         if (path.contains("..") || path.contains("..")) {
             throw new AuthenticationException("Parent folder traversal (\"..\") is disallowed");
         }
+        logger.debug("Extracted SCP path " + path + " from command " + command);
         return path;
 
     }

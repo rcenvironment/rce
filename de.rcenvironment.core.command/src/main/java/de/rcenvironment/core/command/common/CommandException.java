@@ -63,6 +63,10 @@ public final class CommandException extends Exception {
         this.showDeveloperHelp = context.isDeveloperCommandSetEnabled(); // TODO move to getter?
     }
 
+    public static CommandException missingFilename(CommandContext context) {
+        return CommandException.syntaxError("Missing filename", context);
+    }
+
     /**
      * Creates a custom {@link Type#SYNTAX_ERROR} exception.
      * 

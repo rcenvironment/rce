@@ -38,6 +38,16 @@ public enum MessageType {
     HANDSHAKE(UplinkProtocolConstants.MESSAGE_TYPE_HANDSHAKE),
 
     /**
+     * A periodic message for testing the integrity of the bidirectional message exchange. Implementations may choose not to actively send
+     * them, but they are required to respond to them (see {@link #HEARTBEAT_RESPONSE}.
+     */
+    HEARTBEAT(125),
+
+    /**
+     * The response type to {@link #HEARTBEAT} messages. Clients must respond with these when receiving a {@link #HEARTBEAT} message.
+     */
+    HEARTBEAT_RESPONSE(126),
+    /**
      * The message type for the special "end of session" goodbye message. The body is empty on a regular shutdown, or a UTF-8-encoded error
      * message on connection failure. Usage: C2R, R2C.
      */
@@ -133,7 +143,7 @@ public enum MessageType {
     /**
      * A special reserved message, usually for testing.
      */
-    PING(99),
+    TEST(99),
 
     ;
 

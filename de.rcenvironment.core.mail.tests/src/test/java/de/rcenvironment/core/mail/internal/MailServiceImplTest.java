@@ -20,12 +20,14 @@ import java.util.concurrent.Future;
 import javax.mail.MessagingException;
 
 import org.easymock.EasyMock;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;
 
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.mail.InvalidMailException;
 import de.rcenvironment.core.mail.MailDispatchResult;
 import de.rcenvironment.core.mail.MailDispatchResultListener;
@@ -38,10 +40,18 @@ import de.rcenvironment.core.mail.MailDispatchResultListener;
 public class MailServiceImplTest extends AbstractMailServiceImplTest {
 
     private static final String GREENMAIL_IMPLICIT_ENCRYPTION_JSON = "/greenmail_implicit_encryption.json";
-    
+
     private static final String NOT_IMPLEMENTED_YET = "Not implemented yet";
 
     private static final int TWO_SECS_IN_MILLIS = 2000;
+
+    /**
+     * Common test setup.
+     */
+    @Before
+    public void setUp() {
+        RuntimeDetection.allowSimulatedServiceActivation();
+    }
 
     /**
      * Tests if the mail dispatch fails with an incomplete configuration, which only specifies the host and port but nothing else.
@@ -53,7 +63,7 @@ public class MailServiceImplTest extends AbstractMailServiceImplTest {
      */
     @Test
     public void testSendMailWithInvalidConfig() throws InterruptedException, ExecutionException, IOException, InvalidMailException {
-        
+
         boolean configured = setupMailService("/invalidConfig.json");
         assertFalse(configured);
 
@@ -172,7 +182,7 @@ public class MailServiceImplTest extends AbstractMailServiceImplTest {
     @Test
     public void testConnectWithImplicitSecurityAndInvalidCertificate()
         throws IOException, InterruptedException, ExecutionException, InvalidMailException, MessagingException {
-        
+
         // opens an SMTPS server on port 3465 which awaits SSL/TLS connections
         GreenMail greenmail = new GreenMail(ServerSetupTest.SMTPS);
         greenmail.getManagers().getUserManager().setAuthRequired(true);
@@ -200,8 +210,6 @@ public class MailServiceImplTest extends AbstractMailServiceImplTest {
     public void testMailDispatchWithImplicitSecurity() throws IOException, InvalidMailException, InterruptedException, ExecutionException,
         MessagingException {
 
-        
-        
         // opens an SMTPS server on port 3465 which awaits SSL/TLS connections
         GreenMail greenmail = new GreenMail(ServerSetupTest.SMTPS);
         greenmail.getManagers().getUserManager().setAuthRequired(true);
@@ -315,7 +323,7 @@ public class MailServiceImplTest extends AbstractMailServiceImplTest {
         expectedException.expect(CancellationException.class);
         sendMail.get();
     }
-    
+
     /**
      * This test will attempt to establish a connection with explicit security using the STARTTLS command.
      * 
@@ -338,7 +346,7 @@ public class MailServiceImplTest extends AbstractMailServiceImplTest {
     public void testConnectWithInvalidCredentials() {
         throw new UnsupportedOperationException(NOT_IMPLEMENTED_YET);
     }
-    
+
     /**
      * Tests the mail service deactivation during waiting for reattempt of mail delivery.
      * 

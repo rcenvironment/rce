@@ -47,6 +47,7 @@ import de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver;
 import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.common.rpc.RemotableService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -117,6 +118,11 @@ public class CommunicationServiceImpl implements CommunicationService, Additiona
      */
     @Activate
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         this.localInstanceNodeSessionId = platformService.getLocalInstanceNodeSessionId();
         this.localDefaultLogicalNodeSessionId = platformService.getLocalDefaultLogicalNodeSessionId();
 
@@ -133,6 +139,11 @@ public class CommunicationServiceImpl implements CommunicationService, Additiona
      */
     @Deactivate
     public void deactivate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         // TODO for now, triggered from here; move to management service?
         newManagementService.shutDownNetwork();
     }

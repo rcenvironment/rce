@@ -58,5 +58,4 @@ public interface PersistentWorkflowDescriptionLoaderService {
      */
     WorkflowDescription loadWorkflowDescriptionFromFile(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException;
-
 }

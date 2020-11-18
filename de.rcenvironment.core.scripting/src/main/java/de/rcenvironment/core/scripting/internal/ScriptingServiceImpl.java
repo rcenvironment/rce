@@ -40,6 +40,10 @@ public class ScriptingServiceImpl implements ScriptingService {
         if (!supportsScriptLanguage(ScriptLanguage.Python)) {
             engineManager.registerEngineName(ScriptLanguage.Python.getName(), new PythonScriptEngineFactory());
         }
+
+        if (!supportsScriptLanguage(ScriptLanguage.PythonExp)) {
+            engineManager.registerEngineName(ScriptLanguage.PythonExp.getName(), new PythonScriptEngineFactory());
+        }
     }
 
     @Override

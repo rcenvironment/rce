@@ -31,6 +31,7 @@ import de.rcenvironment.core.communication.uplink.network.internal.ClientSideUpl
 import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionLowLevelEventHandler;
+import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -55,6 +56,88 @@ public abstract class AbstractUplinkConnectionTest {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private final class MockUplinkLowLevelEventHandlerImpl implements UplinkConnectionLowLevelEventHandler {
+
+        private final CountDownLatch responseReceivedCDL;
+
+        private MockUplinkLowLevelEventHandlerImpl(CountDownLatch responseReceivedCDL) {
+            this.responseReceivedCDL = responseReceivedCDL;
+        }
+
+        @Override
+        public void provideOrProcessHandshakeData(Map<String, String> incomingData, Map<String, String> outgoingData) {
+            if (incomingData == null) {
+                assertNotNull(outgoingData);
+                // generate initial data
+                outgoingData.put("clientTestData", "dummyVal");
+                outgoingData.put(UplinkProtocolConstants.HANDSHAKE_KEY_PROTOCOL_VERSION_OFFER,
+                    UplinkProtocolConstants.DEFAULT_PROTOCOL_VERSION);
+            } else {
+                assertNull(outgoingData);
+                // TODO parse/check response
+            }
+        }
+
+        @Override
+        public void onHandshakeComplete() {
+            ConcurrencyUtils.getAsyncTaskService().execute("Exchange test messages",
+                AbstractUplinkConnectionTest.this::exchangeTestMessages);
+        }
+
+        @Override
+        public void onHandshakeFailedOrConnectionRefused(UplinkConnectionRefusedException e) {
+            log.error("Handshake failed: " + e.toString());
+        }
+
+        // TODO review these method stubs in comparison to actual client/server side code
+        @Override
+        public void onRegularGoodbyeMessage() {
+            // TODO >10.2 (test only): send goodbye message?
+            protocolWrapper.terminateSession();
+        }
+
+        @Override
+        public void onErrorGoodbyeMessage(UplinkProtocolErrorType errorType, String errorMessage) {
+            log.error("Received protocol-level error message of type " + errorType + ": " + errorMessage);
+            registerAsyncTestError();
+            // TODO >10.2 (test only):send goodbye message?
+            protocolWrapper.terminateSession();
+        }
+
+        @Override
+        public void onIncomingStreamClosedOrEOF() {
+            log.debug("Received EOF or input stream breakdown");
+        }
+
+        @Override
+        public void onStreamReadError(IOException e) {
+            // TODO handle specifically
+            log.warn("Stream write error event; delegating for now: " + e.toString());
+            onNonProtocolError(e); // delegating for now
+        }
+
+        @Override
+        public void onStreamWriteError(IOException e) {
+            // TODO handle specifically
+            log.warn("Stream write error event; delegating for now: " + e.toString());
+            onNonProtocolError(e); // delegating for now
+        }
+
+        @Override
+        public void onNonProtocolError(Exception exception) {
+            log.error("Non-protocol connection error: " + exception.toString());
+            registerAsyncTestError();
+            // TODO >10.2 (test only): send goodbye message?
+            protocolWrapper.terminateSession();
+        }
+
+        @Override
+        public void onMessageBlock(long channelId, MessageBlock message) {
+            log.info("Received server message block: " + new String(message.getData(), ENCODING_CHARSET));
+            responseReceivedCDL.countDown();
+        }
+    }
+
     /**
      * Basic communication test. TODO review test scope and possible merging
      * 
@@ -66,67 +149,23 @@ public abstract class AbstractUplinkConnectionTest {
         CountDownLatch responseReceivedCDL = new CountDownLatch(1);
         CountDownLatch sessionCompleteCDL = new CountDownLatch(1);
 
-        protocolWrapper = new ClientSideUplinkLowLevelProtocolWrapper(uplinkConnection, new UplinkConnectionLowLevelEventHandler() {
+        UplinkConnectionLowLevelEventHandler lowLevelEventHandler = new MockUplinkLowLevelEventHandlerImpl(responseReceivedCDL);
 
-            @Override
-            public void provideOrProcessHandshakeData(Map<String, String> incomingData, Map<String, String> outgoingData) {
-                if (incomingData == null) {
-                    assertNotNull(outgoingData);
-                    // generate initial data
-                    outgoingData.put("clientTestData", "dummyVal");
-                    outgoingData.put(UplinkProtocolConstants.HANDSHAKE_KEY_HIGH_LEVEL_PROTOCOL_VERSION,
-                        UplinkProtocolConstants.HIGH_LEVEL_PROTOCOL_VERSION);
-                } else {
-                    assertNull(outgoingData);
-                    // TODO parse/check response
-                }
-            }
-
-            @Override
-            public void onHandshakeComplete() {
-                ConcurrencyUtils.getAsyncTaskService().execute("Exchange test messages",
-                    AbstractUplinkConnectionTest.this::exchangeTestMessages);
-            }
-
-            // TODO review these method stubs in comparison to actual client/server side code
-            @Override
-            public void onRegularGoodbyeMessage() {
-                protocolWrapper.closeOutgoingMessageStream();
-            }
-
-            @Override
-            public void onErrorGoodbyeMessage(UplinkProtocolErrorType errorType, String errorMessage) {
-                log.error("Received protocol-level error message of type " + errorType + ": " + errorMessage);
-                registerAsyncTestError();
-                protocolWrapper.closeOutgoingMessageStream();
-            }
-
-            @Override
-            public void onNonProtocolError(IOException exception) {
-                log.error("Non-protocol connection error: " + exception.toString());
-                registerAsyncTestError();
-                protocolWrapper.closeOutgoingMessageStream();
-            }
-
-            @Override
-            public void onMessageBlock(long channelId, MessageBlock message) {
-                log.info("Received server message block: " + new String(message.getData(), ENCODING_CHARSET));
-                responseReceivedCDL.countDown();
-            }
+        uplinkConnection.open(msg -> {
+            log.warn("Error output: " + msg);
         });
 
+        protocolWrapper = new ClientSideUplinkLowLevelProtocolWrapper(uplinkConnection, lowLevelEventHandler, "test client");
+
         ConcurrencyUtils.getAsyncTaskService().execute("Uplink test client: handle session", () -> {
-            try {
-                protocolWrapper.runSession();
-            } catch (IOException e) {
-                log.error("Error runnning test client session", e);
-            }
+            protocolWrapper.runSession();
             sessionCompleteCDL.countDown();
         });
 
         log.info("Waiting for response message");
         boolean receivedResponse = responseReceivedCDL.await(1, TimeUnit.SECONDS);
-        protocolWrapper.closeOutgoingMessageStream();
+        protocolWrapper.attemptToSendRegularGoodbyeMessage();
+        protocolWrapper.terminateSession();
         sessionCompleteCDL.await();
 
         // note: this would be a good use case for a multi-assertion
@@ -138,7 +177,7 @@ public abstract class AbstractUplinkConnectionTest {
         try {
             log.info("Sending test message");
             final byte[] msgBytes = "clientMessage".getBytes(ENCODING_CHARSET);
-            protocolWrapper.sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, MessageType.PING.getCode(), msgBytes);
+            protocolWrapper.sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, MessageType.TEST.getCode(), msgBytes);
         } catch (IOException e) {
             log.error("Test error", e);
             registerAsyncTestError();

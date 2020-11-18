@@ -33,12 +33,13 @@ import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
  * 
  * @author Jascha Riedel
  * @author Christian Weiss
+ * @author Kathrin Schaffert
  */
 public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNodePropertySection {
 
-    private static final String CONTROL_COLORIZED_KEY = "property.control.colorized";
+    protected static final String CONTROL_COLORIZED_KEY = "property.control.colorized";
 
-    private static final String CONTROL_COLOR_KEY = "property.control.color";
+    protected static final String CONTROL_COLOR_KEY = "property.control.color";
 
 //    private final WorkflowNodeValidityStateListener validatorStateListener = createErrorStateUpdateListener();
 
@@ -46,6 +47,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     
     private WorkflowNodeIdentifier componentId;
     
+
     private final ComponentValidationMessageStore messageStore = ComponentValidationMessageStore.getInstance();
     
     private IPropertyListener propertyListener = new IPropertyListener() {
@@ -75,7 +77,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     }
 
     @Override
-    protected final void beforeTearingDownModelBinding() {
+    protected void beforeTearingDownModelBinding() {
         try {
             beforeTearingDownModelBindingWithValidation();
         } finally {
@@ -90,6 +92,10 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     protected void updateErrorStates() {
         final List<ComponentValidationMessage> messages = messageStore.getMessagesByComponentId(componentId.toString());
         updateErrorStates(messages);
+    }
+
+    protected ComponentValidationMessageStore getMessageStore() {
+        return messageStore;
     }
 
     /**

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication GUI
 Bundle-SymbolicName: de.rcenvironment.core.gui.communication; singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.equinox.security;bundle-version="1.1.1",
@@ -23,6 +23,7 @@ Import-Package: com.jcraft.jsch;version="0.1.55",
  de.rcenvironment.core.communication.sshconnection,
  de.rcenvironment.core.communication.sshconnection.api,
  de.rcenvironment.core.communication.uplink.client.session.api,
+ de.rcenvironment.core.communication.uplink.session.api,
  de.rcenvironment.core.communication.utils,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.management.api,

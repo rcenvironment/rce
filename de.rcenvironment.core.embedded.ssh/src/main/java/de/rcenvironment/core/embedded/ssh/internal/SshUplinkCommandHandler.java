@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSess
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSessionService;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -48,7 +49,51 @@ public class SshUplinkCommandHandler implements Command {
 
     private SshAuthenticationManager authenticationManager;
 
+    private boolean terminationSignalSent; // a flag to prevent redundant callback.onExit() calls; synchronized on "this"
+
     private final Log log = LogFactory.getLog(getClass());
+
+    private final class ConnectionEndpointAdapter implements StreamConnectionEndpoint {
+
+        private final ChannelSession channelSession;
+
+        private boolean closed;
+
+        private ConnectionEndpointAdapter(ChannelSession channelSession) {
+            this.channelSession = channelSession;
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return SshUplinkCommandHandler.this.outputStream;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return SshUplinkCommandHandler.this.inputStream;
+        }
+
+        @Override
+        public synchronized void close() {
+            if (closed) {
+                // TODO consider logging/aborting to remove redundant calls in the future; fine for now
+                return;
+            }
+            // close the command's input stream (the output stream from this perspective) first
+            try {
+                if (SshUplinkCommandHandler.this.outputStream != null) {
+                    SshUplinkCommandHandler.this.outputStream.close();
+                } else {
+                    log.warn("Unexpected null stream");
+                }
+            } catch (IOException e) {
+                log.debug("Non-critical exception closing the connection output stream before shutdown: " + e);
+            }
+            // terminate the Uplink pseudo-command to make the SSHD server close the underlying SSH/TCP connection
+            SshUplinkCommandHandler.this.destroy(channelSession);
+            closed = true;
+        }
+    }
 
     public SshUplinkCommandHandler(ServerSideUplinkSessionService serverSideUplinkSessionService,
         SshAuthenticationManager authenticationManager) {
@@ -59,37 +104,38 @@ public class SshUplinkCommandHandler implements Command {
     @Override
     public void start(ChannelSession channelSession, Environment env) throws IOException {
         final String loginAccountName = env.getEnv().get(Environment.ENV_USER);
-        final String clientInformationString = StringUtils.format("SSH User \"%s\"", loginAccountName);
+        final String sessionContextInfoString = StringUtils.format("ssh session %d", System.identityHashCode(channelSession.getSession()));
         final ServerSideUplinkSession session =
-            serverSideUplinkSessionService.createServerSideSession(clientInformationString, loginAccountName, inputStream, outputStream);
+            serverSideUplinkSessionService.createServerSideSession(new ConnectionEndpointAdapter(channelSession), loginAccountName,
+                sessionContextInfoString);
 
         SshAccount userAccount = authenticationManager.getAccountByLoginName(loginAccountName, false); // false = do not allow disabled
         if (userAccount == null) {
             writeToStream(errorStream, "Invalid/unknown login name: " + loginAccountName);
             log.warn("Blocked unrecognized SSH account " + loginAccountName);
-            callback.onExit(0);
+            sendTerminationSignal(1);
+            return;
         }
 
         if (authenticationManager.isAllowedToUseUplink(loginAccountName)) {
             ConcurrencyUtils.getAsyncTaskService().execute("SSH Uplink server: run session", () -> {
                 final boolean terminatedNormally = session.runSession();
-                session.close();
                 if (terminatedNormally) {
-                    callback.onExit(0);
+                    sendTerminationSignal(0);
                 } else {
-                    callback.onExit(1);
+                    sendTerminationSignal(1);
                 }
             });
         } else {
             log.warn("Blocked uplink access for account " + loginAccountName);
-            callback.onExit(0);
+            sendTerminationSignal(1);
         }
 
     }
 
     @Override
     public void destroy(ChannelSession channelSession) {
-        callback.onExit(0);
+        sendTerminationSignal(0); // note: exit code 0 is only sent if no signal was sent before
     }
 
     @Override
@@ -117,4 +163,12 @@ public class SshUplinkCommandHandler implements Command {
         stream.flush();
     }
 
+    private void sendTerminationSignal(int exitCode) {
+        synchronized (this) {
+            if (!terminationSignalSent) {
+                terminationSignalSent = true;
+                callback.onExit(exitCode);
+            }
+        }
+    }
 }

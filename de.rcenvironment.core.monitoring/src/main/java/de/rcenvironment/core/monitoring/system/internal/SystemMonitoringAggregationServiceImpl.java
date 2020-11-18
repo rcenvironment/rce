@@ -30,6 +30,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.monitoring.common.spi.PeriodicMonitoringDataContributor;
 import de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService;
 import de.rcenvironment.core.monitoring.system.api.OperatingSystemException;
@@ -98,6 +99,11 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
     private CommunicationService communicationService;
 
     protected void activate(BundleContext bundleContext) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         Objects.requireNonNull(systemDataService);
         Objects.requireNonNull(objectBindingsService);
         Objects.requireNonNull(asyncTaskService);
@@ -121,6 +127,11 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
     }
 
     protected void deactivate(BundleContext bundleContext) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         systemLoadInformationCollector = null;
         systemLoadCollectorFuture.cancel(false); // short-running; no need to interrupt
         systemLoadCollectorFuture = null;
@@ -246,19 +257,33 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
                 .<ProcessInformation> emptyList(),
                 systemDataService.getProcessCPUUsage(adapter.getSelfJavaPid()),
                 systemDataService.getProcessRAMUsage(adapter.getSelfJavaPid())));
-            if (!OSFamily.isWindows()) {
+            if (OSFamily.isLinux()) {
                 ownProcesses.add(new ProcessInformation(adapter.getSelfLauncherPid(), adapter.getSelfLauncherProcessName(), Collections
                     .<ProcessInformation> emptyList(),
                     systemDataService.getProcessCPUUsage(adapter.getSelfLauncherPid()),
                     systemDataService.getProcessRAMUsage(adapter.getSelfLauncherPid())));
-                // Place RCE help processes (on Linux systems) into own processes
+                // move Linux "Webkit*" processes (related to the integrated help browser) to "own processes"
                 for (Iterator<ProcessInformation> it = subProcesses.iterator(); it.hasNext();) {
                     ProcessInformation proc = it.next();
-                    if (proc.getName().startsWith("WebKit")) {
+                    String processName = proc.getName();
+                    if (processName.startsWith("WebKit")) {
                         ownProcesses.add(proc);
                         it.remove();
                     }
                 }
+            } else if (OSFamily.isWindows()) {
+                for (Iterator<ProcessInformation> it = subProcesses.iterator(); it.hasNext();) {
+                    // eliminate "conhost" on Windows systems (see #17328)
+                    String processName = it.next().getName();
+                    if (processName.equals("conhost")) {
+                        // as this has only been observed during Maven tests, just drop it instead of muddying the "own processes" pool
+                        log.debug("Eliminated 'conhost' from the list of sub-processes; "
+                            + "this is normal during integration tests, please report any other sightings");
+                        it.remove();
+                    }
+                }
+            } else {
+                throw new IllegalStateException();
             }
 
         } else {

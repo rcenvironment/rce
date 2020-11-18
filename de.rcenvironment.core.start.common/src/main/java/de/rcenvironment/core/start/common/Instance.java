@@ -11,6 +11,8 @@ package de.rcenvironment.core.start.common;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import de.rcenvironment.core.utils.common.AuditLog;
+import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -125,6 +127,8 @@ public class Instance {
      * Shuts down the RCE instance.
      */
     public static void shutdown() {
+        // TODO identify and add cause as "method" field
+        AuditLog.append(AuditLogIds.APPLICATION_SHUTDOWN_REQUESTED, null);
         shutdownLatch.countDown();
         if (instanceRunner == null) {
             shutdownRequested = true;

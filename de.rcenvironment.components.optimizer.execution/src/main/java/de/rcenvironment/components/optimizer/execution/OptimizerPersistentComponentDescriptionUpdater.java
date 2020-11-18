@@ -38,6 +38,7 @@ import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerFileLoader;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
+import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
@@ -49,8 +50,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Kathrin Schaffert (updated refactored constant declaration PersistentComponentDescriptionConstants.java)
  */
 public class OptimizerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
+
+    // 15.01.2020: several constant declarations are a duplicate of PersistentComponentDescriptionConstants.java and could be replaced
+    // (K. Schaffert)
 
     private static final String REQUIRED = "Required";
 
@@ -495,11 +500,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode dynEndpoints = node.get(DYNAMIC_INPUTS);
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
-                if (endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER) == null
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).isNull()
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).textValue().equals("null")) {
+                if (endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER) == null
+                    || endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER).isNull()
+                    || endpoint.get(PersistentComponentDescriptionConstants.EP_IDENTIFIER).textValue().equals("null")) {
                     ObjectNode objectEndpoint = (ObjectNode) endpoint;
-                    objectEndpoint.remove(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER);
+                    objectEndpoint.remove(PersistentComponentDescriptionConstants.EP_IDENTIFIER);
                     String identifier = "";
                     if ((objectEndpoint.get(METADATA)) != null
                         && !((ObjectNode) objectEndpoint.get(METADATA)).get(WEIGHT).textValue().equals(NAN)) {
@@ -527,7 +532,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                             }
                         }
                     }
-                    objectEndpoint.put(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER, TextNode.valueOf(identifier));
+                    objectEndpoint.put(PersistentComponentDescriptionConstants.EP_IDENTIFIER, TextNode.valueOf(identifier));
 
                 }
             }

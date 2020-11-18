@@ -1,0 +1,11 @@
+{
+	"launchSettings" : [ {
+		"limitInstallationInstances" : "true",
+		"host" : "RCE",
+		"rootWorkingDirectory" : "",
+		"toolDirectory" : ".",
+		"limitInstallationInstancesNumber" : "10",
+		"version" : "0.0"
+  } ],
+  "integrationType" : "Workflow"
+}

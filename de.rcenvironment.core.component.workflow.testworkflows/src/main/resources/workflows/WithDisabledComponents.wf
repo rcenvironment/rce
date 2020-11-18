@@ -1,6 +1,6 @@
 {
   "identifier" : "9b0711ec-fbeb-4abf-98de-e2407d4ec12d",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "c239cf0e-0276-4ab2-bf0a-d7fccbd30689",
     "name" : "Cluster",

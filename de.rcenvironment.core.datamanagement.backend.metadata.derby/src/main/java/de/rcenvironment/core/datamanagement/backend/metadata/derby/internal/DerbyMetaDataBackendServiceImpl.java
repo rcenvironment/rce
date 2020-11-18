@@ -39,6 +39,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
@@ -129,6 +130,11 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
     private String errorMessage = null;
 
     protected void activate(BundleContext context) throws IOException {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         File storageRootDir = configService.getConfigurablePath(ConfigurablePathId.PROFILE_DATA_MANAGEMENT);
         File metaDataDirectory = new File(storageRootDir, METADATA_DB_NAME);
         System.setProperty("derby.stream.error.file", new File(storageRootDir, "derby.log").getAbsolutePath());
@@ -157,6 +163,11 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
     }
 
     protected void deactivate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         try {
             if (!initializationLatch.await(INITIALIZATION_TIMEOUT, TimeUnit.SECONDS)) {
                 LOGGER.error(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);

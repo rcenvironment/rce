@@ -11,11 +11,13 @@ package de.rcenvironment.components.outputwriter.execution;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,6 +34,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  *
  * @author Brigitte Boden
  * @author Dominik Schneider
+ * @author Kathrin Schaffert (added overwriteOption parameter )
  */
 public class OutputLocationWriter {
 
@@ -59,17 +62,19 @@ public class OutputLocationWriter {
 
     private final ComponentLog componentLog;
 
+    private final Boolean overwriteOption;
+
     // Iteration counter; used for AUTORENAME option
     private long iterations;
 
-    protected OutputLocationWriter(List<String> inputNames, String header, String formatString,
-        HandleExistingFile handle, ComponentLog componentLog) {
+    protected OutputLocationWriter(String header, String formatString,
+        HandleExistingFile handle, ComponentLog componentLog, Boolean overwriteOption) {
         this.header = header;
         this.formatString = formatString;
         this.handleExistingFile = handle;
         this.iterations = 0;
-        // this.inputNames = inputNames;
         this.componentLog = componentLog;
+        this.overwriteOption = overwriteOption;
     }
 
     /**
@@ -89,10 +94,7 @@ public class OutputLocationWriter {
         }
         this.outputFile = fileToWrite;
         if (handleExistingFile == HandleExistingFile.APPEND || handleExistingFile == HandleExistingFile.OVERRIDE) {
-            if (fileToWrite.exists()) {
-                fileToWrite = autoRename(fileToWrite);
-                this.outputFile = fileToWrite;
-            }
+            fileToWrite = renameOrDeleteExistingFile(fileToWrite);
             try {
                 outputStream = FileUtils.openOutputStream(fileToWrite, true);
 
@@ -114,7 +116,23 @@ public class OutputLocationWriter {
         componentLog.componentInfo("Created and initialized file used as target for simple data types: " + outputFile.getAbsolutePath());
     }
 
-    protected void writeOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount) throws ComponentException {
+    private File renameOrDeleteExistingFile(File fileToWrite) throws ComponentException {
+        // delete existing files if option is checked
+        if (fileToWrite.exists() && Boolean.FALSE.equals(overwriteOption)) {
+            fileToWrite = autoRename(fileToWrite);
+            this.outputFile = fileToWrite;
+        } else {
+            try {
+                Files.deleteIfExists(fileToWrite.toPath());
+            } catch (IOException e) {
+                throw new ComponentException("The deletion of the file " + fileToWrite.getAbsolutePath() + "failed.", e);
+            }
+        }
+        return fileToWrite;
+    }
+
+    protected void writeOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount)
+        throws ComponentException {
         final String cleanedFormatString = removeNewlines(formatString);
         final String cleanedHeaderString = removeNewlines(header);
         String outputString = OutputWriterValidatorHelper.replacePlaceholders(cleanedFormatString, inputMap, timestamp, executionCount);
@@ -138,17 +156,19 @@ public class OutputLocationWriter {
                 }
 
             } else if (handleExistingFile == HandleExistingFile.AUTORENAME) {
+
+                outputFile = getNamePerIteration(outputFile);
+
+
                 if (!cleanedHeaderString.isEmpty()) {
                     // For option AUTORENAME, create a file with new name and write to it.
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
-                    outputFile = getNamePerIteration(outputFile);
                     FileUtils.writeStringToFile(outputFile,
                         OutputWriterValidatorHelper.formatHeader(cleanedHeaderString, timeStamp, executionCount) + LINE_SEP + outputString,
                         false);
                 } else {
-                    outputFile = getNamePerIteration(outputFile);
                     FileUtils.writeStringToFile(outputFile, outputString, false);
                 }
             }
@@ -159,7 +179,7 @@ public class OutputLocationWriter {
         componentLog.componentInfo(StringUtils.format("Wrote '%s' to: %s", inputMap, outputFile.getAbsolutePath()));
     }
 
-    protected File getNamePerIteration(File fileToWrite) {
+    protected File getNamePerIteration(File fileToWrite) throws ComponentException {
         String folderpath = fileToWrite.getParent();
         String fileName = basicName;
         String extension = "";
@@ -169,9 +189,15 @@ public class OutputLocationWriter {
             fileName = fileName.substring(0, fileName.lastIndexOf(DOT));
         }
         File possibleFile = new File(folderpath, fileName + ITERATION + iterations + extension);
-
-        if (possibleFile.exists()) {
+        // delete existing files if option is checked
+        if (possibleFile.exists() && Boolean.FALSE.equals(overwriteOption)) {
             possibleFile = autoRename(possibleFile);
+        } else if (possibleFile.exists() && Boolean.TRUE.equals(overwriteOption)) {
+            try {
+                Files.deleteIfExists(possibleFile.toPath());
+            } catch (IOException e) {
+                throw new ComponentException("The deletion of the existing file " + possibleFile.getAbsolutePath() + "failed.", e);
+            }
         }
         return possibleFile;
     }

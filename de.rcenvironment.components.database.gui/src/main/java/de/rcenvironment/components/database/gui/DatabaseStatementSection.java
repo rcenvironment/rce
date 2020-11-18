@@ -66,7 +66,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 /**
  * Database statement section.
  *
- * @author Oliver Seebach, Kathrin Schaffert
+ * @author Oliver Seebach
  * @author Kathrin Schaffert
  */
 public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySection {
@@ -117,6 +117,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         refreshOutputCombos();
 
         ComponentInstanceProperties config = getConfiguration();
+        
         config.addPropertyChangeListener(new PropertyChangeListener() {
 
             @Override

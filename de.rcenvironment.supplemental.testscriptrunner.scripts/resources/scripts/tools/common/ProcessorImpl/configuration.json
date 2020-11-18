@@ -1,0 +1,51 @@
+{
+  "commandScriptLinux" : "echo Faking tool execution",
+  "commandScriptWindows" : "echo Faking tool execution",
+  "copyToolBehavior" : "never",
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "documentationFilePath" : "",
+  "enableCommandScriptLinux" : true,
+  "enableCommandScriptWindows" : true,
+  "groupName" : "",
+  "imitationScript" : "",
+  "imitationToolOutputFilename" : "",
+  "inputs" : [ {
+    "inputHandling" : "Queue",
+    "endpointDataType" : "FileReference",
+    "defaultInputExecutionConstraint" : "Required",
+    "endpointName" : "inputData",
+    "defaultInputHandling" : "Queue",
+    "inputExecutionConstraint" : "Required",
+    "endpointFolder" : "Input folder"
+  } ],
+  "integrationType" : "Common",
+  "isActive" : true,
+  "launchSettings" : [ {
+    "limitInstallationInstancesNumber" : "10",
+    "limitInstallationInstances" : "true",
+    "rootWorkingDirectory" : "",
+    "host" : "RCE",
+    "toolDirectory" : "C:\\Users\\wein_al",
+    "version" : "1.0"
+  } ],
+  "outputs" : [ {
+    "inputHandling" : "-",
+    "endpointFileName" : "",
+    "endpointDataType" : "FileReference",
+    "endpointName" : "resultData",
+    "inputExecutionConstraint" : "-",
+    "endpointFolder" : ""
+  } ],
+  "postScript" : "import tempfile\r\n\r\ninputFile = open(\"${in:inputData}\", \"a\")\r\n\r\ninputFile.write(\"\\nDolor Sit Amet\")\r\n\r\ninputFile.close()\r\n\r\n${out:resultData} = \"${in:inputData}\"",
+  "preScript" : "",
+  "toolDescription" : "",
+  "toolIconPath" : "",
+  "toolIntegrationVersion" : 1,
+  "toolIntegratorE-Mail" : "",
+  "toolIntegratorName" : "",
+  "toolName" : "ProcessorImpl",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "uploadIcon" : true
+}

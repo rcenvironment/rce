@@ -23,7 +23,6 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideU
 import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideUplinkSessionEventHandler;
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescriptorListUpdate;
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolExecutionHandle;
-import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
 import de.rcenvironment.core.communication.uplink.entities.ChannelCreationRequest;
@@ -39,14 +38,14 @@ import de.rcenvironment.core.communication.uplink.network.internal.ClientSideUpl
 import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionLowLevelEventHandler;
+import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState;
 import de.rcenvironment.core.communication.uplink.session.internal.AbstractUplinkSessionImpl;
-import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.BlockingResponseMapper;
 import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 
@@ -61,15 +60,13 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  */
 public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl implements ClientSideUplinkSession {
 
-    private static final int CHANNEL_REQUEST_RESULT_TIMEOUT = 2000; // TODO adapt for release
+    private static final int CHANNEL_REQUEST_RESULT_TIMEOUT = 10000; // adapt if necessary
 
-    private static final int DOCUMENTATION_REQUEST_RESULT_TIMEOUT = 5000; // TODO adapt for release
+    private static final int DOCUMENTATION_REQUEST_RESULT_TIMEOUT = 10000; // adapt if necessary
 
     private static final AtomicInteger sharedSessionIdGenerator = new AtomicInteger(0);
 
     private final String localSessionId;
-
-    private final AsyncTaskService asyncTaskService; // for decoupling calling and executing threads
 
     private final ClientSideUplinkSessionParameters sessionParameters;
 
@@ -77,7 +74,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
     private final ClientSideUplinkLowLevelProtocolWrapper lowLevelProtocolWrapper;
 
-    private final UplinkProtocolMessageConverter messageConverter = new UplinkProtocolMessageConverter("client side");
+    private final UplinkProtocolMessageConverter messageConverter;
 
     private final BlockingResponseMapper<String, Object> responseMapper;
 
@@ -92,17 +89,22 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
      *
      * @author Robert Mischke
      */
-    private final class LowLevelConnectionEventHandlerImpl implements UplinkConnectionLowLevelEventHandler {
+    private final class ClientSideUplinkLowLevelEventHandlerImpl implements UplinkConnectionLowLevelEventHandler {
 
         @Override
         public void provideOrProcessHandshakeData(Map<String, String> incomingData, Map<String, String> outgoingData) {
 
-            if (incomingData == null || outgoingData != null) {
+            if (incomingData == null && outgoingData != null) {
                 // requested to produce the initial client-to-relay handshake data
 
                 // the high-level protocol version for compatibility checking
-                outgoingData.put(UplinkProtocolConstants.HANDSHAKE_KEY_HIGH_LEVEL_PROTOCOL_VERSION,
-                    UplinkProtocolConstants.HIGH_LEVEL_PROTOCOL_VERSION);
+                outgoingData.put(UplinkProtocolConstants.HANDSHAKE_KEY_PROTOCOL_VERSION_OFFER,
+                    UplinkProtocolConstants.DEFAULT_PROTOCOL_VERSION);
+
+                String clientVersionString = sessionParameters.getClientVersionInfo();
+                if (clientVersionString != null) {
+                    outgoingData.put(UplinkProtocolConstants.HANDSHAKE_KEY_CLIENT_VERSION_INFO, clientVersionString);
+                }
 
                 // the "session qualifier"/"client id" allowing multiple logins using the same account while keeping them distinguishable
                 final String sessionQualifier =
@@ -115,7 +117,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 }
 
                 markClientHandshakeSentOrReceived(); // not actually sent yet, but will be immediately
-            } else if (incomingData != null || outgoingData == null) {
+            } else if (incomingData != null && outgoingData == null) {
                 // requested to process the relay's response
                 markServerHandshakeSentOrReceived();
 
@@ -123,20 +125,24 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 String serverAssignedNamespaceId = incomingData.get(UplinkProtocolConstants.HANDSHAKE_KEY_ASSIGNED_NAMESPACE_ID);
                 if (StringUtils.isNullorEmpty(serverAssignedNamespaceId)) {
                     serverAssignedNamespaceId = "<error: handshake data did not include a namespace id>/";
-                    // TODO (p1) 10.1+: review that setting this state properly aborts the session
-                    setSessionState(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR);
                 } else {
                     setAssignedNamespaceId(serverAssignedNamespaceId);
                     updateLogDescriptor();
                 }
             } else {
-                throw new IllegalArgumentException();
+                throw new IllegalStateException();
             }
         }
 
         @Override
         public void onHandshakeComplete() {
-            setSessionState(UplinkSessionState.ACTIVE);
+            markHandshakeSuccessful();
+        }
+
+        @Override
+        public void onHandshakeFailedOrConnectionRefused(UplinkConnectionRefusedException e) {
+            sessionEventHandler.onFatalSessionError(e.getType(), e.getRawMessage());
+            markHandshakeFailed(e);
         }
 
         @Override
@@ -149,37 +155,49 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                         ChannelEndpoint channelEndpoint = channelEndpointMap.get(channelId);
                         if (channelEndpoint == null) {
                             log.error(StringUtils.format(
-                                "Received a message of type %s for channel %d but found no registered endpoint to handle it",
-                                messageBlock.getType(), channelId));
+                                "%s Received a message of type %s for channel %d but found no registered endpoint to handle it",
+                                logPrefix, messageBlock.getType(), channelId));
                             return;
                         }
                         channelEndpoint.processMessage(messageBlock);
                     }
                 } catch (IOException e) {
-                    // TODO add a session log id
                     // TODO add actual session closing
-                    log.error("Error while processing incoming message of type " + messageBlock.getType() + ", closing session", e);
+                    log.error(logPrefix + "Error while processing incoming message of type " + messageBlock.getType() + ", closing session",
+                        e);
                 }
             });
         }
 
         @Override
         public void onRegularGoodbyeMessage() {
-            markAsCloseRequestedByRemoteEvent();
+            handleRegularRemoteGoodbyeMessage();
         }
 
         @Override
         public void onErrorGoodbyeMessage(UplinkProtocolErrorType errorType, String errorMessage) {
-            sessionEventHandler.registerConnectionOrSessionError(errorType, "Connection closed by the remote side: " + errorMessage);
-            markAsCloseRequestedByRemoteEvent();
+            handleFatalError(errorType, errorMessage);
         }
 
         @Override
-        public void onNonProtocolError(IOException exception) {
-            sessionEventHandler
-                .registerConnectionOrSessionError(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR,
-                    "Closing the Uplink connection after an error: " + exception.toString());
-            markAsCloseRequestedByRemoteEvent();
+        public void onIncomingStreamClosedOrEOF() {
+            handleIncomingStreamClosedOrEOF();
+        }
+
+        @Override
+        public void onStreamReadError(IOException e) {
+            log.error("Error reading from stream " + getLogDescriptor() + ": " + e.toString());
+            handleFatalError(UplinkProtocolErrorType.LOW_LEVEL_CONNECTION_ERROR, e.toString());
+        }
+
+        @Override
+        public void onStreamWriteError(IOException e) {
+            handleStreamWriteError(e);
+        }
+
+        @Override
+        public void onNonProtocolError(Exception exception) {
+            handleFatalError(UplinkProtocolErrorType.INTERNAL_CLIENT_ERROR, exception.toString());
         }
     }
 
@@ -253,27 +271,30 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
      * Creates the client side of a logical uplink session. Note that the session is actually initiated and run by calling
      * {@link #runSession()}, typically from a separate thread.
      * 
-     * @param connection the abstraction of the underlying connection to send protocol data over; note that this session class does *not*
-     *        manage this underlying connection's life cycle!
+     * @param inputStream the outgoing data stream of the underlying connection
+     * @param outputStream the incoming data stream of the underlying connection
      * @param eventHandler the {@link ClientSideUplinkSessionEventHandler}
      * @param concurrencyUtilsFactory the {@link ConcurrencyUtilsFactory}
      */
-    public ClientSideUplinkSessionImpl(UplinkConnection connection, ClientSideUplinkSessionParameters sessionParameters,
+    public ClientSideUplinkSessionImpl(StreamConnectionEndpoint connectionEndpoint, ClientSideUplinkSessionParameters sessionParameters,
         ClientSideUplinkSessionEventHandler eventHandler, ConcurrencyUtilsFactory concurrencyUtilsFactory) {
         super(concurrencyUtilsFactory);
-        this.localSessionId = Integer.toString(sharedSessionIdGenerator.incrementAndGet());
+        this.localSessionId = "c" + Integer.toString(sharedSessionIdGenerator.incrementAndGet());
+        this.messageConverter = new UplinkProtocolMessageConverter(localSessionId);
         updateLogDescriptor(); // will be updated again once the namespace id is available
-        this.lowLevelProtocolWrapper = new ClientSideUplinkLowLevelProtocolWrapper(connection, new LowLevelConnectionEventHandlerImpl());
+        ClientSideUplinkLowLevelEventHandlerImpl lowLevelEventHandler = new ClientSideUplinkLowLevelEventHandlerImpl();
         this.sessionParameters = sessionParameters;
         this.sessionEventHandler = eventHandler;
-        this.asyncTaskService = ConcurrencyUtils.getAsyncTaskService(); // TODO temporary
         this.responseMapper = concurrencyUtilsFactory.createBlockingResponseMapper();
+        this.lowLevelProtocolWrapper =
+            new ClientSideUplinkLowLevelProtocolWrapper(connectionEndpoint, lowLevelEventHandler, getLocalSessionId());
         this.defaultChannelEndpoint = new DefaultChannelClientEndpoint(this);
     }
 
     @Override
-    public void runSession() throws IOException {
+    public boolean runSession() {
         lowLevelProtocolWrapper.runSession();
+        return getState() == UplinkSessionState.CLEAN_SHUTDOWN;
     }
 
     @Override
@@ -291,11 +312,13 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
             result = performChannelCreationRequest(executionSetup.getDestinationId(), "exec", "tool execution");
         } catch (IOException | InterruptedException | ExecutionException e) {
             // TODO clarify exceptions vs. returning empty Optional
-            log.error("Error opening a tool execution channel", e);
-            return Optional.empty(); // switch to different Optional type
+            log.error("Error opening a tool execution channel: " + e.toString());
+            return Optional.empty();
         }
         if (!result.isPresent()) {
-            return Optional.empty(); // switch to different Optional type
+            log.debug("Creation of a tool execution channel to " + executionSetup.getDestinationId()
+                + " failed; see above log message for details");
+            return Optional.empty();
         }
         final long relayAssignedChannelId = result.get().getChannelId();
 
@@ -309,7 +332,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         } catch (IOException e) {
             // TODO clarify error behavior
             // TODO also log full exception?
-            executionEventHandler.onError("Exception while initiating the tool execution: " + e);
+            executionEventHandler.onError("Exception while initiating the tool execution: " + e.toString());
             return Optional.empty();
         }
 
@@ -360,11 +383,6 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         return localSessionId;
     }
 
-    @Override
-    public void close() {
-        markAsCloseRequestedLocally();
-    }
-
     private String generateRequestId() {
         return Integer.toString(requestIdCounter.incrementAndGet());
     }
@@ -376,7 +394,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         final String requestId = generateRequestId();
         final ChannelCreationRequest request =
             new ChannelCreationRequest(channelType, destinationId, UplinkProtocolConstants.UNDEFINED_CHANNEL_ID, requestId);
-        lowLevelProtocolWrapper.sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
+        enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
             messageConverter.encodeChannelCreationRequest(request));
         // wait for the response or timeout
         final Optional<Object> optionalResponse = responseMapper.registerRequest(requestId, CHANNEL_REQUEST_RESULT_TIMEOUT).get();
@@ -398,32 +416,37 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     }
 
     @Override
-    public synchronized void markAsCloseRequestedByRemoteEvent() {
-        // special state handling on the client side
-        // note: not strictly thread-safe, as reading and setting are not atomic; should not be a problem in practice
-        if (getState() == UplinkSessionState.CLIENT_HANDSHAKE_REQUEST_READY) {
-            setSessionState(UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR);
+    protected void onSessionStateChanged(UplinkSessionState oldState, UplinkSessionState newState) {
+        // TODO add "in terminal state already" sanity check?
+        if (newState == UplinkSessionState.ACTIVE) {
+            sessionEventHandler.onSessionActivating(getAssignedNamespaceId(), getDestinationIdPrefix());
         }
-
-        // delegate to common code
-        super.markAsCloseRequestedByRemoteEvent();
+        if (oldState == UplinkSessionState.ACTIVE) {
+            sessionEventHandler.onActiveSessionTerminating();
+        }
     }
 
     @Override
-    protected void onSessionStateChanged(UplinkSessionState oldState, UplinkSessionState newState) {
-        if (newState == UplinkSessionState.ACTIVE) {
-            sessionEventHandler.onSessionReady(getAssignedNamespaceId(), getDestinationIdPrefix());
-        }
-        if (oldState == UplinkSessionState.ACTIVE) {
-            sessionEventHandler.onSessionTerminating();
-        }
-        // entering a new state implying a closed outgoing connection
-        if (newState == UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR || newState == UplinkSessionState.PARTIALLY_CLOSED_BY_LOCAL
-            || (newState == UplinkSessionState.FULLY_CLOSED && oldState != UplinkSessionState.PARTIALLY_CLOSED_BY_LOCAL)) {
-            lowLevelProtocolWrapper.closeOutgoingMessageStream();
-        }
-        if (newState == UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR || newState == UplinkSessionState.FULLY_CLOSED) {
-            sessionEventHandler.onSessionInFinalState();
-        }
+    protected void onTerminalStateReached(UplinkSessionState newState) {
+        sessionEventHandler.onSessionInFinalState();
     }
+
+    @Override
+    protected void handleFatalError(UplinkProtocolErrorType errorType, String errorMessage) {
+        if (getState() != UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR) {
+            sessionEventHandler.onFatalSessionError(errorType, "Connection closed by the remote side: " + errorMessage);
+        }
+        super.handleFatalError(errorType, errorMessage);
+    }
+
+    @Override
+    public CommonUplinkLowLevelProtocolWrapper getLowLevelProtocolWrapper() {
+        return lowLevelProtocolWrapper;
+    }
+
+    @Override
+    protected String getRemoteSideInformationString() {
+        return "Uplink server"; // TODO add host information if available
+    }
+
 }

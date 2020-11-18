@@ -2,23 +2,28 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch GUI
 Bundle-SymbolicName: de.rcenvironment.components.switch.gui;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.switchcmp.common,
+ de.rcenvironment.components.switchcmp.execution,
+ de.rcenvironment.components.switchcmp.execution.validator,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.validation.api,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.component.workflow.model.spi,
  de.rcenvironment.core.datamanagement,
+ de.rcenvironment.core.datamanagement.commons,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.resources.api,
  de.rcenvironment.core.gui.utils.common.configuration,
  de.rcenvironment.core.gui.utils.common.endpoint,
  de.rcenvironment.core.gui.utils.incubator,
+ de.rcenvironment.core.gui.workflow.editor.commands,
  de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
@@ -28,9 +33,12 @@ Import-Package: de.rcenvironment.components.switchcmp.common,
  org.apache.commons.logging;version="1.1.1",
  org.apache.xmlbeans;version="2.3.0",
  org.eclipse.core.runtime;version="3.4.0",
+ org.eclipse.gef.commands,
  org.eclipse.osgi.util;version="1.1.0",
  org.eclipse.ui
 Export-Package: de.rcenvironment.components.switchcmp.gui
-Require-Bundle: org.eclipse.ui.views.properties.tabbed
+Require-Bundle: org.eclipse.ui.views.properties.tabbed,
+ org.eclipse.jface,
+ de.rcenvironment.platform.maven.other
 RCE-Component: true
 Automatic-Module-Name: de.rcenvironment.components.switch.gui

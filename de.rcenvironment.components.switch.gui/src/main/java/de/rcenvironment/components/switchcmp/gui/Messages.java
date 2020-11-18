@@ -41,11 +41,6 @@ public class Messages extends NLS {
     /**
      * Messages.
      */
-    public static String operatorsFieldString;
-
-    /**
-     * Messages.
-     */
     public static String operatorsLabelString;
 
     /**
@@ -56,17 +51,22 @@ public class Messages extends NLS {
     /**
      * Messages.
      */
+    public static String conditionLabelString;
+
+    /**
+     * Messages.
+     */
     public static String insertButtonString;
 
     /**
      * Messages.
      */
-    public static String noConditionMessageString;
+    public static String validateButtonString;
 
     /**
      * Messages.
      */
-    public static String validateButtonString;
+    public static String writeOutputLabel;
 
     static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

@@ -59,8 +59,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "4",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "4.1"
     },
     "configuration" : {
       "behaviourFailedRun" : "Skip sample and continue",
@@ -107,6 +107,11 @@
       "identifier" : "7f32d855-0417-44d0-9910-69fc8718a5ae",
       "name" : "Done",
       "datatype" : "Boolean"
+    }, {
+      "name" : "Number of samples",
+      "datatype" : "Integer",
+      "metadata" : { },
+      "identifier" : "18fb1c75-5742-4eff-a659-4ffd9f854247"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "8be9fbdb-a77e-4585-bb4b-60e512a3f08c",
@@ -140,8 +145,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "4",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "4.1"
     },
     "configuration" : {
       "behaviourFailedRun" : "Skip sample and continue",
@@ -167,6 +172,11 @@
       "identifier" : "9673c62a-b435-4b19-9497-4187824a247b",
       "name" : "Done",
       "datatype" : "Boolean"
+    }, {
+      "name" : "Number of samples",
+      "datatype" : "Integer",
+      "metadata" : { },
+      "identifier" : "b3b14eec-742b-45f9-88d9-9fea90c4ddc1"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "1715f2a4-726e-4d52-a894-629c9918fc12",

@@ -28,11 +28,11 @@
  * ${tags}
  * ${see_to_target}
  */</template><template autoinsert="false" context="newtype_context" deleted="false" description="New classes and interfaces" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.newtype" name="newtype">/*
- * Copyright 2006-${year} DLR, Germany
+ * Copyright ${year} DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
- * http://www.rcenvironment.de/
+ * https://rcenvironment.de/
  */
  
 ${package_declaration}

@@ -1,6 +1,6 @@
 {
   "identifier" : "3d09fd72-9ab1-41fe-8154-672e3c155ebc",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "0c8ef97d-0e4c-4031-93a1-41f5a72629bd",
     "name" : "Optimizer Inner",
@@ -9,8 +9,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "7.1",
-      "name" : "Optimizer"
+      "name" : "Optimizer",
+      "version" : "8"
     },
     "configuration" : {
       "CustomDakotaPath" : "false",
@@ -24,16 +24,6 @@
       "usePrecalculation" : "false"
     },
     "dynamicInputs" : [ {
-      "identifier" : "1bd983c4-ce5c-4a23-bb0b-c59804788cbe",
-      "name" : "Outer loop done",
-      "epIdentifier" : "outerLoopDone",
-      "group" : "innerLoop",
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
-        "usage" : "optional"
-      }
-    }, {
       "identifier" : "7a504c9e-aaf8-40c5-9bed-5323272e1b23",
       "name" : "f",
       "epIdentifier" : "Objective",
@@ -44,7 +34,6 @@
         "hasGradient" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "vectorSize" : "-",
         "weight" : "1"
       }
@@ -55,7 +44,6 @@
       "group" : "startValues",
       "datatype" : "Float",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
         "usage" : "initial"
       }
     } ],
@@ -65,36 +53,21 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
+      "metadata" : { }
     }, {
       "identifier" : "e9183ae4-3b6a-4325-a15b-414f5d85b5b7",
       "name" : "Gradient request",
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
+      "metadata" : { }
     }, {
       "identifier" : "d7e4e630-9f05-4224-b826-f84291f7ee32",
       "name" : "Iteration",
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Integer",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
-    }, {
-      "identifier" : "5616d9c4-4a8f-44d4-a7dc-94e6ad996c48",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "eb52a252-acec-4f02-ae3d-dc66b3b15740",
@@ -106,7 +79,6 @@
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "lower" : "-1",
         "startValue" : "-",
         "step" : "1",
@@ -125,7 +97,6 @@
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
         "lower" : "-1",
         "startValue" : "-",
         "upper" : "1",
@@ -140,8 +111,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "7.1",
-      "name" : "Optimizer"
+      "name" : "Optimizer",
+      "version" : "8"
     },
     "configuration" : {
       "CustomDakotaPath" : "false",
@@ -164,7 +135,6 @@
         "hasGradient" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "vectorSize" : "-",
         "weight" : "1"
       }
@@ -175,36 +145,21 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
+      "metadata" : { }
     }, {
       "identifier" : "61be4f11-d256-446e-a7e8-0195d30b6b7b",
       "name" : "Gradient request",
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
+      "metadata" : { }
     }, {
       "identifier" : "7d753135-f73e-46f7-8039-792961cd54b8",
       "name" : "Iteration",
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Integer",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
-    }, {
-      "identifier" : "55a6a041-5309-497e-96fe-8db3525b7005",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "74b7bc2d-3a35-47e8-8605-e0324acd2355",
@@ -216,7 +171,6 @@
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "lower" : "-1",
         "startValue" : "0",
         "step" : "1",
@@ -235,7 +189,6 @@
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
         "lower" : "-1",
         "startValue" : "0",
         "upper" : "1",
@@ -289,11 +242,6 @@
     "output" : "86e8ab8d-715c-41a0-afb4-64e4764e5c0c",
     "target" : "05f574fe-93be-4bf7-a895-d0e03d49db16",
     "input" : "b7de0b4d-3b34-44d4-9850-720323c855b0"
-  }, {
-    "source" : "05f574fe-93be-4bf7-a895-d0e03d49db16",
-    "output" : "55a6a041-5309-497e-96fe-8db3525b7005",
-    "target" : "0c8ef97d-0e4c-4031-93a1-41f5a72629bd",
-    "input" : "1bd983c4-ce5c-4a23-bb0b-c59804788cbe"
   }, {
     "source" : "05f574fe-93be-4bf7-a895-d0e03d49db16",
     "output" : "74b7bc2d-3a35-47e8-8605-e0324acd2355",

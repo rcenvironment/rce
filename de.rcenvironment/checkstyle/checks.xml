@@ -12,6 +12,11 @@
   <property name="severity" value="warning"/>
   <property name="localeCountry" value="US"/>
   <property name="localeLanguage" value="en"/>
+  <module name="LineLength">
+    <property name="fileExtensions" value="java"/>
+    <property name="max" value="140" />
+  </module>
+
   <module name="TreeWalker">
     <module name="MissingOverride"/>
     <module name="SuppressWarnings"/>
@@ -75,8 +80,8 @@
       <property name="authorFormat" value="[A-Z][\-\p{L}]*\s+[\p{L}\.\s]*[A-Z][\-\p{L}]*"/>
     </module>
     <module name="JavadocMethod">
-      <property name="scope" value="public"/>
-      <property name="tokens" value="METHOD_DEF"/>
+      <property name="scope" value="public" />
+      <property name="tokens" value="METHOD_DEF" />
     </module>
     <module name="JavadocVariable">
       <property name="scope" value="public"/>
@@ -113,6 +118,9 @@
       <property name="format" value="System[.]out[.]print"/>
       <property name="message" value="Usage of print and println is not allowed."/>
     </module>
+  
+    <!-- Size Violations -->
+    <property name="tabWidth" value="4" />
     <module name="MethodLength">
       <property name="tokens" value="METHOD_DEF"/>
     </module>

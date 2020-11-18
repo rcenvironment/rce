@@ -27,6 +27,7 @@ import org.eclipse.ui.intro.IIntroPart;
 import org.eclipse.ui.intro.IIntroSite;
 import org.eclipse.ui.intro.config.IIntroAction;
 
+import de.rcenvironment.core.gui.wizards.exampleproject.NewExampleProjectWizard;
 import de.rcenvironment.core.gui.wizards.exampleproject.RCEExampleProjectWizard;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -36,6 +37,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Riccardo Dusi
  * @author Alexander Weinert (refactoring and cleanup)
  * @author Robert Mischke (fixed issue when project wizard is cancelled by user)
+ * @author Dominik Schneider (fixed issue when custom name for the workflow examples project is used)
  */
 public class ShowExampleAction implements IIntroAction {
 
@@ -46,6 +48,8 @@ public class ShowExampleAction implements IIntroAction {
     private static final String WORKFLOW_EXAMPLES_PROJECT_NAME = "Workflow Examples Project";
 
     private final Log log = LogFactory.getLog(getClass());
+
+    private String customWorkflowExamplesProjectName = WORKFLOW_EXAMPLES_PROJECT_NAME;
 
     /**
      * Executes when sample card at welcome screen is clicked.
@@ -81,6 +85,7 @@ public class ShowExampleAction implements IIntroAction {
             // Since `ensureExampleProjectExistsInWorkspace` determines whether there exists a project with name WORKFLOW_EXAMPLES_PROJECT
             // in the workspace and since that name is hardcoded as a constant in this class, we implicitly assume here that the user did
             // not change the name of the workflow example project when importing it
+            // Nevertheless, the user can create a workflows example project with a custom name if there exists none with the default name
             ensureExampleProjectExistsInWorkspace();
             ensureExampleProjectIsOpened();
             return true;
@@ -119,7 +124,7 @@ public class ShowExampleAction implements IIntroAction {
     private ProjectFile getExampleProjectFile() {
         final IPath absolutePathToWorkspace = getAbsolutePathToWorkspace();
 
-        final IPath absolutePathToExampleProjectFolder = absolutePathToWorkspace.append(WORKFLOW_EXAMPLES_PROJECT_NAME);
+        final IPath absolutePathToExampleProjectFolder = absolutePathToWorkspace.append(this.customWorkflowExamplesProjectName);
         return ProjectFile.createForProjectFolder(absolutePathToExampleProjectFolder);
     }
 
@@ -178,7 +183,10 @@ public class ShowExampleAction implements IIntroAction {
      * @return True if the user has imported the example project onto disk via the wizard, false otherwise
      */
     private boolean showExampleProjectImportDialog() {
-        WizardDialog dialog = new WizardDialog(null, new RCEExampleProjectWizard());
+        NewExampleProjectWizard exampleProjectWizard = new RCEExampleProjectWizard();
+        exampleProjectWizard
+            .registerProjectNameListener((projectName) -> this.customWorkflowExamplesProjectName = projectName);
+        WizardDialog dialog = new WizardDialog(null, exampleProjectWizard);
         return (dialog.open() == Window.OK);
     }
 
@@ -186,7 +194,7 @@ public class ShowExampleAction implements IIntroAction {
         IPath absolutePathToWorkspace = getAbsolutePathToWorkspace();
 
         final IPath pathToFirstExampleWorkflow = absolutePathToWorkspace
-            .append(WORKFLOW_EXAMPLES_PROJECT_NAME)
+            .append(this.customWorkflowExamplesProjectName)
             .append(WORKFLOW_EXAMPLES_PROJECT_FIRST_FOLDER_NAME)
             .append(WORKFLOW_EXAMPLES_PROJECT_FIRST_WORKFLOW_NAME);
         final WorkflowFile firstExampleWorkflowFile = WorkflowFile.fromPath(pathToFirstExampleWorkflow);

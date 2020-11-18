@@ -2,7 +2,7 @@
 	"configuration": [
         {
             "key":"conditionKey",
-            "defaultValue": ""
+            "defaultValue": "[{\"conditionNumber\":1,\"conditionScript\":\"\"}]"
         },
         {
         	"key":"scriptErrorMessage",
@@ -13,11 +13,11 @@
             "defaultValue": "true"
         },
         {
-            "key":"closeOutputsOnTrue",
+            "key":"closeOutputsOnConditionNumber",
             "defaultValue": "false"
         },
         {
-            "key":"closeOutputsOnFalse",
+            "key":"closeOutputsOnNoMatch",
             "defaultValue": "false"
         }
     ] 

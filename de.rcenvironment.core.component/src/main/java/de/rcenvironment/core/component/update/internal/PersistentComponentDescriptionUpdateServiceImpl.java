@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
-import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;

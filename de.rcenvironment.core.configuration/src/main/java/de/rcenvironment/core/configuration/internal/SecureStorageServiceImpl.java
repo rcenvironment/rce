@@ -31,6 +31,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.SecureStorageSection;
 import de.rcenvironment.core.configuration.SecureStorageService;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -80,6 +81,19 @@ public final class SecureStorageServiceImpl implements SecureStorageService {
 
     @Activate
     protected void activate() throws IOException {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
+        initialize();
+    }
+
+    /**
+     * Performs internal activation; separated from the activate() method to allow explicit initialization of mock instances.
+     */
+    public void initialize() throws IOException {
+
         final String storePassword = determineStorePassword();
 
         // note: the Eclipse JavaDoc states that the URL must point to a directory, but it actually has to be a file - misc_ro

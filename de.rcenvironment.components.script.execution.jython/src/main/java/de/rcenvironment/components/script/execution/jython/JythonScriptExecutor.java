@@ -5,6 +5,7 @@
  * 
  * https://rcenvironment.de/
  */
+
 package de.rcenvironment.components.script.execution.jython;
 
 import java.io.File;
@@ -16,6 +17,7 @@ import javax.script.ScriptException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
@@ -35,7 +37,9 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * 
  * @author Mark Geiger
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#14965, #17088)
  */
+@Component
 public class JythonScriptExecutor extends DefaultScriptExecutor {
 
     protected static ScriptingService scriptingService;
@@ -51,6 +55,10 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     protected String preHeader;
 
     protected String header;
+
+    protected String inputFile;
+
+    protected String orderedDictionary;
 
     protected String body;
 
@@ -75,7 +83,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         File scripts = new File(tempDir, "scripts");
         File file =
             new File(scripts, "script.tmp");
-        workingPath = scripts.getParentFile().getAbsolutePath().toString();
+        workingPath = scripts.getParentFile().getAbsolutePath();
         workingPath = workingPath.replaceAll(ESCAPESLASH, SLASH);
         tempFiles.add(file);
         stateMap = new HashMap<>();
@@ -92,17 +100,22 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         body = "";
         foot = "";
         header = ScriptingUtils.prepareHeaderScript(stateMap, componentContext, tempDir, tempFiles);
+        // with upgrade to Jython > 2.7, the orderedDictionary will be obsolete
+        // K. Schaffert, 13.03.2020
+        orderedDictionary = ScriptingUtils.prepareOrderedDictionaryScript();
+        
+        inputFile = ScriptingUtils.prepareInputFileFactoryScript(workingPath);
         loadScript(userScript);
         foot =
             "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = RCE.get_closed_outputs_internal()\n"
+            + "RCE_writtenInputFiles = RCE.get_written_input_files()\n"
                 + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                     WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
     }
 
     private void loadScript(String userScript) throws ComponentException {
-        // wrappingScript = wrappingScript + userScript;
         body = userScript;
-        if (body == null || body.length() == 0) {
+        if (body == null || body.trim().isEmpty()) {
             throw new ComponentException("No Python script configured");
         }
     }
@@ -117,15 +130,22 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
 
             prepareOutputForRun();
             try {
-                // include two important paths which the header script need
+                // include two important paths which the header script needs
                 scriptEngine
                     .eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE);
                 scriptEngine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
 
                 // execute the headerScript, this defines the RCE_Channel class and some important
-                // imports, variables and
-                // its changig the working directory.
+                // imports, variables and its changing the working directory.
                 scriptEngine.eval(header);
+                
+                // with upgrade to Jython > 2.7, the orderedDictionary will be obsolete
+                // K. Schaffert, 13.03.2020
+                scriptEngine.eval(orderedDictionary);
+                // execute the inputFile Script, which defines the InputFileFactory class
+                scriptEngine.eval(inputFile);
+                // for the InputFileFactory, we need the orderedDictionary script, 
+                // which was was evaluated above.
 
             } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
@@ -168,6 +188,8 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
             LOGGER.error("Failed to close stdout or stderr writer", e);
         }
 
+        this.deleteTempFiles();
+
         return true;
     }
 
@@ -185,5 +207,10 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     public boolean isCancelable() {
         // We cannot cancel the execution of the script. Instead the thread needs to be interrupted.
         return false;
+    }
+
+    @Override
+    public void tearDown() {
+        this.deleteTempFiles();
     }
 }

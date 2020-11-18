@@ -13,6 +13,10 @@
         	"defaultValue": "true"
         },
         {
+        	"key": "OverwriteFilesAndDirs",
+        	"defaultValue": "false"
+        },
+        {
         	"key": "outputLocations",
         	"defaultValue": "{}"
         }

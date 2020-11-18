@@ -53,6 +53,7 @@ import com.jcraft.jsch.Session;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
@@ -209,6 +210,11 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
      * OSGi-DS lifecycle method; made public for unit testing.
      */
     public void activate() {
+        if (RuntimeDetection.isTestEnvironment()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         tfs = TempFileServiceAccess.getInstance();
         hasValidLocalConfiguration = false;
         hasValidDownloadConfiguration = false;
@@ -1131,13 +1137,13 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
             // TODO improve this check to find all possible collisions (add string forms to a Set, check resulting size)
             if (installationsRootDir.equals(templatesRootDir) || installationsRootDir.equals(profilesRootDir)
                 || templatesRootDir.equals(profilesRootDir)) {
-                throw new IOException("Two or more configured directory are equal, but they must be unique");
+                throw new IOException("Two or more configured directories are equal, but they must be unique");
             }
 
             // TODO run this check on Windows only?
             if (installationsRootDir.getPath().length() > MAX_INSTALLATION_ROOT_PATH_LENGTH) {
                 final String errorMessage = String.format(
-                    "The configured IM installation root path (%s) is too long; the maxium allowed length is %d characters. "
+                    "The configured IM installation root path (%s) is too long; the maximal allowed length is %d characters. "
                         + "Change or set the " + INSTALLATIONS_ROOT_DIR_PROPERTY + " option to change it.",
                     installationsRootDir.getPath(),
                     MAX_INSTALLATION_ROOT_PATH_LENGTH);

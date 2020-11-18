@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Monitoring
 Bundle-Vendor: DLR 
 Bundle-SymbolicName: de.rcenvironment.core.monitoring;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -12,6 +12,7 @@ Import-Package: com.sun.jna;version="5.5.0",
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.exception,

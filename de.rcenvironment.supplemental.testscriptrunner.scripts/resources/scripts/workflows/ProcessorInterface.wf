@@ -1,0 +1,30 @@
+{
+  "identifier" : "59096f38-a95b-440a-aa4d-8a8fb7376749",
+  "workflowVersion" : "5",
+  "nodes" : [ {
+    "identifier" : "fcb793f5-a3db-45f8-8242-5e252cac9956",
+    "name" : "Processor",
+    "location" : "590:265",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.integration.common.ProcessorImpl",
+      "version" : "1.0",
+      "name" : "ProcessorImpl"
+    },
+    "configuration" : {
+      "chosenDeleteTempDirBehavior" : "deleteWorkingDirectoriesAfterWorkflowExecution",
+      "storeComponentHistoryData" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "7435efb0-86a5-430b-89da-c57d0c562e27",
+      "name" : "inputData",
+      "datatype" : "FileReference"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "08e82d7d-e7ea-4e7b-9288-5d479fdf4418",
+      "name" : "resultData",
+      "datatype" : "FileReference"
+    } ]
+  } ]
+}

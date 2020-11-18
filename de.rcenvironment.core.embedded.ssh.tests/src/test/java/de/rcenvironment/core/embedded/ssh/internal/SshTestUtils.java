@@ -51,7 +51,7 @@ public final class SshTestUtils {
         configuration.setEnabled(true);
 
         // add user
-        configuration.setAccounts(getValidUsers());
+        configuration.setStaticAccounts(getValidUsers());
 
         return configuration;
     }

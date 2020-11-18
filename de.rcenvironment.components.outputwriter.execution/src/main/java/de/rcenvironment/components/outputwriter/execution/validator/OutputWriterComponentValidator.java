@@ -8,6 +8,7 @@
 
 package de.rcenvironment.components.outputwriter.execution.validator;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -24,6 +25,8 @@ import de.rcenvironment.components.outputwriter.common.OutputLocationList;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.components.outputwriter.common.OutputWriterValidatorHelper;
 import de.rcenvironment.components.outputwriter.execution.Messages;
+import de.rcenvironment.components.outputwriter.execution.OutputWriterPathResolver;
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
@@ -37,8 +40,11 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Sascha Zur
  * @author Jascha Riedel
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (bugfix #17058, #17322, refactoring)
  */
 public class OutputWriterComponentValidator extends AbstractComponentValidator {
+
+    protected final List<ComponentValidationMessage> messages = new LinkedList<>();
 
     @Override
     public String getIdentifier() {
@@ -47,16 +53,11 @@ public class OutputWriterComponentValidator extends AbstractComponentValidator {
 
     @Override
     protected List<ComponentValidationMessage> validateComponentSpecific(ComponentDescription componentDescription) {
-        final List<ComponentValidationMessage> messages = new LinkedList<ComponentValidationMessage>();
-        String chooseAtStart = getProperty(componentDescription, OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART);
-        if (!Boolean.parseBoolean(chooseAtStart)
-            && getProperty(componentDescription, OutputWriterComponentConstants.CONFIG_KEY_ROOT).isEmpty()) {
-            final ComponentValidationMessage noDirectory = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, OutputWriterComponentConstants.CONFIG_KEY_ROOT,
-                Messages.noRootChosen,
-                Messages.bind(Messages.noRootChosen, OutputWriterComponentConstants.CONFIG_KEY_ROOT));
-            messages.add(noDirectory);
-        }
+
+        messages.clear();
+
+        checkRootLocation(componentDescription);
+
         // Validate OutputLocations
         String outputLocString = getProperty(componentDescription,
             OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
@@ -67,113 +68,16 @@ public class OutputWriterComponentValidator extends AbstractComponentValidator {
         }
         try {
             OutputLocationList outputList = jsonMapper.readValue(outputLocString, OutputLocationList.class);
-            List<String> inputNamesHavingOutput = new ArrayList<String>();
+            List<String> inputNamesHavingOutput = new ArrayList<>();
             for (OutputLocation out : outputList.getOutputLocations()) {
+
                 inputNamesHavingOutput.addAll(out.getInputs());
-                // Check if OutputLocation has at least one input
-                if (out.getInputs().isEmpty()) {
-                    final ComponentValidationMessage outputWithoutInput = new ComponentValidationMessage(
-                        ComponentValidationMessage.Type.WARNING, out.getFilename(), Messages.noInputForOutput,
-                        Messages.bind(Messages.noInputForOutput, out.getFilename()));
-                    messages.add(outputWithoutInput);
-                }
-                // Check if all inputs still exist and if they are connected
-                boolean connectedInputs = false;
-                boolean unconnectedInputs = false;
-                for (String inputName : out.getInputs()) {
-                    boolean stillExists = false;
-                    for (EndpointDescription ed : getInputs(componentDescription)) {
-                        if (ed.getName().equals(inputName)) {
-                            stillExists = true;
-                            if (ed.isConnected()) {
-                                connectedInputs = true;
-                            } else {
-                                unconnectedInputs = true;
-                            }
-                        }
-                    }
-                    if (!stillExists) {
-                        final ComponentValidationMessage missingInput = new ComponentValidationMessage(
-                            ComponentValidationMessage.Type.ERROR, out.getFilename(), Messages.missingInput,
-                            Messages.bind(Messages.missingInput, out.getFilename(), inputName));
-                        messages.add(missingInput);
-                    }
-                }
-                // If all inputs of a target are connected or all are
-                // unconnected, there is no problem.
-                // But if some are connected and some are not, the workflow will
-                // probably fail.
-                if (connectedInputs && unconnectedInputs) {
-                    final ComponentValidationMessage connectedAndUnconnectedInputs = new ComponentValidationMessage(
-                        ComponentValidationMessage.Type.WARNING, out.getFilename(),
-                        Messages.connectedAndUnconnectedInputs,
-                        Messages.bind(Messages.connectedAndUnconnectedInputs, out.getFilename()));
-                    messages.add(connectedAndUnconnectedInputs);
-                }
 
-                // Check if all the header placeholders can be resolved
-                List<String> knownPlaceholderList;
-                List<String> unknownPlaceholderList;
-
-                String header = out.getHeader();
-                knownPlaceholderList = new ArrayList<String>();
-                knownPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
-                knownPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
-                knownPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
-                unknownPlaceholderList = OutputWriterValidatorHelper.getValidationErrors(header/*, knownPlaceholderList*/);
-
-                // unknown placeholders are found
-
-                if (unknownPlaceholderList.size() != 0 && unknownPlaceholderList.get(0).equals(OutputWriterValidatorHelper.SYNTAX_ERROR)) {
-                    setMessages("File header", out.getFilename(), Messages.syntaxError,
-                        messages);
-                } else {
-                    for (String placeholder : unknownPlaceholderList) {
-                        setMessages(placeholder, out.getFilename(), Messages.unmatchedHeaderPlaceholder,
-                            messages);
-
-                    }
-                }
-
-                // Check if all the format placeholders can be resolved
-                String formatString = out.getFormatString();
-                for (String input : out.getInputs()) {
-                    String inputPlaceholder = OutputWriterComponentConstants.PH_PREFIX + input + OutputWriterComponentConstants.PH_SUFFIX;
-                    if (!knownPlaceholderList.contains(inputPlaceholder)) {
-                        knownPlaceholderList.add(inputPlaceholder);
-                    }
-                }
-
-                unknownPlaceholderList = OutputWriterValidatorHelper.getValidationErrors(formatString/*, knownPlaceholderList*/);
-
-                // unknown placeholders are found
-
-                if (unknownPlaceholderList.size() != 0 && unknownPlaceholderList.get(0).equals(OutputWriterValidatorHelper.SYNTAX_ERROR)) {
-                    setMessages("Value(s) format", out.getFilename(), Messages.syntaxError,
-                        messages);
-                } else {
-                    for (String placeholder : unknownPlaceholderList) {
-                        setMessages(placeholder, out.getFilename(), Messages.unmatchedFormatPlaceholder,
-                            messages);
-
-                    }
-                }
-
-                // Check if every simple data input is connected to an
-                // OutputLocation
-                for (EndpointDescription ed : getInputs(componentDescription)) {
-                    if (!ed.getDataType().equals(DataType.FileReference)
-                        && !ed.getDataType().equals(DataType.DirectoryReference)) {
-                        if (!inputNamesHavingOutput.contains(ed.getName())) {
-                            final ComponentValidationMessage inputWithoutOutput = new ComponentValidationMessage(
-                                ComponentValidationMessage.Type.WARNING, ed.getName(), Messages.noOutputForInput,
-                                Messages.bind(Messages.noOutputForInput, ed.getName()));
-
-                            messages.add(inputWithoutOutput);
-                        }
-                    }
-                }
+                checkOutputHasInput(out);
+                checkConnectionStatusOfInputs(componentDescription, out);
+                checkForUnknownPlaceholder(out);
             }
+            checkAllInputsHaveOutput(componentDescription, inputNamesHavingOutput);
         } catch (
 
         IOException e) {
@@ -182,7 +86,146 @@ public class OutputWriterComponentValidator extends AbstractComponentValidator {
         return messages;
     }
 
-    private void setMessages(String placeholder, String filename, String message, List<ComponentValidationMessage> messages) {
+    private void checkRootLocation(ComponentDescription componentDescription) {
+        String chooseAtStart = getProperty(componentDescription, OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART);
+
+        if (!Boolean.parseBoolean(chooseAtStart)) {
+            String rootString = getProperty(componentDescription, OutputWriterComponentConstants.CONFIG_KEY_ROOT);
+            if (rootString.isEmpty()) {
+                final ComponentValidationMessage noDirectory = new ComponentValidationMessage(
+                    ComponentValidationMessage.Type.ERROR, OutputWriterComponentConstants.CONFIG_KEY_ROOT,
+                    Messages.noRootChosen,
+                    Messages.bind(Messages.noRootChosen, ""));
+                messages.add(noDirectory);
+            } else {
+                OutputWriterPathResolver pathResolver = new OutputWriterPathResolver(t -> {
+                });
+
+                try {
+                    rootString = pathResolver.adaptRootToAbsoluteRootIfProjectRelative(rootString);
+                } catch (ComponentException e) {
+                    final ComponentValidationMessage noWorkspace = new ComponentValidationMessage(
+                        ComponentValidationMessage.Type.ERROR, OutputWriterComponentConstants.CONFIG_KEY_ROOT,
+                        Messages.noWorkspace,
+                        Messages.bind(Messages.noWorkspace, ""));
+                    messages.add(noWorkspace);
+                    return;
+                }
+                File rootFile = new File(rootString);
+                if (!rootFile.isAbsolute()) {
+                    final ComponentValidationMessage noAbsolutePath = new ComponentValidationMessage(
+                        ComponentValidationMessage.Type.ERROR, OutputWriterComponentConstants.CONFIG_KEY_ROOT,
+                        Messages.noAbsolutePath,
+                        Messages.bind(Messages.noAbsolutePath, OutputWriterComponentConstants.WORKSPACE_PREFIX
+                            + OutputWriterComponentConstants.CURRENT_WORKSPACE + OutputWriterComponentConstants.WORKSPACE_SUFFIX));
+                    messages.add(noAbsolutePath);
+                } else if (!rootFile.isDirectory()) {
+                    final ComponentValidationMessage nonExistingDirectory = new ComponentValidationMessage(
+                        ComponentValidationMessage.Type.WARNING, OutputWriterComponentConstants.CONFIG_KEY_ROOT,
+                        Messages.nonExistingRootChosen,
+                        Messages.bind(Messages.nonExistingRootChosen, ""));
+                    messages.add(nonExistingDirectory);
+                }
+
+            }
+        }
+    }
+
+    private void checkConnectionStatusOfInputs(ComponentDescription componentDescription, OutputLocation out) {
+        // Check if all inputs still exist and if they are connected
+        boolean connectedInputs = false;
+        boolean unconnectedInputs = false;
+
+        for (String inputName : out.getInputs()) {
+            for (EndpointDescription ed : getInputs(componentDescription)) {
+                if (ed.getName().equals(inputName)) {
+                    if (ed.isConnected()) {
+                        connectedInputs = true;
+                    } else {
+                        unconnectedInputs = true;
+                    }
+                }
+            }
+        }
+
+        // If all inputs of a target are connected or all are
+        // unconnected, there is no problem.
+        // But if some are connected and some are not, the workflow will
+        // probably fail.
+        if (connectedInputs && unconnectedInputs) {
+            final ComponentValidationMessage connectedAndUnconnectedInputs = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.WARNING, out.getFilename(),
+                Messages.connectedAndUnconnectedInputs,
+                Messages.bind(Messages.connectedAndUnconnectedInputs, out.getFilename()));
+            messages.add(connectedAndUnconnectedInputs);
+        }
+    }
+
+    private void checkForUnknownPlaceholder(OutputLocation out) {
+        // Check if all the header placeholders can be resolved
+        List<String> knownPlaceholderList;
+        List<String> unknownPlaceholderList;
+
+        String header = out.getHeader();
+        knownPlaceholderList = new ArrayList<>();
+        knownPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
+        knownPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+        knownPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
+        final StringBuilder headerWarningBuilder = new StringBuilder();
+        unknownPlaceholderList = OutputWriterValidatorHelper.getValidationWarnings(headerWarningBuilder, header, knownPlaceholderList);
+
+        // unknown placeholders are found
+        for (String placeholder : unknownPlaceholderList) {
+            setMessages(placeholder, out.getFilename(), Messages.unmatchedHeaderPlaceholder);
+        }
+
+        // Check if all the format placeholders can be resolved
+        String formatString = out.getFormatString();
+        for (String input : out.getInputs()) {
+            String inputPlaceholder = OutputWriterComponentConstants.PH_PREFIX + input + OutputWriterComponentConstants.PH_SUFFIX;
+            if (!knownPlaceholderList.contains(inputPlaceholder)) {
+                knownPlaceholderList.add(inputPlaceholder);
+            }
+        }
+
+        final StringBuilder formatWarningBuilder = new StringBuilder();
+        unknownPlaceholderList =
+            OutputWriterValidatorHelper.getValidationWarnings(formatWarningBuilder, formatString, knownPlaceholderList);
+
+        // unknown placeholders are found
+        for (String placeholder : unknownPlaceholderList) {
+            setMessages(placeholder, out.getFilename(), Messages.unmatchedFormatPlaceholder);
+        }
+    }
+
+    private void checkAllInputsHaveOutput(ComponentDescription componentDescription, List<String> inputNamesHavingOutput) {
+        // Check if every simple data input is connected to an
+        // OutputLocation
+        for (EndpointDescription ed : getInputs(componentDescription)) {
+            if (!ed.getDataType().equals(DataType.FileReference)
+                && !ed.getDataType().equals(DataType.DirectoryReference)) {
+                if (!inputNamesHavingOutput.contains(ed.getName())) {
+                    final ComponentValidationMessage inputWithoutOutput = new ComponentValidationMessage(
+                        ComponentValidationMessage.Type.WARNING, ed.getName(), Messages.noOutputForInput,
+                        Messages.bind(Messages.noOutputForInput, ed.getName()));
+
+                    messages.add(inputWithoutOutput);
+                }
+            }
+        }
+    }
+
+    private void checkOutputHasInput(OutputLocation out) {
+        // Check if OutputLocation has at least one input
+        if (out.getInputs().isEmpty()) {
+            final ComponentValidationMessage outputWithoutInput = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.WARNING, out.getFilename(), Messages.noInputForOutput,
+                Messages.bind(Messages.noInputForOutput, out.getFilename()));
+            messages.add(outputWithoutInput);
+        }
+    }
+
+    private void setMessages(String placeholder, String filename, String message) {
         final ComponentValidationMessage unmatchedPlaceholder = new ComponentValidationMessage(
             ComponentValidationMessage.Type.WARNING, placeholder, message,
             Messages.bind(message, filename, placeholder));

@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
@@ -83,6 +84,11 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
      * OSGi-DS lifecycle method.
      */
     public synchronized void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         localNodeId = nodeConfigurationService.getInstanceNodeSessionId();
         localNodeIsRelay = nodeConfigurationService.isRelay();
         localLinkStateSnapshot = new LinkState(localOutgoingLinks.values());

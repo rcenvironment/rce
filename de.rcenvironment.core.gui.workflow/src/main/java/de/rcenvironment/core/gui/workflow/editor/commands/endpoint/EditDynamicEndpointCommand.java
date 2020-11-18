@@ -30,11 +30,12 @@ public class EditDynamicEndpointCommand extends WorkflowNodeCommand {
 
     protected Refreshable[] refreshable;
 
+    protected EndpointDescriptionsManager manager;
+
     private boolean executable = true;
 
     private boolean undoable = false;
 
-    private EndpointDescriptionsManager manager;
 
     /**
      * The constructor.

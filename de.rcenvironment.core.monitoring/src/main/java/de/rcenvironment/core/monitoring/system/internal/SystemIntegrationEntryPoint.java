@@ -29,7 +29,7 @@ public final class SystemIntegrationEntryPoint {
 
     private SystemIntegrationEntryPoint() {
         final Log log = LogFactory.getLog(getClass());
-        log.debug("Initialized the OSHI library for system monitoring");
+        log.debug("Initializing the OSHI library for system monitoring");
         adapter = new OSHISystemIntegrationAdapter();
     }
 

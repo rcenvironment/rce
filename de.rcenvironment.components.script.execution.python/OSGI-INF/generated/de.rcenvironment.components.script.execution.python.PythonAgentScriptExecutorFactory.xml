@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.components.script.execution.python.PythonAgentScriptExecutorFactory">
+   <service>
+      <provide interface="de.rcenvironment.components.script.common.registry.ScriptExecutorFactory"/>
+   </service>
+   <reference bind="bindPythonInstanceManager" cardinality="1..1" interface="de.rcenvironment.components.script.common.pythonAgentInstanceManager.PythonAgentInstanceManager" name="PythonInstanceManager" policy="static" unbind="unbindPythonInstanceManager"/>
+   <implementation class="de.rcenvironment.components.script.execution.python.PythonAgentScriptExecutorFactory"/>
+</scr:component>

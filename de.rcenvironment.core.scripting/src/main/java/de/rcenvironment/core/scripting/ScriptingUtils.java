@@ -58,6 +58,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Sascha Zur
  * @author Jascha Riedel (#14029)
  * @author David Scholz (#14550, #14548)
+ * @author Kathrin Schaffert (#17088)
  */
 public final class ScriptingUtils {
 
@@ -119,11 +120,13 @@ public final class ScriptingUtils {
             // import Libraries to the jython script, e.g. os or re.
 
             Bundle bundle = Platform.getBundle(BUNDLE_CONTAINING_JYTHON_JAR);
-            URL fileURL = bundle.getEntry(PATH_TO_JYTHON_JAR); // TODO write a test case for this, in case the path or the plugin bundles
+            URL fileURL = bundle.getEntry(PATH_TO_JYTHON_JAR); // TODO write a test case for this, in case the path or
+                                                               // the plugin bundles
                                                                // changes
             // resolves the searched file in the temp. unpacked JAR
             URL resolvedFileURL = FileLocator.toFileURL(fileURL);
-            // We need to use the 3-arg constructor of URI in order to properly escape file system chars
+            // We need to use the 3-arg constructor of URI in order to properly escape file
+            // system chars
             URI resolvedURI;
             try {
                 resolvedURI = new URI(resolvedFileURL.getProtocol(), resolvedFileURL.getPath(), null);
@@ -144,7 +147,7 @@ public final class ScriptingUtils {
     public static synchronized void setJythonPath(File path) {
         jythonPath = path;
     }
-
+    
     // /**
     // * Set JVM properties required for proper Jython 2.7.0 support.
     // */
@@ -152,6 +155,49 @@ public final class ScriptingUtils {
     // System.setProperty("python.import.site", "false");
     // System.setProperty("python.console.encoding", "UTF-8");
     // }
+
+    /**
+     * Prepares the Ordered Dictionary Script to be used with Jython < 2.7. Will become obsolete with Jython 2.7.
+     * 
+     * @return Ordered Dictionary Script
+     * @throws ComponentException on unexpected error
+     */
+
+    public static String prepareOrderedDictionaryScript() throws ComponentException {
+        String orderedDictScript = "";
+
+        try (InputStream in = ScriptingUtils.class.getResourceAsStream("/resources/ordered_dict.py")) {
+            orderedDictScript = IOUtils.toString(in);
+        } catch (IOException e) {
+            throw new ComponentException(
+                "Internal error: Failed to intialize trak config factory script that is wrapped around the actual script",
+                e);
+        }
+        
+        return orderedDictScript;
+    }
+
+    /**
+     * Prepares the Input File Factory Script to be used with Jython.
+     * 
+     * @param path to whom the Input File Factory will write the configuration file.
+     * 
+     * @return prepared Input File Factory Script
+     * @throws ComponentException on unexpected error
+     */
+    public static String prepareInputFileFactoryScript(String path) throws ComponentException {
+        String inputFileFactoryScript = "";
+        
+        try (InputStream in = ScriptingUtils.class.getResourceAsStream("/resources/input_file_factory.py")) {
+            inputFileFactoryScript = IOUtils.toString(in);
+        } catch (IOException e) {
+            throw new ComponentException(
+                "Internal error: Failed to intialize input file factory script that is wrapped around the actual script",
+                e);
+        }
+        inputFileFactoryScript += "\n" + "InputFileFactory.p = " + "'" + path + "/'";
+        return inputFileFactoryScript;
+    }
 
     /**
      * Prepares a header script for using RCE Python API with Jython.
@@ -163,13 +209,15 @@ public final class ScriptingUtils {
      * @return prepared header script
      * @throws ComponentException on unexpected error
      */
-    public static String prepareHeaderScript(Map<String, Object> localStateMap, ComponentContext componentContext, File tempDir,
-        List<File> tempFiles) throws ComponentException {
+    public static String prepareHeaderScript(Map<String, Object> localStateMap, ComponentContext componentContext,
+        File tempDir, List<File> tempFiles) throws ComponentException {
         String currentHeader = "";
+
         try (InputStream in = ScriptingUtils.class.getResourceAsStream("/resources/RCE_Jython.py")) {
             currentHeader = IOUtils.toString(in);
         } catch (IOException e) {
-            throw new ComponentException("Internal error: Failed to intialize script that is wrapped around the actual script", e);
+            throw new ComponentException(
+                "Internal error: Failed to intialize header script that is wrapped around the actual script", e);
         }
 
         String stateMapDefinition = "RCE_STATE_VARIABLES = {";
@@ -203,19 +251,26 @@ public final class ScriptingUtils {
         currentHeader += "RCE.setDictionary_internal(RCE_Dict_InputChannels)\nimport shutil\n";
         List<String> notConnected = new LinkedList<>();
         for (String input : componentContext.getInputsNotConnected()) {
-            if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
-                && (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.RequiredIfConnected.name())
-                    || componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
-                        .equals(
-                            InputExecutionContraint.NotRequired.name()))) {
+            if (componentContext.getInputMetaDataValue(input,
+                ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && (componentContext
+                    .getInputMetaDataValue(input,
+                        ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                    .equals(InputExecutionContraint.RequiredIfConnected.name())
+                    || componentContext
+                        .getInputMetaDataValue(input,
+                            ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                        .equals(InputExecutionContraint.NotRequired.name()))) {
                 notConnected.add(input);
             }
         }
         for (String input : componentContext.getInputs()) {
-            if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
-                && componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name())
+            if (componentContext.getInputMetaDataValue(input,
+                ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && componentContext
+                    .getInputMetaDataValue(input,
+                        ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                    .equals(InputExecutionContraint.NotRequired.name())
                 && !componentContext.getInputsWithDatum().contains(input)) {
                 notConnected.add(input);
             }
@@ -230,7 +285,8 @@ public final class ScriptingUtils {
         return currentHeader;
     }
 
-    private static String prepareInput(File tempDir, ComponentContext compContext, List<File> tempFiles) throws ComponentException {
+    private static String prepareInput(File tempDir, ComponentContext compContext, List<File> tempFiles)
+        throws ComponentException {
         final String openBracket = "[";
         String dataDefinition = "RCE_Dict_InputChannels = { ";
         String nameAndValue = "";
@@ -249,12 +305,13 @@ public final class ScriptingUtils {
                     // point, it is not needed any more (is already exists)
                     // For the script component, this should always run.
                     if (!file.exists()) {
-                        componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, (FileReferenceTD) input, file);
+                        componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext,
+                            (FileReferenceTD) input, file);
                     }
                 } catch (IOException e) {
                     throw new ComponentException("Failed to read input file from the data management", e);
                 }
-                nameAndValue += QUOTE + file.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
+                nameAndValue += QUOTE + file.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
             case DirectoryReference:
                 File dirInputDir = new File(tempDir, inputName);
@@ -269,7 +326,7 @@ public final class ScriptingUtils {
                 } catch (IOException e) {
                     throw new ComponentException("Failed to read input directory from the data management", e);
                 }
-                nameAndValue += QUOTE + dir.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
+                nameAndValue += QUOTE + dir.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
             case Boolean:
                 boolean bool = (((BooleanTD) input).getBooleanValue());
@@ -305,12 +362,10 @@ public final class ScriptingUtils {
                 VectorTD vector = (VectorTD) input;
                 nameAndValue += openBracket;
                 if (vector.getRowDimension() > MAXIMUM_SMALL_TABLE_ENTRIES) {
-                    throw new ComponentException(
-                        StringUtils.format(
-                            "Vector of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                                + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
-                            inputName,
-                            vector.getRowDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
+                    throw new ComponentException(StringUtils.format(
+                        "Vector of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                            + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
+                        inputName, vector.getRowDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
                 }
                 for (int i = 0; i < vector.getRowDimension(); i++) {
                     String appending = replaceNonNumericValue(vector.getFloatTDOfElement(i).getFloatValue());
@@ -351,34 +406,33 @@ public final class ScriptingUtils {
 
     }
 
-    private static String convertSmallTable(final String openBracket, String nameAndValue, String inputName, TypedDatum input)
-        throws ComponentException {
+    private static String convertSmallTable(final String openBracket, String nameAndValue, String inputName,
+        TypedDatum input) throws ComponentException {
         SmallTableTD table = (SmallTableTD) input;
         nameAndValue += openBracket;
         if (table.getRowCount() * table.getColumnCount() > MAXIMUM_SMALL_TABLE_ENTRIES) {
-            throw new ComponentException(
-                StringUtils.format(
-                    "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                        + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
-                    inputName,
-                    table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
+            throw new ComponentException(StringUtils.format(
+                "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                    + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
+                inputName, table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
         }
         for (int i = 0; i < table.getRowCount(); i++) {
             if (table.getRowCount() > 1) {
                 nameAndValue += openBracket;
             }
             for (int j = 0; j < table.getColumnCount(); j++) {
-                if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
-                    table.getTypedDatumOfCell(i, j)) instanceof String) {
+                if (ScriptDataTypeHelper
+                    .getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) instanceof String) {
                     nameAndValue += QUOTE
                         + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j))
                         + QUOTE + COMMA;
-                } else if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
-                    table.getTypedDatumOfCell(i, j)) instanceof Double) {
-                    nameAndValue += replaceNonNumericValue(((FloatTD) table.getTypedDatumOfCell(i, j)).getFloatValue()) + COMMA;
+                } else if (ScriptDataTypeHelper
+                    .getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) instanceof Double) {
+                    nameAndValue += replaceNonNumericValue(((FloatTD) table.getTypedDatumOfCell(i, j)).getFloatValue())
+                        + COMMA;
                 } else {
-                    nameAndValue +=
-                        ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) + COMMA;
+                    nameAndValue += ScriptDataTypeHelper
+                        .getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) + COMMA;
                 }
             }
             nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
@@ -410,35 +464,34 @@ public final class ScriptingUtils {
     private static String getMatrix(final String openBracket, String nameAndValue, String inputName, MatrixTD matrix)
         throws ComponentException {
         if (matrix.getRowDimension() * matrix.getColumnDimension() > MAXIMUM_SMALL_TABLE_ENTRIES) {
-            throw new ComponentException(
-                StringUtils.format(
-                    "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                        + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
-                    inputName,
-                    matrix.getRowDimension() * matrix.getColumnDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
+            throw new ComponentException(StringUtils.format(
+                "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                    + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
+                inputName, matrix.getRowDimension() * matrix.getColumnDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
         }
         for (int i = 0; i < matrix.getRowDimension(); i++) {
             if (matrix.getRowDimension() > 1) {
                 nameAndValue += openBracket;
             }
             for (int j = 0; j < matrix.getColumnDimension(); j++) {
-                if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
-                    matrix.getFloatTDOfElement(i, j)) instanceof String) {
+                if (ScriptDataTypeHelper
+                    .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) instanceof String) {
                     nameAndValue += QUOTE
                         + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j))
                         + QUOTE + COMMA;
-                } else if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
-                    matrix.getFloatTDOfElement(i, j)) instanceof Double) {
+                } else if (ScriptDataTypeHelper
+                    .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) instanceof Double) {
                     String append = replaceNonNumericValue(matrix.getFloatTDOfElement(i, j).getFloatValue());
                     if (append.isEmpty()) {
-                        nameAndValue += ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
+                        nameAndValue += ScriptDataTypeHelper
+                            .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
                     } else {
                         nameAndValue += append;
                     }
                     nameAndValue += COMMA;
                 } else {
-                    nameAndValue +=
-                        ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) + COMMA;
+                    nameAndValue += ScriptDataTypeHelper
+                        .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) + COMMA;
                 }
             }
             nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
@@ -461,8 +514,8 @@ public final class ScriptingUtils {
      * @param historyDataItem of component instance
      * @throws ComponentException e if there is an error
      */
-    public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext, ScriptEngine engine,
-        String workingPath, ComponentHistoryDataItem historyDataItem)
+    public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext,
+        ScriptEngine engine, String workingPath, ComponentHistoryDataItem historyDataItem)
         throws ComponentException {
         writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem, null);
 
@@ -480,9 +533,9 @@ public final class ScriptingUtils {
      * @throws ComponentException e
      */
     @SuppressWarnings("unchecked")
-    public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext, ScriptEngine engine,
-        String workingPath, ComponentHistoryDataItem historyDataItem, Map<String, TypedDatum> lastRunStaticOutputValues)
-        throws ComponentException {
+    public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext,
+        ScriptEngine engine, String workingPath, ComponentHistoryDataItem historyDataItem,
+        Map<String, TypedDatum> lastRunStaticOutputValues) throws ComponentException {
         Map<String, ArrayList<Object>> map = (Map<String, ArrayList<Object>>) engine.get("RCE_Dict_OutputChannels");
         // send values to outputs, using the Map
         // this block sends the values when the user calls the method RCE.write_output()
@@ -493,8 +546,10 @@ public final class ScriptingUtils {
             if (datas != null) {
                 for (Object value : datas) {
                     if (value != null && !String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
-                        TypedDatum outputValue = getOutputByType(value, type, outputName, workingPath, componentContext);
-                        writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName, outputValue);
+                        TypedDatum outputValue = getOutputByType(value, type, outputName, workingPath,
+                            componentContext);
+                        writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName,
+                            outputValue);
                     } else if (String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
                         writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName,
                             typedDatumFactory.createNotAValue());
@@ -509,6 +564,9 @@ public final class ScriptingUtils {
         }
         for (String endpointName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {
             componentContext.closeOutput(endpointName);
+        }
+        for (String item : (List<String>) engine.get("RCE_writtenInputFiles")) {
+            LOGGER.debug("The Input File Factory has written the following file: " + item);
         }
     }
 
@@ -551,7 +609,7 @@ public final class ScriptingUtils {
      * @param type {@link DataType} of the output.
      * @param name Output name.
      * @param workingPath Relevant for {@link FileReferenceTD} and {@link DirectoryReferenceTD} types.
-     * @param componentContext 
+     * @param componentContext the {@link ComponentContext} of the component
      * @return The parsed {@link TypedDatum}
      * @throws ComponentException e
      */
@@ -564,7 +622,8 @@ public final class ScriptingUtils {
             outputValue = handeFileOrDirectoryOutput(value, "file", name, workingPath, componentContext, outputValue);
             break;
         case DirectoryReference:
-            outputValue = handeFileOrDirectoryOutput(value, "directory ", name, workingPath, componentContext, outputValue);
+            outputValue = handeFileOrDirectoryOutput(value, "directory ", name, workingPath, componentContext,
+                outputValue);
             break;
         default:
             outputValue = ScriptDataTypeHelper.parseToTypedDatum(value, typedDatumFactory, type);
@@ -584,22 +643,25 @@ public final class ScriptingUtils {
             if (file.exists()) {
                 if (type.equals("file")) {
                     if (file.isDirectory()) {
-                        throw new ComponentException(StringUtils.format(
-                            "Failed to write %s to output '%s' as it is a directory.", file.getAbsolutePath(), name));
+                        throw new ComponentException(
+                            StringUtils.format("Failed to write %s to output '%s' as it is a directory.",
+                                file.getAbsolutePath(), name));
                     }
-                    outputValue = componentDatamanagementService.createFileReferenceTDFromLocalFile(
-                        componentContext, file, file.getName());
+                    outputValue = componentDatamanagementService.createFileReferenceTDFromLocalFile(componentContext,
+                        file, file.getName());
                 } else {
                     if (!file.isDirectory()) {
-                        throw new ComponentException(StringUtils.format(
-                            "Failed to write %s to output '%s' as it is not a directory.", file.getAbsolutePath(), name));
+                        throw new ComponentException(
+                            StringUtils.format("Failed to write %s to output '%s' as it is not a directory.",
+                                file.getAbsolutePath(), name));
                     }
-                    outputValue = componentDatamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, file,
-                        file.getName());
+                    outputValue = componentDatamanagementService
+                        .createDirectoryReferenceTDFromLocalDirectory(componentContext, file, file.getName());
                 }
             } else {
-                throw new ComponentException(StringUtils.format(
-                    "Failed to write %s to output '%s' as it does not exist: %s", type, name, file.getAbsolutePath()));
+                throw new ComponentException(
+                    StringUtils.format("Failed to write %s to output '%s' as it does not exist: %s", type, name,
+                        file.getAbsolutePath()));
             }
         } catch (IOException e) {
             throw new ComponentException(StringUtils.format("Failed to store %s into the data management - "
@@ -608,7 +670,8 @@ public final class ScriptingUtils {
         return outputValue;
     }
 
-    private static void addOutputToHistoryDataItem(String name, TypedDatum outputValue, ComponentHistoryDataItem historyDataItem) {
+    private static void addOutputToHistoryDataItem(String name, TypedDatum outputValue,
+        ComponentHistoryDataItem historyDataItem) {
         if (historyDataItem != null) {
             ((CommonComponentHistoryDataItem) historyDataItem).addOutput(name, outputValue);
         }

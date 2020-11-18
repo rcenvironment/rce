@@ -28,6 +28,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.w3c.dom.Document;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
@@ -60,7 +64,9 @@ import de.rcenvironment.toolkit.utils.text.AbstractTextLinesReceiver;
  * @author Jan Flink
  * @author Doreen Seider (logging)
  * @author Brigitte Boden
+ * @author Alexander Weinert (OSGI annotations)
  */
+@Component
 public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent {
 
     private static final Log LOG = LogFactory.getLog(CpacsToolIntegratorComponent.class);
@@ -665,11 +671,13 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     }
 
     @Override
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     protected void bindScriptingService(ScriptingService service) {
         super.bindScriptingService(service);
     }
 
     @Override
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     protected void bindComponentDataManagementService(ComponentDataManagementService compDataManagementService) {
         super.bindComponentDataManagementService(compDataManagementService);
     }

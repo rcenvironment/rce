@@ -3,7 +3,6 @@
    <service>
       <provide interface="de.rcenvironment.core.component.integration.ToolIntegrationService"/>
    </service>
-   <reference bind="bindAuthorizationService" interface="de.rcenvironment.core.authorization.api.AuthorizationService" name="AuthorizationService"/>
    <reference bind="bindComponentRegistry" interface="de.rcenvironment.core.component.management.api.LocalComponentRegistrationService" name="ComponentRegistry" unbind="unbindComponentRegistry"/>
    <reference bind="bindFileWatcherManagerBuilder" interface="de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcherManager$Builder" name="FileWatcherManagerBuilder"/>
    <reference bind="bindIconHelper" interface="de.rcenvironment.core.component.integration.internal.IconHelper" name="IconHelper" unbind="unbindIconHelper"/>

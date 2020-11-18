@@ -10,10 +10,13 @@ package de.rcenvironment.core.gui.workflow.execute;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -48,17 +51,38 @@ import de.rcenvironment.core.utils.common.StringUtils;
 
 public class PlaceholderPageTreeFactory {
 
-    static final int DEFAULT_COLUMN_WIDTH = 100;
+    private class PlaceholderHistoryContentProposalProvider extends SimpleContentProposalProvider {
+
+        private final Supplier<String[]> placeholderHistoryProvider;
+
+        PlaceholderHistoryContentProposalProvider(Supplier<String[]> contentProposalProvider) {
+            super(contentProposalProvider.get());
+            this.placeholderHistoryProvider = contentProposalProvider;
+        }
+
+        public void reloadProposals() {
+            this.setProposals(this.placeholderHistoryProvider.get());
+        }
+
+    }
+
+    private static final String PLACEHOLDER_FORMAT = "%s.%s";
+
+    private static final int DEFAULT_COLUMN_WIDTH = 100;
 
     private static final Log LOGGER = LogFactory.getLog(PlaceholderPageTreeFactory.class);
 
     private final PlaceholderPage placeholderPage;
-    
+
     private final WorkflowPlaceholderHandler placeholderHelper;
 
     private final Tree componentPlaceholderTree;
 
     private boolean restoredPasswords = false;
+
+    private TreeColumn displayNameColumn;
+
+    private final Collection<PlaceholderHistoryContentProposalProvider> contentProposalProviders = new HashSet<>();
 
     public PlaceholderPageTreeFactory(final PlaceholderPage placeholderPage, final WorkflowPlaceholderHandler placeholderHandler,
         final Group parentGroup) {
@@ -79,19 +103,25 @@ public class PlaceholderPageTreeFactory {
 
         // resize the row height using a MeasureItem listener
         componentPlaceholderTree.addListener(SWT.MeasureItem, event -> event.height = 2 * 10 + 2);
+
+        displayNameColumn = appendLeftAlignedColumnToTree();
+
+        appendValueColumnToTree();
+        appendBrowseColumnToTree();
+        appendApplyToAllColumnToTree();
     }
 
     public Tree getTree() {
         return this.componentPlaceholderTree;
     }
 
+    public void reloadContentProposals() {
+        for (PlaceholderHistoryContentProposalProvider contentProposalProvider : this.contentProposalProviders) {
+            contentProposalProvider.reloadProposals();
+        }
+    }
+
     void fillTree() {
-        TreeColumn displayNameColumn = appendLeftAlignedColumnToTree();
-
-        appendValueColumnToTree();
-        appendBrowseColumnToTree();
-        appendApplyToAllColumnToTree();
-
         String[] componentTypesWithPlaceholderArray =
             getComponentTypesWithPlaceholders(placeholderHelper.getIdentifiersOfPlaceholderContainingComponents());
 
@@ -101,6 +131,9 @@ public class PlaceholderPageTreeFactory {
 
         placeholderPage.placeApplyToAllButtonsWhereNecessary(componentPlaceholderTree);
         displayNameColumn.pack();
+        componentPlaceholderTree.getColumn(0).setWidth(
+            componentPlaceholderTree.getColumn(0).getWidth() + 10);
+        componentPlaceholderTree.redraw();
     }
 
     /**
@@ -125,7 +158,7 @@ public class PlaceholderPageTreeFactory {
 
             final boolean hasPlaceholderWithGUIName =
                 determineWhetherInstanceHasPlaceholdersWithDisplayName(componentInstanceID, componentName, configDesc);
-            
+
             if (!hasPlaceholderWithGUIName) {
                 // As we are unable to display any placeholders of this component instance to the user, we do not add a tree item for this
                 // instance. Since we do not add a tree item for this instance, we can furthermore skip adding any children to that tree
@@ -138,8 +171,8 @@ public class PlaceholderPageTreeFactory {
 
             final Optional<PlaceholdersMetaDataDefinition> placeholderMetaData = getPlaceholderMetaData(componentName);
             List<String> orderedInstancePlaceholders = PlaceholderSortUtils.sortGlobalPlaceholders(
-                    placeholderHelper.getPlaceholderNameSetOfComponentInstance(componentInstanceID.toString()),
-                    placeholderMetaData.orElse(null));
+                placeholderHelper.getPlaceholderNameSetOfComponentInstance(componentInstanceID.toString()),
+                placeholderMetaData.orElse(null));
 
             for (String instancePlaceholder : orderedInstancePlaceholders) {
                 // active configuration only considers declarative keys. It is needed to consider configuration entries added at runtime
@@ -156,12 +189,12 @@ public class PlaceholderPageTreeFactory {
 
                 placeholderPage.setPlaceholderForTreeItem(instancePHTreeItem, instancePlaceholder);
                 instancePHTreeItem.setText(0, guiName);
-                String currentPlaceholder = StringUtils.format("%s.%s", componentID, instancePlaceholder);
+                String currentPlaceholder = StringUtils.format(PLACEHOLDER_FORMAT, componentID, instancePlaceholder);
 
                 placeholderPage.putIntoControlMap(instancePHTreeItem,
                     buildPlaceholderText(
                         instancePHTreeItem,
-                        StringUtils.format("%s.%s", instanceName, instancePlaceholder),
+                        StringUtils.format(PLACEHOLDER_FORMAT, instanceName, instancePlaceholder),
                         guiName,
                         ComponentUtils.isEncryptedPlaceholder(currentPlaceholder, WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
                         false));
@@ -216,7 +249,7 @@ public class PlaceholderPageTreeFactory {
         return instancesWithPlaceholder.stream().map(WorkflowNodeIdentifier::new).collect(Collectors.toList());
     }
 
-    // TODO: The parameter componentName should not be required here
+    // TODO The parameter componentName should not be required here
     protected void appendGlobalPlaceholdersToTree(final TreeItem parent, String componentID, final String componentName) {
         final Optional<PlaceholdersMetaDataDefinition> placeholderMetaData = getPlaceholderMetaData(componentName);
         final List<String> globalPlaceholders = PlaceholderSortUtils.sortGlobalPlaceholders(
@@ -229,9 +262,9 @@ public class PlaceholderPageTreeFactory {
             placeholderPage.setPlaceholderForTreeItem(compPHTreeItem, componentPlaceholder);
             compPHTreeItem.setText(0, guiName.orElse(""));
 
-            final String currentPlaceholder = StringUtils.format("%s.%s", componentID, componentPlaceholder);
+            final String currentPlaceholder = StringUtils.format(PLACEHOLDER_FORMAT, componentID, componentPlaceholder);
             placeholderPage.putIntoControlMap(compPHTreeItem,
-                buildPlaceholderText(compPHTreeItem, StringUtils.format("%s.%s", componentName, componentPlaceholder),
+                buildPlaceholderText(compPHTreeItem, StringUtils.format(PLACEHOLDER_FORMAT, componentName, componentPlaceholder),
                     guiName.orElse(""),
                     ComponentUtils.isEncryptedPlaceholder(currentPlaceholder, WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
                     true));
@@ -283,27 +316,39 @@ public class PlaceholderPageTreeFactory {
     Control buildPlaceholderText(TreeItem item, final String placeholderName, final String guiName,
         boolean isEncrypted, boolean isGlobal) {
         TreeEditor textEditor = new TreeEditor(item.getParent());
-        Combo booleanCombo = null;
+        final Combo booleanCombo;
         textEditor.horizontalAlignment = SWT.LEFT;
         textEditor.grabHorizontal = true;
         int style = SWT.BORDER | SWT.SINGLE;
         boolean isPathField = false;
-        boolean isBoolean = false;
+        final boolean isBoolean;
         boolean isInteger = false;
         boolean isFloat = false;
         String dataType = placeholderHelper.getPlaceholdersDataType().get(placeholderName);
         final String componentName = placeholderName.split("\\.")[0];
         if (dataType != null) {
             if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_FILE) || dataType.equals(PlaceholdersMetaDataConstants.TYPE_DIR)) {
+                booleanCombo = null;
                 isPathField = true;
+                isBoolean = false;
             } else if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_BOOL)) {
                 booleanCombo = createBooleanCombo(item);
                 isBoolean = true;
             } else if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_INT)) {
+                booleanCombo = null;
                 isInteger = true;
+                isBoolean = false;
             } else if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_FLOAT)) {
+                booleanCombo = null;
                 isFloat = true;
+                isBoolean = false;
+            } else {
+                booleanCombo = null;
+                isBoolean = false;
             }
+        } else {
+            booleanCombo = null;
+            isBoolean = false;
         }
         if (isEncrypted) {
             style |= SWT.PASSWORD;
@@ -324,9 +369,15 @@ public class PlaceholderPageTreeFactory {
             restoredPasswords = true;
         }
 
-        String[] allProposals =
-            getAllProposalsForPlaceholder(item, isEncrypted, isGlobal, booleanCombo, isBoolean, placeholderText);
-        buildAndSetContentProposalAdapter(placeholderText, allProposals);
+        Supplier<String[]> getProposals =
+            () -> {
+                if (isEncrypted) {
+                    return getAllProposalsForEncryptedPlaceholder(item, isGlobal, booleanCombo, isBoolean, placeholderText);
+                } else {
+                    return getAllProposalsForUnencryptedPlaceholder(item, isGlobal, booleanCombo, isBoolean, placeholderText);
+                }
+            };
+        buildAndSetContentProposalAdapter(placeholderText, getProposals);
 
         if (isPathField) {
             placeholderPage.addFileChooser(item, dataType, placeholderText);
@@ -365,10 +416,11 @@ public class PlaceholderPageTreeFactory {
         return combo;
     }
 
-    protected void buildAndSetContentProposalAdapter(final Text placeholderText, String[] allProposals) {
-        SimpleContentProposalProvider scp = new SimpleContentProposalProvider(
-            allProposals);
+    protected void buildAndSetContentProposalAdapter(final Text placeholderText, Supplier<String[]> getProposals) {
+        PlaceholderHistoryContentProposalProvider scp = new PlaceholderHistoryContentProposalProvider(getProposals);
         scp.setFiltering(true);
+        contentProposalProviders.add(scp);
+
         ContentProposalAdapter adapter = null;
         adapter = new ContentProposalAdapter(placeholderText,
             new TextContentAdapter(), scp,
@@ -378,7 +430,7 @@ public class PlaceholderPageTreeFactory {
         adapter.setPropagateKeys(true);
     }
 
-    protected String[] getAllProposalsForPlaceholder(TreeItem item, boolean isEncrypted, boolean isGlobal, Combo booleanCombo,
+    private String[] getAllProposalsForEncryptedPlaceholder(TreeItem item, boolean isGlobal, Combo booleanCombo,
         boolean isBoolean, final Text placeholderText) {
         String[] allProposals;
         if (!isGlobal) {
@@ -394,20 +446,48 @@ public class PlaceholderPageTreeFactory {
 
         String finalProposal = null;
         if (allProposals.length > 0) {
-            if (isEncrypted) {
-                byte[] decoded = new Base64().decode(allProposals[allProposals.length - 1]);
-                allProposals[allProposals.length - 1] = new String(decoded, StandardCharsets.UTF_8);
+            byte[] decoded = new Base64().decode(allProposals[allProposals.length - 1]);
+            allProposals[allProposals.length - 1] = new String(decoded, StandardCharsets.UTF_8);
+            finalProposal = allProposals[allProposals.length - 1]; // set default value to recent one
+        }
+
+        if (finalProposal != null && !finalProposal.equals("")) {
+            if (!isBoolean) {
+                placeholderText.setText(finalProposal);
+            } else if (booleanCombo != null) {
+                booleanCombo.setText(finalProposal);
             }
+        }
+
+        return new String[0];
+    }
+
+    private String[] getAllProposalsForUnencryptedPlaceholder(TreeItem item, boolean isGlobal, Combo booleanCombo,
+        boolean isBoolean, final Text placeholderText) {
+        String[] allProposals;
+        if (!isGlobal) {
+            allProposals = placeholderHelper.getInstancePlaceholderHistory(
+                placeholderPage.getPlaceholderForTreeItem(item),
+                placeholderPage.getWorkflowNodeIDForTreeItem(item).toString());
+        } else {
+            allProposals = placeholderHelper.getComponentPlaceholderHistory(
+                placeholderPage.getPlaceholderForTreeItem(item),
+                placeholderPage.getComponentIDByName(item.getParentItem().getText()),
+                placeholderPage.getWorkflowIdentifier());
+        }
+
+        String finalProposal = null;
+        if (allProposals.length > 0) {
             finalProposal = allProposals[allProposals.length - 1]; // set default value to recent one
         }
 
         String[] additionalProposals = placeholderHelper.getOtherPlaceholderHistoryValues(placeholderPage.getPlaceholderForTreeItem(item));
         if (allProposals.length == 0) {
             allProposals = additionalProposals;
-            if (!isEncrypted && allProposals.length > 0) {
+            if (allProposals.length > 0) {
                 String valueFromOtherComponentInWorkflow = placeholderHelper.getValueFromOtherComponentInWorkflow(
-                        placeholderPage.getPlaceholderForTreeItem(item),
-                        placeholderPage.getWorkflowIdentifier());
+                    placeholderPage.getPlaceholderForTreeItem(item),
+                    placeholderPage.getWorkflowIdentifier());
                 if (valueFromOtherComponentInWorkflow != null) {
                     finalProposal = valueFromOtherComponentInWorkflow;
                 } else {
@@ -426,9 +506,6 @@ public class PlaceholderPageTreeFactory {
             }
         }
 
-        if (isEncrypted) {
-            allProposals = new String[0]; // Passwords should not be visible
-        }
         return allProposals;
     }
 

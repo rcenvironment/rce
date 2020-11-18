@@ -11,7 +11,7 @@ package de.rcenvironment.core.utils.common.exception;
 import java.io.IOException;
 
 /**
- * A generic exception for indicating that a requesting operation failed, if the type of the failure is not relevant.
+ * A generic exception for indicating that a requested operation failed, if the type of the failure is not relevant.
  * <p>
  * For example, if a service's setting is changed through a service method, and that service tries to persist it internally, this write
  * operation may fail. If this happens, then it is irrelevant for the method caller that there was an internal {@link IOException} - the

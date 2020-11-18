@@ -30,6 +30,7 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
  * @author Sascha Zur
  * @author Markus Kunde
  * @author Jan Flink
+ * @author Kathrin Schaffert
  */
 public class EndpointPropertySection extends ValidatingWorkflowNodePropertySection implements PropertyChangeListener {
 
@@ -38,6 +39,8 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
     protected Composite endpointsComposite;
 
     protected Composite parentComposite;
+
+    private boolean listenerRegistered = false;
 
     private EndpointSelectionPane[] panes;
 
@@ -72,8 +75,10 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
 
         super.refreshSection();
         final ComponentInstanceProperties configuration = getConfiguration();
-        for (EndpointSelectionPane pane : panes) {
-            pane.setConfiguration(configuration);
+        if (panes != null) {
+            for (EndpointSelectionPane pane : panes) {
+                pane.setConfiguration(configuration);
+            }
         }
     }
 
@@ -90,15 +95,16 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
             } else {
                 endpointsComposite.setSize(parentComposite.getSize().x, endpointsComposite.getSize().y);
             }
-            parentComposite.getParent().layout(endpointsComposite.getChildren()); 
+            parentComposite.getParent().layout(endpointsComposite.getChildren());
         }
     }
 
     @Override
     public void setInput(IWorkbenchPart part, ISelection selection) {
         super.setInput(part, selection);
-        if (node != null) {
+        if (node != null && !listenerRegistered) {
             node.addPropertyChangeListener(this);
+            listenerRegistered = true;
         }
     }
 
@@ -126,19 +132,12 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
     }
 
     @Override
-    public void aboutToBeHidden() {
+    protected void beforeTearingDownModelBinding() {
         if (node != null) {
             node.removePropertyChangeListener(this);
         }
-        super.aboutToBeHidden();
-    }
-
-    @Override
-    public void dispose() {
-        if (node != null) {
-            node.removePropertyChangeListener(this);
-        }
-        super.dispose();
+        listenerRegistered = false;
+        super.beforeTearingDownModelBinding();
     }
 
 }

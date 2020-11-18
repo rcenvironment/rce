@@ -10,9 +10,6 @@ package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,6 +19,7 @@ import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.testutils.ConfigurationSegmentUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import junit.framework.TestCase;
 
 /**
  * Test for the class SshConfiguration.
@@ -65,7 +63,8 @@ public class SshConfigurationTest extends TestCase {
      * Tests loading a test configuration file.
      * 
      * @throws IOException on uncaught exceptions
-     * @throws ConfigurationException on configuraion exceptions.*/
+     * @throws ConfigurationException on configuraion exceptions.
+     */
     @Test
     public void testLoading() throws IOException, ConfigurationException {
         TempFileServiceAccess.setupUnitTestEnvironment();
@@ -76,7 +75,7 @@ public class SshConfigurationTest extends TestCase {
         assertEquals(true, configuration.isEnabled());
         assertEquals(TEST_FILE_PORT_VALUE, configuration.getPort());
         assertEquals(TEST_FILE_HOST_VALUE, configuration.getHost());
-        assertEquals(4, configuration.getAccounts().size());
+        assertEquals(4, configuration.listAccounts().size());
     }
 
     /** Test. */
@@ -101,34 +100,22 @@ public class SshConfigurationTest extends TestCase {
 
     /** Test. */
     @Test
-    public void testValidationNoUsers() {
+    public void testValidationShouldAcceptNoUsers() {
         SshConfiguration config = SshTestUtils.getValidConfig();
-        config.setAccounts(null);
-        assertFalse("SshConfiguration.validateConfiguration() returned true but false was expected",
+        config.setStaticAccounts(null);
+        assertTrue("SshConfiguration.validateConfiguration() returned false but true was expected",
             config.validateConfiguration(logger));
-        config.setAccounts(new ArrayList<SshAccountImpl>());
-        assertFalse("SshConfiguration.validateConfiguration() returned true but false was expected",
+        config.setStaticAccounts(new ArrayList<SshAccountImpl>());
+        assertTrue("SshConfiguration.validateConfiguration() returned false but true was expected",
             config.validateConfiguration(logger));
     }
 
-    /** Test. */
-    @Test
-    public void testValidationDuplicateUsers() {
-        SshConfiguration config = SshTestUtils.getValidConfig();
-        List<SshAccountImpl> users = config.getAccounts();
-        if (users.addAll(users)) {
-            config.setAccounts(users);
-            assertFalse("SshConfiguration.validateConfiguration() returned true but false was expected.",
-                config.validateConfiguration(logger));
-        } else {
-            fail("Could not create duplicates for users");
-        }
-    }
+    // TODO add new test(s) for duplicate account handling and static/dynamic account merging
 
     private void verifyDefaultValues(SshConfiguration configuration) {
         assertEquals(false, configuration.isEnabled());
         assertEquals(SshConfiguration.DEFAULT_PORT, configuration.getPort());
         assertEquals(SshConfiguration.DEFAULT_HOST, configuration.getHost());
-        assertEquals(0, configuration.getAccounts().size());
+        assertEquals(0, configuration.listAccounts().size());
     }
 }

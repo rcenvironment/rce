@@ -55,6 +55,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.gui.workflow.editor.commands.CompositeCommand;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 
 /**
@@ -606,17 +607,18 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
      */
     protected static class SetConfigurationValueCommand extends AbstractWorkflowNodeCommand {
 
-        private final String key;
+        protected final String key;
 
-        private final String oldValue;
+        protected String oldValue;
 
-        private final String newValue;
+        protected String newValue;
 
         public SetConfigurationValueCommand(final String key, final String oldValue, final String newValue) {
             this.key = key;
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
+
 
         @Override
         public void execute2() {
@@ -791,7 +793,8 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         }
 
         @Override
-        public void focusGained(final FocusEvent event) {}
+        public void focusGained(final FocusEvent event) {
+        }
 
         /**
          * 
@@ -1197,7 +1200,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         private String stringValue(final Control control, final String value, final String defaultValue) {
             final String result;
             if (value != null) {
-                result = value.toString();
+                result = value;
             } else {
                 result = defaultValue;
             }

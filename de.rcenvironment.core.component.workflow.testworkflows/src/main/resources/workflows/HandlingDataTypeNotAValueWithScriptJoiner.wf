@@ -1,6 +1,6 @@
 {
   "identifier" : "74a5377d-7e63-4811-abda-8a3154cf0813",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "name" : "ind_2015-04-12_19:22:48_03",
   "nodes" : [ {
     "identifier" : "07489a14-f7a1-4101-9aba-d788deef47d5",
@@ -75,11 +75,12 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "configuration" : {
-      "Joined" : "4"
+      "inputCount" : "4",
+      "datatype" : "Float"
     },
     "dynamicInputs" : [ {
       "identifier" : "31fbce34-812c-4e12-8915-32e93cb30cb7",
@@ -191,13 +192,12 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.1",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "4"
     },
     "staticOutputs" : [ {
       "identifier" : "9db5e4ef-8f41-4ad5-935a-603daa18fc96",
-      "name" : "Design Variable",
-      "epIdentifier" : null,
+      "name" : "Design variable",
       "datatype" : "Float",
       "metadata" : {
         "FromValue" : "0",

@@ -44,12 +44,9 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * @author Sascha Zur
  * @author Hendrik Abbenhaus
  * @author Kathrin Schaffert
+ * @author Niklas Foerst
  */
 public class ScriptSection extends AbstractScriptSection {
-
-    private static final String JYTHON = "Jython";
-
-    private static final String PYTHON = "Python";
 
     private static final Log LOGGER = LogFactory.getLog(ScriptSection.class);
 
@@ -58,11 +55,15 @@ public class ScriptSection extends AbstractScriptSection {
     public ScriptSection() {
         super(Messages.scriptname);
     }
-    
+
     @Override
     protected void createCompositeContentAtVeryTop(Composite composite, TabbedPropertySheetWidgetFactory factory) {
         Composite scriptParent = factory.createFlatFormComposite(composite);
         scriptParent.setLayout(new RowLayout());
+        factory.createCLabel(composite,
+            "Note: To use the \"Python (Python Agent)\" option, "
+            + "you have to set a path to a local Python installation in the configuration file."
+            + "\n For further information please see thirdPartyIntegration in the user guide.");
         new Label(scriptParent, SWT.NONE).setText(Messages.chooseLanguage);
         languages = new Combo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
         languages.setData(CONTROL_PROPERTY_KEY, ScriptComponentConstants.SCRIPT_LANGUAGE);
@@ -71,15 +72,20 @@ public class ScriptSection extends AbstractScriptSection {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 int index = languages.getSelectionIndex();
-                if (index == 1) {
-                    setProperty(ScriptComponentConstants.SCRIPT_LANGUAGE, PYTHON);
-                } else {
-                    setProperty(ScriptComponentConstants.SCRIPT_LANGUAGE, JYTHON);
+
+                for (ScriptLanguage currentLanguage : ScriptLanguage.values()) {
+
+                    int indexOf = languages.indexOf(currentLanguage.getName());
+                    if (index == indexOf) {
+                        setProperty(ScriptComponentConstants.SCRIPT_LANGUAGE, currentLanguage.getName());
+                    }
                 }
+
             }
 
         });
         languages.addListener(SWT.MouseWheel, new Listener() {
+
             @Override
             public void handleEvent(Event arg0) {
                 // deactivate MouseWheel interaction for Script language dropdown menu
@@ -92,10 +98,11 @@ public class ScriptSection extends AbstractScriptSection {
         List<ScriptLanguage> languagesForCombo =
             scriptExecutorRegistry.getCurrentRegisteredExecutorLanguages();
         for (ScriptLanguage sl : languagesForCombo) {
+
             languages.add(sl.getName());
+
         }
     }
-
 
     @Override
     public void refreshSection() {

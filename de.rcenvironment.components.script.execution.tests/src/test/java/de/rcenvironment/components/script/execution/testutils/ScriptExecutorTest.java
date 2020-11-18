@@ -101,7 +101,7 @@ public abstract class ScriptExecutorTest {
         EasyMock.replay(cont);
         EasyMock.expect(scriptEngine.getContext()).andReturn(cont).anyTimes();
         List<Capture<String>> captures = new LinkedList<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             Capture<String> evalCapture = Capture.newInstance();
             EasyMock.expect(scriptEngine.eval(EasyMock.capture(evalCapture))).andReturn(0);
             captures.add(evalCapture);
@@ -135,7 +135,7 @@ public abstract class ScriptExecutorTest {
         executor.runScript();
 
         boolean hasTestScript = false;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             if (captures.get(i).hasCaptured() && captures.get(i).getValue().contains(PRINT_TEST)) {
                 hasTestScript = true;
             }

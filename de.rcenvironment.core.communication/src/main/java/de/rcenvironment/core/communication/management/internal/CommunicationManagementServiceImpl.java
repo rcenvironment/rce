@@ -49,6 +49,7 @@ import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerServi
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.configuration.CommandLineArguments;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
@@ -339,6 +340,11 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      */
     @Activate
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         ownNodeInformation = nodeConfigurationService.getInitialNodeInformation();
 
         MessageEndpointHandler messageEndpointHandler = new MessageEndpointHandlerImpl(nodeConfigurationService.getNodeIdentifierService());

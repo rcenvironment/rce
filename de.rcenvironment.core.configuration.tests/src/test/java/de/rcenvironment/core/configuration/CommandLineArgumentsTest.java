@@ -14,7 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Test;
 
-import de.rcenvironment.core.configuration.bootstrap.LaunchParameters;
+import de.rcenvironment.core.configuration.bootstrap.EclipseLaunchParameters;
 
 /**
  * Tests for {@link CommandLineArguments}.
@@ -32,7 +32,7 @@ public class CommandLineArgumentsTest {
     public static void setParameters(String... parameters) {
         String commandString = StringUtils.join(parameters, "\n");
         System.setProperty("eclipse.commands", commandString);
-        LaunchParameters.getInstance().readParameters();
+        EclipseLaunchParameters.getInstance().readParameters();
     }
 
     /**
@@ -41,12 +41,12 @@ public class CommandLineArgumentsTest {
     @After
     public void tearDown() {
         System.clearProperty("eclipse.commands");
-        LaunchParameters.getInstance().readParameters();
+        EclipseLaunchParameters.getInstance().readParameters();
     }
 
     private void initTest(String... parameters) {
         CommandLineArgumentsTest.setParameters(parameters);
-        String[] tokens = LaunchParameters.getInstance().getTokens().toArray(new String[0]);
+        String[] tokens = EclipseLaunchParameters.getInstance().getFilteredTokensAsArray();
         CommandLineArguments.initialize(tokens);
     }
 

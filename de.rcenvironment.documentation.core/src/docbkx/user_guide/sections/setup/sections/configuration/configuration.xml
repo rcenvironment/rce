@@ -384,9 +384,30 @@
 							view.</entry>
 						<entry>true</entry>
 					</row>
+					<row>
+						<entry>python</entry>
+						<entry>Configuration of a external Python installation. This needs to be configured to enable
+							Python script language for the Script Component. Note: Python must be
+							downloaded and installed separately.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>python/binaryPath</entry>
+						<entry>The path to a local python installation. This needs to be configured to enable Python
+							script language for the Script Component</entry>
+						<entry>-</entry>
+					</row>
 				</tbody>
 			</tgroup>
 		</table>
+		<para> </para>
+		<para>Third Party integration Python path example:
+			<programlisting>"thirdPartyIntegration": {
+			"python":{
+			"binaryPath": "/path/to/python/executable"
+					}
+			}
+		</programlisting></para>
 		<table width="100%">
 			<title>"sshServer"</title>
 			<tgroup cols="3">

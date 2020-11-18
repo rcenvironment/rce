@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Executor
 Bundle-SymbolicName: de.rcenvironment.core.utils.executor
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.sun.jna;version="5.0.0",
  de.rcenvironment.core.toolkitbridge.transitional,

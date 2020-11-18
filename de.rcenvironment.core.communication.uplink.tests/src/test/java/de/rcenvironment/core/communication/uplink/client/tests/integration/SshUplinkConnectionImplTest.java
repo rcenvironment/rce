@@ -60,12 +60,13 @@ public class SshUplinkConnectionImplTest extends AbstractUplinkConnectionTest {
     @Before
     public void setUp() throws Exception {
         TempFileServiceAccess.setupUnitTestEnvironment();
+
         testServer = new EmbeddedSshServerImpl();
         SshConfiguration configuration = new SshConfiguration();
         configuration.setEnabled(true);
         configuration.setPort(TEST_SSH_PORT); // TODO make dynamic
         configuration.setIdleTimeoutSeconds(TEST_SSH_IDLE_TIMEOUT);
-        configuration.getAccounts().add(new SshAccountImpl(TEST_USER_ACCOUNT, TEST_USER_PW, null, null, TEST_USER_ROLE));
+        configuration.injectAccount(new SshAccountImpl(TEST_USER_ACCOUNT, TEST_USER_PW, null, null, TEST_USER_ROLE));
 
         // TODO refactor; move into base class
         ServerSideUplinkSessionServiceImpl mockServerSideUplinkSessionService = new ServerSideUplinkSessionServiceImpl();
@@ -75,8 +76,8 @@ public class SshUplinkConnectionImplTest extends AbstractUplinkConnectionTest {
         mockServerSideUplinkEndpointService.bindConcurrencyUtilsFactory(ConcurrencyUtils.getFactory());
         mockServerSideUplinkSessionService.bindServerSideUplinkEndpointService(mockServerSideUplinkEndpointService);
 
-        testServer.mockActivateAndStart(configuration, TempFileServiceAccess.getInstance().createManagedTempDir(),
-            mockServerSideUplinkSessionService);
+        testServer.applyMockConfigurationAndStart(configuration, null, TempFileServiceAccess.getInstance().createManagedTempDir(),
+            mockServerSideUplinkSessionService); // null = no dynamic accounts file for testing
         assertTrue("The SSH test server could not be started; most likely, there is another instance using the test port",
             testServer.isRunning());
         delegateLogger = null; // JschSessionFactory.createDelegateLogger(log);

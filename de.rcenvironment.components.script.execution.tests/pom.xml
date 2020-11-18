@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.script.execution.tests</artifactId>
 	<name>RCE Script Execution Bundle Tests</name>
-	<version>10.1.1-SNAPSHOT</version>
+	<version>10.2.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

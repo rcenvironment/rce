@@ -151,19 +151,62 @@
             <para>The mappings can be specified by XML or XSLT as shown in the following examples.
                 RCE differentiates between these methods in accordance to the corresponding file
                 extension (.xml or .xsl).</para>
+            <para>For XML mapping, the following mapping modes are supported (see the mapping mode
+                definitions in the mapping examples below):<itemizedlist>
+                    <listitem>
+                        <para>append: Elements in the target path that have no equivalent in the
+                            source path are retained and are not deleted. Otherwise the elements in
+                            the target path are replaced by the corresponding elements in the source
+                            path. Two elements in the source and target path are considered to be
+                            the same if they have the same element name, the same number of
+                            attributes and the same attributes with the same values.</para>
+                    </listitem>
+                    <listitem>
+                        <para>delete: Before copying, all elements that are described by the target
+                            path are deleted in the target XML file. This is also the standard
+                            behavior if no mapping mode is explicitly set in a mapping rule.</para>
+                    </listitem>
+                    <listitem>
+                        <para>delete-only: All elements that are described by the target path are
+                            deleted in the target XML file.</para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>If a target element described by the target path is not available in the XML file,
+                it is created including all of its parent elements.</para>
             <para>Example for an input or tool specific XML mapping :</para>
             <para>
                 <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
 &lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-    &lt;map:mapping>
-        &lt;map:source>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:source>
+    &lt;map:mapping mode="append">
+        &lt;map:source>/path/to/your/element&lt;/map:source>
         &lt;map:target>/toolInput/data/var1&lt;/map:target>
     &lt;/map:mapping>
+    
+    &lt;map:mapping mode="delete">
+        &lt;map:source>/path/to/your/element&lt;/map:source>
+        &lt;map:target>/toolInput/data/var2&lt;/map:target>
+    &lt;/map:mapping>
+
+    &lt;map:mapping mode="delete-only">
+        &lt;map:target>/toolInput/data/var3&lt;/map:target>
+    &lt;/map:mapping>
+
+    &lt;map:mapping>
+        &lt;map:source>/path/to/your/element&lt;/map:source>
+        &lt;map:target>/toolInput/data/var4&lt;/map:target>
+    &lt;/map:mapping>
+    
+    &lt;xsl:for-each select="$sourceFile/result/cases/case">
+        &lt;map:mapping mode="delete">
+            &lt;map:source>/path/to/your/case[&lt;xsl:value-of select="position()" />]/element&lt;/map:source>
+            &lt;map:target>/toolInput/data/condition[&lt;xsl:value-of select="position()" />]/var&lt;/map:target>
+        &lt;/map:mapping>
+    &lt;/xsl:for-each>
 
 &lt;/map:mappings></programlisting>
             </para>
-            <para>And input or tool specific XSLT mapping:</para>
+            <para>Input or tool specific XSLT mapping:</para>
             <para>
                 <programlisting>&lt;?xml version="1.0" encoding="utf-8"?>
 &lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cpacs_schema.xsd">
@@ -172,7 +215,7 @@
   &lt;toolInput>
    &lt;data>
     &lt;var1>
-     &lt;xsl:value-of select="/cpacs/vehicles/aircraft/model/reference/area" />
+     &lt;xsl:value-of select="/path/to/your/element" />
     &lt;/var1>
    &lt;/data>
   &lt;/toolInput>
@@ -184,9 +227,9 @@
                 <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
 &lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-    &lt;map:mapping mode="delete">
+    &lt;map:mapping>
         &lt;map:source>/toolOutput/data/result1&lt;/map:source>
-        &lt;map:target>/cpacs/vehicles/aircraft/model/reference/area&lt;/map:target>
+        &lt;map:target>/path/to/your/result/element&lt;/map:target>
     &lt;/map:mapping>
 
 &lt;/map:mappings></programlisting>
@@ -198,30 +241,31 @@
   &lt;xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
   &lt;!--Define Variable for toolOutput.xml-->
   &lt;xsl:variable name="toolOutputFile" select="'./ToolOutput/toolOutput.xml'"/>
-  &lt;!--Copy complete Source (e.g. CPACSInitial.xml) to Result (e.g. CPACSResult.xml)-->
+  &lt;!--Copy complete source file to result file -->
   &lt;xsl:template match="@* | node()">
     &lt;xsl:copy>
       &lt;xsl:apply-templates select="@* | node()"/>
     &lt;/xsl:copy>
   &lt;/xsl:template>
   &lt;!--Modify a value of an existing node-->
-    &lt;xsl:template match="/cpacs/vehicles/aircraft/model/reference/area">
-    &lt;area>  
+    &lt;xsl:template match="/path/to/your/result">
+    &lt;element>  
     &lt;xsl:value-of select="document($toolOutputFile)/toolOutput/data/result1"/>
-    &lt;/area>
+    &lt;/element>
     &lt;/xsl:template>
 &lt;/xsl:stylesheet></programlisting>
             </para>
             <para>Please ensure to use the proper namespace for map
-                (xmlns:map="http://www.rcenvironment.de/2015/mapping") in XML mapping files.</para>
+                (xmlns:map="http://www.rcenvironment.de/2015/mapping") in XML mapping files and the
+                proper namespace for xsl (xmlns:xsl="http://www.w3.org/1999/XSL/Transform") in both
+                types of mapping files.</para>
             <para>The figure below illustrates how the additional features are used in the run
                 process of an user-integrated CPACS tool.</para>
             <figure>
                 <title>Run process of an user-integrated CPACS Tool</title>
                 <mediaobject>
                     <imageobject>
-                        <imagedata fileref="images/ug_CPACS_ToolRunProcess.png"
-                        contentwidth="390"/>
+                        <imagedata fileref="images/ug_CPACS_ToolRunProcess.png" contentwidth="390"/>
                     </imageobject>
                 </mediaobject>
             </figure>
@@ -238,10 +282,8 @@
                     <para>Open the <emphasis role="italic">Tool Integration Wizard</emphasis> by
                             clicking the <emphasis role="italic">Integrate Tool...</emphasis> in the
                                 <emphasis role="italic">File</emphasis> menu.<note>
-                                <para>You will always find further help by clicking the <emphasis
-                                        role="italic">?</emphasis> on the bottom left corner on each
-                                    page of the wizard or by pressing <emphasis role="italic"
-                                        >F1</emphasis>.</para>
+                                <para>You will always find further help by clicking the <emphasis role="italic">?</emphasis> on the bottom left corner on each
+                                    page of the wizard or by pressing <emphasis role="italic">F1</emphasis>.</para>
                             </note>
                         </para>
                 </listitem>
@@ -275,8 +317,7 @@
                             wrapper.</para>
                 </listitem>
                 <listitem>
-                    <para>Add a launch setting for the tool by clicking the <emphasis role="italic"
-                                >Add</emphasis> button on the <emphasis role="italic">Launch
+                    <para>Add a launch setting for the tool by clicking the <emphasis role="italic">Add</emphasis> button on the <emphasis role="italic">Launch
                                 Settings</emphasis> page. Configure the path of the CPACS tool and
                             fill in a version, click <emphasis role="italic">OK</emphasis>. If you
                             would like to allow users of your tool to choose that the temp directory
@@ -322,8 +363,7 @@ post.bat</programlisting>
                             will appear immediately in the palette and is be ready to use.</para>
                 </listitem>
                 <listitem>
-                    <para>If not already done, do not forget to publish your tool (cf. <xref
-                                linkend="publishing_authorization"/> ) after testing it locally. To
+                    <para>If not already done, do not forget to publish your tool (cf. <xref linkend="publishing_authorization"/> ) after testing it locally. To
                             check if your tool is successfully published to the RCE network open the
                             tab <emphasis role="italic">Network View</emphasis> at the bottom and
                             checkout <emphasis role="italic">Published Components</emphasis> after
@@ -345,6 +385,293 @@ post.bat</programlisting>
                 (cf. <xref linkend="publishing_authorization"/> ) to publish your tool. If
                 the server instance is already running, your tool will be available immediately
                 after publishing.</para>
+        </sect3>
+    </sect2>
+    <sect2>
+        <title>Workflows as Components (Experimental)</title>
+        <para>In this section we describe how to integrate a workflow containing multiple components
+            as a component itself. This feature is currently experimental and <emphasis>not
+                recommended for productive use</emphasis>.</para>
+        <para>Consider a disciplinary tool that computes the value of some function f_c(x) for some
+            parameter c and some input value x and assume that the user has already integrated this
+            tool as the component <code>DiscComp</code>. Furthermore assume that in multiple
+            workflows the user would like to fix some value for c and find a minimum of f_c. She
+            implements this use case via the structure shown in the following figure.<figure>
+                <title>Workflow for determining the optimal input for the function f_c(x).</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/InnerWorkflow.png"/>
+                    </imageobject>
+                </mediaobject>
+            </figure></para>
+        <para>In that workflow, the user opted to provide the parameter c via an input provider,
+            while she used an optimizer to determine the optimal value of x. That optimal value is
+            then written via an output writer. The user now wants to use this workflow as part of
+            other, more complex workflows.</para>
+        <para>One approach would be to simply copy the part of the workflow that implements the
+            actual computation (i.e., the components <code>Optimizer</code> and
+                <code>DiscComp</code>) and paste it whenever she requires this functionality in
+            other workflow. This approach, however, is neither scalable nor maintainable: While this
+            example requires only copying of two componentes, one can easily imagine situations in
+            which the functionality to be copied is implemented via dozens of components, which
+            leads to severe cluttering of the workflows in which the functionality is used.
+            Furthermore, if the user changes the original workflow, e.g., if she uses another
+            algorithm for the optimization, she would have to re-copy the changed parts to all
+            workflows that use the original parts.</para>
+        <para>Instead of manually copying and pasting, the user may instead opt to integrate the
+            workflow shown in the above figure as a tool to be used in other workflows. This allows
+            her to hide the details of the implementation (i.e., the use of an optimizer and of
+                <code>DiscComp</code>) from users of her component and to easily update that
+            implementation.</para>
+        <para>In the following, we first show how to integrate an existing workflow as a component
+            before detailing the technical backgrounds of executing a workflow as a component.
+            Finally, we discuss caveats and common questions about this feature. In all these
+            sections, we will refer to an "inner" workflow and an "outer" workflow. These refer to
+            the workflow that is integrated as a component and to the workflow in which that
+            component is used later on, respectively.</para>
+        <sect3>
+            <title>Integrating a Workflow</title>
+            <para>Before integrating the workflow shown above, we assume that you have already
+                constructed a workflow that implements the behavior that you want to provide to
+                other users as a component. Moreover, we assume that this workflow contains some
+                input providers that feed initial data into the workflow and some output writers
+                that persist the results of the computation implemented by the workflow. In the
+                figure above, these input providers and output writers are situated to the left of
+                the component <code>DiscComp</code> and to the right of the optimizer, respectively.
+                Finally, the workflow to be integrated must not contain any placeholders (cf. <xref linkend="placeholder_files"/> ). Otherwise user input would be required at
+                execution time in order to assign values, which would prevent automated execution of
+                the integrated workflow.<note>
+                    <para>You can easily determine whether your workflow contains placeholders by
+                        opening the workflow execution wizard (either via the green arrow in the
+                        upper bar in the GUI or via the shortcut Ctrl + Shift + X). If there exist
+                        any placeholders that are to be assigned values before the start of the
+                        execution, the wizard will show a second page that displays all such
+                        placeholders. If no such page exists, the workflow does not contain
+                        placeholders and is ready for integration as a component.</para>
+                </note></para>
+            <para>Integrating a workflow consists of nothing more than determining endpoints of
+                components in the inner workflow that will be exposed to the outer workflow by the
+                resulting component. In this case, we opt to expose the input <code>c</code> of
+                    <code>DiscComp</code> as well as the output <code>x_output</code> of
+                    <code>Optimizer</code>. In general, inputs will be exposed as inputs on the
+                component in the outer workflow, while outputs will be exposed as outputs. It is not
+                possible to expose an input of a component in the inner workflow as an output to the
+                outer workflow, or vice versa.</para>
+            <para>In order to integrate the above workflow as a component, we first remove the input
+                providers and output collectors that handle the inputs and outputs that are to be
+                passed into the inner workflow by the outer workflow. In the example above, we
+                simply deactivate the two components (e.g. via the keyboard shortcut Ctrl + D) and
+                obtain the workflow shown in the following figure.</para>
+            <figure>
+                <title>Workflow from the above figure prepared for integration as a
+                    component.</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/InnerWorkflowPrepared.png"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+            <para>While previously, all endpoints of all components were connected, now there exist
+                two unconnected endpoints: The input c of <code>DiscComp</code> as well as the
+                output <code>x_optimal</code> of <code>Optimizer</code>. The workflow is now ready
+                for integration as a component.</para>
+            <para>Integration of workflows is performed via the command console and, in particular,
+                via the command <code>wf integrate</code>. This command has the following general
+                form:<programlisting>wf integrate [-v] &lt;component name> &lt;absolute path to .wf file> [&lt;exposed endpoint definition>...]</programlisting></para>
+            <para>The optional argument <code>-v</code> enables verbose mode. If this parameter is
+                set, the command outputs detailed information about the endpoints that are exposed
+                to the calling workflows. This does not change the behavior of the command.</para>
+            <para>The parameter <code>component name</code> determines the name of the component
+                that is integrated, i.e., the name that will appear in the pallet and in the
+                workflow editor. Since in our example the purpose of the new component in our
+                example is to determine some optimal parameter x, we opt to call the component
+                    <code>FindOptimalX</code>.</para>
+            <para>The parameter <code>absolute path to .wf file</code> is self-explanatory and
+                denotes the path on your local file system where the workflow file describing the
+                workflow to be integrated is located. In our example we assume that the workflow
+                file is located at <phrase os="windows"><code>C:\Users\user\workflow.wf</code></phrase><phrase os="linux"><code>/home/user/workflow.wf</code></phrase>.<note>
+                    <para>Recall that you can obtain the absolute path to any workflow file in the
+                        project explorer via a right click on the workflow and selecting
+                            <emphasis>Copy Full Path</emphasis>.</para>
+                    <para>Furthermore, recall that parameters in the command console are separated
+                        by spaces unless the parameter is surrounded by quotation marks . Hence, if
+                        the path to your workflow contains spaces, enclose it in quotation marks.
+                        Finally, recall that backslashes must be escaped, i.e., the path <code>C:\My
+                            Folder</code> would have to be entered as <code>"C:\\My
+                        Folder"</code>.</para>
+                </note></para>
+            <para>Each succeeding parameter is interpreted as the definition of an exposed endpoint.
+                Each such definition is of the following
+                form:<programlisting>&lt;component name>:&lt;internal endpoint name>:&lt;exposed endpoint name></programlisting></para>
+            <para>Here, <code>component name</code> refers to the name of the component in the inner
+                workflow whose endpoint is to be exposed. The parameter <code>internal endpoint
+                    name</code> denotes the name of the endpoint of the component that is to be
+                exposed, while the parameter <code>exposed endpoint name</code> determines the name
+                of the endpoint on the resulting component. Make sure that each <code>exposed
+                    endpoint name</code> is unique within the context of the resulting component, as
+                the behavior of a component with multiple inputs or outputs of the same name is undefined.<note>
+                    <para>Instead of the names of the component and the endpoints that are displayed
+                        in the workflow editor, you may instead use the internal identifiers of
+                        these nodes and endpoints, respectively. These are not currently shown in
+                        the GUI of RCE but can, e.g., be determined by inspecting the workflow file
+                        via some text editor. While this should not be necessary when integrating
+                        workflows manually, it may prove useful when automating the creation and
+                        integration of workflows. </para>
+                </note></para>
+            <para>Recall that you do not need to specify whether the endpoint is exposed as an input
+                or as an output, but that the underlying endpoint determines the configuration of
+                the endpoint on the resulting component: Inputs are only ever exposed as inputs,
+                whereas outputs are only ever exposed as outputs. This principle extends to the
+                configuration of inputs: If the endpoint on the component in the inner workflow is,
+                e.g., configured be required for component execution and to only expect a constant
+                value, then the endpoint on the resulting component is configured
+                analogously.</para>
+            <para>Furthermore recall that we want to expose the input <code>c</code> of
+                    <code>DiscComp</code> as well as the output <code>x_output</code> of
+                    <code>Optimizer</code>. We want the former input to retain its original name,
+                while we want to expose the latter input as <code>optimalX</code>. In order to
+                integrate the example workflow prepared above as a component, we thus issue the
+                following
+                command:<programlisting>wf integrate FindOptimalX "<phrase os="windows">C:\Users\user\workflow.wf</phrase><phrase os="linux">/home/user/workflow.wf</phrase>" DiscComp:c:c Optimizer:x_optimal:optimalX</programlisting></para>
+            <para>When enabling verbose mode via the switch <code>-v</code>, RCE writes the
+                following
+                output<programlisting>Input Adapter : c --[Float,Constant,Required]-> c @ 03b5b758-3b44-4a53-b832-be9991321285
+Output Adapter: x_optimal @ 402cac5e-2206-48cc-a62f-803bd320a15a --[Float]-> x_opt</programlisting></para>
+            <para>where <code>03b5b758-3b44-4a53-b832-be9991321285</code> and
+                    <code>402cac5e-2206-48cc-a62f-803bd320a15a</code> denote the IDs of the
+                component <code>DiscComp</code> and of <code>Optimizer</code>, respectively.</para>
+            <para>Once the execution of the command has finished, a new component named
+                    <code>FindOptimalX</code> with a single input named <code>c</code> and a single
+                output named <code>optimalX</code> will be available for use in all other
+                workflows.</para>
+        </sect3>
+        <sect3>
+            <title>Executing an Integrated Workflow</title>
+            <para>Recall that each workflow that RCE executes is controlled by some particular
+                instance, i.e., by the workflow controller. Since executing an integrated workflow
+                executes the underlying workflow, RCE requires a workflow controller for doing so.
+                That workflow controller may or may not be the same as the one executing the outer
+                workflow. Currently, the instance executing the component serves as the workflow
+                controller for the execution of the inner workflow. That instance will execute a
+                copy of the workflow that has been created when the workflow was integrated, i.e.,
+                changes made to the workflow after integration will have no effect on the behavior
+                of the integrated component.</para>
+            <para>Futhermore, since the publishing instance serves as workflow controller for the
+                execution of the integrated workflow, the execution of the integrated workflow will
+                show up in the datamanagement of the publishing instance under the name
+                    <code>&lt;component name> running as component '&lt;node name>' of workflow
+                    '&lt;outer workflow>'</code>, where <code>&lt;component name></code> denotes the
+                name as which the publishing instance published the component, <code>&lt;node
+                    name></code> denotes the name under which the component is used in the outer
+                workflow, and <code>&lt;outer workflow></code> denotes the name under which the
+                calling workflow is stored in the data management of its workflow controller.<note>
+                    <para>Nesting workflows, i.e., integrating workflows as components that already
+                        contain workflows integrated as components, can easily lead to unreadable
+                        names of workflow executions that are stored in the data management. This
+                        may significantly inhibit manual inspection of the resulting data. Keep this
+                        in mind when designing workflows.</para>
+                </note></para>
+            <para>Technically, before starting the integrated workflow, the workflow controller
+                injects two additional components into the workflow, one so-called input adapter and
+                one so-called output adapter.These components are not accessible by the user when
+                constructing workflows and are only used in transport data from the inputs to the
+                component on the side of the calling workflow to the exposed inputs as well as data
+                from the exposed outputs of the workflow to the outputs of the component in the
+                calling workflow, respectively.</para>
+            <para>Upon execution of the integrated component in the calling workflow, the instance
+                publishing the component first injects the input and the output adapter as described
+                above. It subsequently executes the workflow and collects the results via the output
+                adapter. The execution takes place as if the workflow were executed using the
+                command <code>wf run</code>.</para>
+        </sect3>
+        <sect3>
+            <title>Limitations, Caveats, and FAQ</title>
+            <para>Since the integration of workflows as components is currently under development
+                and only released as a beta feature, there are some caveats and known issues that
+                you should be aware of. We have alluded to these limitations and caveats throughout
+                this section, but briefly list them here again for the sake of readability.</para>
+            <itemizedlist>
+                <listitem>
+                    <para>Workflow files are "frozen" at integration time. Changes to an integrated
+                        workflow file after integration do not change the behavior of the component.
+                        If you want to apply changes to the workflow file to the component, you will
+                        have to re-integrate the workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>Currently, no placeholder files (cf. <xref linkend="placeholder_files"/> )
+                        are supported, i.e., the integrated workflow must contain no placeholders.
+                        Moreover, the workflow is not checked for containing placeholders at
+                        integration time, but instead the execution of the the component will fail
+                        at execution time.</para>
+                </listitem>
+                <listitem>
+                    <para>The user cannot specify a version of the integrated component. If there is
+                        demand, we will add the command line switch <code>--version</code> in order
+                        to allow the user to have multiple versions of the same workflow integrated
+                        simultaneously. Also, the user can currently not specify an individual icon
+                        to be used for the integrated component. This may also be added in future
+                        versions.</para>
+                </listitem>
+                <listitem>
+                    <para>If some adapted output is written to multiple times during a single run of
+                        the integrated workflow, only the final values written to that output are
+                        forwarded to the calling workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>Due to this new implementation, there is doubled functionality between the
+                        command <code>wf integrate</code> and the command <code>ra-admin
+                            wf-publish</code>. After the full release of the integration of
+                        workflows as component, the latter command will be deprecated and its output
+                        replaced by a message asking the user to use <code>wf integrate</code>
+                        instead.</para>
+                </listitem>
+                <listitem>
+                    <para>If the underlying workflow is paused during execution, this pause state is
+                        not reflected in the calling workflow. Instead the component is shown as
+                        running. Similarly, if the integrated workflow includes some result
+                        verification and the results are rejected, the component simply fails
+                        instead of indicating the rejection of results.</para>
+                </listitem>
+                <listitem>
+                    <para>Component names passed to the command <code>wf integrate</code> are not
+                        checked to satisfy the rules on component names. This will be fixed before
+                        release and integration of a component with an invalid name will be refused
+                        with an informative error message.</para>
+                </listitem>
+            </itemizedlist>
+            <para>Furthermore, there are some common questions that may occur in the context of
+                integrating a workflow as a component. We collect and answer these questions here
+                again for the sake of readability.<variablelist>
+                    <varlistentry>
+                        <term>Where is the integration folder of my new component?</term>
+                        <listitem>
+                            <para>The integration of a workflow as a component is
+                                stored in a profile in the folder
+                                <phrase os="windows"><code>integration\components\workflows</code></phrase><phrase os="linux"><code>integration/components/workflows</code></phrase>.</para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>Can I move the folder containing the integration of a workflow to
+                            other instances, similarly to the integration of common tools?</term>
+                        <listitem>
+                            <para>Yes, this is possible, since the integration folder contains a
+                                copy of the workflow file which was produced at integration time.
+                                Also, you can publish integrated workflows to other instances just
+                                as you can publish common tools.</para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>What happens if an integrated workflow uses some remote components
+                            that are not available? </term>
+                        <listitem>
+                            <para>In that case the component is still available as long as the
+                                instance publishing it is available. The availability of the
+                                components contained in the integrated workflow is only checked at
+                                execution time. If a component is unavailable at that time, the
+                                execution of the component fails.</para>
+                        </listitem>
+                    </varlistentry>
+                </variablelist></para>
         </sect3>
     </sect2>
     

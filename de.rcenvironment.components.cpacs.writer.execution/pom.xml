@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.cpacs.writer.execution</artifactId>
 	<name>RCE CPACS Writer Component GUI Bundle</name>
-	<version>10.1.1-SNAPSHOT</version>
+	<version>10.2.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

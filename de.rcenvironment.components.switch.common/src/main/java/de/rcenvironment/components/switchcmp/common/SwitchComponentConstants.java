@@ -15,6 +15,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  * Switch constants.
  * 
  * @author David Scholz
+ * @author Kathrin Schaffert
  */
 public final class SwitchComponentConstants {
 
@@ -32,17 +33,41 @@ public final class SwitchComponentConstants {
     /**
      * Constants.
      */
+    public static final String CONDITION_KEY_PROPERTY_ID = "properties.conditionKey";
+
+    /**
+     * Constants.
+     */
     public static final String CONDITION_INPUT_ID = "conditionToInput";
 
     /**
      * Constants.
      */
-    public static final String DATA_INPUT_NAME = "To_forward";
+    public static final String DATA_INPUT_ID = "dataToInput";
+
+    /**
+     * Constants.
+     */
+    public static final String DATA_OUTPUT_ID = "dataToOutput";
+
+    /** Constant. */
+    public static final String OUTPUT_VARIABLE_SUFFIX_CONDITION = "_condition";
+
+    /** Constant. */
+    public static final String OUTPUT_VARIABLE_SUFFIX_NO_MATCH = "_no match";
 
     /**
      * Constants.
      */
     public static final String[] OPERATORS = { "<", ">", "==", "<=", ">=", "not", "or", "and", "True", "False" };
+
+    /**
+     * Constants.
+     */
+    public static final String[] PYTHON_KEYWORDS =
+        { "True", "False", "None", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "finally",
+            "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try",
+            "while", "with", "yield" };
 
     /**
      * Constants.
@@ -57,7 +82,18 @@ public final class SwitchComponentConstants {
     /**
      * Constants.
      */
+    public static final DataType[] CONDITION_SCRIPT_DATA_TYPES = { DataType.Float, DataType.Integer, DataType.Boolean };
+
+    /**
+     * Constants.
+     */
     public static final String CONDITION_KEY = "conditionKey";
+
+
+    /**
+     * Constants.
+     */
+    public static final String WRITE_OUTPUT_KEY = "writeOutputKey";
 
     /**
      * Constants.
@@ -67,27 +103,22 @@ public final class SwitchComponentConstants {
     /**
      * Constants.
      */
-    public static final String CLOSE_OUTPUTS_ON_TRUE_KEY = "closeOutputsOnTrue";
+    public static final String CLOSE_OUTPUTS_ON_CONDITION_NUMBER_KEY = "closeOutputsOnConditionNumber";
 
     /**
      * Constants.
      */
-    public static final String CLOSE_OUTPUTS_ON_FALSE_KEY = "closeOutputsOnFalse";
+    public static final String CLOSE_OUTPUTS_ON_NO_MATCH_KEY = "closeOutputsOnNoMatch";
+    
+    /**
+     * Constants.
+     */
+    public static final String SELECTED_CONDITION = "selectedCondition";
 
     /**
      * Constants.
      */
     public static final String SCRIPT_LANGUAGE = "Jython";
-
-    /**
-     * Constants.
-     */
-    public static final String FALSE_OUTPUT = "False";
-
-    /**
-     * Constants.
-     */
-    public static final String TRUE_OUTPUT = "True";
 
     private SwitchComponentConstants() {}
 

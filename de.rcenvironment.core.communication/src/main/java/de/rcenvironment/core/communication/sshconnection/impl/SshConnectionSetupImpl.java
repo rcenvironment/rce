@@ -198,6 +198,9 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
             } else if (reason.startsWith("invalid privatekey")) {
                 reason = "Authentication failed. An invalid private key was used.";
                 shouldTryToReconnect = false;
+            } else if (reason.equals("The authentication phrase cannot be empty")) {
+                reason = "The authentication phrase cannot be empty.";
+                shouldTryToReconnect = false;
             }
             if (shouldTryToReconnect) {
                 consecutiveConnectionFailures++;

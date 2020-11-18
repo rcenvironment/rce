@@ -5,6 +5,7 @@ Main script for running a user defined script with RCE
 '''
 import RCE_Channel as RCE
 
+RCE.init_module()
 CONTEXT = {"RCE" :  RCE}
 USERSCRIPT = open("userscript.py", "r").read()
 exec(USERSCRIPT, CONTEXT)

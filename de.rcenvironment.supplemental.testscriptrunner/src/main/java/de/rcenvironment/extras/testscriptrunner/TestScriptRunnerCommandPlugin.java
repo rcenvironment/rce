@@ -24,6 +24,7 @@ import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.RceTestLifeCycleHooks;
@@ -72,10 +73,20 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
             InstanceStateStepDefinitions.class,
             RceTestLifeCycleHooks.class,
             WorkflowStepDefinitions.class);
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // avoid breaking when activated in a default test environment
+            TempFileServiceAccess.setupUnitTestEnvironment();
+        }
         reportsRootDir = TempFileServiceAccess.getInstance().createManagedTempDir("tsr_reports");
     }
 
     protected void bindConfigurationService(ConfigurationService configurationService) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // skip implicit bind actions if is was spawned as part of a default test environment;
+            // if this causes errors in mocked service tests, invoke RuntimeDetection.allowSimulatedServiceActivation()
+            return;
+        }
+
         configuration = configurationService.getConfigurationSegment("testScriptRunner");
         String scriptLocation = configuration.getString("scriptLocation");
         if (!StringUtils.isNullorEmpty(scriptLocation)) {

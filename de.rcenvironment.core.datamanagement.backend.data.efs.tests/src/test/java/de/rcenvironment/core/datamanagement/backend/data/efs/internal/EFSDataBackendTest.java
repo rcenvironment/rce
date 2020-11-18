@@ -32,6 +32,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
 
 /**
@@ -70,6 +71,8 @@ public class EFSDataBackendTest {
      **/
     @Before
     public void setUp() throws Exception {
+
+        RuntimeDetection.allowSimulatedServiceActivation();
 
         uri = new EFSDataBackend().suggestLocation(uuid);
         config = new EFSDataBackendConfiguration();

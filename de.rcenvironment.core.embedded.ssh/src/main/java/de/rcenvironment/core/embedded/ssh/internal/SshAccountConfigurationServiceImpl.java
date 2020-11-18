@@ -115,8 +115,8 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
     }
 
     @Override
-    public SortedMap<String, SshAccount> getAllAccountsByLoginName() throws ConfigurationException {
-        return sshAuthenticationManager.getAllAcountsByLoginName();
+    public SortedMap<String, SshAccount> getStaticAccountsByLoginName() throws ConfigurationException {
+        return sshAuthenticationManager.getStaticAccountsByLoginName();
     }
 
     @Override

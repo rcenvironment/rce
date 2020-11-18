@@ -9,6 +9,8 @@
 package de.rcenvironment.core.configuration.testutils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
@@ -66,6 +68,11 @@ public abstract class MockConfigurationService implements ConfigurationService {
 
         @Override
         public void reloadConfiguration() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public ConfigurationSegment loadCustomConfigurationFile(Path path) throws IOException {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
         }
 

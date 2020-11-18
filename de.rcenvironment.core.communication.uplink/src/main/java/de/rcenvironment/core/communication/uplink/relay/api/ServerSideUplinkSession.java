@@ -21,7 +21,8 @@ public interface ServerSideUplinkSession extends UplinkSession {
     /**
      * Performs the initial handshake and runs the message dispatch loop.
      * 
-     * @return true if the connection was closed normally, false on abnormal termination (e.g. connection breakdown)
+     * @return true if the session ended cleanly; false if the initial handshake failed, the connection was refused, a fatal error occurred
+     *         during the session, or the connection was closed unexpectedly
      */
     boolean runSession();
 

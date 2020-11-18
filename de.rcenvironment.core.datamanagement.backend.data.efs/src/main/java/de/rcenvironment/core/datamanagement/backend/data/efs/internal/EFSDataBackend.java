@@ -31,6 +31,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.datamanagement.backend.DataBackend;
 
 /**
@@ -94,6 +95,11 @@ public class EFSDataBackend implements DataBackend {
     }
 
     protected void activate(BundleContext context) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         // note: disabled old configuration loading for 6.0.0 as the only parameter is not being used anymore anyway
         // configuration = configurationService.getConfiguration(context.getBundle().getSymbolicName(), EFSDataBackendConfiguration.class);
         // TODO use default configuration until reworked or removed

@@ -17,6 +17,7 @@ import static org.junit.Assert.fail;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.monitoring.system.api.OperatingSystemException;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService;
 import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
@@ -62,7 +64,7 @@ public class SystemMonitoringServiceImplTest {
 
     private static final Log LOGGER = LogFactory.getLog(SystemMonitoringDataServiceImpl.class);
 
-    private static final long MAX_DELAY = 15000;
+    private static final long MAX_DELAY = 30000; // temporarily increased; re-check this after data gathering has been reworked (>10.2)
 
     /**
      * Expected exception for {@link OperatingSystemException}.
@@ -84,6 +86,8 @@ public class SystemMonitoringServiceImplTest {
      */
     @Before
     public void setUp() throws IOException, OperatingSystemException {
+        RuntimeDetection.allowSimulatedServiceActivation();
+        
         systemDataService = new SystemMonitoringDataServiceImpl();
         systemDataService.activate(EasyMock.createStrictMock(BundleContext.class));
 
@@ -120,7 +124,9 @@ public class SystemMonitoringServiceImplTest {
         if (receivingActualSystemData) {
             assertFalse(model.getNodeSystemRAM() == 0);
             assertFalse(model.getRceProcessesInfo().isEmpty());
-            assertTrue(model.getRceSubProcesses().isEmpty()); // should be actually empty
+            // this list should be empty, but if it isn't, render the list as the assertion error message
+            String subProcessesInfoString = Arrays.toString(model.getRceSubProcesses().toArray());
+            assertTrue(subProcessesInfoString, model.getRceSubProcesses().isEmpty()); // should be actually empty
         } else {
             assertTrue(model.getNodeSystemRAM() == 0);
             assertTrue(model.getRceProcessesInfo().isEmpty());

@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -48,6 +50,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Robert Mischke
  * @author Sascha Zur
+ * @author Dominik Schneider
  */
 
 public abstract class NewExampleProjectWizard extends Wizard implements INewWizard {
@@ -59,6 +62,8 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     private NewExampleProjectWizardPage page;
 
     private ISelection selection;
+
+    private Optional<Consumer<String>> projectNameListener = Optional.empty();
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -99,6 +104,10 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     public boolean performFinish() {
 
         final String newProjectName = page.getNewProjectName();
+        if (this.projectNameListener.isPresent()) {
+            this.projectNameListener.get().accept(newProjectName);
+        }
+
         final int copyToolAnswer = page.getCreateTIExample();
         final boolean copyTool;
         if (copyToolAnswer == NewExampleProjectWizardPage.COPY_EXAMPLE_TOOL) {
@@ -236,6 +245,15 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     @Override
     public void init(IWorkbench workbench, IStructuredSelection newSelection) {
         this.selection = newSelection;
+    }
+
+    /**
+     * Allows to register a consumer which retrieves the new project name on creating the workflow examples project.
+     * 
+     * @param consumer to hold the new project name.
+     */
+    public void registerProjectNameListener(Consumer<String> consumer) {
+        this.projectNameListener = Optional.of(consumer);
     }
 
     /**

@@ -400,7 +400,7 @@ final class WorkflowPage extends WizardPage {
                 Rectangle bounds = event.getBounds();
 
                 WorkflowNode node = (WorkflowNode) element;
-                event.gc.setForeground(ColorPalette.getInstance().getBlackColor());
+                event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
                 event.gc.drawImage(targetNodeLabelProviderTree.getImage(node), bounds.x + offsetIcon, bounds.y);
                 event.gc.drawText(node.getName(), bounds.x + offset, bounds.y);
             }
@@ -433,7 +433,7 @@ final class WorkflowPage extends WizardPage {
                 event.detail &= ~SWT.HOT;
 
                 gc.setBackground(item.getBackground(event.index));
-                gc.setForeground(ColorPalette.getInstance().getBlackColor());
+                gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
                 gc.fillRectangle(event.x, event.y, event.width, event.height);
 
                 if (node.isChildElement()) {

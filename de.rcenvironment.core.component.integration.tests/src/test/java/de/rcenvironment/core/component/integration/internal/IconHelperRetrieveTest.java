@@ -14,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -23,8 +22,8 @@ import org.easymock.IMocksControl;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationServiceImpl.IconSize;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -123,8 +122,8 @@ public class IconHelperRetrieveTest {
 
         // We construct the configuration map without using the ConfigurationMapBuilder here, since we want to expect a call to
         // configurationMap.get(KEY_TOOL_ICON_PATH), but we want this call to return null, which is not possible using the builder.
-        @SuppressWarnings("unchecked") final Map<String, Object> configurationMap = EasyMock.createMock(Map.class);
-        EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)).andStubReturn(null);
+        final ConfigurationMap configurationMap = EasyMock.createMock(ConfigurationMap.class);
+        EasyMock.expect(configurationMap.getIconPath()).andStubReturn(null);
         EasyMock.replay(configurationMap);
 
         final File toolConfigFile = control.createMock(File.class);
@@ -151,8 +150,8 @@ public class IconHelperRetrieveTest {
 
         // We construct the configuration map without using the ConfigurationMapBuilder here, since we want to expect a call to
         // configurationMap.get(KEY_TOOL_ICON_PATH), but we want this call to return null, which is not possible using the builder.
-        @SuppressWarnings("unchecked") final Map<String, Object> configurationMap = EasyMock.createMock(Map.class);
-        EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)).andStubReturn(null);
+        final ConfigurationMap configurationMap = EasyMock.createMock(ConfigurationMap.class);
+        EasyMock.expect(configurationMap.getIconPath()).andStubReturn(null);
         EasyMock.replay(configurationMap);
 
         final File toolConfigFile = control.createMock(File.class);
@@ -178,7 +177,7 @@ public class IconHelperRetrieveTest {
         final String iconName = ICON_PNG;
         final String iconPath = iconName;
 
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(iconName)
             .modificationDate(MODIFICATION_DATE)
             .build();
@@ -226,7 +225,7 @@ public class IconHelperRetrieveTest {
         final String iconName = ICON_PNG;
         final String iconPath = iconName;
 
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(iconName)
             .modificationDate(MODIFICATION_DATE)
             .hash(DEADBEEF)
@@ -278,7 +277,7 @@ public class IconHelperRetrieveTest {
         final String iconName = ICON_PNG;
         final String iconPath = iconName;
 
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(iconName)
             .modificationDate(MODIFICATION_DATE)
             .hash(DEADBEEF)
@@ -323,7 +322,7 @@ public class IconHelperRetrieveTest {
         final String iconName = ICON_PNG;
         final String iconPath = iconName;
 
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(iconName)
             .modificationDate(MODIFICATION_DATE)
             .hash(DEADBEEF)

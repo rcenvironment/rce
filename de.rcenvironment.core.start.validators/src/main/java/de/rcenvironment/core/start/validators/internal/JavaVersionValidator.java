@@ -47,7 +47,10 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
         final Optional<Boolean> isGreaterThan8u161 = isVersionCompatible(javaVersion);
         
         if (isGreaterThan8u161.isPresent()) {
-            if (isGreaterThan8u161.get()) {
+            // Sonar complains at the following line since we use a Boolean as an if-condition, which may be null. We are, however, certain
+            // that the value is not null at this position, since it is taken from an Optional<Boolean>. If the encapsulated value were
+            // null, the Optional would be empty. Hence, we can safely deactivate Sonar on that line in order to remove that warning
+            if (isGreaterThan8u161.get()) { // NOSONAR
                 return InstanceValidationResultFactory.createResultForPassed(VALIDATION_DISPLAY_NAME);
             } else {
                 final String logMessage =
@@ -64,8 +67,6 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
     }
 
     /**
-     * 
-     * 
      * @param javaVersion A string representing a java version.
      * 
      * @return True, if the given string represents a version later than 8u161, false if it represents an earlier one, and an empty optional

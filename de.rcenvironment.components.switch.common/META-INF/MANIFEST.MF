@@ -2,11 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch Common
 Bundle-SymbolicName: de.rcenvironment.components.switch.common
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.components.switchcmp.common
 Import-Package: 
+ com.fasterxml.jackson.annotation;version="2.10.0",
+ com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ com.fasterxml.jackson.databind.type;version="2.10.0",
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -22,7 +27,5 @@ Import-Package:
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.lang3.math;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- com.fasterxml.jackson.core;version="2.9.9",
- com.fasterxml.jackson.databind;version="2.9.9",
- com.fasterxml.jackson.databind.node;version="2.9.9"
+ org.eclipse.osgi.util;version="1.1.0"
 Automatic-Module-Name: de.rcenvironment.components.switch.common

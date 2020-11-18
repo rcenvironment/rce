@@ -27,7 +27,7 @@ public interface ToolIntegrationService {
     /**
      * Dynamically adds a new {@link ComponentInterface} based on a configuration.
      * 
-     * @param configurationMap : information for the interface
+     * @param configurationMap Information for the interface
      * @param context about the component such as the prefix for the component id.
      */
     void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context);

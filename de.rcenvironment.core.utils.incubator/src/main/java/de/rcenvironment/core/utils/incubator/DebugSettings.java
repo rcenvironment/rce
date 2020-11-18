@@ -26,6 +26,8 @@ public final class DebugSettings {
 
     protected static final String VERBOSE_LOGGING_PATTERN_SYSTEM_PROPERTY = "rce.verboseLogging";
 
+    protected static final String META_VERBOSE_LOGGING_ID = "meta";
+
     // default setting: everything disabled
     private static final String DEFAULT_VERBOSE_LOGGING_PATTERN = "";
 
@@ -41,6 +43,9 @@ public final class DebugSettings {
 
     // mainly intended to suppress logging the flag state more than once per class; the caching is just an almost-free side effect - misc_ro
     private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
+
+    // should this class log its own events verbosely?
+    private final boolean metaVerboseLoggingEnabled;
 
     /**
      * Compiles a given pattern string to a regular expression and tests given class names against it. If the pattern string is empty or
@@ -90,6 +95,7 @@ public final class DebugSettings {
             pattern = DEFAULT_VERBOSE_LOGGING_PATTERN;
         }
         sharedVerboseLoggingIdFilter = new IdFilter(pattern);
+        metaVerboseLoggingEnabled = getVerboseLoggingEnabledInternal(META_VERBOSE_LOGGING_ID);
     }
 
     /**
@@ -108,6 +114,7 @@ public final class DebugSettings {
         return INSTANCE.getVerboseLoggingEnabledInternal(id);
     }
 
+    // non-static variant for testing
     protected boolean getVerboseLoggingEnabledInternal(Class<?> callerClass) {
         return getVerboseLoggingEnabledInternal(callerClass.getName());
     }
@@ -120,8 +127,12 @@ public final class DebugSettings {
 
         final boolean enableLogging = sharedVerboseLoggingIdFilter.matches(id);
         cache.put(id, enableLogging); // thread-safe map
-        LogFactory.getLog(DebugSettings.class).debug(
-            StringUtils.format("Set 'verbose logging' flag to %s for id %s", enableLogging, id));
+
+        // always log enabled verbose logging flags; only log disabled ones when the "meta verbose logging" flag is set
+        if (enableLogging || metaVerboseLoggingEnabled) {
+            LogFactory.getLog(DebugSettings.class).debug(
+                StringUtils.format("Set 'verbose logging' flag to %s for id %s", enableLogging, id));
+        }
         return enableLogging;
     }
 

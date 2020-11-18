@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -50,6 +51,7 @@ import de.rcenvironment.core.gui.workflow.executor.properties.WhitespaceShowList
  *
  * @author Brigitte Boden
  * @author Dominik Schneider
+ * @author Kathrin Schaffert (#17016, #14895)
  */
 
 public class OutputLocationEditDialog extends Dialog {
@@ -65,8 +67,6 @@ public class OutputLocationEditDialog extends Dialog {
     private static final int HEADER_HEIGHT = 30;
 
     private static final int FORMAT_HEIGHT = 50;
-
-    private static final int WARNING_HEIGHT = 70;
 
     private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
         '*', '?', '\"', '>', '<', '|' };
@@ -101,9 +101,9 @@ public class OutputLocationEditDialog extends Dialog {
 
     private List<String> generalFormatPlaceholderList;
 
-    private Combo formatPlaceholderCombo;
+    private CCombo formatPlaceholderCombo;
 
-    private Combo headerPlaceholderCombo;
+    private CCombo headerPlaceholderCombo;
 
     private WarningErrorLabel warningLabel;
 
@@ -169,18 +169,15 @@ public class OutputLocationEditDialog extends Dialog {
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
         container.setLayout(new GridLayout(1, false));
-        GridData g = new GridData(GridData.FILL_HORIZONTAL);
-        g.grabExcessHorizontalSpace = true;
+        GridData g = new GridData(GridData.FILL_BOTH);
         g.horizontalAlignment = GridData.CENTER;
         container.setLayoutData(g);
 
         createFileAndFolderSettings(container);
 
         Group inputsGroup = new Group(container, SWT.LEFT);
-        GridData gr = new GridData(GridData.FILL_BOTH);
-        gr.widthHint = container.getSize().x;
+        GridData gr = new GridData(GridData.FILL_HORIZONTAL);
         inputsGroup.setLayoutData(gr);
-        gr.grabExcessVerticalSpace = true;
         gr.minimumWidth = GROUPS_MIN_WIDTH;
         inputsGroup.setText(Messages.groupTitleInputs);
 
@@ -204,7 +201,6 @@ public class OutputLocationEditDialog extends Dialog {
                         } else {
                             chosenInputSet.remove(input);
                         }
-                        validateInput();
                         refreshPlaceholders();
                         refreshFormatPlaceholderList();
                         updateWarningLabel();
@@ -235,8 +231,6 @@ public class OutputLocationEditDialog extends Dialog {
         Group configGroup = new Group(container, SWT.CENTER);
         GridData g = new GridData(GridData.FILL_HORIZONTAL);
         configGroup.setLayoutData(g);
-        g.grabExcessHorizontalSpace = true;
-        g.horizontalAlignment = GridData.FILL_HORIZONTAL;
         g.minimumWidth = GROUPS_MIN_WIDTH;
         configGroup.setText(Messages.groupTitleTargetFile);
         configGroup.setLayout(new GridLayout(2, false));
@@ -249,15 +243,17 @@ public class OutputLocationEditDialog extends Dialog {
         fileName.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         fileName.addModifyListener(ignoredEvent -> {
             chosenFilename = fileName.getText();
-            validateInput();
+            setOKButtonActivation();
         });
 
         new Label(configGroup, SWT.NONE).setText("");
 
         final Composite placeholderComp = new Composite(configGroup, SWT.NONE);
-        placeholderComp.setLayout(new GridLayout(2, false));
+        GridLayout placeholderCompLayout = new GridLayout(2, false);
+        placeholderCompLayout.marginWidth = 0;
+        placeholderComp.setLayout(placeholderCompLayout);
         placeholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-        Combo placeholderCombo =
+        CCombo placeholderCombo =
             OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp, OutputWriterComponentConstants.WORDLIST_OUTPUT);
         OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp, placeholderCombo, fileName);
 
@@ -293,20 +289,22 @@ public class OutputLocationEditDialog extends Dialog {
             } else {
                 chosenFolderForSaving = OutputWriterComponentConstants.ROOT_DISPLAY_NAME;
             }
-            validateInput();
+            setOKButtonActivation();
         });
 
         new Label(configGroup, SWT.NONE).setText("");
         new Label(configGroup, SWT.NONE).setText(Messages.onlyOneSubfolderMessage);
         new Label(configGroup, SWT.NONE).setText("");
 
-        Composite dirPlaceholderComposite = new Composite(configGroup, SWT.NONE);
-        dirPlaceholderComposite.setLayout(new GridLayout(2, false));
-        dirPlaceholderComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-        final Combo dirPlaceholderCombo =
-            OutputWriterGuiUtils.createPlaceholderCombo(dirPlaceholderComposite, OutputWriterComponentConstants.WORDLIST_OUTPUT);
+        Composite dirPlaceholderComp = new Composite(configGroup, SWT.NONE);
+        GridLayout dirPlaceholderCompLayout = new GridLayout(2, false);
+        dirPlaceholderCompLayout.marginWidth = 0;
+        dirPlaceholderComp.setLayout(dirPlaceholderCompLayout);
+        dirPlaceholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
+        final CCombo dirPlaceholderCombo =
+            OutputWriterGuiUtils.createPlaceholderCombo(dirPlaceholderComp, OutputWriterComponentConstants.WORDLIST_OUTPUT);
         final Button dirInsertButton =
-            OutputWriterGuiUtils.createPlaceholderInsertButton(dirPlaceholderComposite, dirPlaceholderCombo, additionalFolder);
+            OutputWriterGuiUtils.createPlaceholderInsertButton(dirPlaceholderComp, dirPlaceholderCombo, additionalFolder);
 
         if (directoryCombo.getSelectionIndex() > 0) {
             additionalFolder.setEnabled(false);
@@ -323,14 +321,13 @@ public class OutputLocationEditDialog extends Dialog {
                 dirPlaceholderCombo.setEnabled(((Combo) arg0.getSource()).getText()
                     .equals(OutputWriterComponentConstants.ROOT_DISPLAY_NAME));
                 dirInsertButton.setEnabled(((Combo) arg0.getSource()).getText().equals(OutputWriterComponentConstants.ROOT_DISPLAY_NAME));
-                validateInput();
-
+                setOKButtonActivation();
             }
 
             @Override
             public void widgetDefaultSelected(SelectionEvent arg0) {
                 widgetSelected(arg0);
-                validateInput();
+                setOKButtonActivation();
             }
         });
         additionalFolder.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
@@ -339,24 +336,23 @@ public class OutputLocationEditDialog extends Dialog {
 
     protected void createFormatSection(Composite container) {
         Group configGroup = new Group(container, SWT.CENTER);
-        GridData g = new GridData(GridData.FILL_HORIZONTAL);
+        GridData g = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
         configGroup.setLayoutData(g);
-        g.grabExcessHorizontalSpace = true;
-        g.horizontalAlignment = GridData.BEGINNING;
         g.minimumWidth = GROUPS_MIN_WIDTH;
         configGroup.setText(Messages.groupTitleFormat);
-        configGroup.setLayout(new GridLayout(2, false));
+        GridLayout configGroupLayout = new GridLayout(2, false);
+        configGroup.setLayout(configGroupLayout);
 
         final Label headerLabel = new Label(configGroup, SWT.NONE);
         headerLabel.setText(Messages.header + COLON + "\n" + Messages.headerMessage);
         final StyledText header = new StyledText(configGroup, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
-        GridData headerGridData = new GridData(GridData.FILL_BOTH);
+        GridData headerGridData = new GridData(GridData.FILL_HORIZONTAL);
         headerGridData.heightHint = HEADER_HEIGHT;
         header.setLayoutData(headerGridData);
         header.setText(chosenHeader);
         header.addModifyListener(event -> {
             chosenHeader = header.getText();
-            validateInput();
+            setOKButtonActivation();
             updateWarningLabel();
         });
 
@@ -382,8 +378,11 @@ public class OutputLocationEditDialog extends Dialog {
         new Label(configGroup, SWT.NONE).setText("");
 
         final Composite headerPlaceholderComp = new Composite(configGroup, SWT.NONE);
-        headerPlaceholderComp.setLayout(new GridLayout(2, false));
+        GridLayout headerPlaceholderCompLayout = new GridLayout(2, false);
+        headerPlaceholderCompLayout.marginWidth = 0;
+        headerPlaceholderComp.setLayout(headerPlaceholderCompLayout);
         headerPlaceholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
+
 
         headerPlaceholderCombo = OutputWriterGuiUtils.createPlaceholderCombo(headerPlaceholderComp, new String[0]);
         OutputWriterGuiUtils.createPlaceholderInsertButton(headerPlaceholderComp, headerPlaceholderCombo, header);
@@ -397,7 +396,7 @@ public class OutputLocationEditDialog extends Dialog {
         formatString.setText(chosenFormatString);
         formatString.addModifyListener(ignoredEvent -> {
             chosenFormatString = formatString.getText();
-            validateInput();
+            setOKButtonActivation();
             updateWarningLabel();
         });
 
@@ -423,7 +422,9 @@ public class OutputLocationEditDialog extends Dialog {
         new Label(configGroup, SWT.NONE).setText("");
 
         final Composite formatPlaceholderComp = new Composite(configGroup, SWT.NONE);
-        formatPlaceholderComp.setLayout(new GridLayout(2, false));
+        GridLayout formatPlaceholderCompLayout = new GridLayout(2, false);
+        formatPlaceholderCompLayout.marginWidth = 0;
+        formatPlaceholderComp.setLayout(formatPlaceholderCompLayout);
         formatPlaceholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
         formatPlaceholderCombo = OutputWriterGuiUtils.createPlaceholderCombo(formatPlaceholderComp, new String[0]);
         OutputWriterGuiUtils.createPlaceholderInsertButton(formatPlaceholderComp, formatPlaceholderCombo, formatString);
@@ -487,11 +488,11 @@ public class OutputLocationEditDialog extends Dialog {
         // dialog title
         getShell().setText(title);
 
-        validateInput();
+        setOKButtonActivation();
         updateWarningLabel();
     }
 
-    protected void validateInput() {
+    protected Boolean validateTargetFileName() {
 
         // Check if input fields are empty
         boolean isValid = !chosenFilename.isEmpty();
@@ -503,6 +504,8 @@ public class OutputLocationEditDialog extends Dialog {
 
         // enable/disable "ok"
         getButton(IDialogConstants.OK_ID).setEnabled(isValid);
+
+        return isValid;
     }
 
     /**
@@ -582,6 +585,18 @@ public class OutputLocationEditDialog extends Dialog {
 
     }
 
+    private void setOKButtonActivation() {
+        final List<String> headerValidationErrors = OutputWriterValidatorHelper.getValidationErrors(chosenHeader);
+        final List<String> formatValidationErrors = OutputWriterValidatorHelper.getValidationErrors(chosenFormatString);
+
+        final boolean headerValidationFailed = !headerValidationErrors.isEmpty();
+        final boolean formatValidationFailed = !formatValidationErrors.isEmpty();
+        final boolean targetFileNameValidationFailed = !validateTargetFileName();
+        final boolean validationFailed = headerValidationFailed || formatValidationFailed || targetFileNameValidationFailed;
+        final Button okButton = getButton(OK);
+        okButton.setEnabled(!validationFailed);
+    }
+
     private void updateWarningLabel() {
         warningLabel.clearWarnings();
         warningLabel.clearErrors();
@@ -591,13 +606,12 @@ public class OutputLocationEditDialog extends Dialog {
 
         final boolean headerValidationFailed = !headerValidationErrors.isEmpty();
         final boolean formatValidationFailed = !formatValidationErrors.isEmpty();
-        final boolean validationFailed = headerValidationFailed || formatValidationFailed;
-        final Button okButton = getButton(OK);
-        okButton.setEnabled(!validationFailed);
 
         if (!headerValidationFailed) {
+            final StringBuilder warningBuilder = new StringBuilder();
+            warningBuilder.append("Contains unknown placeholder: ");
             final List<String> headerValidationWarnings =
-                OutputWriterValidatorHelper.getValidationWarnings(chosenHeader, generalHeaderPlaceholderList);
+                OutputWriterValidatorHelper.getValidationWarnings(warningBuilder, chosenHeader, generalHeaderPlaceholderList);
 
             if (!headerValidationWarnings.isEmpty()) {
                 final StringBuilder warningMessageBuilder = new StringBuilder();
@@ -615,8 +629,10 @@ public class OutputLocationEditDialog extends Dialog {
         }
 
         if (!formatValidationFailed) {
+            final StringBuilder warningBuilder = new StringBuilder();
+            warningBuilder.append("Contains unknown placeholder: ");
             final List<String> formatValidationWarnings =
-                OutputWriterValidatorHelper.getValidationWarnings(chosenFormatString, generalFormatPlaceholderList);
+                OutputWriterValidatorHelper.getValidationWarnings(warningBuilder, chosenFormatString, generalFormatPlaceholderList);
 
             if (!formatValidationWarnings.isEmpty()) {
                 final StringBuilder warningMessageBuilder = new StringBuilder();
@@ -634,10 +650,8 @@ public class OutputLocationEditDialog extends Dialog {
     }
 
     private void createWarningLabel(Group configGroup) {
-        GridData gridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-        gridData.horizontalSpan = 2;
-        gridData.heightHint = WARNING_HEIGHT;
-        warningLabel = new WarningErrorLabel(configGroup, SWT.SHADOW_NONE);
+        new Label(configGroup, SWT.NONE).setText("");
+        warningLabel = new WarningErrorLabel(configGroup, SWT.NONE);
     }
 
 }

@@ -11,14 +11,13 @@ package de.rcenvironment.core.component.integration.internal;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -72,8 +71,8 @@ public class IconHelperStoreTest {
 
         // We construct the configuration map without using the ConfigurationMapBuilder here, since we want to expect a call to
         // configurationMap.get(KEY_TOOL_ICON_PATH), but we want this call to return null, which is not possible using the builder.
-        @SuppressWarnings("unchecked") final Map<String, Object> configurationMap = EasyMock.createMock(Map.class);
-        EasyMock.expect(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH)).andReturn(null);
+        final ConfigurationMap configurationMap = EasyMock.createMock(ConfigurationMap.class);
+        EasyMock.expect(configurationMap.getIconPath()).andReturn(null);
         EasyMock.replay(configurationMap);
 
         final File toolConfigFile = control.createMock(File.class);
@@ -89,7 +88,7 @@ public class IconHelperStoreTest {
      */
     @Test
     public void testStoreEmptyPath() {
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath("")
             .build();
 
@@ -121,7 +120,7 @@ public class IconHelperStoreTest {
             .build();
 
         final String md5Hash = DEADBEEF;
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(toolPath)
             .uploadIcon(Boolean.FALSE)
             .expectHash(md5Hash)
@@ -161,45 +160,45 @@ public class IconHelperStoreTest {
      */
     @Test
     public void testStoreRelativePathWithCopy() throws IOException {
-        final String toolName = ICON_PNG;
-        final String toolPath = toolName;
+        final String iconName = ICON_PNG;
+        final String relativeIconPath = iconName;
 
-        final File toolConfigFile = new MockFileBuilder().build();
+        final File toolConfigFile = new MockFileBuilder("toolConfigFile").build();
         final long lastModified = 4815162342L;
-        final File toolIconFile = new MockFileBuilder()
-            .name(toolName)
+        final File toolIconAbsoluteFile = new MockFileBuilder("toolIconAbsoluteFile")
+            .name(iconName)
             .exists(true)
             .isFile(true)
-            .isAbsolute(false)
+            .isAbsolute(true)
             .lastModified(lastModified)
             .build();
 
         final String md5Hash = DEADBEEF;
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
-            .toolIconPath(toolPath)
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
+            .toolIconPath(relativeIconPath)
             .uploadIcon(Boolean.TRUE)
             .expectHash(md5Hash)
             .expectModificationDate(lastModified)
-            .expectToolIconPathUpdate(toolPath)
+            .expectToolIconPathUpdate(relativeIconPath)
             .expectUploadRemoval()
             .build();
 
-        final File toolPathFile = control.createMock(File.class);
-        EasyMock.expect(fileAccessService.createFile(toolPath)).andReturn(toolPathFile);
-        EasyMock.expect(toolPathFile.isAbsolute()).andReturn(false);
-        EasyMock.expect(fileAccessService.createFile(toolConfigFile, toolPath)).andReturn(toolIconFile);
+        final File relativeIconFile = control.createMock("relativeIconFile", File.class);
+        EasyMock.expect(fileAccessService.createFile(relativeIconPath)).andReturn(relativeIconFile);
+        EasyMock.expect(relativeIconFile.isAbsolute()).andReturn(false);
+        EasyMock.expect(fileAccessService.createFile(toolConfigFile, relativeIconPath)).andReturn(toolIconAbsoluteFile);
 
         final BufferedImage iconImage = control.createMock(BufferedImage.class);
         final byte[] iconContent = {};
 
-        EasyMock.expect(imageService.readImage(toolIconFile)).andReturn(iconImage);
-        EasyMock.expect(fileAccessService.readToByteArray(toolIconFile)).andReturn(iconContent);
+        EasyMock.expect(imageService.readImage(toolIconAbsoluteFile)).andReturn(iconImage);
+        EasyMock.expect(fileAccessService.readToByteArray(toolIconAbsoluteFile)).andReturn(iconContent);
         EasyMock.expect(hashingService.md5Hex(iconContent)).andReturn(md5Hash);
         
-        // final File copyDestinationFile = new MockFileBuilder().name(toolPath).build();
-        // EasyMock.expect(fileAccessService.createFile(toolConfigFile, toolPath)).andReturn(copyDestinationFile);
-        // fileAccessService.copyFile(toolIconFile, copyDestinationFile);
-        // EasyMock.expectLastCall();
+        final File iconDestination = EasyMock.createMock(File.class);
+        EasyMock.expect(fileAccessService.createFile(toolConfigFile, iconName)).andReturn(iconDestination);
+        fileAccessService.copyFile(toolIconAbsoluteFile, iconDestination);
+        EasyMock.expectLastCall();
 
         expectScaleAndWrite(toolConfigFile, iconImage);
         expectScaleAndWrite(toolConfigFile, iconImage);
@@ -209,7 +208,7 @@ public class IconHelperStoreTest {
 
         iconHelper.prescaleAndCopyIcon(configurationMap, toolConfigFile);
 
-        EasyMock.verify(toolConfigFile, configurationMap, toolIconFile, toolPathFile, iconImage,
+        EasyMock.verify(toolConfigFile, configurationMap, toolIconAbsoluteFile, relativeIconFile, iconImage,
             fileAccessService,
             hashingService, imageService);
     }
@@ -234,7 +233,7 @@ public class IconHelperStoreTest {
             .build();
 
         final String md5Hash = DEADBEEF;
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(toolPath)
             .uploadIcon(Boolean.FALSE)
             .expectHash(md5Hash)
@@ -288,7 +287,7 @@ public class IconHelperStoreTest {
             .build();
 
         final String md5Hash = DEADBEEF;
-        final Map<String, Object> configurationMap = new ConfigurationMapBuilder()
+        final ConfigurationMap configurationMap = new ConfigurationMapBuilder()
             .toolIconPath(toolPath)
             .uploadIcon(Boolean.TRUE)
             .expectHash(md5Hash)

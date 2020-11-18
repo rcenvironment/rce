@@ -54,8 +54,6 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 public class ParametricStudyComponentTest {
 
     private static final int CANCEL_TEST_TIMEOUT_MSEC = 1000;
-    
-    private static final int HUNDRED_THOUSAND_INT = 100000;
 
     private static final String ONE_ONE = "1.1";
 
@@ -892,26 +890,37 @@ public class ParametricStudyComponentTest {
      * Test if the components cancels sending new design variables in case the component run (start) was canceled.
      * 
      * @throws ComponentException on unexpected error.
+     * @throws InterruptedException on test interruption
      */
     @Test(timeout = CANCEL_TEST_TIMEOUT_MSEC)
-    public void testCancelStart() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, "100000", false, ONE, false, false);
+    public void testCancelStart() throws ComponentException, InterruptedException {
+        final int maximumOutputCount = 1000 * 1000; // how many outputs the component should generate unless cancelled
+
+        final int waitBeforeCancellation = 100;
+        final int waitBeforeTesting = 200;
+
+        Map<String, String> metadata =
+            generateParametricStudyMetadata(ONE, false, Integer.toString(maximumOutputCount), false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        ConcurrencyUtils.getAsyncTaskService().execute(() -> {
+
+        ConcurrencyUtils.getAsyncTaskService().execute("Cancel the tested component after a short wait", () -> {
 
             try {
-                final int hundred = 100;
-                Thread.sleep(hundred);
+                Thread.sleep(waitBeforeCancellation);
             } catch (InterruptedException e) {
                 return; // test timeout will apply as onStartInterrupted is not called
             }
             component.onStartInterrupted(null);
-
         });
-        component.start();
 
-        assertTrue(context.getCapturedOutput(DESIGN_VARIABLE).size() < HUNDRED_THOUSAND_INT);
-        
+        component.start();
+        Thread.sleep(waitBeforeTesting);
+
+        int actualOutputCount = context.getCapturedOutput(DESIGN_VARIABLE).size();
+        assertTrue("The component did not produce any output at all", actualOutputCount > 0);
+        assertTrue("The component produced the configured maximum number of outputs - "
+            + "either the simulated cancellation was too slow, or cancellation is actually broken", actualOutputCount < maximumOutputCount);
+
         checkDoneOutputs(true);
 
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);

@@ -74,7 +74,8 @@ public class SshUplinkConnectionSetupsListContributor extends NetworkViewContrib
         public boolean isActionApplicable(StandardUserNodeActionType actionType) {
             switch (actionType) {
             case START:
-                return !sshConnectionSetup.isConnected();
+                // allows starting of a connection if there was no previous setup or the previous setup is completely finished
+                return sshConnectionSetup.getSession() == null;
             case STOP:
                 return sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry();
             case EDIT:

@@ -15,7 +15,8 @@
     ],
     "activationFilter": {
         "scriptLanguage": [
-            "Python"
+            "Python",
+            "Python (Experimental)"
         ]
     }
 }

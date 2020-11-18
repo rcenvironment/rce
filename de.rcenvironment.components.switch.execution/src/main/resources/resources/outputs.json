@@ -1,7 +1,7 @@
 { 
-	"staticOutputs": [
+	"dynamicOutputs": [
         {
-            "name": "True",
+            "identifier": "dataToOutput",
             "dataTypes": [
                 "Float",
 				"Integer",
@@ -14,22 +14,6 @@
 				"DirectoryReference"
             ],
             "defaultDataType": "Float"
-        },
-        {
-        	"name": "False",
-        	"dataTypes": [
-        		"Float",
-				"Integer",
-				"Boolean",
-				"ShortText",
-				"Vector",
-				"Matrix",
-				"SmallTable",
-				"FileReference",
-				"DirectoryReference"
-			],
-			"defaultDataType": "Float"
-		}
+        }
     ]
-
 }

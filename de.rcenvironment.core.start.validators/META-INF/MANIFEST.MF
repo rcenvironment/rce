@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Validators
 Bundle-SymbolicName: de.rcenvironment.core.start.validators
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.core.runtime
 Bundle-ClassPath: .
@@ -10,7 +10,8 @@ Service-Component: OSGI-INF/*.xml,
  OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoriesAccessibleValidator.xml,
  OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryVersionValidator.xml,
  OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.JavaVersionValidator.xml,
- OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryNotInUseValidator.xml
+ OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.ProfileDirectoryNotInUseValidator.xml,
+ OSGI-INF/generated/de.rcenvironment.core.start.validators.internal.PythonInstallationValidator.xml
 Import-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.configuration.bootstrap.profile,
@@ -18,7 +19,13 @@ Import-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.launcher.integration,
  de.rcenvironment.core.start.common.validation.api,
  de.rcenvironment.core.start.common.validation.spi,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.core.utils.common.textstream.receivers,
+ de.rcenvironment.core.utils.executor,
+ de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
  org.osgi.service.cm;version="1.3.0",

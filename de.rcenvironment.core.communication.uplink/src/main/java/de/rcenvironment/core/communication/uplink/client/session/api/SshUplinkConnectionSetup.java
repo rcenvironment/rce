@@ -12,6 +12,7 @@ package de.rcenvironment.core.communication.uplink.client.session.api;
  * Represents an SSH connection setup.
  *
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (added method setDisplayName)
  */
 public interface SshUplinkConnectionSetup {
 
@@ -141,4 +142,11 @@ public interface SshUplinkConnectionSetup {
      * @return if this instance should act as gateway.
      */
     boolean isGateway();
+
+    /**
+     * Sets the display name for this connection.
+     * 
+     * @param displayName the display name
+     */
+    void setDisplayName(String displayName);
 }

@@ -1,0 +1,39 @@
+{
+  "identifier" : "801533f3-d40b-42f6-af68-54c4625e52bb",
+  "workflowVersion" : "5",
+  "nodes" : [ {
+    "identifier" : "28187779-fce4-410e-87a5-c47a433b47ff",
+    "name" : "Script",
+    "location" : "476:242",
+    "zIndex" : "0",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"output\", RCE.read_input(\"input\") + 1)",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "20413bcc-40c4-495d-b28c-5431ceddca77",
+      "name" : "input",
+      "epIdentifier" : "default",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "345cbae5-ff21-4329-a639-31cc59fc4f31",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "datatype" : "Integer"
+    } ]
+  } ]
+}

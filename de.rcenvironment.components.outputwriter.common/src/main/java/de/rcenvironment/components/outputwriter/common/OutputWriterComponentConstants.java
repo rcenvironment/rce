@@ -16,6 +16,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
  * @author Hendrik Abbenhaus
  * @author Sascha Zur
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (added CONFIG_KEY_OVERWRITE)
  * 
  */
 public final class OutputWriterComponentConstants {
@@ -114,6 +115,9 @@ public final class OutputWriterComponentConstants {
 
     /** PropertyName of OnWFStart. */
     public static final String CONFIG_KEY_ONWFSTART = "SelectRootOnWorkflowStart";
+
+    /** PropertyName of overwrite Option. */
+    public static final String CONFIG_KEY_OVERWRITE = "OverwriteFilesAndDirs";
 
     /** Constant. */
     public static final String CONFIG_KEY_BEHAVIOUR = "ifexist";

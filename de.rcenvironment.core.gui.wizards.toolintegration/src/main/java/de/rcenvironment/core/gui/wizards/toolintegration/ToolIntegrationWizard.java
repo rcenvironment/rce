@@ -18,6 +18,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -313,8 +315,19 @@ public class ToolIntegrationWizard extends Wizard {
 
         Collections.sort(groupNames, String.CASE_INSENSITIVE_ORDER);
 
+        // We explicitly and hackily exclude the workflow integration context from showing up in the wizard here until we have defined how
+        // the user should integrate a workflow
+        final Predicate<ToolIntegrationContext> isNotWorkflowIntegrationContext =
+            (context -> !context.getClass().getCanonicalName()
+                .equals("de.rcenvironment.core.component.integration.workflow.internal.WorkflowIntegrationContext"));
+
+        final Collection<ToolIntegrationContext> integrationContextsToShow = 
+            integrationContextRegistry.getAllIntegrationContexts().stream()
+            .filter(isNotWorkflowIntegrationContext)
+            .collect(Collectors.toSet());
+
         editConfigurationPage = new ChooseConfigurationPage(Messages.chooseConfigPageTitle,
-            integrationContextRegistry.getAllIntegrationContexts(), this, wizardType);
+            integrationContextsToShow, this, wizardType);
 
         characteristicsPage = new ToolCharacteristicsPage(Messages.firstToolIntegrationPageTitle, configurationMap,
             toolNames, groupNames);

@@ -18,7 +18,7 @@
 	<property name="rce.component.icon-16" type="String" value="script16.png"/>
     <property name="rce.component.icon-24" type="String" value="script24.png"/>
     <property name="rce.component.icon-32" type="String" value="script32.png"/>
-    <property name="rce.component.version" type="String" value="3.4"/>
+    <property name="rce.component.version" type="String" value="3.5"/>
     
     <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
     <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>

@@ -29,6 +29,7 @@ import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListenerAdapter;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
@@ -70,6 +71,11 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
      * OSGi-DS lifecycle method.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         boolean isWorkflowHost = platformService.isWorkflowHost();
         nodePropertiesService.addOrUpdateLocalNodeProperty(WorkflowHostUtils.KEY_IS_WORKFLOW_HOST,
             NodePropertyConstants.wrapBoolean(isWorkflowHost));

@@ -1,6 +1,6 @@
 {
   "identifier" : "873af61b-2123-440b-8f3e-11bdf0da3cf9",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "77fd518e-3439-4b5a-a634-845b5e20acdd",
     "name" : "Joiner",
@@ -72,7 +72,7 @@
     "location" : "150:233",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.3"
+      "version" : "4"
     },
     "dynamicInputs" : [ {
       "identifier" : "c4d38e48-3fef-49f7-b67e-2358ea1242d6",

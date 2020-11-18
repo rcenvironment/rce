@@ -30,12 +30,12 @@ public interface ClientSideUplinkSessionEventHandler {
      * @param destinationIdPrefix the the server-assigned destination id prefix, which is currently equal to the namespace id; added as a
      *        separate parameter as it may be different in the future
      */
-    void onSessionReady(String namespaceId, String destinationIdPrefix);
+    void onSessionActivating(String namespaceId, String destinationIdPrefix);
 
     /**
      * Signals that the session is either about to shut down or has prematurely ended, and that no further messages should be sent.
      */
-    void onSessionTerminating();
+    void onActiveSessionTerminating();
 
     /**
      * Reports an error message either sent by the remote side, or caused by a connection error. This should be called BEFORE using
@@ -45,7 +45,7 @@ public interface ClientSideUplinkSessionEventHandler {
      *        error (see {@link UplinkProtocolErrorType#getClientRetryFlag()})
      * @param errorMessage the message received from the remote side or generated locally after an error
      */
-    void registerConnectionOrSessionError(UplinkProtocolErrorType errorType, String errorMessage);
+    void onFatalSessionError(UplinkProtocolErrorType errorType, String errorMessage);
 
     /**
      * Reports that this session should be considered closed. Before this, the "active" state will have been set to false.

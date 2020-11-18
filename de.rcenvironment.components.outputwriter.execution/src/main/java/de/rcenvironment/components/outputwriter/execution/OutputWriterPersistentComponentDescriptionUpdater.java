@@ -10,7 +10,6 @@ package de.rcenvironment.components.outputwriter.execution;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -27,6 +26,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
  * 
  * @author Doreen Seider
+ * @author Kathrin Schaffert (Update 2.0 > 2.1)
  */
 public class OutputWriterPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
@@ -34,7 +34,13 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
     
     private static final String V2_0 = "2.0";
 
-    private static final String CURRENT_VERSION = V2_0;
+    private static final String V2_1 = "2.1";
+
+    private static final String CURRENT_VERSION = V2_1;
+
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+
+    private static ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -63,6 +69,9 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
                 if (description.getComponentVersion().compareTo(V2_0) < 0) {
                     description = updateFromV11ToV20(description);
                 }
+                if (description.getComponentVersion().compareTo(V2_1) < 0) {
+                    description = updateFromV11ToV21(description);
+                }
                 break;
             default:
                 break;
@@ -72,11 +81,10 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
     }
 
     private PersistentComponentDescription updateFromV10ToV11(PersistentComponentDescription description)
-        throws JsonParseException, IOException {
+        throws IOException {
 
         final String affectedConfigFieldName = "OWWritePath";
         
-        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
         if (configurationsNode != null && configurationsNode.has(affectedConfigFieldName)) {
@@ -84,7 +92,6 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
             configurationsNode.put(affectedConfigFieldName, "${targetRootFolder}");
         }
 
-        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
 
         description.setComponentVersion(V1_1);
@@ -93,11 +100,28 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
     }
     
     
-    private PersistentComponentDescription updateFromV11ToV20(PersistentComponentDescription description)
-        throws JsonParseException, IOException {
+    private PersistentComponentDescription updateFromV11ToV20(PersistentComponentDescription description) {
         
         //No update required, just update version
         description.setComponentVersion(V2_0);
+
+        return description;
+    }
+
+    private PersistentComponentDescription updateFromV11ToV21(PersistentComponentDescription description)
+        throws IOException {
+
+        final String affectedConfigFieldName = "OverwriteFilesAndDirs";
+
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
+        if (configurationsNode != null) {
+            configurationsNode.put(affectedConfigFieldName, "false");
+        }
+
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+
+        description.setComponentVersion(V2_1);
 
         return description;
     }

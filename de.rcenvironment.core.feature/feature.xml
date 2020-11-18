@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.feature"
       label="RCE Core  Feature"
-      version="10.1.1.qualifier"
+      version="10.2.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -390,6 +390,12 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+         
+    <plugin
+         id="de.rcenvironment.core.component.integration.cpacs"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
 
    <plugin
          id="de.rcenvironment.core.communication.transport.jms"

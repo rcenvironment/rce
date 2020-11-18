@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,8 @@ import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.incubator.formatter.Alignments;
@@ -92,6 +95,8 @@ public class ComponentsCommandPlugin implements CommandPlugin {
                 + "see the \"auth create\" and \"auth import\" commands for details. "
                 + "Instead of a list of groups, the special value \"public\" can be used to grant access to "
                 + "any user within the visible network, while \"local\" revokes any previously granted access by remote users."));
+        contributions.add(new CommandDescription(ROOT_COMMAND + "show", "<component id>", true,
+            "Displays detailed information about a component, particularly its inputs and outputs. Mainly used for automated testing."));
         return contributions;
     }
 
@@ -112,6 +117,8 @@ public class ComponentsCommandPlugin implements CommandPlugin {
             performSetAuth(context);
         } else if (subCmd.equals("list-auth")) {
             performListAuth(context);
+        } else if (subCmd.equals("show")) {
+            performShow(context);
         } else {
             throw CommandException.unknownCommand(context);
         }
@@ -335,6 +342,83 @@ public class ComponentsCommandPlugin implements CommandPlugin {
         for (StringBuilder sb : new Formatter().renderTable(outputTable)) {
             context.println(sb.toString());
         }
+    }
+
+    private void performShow(CommandContext context) throws CommandException {
+        final String externalComponentId = context.consumeNextToken();
+        if (externalComponentId == null) {
+            throw CommandException.syntaxError("Missing component ID", context);
+        }
+
+        String internalId;
+        try {
+            internalId = userComponentIdMappingService.fromExternalToInternalId(externalComponentId);
+        } catch (OperationFailureException e) {
+            throw CommandException
+                .executionError(StringUtils.format("Failed to translate external ID '%s' into internal ID", externalComponentId), context);
+        }
+        final Optional<DistributedComponentEntry> optionalComponentEntry =
+            componentKnowledgeService.getCurrentSnapshot().getAllInstallations().stream()
+                .filter(entry -> entry.getComponentInterface().getIdentifier().equals(internalId))
+                .findAny();
+
+        if (!optionalComponentEntry.isPresent()) {
+            throw CommandException.executionError(StringUtils.format("No component with ID '%s' found", externalComponentId), context);
+        }
+
+        final DistributedComponentEntry componentEntry = optionalComponentEntry.get();
+        context.getOutputReceiver().addOutput(StringUtils.format("External ID: %s", externalComponentId));
+        context.getOutputReceiver().addOutput(StringUtils.format("Internal ID: %s", internalId));
+
+        final EndpointDefinitionsProvider inputDefinitionsProvider = componentEntry.getComponentInterface().getInputDefinitionsProvider();
+
+        context.getOutputReceiver().addOutput("Static Inputs:");
+        for (EndpointDefinition staticInputDefinition : inputDefinitionsProvider.getStaticEndpointDefinitions()) {
+            context.getOutputReceiver().addOutput(inputDefinitionToString(staticInputDefinition));
+        }
+        context.getOutputReceiver().addOutput("Dynamic Inputs:");
+        for (EndpointDefinition staticInputDefinition : inputDefinitionsProvider.getDynamicEndpointDefinitions()) {
+            context.getOutputReceiver().addOutput(inputDefinitionToString(staticInputDefinition));
+        }
+
+
+        final EndpointDefinitionsProvider outputDefinitionsProvider = componentEntry.getComponentInterface().getOutputDefinitionsProvider();
+
+        context.getOutputReceiver().addOutput("Static Outputs:");
+        for (EndpointDefinition staticOutputDefinition : outputDefinitionsProvider.getStaticEndpointDefinitions()) {
+            context.getOutputReceiver().addOutput(outputDefinitionToString(staticOutputDefinition));
+        }
+        context.getOutputReceiver().addOutput("Dynamic Outputs:");
+        for (EndpointDefinition staticOutputDefinition : outputDefinitionsProvider.getDynamicEndpointDefinitions()) {
+            context.getOutputReceiver().addOutput(outputDefinitionToString(staticOutputDefinition));
+        }
+
+    }
+
+    private String inputDefinitionToString(EndpointDefinition staticInputDefinition) {
+        return String.join("|", 
+            staticInputDefinition.getName(),
+            staticInputDefinition.getDefaultDataType().toString(),
+            listToTableCellEntry(staticInputDefinition.getPossibleDataTypes()),
+            staticInputDefinition.getDefaultInputDatumHandling().toString(),
+            listToTableCellEntry(staticInputDefinition.getInputDatumOptions()),
+            staticInputDefinition.getDefaultInputExecutionConstraint().toString(),
+            listToTableCellEntry(staticInputDefinition.getInputExecutionConstraintOptions()));
+    }
+
+    private String outputDefinitionToString(EndpointDefinition staticOutputDefinition) {
+        return String.join("|", 
+            staticOutputDefinition.getName(),
+            staticOutputDefinition.getDefaultDataType().toString(),
+            listToTableCellEntry(staticOutputDefinition.getPossibleDataTypes()));
+    }
+
+
+    private String listToTableCellEntry(List<? extends Object> list) {
+        final String listEntries = list.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(","));
+        return StringUtils.format("[%s]", listEntries);
     }
 
 }

@@ -2,6 +2,7 @@
   "identifier" : "07466d99-abcb-4622-8060-5dd1eaa65990",
   "workflowVersion" : "5",
   "name" : "components_chainsreal_2016-08-23_11:20:29_17",
+  "labels" : "[{\"identifier\":\"00934a1b-0167-436e-827a-00e9ec5e2001\",\"headerText\":\"\",\"text\":\"The forwarding actually breaks the chain\",\"location\":\"381:239\",\"size\":\"213:81\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"7dbbdb94-734a-433f-9d15-bec53609bae9\",\"headerText\":\"\",\"text\":\"Start value 1 should result in 3 iterations\",\"location\":\"381:128\",\"size\":\"206:84\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"}]",
   "nodes" : [ {
     "identifier" : "f6b0202c-8dff-43f6-b63e-cd3e80592fe0",
     "name" : "Copy of Design of Experiments",
@@ -10,8 +11,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "4",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "4.1"
     },
     "configuration" : {
       "endSample" : "0",
@@ -63,6 +64,11 @@
       "identifier" : "aae49bdc-e7bd-42e7-9c6c-b7be11248ee2",
       "name" : "Done",
       "datatype" : "Boolean"
+    }, {
+      "name" : "Number of samples",
+      "datatype" : "Integer",
+      "metadata" : { },
+      "identifier" : "9cad956d-6fab-4330-b0e4-9fbfbebe8145"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "445e0ab9-ebc3-4ac3-aef3-261d574d8b2d",
@@ -476,6 +482,5 @@
     "output" : "a08c14a0-b61a-4603-9ac4-300ec13ba8d7",
     "target" : "7928580d-a88b-4666-9b72-553716115527",
     "input" : "d57814ae-d69e-4e4b-b2c9-694a4324d40b"
-  } ],
-  "labels" : "[{\"identifier\":\"00934a1b-0167-436e-827a-00e9ec5e2001\",\"headerText\":\"\",\"text\":\"The forwarding actually breaks the chain\",\"location\":\"381:239\",\"size\":\"213:81\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"},{\"identifier\":\"7dbbdb94-734a-433f-9d15-bec53609bae9\",\"headerText\":\"\",\"text\":\"Start value 1 should result in 3 iterations\",\"location\":\"381:128\",\"size\":\"206:84\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"TOPLEFT\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+  } ]
 }

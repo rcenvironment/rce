@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -105,9 +106,11 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         result.addModifyListener(new MethodPropertiesModifyListener());
         new Label(container, SWT.NONE).setText("");
         final Composite placeholderComp = new Composite(container, SWT.NONE);
-        placeholderComp.setLayout(new GridLayout(2, false));
+        GridLayout placeholderCompLayout = new GridLayout(2, false);
+        placeholderCompLayout.marginWidth = 0;
+        placeholderComp.setLayout(placeholderCompLayout);
         placeholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-        final Combo placeholderCombo =
+        final CCombo placeholderCombo =
             OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp, OutputWriterComponentConstants.WORDLIST);
         OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp, placeholderCombo, result);
 
@@ -152,9 +155,11 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         new Label(container, SWT.NONE).setText("");
 
         final Composite placeholderComp2 = new Composite(container, SWT.NONE);
-        placeholderComp2.setLayout(new GridLayout(2, false));
+        GridLayout placeholderComp2Layout = new GridLayout(2, false);
+        placeholderComp2Layout.marginWidth = 0;
+        placeholderComp2.setLayout(placeholderComp2Layout);
         placeholderComp2.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-        final Combo placeholderCombo2 =
+        final CCombo placeholderCombo2 =
             OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp2, OutputWriterComponentConstants.WORDLIST_SUBFOLDER);
         final Button insertButton2 =
             OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp2, placeholderCombo2, additionalFolder);

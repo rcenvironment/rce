@@ -18,17 +18,17 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 public interface UplinkLogicalNodeMappingService {
 
     /**
-     * Gets the id of the logical node which represents the given destination. 
+     * Gets the id of the logical node which represents the given destination.
      * 
      * @param destinationId the qualified destination id
-     * @param announcedDisplayName TODO
+     * @param announcedDisplayName TODO (p1) 11.0: review display name handling
      * @return the logical node id for the associated logical node, or null if no node exists yet for the given parameters,
      */
     LogicalNodeId getLocalLogicalNodeIdForDestinationIdAndUpdateName(String destinationId, String announcedDisplayName);
-    
+
     /**
-     * Gets the id of the logical node which represents the given destination. If no node exists yet for the given parameters,
-     * a new node is created.
+     * Gets the id of the logical node which represents the given destination. If no node exists yet for the given parameters, a new node is
+     * created.
      * 
      * @param destinationId the qualified destination id
      * @param announcedDisplayName the display name announced by the publisher

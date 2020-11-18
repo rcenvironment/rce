@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.component.integration.workflow.command.WfIntegrateCommandPlugin">
+   <service>
+      <provide interface="de.rcenvironment.core.command.spi.CommandPlugin"/>
+   </service>
+   <reference bind="bindWorkflowIntegrationService" interface="de.rcenvironment.core.component.integration.workflow.WorkflowIntegrationService" name="WorkflowIntegrationService"/>
+   <reference bind="bindWorkflowLoaderService" interface="de.rcenvironment.core.component.workflow.execution.api.PersistentWorkflowDescriptionLoaderService" name="WorkflowLoaderService"/>
+   <implementation class="de.rcenvironment.core.component.integration.workflow.command.WfIntegrateCommandPlugin"/>
+</scr:component>

@@ -47,6 +47,7 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.RestartSafeIncreasingValueGenerator;
@@ -150,8 +151,9 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 try {
                     NodePropertyImpl entry = new NodePropertyImpl(part, nodeIdentifierService);
                     if (entry.getInstanceNodeSessionIdString().startsWith(localInstanceNodeId)) {
-                        // TODO 9.0.0 (p1): consider disabling this log message for release
-                        log.debug("Ignoring incoming node property update for the local node: " + part);
+                        if (verboseLogging) {
+                            log.debug("Ignoring incoming node property update for the local node: " + part);
+                        }
                         continue;
                     }
                     entries.add(entry);
@@ -266,6 +268,11 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+        
         localNodeSessionId = nodeConfigurationService.getInstanceNodeSessionId();
         localInstanceNodeId = localNodeSessionId.getInstanceNodeIdString();
         localNodeIsRelay = nodeConfigurationService.isRelay();
@@ -474,15 +481,19 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     if (localNodeIsRelay) {
                         // relay: calculate complementing knowledge using the full knowledge set
                         complementingKnowledge = completeKnowledgeRegistry.getComplementingKnowledge(parsedUpdate.entries);
-                        log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
-                            + "(out of %d in the complete set)",
-                            complementingKnowledge.size(), completeKnowledgeRegistry.getEntryCount()));
+                        if (verboseLogging) {
+                            log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
+                                + "(out of %d in the complete set)", complementingKnowledge.size(),
+                                completeKnowledgeRegistry.getEntryCount()));
+                        }
                     } else {
                         // non-relay: calculate complementing knowledge using only the local entries set
                         complementingKnowledge = locallyPublishedKnowledgeRegistry.getComplementingKnowledge(parsedUpdate.entries);
-                        log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
-                            + "(out of %d in the local set)", complementingKnowledge.size(),
-                            locallyPublishedKnowledgeRegistry.getEntryCount()));
+                        if (verboseLogging) {
+                            log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
+                                + "(out of %d in the local set)", complementingKnowledge.size(),
+                                locallyPublishedKnowledgeRegistry.getEntryCount()));
+                        }
                     }
                 }
 

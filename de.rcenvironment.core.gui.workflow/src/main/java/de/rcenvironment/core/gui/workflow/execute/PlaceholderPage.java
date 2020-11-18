@@ -83,6 +83,8 @@ public class PlaceholderPage extends WizardPage {
 
     private final Map<String, Set<String>> placeholderValidators = new HashMap<>();
 
+    private PlaceholderPageTreeFactory treeFactory;
+
     /**
      * The Constructor.
      */
@@ -92,13 +94,6 @@ public class PlaceholderPage extends WizardPage {
         setTitle(Messages.workflowPageTitle);
         setDescription(Messages.configure);
 
-    }
-
-    @Override
-    public void createControl(Composite parent) {
-        Composite comp = new Composite(parent, SWT.NONE);
-        comp.setLayout(new GridLayout(1, false));
-        setControl(comp);
         IPreferenceStore prefs = Activator.getInstance().getPreferenceStore();
         String placeholderPersistentSettingsUUID = prefs
             .getString(WorkflowPlaceholderHandler.PLACEHOLDER_PREFERENCES_KEY);
@@ -109,6 +104,19 @@ public class PlaceholderPage extends WizardPage {
         }
         placeholderHelper = WorkflowPlaceholderHandler.createPlaceholderDescriptionFromWorkflowDescription(
             workflowDescription, placeholderPersistentSettingsUUID);
+
+    }
+    
+    public boolean hasActivePlaceholders() {
+        return placeholderHelper.hasActivePlaceholders();
+    }
+
+    @Override
+    public void createControl(Composite parent) {
+        Composite comp = new Composite(parent, SWT.NONE);
+        comp.setLayout(new GridLayout(1, false));
+        setControl(comp);
+
         addPlaceholderGroup(comp);
 
         Button clearHistoryButton = new Button(comp, SWT.NONE);
@@ -121,6 +129,8 @@ public class PlaceholderPage extends WizardPage {
                     getShell(), Messages.clearHistoryDialogTitle,
                     placeholderHelper, workflowDescription);
                 chd.open();
+
+                treeFactory.reloadContentProposals();
             }
 
             @Override
@@ -151,7 +161,7 @@ public class PlaceholderPage extends WizardPage {
         gridData.grabExcessHorizontalSpace = true;
         placeholderInformationGroup.setLayoutData(gridData);
     
-        final PlaceholderPageTreeFactory treeFactory = new PlaceholderPageTreeFactory(this, placeholderHelper, placeholderInformationGroup);
+        treeFactory = new PlaceholderPageTreeFactory(this, placeholderHelper, placeholderInformationGroup);
         treeFactory.fillTree();
         componentPlaceholderTree = treeFactory.getTree();
 
@@ -178,10 +188,6 @@ public class PlaceholderPage extends WizardPage {
         componentPlaceholderTree.addListener(SWT.Expand, listener);
         deleteEmptyTreeItems();
         openItems();
-        componentPlaceholderTree.getColumn(0).pack();
-        componentPlaceholderTree.getColumn(0).setWidth(
-            componentPlaceholderTree.getColumn(0).getWidth() + 10);
-
     }
 
     private void deleteEmptyTreeItems() {
@@ -470,7 +476,7 @@ public class PlaceholderPage extends WizardPage {
      * @return placeholder map for each {@link WorkflowNode}
      */
     protected void performFinish() {
-
+        
         for (TreeItem componentItems : componentPlaceholderTree.getItems()) {
             for (TreeItem componentIDItems : componentItems.getItems()) {
                 if (componentIDItems.getItemCount() == 0) {
@@ -513,6 +519,7 @@ public class PlaceholderPage extends WizardPage {
                 }
             }
         }
+
         /// * dispose SWT components */
         // for (Integer key : controlMap.keySet()) {
         // controlMap.get(key).dispose();
@@ -590,10 +597,15 @@ public class PlaceholderPage extends WizardPage {
     @Override
     public void dispose() {
         /* dispose SWT components */
-        for (Integer key : controlMap.keySet()) {
-            controlMap.get(key).dispose();
+        for (Map.Entry<Integer, Control> entry : controlMap.entrySet()) {
+            Control c = entry.getValue();
+            if (c != null && !c.isDisposed()) {
+                c.dispose();
+            }
         }
-        componentPlaceholderTree.dispose();
+        if (componentPlaceholderTree != null && !componentPlaceholderTree.isDisposed()) {
+            componentPlaceholderTree.dispose();
+        }
         super.dispose();
     }
 

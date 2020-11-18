@@ -34,9 +34,26 @@ public interface UplinkConnectionLowLevelEventHandler {
         throws ProtocolException, UplinkConnectionRefusedException;
 
     /**
-     * Called when the initial protocol handshake is complete, and bidirectional exchange of {@link MessageBlock}s commences.
+     * Called when the initial protocol handshake has been successfully completed.
      */
     void onHandshakeComplete();
+
+    /**
+     * Called when an error prevented the initial protocol handshake from completing, or when the remote side explicitly denied the
+     * connection (e.g. on an client id collision).
+     * 
+     * @param e the cause of the failure, wrapped into an {@link UplinkConnectionRefusedException}; may be a local error, or reconstructed
+     *        from an error message sent by the remote side
+     */
+    void onHandshakeFailedOrConnectionRefused(UplinkConnectionRefusedException e);
+
+    /**
+     * Called sequentially for each received {@link MessageBlock}.
+     * 
+     * @param channelId the id of the virtual channel that this {@link MessageBlock} was marked for
+     * @param message the received {@link MessageBlock}
+     */
+    void onMessageBlock(long channelId, MessageBlock message);
 
     /**
      * Called when the remote side has closed the session by sending a "goodbye" message without any error information, which indicates a
@@ -56,18 +73,25 @@ public interface UplinkConnectionLowLevelEventHandler {
     void onErrorGoodbyeMessage(UplinkProtocolErrorType type, String errorMessage);
 
     /**
+     * Called when the incoming stream reaches EOF or has otherwise broken down.
+     */
+    void onIncomingStreamClosedOrEOF();
+
+    void onStreamReadError(IOException e);
+
+    /**
+     * Called when writing to the outgoing data stream failed unexpectedly.
+     * <p>
+     * Note: This was recently introduced, and not used in all appropriate places yet.
+     * 
+     * @param e a related {@link IOException}; may be the original exception or an artificial wrapper
+     */
+    void onStreamWriteError(IOException e);
+
+    /**
      * Called when an error occurred outside of the protocol's messaging, e.g. an unexpected connection breakdown or an internal error
      * 
      * @param exception the exception representing the error
      */
-    void onNonProtocolError(IOException exception);
-
-    /**
-     * Called sequentially for each received {@link MessageBlock}.
-     * 
-     * @param channelId the id of the virtual channel that this {@link MessageBlock} was marked for
-     * @param message the received {@link MessageBlock}
-     */
-    void onMessageBlock(long channelId, MessageBlock message);
-
+    void onNonProtocolError(Exception exception);
 }

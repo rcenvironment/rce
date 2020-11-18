@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.component.model.configuration.api;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +24,13 @@ import de.rcenvironment.core.component.model.configuration.impl.ConfigurationExt
 public final class ComponentConfigurationModelFactory {
 
     private ComponentConfigurationModelFactory() {}
+    
+    /**
+     * @return A {@link ConfigurationDefinition} without any configurable values and no placeholders.
+     */
+    public static ConfigurationDefinition createEmptyConfigurationDefinition() {
+        return createConfigurationDefinition(new LinkedList<>(), new LinkedList<>(), new LinkedList<>(), new HashMap<String, String>());
+    }
 
     /**
      * @param rawConfigurationDef raw configuration definition information

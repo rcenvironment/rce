@@ -474,7 +474,7 @@ public class ConfigurationTextUI {
         List<SshAccountUIEntry> options = new ArrayList<>();
         SortedMap<String, SshAccount> accountMap;
         try {
-            accountMap = sshAccountOperations.getAllAccountsByLoginName();
+            accountMap = sshAccountOperations.getStaticAccountsByLoginName();
         } catch (ConfigurationException e) {
             log.error("Error getting account data", e);
             LanternaUtils.showErrorMessageBox(guiScreen, e.getMessage());

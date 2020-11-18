@@ -21,12 +21,24 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Alexander Weinert (builder methods)
  * 
  * Note: {@link EndpointDefinition} describes an endpoint of a component as a kind of blueprint. An actual implementation of an
  * endpoint is represented by an {@link EndpointDescription} which is then associated to an {@link ComponentDescription}. The same
  * applies to {@link EndpointGroupDefinition}. --seid_do
  */
 public interface EndpointDefinition extends EndpointGroupDefinition {
+    
+    /**
+     * @return An endpoint builder that will build an input definition
+     */
+    static EndpointDefinitionBuilder inputBuilder() {
+        return new EndpointDefinitionBuilder(EndpointType.INPUT);
+    }
+    
+    static EndpointDefinitionBuilder outputBuilder() {
+        return new EndpointDefinitionBuilder(EndpointType.OUTPUT);
+    }
 
     /**
      * Attributes an input can have.

@@ -12,7 +12,8 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.CommandLineArguments;
-import de.rcenvironment.core.configuration.bootstrap.LaunchParameters;
+import de.rcenvironment.core.configuration.bootstrap.EclipseLaunchParameters;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
@@ -29,8 +30,13 @@ public class Activator implements BundleActivator {
         // (from a service activator) to ensure operation even if OSGi-DS initialization fails.
         ServiceRegistry.setAccessFactory(new OsgiServiceRegistryAccessFactory(context));
 
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // skip CommandLineArguments initialization
+            return;
+        }
+
         // parse command-line options
-        CommandLineArguments.initialize(LaunchParameters.getInstance().getTokens().toArray(new String[0]));
+        CommandLineArguments.initialize(EclipseLaunchParameters.getInstance().getFilteredTokensAsArray());
     }
 
     @Override

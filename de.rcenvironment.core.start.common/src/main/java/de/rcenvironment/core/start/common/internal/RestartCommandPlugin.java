@@ -18,6 +18,8 @@ import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.start.common.Instance;
+import de.rcenvironment.core.utils.common.AuditLog;
+import de.rcenvironment.core.utils.common.AuditLogIds;
 
 /**
  * Provides the "restart" console command.
@@ -52,6 +54,9 @@ public class RestartCommandPlugin implements CommandPlugin {
      * @return String the console output
      */
     private void performRestart(CommandContext context) {
+        AuditLog.append(AuditLog.newEntry(AuditLogIds.APPLICATION_SHUTDOWN_REQUESTED)
+            .set("method", "console command")
+            .set("is_restart", "true"));
         context.println("Restarting RCE ...");
         Instance.restart();
     }

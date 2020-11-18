@@ -108,6 +108,9 @@ public final class CommandLineArguments {
                 if (args.hasNextIsValue()) { // there may be a following token
                     args.getNext(); // yes -> discard
                 }
+            } else if (option.equals("-install") || option.equals("-testproperties")) {
+                // these options are set during integration testing; handled here to avoid irrelevant log output
+                args.getNext(); // discard the following value token
             } else if (option.equals("--upgrade-profile")) {
                 // parameter is already handled earlier in the startup process, ignore here
                 // While this continue is not strictly necessary here, we use it to satisfy checkstyle, which otherwise complains about an

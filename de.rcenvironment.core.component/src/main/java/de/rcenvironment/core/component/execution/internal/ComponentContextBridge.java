@@ -45,6 +45,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Processes method callbacks from {@link ComponentContext} performed by the {@link Component} during execution.
  *
  * @author Doreen Seider
+ * @author Kathrin Schaffert (fix to prevent printing an empty line in method printConsoleRow())
  */
 public class ComponentContextBridge {
 
@@ -225,8 +226,10 @@ public class ComponentContextBridge {
         if (consoleRowType.equals(Type.LIFE_CYCLE_EVENT)) {
             compExeRelatedInstances.consoleRowsSender.sendTimelineEventAsConsoleRow(consoleRowType, line);
         } else {
-            compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(consoleRowType, line,
-                compExeRelatedInstances.compExeRelatedStates.executionCount.get());
+            if (!line.equals("")) {
+                compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(consoleRowType, line,
+                    compExeRelatedInstances.compExeRelatedStates.executionCount.get());
+            }
         }
     }
 
@@ -279,7 +282,7 @@ public class ComponentContextBridge {
 
         Set<WorkflowGraphPath> hopsSet = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
             .getHopsToTraverseWhenResetting(new ComponentExecutionIdentifier(compExeRelatedInstances.compExeCtx.getExecutionIdentifier()));
-        
+
         for (WorkflowGraphPath hops : hopsSet) {
             boolean circular = hops.isCircular();
 

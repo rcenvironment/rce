@@ -9,8 +9,16 @@
 package de.rcenvironment.core.component.integration.internal;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Optional;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.component.integration.CommonToolIntegratorComponent;
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -21,7 +29,9 @@ import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePath
  * Implementation of {@link ToolIntegrationContext} for the standard tool integration.
  * 
  * @author Sascha Zur
+ * @author Alexander Weinert (OSGI annotations)
  */
+@Component
 public final class CommonToolIntegrationContext implements ToolIntegrationContext {
 
     private static ConfigurationService configService;
@@ -72,10 +82,11 @@ public final class CommonToolIntegrationContext implements ToolIntegrationContex
     }
 
     @Override
-    public String getComponentGroupId() {
+    public String getDefaultComponentGroupId() {
         return ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
     }
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
         configService = configServiceIn;
     }
@@ -83,6 +94,11 @@ public final class CommonToolIntegrationContext implements ToolIntegrationContex
     @Override
     public String[] getDisabledIntegrationKeys() {
         return new String[] {};
+    }
+
+    @Override
+    public Optional<ConfigurationMap> parseConfigurationMap(Map<String, Object> rawConfigurationMap) {
+        return Optional.ofNullable(ConfigurationMap.fromMap(rawConfigurationMap));
     }
 
 }

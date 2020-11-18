@@ -23,20 +23,11 @@ public final class ColorPalette {
 
     private static ColorPalette instance = new ColorPalette();
 
-    private final RGB warningRGB = new RGB(255, 0, 0);
-
     private final RGB firstRowRGB = new RGB(255, 255, 240);
 
     private final RGB secondRowRGB = new RGB(255, 255, 220);
 
-    private final RGB blackRGB = new RGB(0, 0, 0);
-
     private boolean colorsDisposed = true;
-
-    /**
-     * RED - used when version is wrong or instance is not available.
-     */
-    private Color warningRED;
 
     /**
      * LIGHT YELLOW - used to separate each row.
@@ -48,11 +39,6 @@ public final class ColorPalette {
      */
     private Color secondRow;
 
-    /**
-     * BLACK - used to set the color back to black after warning has finished.
-     */
-    private Color comboBlack;
-
     private ColorPalette() {
 
         initColors();
@@ -63,11 +49,8 @@ public final class ColorPalette {
      */
     private void initColors() {
 
-        warningRED = new Color(Display.getCurrent(), warningRGB);
         firstRow = new Color(Display.getCurrent(), firstRowRGB);
         secondRow = new Color(Display.getCurrent(), secondRowRGB);
-        comboBlack = new Color(Display.getCurrent(), blackRGB);
-
         colorsDisposed = false;
 
     }
@@ -88,10 +71,8 @@ public final class ColorPalette {
 
         if (!colorsDisposed) {
             colorsDisposed = true;
-            warningRED.dispose();
             firstRow.dispose();
             secondRow.dispose();
-            comboBlack.dispose();
         }
 
     }
@@ -114,16 +95,6 @@ public final class ColorPalette {
     public Color getSecondRowColor() {
 
         return secondRow;
-    }
-
-    public Color getBlackColor() {
-
-        return comboBlack;
-    }
-
-    public Color getWarningColor() {
-
-        return warningRED;
     }
 
 }

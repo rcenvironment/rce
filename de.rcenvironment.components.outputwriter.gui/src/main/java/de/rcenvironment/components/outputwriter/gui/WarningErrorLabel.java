@@ -18,6 +18,7 @@ import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Text;
 
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
@@ -30,9 +31,11 @@ import de.rcenvironment.core.gui.resources.api.StandardImages;
  */
 public class WarningErrorLabel extends Composite {
 
-    private static final int COMPOSITE_HEIGHT_HINT = 100;
+    private static final int COMPOSITE_HEIGHT_HINT = 45;
 
-    private static final int LABEL_HEIGHT_HINT = COMPOSITE_HEIGHT_HINT / 2;
+    private final Text upperText;
+
+    private final Text lowerText;
 
     private final CLabel upperLabel;
 
@@ -46,23 +49,29 @@ public class WarningErrorLabel extends Composite {
         super(parent, style);
 
         this.setVisible(true);
-        this.setLayout(new GridLayout(1, false));
+
+        final GridLayout gd = new GridLayout(2, false);
+        gd.marginWidth = 0;
         final GridData thisGridData =
-            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
-        thisGridData.horizontalSpan = 2;
-        thisGridData.heightHint = COMPOSITE_HEIGHT_HINT;
+            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        this.setLayout(gd);
         this.setLayoutData(thisGridData);
 
         GridData labelGridData =
-            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
-        labelGridData.horizontalSpan = 1;
-        labelGridData.heightHint = LABEL_HEIGHT_HINT;
+            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        labelGridData.heightHint = COMPOSITE_HEIGHT_HINT;
+        GridLayout configGroupLayout = new GridLayout();
+        configGroupLayout.marginWidth = 0;
 
-        upperLabel = new CLabel(this, SWT.SHADOW_NONE);
-        upperLabel.setLayoutData(labelGridData);
+        upperLabel = new CLabel(this, SWT.NONE);
+        upperLabel.setText("xxxxxxxxxErrors"); // xxx space needed, so that the warning image is displayed correctly
+        upperText = new Text(this, SWT.READ_ONLY | SWT.V_SCROLL);
+        upperText.setLayoutData(labelGridData);
 
-        lowerLabel = new CLabel(this, SWT.SHADOW_NONE);
-        lowerLabel.setLayoutData(labelGridData);
+        lowerLabel = new CLabel(this, SWT.NONE);
+        lowerLabel.setText("xxxxxWarnings"); // xxx space needed, so that the warning image is displayed correctly
+        lowerText = new Text(this, SWT.READ_ONLY | SWT.V_SCROLL);
+        lowerText.setLayoutData(labelGridData);
 
         refresh();
     }
@@ -127,40 +136,55 @@ public class WarningErrorLabel extends Composite {
      * Refresh the widgets to correctly display the warnings and errors stored in this object.
      */
     private void refresh() {
+        final Optional<Text> errorText;
+        final Optional<Text> warningText;
         final Optional<CLabel> errorLabel;
         final Optional<CLabel> warningLabel;
+
 
         // Figure out which label to use for errors and which for warnings. If there are both errors and warnings, we first show errors,
         // then warnings. If there is only either of them, we always use the upper label.
         if (errors.isEmpty()) {
+            errorText = Optional.empty();
             errorLabel = Optional.empty();
             if (warnings.isEmpty()) {
+                warningText = Optional.empty();
                 warningLabel = Optional.empty();
             } else {
+                warningText = Optional.of(upperText);
                 warningLabel = Optional.of(upperLabel);
             }
         } else {
+            errorText = Optional.of(upperText);
             errorLabel = Optional.of(upperLabel);
             if (warnings.isEmpty()) {
+                warningText = Optional.empty();
                 warningLabel = Optional.empty();
             } else {
+                warningText = Optional.of(lowerText);
                 warningLabel = Optional.of(lowerLabel);
             }
         }
 
+        upperText.setVisible(false);
+        lowerText.setVisible(false);
         upperLabel.setVisible(false);
         lowerLabel.setVisible(false);
 
-        if (errorLabel.isPresent()) {
+        if (errorText.isPresent()) {
             errorLabel.get().setImage(ImageManager.getInstance().getSharedImage(StandardImages.ERROR_16));
-            errorLabel.get().setText(String.join("\n", errors));
+            errorLabel.get().setText("Errors:");
             errorLabel.get().setVisible(true);
+            errorText.get().setText(String.join("\n", errors));
+            errorText.get().setVisible(true);
         }
 
-        if (warningLabel.isPresent()) {
+        if (warningText.isPresent()) {
             warningLabel.get().setImage(ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16));
-            warningLabel.get().setText(String.join("\n", warnings));
+            warningLabel.get().setText("Warnings:");
             warningLabel.get().setVisible(true);
+            warningText.get().setText(String.join("\n", warnings));
+            warningText.get().setVisible(true);
         }
     }
 }

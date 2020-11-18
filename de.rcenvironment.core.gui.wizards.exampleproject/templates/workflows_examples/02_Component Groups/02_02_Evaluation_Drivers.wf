@@ -134,7 +134,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {
@@ -169,7 +169,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {
@@ -204,7 +204,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {
@@ -239,7 +239,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {

@@ -33,6 +33,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel
+ * @author Kathrin Schaffert
  */
 public class DOEComponentValidator extends AbstractLoopComponentValidator {
 
@@ -47,52 +48,63 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
 
         List<ComponentValidationMessage> messages = new ArrayList<>();
 
-        final boolean hasOutputs = getOutputs(componentDescription).size() > 0;
+        final boolean hasOutputs = !getOutputs(componentDescription).isEmpty();
+        int outputCount = getOutputs(componentDescription).size();
 
         String methodName = getProperty(componentDescription, DOEConstants.KEY_METHOD);
-        if (!hasOutputs) {
-            final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, "", Messages.noOutputsDefinedLong,
-                Messages.noOutputsDefinedLong);
-            messages.add(noInputMessage);
+        int runNumber = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER));
+        
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) || methodName.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
+            || methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
+            if (!hasOutputs) {
+                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
+                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minOneOutput,
+                    Messages.minOneOutput);
+                messages.add(outputTooLow);
+                return messages;
+            }
         } else {
-            int outputCount = getOutputs(componentDescription).size();
-            int runNumber = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER));
-            final ComponentValidationMessage tooManySamplesMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, "", Messages.tooManySamples, Messages.tooManySamples);
-
-            if (methodName
-                .equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
-                if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
-                    messages.add(tooManySamplesMessage);
-                }
-            } else {
-                if (runNumber >= DOEAlgorithms.MAXMIMAL_RUNS) {
-                    messages.add(tooManySamplesMessage);
-                }
+            if (!hasOutputs || outputCount < 2) {
+                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
+                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minTwoOutputs,
+                    Messages.minTwoOutputs);
+                messages.add(outputTooLow);
+                return messages;
             }
         }
-        if (!(methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) || methodName.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
-            || methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT))
-            && getOutputs(componentDescription).size() < 2) {
-            final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.numOutputsG2Long,
-                Messages.numOutputsG2Long);
-            messages.add(outputTooLow);
 
+        if (runNumber == 0) {
+            final ComponentValidationMessage noRun = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER, Messages.noRunNumber,
+                Messages.noRunNumber);
+            messages.add(noRun);
+            return messages;
+        }
+
+        final ComponentValidationMessage tooManySamplesMessage = new ComponentValidationMessage(
+            ComponentValidationMessage.Type.ERROR, "", Messages.tooManySamples, Messages.tooManySamples);
+
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
+            if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
+                messages.add(tooManySamplesMessage);
+                return messages;
+            }
+        } else {
+            if (runNumber >= DOEAlgorithms.MAXMIMAL_RUNS) {
+                messages.add(tooManySamplesMessage);
+                return messages;
+            }
+        }
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT) && runNumber < 2) {
+            final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER,
+                Messages.numLevelsInvalid, Messages.numLevelsInvalid);
+            messages.add(noInputMessage);
+            return messages;
         }
         if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
             checkStartAndEndSample(componentDescription, messages);
             checkTableDimensions(componentDescription, messages);
-        }
-        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
-            if (getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER) == null
-                || Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER)) < 2) {
-                final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
-                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER,
-                    Messages.numLevelsInvalidLong, Messages.numLevelsInvalidLong);
-                messages.add(noInputMessage);
-            }
         }
 
         return messages;
@@ -111,34 +123,37 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
 
         if (table == null || table.isEmpty() || table.equals("null")) {
             final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE, Messages.noTableLong,
-                Messages.noTableLong);
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE, Messages.noTable,
+                Messages.noTable);
             messages.add(startSampleErrorMessage);
         } else {
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 Double[][] tableValues = mapper.readValue(table,
                     Double[][].class);
+                // The table could be too long rsp. too short, only if a table as input is used. (K.Schaffert, 16.09.2020)
                 if (tableValues != null && tableValues.length > 0 && (tableValues[0] != null
                     && tableValues[0].length < getOutputs(componentDescription).size())) {
                     final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
                         ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE,
-                        Messages.tableTooShortLong, Messages.tableTooShortLong);
+                        Messages.tableTooShort, Messages.tableTooShort);
                     messages.add(startSampleErrorMessage);
                 }
                 if (tableValues != null && tableValues.length > 0
                     && tableValues[0].length > getOutputs(componentDescription).size()) {
                     final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
                         ComponentValidationMessage.Type.WARNING, DOEConstants.KEY_TABLE,
-                        Messages.tableTooLongLong, Messages.tableTooLongLong);
+                        Messages.tableTooLong, Messages.tableTooLong);
                     messages.add(startSampleErrorMessage);
                 }
                 final ComponentValidationMessage noValueError = new ComponentValidationMessage(
                     ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE,
                     Messages.undefinedValues, Messages.undefinedValues);
-                for (int i = 0; (i < Integer
-                    .parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER))
-                    && (tableValues != null && i < tableValues.length)); i++) {
+
+                int runNumber = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER));
+
+                for (int i = 0; (i < runNumber)
+                    && (tableValues != null && i < tableValues.length); i++) {
                     for (int j = 0; j < tableValues[i].length; j++) {
                         if (tableValues[i][j] == null) {
                             messages.add(noValueError);
@@ -149,78 +164,33 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
                         break;
                     }
                 }
-                if (getProperty(componentDescription, DOEConstants.KEY_METHOD)
-                    .equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-                    && (getProperty(componentDescription, DOEConstants.KEY_END_SAMPLE) != null
-                        && !getProperty(componentDescription, DOEConstants.KEY_END_SAMPLE).isEmpty()
-                        && Double.parseDouble(getProperty(componentDescription,
-                            DOEConstants.KEY_END_SAMPLE)) > Double.parseDouble(
-                                getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER))
-                                - 1)) {
-                    final ComponentValidationMessage endSampleErrorMessage = new ComponentValidationMessage(
-                        ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_END_SAMPLE,
-                        Messages.endSampleTooHighLong, Messages.endSampleTooHighLong);
-                    messages.add(endSampleErrorMessage);
-                }
             } catch (IOException e) {
+                // should never happen (K.Schaffert, 28.09.2020)
                 final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE, Messages.noTableLong,
-                    Messages.noTableLong);
+                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE, Messages.cannotReadTable,
+                    Messages.cannotReadTable);
                 messages.add(startSampleErrorMessage);
             }
-
         }
-
     }
 
     private void checkStartAndEndSample(ComponentDescription componentDescription,
         final Collection<ComponentValidationMessage> messages) {
         String startSampleString = getProperty(componentDescription, DOEConstants.KEY_START_SAMPLE);
-        Integer startSample = null;
-        try {
-            startSample = Integer.parseInt(startSampleString);
-        } catch (NumberFormatException e) {
+
+        if (startSampleString.isEmpty()) {
             final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_START_SAMPLE,
-                Messages.startSampleNotInteger, Messages.startSampleNotInteger);
-            messages.add(startSampleErrorMessage);
-        }
-        if (startSample != null && startSample < 0) {
-            final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_START_SAMPLE, Messages.startSampleG0,
-                Messages.startSampleG0);
-            messages.add(startSampleErrorMessage);
-        }
-        if (startSample != null
-            && startSample > Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER))) {
-            final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_START_SAMPLE, Messages.startSampleTooHigh,
-                Messages.startSampleTooHigh);
+                Messages.noStartSample, Messages.noStartSample);
             messages.add(startSampleErrorMessage);
         }
         String endSampleString = getProperty(componentDescription, DOEConstants.KEY_END_SAMPLE);
-        Integer endSample = null;
-        try {
-            endSample = Integer.parseInt(endSampleString);
-        } catch (NumberFormatException e) {
+        if (endSampleString.isEmpty()) {
             final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_END_SAMPLE, Messages.endSampleNotInteger,
-                Messages.endSampleNotInteger);
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_END_SAMPLE, Messages.noEndSample,
+                Messages.noEndSample);
             messages.add(startSampleErrorMessage);
         }
-        if (endSample != null && endSample < 0) {
-            final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_END_SAMPLE, Messages.endSampleG0,
-                Messages.endSampleG0);
-            messages.add(startSampleErrorMessage);
-        }
-        if (startSample == null || endSample == null || startSample > endSample) {
-            final ComponentValidationMessage startSampleErrorMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_END_SAMPLE, Messages.endSampleGStart,
-                Messages.endSampleGStart);
-            messages.add(startSampleErrorMessage);
-        }
-
     }
 
     @Override

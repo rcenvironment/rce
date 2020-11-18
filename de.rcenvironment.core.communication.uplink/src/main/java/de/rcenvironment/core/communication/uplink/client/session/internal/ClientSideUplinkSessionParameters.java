@@ -21,18 +21,24 @@ public class ClientSideUplinkSessionParameters {
 
     private final String qualifier;
 
+    private String clientVersionInfo;
+
     private final Map<String, String> customHandshakeData;
 
     /**
      * @param announcedDisplayName the display name to represent this connection/session to other clients, e.g. in network overviews or log
      *        messages
-     * @param qualifier a string to identify a connection in case several connections use the same SSH account
+     * @param qualifier the "client id", a string to identify a connection in case several connections use the same SSH account
+     * @param clientVersionInfo an optional client version value to send as part of the client-to-server handshake, e.g.
+     *        "rce/10.2.0.<qualifier>"
      * @param customHandshakeData handshake field overrides; typically used for testing
      * 
      */
-    public ClientSideUplinkSessionParameters(String announcedDisplayName, String qualifier, Map<String, String> customHandshakeData) {
+    public ClientSideUplinkSessionParameters(String announcedDisplayName, String qualifier, String clientVersionInfo,
+        Map<String, String> customHandshakeData) {
         this.announcedDisplayName = announcedDisplayName;
         this.qualifier = qualifier;
+        this.clientVersionInfo = clientVersionInfo;
         this.customHandshakeData = customHandshakeData;
     }
 
@@ -42,6 +48,10 @@ public class ClientSideUplinkSessionParameters {
 
     public String getSessionQualifier() {
         return qualifier;
+    }
+
+    public String getClientVersionInfo() {
+        return clientVersionInfo;
     }
 
     public Map<String, String> getCustomHandshakeData() {

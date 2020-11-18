@@ -1,6 +1,6 @@
 {
   "identifier" : "1e4beb0e-2670-476e-9eb2-f10014b88c88",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "51affe82-12ef-4010-80b6-9a0504ca5e6a",
     "name" : "Forwarder 1",
@@ -154,7 +154,7 @@
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
       "name" : "Parametric Study",
-      "version" : "3.3"
+      "version" : "4"
     },
     "configuration" : {
       "loopFaultTolerance_5e0ed1cd" : "Fail",
@@ -170,8 +170,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     } ],
     "staticOutputs" : [ {
@@ -184,8 +183,7 @@
         "FromValue" : "0",
         "StepSize" : "1",
         "ToValue" : "10",
-        "fitStepSizeToBounds" : "true",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "fitStepSizeToBounds" : "true"
       }
     }, {
       "identifier" : "9426fe32-f15e-4b27-ab54-f8671f5818a0",
@@ -193,18 +191,7 @@
       "epIdentifier" : null,
       "group" : null,
       "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
-    }, {
-      "identifier" : "a6df6aaf-03a2-4fe1-b321-4ddd0bd5f087",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "metadata" : { }
     } ]
   } ],
   "connections" : [ {

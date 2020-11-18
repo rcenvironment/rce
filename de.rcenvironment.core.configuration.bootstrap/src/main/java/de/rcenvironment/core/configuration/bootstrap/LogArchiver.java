@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public final class LogArchiver {
 
-    private static final Pattern CURRENT_LOG_FILE_PATTERN = Pattern.compile("^(\\w+)\\.(log(\\.\\d+)?)$");
+    private static final Pattern CURRENT_LOG_FILE_PATTERN = Pattern.compile("^(debug|warnings)\\.(log(\\.\\d+)?)$");
 
     private static final Pattern ARCHIVED_LOG_FILE_PATTERN = Pattern.compile("^(\\w+)\\.(previous\\.log(\\.\\d+)?)$");
 

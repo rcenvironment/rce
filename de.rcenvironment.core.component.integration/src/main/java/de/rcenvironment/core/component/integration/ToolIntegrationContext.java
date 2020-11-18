@@ -9,6 +9,8 @@
 package de.rcenvironment.core.component.integration;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Stores information for the tool integration.
@@ -60,9 +62,9 @@ public interface ToolIntegrationContext {
     String getPrefixForComponentId();
 
     /**
-     * @return name of the component group in which the integrated components are published
+     * @return The component group in which the tool is integrated if the tool configuration does not specify some other group.
      */
-    String getComponentGroupId();
+    String getDefaultComponentGroupId();
 
     /**
      * Some integration types don't need all common integration properties to be defined by the
@@ -78,4 +80,10 @@ public interface ToolIntegrationContext {
      * @return pathes
      */
     File[] getReadOnlyPathsList();
+    
+    /**
+     * @param rawConfigurationMap TODO
+     * @return TODO
+     */
+    Optional<ConfigurationMap> parseConfigurationMap(Map<String, Object> rawConfigurationMap);
 }

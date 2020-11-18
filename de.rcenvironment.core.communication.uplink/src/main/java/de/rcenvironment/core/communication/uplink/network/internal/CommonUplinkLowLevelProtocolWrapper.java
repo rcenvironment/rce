@@ -10,7 +10,9 @@ package de.rcenvironment.core.communication.uplink.network.internal;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -27,13 +29,18 @@ import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocol
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Encapsulates common aspects of the low-level transmission protocol, comprised of the initial client-server protocol handshake,
- * bidirectional transmission of message blocks, error message handling, and session teardown for an uplink connection.
+ * bidirectional transmission of message blocks, error message handling, and connection teardown.
+ * <p>
+ * This class and its subclasses are supposed to be <b>as stateless as possible</b>, except for the state of the low-level connection and
+ * its input/output streams (EOF, read/write error, closed, ...). All other state handling should occur in higher layers, especially the
+ * Uplink session classes.
  * <p>
  * Threading behavior: All operations of this class (and its known subclasses) are <em>blocking</em>.
  * <ul>
@@ -46,14 +53,16 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public abstract class CommonUplinkLowLevelProtocolWrapper {
 
-    // TODO (p3) review: separate values needed?
-    private static final int HANDSHAKE_MESSAGE_TIMEOUT = UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC;
+    // TODO (p3) 10.x/11.0: review: separate values needed?
+    protected static final int HANDSHAKE_MESSAGE_TIMEOUT = UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC;
 
     private static final int HANDSHAKE_MESSAGE_WAIT_CHECK_INTERVAL = 100;
 
-    protected DataInputStream dataInputStream;
+    protected final StreamConnectionEndpoint connectionEndpoint;
 
-    protected DataOutputStream dataOutputStream;
+    protected final DataInputStream dataInputStream;
+
+    protected final DataOutputStream dataOutputStream;
 
     protected final UplinkConnectionLowLevelEventHandler eventHandler;
 
@@ -61,26 +70,48 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
 
     protected final UplinkProtocolMessageConverter messageConverter;
 
+    protected final String logPrefix;
+
     protected final boolean verboseLoggingEnabled = DebugSettings.getVerboseLoggingEnabled("uplink.lowlevel");
 
     protected final Log log = LogFactory.getLog(getClass());
 
-    private boolean outgoingStreamClosed;
-
-    public CommonUplinkLowLevelProtocolWrapper(UplinkConnectionLowLevelEventHandler eventHandler, String logIdentity) {
+    public CommonUplinkLowLevelProtocolWrapper(StreamConnectionEndpoint connectionEndpoint,
+        UplinkConnectionLowLevelEventHandler eventHandler, String logIdentity) {
+        this.connectionEndpoint = connectionEndpoint;
+        this.dataInputStream = new DataInputStream(connectionEndpoint.getInputStream());
+        this.dataOutputStream = new DataOutputStream(connectionEndpoint.getOutputStream());
         this.eventHandler = eventHandler;
         this.jsonMapper = JsonUtils.getDefaultObjectMapper();
         this.messageConverter = new UplinkProtocolMessageConverter(logIdentity);
+        this.logPrefix = "[" + logIdentity + "] ";
     }
 
     /**
-     * A blocking call that performs the initial protocol handshake and then runs the message dispatch loop.
+     * A blocking call that performs the initial protocol handshake and then runs the message dispatch loop. Any errors are handled
+     * internally or reported via callbacks.
      * 
-     * @throws IOException on I/O exceptions, e.g. a breakdown of the underlying connection
-     * @throws ProtocolException on unexpected protocol behavior, e.g. a protocol version mismatch with the remote side, or malformed
-     *         traffic
+     * TODO >10.2 (p2): pull this up to the session layer
      */
-    public abstract void runSession() throws IOException;
+    public void runSession() {
+        try {
+            runHandshakeSequence();
+            eventHandler.onHandshakeComplete();
+            runMessageReceiveLoop();
+        } catch (UplinkConnectionRefusedException e) {
+            if (e.shouldAttemptToSendErrorGoodbye()) {
+                log.debug(logPrefix + "Uplink handshake failed or connection refused; attempting to send error message \""
+                    + e.getRawMessage() + "\"");
+                attemptToSendErrorGoodbyeMessage(e.getType(), e.getRawMessage());
+            } else {
+                log.debug(logPrefix + "Uplink handshake failed or connection refused: " + e.getRawMessage());
+            }
+            eventHandler.onHandshakeFailedOrConnectionRefused(e);
+        }
+        // no matter the outcome, ensure that the underlying connection or low-level session is always closed.
+        // this is redundant in some cases, but all implementations should be tolerant against repeated calls.
+        terminateSession();
+    }
 
     /**
      * Transmits the given message block to the other end of the connection.
@@ -92,20 +123,16 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
     public final void sendMessageBlock(long channelId, MessageBlock messageBlock) throws IOException {
         final byte[] data = messageBlock.getData();
         synchronized (dataOutputStream) {
-            if (outgoingStreamClosed) {
-                log.debug("Ignoring message send request as the connection has been shut down");
-                return;
-            }
             if (verboseLoggingEnabled) {
                 log.debug(
-                    StringUtils.format("Sending a message of type %s to channel %d, payload size %d bytes",
-                        messageBlock.getType(), channelId, data.length));
+                    StringUtils.format("%sSending a message of type %s to channel %d, payload size %d bytes",
+                        logPrefix, messageBlock.getType(), channelId, data.length));
             }
             dataOutputStream.writeLong(channelId); // 8 bytes of channel id
             dataOutputStream.writeInt(data.length); // 4 bytes of size data
             dataOutputStream.writeByte(messageBlock.getType().getCode()); // 1 byte of message type
             dataOutputStream.write(data);
-            dataOutputStream.flush();
+            dataOutputStream.flush(); // TODO potential optimization: avoid flushing after every block?
         }
     }
 
@@ -122,13 +149,8 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         sendMessageBlock(channelId, new MessageBlock(type, data));
     }
 
-    /**
-     * Makes a best-effort attempt to send a goodbye message, and then closes the session and its underlying connection.
-     */
-    public abstract void closeOutgoingMessageStream();
-
     protected byte[] readExpectedBytesWithTimeout(final int expectedLength, int timeoutMsec, int recheckInterval)
-        throws IOException {
+        throws IOException, TimeoutException {
         byte[] expectedBytes = new byte[expectedLength];
         long startTime = System.currentTimeMillis();
         while (dataInputStream.available() < expectedLength) {
@@ -140,7 +162,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
                     throw new ProtocolException("Interrupted while waiting for " + expectedLength + " bytes of data");
                 }
             } else {
-                throw new ProtocolException(
+                throw new TimeoutException(
                     "Expected " + expectedLength + " bytes of data, but did not receive them within " + timeoutMsec + " msec");
             }
         }
@@ -155,11 +177,11 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         }
         dataOutputStream.write(initBytes);
         if (verboseLoggingEnabled) {
-            log.debug("Sent handshake init (" + initBytes.length + " bytes)");
+            log.debug(logPrefix + "Sent handshake init (" + initBytes.length + " bytes)");
         }
     }
 
-    protected void expectHandshakeInit() throws IOException {
+    protected void expectHandshakeInit() throws IOException, TimeoutException {
         byte[] expectedHandshakeInitBytes = readExpectedBytesWithTimeout(UplinkProtocolConstants.HANDSHAKE_INIT_STRING_BYTE_LENGTH,
             HANDSHAKE_MESSAGE_TIMEOUT, HANDSHAKE_MESSAGE_WAIT_CHECK_INTERVAL);
         final String reveivedHeader = new String(expectedHandshakeInitBytes, UplinkProtocolConstants.DEFAULT_CHARSET);
@@ -167,7 +189,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
             throw new ProtocolException("Received invalid handshake init: " + reveivedHeader);
         }
         if (verboseLoggingEnabled) {
-            log.debug("Received expected handshake init (" + expectedHandshakeInitBytes.length + " bytes)");
+            log.debug(logPrefix + "Received expected handshake init (" + expectedHandshakeInitBytes.length + " bytes)");
         }
     }
 
@@ -175,7 +197,8 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, responseData);
         dataOutputStream.flush();
         if (verboseLoggingEnabled) {
-            log.debug("Sent handshake data");
+            log.debug(
+                logPrefix + "Sent handshake data '" + new String(responseData.getData(), UplinkProtocolConstants.DEFAULT_CHARSET) + "'");
         }
     }
 
@@ -183,50 +206,65 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, new MessageBlock(MessageType.HANDSHAKE));
         dataOutputStream.flush();
         if (verboseLoggingEnabled) {
-            log.debug("Sent handshake confirmation");
+            log.debug(logPrefix + "Sent handshake confirmation");
         }
     }
 
-    protected MessageBlock expectHandshakeData() throws IOException, UplinkConnectionRefusedException {
-        final long channelId = readChannelId(); // TODO could be omitted; left in for regularity for now
-        if (channelId != UplinkProtocolConstants.DEFAULT_CHANNEL_ID) {
-            throw new ProtocolException("Unexpected handshake channel id: " + channelId);
+    protected MessageBlock expectHandshakeData() throws UplinkConnectionRefusedException, TimeoutException, IOException {
+        MessageBlockWithChannelId messageBlock;
+        try {
+            messageBlock = readChannelIdAndMessageBlockWithTimeout(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
+        } catch (TimeoutException e) {
+            // improve timeout message
+            throw new TimeoutException("The remote side did not send their Uplink handshake response within "
+                + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC + " msec");
+        } catch (IOException e) {
+            // improve error message
+            throw new IOException("Error receiving the remote side's handshake response: " + e.getMessage());
         }
-        MessageBlock messageBlock = readMessageBlockWithTimeout(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
+
+        // check assumption (default channel)
+        if (messageBlock.getChannelId() != UplinkProtocolConstants.DEFAULT_CHANNEL_ID) {
+            throw new ProtocolException("Unexpected handshake channel id: " + messageBlock.getChannelId());
+        }
 
         if (messageBlock.getType() == MessageType.GOODBYE) {
-            // note: this error message may be slightly confusing if this is actually sent by a client;
-            // as this should not normally happen, this is not handled separately
+            // this should only be sent by the server side at this point, so make this a local exception
             final String errorMessage = extractGoodbyeErrorMessage(messageBlock, true);
+            // (re)construct an exception from the remote error message
+            // TODO instead of the two separate calls, provide a factory method?
             throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.typeOfWrappedErrorMessage(errorMessage),
-                UplinkProtocolErrorType.unwrapErrorMessage(errorMessage));
+                UplinkProtocolErrorType.unwrapErrorMessage(errorMessage), false);
         }
         if (messageBlock.getType() != MessageType.HANDSHAKE) {
-            throw new ProtocolException(
-                "Expected handshake data, but received message type " + messageBlock.getType() + " instead");
+            // not confidential, and the connection has not broken down -> attempt to send a reply
+            throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VIOLATION,
+                "Expected handshake data, but received message type " + messageBlock.getType() + " instead", true);
         }
         if (verboseLoggingEnabled) {
-            log.debug(
-                "Received handshake data: " + new String(messageBlock.getData(), UplinkProtocolConstants.DEFAULT_CHARSET));
+            if (messageBlock.getDataLength() == 0) {
+                log.debug(
+                    logPrefix + "Received handshake confirmation");
+            } else {
+                log.debug(
+                    logPrefix + "Received handshake data '" + new String(messageBlock.getData(), UplinkProtocolConstants.DEFAULT_CHARSET)
+                        + "'");
+            }
         }
         return messageBlock;
     }
 
-    protected final long readChannelId() throws IOException {
-        synchronized (dataInputStream) {
-            return dataInputStream.readLong();
-        }
-    }
-
     /**
-     * Blocks until the next message block could be read, or the incoming stream has been closed cleanly, or an error occurred.
+     * Blocks until the next message block could be read, or the incoming stream has been closed cleanly, or an error occurred. Any timeout
+     * handling should be done by running this in a worker thread, and checking for completion from another thread.
      * 
      * @return the received message/data block if it could be read, or {@link Optional#empty()} on clean stream shutdown
      * @throws IOException on a read error
      * @throws ProtocolException if the received message block violates value constraints, e.g. an invalid message type
      */
-    protected final MessageBlock readMessageBlock() throws IOException {
+    protected final MessageBlockWithChannelId readMessageBlock() throws IOException {
         synchronized (dataInputStream) {
+            long channelId = dataInputStream.readLong();
             int blockSize = dataInputStream.readInt();
             // sanity check on announced size to detect protocol errors and prevent heap exhaustion
             if (blockSize < 0 || blockSize > UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH) {
@@ -235,10 +273,9 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
                     UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH));
             }
             byte type = dataInputStream.readByte();
-            // TODO timeout handling
             byte[] data = new byte[blockSize];
             dataInputStream.readFully(data);
-            return new MessageBlock(type, data);
+            return new MessageBlockWithChannelId(type, data, channelId);
         }
     }
 
@@ -249,11 +286,12 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
      * @param timeoutMsec the timeout in msec (surprising, I know...)
      * @return the received message/data block if it could be read, or {@link Optional#empty()} on clean stream shutdown
      * @throws IOException on a read error
+     * @throws TimeoutException on timeout
      * @throws ProtocolException if the received message block violates value constraints, e.g. an invalid message type
      */
-    protected final MessageBlock readMessageBlockWithTimeout(int timeoutMsec) throws IOException {
-        final CompletableFuture<MessageBlock> messageFuture = new CompletableFuture<>();
-
+    protected final MessageBlockWithChannelId readChannelIdAndMessageBlockWithTimeout(int timeoutMsec)
+        throws IOException, TimeoutException {
+        final CompletableFuture<MessageBlockWithChannelId> messageFuture = new CompletableFuture<>();
         ConcurrencyUtils.getAsyncTaskService().execute("Uplink: Read message block with timeout", () -> {
             try {
                 messageFuture.complete(readMessageBlock());
@@ -263,78 +301,102 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         });
         try {
             return messageFuture.get(timeoutMsec, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new IOException("Error while waiting for an incoming message: " + e.toString());
+        } catch (InterruptedException e) {
+            throw new IOException("Interrupted while waiting for an incoming message");
+        } catch (ExecutionException e) {
+            throw new IOException("Error while waiting for an incoming message: " + e.getMessage());
         }
     }
 
     /**
-     * Sends a final shutdown message into the outgoing stream and then closes it.
-     * 
-     * @throws IOException on failure to send the shutdown message
+     * Ensures that the outgoing connection is closed.
      */
-    protected final void closeOutgoingDataStream() {
-        synchronized (dataOutputStream) {
-            if (outgoingStreamClosed) {
-                return; // ignore duplicate calls
-            }
-            try {
-                sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, UplinkProtocolConstants.MESSAGE_TYPE_GOODBYE, new byte[0]);
-            } catch (ProtocolException e) {
-                throw new RuntimeException("Internal error: Failed to construct shutdown message", e);
-            } catch (IOException e) {
-                log.debug("Failed to send goodbye message; most likely, the connection has already failed");
-            }
-            try {
-                dataOutputStream.close();
-            } catch (IOException e) {
-                log.debug("Failed to actively close the output stream; most likely, the connection has already failed");
-            }
-            outgoingStreamClosed = true;
+    public final void terminateSession() {
+        connectionEndpoint.close();
+    }
+
+    public final boolean attemptToSendRegularGoodbyeMessage() {
+        try {
+            sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, UplinkProtocolConstants.MESSAGE_TYPE_GOODBYE, new byte[0]);
+            return true;
+        } catch (ProtocolException e) {
+            throw new RuntimeException("Internal error: Failed to construct shutdown message", e);
+        } catch (IOException e) {
+            log.debug("Failed to send regular 'goodbye' message; most likely, the connection has already failed");
+            return false;
         }
     }
 
+    public final void attemptToSendErrorGoodbyeMessage(final UplinkProtocolErrorType type, final String rawMessage) {
+        final String wrappedMessage = type.wrapErrorMessage(rawMessage);
+        try {
+            sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageConverter.encodeErrorGoodbyeMessage(wrappedMessage));
+        } catch (IOException e) {
+            log.debug(StringUtils.format("%sFailed to send a 'goodbye' error message; this is often a best-effort attempt, "
+                + "so this can typically be ignored (message body: %s; error while sending: %s)", logPrefix, wrappedMessage, e.toString()));
+        }
+    }
+
+    protected abstract void runHandshakeSequence() throws UplinkConnectionRefusedException;
+
     protected final void runMessageReceiveLoop() {
         if (verboseLoggingEnabled) {
-            log.debug("Running message dispatch loop");
+            log.debug(logPrefix + "Running message dispatch loop");
         }
-        boolean proceed = true;
-        while (proceed) {
+        boolean expectingFurtherMessages = true;
+        while (true) {
             try {
                 if (!receiveNextMessage()) {
-                    proceed = false;
+                    expectingFurtherMessages = false;
                 }
             } catch (IOException e) {
-                final String errorMarker = LogUtils.logExceptionAsSingleLineAndAssignUniqueMarker(log,
-                    "Error while receiving a message, closing the connection", e);
-                // note: not integrated with the client-side "only report first error" mechanism; this should be ok, though
-                eventHandler.onNonProtocolError(e);
-                attemptToSendErrorGoodbyeMessage(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR,
-                    "Closing the connection after an error (internal error log marker " + errorMarker + ")");
-                proceed = false;
+                boolean exceptionMatchesClosedConnection = e instanceof EOFException || e instanceof SocketException;
+                if (exceptionMatchesClosedConnection) {
+                    if (e.getClass() != EOFException.class && e.getMessage() == null) {
+                        // unless this is the cleanest case possible, log the semantic mapping
+                        log.debug(StringUtils.format("%sCategorizing stream read exception as 'end of stream' event: %s", logPrefix,
+                            e.toString()));
+                    }
+                    eventHandler.onIncomingStreamClosedOrEOF();
+                    break;
+                } else {
+                    if (expectingFurtherMessages) {
+                        final String errorMarker = LogUtils.logExceptionAsSingleLineAndAssignUniqueMarker(log,
+                            logPrefix + "Error while receiving a message, closing the connection", e);
+                        // report unexpected errors
+                        eventHandler.onStreamReadError(e);
+                        attemptToSendErrorGoodbyeMessage(UplinkProtocolErrorType.INTERNAL_SERVER_ERROR,
+                            "Closing the connection after an error (internal error log marker " + errorMarker + ")");
+                    } else {
+                        log.error(logPrefix + "Not expecting further messages, but encountered a non-EOF exception; "
+                            + "still considering the stream as closed/broken as a fallback: " + e.toString());
+                        eventHandler.onIncomingStreamClosedOrEOF();
+                        break;
+                    }
+                }
             }
         }
     }
 
     private boolean receiveNextMessage() throws IOException {
-        long channelId = readChannelId();
-        final MessageBlock message = readMessageBlock();
+        final MessageBlockWithChannelId message = readMessageBlock();
+        long channelId = message.getChannelId();
         if (message.getType() == MessageType.GOODBYE) {
-            log.debug("Received 'goodbye' message, stopping message listener");
             if (message.getDataLength() == 0) {
+                log.debug(logPrefix + "Received regular 'goodbye' message, expecting end of stream next");
                 eventHandler.onRegularGoodbyeMessage();
             } else {
+                log.debug(logPrefix + "Received error 'goodbye' message, expecting end of stream next");
                 String errorMessage = extractGoodbyeErrorMessage(message, false);
-                // note: not integrated with the client-side "only report first error" mechanism; this should be ok, though
                 eventHandler.onErrorGoodbyeMessage(UplinkProtocolErrorType.typeOfWrappedErrorMessage(errorMessage),
                     UplinkProtocolErrorType.unwrapErrorMessage(errorMessage));
             }
-            return false; // do not continue
+            return false; // continue, but do not expect further messages
         }
         if (verboseLoggingEnabled) {
             log.debug(
-                StringUtils.format("Received message of type %s for channel %d, payload size %d bytes", message.getType(), channelId,
-                    message.getDataLength()));
+                StringUtils.format("%sReceived message of type %s for channel %d, payload size %d bytes", logPrefix, message.getType(),
+                    channelId, message.getDataLength()));
         }
         eventHandler.onMessageBlock(channelId, message);
         return true; // continue
@@ -353,20 +415,6 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
                 + "byte length: " + message.getDataLength();
         }
         return errorMessage;
-    }
-
-    protected void attemptToSendErrorGoodbyeMessage(final UplinkProtocolErrorType type, final String rawMessage) {
-        final String wrappedMessage = type.wrapErrorMessage(rawMessage);
-        try {
-            sendMessageBlock(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageConverter.encodeErrorGoodbyeMessage(wrappedMessage));
-        } catch (IOException e) {
-            log.debug(StringUtils.format("Failed to send a 'goodbye' error message; this is often a best-effort attempt, "
-                + "so this can typically be ignored (message body: %s; error while sending: %s)", wrappedMessage, e.toString()));
-        }
-    }
-
-    protected boolean isOutgoingStreamClosed() {
-        return outgoingStreamClosed;
     }
 
 }

@@ -2,205 +2,335 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
 	"http://docbook.org/xml/4.4/docbookx.dtd">
 <chapter>
-    <title>Script Component Usage</title>
-    <sect1>
-        <title>Synopsis</title>
-        <para>The Script component allows the execution of a self-written script. Currently, two
-            script languages are supported:<itemizedlist>
-                <listitem>
-                    <para>Python: must be installed on the executing system</para>
-                </listitem>
-                <listitem>
-                    <para><ulink url="http://www.jython.org/">Jython</ulink>: a Java implementation
-                        of Python.</para>
-                </listitem>
-            </itemizedlist></para>
-    </sect1>
-    <sect1>
-        <title>Rationale</title>
-        <para>Based on the selection, the component uses either a natively installed Python version
-            or the Java implementation Jython. This approach was selected on purpose because many
-            users use their own specific modules and want to use Python for this, others are
-            satisfied with the standard Python operations and need a faster implementation which is
-            Jython.</para>
-        <para>Limitations:</para>
-        <para>Only single file scripts are allowed, because the user's script contents are converted
-            into a temporary "wrapped" script, executed in the executor’s temporary directory. It is
-            currently not possible to copy satellite files like modules or input data files to the
-            directory where the script is residing.</para>
-        <para>The execution speed of the Python implementation is dominated by the initial start-up
-            time of the Python interpreter (or virtual machine, just-in-time compiler). Each script
-            execution first wraps the user script into a temporary script file, then starts the
-            Python executable in a new process and after that, processes the output bindings.</para>
-        <para>Advantages of native Python: <itemizedlist>
-                <listitem>
-                    <para>100% binary compatibility </para>
-                </listitem>
-                <listitem>
-                    <para>Exotic setups are supported automatically, including third-party modules,
-                        binary libraries, <code>cpython</code> and so on. Users gain the benefit of
-                        using additionally installed Python modules like
-                            <code>&lt;&lt;numpy>></code>, <code>&lt;&lt;scipy>></code> or
-                            <code>&lt;&lt;mysqldb>></code></para>
-                </listitem>
-                <listitem>
-                    <para>Self-compiled Python interpreters with binary extensions can be
-                        used</para>
-                </listitem>
-                <listitem>
-                    <para>No problems with library indexing as e.g. in Jython</para>
-                </listitem>
-            </itemizedlist></para>
-    </sect1>
-    <sect1>
-        <title>Usage</title>
-            <sect2>
-                <title>Script API</title>
-                <para>For interacting with RCE in the script execution, there is an API. All methods
-                of this API are listed <link linkend="scriptApiReference">here</link>.</para>
-                    <para><emphasis role="bold">How to use the script API:</emphasis></para>
-                <para>Define your inputs and outputs in the Inputs/Outputs tab of the Properties
-                view (appearing for the selected Script component on double click). Write your
-                script in the Script tab (in the same Properties view). You can either do it in the
-                text box or in a separate text editor by clicking on the button “Open in Editor”.
-                For interacting with RCE from a script, there is a module called "RCE". To get an
-                overview of all RCE API methods, look at<link linkend="scriptApiReference"> the
-                    script API detailed description</link> The most important methods there are
-                reading inputs and writing outputs. For reading an input, call the
-                method<programlisting>RCE.read_input(String input_name)</programlisting>or<programlisting>RCE.read_input(String input_name, default value)</programlisting>You
-                can write outputs within your script
-                with<programlisting>RCE.write_output(String output_name, OutputDataType value)</programlisting>Thereby,
-                the type (OutputDataType) of the value must fit the data type of the output (as
-                defined in the tab Inputs/Outputs). File and Directory are represented by the
-                absolute file paths.<note>
-                    <para>The module RCE uses is already imported in the script during
-                        execution.</para>
-                </note></para>
-            <para>Examples:</para>
-            <para>If you like to double an incoming value (x is an input of type Integer and y an
-                output of type
-                Integer):<programlisting>RCE.write_output("y", RCE.read_input("x")*2)</programlisting>If
-                you like to access an incoming file (f_in is an input of type
-                File):<programlisting>file = open(RCE.read_input("f_in"),"r")</programlisting>If you
-                like to send a file to an output (f_out is an output of type
-                File):<programlisting>absolute_file_path = /home/user_1/my_file.txt
-RCE.write_output("f_out", absolute_file_path)</programlisting>
-                If an output is not needed any more (e.g. you want to end an inner loop), you can
-                close an output using the
-                command:<programlisting>RCE.close_output(String output_name)</programlisting>Example:<programlisting>RCE.close_output(“y”)</programlisting>The
-                following components will get the finished signal.</para>
-            <para>If a script fails because of some invalid parameters sent by a Parametric Study or
-                Optimizer component, you can send a "not a value" signal to your output(s). This
-                signal indicates that the script failed because of invalid parameters and did not
-                fail at all. This signal is ignored by most of the components, only the Parametric
-                Study and the Optimizer component handle this signal. For sending it, use
-                <programlisting>RCE.write_not_a_value_output(String outputname)</programlisting>For
-                the other API methods refer to the example workflow "Script_with_all_API_methods.wf"
-                from the workflow examples project or to the script reference found <link
-                    linkend="scriptApiReference">below</link> and in the user guide.</para>
-            </sect2>
-        <sect2>
-            <title>Script component states</title>
-            <para>The Script component is able to keep its state from one run to another. Use the API to
-                write and read state variables. The values are stored in a Python dictionary. They
-                must be compatible with the RCE data types. Script components of nested loops are
-                reset if the nested loop has been terminated. Resetting a script component in a
-                nested loop also resets its state map.</para>
-        </sect2>
-        <sect2>
-            <title>Python Executable</title>
-            <para>If Python was chosen as script language, the path to the Python executable must be
-                chosen at workflow start (in the second page of the workflow execution
-                dialog). This must be done for every Script component of the workflow. If all components
-                shall use the same Python interpreter, the “Apply to all” button helps.</para>
-        </sect2>
-    </sect1>
-    <sect1>
-        <title><anchor id="scriptApiReference"/>Script API Reference</title>
-        <informaltable frame="none" id="apiReferenceTable">
-            <tgroup cols="2">
-                <colspec colname="c1" colnum="1" colwidth="1.0*"/>
-                <colspec colname="c2" colnum="2" colwidth="1.0*"/>
-                <thead>
-                    <row>
-                        <entry>Method</entry>
-                        <entry>Description</entry>
-                    </row>
-                </thead>
-                <tbody>
-                    <row>
-                            <entry><code>def RCE.close_all_outputs ( )</code>
-                        </entry>
-                        <entry>Closes all outputs that are known in RCE.</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.close_output ( name )</code>
-                        </entry>
-                        <entry>Closes the RCE output with the given name</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.fail ( reason )</code></entry>
-                        <entry>Fails the RCE component with the given reason</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.get_execution_count ( )</code>
-                        </entry>
-                        <entry>Returns the current execution count of the RCE component</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.get_input_names_with_datum ( )</code>
-                        </entry>
-                        <entry>Returns all input names that have got a data value from RCE.</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.get_output_names ( )</code></entry>
-                        <entry>Returns the read names of all outputs from RCE</entry>
-                    </row>
-                    <row>
-                            <entry><code>def RCE.get_state_dict ( ) </code></entry>
-                        <entry>Returns the current state dictionary</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.getallinputs ( )</code></entry>
-                        <entry>Gets a dictionary with all inputs from RCE</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.read_input ( name ) </code></entry>
-                        <entry>Gets the value for the given input name or an error, if the input is
-                            not there (e.g. not required and it got no value)</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.read_input ( name , defaultvalue ) </code></entry>
-                        <entry>Gets the value for the given input name or returns the default value
-                            if there is no input connected and the input not required</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.read_state_variable ( name ) </code></entry>
-                        <entry>Reads the given state variables value, if it exists, else None is
-                            returned</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.read_state_variable ( name, defaultvalue
-                            )</code></entry>
-                        <entry>Reads the given state variables value, if it exists, else a the
-                            default value is returned and stored in the dictionary</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.write_not_a_value_output ( name ) </code></entry>
-                        <entry>Sets the given output to "not a value" data type</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.write_output ( name, value )</code></entry>
-                        <entry>Sets the given value to the output "name" which will be read from
-                            RCE</entry>
-                    </row>
-                    <row>
-                        <entry><code>def RCE.write_state_variable ( name, value )</code></entry>
-                        <entry>Writes a variable name in the dictionary for the components
-                            state</entry>
-                    </row>
-                </tbody>
-            </tgroup>
-        </informaltable>
-    </sect1>
+	<title>Script Component Usage</title>
+	<sect1>
+		<title>Synopsis</title>
+		<para> The Script component allows the execution of a self-written script. Currently, two script
+			languages are supported:<itemizedlist>
+				<listitem>
+					<para>Python: must be installed on the executing system</para>
+				</listitem>
+				<listitem>
+					<para>
+						<ulink url="http://www.jython.org/">Jython</ulink> : a Java implementation
+						of Python.</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect1>
+	<sect1>
+		<title>Rationale</title>
+		<para>Based on the selection, the component uses either a natively installed Python version or the
+			Java implementation Jython. This approach was selected on purpose because many users use
+			their own specific modules and want to use Python for this, others are satisfied with
+			the standard Python operations and need a faster implementation which is Jython.</para>
+		<para>Limitations:</para>
+		<para>Only single file scripts are allowed, because the user's script contents are converted into
+			a temporary "wrapped" script, executed in the executor’s temporary directory. It is
+			currently not possible to copy satellite files like modules or input data files to the
+			directory where the script is residing.</para>
+		<para>The execution speed of the Python implementation is dominated by the initial start-up time
+			of the Python interpreter (or virtual machine, just-in-time compiler). Each script
+			execution first wraps the user script into a temporary script file, then starts the
+			Python executable in a new process and after that, processes the output bindings.</para>
+		<para>
+			Advantages of native Python:
+			<itemizedlist>
+				<listitem>
+					<para>100% binary compatibility </para>
+				</listitem>
+				<listitem>
+					<para> Exotic setups are supported automatically, including third-party modules, binary
+						libraries, <code>cpython</code> and so on. Users gain the benefit of using
+						additionally installed Python modules like <code>&lt;&lt;numpy>></code> ,
+							<code>&lt;&lt;scipy>></code> or <code>&lt;&lt;mysqldb>></code>
+					</para>
+				</listitem>
+				<listitem>
+					<para>Self-compiled Python interpreters with binary extensions can be used</para>
+				</listitem>
+				<listitem>
+					<para>No problems with library indexing as e.g. in Jython</para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect1>
+	<sect1>
+		<title>Usage</title>
+		<sect2>
+			<title>Python Executable</title>
+			<para> 
+				There are two options for using Python as script language, the (old) "Python" and the "Python (Python Agent)" option.
+			</para>	
+			<para>
+				If the "Python" option was chosen, the path to the Python executable must be chosen at workflow start (in the second page of the workflow executiondialog). 
+				This must be done for every Script component of the workflow. If all components shall use the same Python interpreter, the “Apply to all” button helps.
+			</para>
+			<para>
+				"Python (Python Agent)" is a new experimental implementation for using Python as script language that aims to improve on the (old) "Python" option and will replace it in the future.
+				If you want to use the Python Agent, the path to the Python executable must be
+				configured in RCE configuration file. For further information please see chapter 2.2
+				of the RCE User Guide.</para>
+		</sect2>
+		<sect2>
+			<title>Script API</title>
+			<para> For interacting with RCE in the script execution, there is an API. All methods of this API
+				are listed <link linkend="scriptApiReference">here</link> .</para>
+			<para>
+				<emphasis role="bold">How to use the script API:</emphasis>
+			</para>
+			<para>Define your inputs and outputs in the Inputs/Outputs tab of the Properties view (appearing
+				for the selected Script component on double click). Write your script in the Script
+				tab (in the same Properties view). You can either do it in the text box or in a
+				separate text editor by clicking on the button “Open in Editor”. For interacting
+				with RCE from a script, there is a module called "RCE". To get an overview of all
+				RCE API methods, look at <link linkend="scriptApiReference"> the script API detailed
+				description</link> The most important methods there are reading inputs and
+				writing outputs. For reading an input, call the method
+				<programlisting>RCE.read_input(String input_name)</programlisting> or
+				<programlisting>RCE.read_input(String input_name, default value)</programlisting>
+				You can write outputs within your script with
+				<programlisting>RCE.write_output(String output_name, OutputDataType
+				value)</programlisting>
+				Thereby, the type (OutputDataType) of the value must fit the data type of the output
+				(as defined in the tab Inputs/Outputs). File and Directory are represented by the
+				absolute file paths. <note>
+				<para>The module RCE uses is already imported in the script during execution.</para>
+				</note>
+			</para>
+			<para>Examples:</para>
+			<para> If you like to double an incoming value (x is an input of type Integer and y an output of
+				type
+				Integer):<programlisting>RCE.write_output("y", RCE.read_input("x")*2)</programlisting>
+				If you like to access an incoming file (f_in is an input of type
+				File):<programlisting>file = open(RCE.read_input("f_in"),"r")</programlisting> If
+				you like to send a file to an output (f_out is an output of type
+				File):<programlisting>absolute_file_path = /home/user_1/my_file.txt
+				RCE.write_output("f_out", absolute_file_path)</programlisting>
+				If an output is not needed any more (e.g. you want to end an inner loop), you can
+				close an output using the
+				command:<programlisting>RCE.close_output(String output_name)</programlisting>
+				Example:<programlisting>RCE.close_output(“y”)</programlisting> The following
+				components will get the finished signal.</para>
+			<para> If a script fails because of some invalid parameters sent by a Parametric Study or
+				Optimizer component, you can send a "not a value" signal to your output(s). This
+				signal indicates that the script failed because of invalid      parameters and did
+				not fail at all. This signal is ignored by most of the components, only the
+				Parametric Study and the Optimizer component handle this signal. For sending it, use
+				<programlisting>RCE.write_not_a_value_output(String outputname)</programlisting> For
+				the other API methods refer to the example workflow "Script_with_all_API_methods.wf"
+				from the workflow examples project or to the script reference found <link
+					linkend="scriptApiReference">below</link> and in the user guide.</para>
+		</sect2>
+		<sect2>
+			<title>Script component states</title>
+			<para>The Script component is able to keep its state from one run to another. Use the API to
+				write and read state variables. The values are stored in a Python dictionary. They
+				must be compatible with the RCE data types. Script components of nested loops are
+				reset if the nested loop has been terminated. Resetting a script component in a
+				nested loop also resets its state map.</para>
+		</sect2>
+		<sect2>
+			<title>Input File Factory</title>
+			<para>The Input File Factory is an extension of the Script API that aims to write Python input
+				parameter files during a workflow run. To call the Input File Factory the user must
+				first create a file using the command <code>file = RCE.create_input_file()</code>.
+				Afterwards the user can add variable declarations, comments or Python dictionaries
+				by calling the previously created file (e.g.
+					<code>file.add_variable(name,value)</code>). Finally,the stored data must be
+				written to the file system by executing the command
+					<code>write_to_file(filename)</code>, whereat the name of the file is the given
+					<emphasis>filename</emphasis>. <note>
+					<para>It is not allowed to enter a relative or absolute path for
+						<emphasis>filename</emphasis>.</para>
+				</note>When the Input File Factory is called from an integrated tool, the file is
+				written to the working directorie's <emphasis>Input directory</emphasis> or to the
+				tool directory depending on the user configuration. When a script component calls
+				the factory, the file is written to the temp directory. Use the
+					<emphasis>RCE_write_output</emphasis> command to forward the file in a
+				workflow.</para>
+		</sect2>
+	</sect1>
+	<sect1>
+		<title>
+			<anchor id="scriptApiReference" />
+			Script API Reference
+		</title>
+		<informaltable frame="none" id="apiReferenceTable">
+			<tgroup cols="2">
+				<colspec colname="c1" colnum="1" colwidth="1.0*" />
+				<colspec colname="c2" colnum="2" colwidth="1.0*" />
+				<thead>
+					<row>
+						<entry>Method</entry>
+						<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>
+							<code>def RCE.close_all_outputs ( )</code>
+						</entry>
+						<entry>Closes all outputs that are known in RCE</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.close_output (name)</code>
+						</entry>
+						<entry>Closes the RCE output with the given name</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.fail (reason)</code>
+						</entry>
+						<entry>Fails the RCE component with the given reason</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.get_execution_count ( )</code>
+						</entry>
+						<entry>Returns the current execution count of the RCE component</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.get_input_names_with_datum ( )</code>
+						</entry>
+						<entry>Returns all input names that have got a data value from RCE</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.get_output_names ( )</code>
+						</entry>
+						<entry>Returns the read names of all outputs from RCE</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.get_state_dict ( ) </code>
+						</entry>
+						<entry>Returns the current state dictionary</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.getallinputs ( )</code>
+						</entry>
+						<entry>Gets a dictionary with all inputs from RCE</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.read_input (name) </code>
+						</entry>
+						<entry>Gets the value for the given input name or an error, if the input is not there (e.g.
+							not required and it got no value)</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.read_input (name,defaultvalue) </code>
+						</entry>
+						<entry>Gets the value for the given input name or returns the default value if there is no
+							input connected and the input not required</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.read_state_variable (name) </code>
+						</entry>
+						<entry>Reads the given state variables value, if it exists, else None is returned</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.read_state_variable (name,defaultvalue)</code>
+						</entry>
+						<entry>Reads the given state variables value, if it exists, else the default value is returned
+							and stored in the dictionary</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.write_not_a_value_output (name) </code>
+						</entry>
+						<entry>Sets the given output to "not a value" data type</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.write_output (name,value)</code>
+						</entry>
+						<entry>Sets the given value to the output "name" which will be read from RCE</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.write_state_variable (name,value)</code>
+						</entry>
+						<entry>Writes a variable <emphasis> name </emphasis> in the dictionary for the components state</entry>
+					</row>
+					<row>
+						<entry>
+							<code>def RCE.create_input_file ()</code>
+						</entry>
+						<entry> <para>Creates and returns a file from the input file factory</para>
+							<para>Syntax: file = RCE.create_input_file ()</para> </entry>
+					</row>
+					<row>
+						<entry>
+							<code>def add_variable (name,value)</code>
+						</entry>
+						<entry><para>Adds the variable declaration of <emphasis> name </emphasis> (i.e. name = value) to the input file</para>
+							<para>Syntax: file.add_variable(name, value)</para> </entry>
+					</row>
+					<row>
+						<entry>
+							<code>def add_comment(value)</code>
+						</entry>
+						<entry>Adds a comment (i.e. # value) to the given file <para>Syntax:
+								file.add_comment(value)</para></entry>
+					</row>
+					<row>
+						<entry>
+							<code>def add_dictionary (name)</code>
+						</entry>
+						<entry>Defines an empty Python dictionary with the given <emphasis> name </emphasis> (i.e. name = {}) and adds it to
+							the input file. Note: The data type of <emphasis> name </emphasis> has to be String. 
+							<para>Syntax: file.add_dictionary(name) </para></entry>
+					</row>
+					<row>
+						<entry>
+							<code>def add_value_to_dictionary (dic,key,value)</code>
+						</entry>
+						<entry>Writes a <emphasis> (key,value) </emphasis> pair (i.e. dic[key] = value) to the
+							dictionary <emphasis> dic </emphasis> into the input file. Note: An
+							empty dictionary with the given name <emphasis> dic </emphasis> has to
+							be defined beforehand. <para>Syntax: file.add_value_to_dictionary(dic,
+								key, value)</para></entry>
+					</row>
+					<row>
+						<entry>
+							<code>def write_to_file (filename)</code>
+						</entry>
+						<entry>Writes a previously created input <emphasis> file </emphasis> to the temp, working or
+							tool dir, depending on the user configurations, and returns the path to
+							the file. The name of the written file is the given <emphasis> filename
+							</emphasis>. The component will fail with an error, if a file with the
+							given <emphasis> filename </emphasis> already exists. Note: The data
+							type of <emphasis> filename </emphasis> has to be String.  An input
+								<emphasis> file </emphasis> must first be created using the
+							RCE.create_input_file () method. <para>Syntax: filepath =
+								file.write_to_file(filename)</para></entry>
+					</row>
+					<row>
+						<entry>
+							<code>def write_to_file (filename,overwriteFile)</code>
+						</entry>
+						<entry>Writes a previously created input <emphasis> file </emphasis> to the temp, working or
+							tool dir, depending on the user configurations, and returns the path to
+							the file. The name of the written file is the given <emphasis> filename
+							</emphasis>. The boolean parameter <emphasis> overwriteFile </emphasis>
+							is optional. If set to <emphasis> True </emphasis>, an existing file
+							with the given <emphasis> filename </emphasis> will be overwritten. The
+							default value is <emphasis> False </emphasis>. Note: The data type of
+								<emphasis> filename </emphasis> has to be String.  An input
+								<emphasis> file </emphasis> must first be created using the
+							RCE.create_input_file () method. <para>Syntax: filepath=
+								file.write_to_file(filename, True)</para></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</informaltable>
+	</sect1>
 </chapter>

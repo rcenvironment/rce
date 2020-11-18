@@ -13,17 +13,17 @@ import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
 
 /**
- * Constants for the uplink protocol.
+ * Constants for the Uplink protocol.
  *
  * @author Robert Mischke
  */
 public final class UplinkProtocolConstants {
 
     /**
-     * The version of the low-level protocol to send and expect. If this does not match, the connection can only be dropped/refused, as
-     * there is no agreed way to transmit an error message.
+     * The version of the low-level/"wire" protocol to send and expect. If this does not match, the connection can only be dropped/refused,
+     * as there is no agreed way to transmit an error message.
      */
-    public static final String LOW_LEVEL_PROTOCOL_VERSION = "1.0";
+    public static final String WIRE_PROTOCOL_VERSION = "1.0";
 
     /**
      * The high-level protocol version to send for compatibility checking. If this does not match, the connection can be refused gracefully,
@@ -32,12 +32,41 @@ public final class UplinkProtocolConstants {
      * Note that currently, the server expects an exact match using this same constant; this could be extended in the future to make the
      * server side accept multiple protocol versions.
      */
-    public static final String HIGH_LEVEL_PROTOCOL_VERSION = "10.0.0";
+    public static final String DEFAULT_PROTOCOL_VERSION = "0.2";
 
     /**
-     * Handshake data key for the detailed protocol version (used for compatibility checking).
+     * The "high-level protocol version" sent by 10.0 and 10.1 clients. If a client sends this, consider the actual protocol version to be
+     * {@link #LEGACY_PROTOCOL_VERSION_0_1_CLIENT_VALUE}.
      */
-    public static final String HANDSHAKE_KEY_HIGH_LEVEL_PROTOCOL_VERSION = "protocolVersion";
+    public static final String LEGACY_PROTOCOL_VERSION_0_1_CLIENT_VALUE = "10.0.0";
+
+    /**
+     * The value the legacy version string {@link #LEGACY_PROTOCOL_VERSION_0_1_CLIENT_VALUE} is rewritten to for consistent parsing.
+     */
+    public static final String LEGACY_PROTOCOL_VERSION_0_1 = "0.1";
+
+    /**
+     * Handshake key for the protocol version(s) offered by the client to the server.
+     */
+    public static final String HANDSHAKE_KEY_PROTOCOL_VERSION_OFFER = "protocolVersion";
+
+    /**
+     * The handshake response key from server to client stating the final protocol version to use. Especially important if/when protocol
+     * version negotiation is added in the future.
+     */
+    public static final String HANDSHAKE_KEY_EFFECTIVE_PROTOCOL_VERSION = "protocolVersion";
+
+    /**
+     * Handshake data key for the client's software version; intended as an informational field, e.g. for logging and client version
+     * statistics. SHOULD NOT be relied upon by the server for compatibility checking etc.
+     * 
+     * Standard RCE clients SHOULD send a string like "rce/<core version>". Other clients MUST NOT use the "rce/" prefix, i.e. they should
+     * not impersonate a real client, but reflect the actual software being used instead.
+     * 
+     * Clients MAY omit this from their handshake data completely, or send a static (non-versioned) string, although neither is recommended
+     * in production usage.
+     */
+    public static final String HANDSHAKE_KEY_CLIENT_VERSION_INFO = "clientVersion";
 
     /**
      * Handshake data key for the the "session qualifier"/"client id" allowing multiple logins using the same account while keeping them
@@ -94,7 +123,7 @@ public final class UplinkProtocolConstants {
      * The character to right-pad the login name and session qualifier/"client id" (individually) before concatenating them into the
      * destination id prefix.
      */
-    // TODO (p1) 10.1/11.0: preliminary; align this with SSH login and client identifier rules
+    // TODO (p1) 10.x/11.0: preliminary; align this with SSH login and client identifier rules
     public static final char DESTINATION_ID_PREFIX_PADDING_CHARACTER = '-';
 
     /**
@@ -109,6 +138,29 @@ public final class UplinkProtocolConstants {
      * configuration.
      */
     public static final String SESSION_QUALIFIER_DEFAULT = "default";
+
+    /**
+     * The average interval between sending heartbeat message from server to client.
+     * 
+     * Currently, this is also the implicit timeout for the response, as response reception is currently checked before sending the next
+     * heartbeat for simplicity.
+     */
+    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_AVERAGE = 20 * 1000;
+
+    /**
+     * The maximum time that each side of the handshake exchange waits for the other side's response. Adjust if necessary.
+     */
+    public static final int HANDSHAKE_RESPONSE_TIMEOUT_MSEC = 2000;
+
+    /**
+     * The variation width of the heartbeat interval; added to avoid heartbeat events all arriving at the same time when started in sync.
+     */
+    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_SPREAD = 2 * 1000;
+
+    /**
+     * If the time between sending a heartbeat and receiving the related response exceeds this time, a warning is logged.
+     */
+    public static final int HEARTBEAT_RESPONSE_TIME_WARNING_THRESHOLD = 5000;
 
     /**
      * The lowest valid message type value.
@@ -164,8 +216,6 @@ public final class UplinkProtocolConstants {
      * The maximum expected time between sending one's own handshake data and receiving a response. As this should be a very fast and
      * low-bandwidth operation, this interval should be fairly short even for connections outside of an organization's network.
      */
-    public static final int HANDSHAKE_RESPONSE_TIMEOUT_MSEC = 2000;
-
     protected static final int HANDSHAKE_FORMAT_VERSION = 1;
 
     // note: header version "0" for development; the first release version should be "1"

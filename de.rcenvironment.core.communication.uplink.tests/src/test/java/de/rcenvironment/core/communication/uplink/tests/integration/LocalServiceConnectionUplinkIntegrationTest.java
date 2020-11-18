@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.communication.uplink.tests.integration;
 
+import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.client.session.impl.LocalServiceUplinkConnectionImpl;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
@@ -20,10 +21,16 @@ public class LocalServiceConnectionUplinkIntegrationTest extends AbstractUplinkI
 
     @Override
     protected LocalServiceUplinkConnectionImpl setUpClientConnection() {
+
         // the mock UplinkConnection to the service
         LocalServiceUplinkConnectionImpl uplinkConnection =
             new LocalServiceUplinkConnectionImpl(ConcurrencyUtils.getAsyncTaskService(), getMockServerSideUplinkSessionService());
         return uplinkConnection;
+    }
+
+    @Override
+    protected void simulateClientSideEOF(UplinkConnection connection) {
+        ((LocalServiceUplinkConnectionImpl) connection).simulateClientSideEOF();
     }
 
 }

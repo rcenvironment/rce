@@ -22,6 +22,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  */
 public enum UplinkProtocolErrorType {
+
     /**
      * A pseudo type for I/O errors occurring "below" the protocol level. Auto-retry is generally considered useful in this case, as all
      * kinds of network disruptions will manifest in this way. There are also counter-examples where retry is not useful, for example a
@@ -47,8 +48,15 @@ public enum UplinkProtocolErrorType {
     /**
      * Thrown during a connection attempt when the server is not accepting new connections, or when the server closes existing connections
      * when it is shutting down.
+     * 
+     * Note: not used yet; apply once application-wide graceful shutdown is implemented
      */
     SERVER_SHUTTING_DOWN(10, true),
+
+    /**
+     * Thrown on receiving an unexpected protocol message, or on an unexpected timeout.
+     */
+    PROTOCOL_VIOLATION(90, false),
 
     /**
      * Thrown by the server when the client's handshake data is missing a required field, or some field's data is invalid.
@@ -59,6 +67,11 @@ public enum UplinkProtocolErrorType {
      * Thrown by the server on internal errors.
      */
     INTERNAL_SERVER_ERROR(92, false),
+
+    /**
+     * Thrown by the client on internal errors.
+     */
+    INTERNAL_CLIENT_ERROR(93, false),
 
     /**
      * Fallback for when an error message cannot be recognized as a known type.

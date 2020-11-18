@@ -41,7 +41,6 @@ import de.rcenvironment.core.component.api.UserComponentIdMappingService;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
-import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -325,8 +324,7 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
         //File consoleLogFile = new File(outputDir, "console.log");
 
         try {
-            exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(createdWorkflowFile,
-                logDir);
+            exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(createdWorkflowFile).setLogDirectory(logDir);
             exeContextBuilder.setSingleConsoleRowsProcessor(new SingleConsoleRowsProcessor() {
 
                 @Override

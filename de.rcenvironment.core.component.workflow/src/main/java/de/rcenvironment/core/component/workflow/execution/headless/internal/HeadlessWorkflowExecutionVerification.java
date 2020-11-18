@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,6 +23,8 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
@@ -40,9 +43,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public final class HeadlessWorkflowExecutionVerification
     implements HeadlessWorkflowExecutionVerificationRecorder, HeadlessWorkflowExecutionVerificationResult {
 
-    /** Name of directory with workflows that are expected to fail. */
-    public static final String FAILURE_DIR_NAME = "failure";
-    
     /** Date-Format used for timestamps in results log. */
     public static final String DATE_FORMAT = "yyyy-MM-dd - HH:mm:ss";
 
@@ -53,7 +53,7 @@ public final class HeadlessWorkflowExecutionVerification
     public static final String FILE_SUFFIX_PROHIBITED_LOG = ".log.prohibited";
 
     private static final String EMPTY_COLLECTION_STRING = "-";
-    
+
     private static final int THOUSAND = 1000;
 
     private String wfFileRootDir = null;
@@ -106,45 +106,54 @@ public final class HeadlessWorkflowExecutionVerification
     private List<File> wfRelatedFilesToDelete = new ArrayList<>();
 
     private boolean verified = true;
-    
+
     private Date startTime = null;
-    
+
     private Date endTime = null;
 
-    private HeadlessWorkflowExecutionVerification(List<File> wfFiles, int parallelRuns, int sequentialRuns) {
-        this.wfFilesSubmitted = wfFiles;
+    private HeadlessWorkflowExecutionVerification(String absolutePathToWorkflowRootDir, List<File> wfFilesExpectedToSucceed,
+        List<File> wfFilesExpectedToFail, int parallelRuns, int sequentialRuns) {
+        this.wfFilesSubmitted =
+            Stream.concat(wfFilesExpectedToSucceed.stream(), wfFilesExpectedToFail.stream()).collect(Collectors.toList());
         this.parallelRuns = parallelRuns;
         this.sequentialRuns = sequentialRuns;
-        if (!wfFiles.isEmpty()) {
-            File parentFile = wfFiles.get(0).getParentFile();
-            if (!parentFile.getName().equals(FAILURE_DIR_NAME)) {
-                wfFileRootDir = parentFile.getAbsolutePath();
-            } else {
-                wfFileRootDir = parentFile.getParentFile().getAbsolutePath();
-            }
-            // was originally written to console output; moved to log, as it should usually be irrelevant
-            LogFactory.getLog(getClass()).debug("Using workflow verification root dir " + wfFileRootDir);
-        }
-        for (File wfFile : wfFiles) {
+        this.wfFileRootDir = absolutePathToWorkflowRootDir;
+        LogFactory.getLog(getClass()).debug("Using workflow verification root dir " + wfFileRootDir);
+
+//        if (!wfFiles.isEmpty()) {
+//            File parentFile = wfFiles.get(0).getParentFile();
+//            if (!parentFile.getName().equals(FAILURE_DIR_NAME)) {
+//                wfFileRootDir = parentFile.getAbsolutePath();
+//            } else {
+//                wfFileRootDir = parentFile.getParentFile().getAbsolutePath();
+//            }
+//            // was originally written to console output; moved to log, as it should usually be irrelevant
+//        }
+        wfsExpectedToFail = new LinkedList<>(wfFilesExpectedToFail);
+        for (File wfFile : wfFilesSubmitted) {
             wfsWithExecutionDurationSec.put(wfFile, new ArrayList<Long>());
         }
-        wfsExpectedToFinishCount = wfFiles.size() * parallelRuns * sequentialRuns;
+        wfsExpectedToFinishCount = wfFilesSubmitted.size() * parallelRuns * sequentialRuns;
     }
 
     /**
      * Creates an initialized instance of {@link HeadlessWorkflowExecutionVerificationRecorder}.
      * 
-     * @param wfFiles the workflow files to consider
+     * @param wfFileRootDir
+     * @param wfFilesExpectedToSucceed
+     * @param wfFilesExpectedToFail
      * @param parallelRuns number of expected parallel runs
      * @param sequentialRuns number of expected sequential runs
      * @return initialized instance of {@link HeadlessWorkflowExecutionVerificationRecorder}
      * @throws IOException if initializing instance of {@link HeadlessWorkflowExecutionVerificationRecorder} fails (mainly because of
      *         violated conventions)
      */
-    public static HeadlessWorkflowExecutionVerificationRecorder createAndInitializeInstance(List<File> wfFiles, int parallelRuns,
+    public static HeadlessWorkflowExecutionVerificationRecorder createAndInitializeInstance(File wfFileRootDir,
+        List<File> wfFilesExpectedToSucceed, List<File> wfFilesExpectedToFail, int parallelRuns,
         int sequentialRuns) throws IOException {
         HeadlessWorkflowExecutionVerification verification =
-            new HeadlessWorkflowExecutionVerification(wfFiles, parallelRuns, sequentialRuns);
+            new HeadlessWorkflowExecutionVerification(wfFileRootDir.getAbsolutePath(), wfFilesExpectedToSucceed, wfFilesExpectedToFail,
+                parallelRuns, sequentialRuns);
         verification.initialize();
         return verification;
     }
@@ -161,9 +170,6 @@ public final class HeadlessWorkflowExecutionVerification
     private void initialize() throws IOException {
         for (File wfFile : wfFilesSubmitted) {
             String wfFileNameWithoutEnding = wfFile.getName().replace(WorkflowConstants.WORKFLOW_FILE_ENDING, "");
-            if (wfFile.getParentFile().getName().equals(FAILURE_DIR_NAME)) {
-                wfsExpectedToFail.add(wfFile);
-            }
             File wfExpectedLogFile = new File(wfFile.getParentFile(), wfFileNameWithoutEnding + FILE_SUFFIX_EXPECTED_LOG);
             if (wfExpectedLogFile.exists()) {
                 wfsWithExpectedLogMessages.put(wfFile, FileUtils.readLines(wfExpectedLogFile));
@@ -245,8 +251,6 @@ public final class HeadlessWorkflowExecutionVerification
                 wfFile.getName().replace(WorkflowConstants.WORKFLOW_FILE_ENDING, "") + FILE_SUFFIX_PROHIBITED_LOG));
         }
     }
-    
-    
 
     @Override
     public List<File> getWorkflowRelatedFilesToDelete() {
@@ -332,7 +336,7 @@ public final class HeadlessWorkflowExecutionVerification
             int newValue;
             try {
                 newValue = Integer.parseInt(duration);
-            } catch (NumberFormatException e){
+            } catch (NumberFormatException e) {
                 newValue = 0;
             }
             sec += newValue;
@@ -343,7 +347,7 @@ public final class HeadlessWorkflowExecutionVerification
         builder.append(StringUtils.format("- Aggregated: %s sec\n", sec));
         int totaltime = (int) ((endTime.getTime() - startTime.getTime()) / THOUSAND);
         builder.append(StringUtils.format("- Total: %s sec\n", totaltime));
-        
+
         String result;
         if (isVerified()) {
             result = "SUCCEEDED";
@@ -366,7 +370,7 @@ public final class HeadlessWorkflowExecutionVerification
         }
         return fileNameMap;
     }
-    
+
     private String convertFileMapToString(Map<File, ? extends Object> fileMap) {
         if (fileMap.isEmpty()) {
             return EMPTY_COLLECTION_STRING;
@@ -382,11 +386,11 @@ public final class HeadlessWorkflowExecutionVerification
         }
         return fileNameSet;
     }
-    
+
     private String convertFileListToString(List<File> fileList) {
         return convertSetToString(reduceFilePathToFileName(fileList));
     }
-    
+
     private String convertListToString(List<? extends Object> list) {
         if (list.isEmpty()) {
             return EMPTY_COLLECTION_STRING;
@@ -394,7 +398,7 @@ public final class HeadlessWorkflowExecutionVerification
             return list.toString().replaceAll("\\[", "").replaceAll("\\]", "").trim();
         }
     }
-    
+
     private String convertSetToString(Set<? extends Object> set) {
         if (set.isEmpty()) {
             return EMPTY_COLLECTION_STRING;
@@ -408,6 +412,5 @@ public final class HeadlessWorkflowExecutionVerification
         this.startTime = start;
         this.endTime = end;
     }
-
 
 }

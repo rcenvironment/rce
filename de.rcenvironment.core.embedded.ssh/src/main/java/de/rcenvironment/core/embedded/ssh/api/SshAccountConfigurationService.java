@@ -33,7 +33,7 @@ public interface SshAccountConfigurationService {
      * @return the current map of all SSH accounts, with account ids as map keys
      * @throws ConfigurationException on internal configuration errors
      */
-    SortedMap<String, SshAccount> getAllAccountsByLoginName() throws ConfigurationException;
+    SortedMap<String, SshAccount> getStaticAccountsByLoginName() throws ConfigurationException;
 
     /**
      * @param accountId the requeusted account id

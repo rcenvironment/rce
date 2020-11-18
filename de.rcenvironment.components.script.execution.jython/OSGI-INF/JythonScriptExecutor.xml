@@ -1,3 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Jython Script Executor">
-	<implementation class="de.rcenvironment.components.script.execution.jython.JythonScriptExecutor"/>
-</scr:component> 

@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,8 +24,10 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogConfigurationException;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.Version;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 import com.jcraft.jsch.JSchException;
@@ -58,6 +61,7 @@ import de.rcenvironment.core.utils.common.FileCompressionFormat;
 import de.rcenvironment.core.utils.common.FileCompressionService;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
@@ -73,6 +77,9 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
  *
  * @author Brigitte Boden
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#17306)
+ * @author Niklas Foerst
+ * @author Dominik Schneider
  */
 @Component
 public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionService {
@@ -84,6 +91,8 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
     private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final Map<String, SshUplinkConnectionSetup> connectionSetups;
+
+    private List<String> scheduledConnectionSetups;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -110,8 +119,11 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
     @Reference
     private UplinkLogicalNodeMappingService logicalNodeMappingService;
 
+    private String clientVersionInfo;
+
     public SshUplinkConnectionServiceImpl() {
         connectionSetups = new HashMap<String, SshUplinkConnectionSetup>();
+        scheduledConnectionSetups = Collections.synchronizedList(new ArrayList<String>());
         uplinkConnectionlistener = defineListenerForUplinkConnectionSetups();
     }
 
@@ -124,7 +136,7 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
         }
         return setup.getSession();
     }
-    
+
     @Override
     public boolean sshUplinkConnectionAlreadyExists(SshConnectionContext context) {
         for (String s : connectionSetups.keySet()) {
@@ -185,6 +197,7 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
             @Override
             public void onConnectionClosed(final SshUplinkConnectionSetup setup, final boolean willAutoRetry) {
 
+                setup.setWaitingForRetry(willAutoRetry);
                 if (willAutoRetry) {
                     scheduleAutoRetry(setup);
                 }
@@ -200,6 +213,7 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
 
             @Override
             public void onConnected(final SshUplinkConnectionSetup setup) {
+                setup.resetConsecutiveConnectionFailures();
                 callbackManager.enqueueCallback(new AsyncCallback<SshUplinkConnectionListener>() {
 
                     @Override
@@ -236,15 +250,26 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
     }
 
     private void scheduleAutoRetry(final SshUplinkConnectionSetup setup) {
-        log.debug(StringUtils.format("Scheduling auto-retry of connection %s in %d msec", setup.getDisplayName(),
-            SshUplinkConnectionConstants.DELAY_BEFORE_RETRY));
-        threadPool.scheduleAfterDelay("Communication Layer: SshUplinkConnectionService auto-reconnect timer", () -> {
-            if (setup.isWaitingForRetry()) {
-                connectSession(setup.getId());
-            }
-        },
-            SshUplinkConnectionConstants.DELAY_BEFORE_RETRY);
-        setup.setWaitingForRetry(true);
+        // Saving the already scheduled setups is used to prevent multiple scheduled retries for one connection.
+        // It might be possible that there are race conditions when the automatic scheduled setup is deleted from the list and a by hand
+        // started retry is going to be scheduled. Nevertheless, as it is the same connection this should not be a problem.
+        if (!scheduledConnectionSetups.contains(setup.getId())) {
+            log.debug(StringUtils.format("Scheduling auto-retry of connection %s in %d msec", setup.getDisplayName(),
+                SshUplinkConnectionConstants.DELAY_BEFORE_RETRY));
+            threadPool.scheduleAfterDelay("Communication Layer: SshUplinkConnectionService auto-reconnect timer", () -> {
+                scheduledConnectionSetups.remove(setup.getId());
+                if (setup.isWaitingForRetry()) {
+
+                    connectSession(setup.getId());
+                }
+            },
+                SshUplinkConnectionConstants.DELAY_BEFORE_RETRY);
+            setup.setWaitingForRetry(true);
+            scheduledConnectionSetups.add(setup.getId());
+        } else {
+            log.debug(StringUtils.format("Connection %s already scheduled.", setup.getDisplayName()));
+        }
+
     }
 
     @Override
@@ -335,6 +360,12 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
 
     @Override
     public Collection<SshUplinkConnectionSetup> getAllSshConnectionSetups() {
+        for (SshUplinkConnectionSetup c : connectionSetups.values()) {
+            if (c.getDisplayName() == null) {
+                String hostAndPortString = StringUtils.format("%s:%s", c.getHost(), c.getPort());
+                c.setDisplayName(hostAndPortString);
+            }
+        }
         return Collections.unmodifiableCollection(connectionSetups.values());
     }
 
@@ -404,6 +435,14 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
     @Activate
     public void activate() {
 
+        // determine this client's version for announcing it to servers
+        Version clientVersion = VersionUtils.getVersionOfProduct();
+        if (clientVersion != null) {
+            clientVersionInfo = "rce/" + clientVersion.toString().replace("qualifier", "dev");
+        } else {
+            clientVersionInfo = "rce/-";
+        }
+
         // perform any file-based password imports
         final File importFilesDir =
             configurationService.getStandardImportDirectory(SshUplinkConnectionConstants.PASSWORD_FILE_IMPORT_SUBDIRECTORY);
@@ -424,6 +463,15 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
 
         ConcurrencyUtils.getAsyncTaskService().execute("Client-Side Uplink Access: Add pre-configured SSH connections",
             () -> addAndConnectInitialUplinkConfigs(configurationService.getInitialUplinkConnectionConfigs()));
+    }
+
+    @Deactivate
+    public void deactivate() {
+        // shutdown uplink connections cleanly
+        Map<String, SshUplinkConnectionSetup> activeSshConnectionSetups = getAllActiveSshConnectionSetups();
+        activeSshConnectionSetups.keySet()
+            .forEach(connectionId -> disconnectSession(connectionId));
+
     }
 
     private void addAndConnectInitialUplinkConfigs(List<InitialUplinkConnectionConfig> configs) {
@@ -524,140 +572,162 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
 
     private void connectSession(SshUplinkConnectionSetup setup, String passphrase) {
         ThreadGuard.checkForForbiddenThread();
+        synchronized (setup) {
+            if (setup.getSession() != null) {
+                log.debug(StringUtils.format("Denied new session of connection %s.", setup.getDisplayName()));
+                return;
+            }
 
-        final ClientSideUplinkSession uplinkSession;
+            final ClientSideUplinkSession uplinkSession;
 
-        if (setup.getKeyfileLocation() == null && passphrase == null) {
-            log.warn(StringUtils.format("Connecting SSH session failed because no key file and no passphrase is given: host %s, port %s.",
-                setup.getHost(), setup.getPort()));
-            String error = "No key file or passphrase could be found. Probable cause: "
-                + "This was an automatic reconnection attempt and the passphrase is not stored.";
-            uplinkConnectionlistener.onConnectionAttemptFailed(setup, error, true, false);
-            return;
-        }
+            if (setup.getKeyfileLocation() == null && passphrase == null) {
+                log.warn(
+                    StringUtils.format("Connecting SSH session failed because no key file and no passphrase is given: host %s, port %s.",
+                        setup.getHost(), setup.getPort()));
+                String error = "No key file or passphrase could be found. Probable cause: "
+                    + "This was an automatic reconnection attempt and the passphrase is not stored.";
+                uplinkConnectionlistener.onConnectionAttemptFailed(setup, error, true, false);
+                return;
+            }
 
-        try {
-            Session sshSession =
-                JschSessionFactory.setupSession(setup.getHost(), setup.getPort(), setup.getUsername(),
-                    setup.getKeyfileLocation(), passphrase, JschSessionFactory.createDelegateLogger(LogFactory.getLog(getClass())));
-            final ClientSideUplinkSessionParameters sessionParameters = new ClientSideUplinkSessionParameters("My display name",
-                setup.getQualifier(), null);
-            uplinkSession = uplinkSessionService.createSession(new SshUplinkConnectionImpl(sshSession), sessionParameters,
-                new ClientSideUplinkSessionEventHandler() {
-
-                    private UplinkProtocolErrorType errorType;
-
-                    @Override
-                    public void onSessionReady(String namespaceId, String destinationIdPrefix) {
-                        setup.setDestinationIdPrefix(namespaceId);
-                        uplinkConnectionlistener.onConnected(setup);
-                    }
-
-                    @Override
-                    public void onSessionTerminating() {
-                        boolean willAutoRetry = setup.getAutoRetry();
-                        // if the session was terminated by an error, check whether the error type suggests not to auto-retry
-                        if (errorType != null) {
-                            willAutoRetry = willAutoRetry && errorType.getClientRetryFlag();
-                        }
-                        uplinkConnectionlistener.onConnectionClosed(setup, willAutoRetry);
-                        log.debug("Uplink session " + setup.getSession() + " is terminating");
-                    }
-
-                    @Override
-                    public void registerConnectionOrSessionError(UplinkProtocolErrorType errorType, String errorMessage) {
-                        // TODO Preliminary code, this should not be decided here.
-                        // Will be changed when "state machine" approach is implemented for uplink connections
-                        if (errorType.equals(UplinkProtocolErrorType.CLIENT_NAMESPACE_COLLISION)
-                            || errorType.equals(UplinkProtocolErrorType.PROTOCOL_VERSION_MISMATCH)) {
-                            uplinkConnectionlistener.onConnectionAttemptFailed(setup, errorMessage,
-                                (setup.getConsecutiveConnectionFailures() <= 1), false);
-                        }
-                        this.errorType = errorType;
-                        log.warn("Uplink session or connection error: " + errorMessage + " (type " + errorType + ", session id: "
-                            + setup.getSession() + ")");
-                    }
-
-                    @Override
-                    public void onSessionInFinalState() {
-                        log.debug("Session closed");
-                    }
-
-                    @Override
-                    public void processToolDescriptorListUpdate(ToolDescriptorListUpdate update) {
-                        uplinkConnectionlistener.onPublicationEntriesChanged(update, setup.getId());
-                    }
-
-                    @Override
-                    public ToolExecutionProvider setUpToolExecutionProvider(ToolExecutionRequest request) {
-                        return new ToolExecutionProviderImpl(request);
-                    }
-
-                    @Override
-                    public Optional<SizeValidatedDataSource> provideToolDocumentationData(String destinationId, String docReferenceId) {
-                        String nodeId =
-                            DestinationIdUtils.getNodeIdFromQualifiedDestinationId(destinationId);
-                        File docDir;
-                        try {
-                            docDir =
-                                toolDocService.getToolDocumentation(docReferenceId.split(SLASH)[0] + SLASH + docReferenceId.split(SLASH)[1],
-                                    nodeId, docReferenceId.split(SLASH)[2]);
-                            final byte[] data =
-                                FileCompressionService.compressDirectoryToByteArray(docDir, FileCompressionFormat.ZIP, false);
-                            return Optional.of(new SizeValidatedDataSource(data));
-                        } catch (RemoteOperationException | IOException e) {
-                            log.warn("Could not retreive tool documentation from tool documentation service: ", e);
-                            return null;
-                        }
-                    }
-
-                });
-            ConcurrencyUtils.getAsyncTaskService().execute("Run SSH Uplink session", () -> {
+            try {
+                Session sshSession =
+                    JschSessionFactory.setupSession(setup.getHost(), setup.getPort(), setup.getUsername(),
+                        setup.getKeyfileLocation(), passphrase, JschSessionFactory.createDelegateLogger(LogFactory.getLog(getClass())));
+                final ClientSideUplinkSessionParameters sessionParameters = new ClientSideUplinkSessionParameters("My display name",
+                    setup.getQualifier(), clientVersionInfo, null);
+                SshUplinkConnectionImpl uplinkConnection = new SshUplinkConnectionImpl(sshSession);
                 try {
-                    uplinkSession.runSession();
-                } catch (IOException e) {
-                    log.error("Caught error from runSession() for connection " + setup.getDisplayName(), e);
+                    uplinkConnection.open(errorMessage -> {
+                        // no particular known events on this output, so just log them for now
+                        log.warn("Uplink connection error: " + errorMessage);
+                    });
+                } catch (IOException e1) {
+                    throw new OperationFailureException(
+                        StringUtils.format("Failed to connect to Uplink server at %s:%d; reason: %s",
+                            setup.getHost(), setup.getPort(), e1.toString()));
                 }
-            });
 
-            setup.setSession(uplinkSession);
-            setup.setWaitingForRetry(false);
-            setup.resetConsecutiveConnectionFailures();
+                uplinkSession =
+                    uplinkSessionService.createSession(uplinkConnection, sessionParameters, new ClientSideUplinkSessionEventHandler() {
 
-        } catch (OperationFailureException | LogConfigurationException | JSchException | SshParameterException e) {
-            log.warn(StringUtils.format("Connecting SSH session failed: host %s, port %s: %s", setup.getHost(),
-                setup.getPort(), e.toString()));
-            // Filter typical reasons to produce better error messages.
-            String reason = e.getMessage();
-            Throwable cause = e.getCause();
-            if (reason == null) {
-                reason = "";
-            }
-            // Reconnect only makes sense if some network problem occured, not if the credentials are wrong.
-            boolean shouldTryToReconnect = setup.getAutoRetry();
-            if (cause != null && cause instanceof ConnectException) {
-                reason = "The remote instance could not be reached. Probably the hostname or port is wrong.";
-            } else if (cause != null && cause instanceof UnknownHostException) {
-                reason = "No host with this name could be found.";
-            } else if (reason.equals("Auth fail")) {
-                reason =
-                    "Authentication failed. Probably the username or passphrase is wrong, the wrong key file was used or the account is "
-                        + "not enabled on the remote host.";
-                shouldTryToReconnect = false;
-            } else if (reason.equals("USERAUTH fail")) {
-                reason = "Authentication failed. The wrong passphrase for the key file " + setup.getKeyfileLocation() + " was used.";
-                shouldTryToReconnect = false;
-            } else if (reason.startsWith("invalid privatekey")) {
-                reason = "Authentication failed. An invalid private key was used.";
-                shouldTryToReconnect = false;
-            }
-            if (shouldTryToReconnect) {
-                setup.raiseConsecutiveConnectionFailures();
-            }
-            uplinkConnectionlistener.onConnectionAttemptFailed(setup, reason, (setup.getConsecutiveConnectionFailures() <= 1),
-                shouldTryToReconnect);
+                        private UplinkProtocolErrorType errorType;
 
-            return;
+                        @Override
+                        public void onSessionActivating(String namespaceId, String destinationIdPrefix) {
+                            setup.setDestinationIdPrefix(namespaceId);
+                            uplinkConnectionlistener.onConnected(setup);
+                            log.debug(StringUtils.format("Uplink session %s established", setup.getSession()));
+                        }
+
+                        @Override
+                        public void onActiveSessionTerminating() {
+                            log.debug(StringUtils.format("Uplink session %s is terminating", setup.getSession()));
+
+                        }
+
+                        @Override
+                        public void onFatalSessionError(UplinkProtocolErrorType errorType, String errorMessage) {
+                            // TODO Preliminary code, this should not be decided here.
+                            // Will be changed when "state machine" approach is implemented for uplink connections
+                            if (errorType.equals(UplinkProtocolErrorType.CLIENT_NAMESPACE_COLLISION)
+                                || errorType.equals(UplinkProtocolErrorType.PROTOCOL_VERSION_MISMATCH)) {
+                                uplinkConnectionlistener.onConnectionAttemptFailed(setup, errorMessage,
+                                    (setup.getConsecutiveConnectionFailures() <= 1), false);
+                            }
+                            this.errorType = errorType;
+                            log.warn("Uplink session or connection error: " + errorMessage + " (type " + errorType + ", session id: "
+                                + setup.getSession() + ")");
+                        }
+
+                        @Override
+                        public void onSessionInFinalState() {
+                            boolean willAutoRetry = setup.isWaitingForRetry();
+                            // if the session was terminated by an error, check whether the error type suggests not to auto-retry
+                            if (errorType != null) {
+                                willAutoRetry = willAutoRetry && errorType.getClientRetryFlag();
+                            }
+                            uplinkConnectionlistener.onConnectionClosed(setup, willAutoRetry);
+                            log.debug("Uplink session " + setup.getSession() + " terminated");
+                            setup.setSession(null); // release reference on terminated session; verified on next connect attempt
+                        }
+
+                        @Override
+                        public void processToolDescriptorListUpdate(ToolDescriptorListUpdate update) {
+                            uplinkConnectionlistener.onPublicationEntriesChanged(update, setup.getId());
+                        }
+
+                        @Override
+                        public ToolExecutionProvider setUpToolExecutionProvider(ToolExecutionRequest request) {
+                            return new ToolExecutionProviderImpl(request);
+                        }
+
+                        @Override
+                        public Optional<SizeValidatedDataSource> provideToolDocumentationData(String destinationId, String docReferenceId) {
+                            String nodeId = DestinationIdUtils.getNodeIdFromQualifiedDestinationId(destinationId);
+                            File docDir;
+                            try {
+                                docDir =
+                                    toolDocService.getToolDocumentation(
+                                        docReferenceId.split(SLASH)[0] + SLASH + docReferenceId.split(SLASH)[1],
+                                        nodeId, docReferenceId.split(SLASH)[2]);
+                                final byte[] data =
+                                    FileCompressionService.compressDirectoryToByteArray(docDir, FileCompressionFormat.ZIP, false);
+                                return Optional.of(new SizeValidatedDataSource(data));
+                            } catch (RemoteOperationException | IOException e) {
+                                log.warn("Could not retreive tool documentation from tool documentation service: ", e);
+                                return null;
+                            }
+                        }
+
+                    });
+                ConcurrencyUtils.getAsyncTaskService().execute("Run SSH Uplink session", () -> {
+                    if (!uplinkSession.runSession()) {
+                        // intended as a user-facing message, so avoid terminology like "session" or "clean exit"
+                        log.warn("An Uplink connection (" + setup.getDisplayName()
+                            + ") finished with a warning or error; inspect the log output above for details");
+                    }
+                });
+                setup.setSession(uplinkSession);
+
+            } catch (OperationFailureException | LogConfigurationException | JSchException | SshParameterException e) {
+                log.warn(StringUtils.format("Connecting SSH session failed: host %s, port %s: %s", setup.getHost(),
+                    setup.getPort(), e.toString()));
+                // Filter typical reasons to produce better error messages.
+                String reason = e.getMessage();
+                Throwable cause = e.getCause();
+                if (reason == null) {
+                    reason = "";
+                }
+                // Reconnect only makes sense if some network problem occured, not if the credentials are wrong.
+                boolean shouldTryToReconnect = setup.getAutoRetry();
+                if (cause != null && cause instanceof ConnectException) {
+                    reason = "The remote instance could not be reached. Probably the hostname or port is wrong.";
+                } else if (cause != null && cause instanceof UnknownHostException) {
+                    reason = "No host with this name could be found.";
+                } else if (reason.equals("Auth fail")) {
+                    reason =
+                        "Authentication failed. Probably the username or passphrase is wrong, the wrong key file was used or the account is "
+                            + "not enabled on the remote host.";
+                    shouldTryToReconnect = false;
+                } else if (reason.equals("USERAUTH fail")) {
+                    reason = "Authentication failed. The wrong passphrase for the key file " + setup.getKeyfileLocation() + " was used.";
+                    shouldTryToReconnect = false;
+                } else if (reason.startsWith("invalid privatekey")) {
+                    reason = "Authentication failed. An invalid private key was used.";
+                    shouldTryToReconnect = false;
+                } else if (reason.equals("The authentication phrase cannot be empty")) {
+                    reason = "The authentication phrase cannot be empty.";
+                    shouldTryToReconnect = false;
+                }
+                if (shouldTryToReconnect) {
+                    setup.raiseConsecutiveConnectionFailures();
+                }
+                uplinkConnectionlistener.onConnectionAttemptFailed(setup, reason, (setup.getConsecutiveConnectionFailures() <= 1),
+                    shouldTryToReconnect);
+
+                return;
+            }
         }
     }
 }

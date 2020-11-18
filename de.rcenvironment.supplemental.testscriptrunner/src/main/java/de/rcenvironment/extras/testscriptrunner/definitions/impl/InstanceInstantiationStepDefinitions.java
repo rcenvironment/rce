@@ -12,6 +12,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -92,7 +93,10 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
             executionContext.addInstance(instance);
             printToCommandConsole(StringUtils.format("Configuring test instance \"%s\"", instanceId));
 
-            final int imSshPortNumber = PORT_NUMBER_GENERATOR.incrementAndGet(); // TODO check whether that port is actually free
+            int imSshPortNumber = PORT_NUMBER_GENERATOR.incrementAndGet();
+            while (!isPortAvailable(imSshPortNumber)) {
+                imSshPortNumber = PORT_NUMBER_GENERATOR.incrementAndGet();
+            }
             instance.setServerPort(StepDefinitionConstants.CONNECTION_TYPE_SSH, 0, imSshPortNumber);
 
             configureInstance(imOperationOutputReceiver, instanceId, optionString, imSshPortNumber, wipeProfile);
@@ -102,6 +106,26 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
             INSTANCE_MANAGEMENT_SERVICE.startInstance(installationId, instanceIds, imOperationOutputReceiver,
                 TimeUnit.SECONDS.toMillis(StepDefinitionConstants.IM_ACTION_TIMEOUT_IN_SECS), false, "");
         }
+    }
+
+    private boolean isPortAvailable(int imSshPortNumber) {
+        ServerSocket socket = null;
+        // Solution for checking port availability inspired by https://stackoverflow.com/a/435579
+        try {
+            socket = new ServerSocket(imSshPortNumber);
+            socket.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException innerException) {
+                    /* should not be thrown */
+                }
+            }
+        }
+        return false;
     }
 
     private void configureInstance(final PrefixingTextOutForwarder imOperationOutputReceiver, final String instanceId,

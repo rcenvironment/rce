@@ -17,67 +17,37 @@ import org.eclipse.osgi.util.NLS;
 public class Messages extends NLS {
 
     /** Field for NLS. */
-    public static String noOutputsDefined;
-
-    /** Field for NLS. */
-    public static String noOutputsDefinedLong;
-
-    /** Field for NLS. */
     public static String tooManySamples;
 
     /** Field for NLS. */
-    public static String numOutputsG2;
+    public static String minTwoOutputs;
 
     /** Field for NLS. */
-    public static String numOutputsG2Long;
+    public static String minOneOutput;
 
     /** Field for NLS. */
     public static String numLevelsInvalid;
 
     /** Field for NLS. */
-    public static String numLevelsInvalidLong;
-
-    /** Field for NLS. */
     public static String noTable;
 
     /** Field for NLS. */
-    public static String noTableLong;
+    public static String cannotReadTable;
 
     /** Field for NLS. */
     public static String tableTooShort;
 
     /** Field for NLS. */
-    public static String tableTooShortLong;
-
-    /** Field for NLS. */
     public static String tableTooLong;
 
     /** Field for NLS. */
-    public static String tableTooLongLong;
+    public static String noRunNumber;
 
     /** Field for NLS. */
-    public static String endSampleTooHigh;
+    public static String noStartSample;
 
     /** Field for NLS. */
-    public static String endSampleTooHighLong;
-
-    /** Field for NLS. */
-    public static String startSampleNotInteger;
-
-    /** Field for NLS. */
-    public static String startSampleG0;
-
-    /** Field for NLS. */
-    public static String endSampleNotInteger;
-
-    /** Field for NLS. */
-    public static String endSampleG0;
-
-    /** Field for NLS. */
-    public static String endSampleGStart;
-
-    /** Field for NLS. */
-    public static String startSampleTooHigh;
+    public static String noEndSample;
 
     /** Field for NLS. */
     public static String undefinedValues;

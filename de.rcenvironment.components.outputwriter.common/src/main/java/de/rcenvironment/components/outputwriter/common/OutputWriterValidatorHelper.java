@@ -23,6 +23,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  * A class for helping to validate placeholders in the OutputWriter.
  *
  * @author Dominik Schneider
+ * @author Kathrin Schaffert (added StringBuilder to getValidationWarnings method)
  */
 
 public abstract class OutputWriterValidatorHelper {
@@ -31,11 +32,6 @@ public abstract class OutputWriterValidatorHelper {
      * Placeholder for -1.
      */
     public static final int MINUS_ONE = -1;
-
-    /**
-     * Incomplete bracket term detected.
-     */
-    public static final String SYNTAX_ERROR = "Incomplete squared bracket term detected.";
 
     private static final List<Character> ALLOWED_ESCAPES = Arrays.asList('\\', '[', ']');
 
@@ -202,11 +198,12 @@ public abstract class OutputWriterValidatorHelper {
      * As of now, we only check for unknown placeholders, i.e., the resulting list has at most a single entry. We return a list at this
      * point anyways in order to be consistent with getValidationErrors.
      * 
-     * @param text              The format string to be checked.
+     * @param warningBuilder String Builder
+     * @param text The format string to be checked.
      * @param knownPlaceholders The list of known placeholders that may occur in the given text
      * @return A list of warnings that may be directly displayed to the user.
      */
-    public static List<String> getValidationWarnings(String text, List<String> knownPlaceholders) {
+    public static List<String> getValidationWarnings(StringBuilder warningBuilder, String text, List<String> knownPlaceholders) {
         final List<String> warnings = new LinkedList<>();
 
         final List<String> placeholders = parsePlaceholders(text);
@@ -216,14 +213,7 @@ public abstract class OutputWriterValidatorHelper {
                 unknownPlaceholders.add(placeholder);
             }
         }
-
         if (!unknownPlaceholders.isEmpty()) {
-            final StringBuilder warningBuilder = new StringBuilder();
-            warningBuilder.append("Contains unknown placeholder");
-            if (unknownPlaceholders.size() > 1) {
-                warningBuilder.append("s");
-            }
-            warningBuilder.append(": ");
             warningBuilder.append(String.join(", ", unknownPlaceholders));
             warnings.add(warningBuilder.toString());
         }

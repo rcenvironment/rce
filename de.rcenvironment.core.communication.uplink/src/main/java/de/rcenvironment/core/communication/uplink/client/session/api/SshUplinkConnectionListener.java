@@ -70,14 +70,13 @@ public interface SshUplinkConnectionListener {
      * @param setup the new {@link SshUplinkConnectionSetup}
      */
     void onDisposed(SshUplinkConnectionSetup setup);
-    
+
     /**
      * Reports that a new list of publication entries has arrived via an uplink connection.
-     *  
+     * 
      * @param publicationEntries the new list of publicationEntries
      * @param connectionId the id of the connection from which these entries where published
      */
     void onPublicationEntriesChanged(ToolDescriptorListUpdate publicationEntries, String connectionId);
-
 
 }

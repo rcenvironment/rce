@@ -8,6 +8,8 @@
 package de.rcenvironment.core.configuration.testutils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
@@ -46,6 +48,11 @@ public class ConfigurationServiceDefaultStub implements ConfigurationService {
 
     @Override
     public void reloadConfiguration() {}
+
+    @Override
+    public ConfigurationSegment loadCustomConfigurationFile(Path path) throws IOException {
+        return null;
+    }
 
     @Override
     public String resolveBundleConfigurationPath(String identifier, String path) {

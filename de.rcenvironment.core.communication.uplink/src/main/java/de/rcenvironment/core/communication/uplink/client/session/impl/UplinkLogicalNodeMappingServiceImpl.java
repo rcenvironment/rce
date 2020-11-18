@@ -85,6 +85,9 @@ public class UplinkLogicalNodeMappingServiceImpl implements UplinkLogicalNodeMap
     }
 
     private String deriveLogicalNodeRecognitionPart(String destinationId) {
+        if (StringUtils.isNullorEmpty(destinationId)) {
+            throw new IllegalArgumentException("Empty or null destination ID");
+        }
         String nodeIdPart = destinationId.replaceAll("[^0-9a-zA-Z]", "_");
         if (nodeIdPart.length() < CommonIdBase.MAXIMUM_LOGICAL_NODE_QUALIFIER_LENGTH) {
             throw new IllegalArgumentException("Unexpected short node id");

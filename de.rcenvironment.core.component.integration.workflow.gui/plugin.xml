@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->  
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               class="de.rcenvironment.core.component.integration.workflow.gui.WorkflowComponentEndpointSection"
+               enablesFor="1"
+               filter="de.rcenvironment.core.component.integration.workflow.gui.WorkflowComponentFilter"
+               id="workflow.editor.tab.Properties.Section.InputsOutputs"
+               tab="workflow.editor.tab.script.InputsOutputs">
+         </propertySection>
+  	</propertySections>        
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.script.InputsOutputs"
+               label="Inputs/Outputs">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+   <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
+   
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.core.component.integration.workflow.gui.EndpointAdapterDataItemSubtreeBuilder"/>
+   </extension>
+</plugin>

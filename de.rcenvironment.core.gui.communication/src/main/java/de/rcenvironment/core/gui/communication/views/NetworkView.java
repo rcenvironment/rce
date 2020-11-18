@@ -78,6 +78,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Oliver Seebach
  * @author David Scholz
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (#16726 changed double-click event from editAction to startAction)
  */
 public class NetworkView extends ViewPart {
 
@@ -347,8 +348,10 @@ public class NetworkView extends ViewPart {
 
         viewer.addDoubleClickListener(dblClkEvent -> {
             expandSelectedNode();
-            if (editAction.isEnabled()) {
-                editAction.run();
+            if (startAction.isEnabled()) {
+                startAction.run();
+            } else {
+                stopAction.run();
             }
 
         });

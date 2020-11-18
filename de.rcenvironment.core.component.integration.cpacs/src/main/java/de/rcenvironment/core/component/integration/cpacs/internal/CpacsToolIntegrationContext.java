@@ -9,7 +9,15 @@
 package de.rcenvironment.core.component.integration.cpacs.internal;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Optional;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.cpacs.CpacsToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.cpacs.CpacsToolIntegratorComponent;
@@ -22,7 +30,9 @@ import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePath
  * Implementation of {@link ToolIntegrationContext} for the CPACS tool integration.
  * 
  * @author Jan Flink
+ * @author Alexander Weinert (OSGI annotations)
  */
+@Component
 public final class CpacsToolIntegrationContext implements ToolIntegrationContext {
 
     private static ConfigurationService configService;
@@ -68,10 +78,11 @@ public final class CpacsToolIntegrationContext implements ToolIntegrationContext
     }
 
     @Override
-    public String getComponentGroupId() {
+    public String getDefaultComponentGroupId() {
         return ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
     }
 
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC, name = "Configuration Service")
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
         configService = configServiceIn;
     }
@@ -85,6 +96,11 @@ public final class CpacsToolIntegrationContext implements ToolIntegrationContext
     public String[] getDisabledIntegrationKeys() {
         return new String[] { ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_NEVER,
             ToolIntegrationConstants.KEY_SET_TOOL_DIR_AS_WORKING_DIR };
+    }
+
+    @Override
+    public Optional<ConfigurationMap> parseConfigurationMap(Map<String, Object> rawConfigurationMap) {
+        return Optional.ofNullable(ConfigurationMap.fromMap(rawConfigurationMap));
     }
 
 }

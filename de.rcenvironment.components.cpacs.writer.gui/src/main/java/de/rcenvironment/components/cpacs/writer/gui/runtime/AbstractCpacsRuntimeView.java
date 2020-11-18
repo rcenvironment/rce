@@ -173,7 +173,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
      * 
      * @param file The file to show
      */
-    protected abstract void performShowAction(final File file);
+    protected abstract void performShowAction(File file);
 
     /**
      * Check if there is a recent history entry notification. This is needed to show the last version of the incoming + mapped CPACS

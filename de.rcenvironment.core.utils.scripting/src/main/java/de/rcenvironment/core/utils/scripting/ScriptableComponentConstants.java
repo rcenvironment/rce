@@ -94,6 +94,9 @@ public final class ScriptableComponentConstants {
 
     /** The property key for the run init script language. */
     public static final String POST_RUN_SCRIPT_LANGUAGE = "postRunScriptLanguage";
+    
+    /** Ending of a python script. */
+    public static final String PY = "py";
 
     /** Factory to create property keys generically. */
     public static final PropertyFactory FACTORY = new PropertyFactory();

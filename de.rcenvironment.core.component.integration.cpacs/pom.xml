@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.integration.cpacs</artifactId>
 	<name>RCE CPACS Component Integration Bundle</name>
-	<version>10.1.1-SNAPSHOT</version>
+	<version>10.2.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

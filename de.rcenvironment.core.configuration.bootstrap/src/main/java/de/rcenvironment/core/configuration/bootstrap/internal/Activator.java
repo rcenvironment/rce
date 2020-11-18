@@ -15,10 +15,10 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.bootstrap.ParameterException;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.bootstrap.SystemExitException;
 import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.configuration.bootstrap.ui.ErrorTextUI;
-import de.rcenvironment.core.utils.incubator.RuntimeDetection;
 
 /**
  * Bundle activator that triggers the {@link BootstrapConfiguration} initialization.
@@ -36,7 +36,7 @@ public class Activator implements BundleActivator {
     @Override
     public void start(BundleContext arg0) {
 
-        if (!RuntimeDetection.isRunningAsTest()) {
+        if (!RuntimeDetection.isTestEnvironment()) {
             // If we are in a testing environment, the following test doesn't make any sense and should be skipped.
 
             String schibboleth = System.getProperty(PROP_RCE_LAUNCHER);

@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.utils.common.JsonUtils;
 
@@ -146,6 +147,11 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
     }
 
     protected void activate(BundleContext context) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         if (storageDirectory == null) {
             // TODO use File object instead of String where possible
             storageDirectory = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA);

@@ -13,6 +13,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
 import de.rcenvironment.core.communication.uplink.network.api.AsyncMessageBlockSender;
 import de.rcenvironment.core.communication.uplink.network.channel.api.ChannelEndpoint;
@@ -57,10 +58,28 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
         if (DEBUG_OUTPUT_ENABLED) {
             log.debug(StringUtils.format("Processing a message of type %s in channel '%s'", messageBlock.getType(), sessionId));
         }
+        final MessageType messageType = messageBlock.getType();
+        if (messageType == MessageType.HEARTBEAT) {
+            // attempt to send a response no matter the local session state
+            try {
+                // implicitly send the response to the channel the heartbeat was received from; typically, this is the default channel
+                enqueueMessageBlockForSending(new MessageBlock(MessageType.HEARTBEAT_RESPONSE));
+            } catch (IOException e) {
+                log.debug("Error attempting to send an Uplink heartbeat response: " + e.toString());
+            }
+            // this could received further processing in the future; for now, only send the response
+            return;
+        } else if (messageType == MessageType.HEARTBEAT_RESPONSE) {
+            // heartbeat messages are currently supposed to be handled on the session level only, so log any that come through
+            log.warn("Unexpected " + MessageType.HEARTBEAT_RESPONSE.name() + " message at channel endpoint " + sessionId);
+            return;
+        }
         try {
             synchronized (this) { // ensure state visibility when switching execution threads
                 if (!processMessageInternal(messageBlock)) {
-                    log.debug("Channel " + channelId + " is terminating"); // TODO (p1) 10.0.0: move to verbose logging?
+                    if (DEBUG_OUTPUT_ENABLED) {
+                        log.debug("Uplink channel " + channelId + " is terminating");
+                    }
                     // TODO additional steps to actually close/delete the channel?
                 }
             }

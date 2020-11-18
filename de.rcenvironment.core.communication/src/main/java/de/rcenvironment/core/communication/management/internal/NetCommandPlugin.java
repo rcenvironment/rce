@@ -32,6 +32,7 @@ import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.GraphvizUtils;
 
@@ -140,6 +141,11 @@ public class NetCommandPlugin implements CommandPlugin {
      * @param newInstance the new service instance
      */
     public void bindConfigurationService(ConfigurationService newInstance) {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // skip implicit bind actions if is was spawned as part of a default test environment;
+            // if this causes errors in mocked service tests, invoke RuntimeDetection.allowSimulatedServiceActivation()
+            return;
+        }
         this.outputDir = newInstance.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
     }
 
@@ -240,5 +246,5 @@ public class NetCommandPlugin implements CommandPlugin {
         }
 
     }
-    
+
 }

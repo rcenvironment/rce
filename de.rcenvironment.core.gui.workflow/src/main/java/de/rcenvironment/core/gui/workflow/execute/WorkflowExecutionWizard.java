@@ -81,6 +81,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Jascha Riedel
  * @author Robert Mischke
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (# 17256)
  */
 public class WorkflowExecutionWizard extends Wizard implements DistributedComponentKnowledgeListener {
 
@@ -158,13 +159,24 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         workflowPage = new WorkflowPage(wfDescription.clone(), nodeIdConfigHelper);
         addPage(workflowPage);
         placeholdersPage = new PlaceholderPage(wfDescription.clone());
-        addPage(placeholdersPage);
+
+        if (placeholdersPage.hasActivePlaceholders()) {
+            addPage(placeholdersPage);
+        }
+
         getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
 
     }
 
     @Override
     public boolean canFinish() {
+
+        // the placeholder page is only added if hasActivePlaceholders() returns true
+        // placeholder page exists <=> hasActivePlaceholders()
+        // K. Schaffert, 02.09.2020
+        if (!placeholdersPage.hasActivePlaceholders()) {
+            return workflowPage.canFinish();
+        }
 
         return workflowPage.canFinish()
             && (getContainer().getCurrentPage() == placeholdersPage || placeholdersPage.canFinish());
@@ -175,7 +187,9 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         grabDataFromWorkflowPage();
 
-        grabDataFromPlaceholdersPage();
+        if (placeholdersPage.hasActivePlaceholders()) {
+            grabDataFromPlaceholdersPage();
+        }
 
         if (!performValidations()) {
             return false;
@@ -183,19 +197,24 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         messageStore.emptyMessageStore(); // Delete all old messages
 
-        // check both before the if statement to avoid short circuiting on the first check
-        boolean workflowControllerVisibilityValid = validateWorkflowControllerVisibility(); // run first for error message ordering
-        boolean workflowAndPlaceholdersValid = validateWorkflowAndPlaceholders();
+        boolean isValid = true;
 
-        if (!(workflowAndPlaceholdersValid && workflowControllerVisibilityValid)
-            && !requestConfirmationForValidationErrorsWarnings()) {
+        isValid &= validateWorkflowControllerVisibility();
+        isValid &= validateWorkflow();
+
+        if (placeholdersPage.hasActivePlaceholders()) {
+            isValid &= validatePlaceholder();
+        }
+
+        if (!isValid && !requestConfirmationForValidationErrorsWarnings()) {
             return false;
-        } else {
-            // Only save placeholders to persistent settings if the user does not cancel the run dialog.
+        } else if (placeholdersPage.hasActivePlaceholders()) {
             placeholdersPage.savePlaceholdersToPersistentSettings();
         }
 
-        placeholdersPage.dispose();
+        if (placeholdersPage.hasActivePlaceholders()) {
+            placeholdersPage.dispose();
+        }
 
         WorkflowExecutionUtils.setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, localDefaultNodeId);
         saveWorkflow();
@@ -282,18 +301,24 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
     }
 
     /**
-     * Validate the executed workflow and the placeholder page, if any warnings or errors exist.
+     * Validate the placeholder page, if any warnings or errors exist.
      * 
      * @return <code>false</code>, if at least one error or one warning exist
      */
-    private boolean validateWorkflowAndPlaceholders() {
+    private boolean validatePlaceholder() {
+
+        return !placeholdersPage.validateErrors();
+    }
+
+    /**
+     * Validate the executed workflow, if any warnings or errors exist.
+     * 
+     * @return <code>false</code>, if at least one error or one warning exist
+     */
+    private boolean validateWorkflow() {
         WorkflowDescriptionValidationUtils.validateWorkflowDescription(wfDescription, true, true);
 
-        // placeholder-error
-        boolean placeholderError = placeholdersPage.validateErrors();
-
-        boolean returnValue = !placeholderError && messageStore.isErrorAndWarningsFree();
-        return returnValue;
+        return messageStore.isErrorAndWarningsFree();
     }
 
     private boolean validateWorkflowControllerVisibility() {

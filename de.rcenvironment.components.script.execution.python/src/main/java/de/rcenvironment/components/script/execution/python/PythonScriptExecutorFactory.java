@@ -18,14 +18,12 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * 
  * @author Sascha Zur
  */
-public class PythonScriptExecutorFactory implements ScriptExecutorFactory {
+public class PythonScriptExecutorFactory implements ScriptExecutorFactory{
 
-    @Override
     public ScriptLanguage getSupportingScriptLanguage() {
         return ScriptLanguage.Python;
     }
 
-    @Override
     public ScriptExecutor createScriptExecutor() {
         return new PythonScriptExecutor();
     }

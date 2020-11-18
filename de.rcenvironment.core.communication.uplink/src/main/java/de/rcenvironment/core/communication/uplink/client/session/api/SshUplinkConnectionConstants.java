@@ -24,7 +24,7 @@ public final class SshUplinkConnectionConstants {
     /**
      * Delay before retrying to connect SSH connection.
      */
-    public static final int DELAY_BEFORE_RETRY = 5000;
+    public static final int DELAY_BEFORE_RETRY = 10 * 1000; // TODO replace this with exponential backoff
 
     /**
      * The pseudo command that is "executed" from the viewpoint of the SSH uplink client to attach input and output streams to. Must be

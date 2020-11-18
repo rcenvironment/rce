@@ -1,4 +1,15 @@
+'''
+Last update on 27.07.2020
+
+@author: Kathrin Schaffert (#17088)
+'''
+
 class RCE:
+
+	   		
+   	def create_input_file(self):
+		return InputFileFactory(OrderedDict(),rce_input_files)
+
 	def setDictionary_internal(self,value):
 		"""
     	INTERNAL METHOD
@@ -6,9 +17,12 @@ class RCE:
 		global dictOut
 		global dictIn 
 		global listClose
+		global rce_input_files
 		dictIn = value
 		dictOut = {}
 		listClose = []
+		rce_input_files = []
+		
 	def get_closed_outputs_internal(self):
 		"""
     	INTERNAL METHOD
@@ -26,7 +40,13 @@ class RCE:
     	Gets the dictionary with all inputs from RCE
     	"""
 	   	return dictIn.keys() + RCE_LIST_REQ_IF_CONNECTED_INPUTS
-	
+	   	
+	def get_written_input_files(self):
+		"""
+    	INTERNAL METHOD
+    	"""	
+		return rce_input_files
+	    
 	def read_input(self, name, defaultValue = None):
    		 """ 
   		 Gets the value for the given input name or returns the default value if there is no input connected and the input not required

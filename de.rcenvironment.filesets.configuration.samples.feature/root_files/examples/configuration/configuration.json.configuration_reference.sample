@@ -176,6 +176,9 @@
 	"thirdPartyIntegration": {
 		"tiglViewer":{
 			"binaryPath": "/path/to/tiglViewer/executable"
+		},
+		"python":{
+			"binaryPath": "/path/to/python/executable"
 		}
 	}
 }

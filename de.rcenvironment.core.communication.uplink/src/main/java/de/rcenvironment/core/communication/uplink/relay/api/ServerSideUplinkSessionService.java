@@ -11,6 +11,8 @@ package de.rcenvironment.core.communication.uplink.relay.api;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
+
 /**
  * The service for providers of network connections (e.g., an embedded SSH server) to create uplink relay (i.e., server) sessions on top of
  * input and output streams of incoming network connections.
@@ -28,15 +30,15 @@ public interface ServerSideUplinkSessionService {
      * successful SSH login. The client-server handshake and associated checks (potentially including further authorization) are performed
      * <em>within</em> {@link ServerSideUplinkSession#runSession()}, so the session may never become active in the first place.
      * 
-     * @param clientInformationString an arbitrary string describing the client's identity; used for log output, and potentially error
-     *        messages
+     * @param connectionEndpoint the abstract representation of the underlying connection
      * @param loginAccountName the login name, which will be used in combination with the "session qualifier"/"client id" to define a stable
      *        client identity
-     * @param inputStream the {@link InputStream} providing incoming data
-     * @param outputStream the {@link OutputStream} to send outgoing data to
+     * @param clientInformationString an arbitrary string describing the client's identity; used for log output, and potentially error
+     *        messages
+     * 
      * @return the session object/handle
      */
-    ServerSideUplinkSession createServerSideSession(String clientInformationString, String loginAccountName, InputStream inputStream,
-        OutputStream outputStream);
+    ServerSideUplinkSession createServerSideSession(StreamConnectionEndpoint connectionEndpoint, String loginAccountName,
+        String clientInformationString);
 
 }

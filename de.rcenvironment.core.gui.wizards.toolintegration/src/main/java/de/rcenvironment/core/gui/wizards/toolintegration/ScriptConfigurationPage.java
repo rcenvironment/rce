@@ -16,6 +16,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.FocusEvent;
@@ -27,7 +28,6 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
@@ -43,6 +43,7 @@ import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWiza
 
 /**
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#16533 changed to Combos into CCombo and added COMBO_WIDTH, INSERT_BUTTON_WIDTH)
  */
 public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
@@ -61,6 +62,10 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
     /** Constant. */
     public static final int DIRECTORY_COMBO = 4;
 
+    private static final int COMBO_WIDTH = 125;
+
+    private static final int INSERT_BUTTON_WIDTH = 50;
+
     private static final int MOCK_GROUP_MINIMUM_HEIGHT = 67;
 
     private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_execution";
@@ -77,13 +82,13 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
     protected Map<String, Object> configurationMap;
 
-    private final Combo[] inputCombos;
+    private final CCombo[] inputCombos;
 
-    private final Combo[] outputCombos;
+    private final CCombo[] outputCombos;
 
-    private final Combo[] propertiesCombos;
+    private final CCombo[] propertiesCombos;
 
-    private final Combo[] directoryCombos;
+    private final CCombo[] directoryCombos;
 
     private final LineNumberStyledText[] textFields;
 
@@ -118,10 +123,10 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         setTitle(pageName);
         setDescription(Messages.scriptPageDescription);
         this.configurationMap = configurationMap;
-        inputCombos = new Combo[NUMBER_OF_TABS];
-        outputCombos = new Combo[NUMBER_OF_TABS];
-        propertiesCombos = new Combo[NUMBER_OF_TABS];
-        directoryCombos = new Combo[NUMBER_OF_TABS];
+        inputCombos = new CCombo[NUMBER_OF_TABS];
+        outputCombos = new CCombo[NUMBER_OF_TABS];
+        propertiesCombos = new CCombo[NUMBER_OF_TABS];
+        directoryCombos = new CCombo[NUMBER_OF_TABS];
         textFields = new LineNumberStyledText[NUMBER_OF_TABS + 1];
 
     }
@@ -256,7 +261,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         updatePageComplete();
     }
 
-    private void setComboEnabled(Combo combo) {
+    private void setComboEnabled(CCombo combo) {
         if (combo != null) {
             if (combo.getItemCount() == 0) {
                 combo.setEnabled(false);
@@ -534,16 +539,24 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         buttonComposite.setLayout(new GridLayout(2, false));
         GridData buttonCompositeData = new GridData();
         buttonCompositeData.verticalAlignment = GridData.BEGINNING;
+        buttonCompositeData.horizontalSpan = 1;
         buttonComposite.setLayoutData(buttonCompositeData);
         GridData labelData = new GridData();
         labelData.horizontalSpan = 2;
         Label inputLabel = new Label(buttonComposite, SWT.NONE);
         inputLabel.setText(Messages.inputs);
         inputLabel.setLayoutData(labelData);
-        Combo inputCombo = new Combo(buttonComposite, SWT.READ_ONLY);
-        GridData inputComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        CCombo inputCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
+        GridData inputComboData = new GridData(GridData.FILL_HORIZONTAL);
+        inputComboData.horizontalSpan = 1;
+        inputComboData.widthHint = COMBO_WIDTH;
         inputCombo.setLayoutData(inputComboData);
         Button inputInsertButton = new Button(buttonComposite, SWT.PUSH);
+        // GridData for insert buttons
+        GridData insertButtonData = new GridData();
+        insertButtonData.horizontalSpan = 1;
+        insertButtonData.widthHint = INSERT_BUTTON_WIDTH;
+        inputInsertButton.setLayoutData(insertButtonData);
         inputInsertButton.setText(Messages.insertButtonLabel);
         if (buttonIndex == 0) {
             inputInsertButton.addSelectionListener(new InsertButtonListener(inputCombo, scriptArea, scriptAreaWin, INPUT_COMBO));
@@ -557,10 +570,12 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             Label outputLabel = new Label(buttonComposite, SWT.NONE);
             outputLabel.setText(Messages.outputs);
             outputLabel.setLayoutData(labelDataOutput);
-            Combo outputCombo = new Combo(buttonComposite, SWT.READ_ONLY);
-            GridData outputComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+            CCombo outputCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
+            GridData outputComboData = new GridData(GridData.FILL_HORIZONTAL);
+            outputComboData.widthHint = COMBO_WIDTH;
             outputCombo.setLayoutData(outputComboData);
             Button outputInsertButton = new Button(buttonComposite, SWT.PUSH);
+            outputInsertButton.setLayoutData(insertButtonData);
             outputInsertButton.setText(Messages.insertButtonLabel);
             outputInsertButton.addSelectionListener(new InsertButtonListener(outputCombo, scriptArea, OUTPUT_COMBO));
             outputCombos[buttonIndex] = outputCombo;
@@ -571,10 +586,12 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         Label propertiesLabel = new Label(buttonComposite, SWT.NONE);
         propertiesLabel.setText(Messages.properties);
         propertiesLabel.setLayoutData(labelDataProperties);
-        Combo propertiesCombo = new Combo(buttonComposite, SWT.READ_ONLY);
-        GridData propertiesComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        CCombo propertiesCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
+        GridData propertiesComboData = new GridData(GridData.FILL_HORIZONTAL);
+        propertiesComboData.widthHint = COMBO_WIDTH;
         propertiesCombo.setLayoutData(propertiesComboData);
         Button propertyInsertButton = new Button(buttonComposite, SWT.PUSH);
+        propertyInsertButton.setLayoutData(insertButtonData);
         propertyInsertButton.setText(Messages.insertButtonLabel);
         if (buttonIndex == 0) {
             propertyInsertButton.addSelectionListener(new InsertButtonListener(propertiesCombo, scriptArea, scriptAreaWin, PROPERTY_COMBO));
@@ -587,11 +604,13 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         Label directoryLabel = new Label(buttonComposite, SWT.NONE);
         directoryLabel.setText(Messages.directory);
         directoryLabel.setLayoutData(labelDataDirectories);
-        Combo directoriesCombo = new Combo(buttonComposite, SWT.READ_ONLY);
-        GridData directoriesComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        CCombo directoriesCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
+        GridData directoriesComboData = new GridData(GridData.FILL_HORIZONTAL);
+        directoriesComboData.widthHint = COMBO_WIDTH;
         directoriesCombo.setLayoutData(directoriesComboData);
         directoriesCombo.setItems(ToolIntegrationConstants.DIRECTORIES_PLACEHOLDERS_DISPLAYNAMES);
         Button directoryInsertButton = new Button(buttonComposite, SWT.PUSH);
+        directoryInsertButton.setLayoutData(insertButtonData);
         directoryInsertButton.setText(Messages.insertButtonLabel);
         if (scriptAreaWin != null) {
             directoryInsertButton.addSelectionListener(new InsertButtonListener(directoriesCombo, scriptArea, scriptAreaWin,
@@ -607,12 +626,14 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             Label addPropLabel = new Label(buttonComposite, SWT.NONE);
             addPropLabel.setText("Additional Properties");
             addPropLabel.setLayoutData(labelDataAddProp);
-            Combo addPropCombo = new Combo(buttonComposite, SWT.READ_ONLY);
-            GridData addPropComboData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+            CCombo addPropCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
+            GridData addPropComboData = new GridData(GridData.FILL_HORIZONTAL);
+            addPropComboData.widthHint = COMBO_WIDTH;
             addPropCombo.setLayoutData(addPropComboData);
             addPropCombo.add(Messages.exitCodeLabel);
             addPropCombo.select(0);
             Button addPropInsertButton = new Button(buttonComposite, SWT.PUSH);
+            addPropInsertButton.setLayoutData(insertButtonData);
             addPropInsertButton.setText(Messages.insertButtonLabel);
             addPropInsertButton.addSelectionListener(new InsertButtonListener(addPropCombo, scriptArea, 3));
 
@@ -623,7 +644,6 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             new Label(buttonComposite, SWT.NONE).setText("");
             Button insertCopyCommand = new Button(buttonComposite, SWT.PUSH);
             GridData copyData = new GridData();
-            copyData.horizontalSpan = 2;
             insertCopyCommand.setLayoutData(copyData);
             insertCopyCommand.setText("Insert copy of file/dir...");
             insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea));
@@ -668,7 +688,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         });
     }
 
-    private void addAllEndpoints(Combo endpointCombo, String key, int tabNumber) {
+    private void addAllEndpoints(CCombo endpointCombo, String key, int tabNumber) {
         endpointCombo.removeAll();
         @SuppressWarnings("unchecked") List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap.get(key);
         if (endpointList != null) {
@@ -719,7 +739,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private static final String QUOTE = "\"";
 
-        private final Combo combo;
+        private final CCombo combo;
 
         private final LineNumberStyledText text;
 
@@ -727,13 +747,13 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private LineNumberStyledText text2;
 
-        InsertButtonListener(Combo inputCombo, LineNumberStyledText scriptArea, int comboType) {
+        InsertButtonListener(CCombo inputCombo, LineNumberStyledText scriptArea, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             this.comboType = comboType;
         }
 
-        InsertButtonListener(Combo inputCombo, LineNumberStyledText scriptArea, LineNumberStyledText scriptArea2, int comboType) {
+        InsertButtonListener(CCombo inputCombo, LineNumberStyledText scriptArea, LineNumberStyledText scriptArea2, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             text2 = scriptArea2;

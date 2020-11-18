@@ -40,7 +40,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testCorrectCredentials() {
-        List<SshAccountImpl> users = configuration.getAccounts();
+        List<SshAccountImpl> users = configuration.listAccounts();
         for (SshAccount user : users) {
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 assertTrue("User " + user.getLoginName() + " was not accepted.",
@@ -56,7 +56,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testIncorrectUser() {
-        SshAccount user = configuration.getAccounts().get(0);
+        SshAccount user = configuration.listAccounts().get(0);
         String userName = "bnmslejnds";
         assertFalse("Authenticator accepted a wrong username (with correct password). (Note: Do not define a test user with the name "
             + userName
@@ -71,7 +71,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testIncorrectPassword() {
-        SshAccount user = configuration.getAccounts().get(0);
+        SshAccount user = configuration.listAccounts().get(0);
         String password = "kjdfskjdshjbne";
         assertFalse("Authenticator accepted a existing user with incorrect password. (Note: Do not define a test user with the password "
             + password + ")",
@@ -113,7 +113,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testPwAuthForPublicKeyUser() {
-        List<SshAccountImpl> users = configuration.getAccounts();
+        List<SshAccountImpl> users = configuration.listAccounts();
         for (SshAccount user : users) {
             if (user.getPublicKey() != null && !user.getPublicKey().isEmpty()) {
                 assertFalse("Authenticator accepted user that does not have a password.",
@@ -129,7 +129,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testCorrectCredentialsForPublicKeyUser() {
-        List<SshAccountImpl> users = configuration.getAccounts();
+        List<SshAccountImpl> users = configuration.listAccounts();
         for (SshAccount user : users) {
             if (user.getPublicKey() != null && !user.getPublicKey().isEmpty()) {
                 assertTrue("Public key user " + user.getLoginName() + " was not accepted.",

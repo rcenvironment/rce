@@ -44,6 +44,7 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel (#14029)
+ * @author Kathrin Schaffert (#14965)
  */
 public class PythonScriptExecutor extends DefaultScriptExecutor {
 
@@ -82,7 +83,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         historyDataItem = dataItem;
         scriptEngine = scriptingService.createScriptEngine(scriptLanguage);
         wrappingScript = userScript;
-        if (wrappingScript == null || wrappingScript.length() == 0) {
+        if (wrappingScript == null || wrappingScript.trim().isEmpty()) {
             throw new ComponentException("No Python script configured");
         }
         scriptEngine.setContext(scriptContext);
@@ -139,6 +140,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
             componentContext.closeOutput(outputName);
         }
         ((PythonScriptEngine) scriptEngine).dispose();
+        this.deleteTempFiles();
         return true;
     }
 
@@ -229,5 +231,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
     @Override
     public boolean isCancelable() {
         return true;
+    }
+
+    @Override
+    public void tearDown() {
+        this.deleteTempFiles();
     }
 }

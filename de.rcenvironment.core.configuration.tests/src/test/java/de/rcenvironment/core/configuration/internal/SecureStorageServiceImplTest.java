@@ -52,8 +52,8 @@ public class SecureStorageServiceImplTest {
     private static final String NON_NULL_DEFAULT_VALUE = "nonNullDefault";
 
     private static final String MESSAGE_TEXT_TEST_CANNOT_RUN_OUTSIDE_OF_PLUGIN_ENVIRONMENT =
-        "The following test steps require Eclipse infrastructure, "
-            + "and can therefore not be run as a plain unit test - skipping";
+        "These test steps require Eclipse infrastructure "
+            + "and can therefore not be run as a plain unit test; skipping";
 
     private static final String TEST_SECTION_ID = "test1";
 
@@ -145,7 +145,7 @@ public class SecureStorageServiceImplTest {
         }
 
         System.setProperty(SecureStorageServiceImpl.PASSWORD_OVERRIDE_PROPERTY, "pw1");
-        service.activate();
+        service.initialize();
         assertTrue(storeFile.isFile()); // should have been created
         assertFalse(keyFile.isFile()); // should not have been created as password override is being used
         assertFalse(backupFile.isFile());
@@ -158,14 +158,14 @@ public class SecureStorageServiceImplTest {
 
         // try to read from a different service instance using the same password -> should succeed
         SecureStorageServiceImpl service2 = setupMockService();
-        service2.activate();
+        service2.initialize();
         assertTrue(backupFile.isFile()); // should have been created now
         assertEquals(VAL1, service2.getSecureStorageSection(TEST_SECTION_ID).read(KEY1, null));
 
         // try to read from a different service instance using a different password -> should fail
         SecureStorageServiceImpl service3 = setupMockService();
         System.setProperty(SecureStorageServiceImpl.PASSWORD_OVERRIDE_PROPERTY, "pw2");
-        service3.activate();
+        service3.initialize();
 
         try {
             final String value = service3.getSecureStorageSection(TEST_SECTION_ID).read(KEY1, null);
@@ -201,7 +201,7 @@ public class SecureStorageServiceImplTest {
             return;
         }
 
-        service.activate();
+        service.initialize();
         assertTrue(storeFile.isFile()); // should have been created
         assertTrue(keyFile.isFile()); // should have been created
         assertFalse(backupFile.isFile());
@@ -214,7 +214,7 @@ public class SecureStorageServiceImplTest {
 
         // try to read from a different service instance using the same password -> should succeed
         SecureStorageServiceImpl service2 = setupMockService();
-        service2.activate();
+        service2.initialize();
         assertTrue(keyFile.isFile()); // should still exist
         assertTrue(backupFile.isFile()); // should have been created now
         assertEquals(VAL1, service2.getSecureStorageSection(TEST_SECTION_ID).read(KEY1, null));
@@ -223,7 +223,7 @@ public class SecureStorageServiceImplTest {
         // now delete the key file, and try to read from a different service -> should fail
         assertTrue(keyFile.delete());
         SecureStorageServiceImpl service3 = setupMockService();
-        service3.activate();
+        service3.initialize();
         try {
             service3.getSecureStorageSection(TEST_SECTION_ID).read(KEY1, null);
             fail("Re-reading the non-null value with a different (generated) password did not fail as expected");
@@ -276,7 +276,7 @@ public class SecureStorageServiceImplTest {
         }
 
         System.setProperty(SecureStorageServiceImpl.PASSWORD_OVERRIDE_PROPERTY, "pw1");
-        service.activate();
+        service.initialize();
 
         final SecureStorageSection storageSection = service.getSecureStorageSection(TEST_SECTION_ID);
         storageSection.store(KEY1, VAL1);

@@ -16,7 +16,6 @@ import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecu
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionRequest;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSession;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
-import de.rcenvironment.core.utils.common.exception.ProtocolException;
 
 /**
  * Represents a single uplink session in which local tools can be published and remote tools can be executed. Typically corresponds to the
@@ -33,10 +32,10 @@ public interface ClientSideUplinkSession extends UplinkSession {
      * while the logical protocol connection is still alive. If the underlying {@link UplinkConnection} breaks down, this method will also
      * eventually terminate.
      * 
-     * @throws IOException on a general I/O exception, e.g. the breakdown of the underlying connection
-     * @throws ProtocolException on a fatal protocol deviation of the remote side, or local internal errors
+     * @return true if the session ended cleanly; false if the initial handshake failed, the connection was refused, a fatal error occurred
+     *         during the session, or the connection was closed unexpectedly
      */
-    void runSession() throws IOException;
+    boolean runSession();
 
     /**
      * Updates (ie, replaces) the list of tools to publish via this uplink connection.
@@ -70,19 +69,5 @@ public interface ClientSideUplinkSession extends UplinkSession {
      *         was available for the given parameters
      */
     Optional<SizeValidatedDataSource> fetchDocumentationData(String destinationId, String docReferenceId);
-
-    // FIXME move JavaDoc
-    /**
-     * Provides access to the relay-assigned prefix that must be attached to all "destination ids" representing nodes/locations in the local
-     * network. These ids can then be embedded in outgoing {@link ToolDescriptorListUpdate}s to specify where the given tool can be
-     * executed. Effectively, this prefix defines a destination id namespace per client-relay connection to prevent collisions between
-     * different network's nodes.
-     * 
-     * Note that this prefix is provided as a {@link Future} as it is only available after the initial protocol handshake has completed. It
-     * is recommended to wait for it with a fairly low timeout (e.g. a few seconds) after starting {@link #runSession()} in a different
-     * thread.
-     * 
-     * @return a {@link Future} for the relay-assigned id prefix
-     */
 
 }

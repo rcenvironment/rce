@@ -33,8 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
@@ -65,8 +63,12 @@ import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel (#14029)
+ * @author Kathrin Schaffert (#17088)
+ * @author Adrian Stock
  */
 public class PythonScriptEngine implements ScriptEngine {
+
+    private static final String INPUT_FILE_FACTORY_PY = "input_file_factory.py";
 
     private static final String SIMPLEJSON = "simplejson.zip";
 
@@ -81,6 +83,10 @@ public class PythonScriptEngine implements ScriptEngine {
     private static final String ESCAPED_DOUBLE_QUOTE = "\"";
 
     private static final int EXIT_CODE_FAILURE = 1;
+
+    private static final String ESCAPESLASH = "\\\\";
+
+    private static final String SLASH = "/";
 
     private static ComponentDataManagementService componentDatamanagementService;
 
@@ -103,6 +109,8 @@ public class PythonScriptEngine implements ScriptEngine {
     private TextStreamWatcher stderrWatcher;
 
     private Map<String, Object> stateOutput;
+
+    private List<String> writtenFileOutput;
 
     /**
      * This latch is used to ensure that a cancellation request is not performed during the preparation of the script execution is executed,
@@ -166,10 +174,9 @@ public class PythonScriptEngine implements ScriptEngine {
             LOGGER.error("Failed to create temporary Python script.");
         }
         executor.setWorkDir(tempDir);
-        final String command =
-            ESCAPED_DOUBLE_QUOTE + ((String) context.getAttribute(PythonComponentConstants.PYTHON_INSTALLATION)) + ESCAPED_DOUBLE_QUOTE
-                + " -u "
-                + tempDir.getAbsolutePath() + File.separator + RUN_SCRIPT;
+        final String command = ESCAPED_DOUBLE_QUOTE
+            + ((String) context.getAttribute(PythonComponentConstants.PYTHON_INSTALLATION)) + ESCAPED_DOUBLE_QUOTE
+            + " -u " + tempDir.getAbsolutePath() + File.separator + RUN_SCRIPT;
         LOGGER.debug("PythonExecutor executes command: " + command);
 
         int exitCode = 0;
@@ -196,21 +203,80 @@ public class PythonScriptEngine implements ScriptEngine {
             LOGGER.error("Something during Python execution failed. See exception for details", e);
         }
         readOutputFromPython();
+
+        for (String item : writtenFileOutput) {
+            String message = "The Input File Factory has written the following file: " + item;
+            LOGGER.debug(message);
+        }
+
         return exitCode;
     }
 
     private void prepareOutputForRun() {
 
-        stdoutWatcher =
-            ConsoleRowUtils.logToWorkflowConsole(((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT))
-                .getLog(), executor.getStdout(), ConsoleRow.Type.TOOL_OUT, null, false);
-        stderrWatcher =
-            ConsoleRowUtils.logToWorkflowConsole(((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT))
-                .getLog(), executor.getStderr(), ConsoleRow.Type.TOOL_ERROR, null, false);
+        stdoutWatcher = ConsoleRowUtils.logToWorkflowConsole(
+            ((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT)).getLog(),
+            executor.getStdout(), ConsoleRow.Type.TOOL_OUT, null, false);
+        stderrWatcher = ConsoleRowUtils.logToWorkflowConsole(
+            ((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT)).getLog(),
+            executor.getStderr(), ConsoleRow.Type.TOOL_ERROR, null, false);
     }
 
     private void writeInputForPython() {
-        ComponentContext compContext = (ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT);
+        ComponentContext compContext = (ComponentContext) context
+            .getAttribute(PythonComponentConstants.COMPONENT_CONTEXT);
+        Map<String, Object> inputsToWrite = extractInputsToWrite(compContext);
+        List<String> inputsNotConnected = new LinkedList<>();
+        for (String input : compContext.getInputsNotConnected()) {
+            if (compContext.getInputMetaDataValue(input,
+                ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && (compContext
+                    .getInputMetaDataValue(input,
+                        ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                    .equals(InputExecutionContraint.RequiredIfConnected.name())
+                    || compContext
+                        .getInputMetaDataValue(input,
+                            ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                        .equals(InputExecutionContraint.NotRequired.name()))) {
+                inputsNotConnected.add(input);
+            }
+        }
+        for (String input : compContext.getInputs()) {
+            if (compContext.getInputMetaDataValue(input,
+                ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && compContext
+                    .getInputMetaDataValue(input,
+                        ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                    .equals(InputExecutionContraint.NotRequired.name())
+                && !compContext.getInputsWithDatum().contains(input)) {
+                inputsNotConnected.add(input);
+            }
+        }
+        try {
+            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInput.rced"), inputsToWrite);
+            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInputReqIfConnected.rced"),
+                inputsNotConnected);
+            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonStateVariables.rces"),
+                context.getAttribute(PythonComponentConstants.STATE_MAP));
+            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonRunNumber.rcen"),
+                context.getAttribute(PythonComponentConstants.RUN_NUMBER));
+
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+        }
+
+        List<String> outputNames = new LinkedList<>();
+        for (String outputName : compContext.getOutputs()) {
+            outputNames.add(outputName);
+        }
+        try {
+            mapper.writeValue(new File(tempDir.getAbsolutePath() + File.separator + "outputs.rceo"), outputNames);
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+        }
+    }
+
+    private Map<String, Object> extractInputsToWrite(ComponentContext compContext) {
         Map<String, Object> inputsToWrite = new HashMap<>();
         for (String inputName : compContext.getInputsWithDatum()) {
             switch (compContext.getInputDataType(inputName)) {
@@ -224,7 +290,7 @@ public class PythonScriptEngine implements ScriptEngine {
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to load input file from the data management", e);
                 }
-                inputsToWrite.put(inputName, file.getAbsolutePath().toString().replaceAll("\\\\", "/"));
+                inputsToWrite.put(inputName, file.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH));
                 break;
             case DirectoryReference:
                 DirectoryReferenceTD directoryReference = (DirectoryReferenceTD) compContext.readInput(inputName);
@@ -237,7 +303,7 @@ public class PythonScriptEngine implements ScriptEngine {
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to load input directory from the data management", e);
                 }
-                inputsToWrite.put(inputName, dir.getAbsolutePath().toString().replaceAll("\\\\", "/"));
+                inputsToWrite.put(inputName, dir.getAbsolutePath().replaceAll(ESCAPESLASH, SLASH));
                 break;
             case Boolean:
                 boolean bool = (((BooleanTD) compContext.readInput(inputName)).getBooleanValue());
@@ -274,14 +340,16 @@ public class PythonScriptEngine implements ScriptEngine {
                     Object[][] result = new Object[matrix.getRowDimension()][matrix.getColumnDimension()];
                     for (int i = 0; i < result.length; i++) {
                         for (int j = 0; j < result[0].length; j++) {
-                            result[i][j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
+                            result[i][j] = ScriptDataTypeHelper
+                                .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
                         }
                     }
                     inputsToWrite.put(inputName, result);
                 } else {
                     Object[] result = new Object[matrix.getColumnDimension()];
                     for (int j = 0; j < matrix.getColumnDimension(); j++) {
-                        result[j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(0, j));
+                        result[j] = ScriptDataTypeHelper
+                            .getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(0, j));
                     }
                     inputsToWrite.put(inputName, result);
                 }
@@ -292,14 +360,16 @@ public class PythonScriptEngine implements ScriptEngine {
                     Object[][] result = new Object[table.getRowCount()][table.getColumnCount()];
                     for (int i = 0; i < table.getRowCount(); i++) {
                         for (int j = 0; j < table.getColumnCount(); j++) {
-                            result[i][j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j));
+                            result[i][j] = ScriptDataTypeHelper
+                                .getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j));
                         }
                     }
                     inputsToWrite.put(inputName, result);
                 } else {
                     Object[] result = new Object[table.getColumnCount()];
                     for (int j = 0; j < table.getColumnCount(); j++) {
-                        result[j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(0, j));
+                        result[j] = ScriptDataTypeHelper
+                            .getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(0, j));
                     }
                     inputsToWrite.put(inputName, result);
                 }
@@ -309,74 +379,33 @@ public class PythonScriptEngine implements ScriptEngine {
                 break;
             }
         }
-        List<String> inputsNotConnected = new LinkedList<>();
-        for (String input : compContext.getInputsNotConnected()) {
-            if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
-                && (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.RequiredIfConnected.name())
-                || compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name()))) {
-                inputsNotConnected.add(input);
-            }
-        }
-        for (String input : compContext.getInputs()) {
-            if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
-                && compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name())
-                && !compContext.getInputsWithDatum().contains(input)) {
-                inputsNotConnected.add(input);
-            }
-        }
-        try {
-            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInput.rced"), inputsToWrite);
-            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInputReqIfConnected.rced"), inputsNotConnected);
-            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonStateVariables.rces"),
-                context.getAttribute(PythonComponentConstants.STATE_MAP));
-            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonRunNumber.rcen"),
-                context.getAttribute(PythonComponentConstants.RUN_NUMBER));
-
-        } catch (JsonGenerationException e) {
-            LOGGER.error(e.getMessage());
-        } catch (JsonMappingException e) {
-            LOGGER.error(e.getMessage());
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage());
-        }
-
-        List<String> outputNames = new LinkedList<>();
-        for (String outputName : compContext.getOutputs()) {
-            outputNames.add(outputName);
-        }
-        try {
-            mapper.writeValue(new File(tempDir.getAbsolutePath() + File.separator + "outputs.rceo"), outputNames);
-        } catch (JsonGenerationException e) {
-            LOGGER.error(e.getMessage());
-        } catch (JsonMappingException e) {
-            LOGGER.error(e.getMessage());
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage());
-        }
+        return inputsToWrite;
     }
 
     @SuppressWarnings("unchecked")
     private void readOutputFromPython() throws ScriptException {
         try {
-            if (new File(tempDir.getAbsolutePath() + File.separator
-                + "pythonOutput.rced").exists()) {
-                output = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
-                    + "pythonOutput.rced"), output.getClass());
+            if (new File(tempDir.getAbsolutePath() + File.separator + "pythonOutput.rced").exists()) {
+                output = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator + "pythonOutput.rced"),
+                    output.getClass());
             }
 
-            if (new File(tempDir.getAbsolutePath() + File.separator
-                + "pythonCloseOutputChannelsList.rced").exists()) {
-                closeOutputChannelsList = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
-                    + "pythonCloseOutputChannelsList.rced"), closeOutputChannelsList.getClass());
+            if (new File(tempDir.getAbsolutePath() + File.separator + "pythonCloseOutputChannelsList.rced").exists()) {
+                closeOutputChannelsList = mapper.readValue(
+                    new File(tempDir.getAbsolutePath() + File.separator + "pythonCloseOutputChannelsList.rced"),
+                    closeOutputChannelsList.getClass());
             }
             stateOutput = new HashMap<>();
-            if (new File(tempDir.getAbsolutePath() + File.separator
-                + "pythonStateOutput.rces").exists()) {
-                stateOutput = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
-                    + "pythonStateOutput.rces"), stateOutput.getClass());
+            if (new File(tempDir.getAbsolutePath() + File.separator + "pythonStateOutput.rces").exists()) {
+                stateOutput = mapper.readValue(
+                    new File(tempDir.getAbsolutePath() + File.separator + "pythonStateOutput.rces"),
+                    stateOutput.getClass());
+            }
+            writtenFileOutput = new LinkedList<>();
+            if (new File(tempDir.getAbsolutePath() + File.separator + "pythonInputFileFactoryOutput.rced").exists()) {
+                writtenFileOutput =
+                    mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator + "pythonInputFileFactoryOutput.rced"),
+                        writtenFileOutput.getClass());
             }
         } catch (IOException e) {
             throw new ScriptException(e);
@@ -400,14 +429,26 @@ public class PythonScriptEngine implements ScriptEngine {
         writer.write(script);
         writer.close();
         File wrapperMain = new File(tempDir, RUN_SCRIPT);
-        try (InputStream wrapperScriptInputMain = PythonScriptEngine.class.getResourceAsStream(RESOURCES + RUN_SCRIPT)) {
+        try (InputStream wrapperScriptInputMain = PythonScriptEngine.class
+            .getResourceAsStream(RESOURCES + RUN_SCRIPT)) {
             FileUtils.copyInputStreamToFile(wrapperScriptInputMain, wrapperMain);
             File wrapperBridge = new File(tempDir, PYTHON_BRIDGE);
-            try (InputStream wrapperScriptInputBridge = PythonScriptEngine.class.getResourceAsStream(RESOURCES + PYTHON_BRIDGE)) {
+            File inputFileFactory = new File(tempDir, INPUT_FILE_FACTORY_PY);
+            try (InputStream wrapperScriptInputBridge = PythonScriptEngine.class
+                .getResourceAsStream(RESOURCES + PYTHON_BRIDGE)) {
                 FileUtils.copyInputStreamToFile(wrapperScriptInputBridge, wrapperBridge);
-                try (InputStream simpleJsonFiles = PythonScriptEngine.class.getResourceAsStream(RESOURCES + SIMPLEJSON)) {
+                try (InputStream simpleJsonFiles = PythonScriptEngine.class
+                    .getResourceAsStream(RESOURCES + SIMPLEJSON)) {
                     FileSupport.unzip(simpleJsonFiles, tempDir);
                 }
+            }
+            try (InputStream wrapperScriptInputFactory = PythonScriptEngine.class
+                .getResourceAsStream(RESOURCES + INPUT_FILE_FACTORY_PY)) {
+                FileUtils.copyInputStreamToFile(wrapperScriptInputFactory, inputFileFactory);
+
+                String path = "\n" + "InputFileFactory.p = " + "'" + tempDir.getPath().replaceAll(ESCAPESLASH, SLASH) + "/'";
+
+                FileUtils.writeStringToFile(inputFileFactory, path, true);
             }
         }
     }
@@ -475,7 +516,7 @@ public class PythonScriptEngine implements ScriptEngine {
     }
 
     @Override
-    public void put(String key, Object value) {
+    public void put(String key, Object value) { 
         context.setAttribute(key, value, 0);
     }
 
@@ -509,7 +550,8 @@ public class PythonScriptEngine implements ScriptEngine {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error(e.getMessage());
+            throw new RuntimeException(e);
+            //LOGGER.error("--->" + e.getMessage());
         }
     }
 
@@ -540,4 +582,31 @@ public class PythonScriptEngine implements ScriptEngine {
         stderrWatcher.cancel();
         executor.cancel();
     }
+
+    /**
+     * Creates files from the component's inputs and a file which contains the script to be executed.
+     * These are used during the script execution and will be removed later.
+     * 
+     * @param script which will be executed.
+     * @param directory in which the files shall be created.
+     * @throws IOException if an error occurs when writing the script in a file.
+     */
+    public synchronized void agentPrepareScriptExecution(String script, File directory) throws IOException {
+        tempDir = directory;
+        writeInputForPython();
+    }
+    
+    /**
+     * After the PythonScriptAgent component's execution, the outputs are written in a file.
+     * This method grants access to a method, which writes the content of these files in
+     * variables.
+     * 
+     * @param directory current working directory.
+     * @throws ScriptException when the used method fails.
+     */
+    public void agentReadOutputFromPython(File directory) throws ScriptException {
+        tempDir = directory;
+        readOutputFromPython();
+    }
+
 }

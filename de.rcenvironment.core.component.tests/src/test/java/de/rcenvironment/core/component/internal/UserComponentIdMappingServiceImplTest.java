@@ -54,7 +54,9 @@ public class UserComponentIdMappingServiceImplTest {
             { "de.rcenvironment.integration.cpacs.SimpleExample", "cpacs/SimpleExample" },
             { "de.rcenvironment.integration.cpacs.tool With various_ allowed _ 2chars2", "cpacs/tool With various_ allowed _ 2chars2" },
             { "de.rcenvironment.cpacswriter", "rce/CPACS Writer" }, // example of registered name mapping for a built-in component
-            { "de.rcenvironment.doe.v2", "rce/Design of Experiments" } // special case of a built-in component
+            { "de.rcenvironment.doe.v2", "rce/Design of Experiments" }, // special case of a built-in component
+            { "de.rcenvironment.integration.workflow.SimpleExample", "workflow/SimpleExample" },
+            { "de.rcenvironment.integration.workflow.Simple Example With Space", "workflow/Simple Example With Space" }
         });
     }
 

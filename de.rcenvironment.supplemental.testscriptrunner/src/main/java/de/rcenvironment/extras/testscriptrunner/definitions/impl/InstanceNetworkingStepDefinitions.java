@@ -11,6 +11,7 @@ package de.rcenvironment.extras.testscriptrunner.definitions.impl;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -642,9 +643,32 @@ public class InstanceNetworkingStepDefinitions extends InstanceManagementStepDef
         Integer serverPort = instance.getServerPort(connectionType, serverNumber);
         if (serverPort == null) {
             serverPort = PORT_NUMBER_GENERATOR.incrementAndGet();
+            while (!isPortAvailable(serverPort)) {
+                serverPort = PORT_NUMBER_GENERATOR.incrementAndGet();
+            }
             instance.setServerPort(connectionType, serverNumber, serverPort);
         }
         return serverPort;
+    }
+
+    private boolean isPortAvailable(int portNumber) {
+        ServerSocket socket = null;
+        // Solution for checking port availability inspired by https://stackoverflow.com/a/435579
+        try {
+            socket = new ServerSocket(portNumber);
+            socket.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException innerException) {
+                    /* should not be thrown */
+                }
+            }
+        }
+        return false;
     }
 
     private boolean testIfConfiguredOutgoingConnectionsAreConnected(final ManagedInstance instance, boolean isFinalAttempt) {

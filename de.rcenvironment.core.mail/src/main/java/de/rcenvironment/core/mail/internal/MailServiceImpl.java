@@ -13,11 +13,6 @@ import java.util.concurrent.Future;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
 
-import jodd.mail.Email;
-import jodd.mail.MailException;
-import jodd.mail.SendMailSession;
-import jodd.mail.SmtpSslServer;
-
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.mail.Mail;
 import de.rcenvironment.core.mail.MailDispatchResult;
 import de.rcenvironment.core.mail.MailDispatchResultListener;
@@ -33,6 +29,10 @@ import de.rcenvironment.core.mail.SMTPServerConfiguration;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import jodd.mail.Email;
+import jodd.mail.MailException;
+import jodd.mail.SendMailSession;
+import jodd.mail.SmtpSslServer;
 
 /**
  * This class is an implementation of the {@link MailService}.
@@ -56,6 +56,11 @@ public final class MailServiceImpl implements MailService {
      * OSGi-DS life-cycle method.
      */
     public void activate() {
+        if (RuntimeDetection.isImplicitServiceActivationDenied()) {
+            // do not activate this service if is was spawned as part of a default test environment
+            return;
+        }
+
         ConfigurationSegment configurationSegment =
             configurationService.getConfigurationSegment(SMTPServerConfiguration.CONFIGURATION_PATH);
         if (configurationSegment == null || !configurationSegment.isPresentInCurrentConfiguration()) {

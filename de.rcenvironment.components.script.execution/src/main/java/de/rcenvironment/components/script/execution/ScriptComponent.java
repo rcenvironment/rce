@@ -11,6 +11,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.ServiceException;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
@@ -62,18 +63,36 @@ public class ScriptComponent extends DefaultComponent {
 
     @Override
     public void start() throws ComponentException {
-        canceled = false;
 
-        scriptExecutorRegistry = componentContext.getService(ScriptExecutorFactoryRegistry.class);
+        canceled = false;
+        try {
+            scriptExecutorRegistry = componentContext.getService(ScriptExecutorFactoryRegistry.class);
+        } catch (ServiceException e) {
+            throw new ComponentException(
+                "ScriptExecutorFactoryRegistry was not initialized."
+                    + " Please check your configuration and make sure the right python path is set.",
+                e);
+
+        }
+
         String language = componentContext.getConfigurationValue("scriptLanguage");
-        setExecutor(scriptExecutorRegistry.requestScriptExecutor(ScriptLanguage.getByName(language)));
         scriptLanguage = ScriptLanguage.getByName(language);
+        log.debug("ScriptLanguage: " + language);
+
+        this.setExecutor(scriptExecutorRegistry.requestScriptExecutor(scriptLanguage));
         script = componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT);
-        executor.prepareExecutor(componentContext);
+
+        try {
+            executor.prepareExecutor(componentContext);
+        } catch (ComponentException e) {
+            throw new ComponentException(
+                "ScriptExecutorFactoryRegistry was not initialized."
+                    + " Please check your configuration and make sure the right python path is set.",
+                e);
+        }
         if (treatStartAsComponentRun()) {
             processInputs();
         }
-
     }
 
     @Override
@@ -110,7 +129,6 @@ public class ScriptComponent extends DefaultComponent {
         }
 
         executor.postRun();
-        executor.deleteTempFiles();
         writeFinalHistoryDataItem();
     }
 
@@ -152,7 +170,7 @@ public class ScriptComponent extends DefaultComponent {
     @Override
     public void tearDown(FinalComponentState state) {
         if (executor != null) {
-            executor.deleteTempFiles();
+            executor.tearDown();
         }
     }
 

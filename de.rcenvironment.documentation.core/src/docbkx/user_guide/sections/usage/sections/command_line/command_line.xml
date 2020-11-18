@@ -532,21 +532,19 @@
 	
 	<sect3 id="placeholder_files">
 		<title>Configuration Placeholder Value Files</title>
-	<para>Some workflow components use placeholders for configuration
-		values. The values for the placeholders are defined at workflow start.
-		When executing workflows from the command line (e.g. in headless or
-		batch mode), the placeholder's values must be defined in a file, which
-		will be passed to the command with the -p option. Placeholder value
-		files have following format:</para>
-		<para><code>{ </code></para>
-		<para><code> &lt;component id>/&lt;component version> : {</code></para>
-		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
-		<para><code>  }</code></para>
-		<para><code> &lt;component id>/&lt;component version>/&lt;component instance name> :
-				{</code></para>
-		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
-		<para><code>  }</code></para>
-		<para><code>}</code></para>
+	<para>Some workflow components use placeholders for configuration values. The values for the
+				placeholders are defined at workflow start. When executing workflows from the
+				command line (e.g. in headless or batch mode), the placeholder's values must be
+				defined in a file, which will be passed to the command with the -p option.
+				Placeholder value files have following
+				format:<programlisting>{
+  &lt;component id>/&lt;component version> : {
+    &lt;configuration placeholder id> : &lt;configuration value>
+  },
+  &lt;component id>/&lt;component version>/&lt;component instance name> : {
+    &lt;configuration placeholder id> : &lt;configuration value>
+  }
+}</programlisting></para>
 		<para>
 			<note>
 				<para>Every id and every value must be in enclosed in double quotes ("...").</para>
@@ -555,12 +553,12 @@
 		<para>The <code>component id</code> is the id string of a component (e.g.
 				de.rcenvironment.script), the <code>component version</code> is the version of the
 				component that is used in the workflow (e.g. 3.4).</para>
-		<para> There are two ways of defining values for configuration placeholders: per component type and
-				per component instance. When defined per component type, the id and version must be
-				specified (e.g. "de.rcenvironment.script/3.4"). When defined per component instance
-				the component id, component version, and the name of the component in the workflow
-				must be specified (e.g. "de.rcenvironment.script/3.4/MyScript"). In both cases, the
-					<code>configuration placeholder id</code>, which is the name of the
+		<para> There are two ways of defining values for configuration placeholders: per component type
+				and per component instance. When defined per component type, the id and version must
+				be specified (e.g. "de.rcenvironment.script/3.4"). When defined per component
+				instance the component id, component version, and the name of the component in the
+				workflow must be specified (e.g. "de.rcenvironment.inputprovider/MyFile"). In both
+				cases, the <code>configuration placeholder id</code>, which is the name of the
 				configuration placeholder, and the actual <code>configuration value</code> must be
 				specified.</para>
 		<para>Component instance values override component type values.</para>
@@ -569,21 +567,19 @@
 				<para>It is possible to mix component type and component instance values.</para>
 			</note>
 		</para>
-		<para>Below is an example placeholder value file, which defines one placeholder value (component type) for the
-				script component, one placeholer value (component type) for the input provider component and
-				a placeholder value (component instance) for a specified input provider component of the workflow:</para>
-		<para><code>{</code></para>
-		<para><code> "de.rcenvironment.script/3.4": {</code></para>
-		<para><code>     "pythonExecutionPath": "C:/Python/python.exe"</code></para>
-		<para><code>     },</code></para>
-		<para><code> "de.rcenvironment.inputprovider/3.2": {</code></para>
-		<para><code> "inputFile": "C:/input/globalInputFile.txt"</code></para>
-		<para><code>},</code></para>
-		<para><code> "de.rcenvironment.inputprovider/3.2/Provider 1" : {</code></para>
-		<para><code>           "inputFile": "C:/input/Provider1.txt"</code></para>
-		<para><code> }</code>
-		</para>
-		<para><code>}</code></para>
+		<para>Below is an example placeholder value file, which defines one placeholder value (component
+				type) for the input provider component and a placeholder value (component instance)
+				for a specified input provider component of the workflow:</para>
+		<para>
+				<programlisting>{
+  "de.rcenvironment.inputprovider/3.2": {
+    "inputFile": "<phrase os="linux">/home/user/globalInputFile.txt</phrase><phrase os="windows">C:/input/globalInputFile.txt</phrase>"
+  },
+  "de.rcenvironment.inputprovider/3.2/Provider 1" : {
+    "inputFile": "<phrase os="linux">/home/user/Provider1.txt</phrase><phrase os="windows">C:/input/Provider1.txt</phrase>"
+  }
+}</programlisting>
+			</para>
 		
 		<para>The following table lists components and their configuration placeholders.</para>
 		<para>

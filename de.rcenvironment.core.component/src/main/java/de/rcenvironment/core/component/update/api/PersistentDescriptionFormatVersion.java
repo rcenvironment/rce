@@ -32,7 +32,7 @@ public final class PersistentDescriptionFormatVersion {
     
     /** Workflow version > 3, i.e. RCE > 3.0.0. */
     public static final int AFTER_VERSION_THREE = 4;
-    
+
     /** No update for any workflow format version available. */
     public static final int NONE = 0;
     

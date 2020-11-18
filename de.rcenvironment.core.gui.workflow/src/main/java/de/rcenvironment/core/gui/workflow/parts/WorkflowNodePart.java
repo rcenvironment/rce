@@ -90,6 +90,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Jascha Riedel (#13765)
  * @author Oliver Seebach
  * @author Jan Flink
+ * @author Alexander Weinert (initialization of Images and IFigures in constructor)
  * 
  */
 public class WorkflowNodePart extends AbstractGraphicalEditPart implements PropertyChangeListener, NodeEditPart {
@@ -104,6 +105,30 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
      */
     public static final int WORKFLOW_NODE_WIDTH = 81;
 
+    private static final int DEPRECATED_FIGURE_SIZE = 32;
+
+    private static final int DEPRECATED_FIGURE_OFFSET_Y = 17;
+
+    private static final int DEPRECATED_FIGURE_OFFSET_X = 23;
+
+    private static final int WARNING_FIGURE_SIZE = 16;
+
+    private static final int WARNING_FIGURE_OFFSET_Y = 2;
+
+    private static final int WARNING_FIGURE_OFFSET_X = 62;
+
+    private static final int ERROR_FIGURE_SIZE = 16;
+
+    private static final int ERROR_FIGURE_OFFSET_Y = 2;
+
+    private static final int ERROR_FIGURE_OFFSET_X = 2;
+
+    private static final int INFORMATION_FIGURE_SIZE = 16;
+
+    private static final int INFORMATION_FIGURE_OFFSET_Y = 62;
+
+    private static final int INFORMATION_FIGURE_OFFSET_X = 62;
+
     private static final int OFFSET_FACTOR = 2;
 
     private static final int MAX_LABELTEXT_SIZE = 30;
@@ -112,54 +137,23 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private static final int MAX_LABEL_WIDTH = 73;
 
-    private static final Image ERROR_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.ERROR_16);
+    protected final Image errorImage;
 
-    private static final Image WARNING_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16);
+    protected final Image warningImage;
 
-    private static final Image LOCAL_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.LOCAL);
+    protected final Image localImage;
 
-    private static final Image IMITATION_MODE_IMAGE = ImageManager.getInstance()
-        .getSharedImage(StandardImages.IMITATION_MODE);
+    protected final Image imitationModeImage;
 
-    private static final Image DEPRECATED_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.DEPRECATED);
+    protected final Image deprecatedImage;
 
-    protected final IFigure informationFigure = new ImageFigure(LOCAL_IMAGE);
+    protected final IFigure informationFigure;
 
-    {
-        final int offsetX = 62;
-        final int offsetY = 62;
-        final int size = 16;
-        informationFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
-        informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
-        informationFigure.setVisible(false);
-    }
+    protected final IFigure errorFigure;
 
-    private final IFigure errorFigure = new ImageFigure(ERROR_IMAGE);
-    {
-        final int offset = 2;
-        final int size = 16;
-        errorFigure.setBounds(new Rectangle(offset, offset, size, size));
-        errorFigure.setVisible(false);
-    }
+    protected final IFigure warningFigure;
 
-    private final IFigure warningFigure = new ImageFigure(WARNING_IMAGE);
-    {
-        final int offsetX = 62;
-        final int offsetY = 2;
-        final int size = 16;
-        warningFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
-        warningFigure.setVisible(false);
-    }
-
-    private final IFigure deprecatedFigure = new ImageFigure(DEPRECATED_IMAGE);
-    {
-        final int offsetX = 23;
-        final int offsetY = 17;
-        final int size = 32;
-        deprecatedFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
-        deprecatedFigure.setToolTip(new Label(Messages.deprecated));
-        deprecatedFigure.setVisible(false);
-    }
+    protected final IFigure deprecatedFigure;
 
     private final ToolIntegrationContextRegistry toolIntegrationRegistry;
 
@@ -168,8 +162,77 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     private Image imageToDispose = null;
 
     public WorkflowNodePart() {
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-        toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
+        toolIntegrationRegistry = getServiceRegistryAccess().getService(ToolIntegrationContextRegistry.class);
+
+        errorImage = getErrorImage();
+        errorFigure = createImageFigure(errorImage,
+            ERROR_FIGURE_OFFSET_X, ERROR_FIGURE_OFFSET_Y,
+            ERROR_FIGURE_SIZE,
+            false);
+
+        warningImage = getWarningImage();
+        warningFigure = createImageFigure(warningImage,
+            WARNING_FIGURE_OFFSET_X, WARNING_FIGURE_OFFSET_Y,
+            WARNING_FIGURE_SIZE,
+            false);
+
+        localImage = getLocalImage();
+        informationFigure = createImageFigure(localImage, 
+            INFORMATION_FIGURE_OFFSET_X, INFORMATION_FIGURE_OFFSET_Y,
+            INFORMATION_FIGURE_SIZE,
+            Messages.localExecutionOnly,
+            false);
+
+        imitationModeImage = getImitationModeImage();
+
+        deprecatedImage = getDeprecatedImage();
+        deprecatedFigure = createImageFigure(deprecatedImage,
+            DEPRECATED_FIGURE_OFFSET_X, DEPRECATED_FIGURE_OFFSET_Y,
+            DEPRECATED_FIGURE_SIZE,
+            Messages.deprecated,
+            false);
+
+    }
+
+    protected Image getErrorImage() {
+        return getSharedImage(StandardImages.ERROR_16);
+    }
+
+    protected Image getWarningImage() {
+        return getSharedImage(StandardImages.WARNING_16);
+    }
+
+    protected Image getLocalImage() {
+        return getSharedImage(StandardImages.LOCAL);
+    }
+
+    protected Image getDeprecatedImage() {
+        return getSharedImage(StandardImages.DEPRECATED);
+    }
+
+    protected Image getImitationModeImage() {
+        return getSharedImage(StandardImages.IMITATION_MODE);
+    }
+
+    protected ServiceRegistryAccess getServiceRegistryAccess() {
+        return ServiceRegistry.createAccessFor(this);
+    }
+
+    protected Image getSharedImage(StandardImages standardImage) {
+        return ImageManager.getInstance().getSharedImage(standardImage);
+    }
+
+    protected IFigure createImageFigure(Image image, int offsetX, int offsetY, int size, boolean visible) {
+        final IFigure returnValue = new ImageFigure(image);
+        returnValue.setBounds(new Rectangle(offsetX, offsetY, size, size));
+        returnValue.setVisible(visible);
+        return returnValue;
+    }
+
+    protected IFigure createImageFigure(Image image, int offsetX, int offsetY, int size, String tooltip, boolean visible) {
+        final IFigure returnValue = createImageFigure(image, offsetX, offsetY, size, visible);
+        returnValue.setToolTip(new Label(tooltip));
+        return returnValue;
     }
 
     @Override
@@ -294,10 +357,10 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             .getComponentInterface();
 
         if (ci.getSize() == ComponentSize.SMALL) {
-            image = ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class).getComponentImageContainer(ci)
+            image = getServiceRegistryAccess().getService(ComponentImageContainerService.class).getComponentImageContainer(ci)
                 .getComponentIcon24();
         } else {
-            image = ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class).getComponentImageContainer(ci)
+            image = getServiceRegistryAccess().getService(ComponentImageContainerService.class).getComponentImageContainer(ci)
                 .getComponentIcon32();
         }
 
@@ -465,12 +528,12 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         setTooltipText();
 
         if (((WorkflowNode) getModel()).getComponentDescription().canOnlyBeExecutedLocally()) {
-            ((ImageFigure) informationFigure).setImage(LOCAL_IMAGE);
+            ((ImageFigure) informationFigure).setImage(localImage);
             informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
             informationFigure.setVisible(true);
         } else if (Boolean.valueOf(((WorkflowNode) getModel()).getConfigurationDescription()
             .getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))) {
-            ((ImageFigure) informationFigure).setImage(IMITATION_MODE_IMAGE);
+            ((ImageFigure) informationFigure).setImage(imitationModeImage);
             informationFigure.setToolTip(new Label(Messages.imitationMode));
             informationFigure.setVisible(true);
         } else {

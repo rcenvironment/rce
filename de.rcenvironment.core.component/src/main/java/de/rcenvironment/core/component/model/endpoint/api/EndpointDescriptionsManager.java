@@ -63,8 +63,8 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
 
     private Map<String, EndpointGroupDescription> dynamicEndpointGroupDescriptions = new HashMap<>();
 
-    public EndpointDescriptionsManager(EndpointDefinitionsProvider endpointDefinitionsProvider, EndpointType entdpointType) {
-        this.endpointType = entdpointType;
+    public EndpointDescriptionsManager(EndpointDefinitionsProvider endpointDefinitionsProvider, EndpointType endpointType) {
+        this.endpointType = endpointType;
         this.endpointDefinitionsProvider = endpointDefinitionsProvider;
         this.staticEndpointDescriptions = createStaticEndpointDescriptions(endpointDefinitionsProvider);
         this.staticEndpointGroupDescriptions = createStaticEndpointGroupDescriptions(endpointDefinitionsProvider);
