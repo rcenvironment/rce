@@ -2,11 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.python.tests
-Bundle-Version: 10.2.0.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.script.execution.testutils,
- de.rcenvironment.core.component.scripting,
  de.rcenvironment.core.component.testutils,
  de.rcenvironment.core.utils.scripting
 Bundle-ActivationPolicy: lazy

@@ -60,9 +60,9 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     protected static final String AUDIT_LOG_KEY_NAMESPACE = "namespace";
 
     /**
-     * Audit log key for the session's context, e.g. the underlying SSH session id.
+     * Audit log key for the session's context, e.g. the underlying connection id matching the connection's log entries for association.
      */
-    protected static final String AUDIT_LOG_KEY_CONTEXT = "context";
+    protected static final String AUDIT_LOG_KEY_CONNECTION_ID = "connection_id";
 
     protected static final String AUDIT_LOG_KEY_PROTOCOL_VERSION = "protocol";
 

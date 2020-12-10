@@ -11,8 +11,10 @@ package de.rcenvironment.core.utils.common;
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,11 +29,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public final class AuditLog {
 
+    protected static final int EXPECTED_TIMESTAMP_LENGTH = 23;
+
     private static AuditLog sharedInstance = new AuditLog(new FallbackLoggingBackend());
 
     private final AuditLogBackend backend;
 
     private final ObjectMapper jsonMapper = new ObjectMapper();
+
+    // "immutable and thread-safe", according to JavaDoc
+    private final DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS");
 
     /**
      * Convenience and type safety wrapper for constructing new log entries.
@@ -42,7 +49,7 @@ public final class AuditLog {
 
         private final String eventId;
 
-        private final Map<String, String> data = new HashMap<>();
+        private final Map<String, String> data = new TreeMap<>(); // sort entries by key
 
         public LogEntry(String eventId) {
             this.eventId = eventId;
@@ -64,6 +71,19 @@ public final class AuditLog {
          */
         public LogEntry set(String key, int value) {
             set(key, Integer.toString(value));
+            return this;
+        }
+
+        /**
+         * Convenience method for adding a map of values. All provided entries are added as they are; existing entries with matching keys
+         * are silently replaced.
+         * 
+         * @param dataMap the map of entries to add to the log entry
+         * 
+         * @return this instance (for command chaining)
+         */
+        public LogEntry setAll(Map<String, String> dataMap) {
+            data.putAll(dataMap);
             return this;
         }
     }
@@ -204,8 +224,8 @@ public final class AuditLog {
 
     // protected access for unit tests
     protected void appendInternal(String eventId, Map<String, String> data) {
-        // TODO enforce dot vs commma separator?
-        final String timestamp = LocalDateTime.now().toString();
+        LocalDateTime time = LocalDateTime.now();
+        final String timestamp = formatTimestamp(time);
 
         String dataString;
         if (data == null || data.isEmpty()) {
@@ -223,6 +243,17 @@ public final class AuditLog {
             backend.append(timestamp, eventId, dataString);
         } catch (IOException e) {
             getStandardLog().error("Error writing to audit log: " + e.toString());
+        }
+    }
+
+    // protected access for unit tests
+    protected String formatTimestamp(LocalDateTime time) {
+        String formatted = time.format(timestampFormatter);
+        int len = formatted.length();
+        if (len == EXPECTED_TIMESTAMP_LENGTH) {
+            return formatted;
+        } else {
+            throw new IllegalStateException(Integer.toString(len)); // sanity check failed
         }
     }
 

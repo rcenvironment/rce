@@ -2,13 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Authentication
 Bundle-SymbolicName: de.rcenvironment.platform.maven.auth;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.apache.commons.logging;version="1.1.1",
- org.dom4j;version="1.6.1",
- org.dom4j.bean;version="1.6.1",
- org.dom4j.datatype;version="1.6.1",
- org.dom4j.io;version="1.6.1",
  org.slf4j;version="1.6.1"
 Bundle-ClassPath: lib/maven/bcprov-jdk15on-1.65.01.jar
 Export-Package: org.bouncycastle;version="1.65.01",

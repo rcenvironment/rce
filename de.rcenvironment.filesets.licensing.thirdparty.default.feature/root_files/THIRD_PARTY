@@ -88,7 +88,6 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	XmlSchema (org.apache.ws.commons.schema:XmlSchema:1.4.7 - http://ws.apache.org/commons/XmlSchema)
 
  Berkeley Software Distribution (BSD)
-	dom4j (dom4j:dom4j:1.6.1 - http://dom4j.org)
 	jung-algorithms (net.sf.jung:jung-algorithms:2.0.1 - http://jung.sourceforge.net/site/jung-algorithms)
 	jung-api (net.sf.jung:jung-api:2.0.1 - http://jung.sourceforge.net/site/jung-api)
 	jung-graph-impl (net.sf.jung:jung-graph-impl:2.0.1 - http://jung.sourceforge.net/site/jung-graph-impl)
@@ -151,9 +150,6 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
  ICU license
 	icu4j (com.ibm.icu:icu4j:2.6.1 - no url defined)
 
- Jaxen Project License
-	jaxen (jaxen:jaxen:1.1.1 - http://jaxen.codehaus.org/)
-	
  Jython License
     jython (org.python:jython-standalone:2.7.0 - http://www.jython.org/)
 

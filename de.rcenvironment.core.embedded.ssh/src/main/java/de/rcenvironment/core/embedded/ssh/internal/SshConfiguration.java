@@ -38,7 +38,10 @@ public class SshConfiguration {
 
     protected static final String DEFAULT_HOST = "127.0.0.1"; // conservative default: bind to localhost, not 0.0.0.0
 
-    protected static final Integer DEFAULT_IDLE_TIMEOUT_SECONDS = 10 * 60; // 10 minutes
+    // Was 10 Minutes until 10.2.0, then changed to 1 minute to prevent SSH sessions lingering for that time with some clients, even
+    // after they have actively closed their connection. A special solution to keep interactive shells open for longer may be added in a
+    // future release. -- misc_ro
+    protected static final Integer DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
 
     private static final String CONFIG_PROPERTY_IDLE_TIMEOUT_SECONDS = "idleTimeoutSeconds";
 

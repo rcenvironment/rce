@@ -1,28 +1,25 @@
-package de.rcenvironment.components.script.execution.python;
+/*
+ * Copyright 2006-2020 DLR, Germany
+ * 
+ * SPDX-License-Identifier: EPL-1.0
+ * 
+ * https://rcenvironment.de/
+ */
 
-import static org.junit.Assert.assertEquals;
+package de.rcenvironment.components.script.execution.python;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import javax.script.ScriptException;
 
 import org.easymock.Capture;
 import org.easymock.CaptureType;
-import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.components.script.common.pythonAgentInstanceManager.PythonAgentInstanceManager;
 import de.rcenvironment.components.script.common.pythonAgentInstanceManager.internal.PythonAgent;
-import de.rcenvironment.components.script.common.pythonAgentInstanceManager.internal.PythonAgentInstanceManagerImpl;
-import de.rcenvironment.components.script.common.pythonAgentInstanceManager.internal.ScriptJSONObject;
-import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 public class PythonAgentTest {
     

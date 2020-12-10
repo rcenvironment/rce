@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.platform.combined.feature_10.1.1.qualifier.jar" id="de.rcenvironment.platform.combined.feature" version="10.1.1.qualifier"/>
-   <feature url="features/de.rcenvironment.platform.maven_extensions.bdd.feature_10.1.1.qualifier.jar" id="de.rcenvironment.platform.maven_extensions.bdd.feature" version="10.1.1.qualifier"/>
+   <feature url="features/de.rcenvironment.platform.combined.feature_10.2.1.qualifier.jar" id="de.rcenvironment.platform.combined.feature" version="10.2.1.qualifier"/>
+   <feature url="features/de.rcenvironment.platform.maven_extensions.bdd.feature_10.2.1.qualifier.jar" id="de.rcenvironment.platform.maven_extensions.bdd.feature" version="10.2.1.qualifier"/>
    <feature id="de.vonloesch.pdf4eclipse" version="1.1.0"/>
    <feature id="nu.psnet.quickimage" version="1.0.3.2"/>
 </site>

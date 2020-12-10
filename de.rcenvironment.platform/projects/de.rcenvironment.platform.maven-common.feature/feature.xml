@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven_common.feature"
       label="RCE Platform - Maven Plain Java Common Libraries Feature"
-      version="10.1.1.qualifier"
+      version="10.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -115,12 +115,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <discovery label="RCE (Remote Component Environment)" url="http://www.rcenvironment.de"/>
       <discovery label="Eclipse" url="http://www.eclipse.org"/>
    </url>
-
-   <plugin
-         id="de.rcenvironment.platform.maven.xml"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"/>
 
    <plugin
          id="de.rcenvironment.platform.maven.other"

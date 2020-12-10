@@ -47,7 +47,6 @@ import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDat
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.testing.CommonTestOptions;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
-import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
 

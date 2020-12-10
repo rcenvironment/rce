@@ -2,21 +2,21 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Native Code Libraries - Cross-Platform
 Bundle-SymbolicName: de.rcenvironment.platform.maven.native.common;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-ClassPath: lib/maven/oshi-core-4.7.0.jar,
- lib/maven/jna-5.5.0.jar,
- lib/maven/jna-platform-5.5.0.jar
-Export-Package: com.sun.jna;version="5.5.0",
- com.sun.jna.darwin;version="5.5.0",
- com.sun.jna.platform.win32;version="5.5.0",
- com.sun.jna.ptr;version="5.5.0",
- com.sun.jna.win32;version="5.5.0",
- oshi;version="4.7.0",
- oshi.hardware;version="4.7.0",
- oshi.software.os;version="4.7.0",
- oshi.util;version="4.7.0"
+Bundle-ClassPath: lib/maven/oshi-core-4.9.5.jar,
+ lib/maven/jna-5.6.0.jar,
+ lib/maven/jna-platform-5.6.0.jar
+Export-Package: com.sun.jna;version="5.6.0",
+ com.sun.jna.darwin;version="5.6.0",
+ com.sun.jna.platform.win32;version="5.6.0",
+ com.sun.jna.ptr;version="5.6.0",
+ com.sun.jna.win32;version="5.6.0",
+ oshi;version="4.9.5",
+ oshi.hardware;version="4.9.5",
+ oshi.software.os;version="4.9.5",
+ oshi.util;version="4.9.5"
 Eclipse-BundleShape: dir
 Import-Package: org.slf4j;version="1.7.25",
  org.slf4j.helpers;version="1.7.25",

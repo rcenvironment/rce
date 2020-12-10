@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform</artifactId>
 	<name>RCE Platform Master Project</name>
-	<version>10.1.1-SNAPSHOT</version>
+	<version>10.2.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -48,7 +48,6 @@
 		<module>projects/de.rcenvironment.platform.maven.ssh.server</module>
 		<module>projects/de.rcenvironment.platform.maven.testing</module>
 		<module>projects/de.rcenvironment.platform.maven.testing.bdd</module>
-		<module>projects/de.rcenvironment.platform.maven.xml</module>
 		<module>projects/de.rcenvironment.platform.maven.other</module>
 		<!-- platform-specific library bundles -->
 		<module>projects/de.rcenvironment.platform.maven.native.common</module>

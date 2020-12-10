@@ -52,7 +52,8 @@ public class KeyToolCommandPlugin implements CommandPlugin {
         if (SUBCMD_SSH_PW.equals(subCmd) || SUBCMD_UPLINK_PW.equals(subCmd)) {
             performGenerateSshOrUplinkPw(context, parameters);
         } else {
-            throw CommandException.unknownCommand(context);
+            throw CommandException.syntaxError("Missing operation argument (e.g. \"" + MAIN_CMD + " " + SUBCMD_SSH_PW + "\")",
+                context);
         }
     }
 
@@ -73,8 +74,12 @@ public class KeyToolCommandPlugin implements CommandPlugin {
     @Override
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(MAIN_CMD + " " + SUBCMD_SSH_PW + " / " + MAIN_CMD + " " + SUBCMD_UPLINK_PW, null,
-            false, "generates a password for an SSH or Uplink connection, and the corresponding server entry"));
+        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
+        // should be revisited when new command help/parser is in place
+        contributions.add(new CommandDescription(MAIN_CMD, SUBCMD_SSH_PW,
+            false, "generates a password for an SSH connection, and the corresponding server entry"));
+        contributions.add(new CommandDescription(MAIN_CMD + " " + SUBCMD_UPLINK_PW, null,
+            false, "generates a password for an Uplink connection, and the corresponding server entry"));
         return contributions;
     }
 

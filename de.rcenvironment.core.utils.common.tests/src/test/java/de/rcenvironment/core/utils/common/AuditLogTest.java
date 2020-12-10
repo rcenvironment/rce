@@ -16,9 +16,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -30,6 +33,9 @@ import de.rcenvironment.core.utils.common.AuditLog.AuditLogBackend;
  * @author Robert Mischke
  */
 public class AuditLogTest {
+
+    // ISO-8601 with three millisecond digits; these are always attached with a dot, regardless of locale
+    private static final Pattern TIMESTAMP_VERIFICATION_REGEXP = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$");
 
     /**
      * Test backend that captures the output.
@@ -100,8 +106,9 @@ public class AuditLogTest {
         log.appendInternal("test", null);
         String timestamp = capture.get(0)[0];
 
-        // verify format: local ISO time with milliseconds, no timezone; for now, do not enforce dot vs. comma separator
-        assertTrue(timestamp.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[\\.,]\\d{3}$"));
+        // verify timestamp length constant and format
+        assertEquals(AuditLog.EXPECTED_TIMESTAMP_LENGTH, timestamp.length());
+        assertTrue(timestamp, TIMESTAMP_VERIFICATION_REGEXP.matcher(timestamp).matches());
 
         assertEquals(capture.get(0)[2], "{}");
 
@@ -110,7 +117,31 @@ public class AuditLogTest {
         // empty data
         log.appendInternal("test", new HashMap<>());
         assertEquals(capture.get(0)[2], "{}");
+    }
 
+    /**
+     * Verifies that:
+     * <li>the overall timestamp format looks as expected (ISO-8601 with three millisecond digits),
+     * <li>in particular, milliseconds are separated by dot, regardless of locale,
+     * <li>and that a zero millisecond part is not omitted, but rendered as "000" (regression test for #0017428)
+     */
+    @Test
+    public void timestampFormatting() {
+        LocalDateTime time = LocalDateTime.now();
+        // adust the millisecond part so that its representation should be ".100"
+        time = time.with(ChronoField.MILLI_OF_SECOND, 100);
+        String timestamp = new AuditLog(null).formatTimestamp(time);
+
+        // verify format: local ISO time with milliseconds, no timezone; milliseconds present, separated with a dot
+        assertTrue(timestamp, TIMESTAMP_VERIFICATION_REGEXP.matcher(timestamp).matches());
+        assertTrue(timestamp, timestamp.endsWith(".100"));
+
+        // set the millisecond part to zero
+        time = time.with(ChronoField.MILLI_OF_SECOND, 0);
+        timestamp = new AuditLog(null).formatTimestamp(time);
+
+        assertTrue(timestamp, TIMESTAMP_VERIFICATION_REGEXP.matcher(timestamp).matches());
+        assertTrue(timestamp, timestamp.endsWith(".000"));
     }
 
 }

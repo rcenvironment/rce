@@ -1,3 +1,33 @@
+RCE 10.2.1 (Dec 08, 2020)
+
+# Network (SSH, Uplink, and Remote Access Connections)
+
+- Improved event.log entries: added more information, especially regarding login 
+  events and opening/closing connections, and reduced the number of events;
+  fixed cases where the end of a session was not always logged
+- Lowered timeout of SSH connections from 10 minutes to 1 minute for technical 
+  reasons; Note that this also affects interactive SSH sessions
+- Set an explicit limit of three login attempts per connection (currently hardcoded)
+
+# Library Changes
+
+- Upgraded OSHI to version 4.9.5, fixing a memory leak in long-running RCE instances
+- Removed the obsolete dom4j 1.x library
+
+# Documentation
+
+- Rewrote section on installation in user guide to better explain
+  signature handling
+
+# Other
+
+- Extended validity of RCE signing key (unchanged fingerprint: 0xBA880CB39DC1CE34, 
+  new expiration date: December 2, 2022)
+- Reinstated commands `keytool` and `sysmon`, which were unavailable in 10.2.0 
+  by accident
+- Minor bugfixes
+
+
 RCE 10.2.0 (Nov 11, 2020)
 
 # Network

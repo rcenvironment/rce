@@ -107,13 +107,16 @@ public class SystemMonitoringCommandPlugin implements CommandPlugin {
 
     @Override
     public Collection<CommandDescription> getCommandDescriptions() {
+        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
+        // should be revisited when new command help/parser is in place
+        
         // TODO possible expansion: add "local" query command, too?
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions
-            .add(new CommandDescription(ROOT_COMMAND + SPACE + SUBCOMMAND_FETCH_LOCAL + "/" + SUBCOMMAND_FETCH_LOCAL_SHORT, "", false,
+            .add(new CommandDescription(ROOT_COMMAND, SUBCOMMAND_FETCH_LOCAL + "/" + SUBCOMMAND_FETCH_LOCAL_SHORT, false,
                 "prints system monitoring data for the local instance"));
         contributions
-            .add(new CommandDescription(ROOT_COMMAND + SPACE + SUBCOMMAND_FETCH_REMOTE + "/" + SUBCOMMAND_FETCH_REMOTE_SHORT, "", false,
+            .add(new CommandDescription(ROOT_COMMAND + " " + SUBCOMMAND_FETCH_REMOTE, "/" + SUBCOMMAND_FETCH_REMOTE_SHORT, false,
                 "fetches system monitoring data from all reachable nodes in the network, and prints it in a human-readable format"));
         contributions.add(new CommandDescription(ROOT_COMMAND + SPACE + SUBCOMMAND_API, "<operation>", false,
             "fetches system monitoring data from all reachable nodes in the network, and prints it in a parser-friendly format.",

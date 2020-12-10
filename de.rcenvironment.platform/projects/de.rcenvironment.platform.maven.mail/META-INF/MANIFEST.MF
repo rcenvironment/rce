@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Mail
 Bundle-SymbolicName: de.rcenvironment.platform.maven.mail;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/activation-1.1.1.jar,
  lib/maven/jodd-core-3.7.1.jar,

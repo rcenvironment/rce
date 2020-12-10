@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.start.headless</artifactId>
 	<name>RCE Core Start Headless Bundle</name>
-	<version>10.2.0-SNAPSHOT</version>
+	<version>10.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

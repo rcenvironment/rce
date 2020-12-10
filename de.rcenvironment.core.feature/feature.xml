@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.feature"
       label="RCE Core  Feature"
-      version="10.2.0.qualifier"
+      version="10.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -135,7 +135,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <import plugin="org.eclipse.equinox.app"/>
       <import plugin="de.rcenvironment.platform.maven.jms"/>
       <import plugin="org.eclipse.core.runtime" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="de.rcenvironment.platform.maven.xml"/>
       <import plugin="org.apache.commons.codec"/>
       <import plugin="de.rcenvironment.core.configuration.ui"/>
       <import plugin="org.ops4j.pax.logging.pax-logging-service"/>

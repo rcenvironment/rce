@@ -57,12 +57,6 @@ public final class AuditLogIds {
     public static final String NETWORK_NAMING_UPDATE = "network.naming.update";
 
     /**
-     * Logged when a connection to a server port is initiated; should be logged as early as possible, so some connection information may not
-     * be available yet.
-     */
-    public static final String CONNECTION_INCOMING_OPEN = "connection.incoming.open";
-
-    /**
      * Logged when an incoming connection has been successfully established. This should only be logged once the connection has been fully
      * validated on the application logic level. Mutually exclusive with the refused/failed event.
      */
@@ -70,8 +64,21 @@ public final class AuditLogIds {
 
     /**
      * Logged when an incoming connection has failed or been refused for any reason. Mutually exclusive with the success event.
+     * <p>
+     * SSH authentication timeout, which occurs when q client makes no authentication attempt at all, and a certain time expires, is also
+     * represented by this event. It can be recognized by the value of the "reason" field(s).
      */
     public static final String CONNECTION_INCOMING_REFUSE = "connection.incoming.refuse";
+
+    /**
+     * Logged on a failed authentication attempt. Whether this failure is fatal for the overall connection attempt or not is
+     * implementation-specific.
+     * <p>
+     * If this is ultimately followed up by a successful authentication attempt (in case another attempt is allowed in the first place),
+     * this event should be succeeded with a {@link #CONNECTION_INCOMING_ACCEPT} event. Otherwise, this should always be followed up by a
+     * {@link #CONNECTION_INCOMING_REFUSE} event.
+     */
+    public static final String CONNECTION_INCOMING_AUTH_FAILURE = "connection.incoming.authfail";
 
     /**
      * Logged when a connection has been terminally closed.

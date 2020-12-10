@@ -21,7 +21,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -30,6 +32,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -58,11 +62,11 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefi
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationExtensionDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.ComponentEndpointModelFactory;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputDatumHandling;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionBuilder;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputDatumHandling;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.configuration.CommandLineArguments;
@@ -184,6 +188,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
     private IconHelper iconHelper;
 
     private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
+
+    private final CountDownLatch initializationComplete = new CountDownLatch(1);
 
     private final Log log = LogFactory.getLog(ToolIntegrationServiceImpl.class);
 
@@ -466,7 +472,6 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             descriptionBuilder.inputHandlings(Arrays.asList(inputHandlings).stream()
                 .map(InputDatumHandling::valueOf)
                 .collect(Collectors.toList()));
-
 
             // migration code: usage (required, initial, optional) -> required, not required
             String[] inputExecutionConstraints;
@@ -764,20 +769,29 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
      * @param context of the bundle
      */
     @Activate
-    protected void activate() {
+    protected void activate(BundleContext bundleContext) {
         watchManager = fileWatcherManagerBuilder.build(this);
 
         asyncTaskService.execute("Initialize all provided ToolIntegrationContexts", () -> {
 
             ToolIntegrationContext context;
-            while ((context = toolIntegrationContextRegistry.fetchNextUninitializedToolIntegrationContext()) != null) {
+            while (bundleContext.getBundle().getState() == Bundle.ACTIVE
+                && (context = toolIntegrationContextRegistry.fetchNextUninitializedToolIntegrationContext()) != null) {
                 if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
                     log.debug("Registering " + ToolIntegrationContext.class.getSimpleName() + " " + context.getContextId());
                     integrateToolIntegrationContext(context);
                 }
             }
-            log.debug("Received termination signal from " + ToolIntegrationContext.class.getSimpleName() + " queue");
-            localComponentRegistry.reportToolIntegrationRegistrationComplete();
+            log.debug("Finished processing tool integration contexts from " + ToolIntegrationContext.class.getSimpleName() + " queue");
+            initializationComplete.countDown();
+
+            // note: this is only a band-aid fix until the structural startup/shutdown issues are addressed;
+            // this fix still leaves a minor risk of a race condition, although MUCH smaller than without it -- misc_ro
+            if (bundleContext.getBundle().getState() == Bundle.ACTIVE) {
+                localComponentRegistry.reportToolIntegrationRegistrationComplete();
+            } else {
+                log.debug("Skipping 'tool integration complete' trigger as this bundle seems to be shutting down");
+            }
         });
     }
 
@@ -786,6 +800,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
      */
     @Deactivate
     protected void deactivateIntegrationService() {
+        try {
+            if (!initializationComplete.await(10, TimeUnit.SECONDS)) {
+                log.warn("Exceeded timeout while waiting for initialization to finish");
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for initialization to finish", e);
+        }
         watchManager.shutdown();
     }
 

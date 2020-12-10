@@ -45,9 +45,13 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  */
 public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl implements ServerSideUplinkSession {
 
+    private static final String SESSION_CONTEXT_INFO_PREFIX_FOR_SSH_SESSION = "ssh session ";
+
     private static final boolean HEARTBEAT_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.heartbeat");
 
     private final String sessionContextInfoString; // provided by network connection layer
+
+    private final String eventLogConnectionId;
 
     private final String localSessionId;
 
@@ -236,6 +240,11 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         super(concurrencyUtilsFactory);
         this.loginAccountName = loginAccountName;
         this.sessionContextInfoString = sessionContextInfoString;
+        if (sessionContextInfoString.startsWith(SESSION_CONTEXT_INFO_PREFIX_FOR_SSH_SESSION)) {
+            this.eventLogConnectionId = sessionContextInfoString.substring(SESSION_CONTEXT_INFO_PREFIX_FOR_SSH_SESSION.length());
+        } else {
+            this.eventLogConnectionId = sessionContextInfoString; // unit tests etc.
+        }
         this.serverSideUplinkEndpointService = serverSideUplinkEndpointService;
         this.localSessionId = serverSideUplinkEndpointService.assignSessionId(ServerSideUplinkSessionImpl.this);
         updateLogDescriptor(); // updated once the namespace id is available
@@ -455,7 +464,7 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         String effectiveAccountName = sessionState.getEffectiveAccountName();
         entry
             .set(AUDIT_LOG_KEY_SESSION_ID, localSessionId)
-            .set(AUDIT_LOG_KEY_CONTEXT, sessionContextInfoString)
+            .set(AUDIT_LOG_KEY_CONNECTION_ID, eventLogConnectionId)
             .set(AUDIT_LOG_KEY_EFFECTIVE_LOGIN_NAME, effectiveAccountName)
             .set(AUDIT_LOG_KEY_EFFECTIVE_CLIENT_ID, sessionState.getEffectiveSessionQualifier());
         Optional<String> assignedNamespaceIdIfAvailable = sessionState.getAssignedNamespaceIdIfAvailable();
@@ -470,7 +479,7 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     private void writeAuditLogEntryOnSessionTerminating(UplinkSessionState newState) {
         AuditLog.append(AuditLog.newEntry(AuditLogIds.UPLINK_SESSION_CLOSE)
             .set(AUDIT_LOG_KEY_SESSION_ID, localSessionId)
-            .set(AUDIT_LOG_KEY_CONTEXT, sessionContextInfoString)
+            .set(AUDIT_LOG_KEY_CONNECTION_ID, eventLogConnectionId)
             .set(AUDIT_LOG_KEY_FINAL_STATE, newState.name()));
     }
 

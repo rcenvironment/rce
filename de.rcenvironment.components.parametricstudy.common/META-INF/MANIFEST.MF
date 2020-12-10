@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component Common
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.common
-Bundle-Version: 10.2.0.qualifier
+Bundle-Version: 10.2.1.qualifier
 Export-Package: de.rcenvironment.components.parametricstudy.common
 Bundle-ClassPath: .
 Bundle-Vendor: DLR

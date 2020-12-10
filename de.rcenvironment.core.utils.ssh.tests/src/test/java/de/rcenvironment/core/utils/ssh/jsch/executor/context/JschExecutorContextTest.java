@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.SshServer;
-import org.apache.sshd.server.auth.UserAuth;
 import org.apache.sshd.server.auth.UserAuthFactory;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.channel.ChannelSession;

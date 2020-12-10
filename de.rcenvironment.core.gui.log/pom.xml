@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.log</artifactId>
 	<name>RCE Core GUI Log Bundle</name>
-	<version>10.2.0-SNAPSHOT</version>
+	<version>10.2.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

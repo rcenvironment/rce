@@ -45,10 +45,12 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
+import de.rcenvironment.core.embedded.ssh.internal.IncomingSessionTracker.SessionHandle;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.AuditLog;
 import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
@@ -61,6 +63,10 @@ import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 @Component(immediate = true)
 public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
+    private static final int INCREASE_BY_ONE = 1;
+
+    private static final int DECREASE_BY_ONE = -1;
+
     private static final int DYNAMIC_ACCOUNT_FILE_MODIFICATION_CHECK_INTERVAL_MSEC = 10 * 1000;
 
     private static final String HOST_KEY_STORAGE_FILE_NAME = "ssh_host_key.dat";
@@ -68,6 +74,8 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     private static final String EVENT_LOG_KEY_CONNECTION_TYPE = "type";
 
     private static final String EVENT_LOG_VALUE_CONNECTION_TYPE = "ssh/uplink";
+
+    private static final int NUM_ALLOWED_AUTH_ATTEMPTS = 3; // TODO hardcoded for now; make configurable?
 
     private ConfigurationService configurationService;
 
@@ -90,6 +98,8 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     private final Map<String, String> announcedVersionEntries = new HashMap<>();
 
     private final Set<Session> openSshSessions = Collections.synchronizedSet(new HashSet<>());
+
+    private final IncomingSessionTracker<Session> sessionTracker = new IncomingSessionTracker<Session>(EVENT_LOG_VALUE_CONNECTION_TYPE);
 
     private final Log logger = LogFactory.getLog(getClass());
 
@@ -188,7 +198,8 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         sshd = createSSHServerAndApplySettings();
 
         // includes loading the list of static accounts
-        SshAuthenticationManager authenticationManager = new SshAuthenticationManager(sshConfiguration);
+        SshAuthenticationManager authenticationManager =
+            new SshAuthenticationManager(sshConfiguration, sessionTracker, NUM_ALLOWED_AUTH_ATTEMPTS);
 
         // path may be null to allow tests to disable dynamic account loading
         if (dynamicAccountsFilePath != null && Files.exists(dynamicAccountsFilePath)) {
@@ -221,7 +232,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
         try {
             sshd.start();
-            logSuccessfulServerStartup();
+            logServerStartupEvent();
             sshServerRunning = true;
         } catch (IOException e) {
             logger.error(
@@ -302,7 +313,9 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
         logger.debug("Configuring SSH session idle timeout of " + sshConfiguration.getIdleTimeoutSeconds() + " seconds");
         serverInstance.getProperties().put(SshServer.IDLE_TIMEOUT, TimeUnit.SECONDS.toMillis(sshConfiguration.getIdleTimeoutSeconds()));
-
+        // set the allowed time before the first authentication attempt; default is 120 seconds
+        // TODO make this configurable?
+        serverInstance.getProperties().put(SshServer.AUTH_TIMEOUT, TimeUnit.SECONDS.toMillis(10));
         return serverInstance;
     }
 
@@ -312,15 +325,13 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         if (sshd != null) {
             try {
                 sshd.stop(true);
-                AuditLog.append(AuditLog.newEntry(AuditLogIds.NETWORK_SERVERPORT_CLOSE)
-                    .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-                    .set("bind_ip", sshConfiguration.getHost())
-                    .set("port", sshConfiguration.getPort()));
-                logger.debug("Embedded SSH server shut down");
+                logServerShutdownEvent();
             } catch (IOException e) {
                 logger.error("Exception during shutdown of embedded SSH server", e);
             }
         }
+
+        sessionTracker.logLeftoverSessions();
     }
 
     // note: should only be called from synchronized methods
@@ -337,12 +348,14 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     }
 
     private void registerConnectionLifecycleListeners(SshServer serverInstance) {
+
         // Add listeners for logging high-level events. On an incoming connection, the earliest available callback seems to be
         // Session.established. -- misc_ro
         serverInstance.addSessionListener(new SessionListener() {
 
             @Override
             public void sessionEstablished(Session session) {
+                SessionHandle sessionTrackingHandle = sessionTracker.registerSessionStart(session);
 
                 if (!openSshSessions.add(session)) { // synchronized set
                     logger.error("SSH session registered more than once"); // sanity check failed
@@ -350,17 +363,33 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
                 // this seems to be the earliest available callback, so log this here
                 InetSocketAddress remoteAddressAndPort = (InetSocketAddress) session.getRemoteAddress();
+
                 // note: session.userName() is not defined here yet
-                AuditLog.append(AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_OPEN)
-                    .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-                    .set("remote_ip", remoteAddressAndPort.getAddress().getHostAddress())
-                    .set("remote_port", remoteAddressAndPort.getPort())
-                    .set("server_port", sshConfiguration.getPort())
-                    // as many other identifiers are not defined here yet, use the session object itself
-                    .set("ssh_session_id", System.identityHashCode(session)));
+                sessionTrackingHandle
+                    .addLogData("remote_ip", remoteAddressAndPort.getAddress().getHostAddress())
+                    .addLogData("remote_port", remoteAddressAndPort.getPort())
+                    .addLogData("server_port", sshConfiguration.getPort());
+            }
+
+            @Override
+            public void sessionCreated(Session session) {
+                updateSessionLivenessAndRegisterAsClosedIfZero(session, "sessionCreated()", INCREASE_BY_ONE);
+            }
+
+            @Override
+            public void sessionClosed(Session session) {
+                // TODO 10.3.0+: update this description in relation to the new close detection mechanism
+
+                // The only reliable marker of the end of a connection seems to be that at least one of this or channelClosed() is called.
+                // In some connection life cycles, this method is called exclusively; in others, this is called after channelClosed(), so
+                // allow duplicate registerSessionClosed() calls without considering it an error (2nd parameter 'true'). -- misc_ro
+
+                updateSessionLivenessAndRegisterAsClosedIfZero(session, "sessionClosed()", DECREASE_BY_ONE);
             }
 
         });
+
+        // TODO 10.3.0+: update this description in relation to the new close detection mechanism
 
         // On disconnect from RCE (via GUI), or on connection failure, however, neither
         // Session.closed, .disconnect, nor .exception are called. There is also no
@@ -372,48 +401,49 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             public void channelStateChanged(Channel channel, String hint) {
                 // the EOF case does not seem to trigger the other shutdown events, so log this
                 if ("SSH_MSG_CHANNEL_EOF".equals(hint)) {
-                    logConnectionShutdown(channel, "EOF");
+                    try {
+                        sessionTracker.forSession(channel.getSession()).registerDataStreamEOF();
+                    } catch (OperationFailureException e) {
+                        logger.warn("Failed to register stream EOF: " + e.getMessage());
+                    }
                 }
             }
 
             @Override
-            public void channelClosed(Channel channel, Throwable reason) {
-                // this seems to be the last available event, and called in the most cases,
-                // so log this here
-                logConnectionShutdown(channel, "regular");
+            public void channelInitialized(Channel channel) {
+                updateSessionLivenessAndRegisterAsClosedIfZero(channel.getSession(), "channelInitialized()", INCREASE_BY_ONE);
             }
 
-            private void logConnectionShutdown(Channel channel, String closeTrigger) {
-                Session session = channel.getSession();
-                String sshSessionLogId = Integer.toString(System.identityHashCode(session));
+            @Override
+            public void channelClosed(Channel channel, Throwable reason) {
+                updateSessionLivenessAndRegisterAsClosedIfZero(channel.getSession(), "channelClosed()", DECREASE_BY_ONE);
 
-                if (!openSshSessions.remove(session)) { // synchronized set
-                    // already logged -> do not write a second audit log entry
-                    logger.debug("Received additional close event with trigger '" + closeTrigger + "' for SSH session " + sshSessionLogId);
-                    return;
-                }
-                InetSocketAddress remoteAddressAndPort = (InetSocketAddress) session.getRemoteAddress();
-                AuditLog.append(AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_CLOSE)
-                    .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-                    .set("login_name", session.getUsername())
-                    .set("remote_ip", remoteAddressAndPort.getAddress().getHostAddress())
-                    .set("remote_port", remoteAddressAndPort.getPort())
-                    .set("server_port", sshConfiguration.getPort())
-                    // for association; see start event
-                    .set("ssh_session_id", sshSessionLogId)
-                    .set("close_trigger", closeTrigger));
+                // TODO 10.3.0+: update this description in relation to the new close detection mechanism
+
+                // The only reliable marker of the end of a connection seems to be that at least one of this or sessionClosed() is called.
+                // In some connection life cycles, this method is called exclusively; in others, this is called before sessionClosed().
+                // In both cases, it should never be a repeated call, so if this happens, this should be considered a consistency error (2nd
+                // parameter 'false'). -- misc_ro
             }
 
         });
     }
 
-    private void logSuccessfulServerStartup() {
+    private void logServerStartupEvent() {
         AuditLog.append(AuditLog.newEntry(AuditLogIds.NETWORK_SERVERPORT_OPEN)
             .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
             .set("bind_ip", sshConfiguration.getHost())
             .set("port", sshConfiguration.getPort()));
         logger.info(StringUtils.format("SSH server started on port %s (bound to IP %s)", sshConfiguration.getPort(),
             sshConfiguration.getHost()));
+    }
+
+    private void logServerShutdownEvent() {
+        AuditLog.append(AuditLog.newEntry(AuditLogIds.NETWORK_SERVERPORT_CLOSE)
+            .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
+            .set("bind_ip", sshConfiguration.getHost())
+            .set("port", sshConfiguration.getPort()));
+        logger.debug("Embedded SSH server shut down");
     }
 
     private boolean getActivationSettingFromConfig(SshConfiguration currentConfig) {
@@ -442,6 +472,30 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     @Reference
     protected void bindServerSideUplinkSessionService(ServerSideUplinkSessionService newInstance) {
         this.uplinkSessionService = newInstance;
+    }
+
+    /*
+     * TODO 10.3.0+: add more detailed explanation of this mechanism
+     * 
+     * Short version: Initially, this approach was needed as a workaround; later, it was kept to handle cases where the last channel close
+     * and the session close could be fired out of order. As it does not seem to have any downsides, there is currently no reason to change
+     * it. -- misc_ro
+     */
+    private void updateSessionLivenessAndRegisterAsClosedIfZero(Session session, String eventName, int delta) {
+        try {
+            int newSessionLivenessCount = sessionTracker.forSession(session).modifyCustomCounter(delta);
+            // TODO 10.3.0+: consider leaving this in as verbose log option
+            // logger.debug("SSH session " + session + " " + eventName + ", new liveness value: " + newSessionLivenessCount);
+            if (newSessionLivenessCount == 0) {
+                // the second parameter was intended for an earlier approach and is probably obsolete; always "false",
+                // as duplicate calls to this method should always be considered a consistency violation for now. --misc_ro
+                // TODO 10.3.0+: examine and consider removing the parameter
+                sessionTracker.registerSessionClosed(session, false);
+            }
+        } catch (OperationFailureException e) {
+            logger.warn("SSH session " + session + ": Failed to register " + eventName + " event: " + e.getMessage());
+            return;
+        }
     }
 
     private void writeStatusToAuditLog(String eventType) {

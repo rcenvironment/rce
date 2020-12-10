@@ -121,8 +121,6 @@ public class DMContentProvider implements ITreeContentProvider {
 
     private static final String NO_BUILDER_ERROR_MESSAGE = "No subtree builder found for history data item with identifier: ";
 
-    private static final String STRING_SLASH = "/";
-
     private static final String NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME = "%s <%s>";
 
     private static final String NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST = "%s (%s)  <%s>";
@@ -584,19 +582,19 @@ public class DMContentProvider implements ITreeContentProvider {
         } else {
             for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
 
-                if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
+                if (!workflowRun.getComponentRuns().get(componentInstance).isEmpty()) {
 
                     final ComponentRun firstComponentRun = workflowRun.getComponentRuns().get(componentInstance).iterator().next();
                     final LogicalNodeId componentRunLogicalNodeId = firstComponentRun.getLogicalNodeId();
 
                     // TODO review: why/when can this be null? if it can be, this should be documented - misc_ro
                     if (componentRunLogicalNodeId != null) {
+                        final String componentName = componentInstance.getComponentInstanceName();
                         DMBrowserNode compNode = DMBrowserNode.addNewLeafNode(
-                            StringUtils.format("%s: %s", componentInstance.getComponentInstanceName(),
+                            StringUtils.format("%s: %s", componentName,
                                 componentRunLogicalNodeId.getAssociatedDisplayName()),
                             DMBrowserNodeType.Component, componentHostInformation);
                         MetaDataSet metaDataSet = new MetaDataSet();
-                        final String componentName = componentInstance.getComponentInstanceName();
                         metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
                         metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID());
                         compNode.setMetaData(metaDataSet);
@@ -1204,7 +1202,7 @@ public class DMContentProvider implements ITreeContentProvider {
     }
 
     private boolean wasComponentRunOnLocalInstance(final ComponentRun firstRun) {
-        return localInstanceSessionId.isSameInstanceNodeAs(firstRun.getLogicalNodeId());
+        return localInstanceSessionId.convertToDefaultLogicalNodeId().equals(firstRun.getLogicalNodeId());
     }
 
 }

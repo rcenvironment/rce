@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Incubator Bundle
 Bundle-SymbolicName: de.rcenvironment.core.utils.incubator;singleton:=true
-Bundle-Version: 10.2.0.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
@@ -17,12 +17,9 @@ Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
  net.sf.saxon;version="9.4.0.1",
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.lang3;version="3.1.0",
- org.dom4j;version="1.6.1",
- org.dom4j.io;version="1.6.1",
  org.imgscalr;version="4.2.0"
 Export-Package: de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.configuration,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
- de.rcenvironment.core.utils.incubator.formatter,
- de.rcenvironment.core.utils.incubator.xml
+ de.rcenvironment.core.utils.incubator.formatter
 Automatic-Module-Name: de.rcenvironment.core.utils.incubator

@@ -86,9 +86,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     private static final String SUBCOMMAND_TOOL_DETAILS = "describe-tool";
 
     private static final String SUBCOMMAND_WF_DETAILS = "describe-wf";
-    
+
     private static final String SUBCOMMAND_TOOL_DOCUMENTATION_LIST = "get-doc-list";
-    
+
     private static final String SUBCOMMAND_DOWNLOAD_DOCUMENTATION = "get-tool-doc";
 
     private static final Object SUBCOMMAND_ADMIN_PUBLISH_WF = "publish-wf";
@@ -100,9 +100,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     private static final Object SUBCOMMAND_ADMIN_UNPUBLISH_WF = "unpublish-wf";
 
     private static final Object SUBCOMMAND_ADMIN_LIST_WFS = "list-wfs";
-    
+
     private static final String INPUT = "input";
-    
+
     private static final String OUTPUT = "output";
 
     private RemoteAccessService remoteAccessService;
@@ -251,8 +251,11 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     @Override
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
+        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
+        // should be revisited when new command help/parser is in place
+        
         // ra protocol-version
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_PROTOCOL_VERSION, "", true,
+        contributions.add(new CommandDescription(RA_COMMAND, SUBCOMMAND_PROTOCOL_VERSION, true,
             "prints the protocol version of this interface"));
         // ra list-tools
         contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_TOOLS, "[-f/--format {csv|token-list}] "
@@ -295,8 +298,7 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         // ra-admin publish-wf
         contributions
             .add(new CommandDescription(
-                RA_ADMIN_COMMAND + " publish-wf",
-                "[-g <group name>] [-k] [-t] [-p <JSON placeholder file>] <workflow file> <id>",
+                RA_ADMIN_COMMAND , " publish-wf [-g <group name>] [-k] [-t] [-p <JSON placeholder file>] <workflow file> <id>",
                 false,
                 "publishes a workflow file for remote execution via \""
                     + RA_COMMAND + " " + SUBCOMMAND_RUN_WF + "\" using <id>.",
@@ -361,7 +363,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         } else if (SUBCOMMAND_DOWNLOAD_DOCUMENTATION.equals(subCommand)) {
             performDownloadDocumentation(context);
         } else {
-            throw CommandException.unknownCommand(context);
+            throw CommandException.syntaxError(
+                "Missing operation argument (e.g. \"" + RA_COMMAND + " " + SUBCOMMAND_PROTOCOL_VERSION  + "\")",
+                context);
         }
     }
 
@@ -374,7 +378,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         } else if (SUBCOMMAND_ADMIN_LIST_WFS.equals(subCommand)) {
             performAdminListWfs(context);
         } else {
-            throw CommandException.unknownCommand(context);
+            throw CommandException.syntaxError(
+                "Missing operation argument (e.g. \"" + RA_ADMIN_COMMAND + " list-wfs" + "\")",
+                context);
         }
     }
 
@@ -637,8 +643,7 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         String sessionToken = context.consumeNextToken();
         remoteAccessService.cancelToolOrWorkflow(sessionToken);
     }
-    
-    
+
     private void performGetToolDocList(CommandContext context) {
         String toolId = context.consumeNextToken();
         remoteAccessService.getToolDocumentationList(context.getOutputReceiver(), toolId);
@@ -650,12 +655,11 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         String nodeId = context.consumeNextToken();
         String hashValue = context.consumeNextToken();
         String sessionToken = context.consumeNextToken();
-        
+
         String usedCommandVariant = context.getOriginalTokens().get(0);
         String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
-        
 
-        //Get SCP context and output file path
+        // Get SCP context and output file path
         ScpContext scpContext = scpContextManager.getMatchingScpContext(account.getLoginName(), virtualScpRootPath);
         if (scpContext == null) {
             throw CommandException.executionError(StringUtils.format(
@@ -663,12 +667,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         }
 
         File outputFilesPath = new File(scpContext.getLocalRootPath(), OUTPUT);
-        
+
         remoteAccessService.getToolDocumentation(context.getOutputReceiver(), toolId, nodeId, hashValue, outputFilesPath);
     }
-
-    
-    
 
     private void performAdminPublishWf(CommandContext context) throws CommandException {
         // ra-admin publish-wf [-g group name] [-t] [-p <JSON placeholder file>] <workflow file> <id>
@@ -782,7 +783,7 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             throw CommandException.syntaxError(StringUtils.format("Invalid %s: %s", description, errorMsg), context);
         }
     }
-    
+
     /**
      * Includes {@link #validateParameterNotNull(String, String, CommandContext)}.
      */

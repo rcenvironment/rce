@@ -9,7 +9,6 @@
 package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.SortedMap;
@@ -20,6 +19,7 @@ import java.util.regex.PatternSyntaxException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sshd.common.session.Session;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
@@ -30,11 +30,9 @@ import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 import de.rcenvironment.core.embedded.ssh.api.TemporarySshAccount;
 import de.rcenvironment.core.embedded.ssh.api.TemporarySshAccountControl;
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLog.LogEntry;
-import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
 /**
  * A simple Password Authenticator to be replaced by a public/private key infrastructure.
@@ -45,26 +43,37 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class SshAuthenticationManager implements PasswordAuthenticator, TemporarySshAccountControl, PublickeyAuthenticator {
 
-    private static final String REFUSAL_REASON_NO_SUCH_USER = "account not found or disabled";
-
-    private static final String REFUSAL_REASON_AUTH_FAILURE = "auth failure";
-
     private static final String REFUSAL_REASON_UNDEFINED = "<undefined>";
 
-    private static final String EVENT_LOG_KEY_CONNECTION_TYPE = "type";
+    private static final String REFUSAL_REASON_EMPTY_LOGIN_NAME = "empty login name";
 
-    private static final String EVENT_LOG_KEY_REFUSAL_REASON = "reason";
+    private static final String REFUSAL_REASON_INVALID_ACCOUNT = "invalid account";
 
-    private static final String EVENT_LOG_VALUE_CONNECTION_TYPE = "ssh/uplink";
+    private static final String REFUSAL_REASON_EMPTY_PASSWORD = "empty password";
 
-    private SshConfiguration configuration;
+    private static final String REFUSAL_REASON_WRONG_PASSWORD = "wrong password";
+
+    private static final String REFUSAL_REASON_NO_MATCHING_KEY = "no matching key";
+
+    private static final String EVENT_LOG_VALUE_AUTH_METHOD_PASSWORD = "password";
+
+    private static final String EVENT_LOG_VALUE_AUTH_METHOD_PUBLIC_KEY = "publickey";
+
+    private final SshConfiguration configuration;
+
+    private final IncomingSessionTracker<Session> sessionTracker;
+
+    private final int numAllowedLoginAttempts;
 
     private List<TemporarySshAccount> temporaryAccounts;
 
     private final Log log = LogFactory.getLog(getClass());
 
-    public SshAuthenticationManager(SshConfiguration configuration) {
+    public SshAuthenticationManager(SshConfiguration configuration, IncomingSessionTracker<Session> sessionTracker,
+        int numAllowedLoginAttempts) {
         this.configuration = configuration;
+        this.sessionTracker = sessionTracker;
+        this.numAllowedLoginAttempts = numAllowedLoginAttempts;
     }
 
     @Override
@@ -74,9 +83,9 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         String refusalReason = REFUSAL_REASON_UNDEFINED;
 
         if (passwordParam == null || passwordParam.isEmpty()) {
-            refusalReason = "empty password";
+            refusalReason = REFUSAL_REASON_EMPTY_PASSWORD;
         } else if (loginName == null || loginName.isEmpty()) {
-            refusalReason = "empty login name";
+            refusalReason = REFUSAL_REASON_EMPTY_LOGIN_NAME;
         } else if (loginName.startsWith(SshConstants.TEMP_USER_PREFIX)) {
             // currently disabled
             refusalReason = "unsupported temp user";
@@ -87,15 +96,19 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
                 if (checkPassword(account, passwordParam)) {
                     success = true;
                 } else {
-                    refusalReason = REFUSAL_REASON_AUTH_FAILURE;
+                    refusalReason = REFUSAL_REASON_WRONG_PASSWORD;
                 }
             } else {
-                // no matching account found
-                refusalReason = REFUSAL_REASON_NO_SUCH_USER;
+                // no matching active account found
+                refusalReason = REFUSAL_REASON_INVALID_ACCOUNT;
             }
         }
 
-        writeAuditLogEntry(session, loginName, "password", success, refusalReason);
+        registerAuthResult(session, loginName, EVENT_LOG_VALUE_AUTH_METHOD_PASSWORD, success, refusalReason);
+
+        if (!success && session != null && sessionTracker != null) {
+            closeConnectionIfAuthAttemptsExceeded(session);
+        }
 
         return success;
     }
@@ -103,30 +116,94 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
     /*
      * For public key authentication. Does not perform the actual authentication, but just checks if the given public key is allowed to
      * authenticate.
-     *
+     * 
+     * Note that this seems to be called twice with the same parameters, either always or in certain situations. The circumstances are
+     * unclear for now. This is currently addressed by ignoring repeated calls in the session tracker.
      */
     @Override
     public boolean authenticate(String loginName, PublicKey key, ServerSession session) {
         boolean success = false;
         String refusalReason = REFUSAL_REASON_UNDEFINED;
 
-        SshAccount account = configuration.getAccountByName(loginName, false);
-        if (account != null) {
-            PublicKey knownKey = account.getPublicKeyObj();
-            if (knownKey != null) {
-                success = key.equals(knownKey);
-            }
-            if (!success) {
-                refusalReason = REFUSAL_REASON_AUTH_FAILURE;
-            }
+        if (loginName == null || loginName.isEmpty()) {
+            refusalReason = REFUSAL_REASON_EMPTY_LOGIN_NAME;
         } else {
-            // no matching account found
-            refusalReason = REFUSAL_REASON_NO_SUCH_USER;
+            SshAccount account = configuration.getAccountByName(loginName, false);
+            if (account != null) {
+                PublicKey knownKey = account.getPublicKeyObj();
+                if (knownKey != null) {
+                    success = key.equals(knownKey);
+                }
+                if (!success) {
+                    refusalReason = REFUSAL_REASON_NO_MATCHING_KEY;
+                }
+            } else {
+                // no matching active account found
+                refusalReason = REFUSAL_REASON_INVALID_ACCOUNT;
+            }
         }
 
-        writeAuditLogEntry(session, loginName, "publickey", success, refusalReason);
+        if (session != null) {
+            // ignores duplicate calls; see method comment
+            registerAuthResult(session, loginName, EVENT_LOG_VALUE_AUTH_METHOD_PUBLIC_KEY, success, refusalReason);
+        } else {
+            // consistency check
+            if (!RuntimeDetection.isTestEnvironment()) {
+                throw new IllegalStateException("SSH session is null while apparently not in a test context");
+            }
+        }
+
+        if (!success && session != null && sessionTracker != null) {
+            closeConnectionIfAuthAttemptsExceeded(session);
+        }
 
         return success;
+    }
+
+    private void registerAuthResult(ServerSession session, String loginName, String method, boolean success, String refusalReason) {
+
+        if (session == null || sessionTracker == null) {
+            // consistency check - both are only allowed during unit tests
+            if (!RuntimeDetection.isTestEnvironment()) {
+                throw new IllegalStateException(
+                    "SSH session or session tracker null (" + session + "/" + sessionTracker
+                        + ") while apparently outside of a test context");
+            }
+            return;
+        }
+
+        try {
+            if (success) {
+                sessionTracker.forSession(session).registerAuthenticationSuccess(loginName, method);
+            } else {
+                sessionTracker.forSession(session).registerAuthenticationFailure(loginName, method,
+                    refusalReason);
+            }
+        } catch (OperationFailureException e) {
+            log.warn("Failed to log authentication result (success=" + success + "): " + e.getMessage());
+        }
+    }
+
+    private void closeConnectionIfAuthAttemptsExceeded(ServerSession session) {
+        // TODO improve log id
+        final String logId = session.toString();
+        int authenticationFailureCount;
+        try {
+            authenticationFailureCount = sessionTracker.forSession(session).getAuthenticationFailureCount();
+        } catch (OperationFailureException e1) {
+            log.warn("Failed to query incoming SSH session " + logId
+                + " for its login failure count; this is possible, but unusual in normal operation");
+            return;
+        }
+        if (authenticationFailureCount >= numAllowedLoginAttempts) {
+            log.debug(
+                "Closing incoming SSH connection " + logId + " after " + authenticationFailureCount + " failed authentication attempts");
+            try {
+                session.close();
+            } catch (IOException e) {
+                log.error("Failed to close", e);
+            }
+        }
     }
 
     /**
@@ -323,35 +400,6 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         log.error("Consistency error: SSH login attempt with a password for user \"" + account.getLoginName()
             + "\", but the local account has neither a clear-text nor a hashed password");
         return false;
-    }
-
-    private void writeAuditLogEntry(ServerSession session, String usernameParam, String authMethod, boolean success, String refusalReason) {
-        if (session == null) {
-            if (!RuntimeDetection.isTestEnvironment()) {
-                throw new IllegalStateException("SSH session is null while apparently not in a test context");
-            }
-            return;
-        }
-        String sshSessionLogId = Integer.toString(System.identityHashCode(session));
-        InetSocketAddress remoteAddressAndPort = (InetSocketAddress) session.getRemoteAddress();
-        final LogEntry auditLogEntry;
-        if (success) {
-            auditLogEntry = AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_ACCEPT);
-        } else {
-            auditLogEntry = AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_REFUSE);
-        }
-        auditLogEntry
-            .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-            .set("login_name", usernameParam)
-            .set("auth_method", authMethod)
-            .set("remote_ip", remoteAddressAndPort.getAddress().getHostAddress())
-            .set("remote_port", remoteAddressAndPort.getPort())
-            .set("server_port", configuration.getPort())
-            .set("ssh_session_id", sshSessionLogId); // for association
-        if (!success) {
-            auditLogEntry.set(EVENT_LOG_KEY_REFUSAL_REASON, refusalReason);
-        }
-        AuditLog.append(auditLogEntry);
     }
 
 }

@@ -11,11 +11,10 @@ package de.rcenvironment.core.embedded.ssh.internal;
 import java.security.PublicKey;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
+import junit.framework.TestCase;
 
 /**
  * Test for the class ConsoleAuthenticator.
@@ -30,7 +29,8 @@ public class SshAuthenticationManagerTest extends TestCase {
 
     public SshAuthenticationManagerTest() {
         configuration = SshTestUtils.getValidConfig();
-        authenticationManager = new SshAuthenticationManager(configuration);
+        // null = no session tracker needed; 3 = allowed number of login attempts, set to not interfere with testing
+        authenticationManager = new SshAuthenticationManager(configuration, null, 3);
     }
 
     /**
@@ -91,7 +91,7 @@ public class SshAuthenticationManagerTest extends TestCase {
             + userName + ")",
             authenticationManager.authenticate(userName, password, null));
     }
-    
+
     /**
      * 
      * Test for authenticate method with disabled account.
@@ -104,7 +104,6 @@ public class SshAuthenticationManagerTest extends TestCase {
         assertFalse("Authenticator accepted a disabled account.",
             authenticationManager.authenticate(user.getLoginName(), user.getPassword(), null));
     }
-
 
     /**
      * 
@@ -160,7 +159,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testIncorrectKeyForPublicKeyUser() {
-        SshAccount user =  SshTestUtils.getValidPublicKeyUser();
+        SshAccount user = SshTestUtils.getValidPublicKeyUser();
         PublicKey key = SshTestUtils.createIncorrectPublicKey();
         assertFalse("Authenticator accepted a existing user with incorrect key.",
             authenticationManager.authenticate(user.getLoginName(), key, null));
@@ -180,7 +179,7 @@ public class SshAuthenticationManagerTest extends TestCase {
             + userName + ")",
             authenticationManager.authenticate(userName, key, null));
     }
-    
+
     /**
      * 
      * Test for authenticate method with disabled account.
@@ -193,7 +192,6 @@ public class SshAuthenticationManagerTest extends TestCase {
         assertFalse("Authenticator accepted a disabled account.",
             authenticationManager.authenticate(user.getLoginName(), user.getPublicKeyObj(), null));
     }
-
 
     /**
      * 

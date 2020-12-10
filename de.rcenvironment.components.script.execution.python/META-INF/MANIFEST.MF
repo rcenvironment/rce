@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.python
-Bundle-Version: 10.2.0.qualifier
+Bundle-Version: 10.2.1.qualifier
 Export-Package: de.rcenvironment.components.script.common.pythonAgentInstanceManager,
  de.rcenvironment.components.script.common.pythonAgentInstanceManager.internal,
  de.rcenvironment.components.script.execution.python,

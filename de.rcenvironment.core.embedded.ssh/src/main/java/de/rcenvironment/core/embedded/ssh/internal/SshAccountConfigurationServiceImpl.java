@@ -215,7 +215,8 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
     private void readAsParsedConfigurationData(final ConfigurationSegment sshConfigurationSegment) throws ConfigurationException {
         try {
             sshConfiguration = new SshConfiguration(sshConfigurationSegment);
-            sshAuthenticationManager = new SshAuthenticationManager(sshConfiguration);
+            // null = no session tracker needed; 0 = allowed number of login attempts, not used here at all
+            sshAuthenticationManager = new SshAuthenticationManager(sshConfiguration, null, 0);
         } catch (ConfigurationException | IOException e) {
             throw new ConfigurationException("Error reading SSH configuration data: " + e.getMessage());
         }

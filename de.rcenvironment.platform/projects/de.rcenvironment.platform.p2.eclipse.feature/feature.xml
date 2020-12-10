@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.p2.eclipse.feature"
       label="RCE Platform - p2 Bridge Feature - Eclipse Artifacts"
-      version="10.1.1.qualifier"
+      version="10.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

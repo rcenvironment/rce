@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Other
 Bundle-SymbolicName: de.rcenvironment.platform.maven.other;singleton:=true
-Bundle-Version: 10.1.1.qualifier
+Bundle-Version: 10.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/commons-codec-1.4.jar,
  lib/maven/poi-3.8.jar,
@@ -163,10 +163,6 @@ Export-Package: com.fasterxml.jackson.annotation;version="2.11.1",
  org.picocontainer.visitors;version="2.15",
  org.python.jsr223;version="2.5.1",
  com.jcraft.jsch;version="0.1.55"
-Import-Package: org.dom4j;version="1.6.1",
- org.dom4j.bean;version="1.6.1",
- org.dom4j.datatype;version="1.6.1",
- org.dom4j.io;version="1.6.1",
- org.slf4j;version="1.6.1"
+Import-Package: org.slf4j;version="1.6.1"
 Bundle-Vendor: DLR
 Eclipse-BundleShape: dir
