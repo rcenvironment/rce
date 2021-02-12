@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2020 DLR, Germany
+ * Copyright 2006-2021 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -96,8 +96,6 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
     private boolean sshServerRunning = false; // actually running?
 
     private final Map<String, String> announcedVersionEntries = new HashMap<>();
-
-    private final Set<Session> openSshSessions = Collections.synchronizedSet(new HashSet<>());
 
     private final IncomingSessionTracker<Session> sessionTracker = new IncomingSessionTracker<Session>(EVENT_LOG_VALUE_CONNECTION_TYPE);
 
@@ -356,10 +354,6 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             @Override
             public void sessionEstablished(Session session) {
                 SessionHandle sessionTrackingHandle = sessionTracker.registerSessionStart(session);
-
-                if (!openSshSessions.add(session)) { // synchronized set
-                    logger.error("SSH session registered more than once"); // sanity check failed
-                }
 
                 // this seems to be the earliest available callback, so log this here
                 InetSocketAddress remoteAddressAndPort = (InetSocketAddress) session.getRemoteAddress();

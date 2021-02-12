@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Loader Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.xml.loader.execution
-Bundle-Version: 10.2.1.qualifier
+Bundle-Version: 10.2.2.qualifier
 Import-Package: de.rcenvironment.components.xml.loader.common;version="6.0.0",
  de.rcenvironment.core.authorization,
  de.rcenvironment.core.component.api,

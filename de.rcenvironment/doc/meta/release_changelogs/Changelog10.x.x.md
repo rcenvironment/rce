@@ -1,3 +1,20 @@
+RCE 10.2.2 (Feb 04, 2021)
+
+# Network
+
+- Fixed a memory leak in the handling of incoming SSH/Uplink connections (present
+  in RCE 10.2.1)
+
+# Library Changes
+
+- Upgraded Apache POI to 4.1.2 to fix a security issue
+- Upgraded XMLBeans to 3.1.0 (transitive dependency)
+
+# Documentation
+
+- Added missing flag `--expose` in documentation of `wf integrate`
+
+
 RCE 10.2.1 (Dec 08, 2020)
 
 # Network (SSH, Uplink, and Remote Access Connections)

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.excel.common
-Bundle-Version: 10.2.1.qualifier
+Bundle-Version: 10.2.2.qualifier
 Export-Package: de.rcenvironment.components.excel.common
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
@@ -30,15 +30,15 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.apache.poi;version="3.8.0",
- org.apache.poi.hssf.usermodel;version="3.8.0",
- org.apache.poi.openxml4j.exceptions;version="3.8.0",
- org.apache.poi.poifs.filesystem;version="3.8.0",
- org.apache.poi.ss;version="3.8.0",
- org.apache.poi.ss.formula.eval;version="3.8.0",
- org.apache.poi.ss.usermodel;version="3.8.0",
- org.apache.poi.ss.util;version="3.8.0",
- org.apache.poi.xssf.usermodel;version="3.8.0",
+ org.apache.poi;version="4.1.2",
+ org.apache.poi.hssf.usermodel;version="4.1.2",
+ org.apache.poi.openxml4j.exceptions;version="4.1.2",
+ org.apache.poi.poifs.filesystem;version="4.1.2",
+ org.apache.poi.ss;version="4.1.2",
+ org.apache.poi.ss.formula.eval;version="4.1.2",
+ org.apache.poi.ss.usermodel;version="4.1.2",
+ org.apache.poi.ss.util;version="4.1.2",
+ org.apache.poi.xssf.usermodel;version="4.1.2",
  org.eclipse.core.resources,
  org.eclipse.core.runtime
 Service-Component: OSGI-INF/*.xml

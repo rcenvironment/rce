@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.script.execution.python.tests</artifactId>
 	<name>RCE Script Execution Python Bundle Tests</name>
-	<version>10.2.1-SNAPSHOT</version>
+	<version>10.2.2-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

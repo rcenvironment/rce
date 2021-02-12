@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution
-Bundle-Version: 10.2.1.qualifier
+Bundle-Version: 10.2.2.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,

@@ -502,7 +502,7 @@ post.bat</programlisting>
                 </note></para>
             <para>Each succeeding parameter is interpreted as the definition of an exposed endpoint.
                 Each such definition is of the following
-                form:<programlisting>&lt;component name>:&lt;internal endpoint name>:&lt;exposed endpoint name></programlisting></para>
+                form:<programlisting>--expose &lt;component name>:&lt;internal endpoint name>:&lt;exposed endpoint name></programlisting></para>
             <para>Here, <code>component name</code> refers to the name of the component in the inner
                 workflow whose endpoint is to be exposed. The parameter <code>internal endpoint
                     name</code> denotes the name of the endpoint of the component that is to be

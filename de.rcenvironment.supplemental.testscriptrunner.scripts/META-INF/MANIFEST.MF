@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Extensions - Test Script Runner - Test Scripts
 Bundle-SymbolicName: de.rcenvironment.supplemental.testscriptrunner.scripts
-Bundle-Version: 10.2.1.qualifier
+Bundle-Version: 10.2.2.qualifier
 Eclipse-BundleShape: dir
 RCE-Unpacked-Fileset-Id: testScripts
 RCE-Unpacked-Fileset-Path: resources/scripts

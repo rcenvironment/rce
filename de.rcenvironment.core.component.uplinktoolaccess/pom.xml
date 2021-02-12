@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.uplinktoolaccess</artifactId>
 	<name>RCE Uplink Tool Access Bundle</name>
-	<version>10.2.1-SNAPSHOT</version>
+	<version>10.2.2-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

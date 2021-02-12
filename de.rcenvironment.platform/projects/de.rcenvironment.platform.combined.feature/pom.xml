@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.combined.feature</artifactId>
 	<name>RCE Platform - Combined Feature</name>
-	<version>10.2.1-SNAPSHOT</version>
+	<version>10.2.2-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

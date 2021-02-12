@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven_common.feature"
       label="RCE Platform - Maven Plain Java Common Libraries Feature"
-      version="10.2.1.qualifier"
+      version="10.2.2.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

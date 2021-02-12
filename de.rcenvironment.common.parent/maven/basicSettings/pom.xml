@@ -6,7 +6,7 @@
 	<groupId>de.rcenvironment</groupId>
 	<artifactId>de.rcenvironment.common.parent.basicSettings</artifactId>
 	<name>RCE Common Parent POMs - Basic Settings</name>
-	<version>10.2.1-SNAPSHOT</version>
+	<version>10.2.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<properties>

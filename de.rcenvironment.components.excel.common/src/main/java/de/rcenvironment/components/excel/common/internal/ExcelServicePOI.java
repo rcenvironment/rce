@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2020 DLR, Germany
+ * Copyright 2006-2021 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -18,11 +18,10 @@ import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.ss.formula.eval.NotImplementedException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
@@ -100,9 +99,10 @@ public class ExcelServicePOI implements ExcelService {
     protected void initialTest(final File xlFile) throws ExcelException {
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(xlFile))) {
-            boolean isXlsx = POIXMLDocument.hasOOXMLHeader(bis);
+            boolean isXlsx = FileMagic.valueOf(bis) == FileMagic.OOXML; // Changed due to library upgrade from apache poi 3.8 to 3.17 (JF,
+                                                                        // 2021-02-02)
             bis.reset();
-            boolean isXls = POIFSFileSystem.hasPOIFSHeader(bis);
+            boolean isXls = FileMagic.valueOf(bis) == FileMagic.OLE2;
 
             if (!isXlsx && !isXls) {
                 throw new ExcelException("Given file seems to be no Excel file");
@@ -159,27 +159,27 @@ public class ExcelServicePOI implements ExcelService {
 
                             switch (data.getDataType()) {
                             case ShortText:
-                                cell.setCellType(Cell.CELL_TYPE_STRING);
+                                cell.setCellType(CellType.STRING);
                                 cell.setCellValue(((ShortTextTD) data).getShortTextValue());
                                 break;
                             case Float:
-                                cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                                cell.setCellType(CellType.NUMERIC);
                                 cell.setCellValue(((FloatTD) data).getFloatValue());
                                 break;
                             case Integer:
-                                cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                                cell.setCellType(CellType.NUMERIC);
                                 cell.setCellValue(((IntegerTD) data).getIntValue());
                                 break;
                             case Boolean:
-                                cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
+                                cell.setCellType(CellType.BOOLEAN);
                                 cell.setCellValue(((BooleanTD) data).getBooleanValue());
                                 break;
                             case DateTime:
-                                cell.setCellType(Cell.CELL_TYPE_STRING);
+                                cell.setCellType(CellType.STRING);
                                 cell.setCellValue(((DateTimeTD) data).getDateTime().getTime());
                                 break;
                             case Empty:
-                                cell.setCellType(Cell.CELL_TYPE_BLANK);
+                                cell.setCellType(CellType.BLANK);
                                 break;
                             default:
                                 break;
@@ -240,8 +240,6 @@ public class ExcelServicePOI implements ExcelService {
             }
         } catch (FileNotFoundException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
-        } catch (InvalidFormatException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
         }
@@ -287,11 +285,11 @@ public class ExcelServicePOI implements ExcelService {
                         }
 
                         switch (cell.getCellType()) {
-                        case Cell.CELL_TYPE_STRING:
+                        case STRING:
                             data = typedDatumFactory.createShortText(cell.getRichStringCellValue().getString());
                             retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                             break;
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case NUMERIC:
                             if (DateUtil.isCellDateFormatted(cell)) {
                                 data = typedDatumFactory.createDateTime(cell.getDateCellValue().getTime());
                                 retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
@@ -306,24 +304,24 @@ public class ExcelServicePOI implements ExcelService {
                                 retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                             }
                             break;
-                        case Cell.CELL_TYPE_BOOLEAN:
+                        case BOOLEAN:
                             data = typedDatumFactory.createBoolean(cell.getBooleanCellValue());
                             retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                             break;
-                        case Cell.CELL_TYPE_FORMULA:
+                        case FORMULA:
                             FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
                             try {
                                 CellValue cellValue = evaluator.evaluate(cell);
                                 switch (cellValue.getCellType()) {
-                                case Cell.CELL_TYPE_BOOLEAN:
+                                case BOOLEAN:
                                     data = typedDatumFactory.createBoolean(cellValue.getBooleanValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
-                                case Cell.CELL_TYPE_NUMERIC:
+                                case NUMERIC:
                                     data = typedDatumFactory.createFloat(cellValue.getNumberValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
-                                case Cell.CELL_TYPE_STRING:
+                                case STRING:
                                     data = typedDatumFactory.createShortText(cellValue.getStringValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
@@ -335,11 +333,11 @@ public class ExcelServicePOI implements ExcelService {
                             } catch (org.apache.poi.ss.formula.eval.NotImplementedException e) {
                                 // In case evaluator.evalualte(cell) does not implement a specific formula
                                 switch (cell.getCachedFormulaResultType()) {
-                                case Cell.CELL_TYPE_BOOLEAN:
+                                case BOOLEAN:
                                     data = typedDatumFactory.createBoolean(cell.getBooleanCellValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
-                                case Cell.CELL_TYPE_NUMERIC:
+                                case NUMERIC:
                                     if (DateUtil.isCellDateFormatted(cell)) {
                                         data = typedDatumFactory.createDateTime(cell.getDateCellValue().getTime());
                                         retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
@@ -354,7 +352,7 @@ public class ExcelServicePOI implements ExcelService {
                                         retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     }
                                     break;
-                                case Cell.CELL_TYPE_STRING:
+                                case STRING:
                                     data = typedDatumFactory.createShortText(cell.getStringCellValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
@@ -374,8 +372,6 @@ public class ExcelServicePOI implements ExcelService {
                 }
             } catch (FileNotFoundException e) {
                 throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
-            } catch (InvalidFormatException e) {
-                throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
             } catch (IOException e) {
                 throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
             } finally {
@@ -409,8 +405,6 @@ public class ExcelServicePOI implements ExcelService {
             }
         } catch (FileNotFoundException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
-        } catch (InvalidFormatException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
         } catch (IllegalArgumentException e) {
@@ -452,7 +446,7 @@ public class ExcelServicePOI implements ExcelService {
                 Sheet sheet = wb.getSheetAt(sheetNum);
                 for (Row r : sheet) {
                     for (Cell c : r) {
-                        if (c.getCellType() == Cell.CELL_TYPE_FORMULA) {
+                        if (c.getCellType() == CellType.FORMULA) {
                             evaluator.evaluateFormulaCell(c);
                         }
                     }
@@ -462,8 +456,6 @@ public class ExcelServicePOI implements ExcelService {
             throw new ExcelException("Tried to evaluate unknow formula", e);
         } catch (FileNotFoundException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
-        } catch (InvalidFormatException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
         } finally {

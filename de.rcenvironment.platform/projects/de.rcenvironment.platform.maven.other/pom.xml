@@ -5,7 +5,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.other</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - Other</name>
-	<version>10.2.1-SNAPSHOT</version>
+	<version>10.2.2-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -81,12 +81,14 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.8</version>
+			<!-- last updated: 2021-02-02, flink -->
+			<version>4.1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
-			<version>3.8</version>
+			<!-- last updated: 2021-02-02, flink -->
+			<version>4.1.2</version>
 			<exclusions>
 				<exclusion>
 					<groupId>dom4j</groupId>
@@ -97,7 +99,8 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml-schemas</artifactId>
-			<version>3.8</version>
+			<!-- last updated: 2021-02-02, flink -->
+			<version>4.1.2</version>
 		</dependency>
 		<!-- updated version number for 5.0.0 - seid_do, Mar 2014 -->
 		<!-- We use 2.5.1 because in 2.5.2+ a memory leak exists: http://bugs.jython.org/issue2026 

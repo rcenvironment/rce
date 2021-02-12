@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2020 DLR, Germany
+ * Copyright 2006-2021 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -17,7 +17,6 @@ import java.io.Serializable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -93,7 +92,9 @@ public class ExcelAddress implements Serializable {
                 worksheetName = name.getSheetName();
                 worksheetName = cutBeginningAndEndingApostrophe(worksheetName);
 
-                AreaReference ar = new AreaReference(fullAddress);
+                AreaReference ar = new AreaReference(fullAddress, SpreadsheetVersion.EXCEL2007); // Added spreadsheet version due to library
+                                                                                                 // upgrade from apache poi 3.8 to 3.17 (JF,
+                                                                                                 // 2021-02-02)
 
                 firstCell = StringUtils.split(ar.getFirstCell().formatAsString(), ExcelComponentConstants.DIVIDER_TABLECELLADDRESS)[1];
                 lastCell = StringUtils.split(ar.getLastCell().formatAsString(), ExcelComponentConstants.DIVIDER_TABLECELLADDRESS)[1];
@@ -166,7 +167,9 @@ public class ExcelAddress implements Serializable {
                     + ExcelComponentConstants.DIVIDER_CELLADDRESS + lastCell;
 
                 // Test if full address
-                AreaReference ar = new AreaReference(fullAddress);
+                AreaReference ar = new AreaReference(fullAddress, SpreadsheetVersion.EXCEL2007); // Added spreadsheet version due to library
+                                                                                                 // upgrade from apache poi 3.8 to 3.17 (JF,
+                                                                                                 // 2021-02-02)
                 fullAddress = ar.formatAsString();
 
                 Sheet sheet = wb.getSheet(worksheetName);
@@ -178,8 +181,6 @@ public class ExcelAddress implements Serializable {
             throw new ExcelException(e);
         } catch (FileNotFoundException e) {
             throw new ExcelException(e);
-        } catch (InvalidFormatException e) {
-            throw new ExcelException("Excel file has an invalid format.", e);
         } catch (IllegalArgumentException e) {
             throw new ExcelException("File is no Excel file.", e);
         } catch (IOException e) {

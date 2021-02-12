@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.branding.default.versioninfo.feature"
       label="RCE Default Branding Version Info Feature"
-      version="10.2.1.qualifier"
+      version="10.2.2.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

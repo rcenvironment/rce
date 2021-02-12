@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2020 DLR, Germany
+ * Copyright 2006-2021 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -17,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -78,23 +79,23 @@ public final class ExcelFileExporter {
 
                     switch (bv.getType()) {
                     case String:
-                        cell.setCellType(Cell.CELL_TYPE_STRING);
+                        cell.setCellType(CellType.STRING);
                         cell.setCellValue(bv.getStringValue());
                         break;
                     case Integer:
-                        cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                        cell.setCellType(CellType.NUMERIC);
                         cell.setCellValue(bv.getIntegerValue());
                         break;
                     case Logic:
-                        cell.setCellType(Cell.CELL_TYPE_BOOLEAN);
+                        cell.setCellType(CellType.BOOLEAN);
                         cell.setCellValue(bv.getLogicValue());
                         break;
                     case Real:
-                        cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                        cell.setCellType(CellType.NUMERIC);
                         cell.setCellValue(bv.getRealValue());
                         break;
                     case Empty:
-                        cell.setCellType(Cell.CELL_TYPE_BLANK);
+                        cell.setCellType(CellType.BLANK);
                     default:
                         break;
                     }

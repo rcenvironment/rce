@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Login
 Bundle-SymbolicName: de.rcenvironment.core.login;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.2.1.qualifier
+Bundle-Version: 10.2.2.qualifier
 Export-Package: de.rcenvironment.core.login
 Bundle-ManifestVersion: 2
 Bundle-ClassPath: .
