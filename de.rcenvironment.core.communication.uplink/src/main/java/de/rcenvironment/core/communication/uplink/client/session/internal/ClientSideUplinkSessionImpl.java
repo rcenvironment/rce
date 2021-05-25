@@ -60,9 +60,11 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  */
 public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl implements ClientSideUplinkSession {
 
-    private static final int CHANNEL_REQUEST_RESULT_TIMEOUT = 10000; // adapt if necessary
+    // TODO move these to constants class?
 
-    private static final int DOCUMENTATION_REQUEST_RESULT_TIMEOUT = 10000; // adapt if necessary
+    private static final int CHANNEL_REQUEST_RESULT_TIMEOUT = 20 * 1000; // raised in 10.2.3: 10->20
+
+    private static final int DOCUMENTATION_REQUEST_RESULT_TIMEOUT = 20 * 1000; // raised in 10.2.3: 10->20
 
     private static final AtomicInteger sharedSessionIdGenerator = new AtomicInteger(0);
 
@@ -141,7 +143,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
         @Override
         public void onHandshakeFailedOrConnectionRefused(UplinkConnectionRefusedException e) {
-            sessionEventHandler.onFatalSessionError(e.getType(), e.getRawMessage());
+            sessionEventHandler.onFatalErrorMessage(e.getType(), e.getRawMessage());
             markHandshakeFailed(e);
         }
 
@@ -427,14 +429,31 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     }
 
     @Override
-    protected void onTerminalStateReached(UplinkSessionState newState) {
-        sessionEventHandler.onSessionInFinalState();
+    protected void onTerminalStateReached(UplinkSessionState newState, Optional<UplinkProtocolErrorType> fatalError) {
+        if (fatalError.isPresent()) {
+            // consistency/sanity check
+            if (newState != UplinkSessionState.UNCLEAN_SHUTDOWN && newState != UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR) {
+                log.warn(logPrefix + "Unexpected combination: A fatal error of type " + fatalError.get().name()
+                    + " was registered, but the session ended in state " + newState);
+            }
+            sessionEventHandler.onSessionInFinalState(fatalError.get().getClientRetryFlag());
+        } else {
+            // consistency/sanity check
+            if (newState != UplinkSessionState.CLEAN_SHUTDOWN) {
+                // not a problem; mostly for tracking whether some an message might be missing
+                log.debug(logPrefix + "Session ended in state " + newState + " without a previous fatal error message");
+            }
+            // Rationale for "retry=true": A clean shutdown was either initiated locally, or by the server; in the first case, no retry is
+            // attempted anyway, and in the second case, the typical reason is a server restart, so retrying is reasonable.
+            // TODO actively track which side closed the connection to make this more specific? shouldn't make a real difference, though
+            sessionEventHandler.onSessionInFinalState(true);
+        }
     }
 
     @Override
     protected void handleFatalError(UplinkProtocolErrorType errorType, String errorMessage) {
         if (getState() != UplinkSessionState.SESSION_REFUSED_OR_HANDSHAKE_ERROR) {
-            sessionEventHandler.onFatalSessionError(errorType, "Connection closed by the remote side: " + errorMessage);
+            sessionEventHandler.onFatalErrorMessage(errorType, "Connection closed by the remote side: " + errorMessage);
         }
         super.handleFatalError(errorType, errorMessage);
     }

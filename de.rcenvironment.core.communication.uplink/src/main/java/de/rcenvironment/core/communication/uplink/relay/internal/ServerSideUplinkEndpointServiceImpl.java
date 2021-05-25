@@ -156,7 +156,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
 
         // the number of times to attempt finding an active session for an incoming request's destination;
         // mostly to prevent (semantic) race conditions in automated setups
-        private static final int DEFAULT_CHANNEL_MATCH_ATTEMPTS = 3;
+        private static final int DEFAULT_CHANNEL_MATCH_ATTEMPTS = 5;
 
         // the time to wait between attempts; this is mostly relevant for automated/scripted setups, so retry fairly quickly
         private static final int DEFAULT_CHANNEL_MATCH_RETRY_INTERVAL = 500;
@@ -472,10 +472,12 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
         if (numAttempts < 1) {
             throw new IllegalArgumentException();
         }
-        int attempt = 1;
+        int attempt = 0;
         do {
+            attempt++;
             if (attempt > 1) {
-                log.debug("Waiting " + intervalMsec + " msec for a matching session to become available");
+                log.debug(StringUtils.format("Waiting %d msec until starting attempt %d at resolving destination id '%s'",
+                    intervalMsec, attempt, destinationId));
                 try {
                     Thread.sleep(intervalMsec);
                 } catch (InterruptedException e) {
@@ -499,7 +501,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     return Optional.of(session);
                 }
             }
-            log.debug("Received a destination id, but found no matching active session among "
+            log.debug("Found no match for destination id '" + destinationId + "' among active sessions "
                 + Arrays.toString(activeSessions.toArray()));
         }
         return Optional.empty();

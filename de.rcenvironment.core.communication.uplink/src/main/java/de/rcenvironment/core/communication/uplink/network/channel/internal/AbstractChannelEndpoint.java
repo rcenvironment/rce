@@ -16,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
 import de.rcenvironment.core.communication.uplink.network.api.AsyncMessageBlockSender;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.channel.api.ChannelEndpoint;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -63,7 +64,7 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
             // attempt to send a response no matter the local session state
             try {
                 // implicitly send the response to the channel the heartbeat was received from; typically, this is the default channel
-                enqueueMessageBlockForSending(new MessageBlock(MessageType.HEARTBEAT_RESPONSE));
+                enqueueMessageBlockForSending(new MessageBlock(MessageType.HEARTBEAT_RESPONSE), MessageBlockPriority.HIGH);
             } catch (IOException e) {
                 log.debug("Error attempting to send an Uplink heartbeat response: " + e.toString());
             }
@@ -98,13 +99,24 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
     protected abstract boolean processMessageInternal(MessageBlock message) throws IOException;
 
     /**
-     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint.
+     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint with {@link MessageBlockPriority#DEFAULT} priority.
      * 
      * @param messageBlock the {@link MessageBlock} to send
      * @throws IOException on errors or interruption while waiting to enqueue this message
      */
     protected final void enqueueMessageBlockForSending(MessageBlock messageBlock) throws IOException {
         asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, messageBlock);
+    }
+
+    /**
+     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint with the given {@link MessageBlockPriority}.
+     * 
+     * @param messageBlock the {@link MessageBlock} to send
+     * @param priority the {@link MessageBlockPriority} to use for scheduling
+     * @throws IOException on errors or interruption while waiting to enqueue this message
+     */
+    protected final void enqueueMessageBlockForSending(MessageBlock messageBlock, MessageBlockPriority priority) throws IOException {
+        asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, messageBlock, priority);
     }
 
     protected final boolean refuseUnexpectedMessageType(MessageBlock message) throws ProtocolException {

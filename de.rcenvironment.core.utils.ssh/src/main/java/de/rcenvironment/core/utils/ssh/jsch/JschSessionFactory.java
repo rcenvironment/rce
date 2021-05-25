@@ -32,6 +32,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public final class JschSessionFactory {
 
     private static final int SERVER_ALIVE_INTERVAL = 5000;
+
     private static Log log = LogFactory.getLog(JschSessionFactory.class);
 
     private JschSessionFactory() {
@@ -46,6 +47,28 @@ public final class JschSessionFactory {
      */
     private static final class ACLDelegate implements Logger {
 
+        private static final String FORWARDED_LOG_LINE_PREFIX = "SSH connection: ";
+
+        private static final String LOG_FILTER_FULL_MESSAGE_1 =
+            "CheckCiphers: aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,3des-ctr,arcfour,arcfour128,arcfour256";
+
+        private static final String LOG_FILTER_FULL_MESSAGE_2 =
+            "CheckKexes: diffie-hellman-group14-sha1,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521";
+
+        private static final String LOG_FILTER_FULL_MESSAGE_3 =
+            "CheckSignatures: ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521";
+
+        private static final String LOG_FILTER_FULL_MESSAGE_4 =
+            "ssh_rsa_verify: signature true";
+
+        private static final String LOG_FILTER_STARTS_WITH_1 = "kex: ";
+
+        private static final String LOG_FILTER_STARTS_WITH_2 = "expecting ";
+
+        private static final String LOG_FILTER_ENDS_WITH_1 = " sent";
+
+        private static final String LOG_FILTER_ENDS_WITH_2 = " received";
+
         private final Log apacheCommonsLogger;
 
         private final int minLevel;
@@ -58,27 +81,43 @@ public final class JschSessionFactory {
         @Override
         public void log(int level, String rawMessage) {
             if (level >= minLevel) {
-                final String wrappedMessage = StringUtils.format("SSH connection log (L%s): %s", level, rawMessage);
                 if (level == 0) {
-                    apacheCommonsLogger.debug(wrappedMessage);
+                    apacheCommonsLogger.debug(FORWARDED_LOG_LINE_PREFIX + rawMessage + " [L0]");
                 } else if (level == 1) {
                     // always log JSch "info" messages as debug, as they are quite verbose
                     // also, filter out certain messages that are usually irrelevant unless JSch DEBUG level is requested
-                    if (minLevel > 0 && (rawMessage.startsWith("kex: ") || rawMessage.endsWith(" sent") || rawMessage.endsWith(" received")
-                        || rawMessage.startsWith("expecting "))) {
-                        return; // suppress this line
+                    if (minLevel > 0) {
+                        if (rawMessage.equals(LOG_FILTER_FULL_MESSAGE_1) // clumsy, but probably more efficient than a hash-based lookup
+                            || rawMessage.equals(LOG_FILTER_FULL_MESSAGE_2)
+                            || rawMessage.equals(LOG_FILTER_FULL_MESSAGE_3)
+                            || rawMessage.equals(LOG_FILTER_FULL_MESSAGE_4)
+                            || rawMessage.startsWith(LOG_FILTER_STARTS_WITH_1)
+                            || rawMessage.startsWith(LOG_FILTER_STARTS_WITH_2)
+                            || rawMessage.endsWith(LOG_FILTER_ENDS_WITH_1)
+                            || rawMessage.endsWith(LOG_FILTER_ENDS_WITH_2)) {
+                            return; // suppress this line
+                        }
                     }
 
-                    apacheCommonsLogger.debug(wrappedMessage);
+                    // omit the level suffix as this is the most frequent case
+                    apacheCommonsLogger.debug(FORWARDED_LOG_LINE_PREFIX + rawMessage);
+
                 } else if (level == 2) {
+                    // rewrite certain known messages
                     if (rawMessage.startsWith("Permanently added ")) {
                         // we do not consider these messages actual warnings in our log levels
-                        apacheCommonsLogger.info(wrappedMessage);
+                        // note: substituted and lowered to DEBUG as long as the message is actually misleading; see #0016393
+                        apacheCommonsLogger.debug(
+                            FORWARDED_LOG_LINE_PREFIX + rawMessage.replace("Permanently added ", "(Disabled) Would permanently add "));
+                    } else if (rawMessage.startsWith("an exception ")) {
+                        apacheCommonsLogger.debug(
+                            FORWARDED_LOG_LINE_PREFIX + rawMessage.replace("an exception during authentication\n",
+                                "Caught an exception during authentication: "));
                     } else {
-                        apacheCommonsLogger.warn(wrappedMessage);
+                        apacheCommonsLogger.warn(FORWARDED_LOG_LINE_PREFIX + rawMessage + " [L2]");
                     }
                 } else {
-                    apacheCommonsLogger.error(wrappedMessage);
+                    apacheCommonsLogger.error(FORWARDED_LOG_LINE_PREFIX + rawMessage + "[L" + level + "]"); // never encountered so far
                 }
             }
         }
@@ -237,7 +276,7 @@ public final class JschSessionFactory {
         }
 
         JSch.setLogger(connectionLogger);
-        
+
         jschSession.setServerAliveInterval(SERVER_ALIVE_INTERVAL);
 
         jschSession.connect();

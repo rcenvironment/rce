@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Integration Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.integration.workflow
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 10.2.3.qualifier
 Automatic-Module-Name: de.rcenvironment.core.component.integration.workflow
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.fasterxml.jackson.core;version="2.10.0",
@@ -50,3 +50,4 @@ Bundle-ActivationPolicy: lazy
 Export-Package: de.rcenvironment.core.component.integration.workflow,
  de.rcenvironment.core.workflow.execution.function,
  de.rcenvironment.core.workflow.execution.function.testutils
+Bundle-Vendor: DLR

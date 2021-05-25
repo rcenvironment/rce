@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.evaluationmemory.execution.tests</artifactId>
 	<name>RCE Evaluation Memory Execution Bundle Tests</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.3-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

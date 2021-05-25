@@ -136,8 +136,14 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                     try {
                         localReceiver.receiveFile(fileDataSource);
                     } catch (IOException e) {
-                        // TODO propagate this error
-                        log.error("Error while downloading file " + fileHeader.getPath(), e);
+                        if ("Pipe broken".equals(e.getMessage())) {
+                            // rewrite "expected" event to a more user-friendly log message
+                            log.warn("Error while downloading file " + fileHeader.getPath()
+                                + ": Either the execution was cancelled, or there was a connection error");
+                        } else {
+                            log.warn("Error while downloading file " + fileHeader.getPath(), e);
+                        }
+                        // TODO propagate these errors to the main flow?
                     } finally {
                         receiveFileMethodsLock.release();
                         log.debug("Finished download of " + fileHeader.getPath());

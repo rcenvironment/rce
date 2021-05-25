@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
@@ -211,7 +212,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
     }
 
     protected MessageBlock expectHandshakeData() throws UplinkConnectionRefusedException, TimeoutException, IOException {
-        MessageBlockWithChannelId messageBlock;
+        MessageBlockWithMetadata messageBlock;
         try {
             messageBlock = readChannelIdAndMessageBlockWithTimeout(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
         } catch (TimeoutException e) {
@@ -262,7 +263,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
      * @throws IOException on a read error
      * @throws ProtocolException if the received message block violates value constraints, e.g. an invalid message type
      */
-    protected final MessageBlockWithChannelId readMessageBlock() throws IOException {
+    protected final MessageBlockWithMetadata readMessageBlock() throws IOException {
         synchronized (dataInputStream) {
             long channelId = dataInputStream.readLong();
             int blockSize = dataInputStream.readInt();
@@ -275,7 +276,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
             byte type = dataInputStream.readByte();
             byte[] data = new byte[blockSize];
             dataInputStream.readFully(data);
-            return new MessageBlockWithChannelId(type, data, channelId);
+            return new MessageBlockWithMetadata(type, data, channelId, MessageBlockPriority.DEFAULT);
         }
     }
 
@@ -289,9 +290,9 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
      * @throws TimeoutException on timeout
      * @throws ProtocolException if the received message block violates value constraints, e.g. an invalid message type
      */
-    protected final MessageBlockWithChannelId readChannelIdAndMessageBlockWithTimeout(int timeoutMsec)
+    protected final MessageBlockWithMetadata readChannelIdAndMessageBlockWithTimeout(int timeoutMsec)
         throws IOException, TimeoutException {
-        final CompletableFuture<MessageBlockWithChannelId> messageFuture = new CompletableFuture<>();
+        final CompletableFuture<MessageBlockWithMetadata> messageFuture = new CompletableFuture<>();
         ConcurrencyUtils.getAsyncTaskService().execute("Uplink: Read message block with timeout", () -> {
             try {
                 messageFuture.complete(readMessageBlock());
@@ -379,7 +380,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
     }
 
     private boolean receiveNextMessage() throws IOException {
-        final MessageBlockWithChannelId message = readMessageBlock();
+        final MessageBlockWithMetadata message = readMessageBlock();
         long channelId = message.getChannelId();
         if (message.getType() == MessageType.GOODBYE) {
             if (message.getDataLength() == 0) {

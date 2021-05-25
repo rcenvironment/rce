@@ -51,7 +51,7 @@ public class DataStreamUploadWrapper {
 
     private MessageBlock encodeNextDataBlock(MessageType messageType, SizeValidatedDataSource dataSource)
         throws IOException {
-        int bufferSize = (int) Math.min(dataSource.getRemaining(), UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH);
+        int bufferSize = (int) Math.min(dataSource.getRemaining(), UplinkProtocolConstants.MAX_FILE_TRANSFER_CHUNK_SIZE);
         if (bufferSize < 1) {
             throw new ProtocolException("Attempted to create a message block from an already-finished data stream");
         }

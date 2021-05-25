@@ -144,8 +144,10 @@ public final class UplinkProtocolConstants {
      * 
      * Currently, this is also the implicit timeout for the response, as response reception is currently checked before sending the next
      * heartbeat for simplicity.
+     * 
+     * TODO split these parameters so they can be adjusted independently?
      */
-    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_AVERAGE = 20 * 1000;
+    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_AVERAGE = 30 * 1000; // raised in 10.2.3: 20->30
 
     /**
      * The maximum time that each side of the handshake exchange waits for the other side's response. Adjust if necessary.
@@ -211,6 +213,13 @@ public final class UplinkProtocolConstants {
      * The maximum valid length of the data byte array.
      */
     public static final int MAX_MESSAGE_BLOCK_DATA_LENGTH = 256 * 1024; // 256 kb
+
+    /**
+     * The maximum data length of FILE_CONTENT message blocks. If there is sufficient data remaining in the source file, this size is always
+     * used, so the only messages smaller than that will be the final ones of each file.
+     */
+    // note: this was lowered in 10.2.3; was using MAX_MESSAGE_BLOCK_DATA_LENGTH before
+    public static final long MAX_FILE_TRANSFER_CHUNK_SIZE = 32 * 1024; // maybe go even lower? should be benchmarked to optimize
 
     /**
      * The maximum expected time between sending one's own handshake data and receiving a response. As this should be a very fast and

@@ -36,6 +36,7 @@ import de.rcenvironment.core.authorization.api.AuthorizationAccessGroupListener;
 import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideUplinkSession;
 import de.rcenvironment.core.communication.uplink.client.session.api.SshUplinkConnectionListener;
 import de.rcenvironment.core.communication.uplink.client.session.api.SshUplinkConnectionListenerAdapter;
 import de.rcenvironment.core.communication.uplink.client.session.api.SshUplinkConnectionService;
@@ -73,7 +74,7 @@ import de.rcenvironment.core.utils.common.exception.OperationFailureException;
  * Default implementation of {@link UplinkToolAccessClientService}.
  *
  * @author Brigitte Boden
- * @author Robert Mischke (minor change)
+ * @author Robert Mischke (minor changes)
  */
 @Component(immediate = true)
 public class UplinkToolAccessClientServiceImpl implements UplinkToolAccessClientService {
@@ -270,7 +271,8 @@ public class UplinkToolAccessClientServiceImpl implements UplinkToolAccessClient
 
                 if (accessibleAuthGroups.isEmpty()) {
                     // For now, print only debug message as groups are not filtered on relay yet.
-                    log.debug("Non of the tool's authorization groups exist locally. Toll will not be registered.");
+                    log.debug("No local authorization group match for '" + toolDesc.getToolId() + "/" + toolDesc.getToolVersion()
+                        + "'; tool will not be registered");
                     return;
                 }
 
@@ -299,9 +301,9 @@ public class UplinkToolAccessClientServiceImpl implements UplinkToolAccessClient
                 createUniqueToolInstallationId(toolDesc.getToolId(), toolDesc.getToolVersion(), logicalNodeId);
             // If this component was not registered before, register it now.
             if (!registeredComponents.containsKey(toolInstallationId)) {
-                LOG.info(
-                    StringUtils.format("Detected new SSH tool %s (version %s) on host %s.", toolDesc.getToolId(), toolDesc.getToolVersion(),
-                        destinationId));
+                LOG.debug(
+                    StringUtils.format("Detected new Uplink tool %s (version %s) on host %s", toolDesc.getToolId(),
+                        toolDesc.getToolVersion(), destinationId));
                 registerToolAccessComponent(toolInstallationId, compDesc, connectionId, destinationId, permissionSet,
                     logicalNodeId);
                 registeredComponentHashes.put(toolInstallationId, toolDesc.getToolDataHash());
@@ -483,7 +485,12 @@ public class UplinkToolAccessClientServiceImpl implements UplinkToolAccessClient
         String docReferenceId = toolIdAndVersion + SLASH + hashValue;
 
         // TODO check size
-        return sshUplinkService.getAvtiveSshUplinkSession(connectionId).fetchDocumentationData(destinationId, docReferenceId);
+        Optional<ClientSideUplinkSession> optionalUplinkSession = sshUplinkService.getActiveSshUplinkSession(connectionId);
+        if (!optionalUplinkSession.isPresent()) {
+            log.warn("Tool documentation download requested, but the required Uplink connection is not active anymore");
+            return Optional.empty();
+        }
+        return optionalUplinkSession.get().fetchDocumentationData(destinationId, docReferenceId);
     }
 
 }

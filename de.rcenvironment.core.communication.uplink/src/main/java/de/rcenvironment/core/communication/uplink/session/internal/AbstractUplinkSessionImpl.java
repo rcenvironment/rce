@@ -12,14 +12,15 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
+import de.rcenvironment.core.communication.uplink.network.internal.MessageBlockWithMetadata;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
@@ -72,6 +73,8 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
     protected static final String AUDIT_LOG_KEY_FINAL_STATE = "final_state";
 
+    protected static final String UNDEFINED_CLIENT_VERSION_PLACEHOLDER = "<undefined>";
+
     // the maximum time to wait for the namespace id's Future; not intended for actual waiting, but only to prevent minor race conditions
     private static final int VERY_SHORT_WAIT_MSEC = 50;
 
@@ -101,11 +104,9 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
     protected final Log log = LogFactory.getLog(getClass());
 
-    private final Semaphore outgoingMessageQueueLimit = new Semaphore(OUTGOING_MESSAGE_QUEUE_SIZE);
+    private final BoundedMessageBlockPrioritizer boundedMessageOutbox = new BoundedMessageBlockPrioritizer(OUTGOING_MESSAGE_QUEUE_SIZE);
 
     private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
-
-    private Optional<Runnable> onSessionShutdownFinishedRunner = Optional.empty();
 
     /**
      * Encapsulates the protocol-level state of this session and its underlying connection. Also serves to keep the synchronization boundary
@@ -119,6 +120,8 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
         private static final String STRING_TO = " to ";
 
         private UplinkSessionState mainState = UplinkSessionState.INITIAL; // synchronized on "this"
+
+        private Optional<UplinkProtocolErrorType> fatalError = Optional.empty();
 
         private final CompletableFuture<String> assignedNamespaceIdFuture = new CompletableFuture<String>();
 
@@ -275,10 +278,12 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
         /**
          * Note: This method call does not trigger any action; should be followed up with
          * {@link AbstractUplinkSessionImpl#initiateUncleanShutdownIfStillRunning()}.
+         * 
+         * @param errorType the error type to store internally for later use
          */
-        public synchronized void markFatalError() {
-            log.debug(logPrefix
-                + "Encountered a fatal error, terminating the session");
+        public synchronized void markFatalError(UplinkProtocolErrorType errorType) {
+            this.fatalError = Optional.of(errorType); // store for later
+            log.debug(logPrefix + "Encountered fatal error " + errorType.name() + ", terminating the session");
         }
 
         /**
@@ -305,6 +310,19 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
                     setMainStateInternal(UplinkSessionState.CLEAN_SHUTDOWN);
                 } else {
                     setMainStateInternal(UplinkSessionState.UNCLEAN_SHUTDOWN);
+                }
+            } else if (mainState != UplinkSessionState.CLEAN_SHUTDOWN) {
+                if (incomingStreamClosedOrEOF) {
+                    // typical situation at this point: unexpected breakdown of connection -> local goodbye attempt sent -> closed stream
+                    if (mainState != UplinkSessionState.UNCLEAN_SHUTDOWN_INITIATED) { // expected state; log anything else, but act the same
+                        log.warn(logPrefix + "Unexpected transition: " + mainState + "->" + UplinkSessionState.UNCLEAN_SHUTDOWN);
+                    }
+                    setMainStateInternal(UplinkSessionState.UNCLEAN_SHUTDOWN);
+                } else {
+                    // unexpected -> log
+                    // TODO (p2) 10.3.0: as of 10.2.3-RC, this is triggered with main state GOODBYE_HANDSHAKE_COMPLETE on every regular
+                    // client disconnect; should be investigated, but unlikely to be an serious issue, therefore postponed to 10.3.0
+                    log.debug(logPrefix + "Unexpected combination: " + mainState + ", outgoing stream closed, but not incoming stream");
                 }
             }
         }
@@ -401,7 +419,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             if (newState.isTerminal()) {
                 // probably redundant, but in that case, it is a NOP
                 getLowLevelProtocolWrapper().terminateSession();
-                onTerminalStateReached(newState);
+                onTerminalStateReached(newState, fatalError);
             }
         }
 
@@ -416,7 +434,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             if (clientVersionInfo != null) {
                 this.clientVersionInfo = clientVersionInfo;
             } else {
-                this.clientVersionInfo = "<undefined>";
+                this.clientVersionInfo = UNDEFINED_CLIENT_VERSION_PLACEHOLDER;
             }
         }
 
@@ -470,7 +488,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             if (pendingHeartbeatExchange) {
                 long duration = System.currentTimeMillis() - lastHeartbeatSentTime;
                 if (duration > UplinkProtocolConstants.HEARTBEAT_RESPONSE_TIME_WARNING_THRESHOLD) {
-                    log.warn(logPrefix + "Observed long round-trip response time of " + duration + " msec");
+                    log.warn(logPrefix + "Observed long heartbeat round-trip time of " + duration + " msec");
                 }
                 pendingHeartbeatExchange = false;
             } else {
@@ -493,12 +511,12 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     protected AbstractUplinkSessionImpl(ConcurrencyUtilsFactory concurrencyUtilsFactory) {
         Objects.requireNonNull(concurrencyUtilsFactory);
         this.incomingMessageQueue =
-            concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+            concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
         this.outgoingMessageQueue =
-            concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+            concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
     }
 
-    protected abstract void onTerminalStateReached(UplinkSessionState newState);
+    protected abstract void onTerminalStateReached(UplinkSessionState newState, Optional<UplinkProtocolErrorType> fatalError);
 
     @Override
     public UplinkSessionState getState() {
@@ -511,31 +529,29 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     }
 
     @Override
-    public final void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock) throws IOException {
+    public void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock) throws IOException {
+        enqueueMessageBlockForSending(channelId, messageBlock, MessageBlockPriority.DEFAULT);
+    }
+
+    @Override
+    public final void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock, MessageBlockPriority priority)
+        throws IOException {
+
+        if (DEBUG_OUTPUT_ENABLED) {
+            log.debug(StringUtils.format("%sEnqueuing message of type %s for sending to channel %d with priority %s, payload size %d bytes",
+                logPrefix, messageBlock.getType(), channelId, priority.name(), messageBlock.getDataLength()));
+        }
+
+        final MessageBlockWithMetadata wrappedMessage = new MessageBlockWithMetadata(messageBlock, channelId, priority);
         try {
-            if (!outgoingMessageQueueLimit.tryAcquire()) {
-                // the outgoing message queue is full, so no permit could be fetched immediately -> log this and wait for it instead
-                log.debug(logPrefix + "Stalling new additions to the send queue as there are already "
-                    + OUTGOING_MESSAGE_QUEUE_SIZE + " enqueued messages");
-                // TODO in normal behavior, this should not pose any deadlock potential; check if it does in extreme situations
-                outgoingMessageQueueLimit.acquire();
-            }
+            boundedMessageOutbox.submit(wrappedMessage, logPrefix);
         } catch (InterruptedException e1) {
             Thread.currentThread().interrupt();
             log.warn(logPrefix + "Interrupted while waiting for rate limiting to enqueue a message of type " + messageBlock.getType());
             return;
         }
-        if (DEBUG_OUTPUT_ENABLED) {
-            log.debug(StringUtils.format("%sEnqueueing message of type %s for sending to channel %d, payload size %d bytes",
-                logPrefix, messageBlock.getType(), channelId, messageBlock.getDataLength()));
-        }
-        outgoingMessageQueue.enqueue(() -> {
-            try {
-                sendEnqueuedMessage(channelId, messageBlock);
-            } finally {
-                outgoingMessageQueueLimit.release();
-            }
-        });
+
+        outgoingMessageQueue.enqueue(this::sendNextMessageByPriority);
     }
 
     @Override
@@ -668,18 +684,12 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
                     // remote side has already sent goodbye -> close immediately
                     getLowLevelProtocolWrapper().terminateSession();
                     sessionState.markOutgoingStreamClosed();
-                    if (onSessionShutdownFinishedRunner.isPresent()) {
-                        onSessionShutdownFinishedRunner.get().run();
-                    }
                 } else {
                     // self-initiated goodbye -> wait before until closing on timeout
                     asyncTaskService.scheduleAfterDelay("Close local end of Uplink stream", () -> {
                         if (!sessionState.isOutgoingStreamClosed()) {
                             getLowLevelProtocolWrapper().terminateSession();
                             sessionState.markOutgoingStreamClosed();
-                        }
-                        if (onSessionShutdownFinishedRunner.isPresent()) {
-                            onSessionShutdownFinishedRunner.get().run();
                         }
                     }, GOODBYE_CONFIRMATION_WAIT_TIMEOUT_MSEC);
                 }
@@ -689,9 +699,6 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
                 // potentially redundant, but in that case, it is a NOP
                 getLowLevelProtocolWrapper().terminateSession();
                 sessionState.markOutgoingStreamClosed();
-                if (onSessionShutdownFinishedRunner.isPresent()) {
-                    onSessionShutdownFinishedRunner.get().run();
-                }
             }
         });
     }
@@ -700,7 +707,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
         log.warn(StringUtils.format("%sFatal error in Uplink session for %s, closing the session: %s [type %s]",
             logPrefix, getRemoteSideInformationString(), errorMessage, errorType.name()));
         synchronized (sessionState) {
-            sessionState.markFatalError();
+            sessionState.markFatalError(errorType);
             initiateUncleanShutdownIfStillRunning();
         }
     }
@@ -731,7 +738,11 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     }
 
     // TODO move this in to the synchronized scope as part of the planned 10.3+ rework
-    private void sendEnqueuedMessage(long channelId, MessageBlock messageBlock) {
+    private void sendNextMessageByPriority() {
+
+        // should always return a value, unless there is a consistency error between triggers and queued message elements
+        MessageBlockWithMetadata messageBlock = boundedMessageOutbox.takeNext();
+
         // do not send anything except goodbye messages when shutting down
         // note: isShuttingDownOrShutDown() requires the session's state lock, so this method must not be called with any locks held
         if (isShuttingDownOrShutDown() && messageBlock.getType() != MessageType.GOODBYE) {
@@ -739,7 +750,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             return;
         }
         try {
-            getProtocolWrapper().sendMessageBlock(channelId, messageBlock);
+            getProtocolWrapper().sendMessageBlock(messageBlock.getChannelId(), messageBlock);
             if (DEBUG_OUTPUT_ENABLED) {
                 log.debug(logPrefix + "Successfully sent message of type " + messageBlock.getType());
             }
@@ -764,10 +775,4 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     protected abstract CommonUplinkLowLevelProtocolWrapper getLowLevelProtocolWrapper();
 
     protected abstract String getRemoteSideInformationString();
-
-    @Override
-    public void registerOnShutdownFinishedListener(Runnable run) {
-        this.onSessionShutdownFinishedRunner = Optional.of(run);
-    }
-
 }

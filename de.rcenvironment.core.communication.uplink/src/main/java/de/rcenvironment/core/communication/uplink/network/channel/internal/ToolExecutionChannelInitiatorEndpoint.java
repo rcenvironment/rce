@@ -21,6 +21,7 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideU
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolExecutionHandle;
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 
 /**
@@ -95,14 +96,30 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
             }
 
             log.debug("Successfully set up remote tool execution, preparing to upload the input files");
+
+            // expect no return messages while uploading input files
             channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES;
-            // input upload sequence
+
             executionEventHandler.onInputUploadsStarting();
-            uploadInputFiles();
-            executionEventHandler.onInputUploadsFinished();
-            // the end of input uploads implies starting the execution on the remote side, so expect related events
-            executionEventHandler.onExecutionStarting();
-            channelState = ToolExecutionChannelState.EXPECTING_EXECUTION_EVENTS;
+
+            // spawn a thread to upload input files without blocking the thread processing incoming messages (for all channels)
+            // TODO proper cancellation is not implemented yet; will be addressed in #0017599
+            ConcurrencyUtils.getAsyncTaskService().execute("Uplink: upload input files for remote tool execution", () -> {
+                try {
+                    uploadInputFiles();
+                } catch (IOException e) {
+                    log.warn("Error while uploading input files for remote tool execution", e);
+                    // TODO propagate this error
+                    return;
+                }
+                executionEventHandler.onInputUploadsFinished();
+                // the end of input uploads implies starting the execution on the remote side, so expect related events
+                // TODO 11.0.0 there could be a theoretical race condition where execution events arrive before this new state is set;
+                // very unlikely, especially including network latency, but should be investigated before going 'stable'. A potential
+                // fix might be setting this state before sending out the final message of the upload sequence. -- misc_ro
+                channelState = ToolExecutionChannelState.EXPECTING_EXECUTION_EVENTS;
+                executionEventHandler.onExecutionStarting();
+            });
             return true;
         case EXPECTING_EXECUTION_EVENTS:
             if (messageType == MessageType.TOOL_EXECUTION_EVENTS) {

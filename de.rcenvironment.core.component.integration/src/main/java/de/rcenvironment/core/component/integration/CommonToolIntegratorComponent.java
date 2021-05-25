@@ -248,10 +248,13 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
         if (toolDirPath.equals(CURRENT_DIR) || toolDirPath.startsWith("./")) {
             try {
-                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.toURI().toString());
+                toolDirPath = toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.toURI().toString());
             } catch (URISyntaxException e) {
                 LOG.debug("Could not get installation dir with URI, trying URL. ", e);
-                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.getPath());
+                String path = platformUrl.getPath();
+                if (!path.isEmpty()) {
+                    toolDirPath = toolDirPath.replaceFirst(CURRENT_DIR, path);
+                }
             }
         }
         sourceToolDirectory = new File(toolDirPath);

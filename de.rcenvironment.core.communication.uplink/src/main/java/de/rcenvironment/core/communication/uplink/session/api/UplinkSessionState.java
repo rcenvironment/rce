@@ -11,6 +11,9 @@ package de.rcenvironment.core.communication.uplink.session.api;
 /**
  * Defines the states a {@link UplinkSession} can be in. These states are used for both the client and server side, but may have slightly
  * different meanings for them; see each state's JavaDoc for details.
+ * 
+ * The boolean constructor parameter indicates which states are "terminal". Each session is expected to be in a terminal state at the end of
+ * its execution (typically "runSession()").
  *
  * @author Robert Mischke
  */
@@ -36,7 +39,7 @@ public enum UplinkSessionState {
     /**
      * The server has refused the connection for some reason. For clients, this is reached either by receiving an error response message
      * instead of a handshake response, or by receiving a handshake response signaling the refusal. For servers, this is reached after
-     * processing the client's handshake data and sending its response. This and {@link #FULLY_CLOSED} are the terminal states.
+     * processing the client's handshake data and sending its response.
      */
     SESSION_REFUSED_OR_HANDSHAKE_ERROR(true),
 
@@ -56,8 +59,7 @@ public enum UplinkSessionState {
     GOODBYE_HANDSHAKE_COMPLETE(false),
 
     /**
-     * The final, inactive state after a connection was {@link #ACTIVE} at some point. This and {@link #SESSION_REFUSED_OR_HANDSHAKE_ERROR}
-     * are the terminal states.
+     * The final, inactive state after a connection was {@link #ACTIVE} at some point.
      */
     CLEAN_SHUTDOWN(true),
 

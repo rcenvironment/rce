@@ -10,14 +10,19 @@ package de.rcenvironment.core.communication.uplink.client.session.api;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
+
+import com.jcraft.jsch.JSchException;
 
 import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
+import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
 
 /**
  * Service managing the current SSH uplink connections.
  *
  * @author Brigitte Boden
+ * @author Robert Mischke (minor change)
  */
 public interface SshUplinkConnectionService {
 
@@ -33,11 +38,11 @@ public interface SshUplinkConnectionService {
      * Returns the SSH session for the given Id, if connected.
      * 
      * @param connnectionId The id of the required connection.
-     * @return The connection with the given Id, if existing, and null, else.
+     * @return The connection with the given Id, if it exists, {@link Optional#empty()} otherwise
      * @throws SshParameterException
      * @throws JSchException
      */
-    ClientSideUplinkSession getAvtiveSshUplinkSession(String connnectionId);
+    Optional<ClientSideUplinkSession> getActiveSshUplinkSession(String connnectionId);
 
     /**
      * Adds a new ssh connection config to the service (does not store the passphrase). For adding keyfile and/or passphrase, call the

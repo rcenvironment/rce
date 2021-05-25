@@ -496,12 +496,13 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     private void setupLogDirectory(ExtendedHeadlessWorkflowExecutionContext wfHeadlessExeCtx) throws WorkflowExecutionException {
         File logDirectory = wfHeadlessExeCtx.getLogDirectory();
         logDirectory.mkdirs();
-        if (!logDirectory.isDirectory()) {
-            throw new WorkflowExecutionException(StringUtils.format("Failed to create log directory '%s' for workflow '%s'"
-                + logDirectory.getAbsolutePath(), wfHeadlessExeCtx.getWorkflowFile().getAbsolutePath()));
+        if (logDirectory.isDirectory()) {
+            log.debug(StringUtils.format("Created log file directory '%s' for execution of '%s'",
+                logDirectory.getAbsolutePath(), wfHeadlessExeCtx.getWorkflowFile().getAbsolutePath()));
+        } else {
+            throw new WorkflowExecutionException(StringUtils.format("Failed to create log directory '%s' for execution of '%s'",
+                logDirectory.getAbsolutePath(), wfHeadlessExeCtx.getWorkflowFile().getAbsolutePath()));
         }
-        log.debug(StringUtils.format("Writing log files for workflow '%s' to: ",
-            wfHeadlessExeCtx.getWorkflowFile().getAbsolutePath(), logDirectory.getAbsolutePath()));
     }
 
     private String createComponentInstancePlaceholderKey(WorkflowNode wn) {

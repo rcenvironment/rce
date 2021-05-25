@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Binaries - Dakota (Win32 x86_64)
 Bundle-SymbolicName: de.rcenvironment.binaries.dakota.win32.x86_64;singleton:=true
-Bundle-Version: 10.2.2.qualifier
+Bundle-Version: 10.2.3.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) (osgi.arch=x86_64) )

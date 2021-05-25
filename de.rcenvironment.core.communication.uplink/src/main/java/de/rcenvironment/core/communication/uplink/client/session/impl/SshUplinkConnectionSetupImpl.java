@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.communication.uplink.client.session.impl;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -22,6 +24,7 @@ import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
  *
  * @author Brigitte Boden
  * @author Kathrin Schaffert (added method setDisplayName to fix #17306)
+ * @author Dominik Schneider (added wantToReconnect for correct retry behavior)
  */
 
 public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
@@ -36,8 +39,6 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
 
     private ClientSideUplinkSession session;
 
-    private SshUplinkConnectionListener listener;
-
     private boolean connectOnStartup;
 
     private boolean autoRetry;
@@ -45,6 +46,8 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
     private boolean usePassphrase;
 
     private boolean isGateway;
+
+    private AtomicBoolean wantToReconnect;
 
     private int consecutiveConnectionFailures;
 
@@ -65,13 +68,13 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
         this.id = id;
         this.connectOnStartup = connectOnStartUp;
         this.autoRetry = autoRetry;
-        this.listener = listener;
         this.displayName = displayName;
         this.qualifier = qualifier;
         this.usePassphrase = usePassphrase;
         this.consecutiveConnectionFailures = 0;
         this.waitingForRetry = false;
         this.isGateway = isGateway;
+        this.wantToReconnect = new AtomicBoolean(autoRetry);
         listener.onCreated(this);
     }
 
@@ -121,17 +124,14 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
             log.warn("Attaching new Uplink session " + session.getLocalSessionId() + " before the previous session "
                 + this.session.getLocalSessionId() + " was disposed");
         }
+
         this.session = session;
+        this.wantToReconnect.set(autoRetry);
     }
 
     @Override
     public void disconnect() {
-        // This listener is used to prevent displaying a disconnected connection although the uplink session is not disconnected yet.
-        session.registerOnShutdownFinishedListener(() -> {
-            listener.onConnectionClosed(this, false);
-            this.consecutiveConnectionFailures = 0;
-            this.waitingForRetry = false;
-        });
+        this.wantToReconnect.set(false);
         session.initiateCleanShutdownIfRunning();
     }
 
@@ -202,5 +202,10 @@ public class SshUplinkConnectionSetupImpl implements SshUplinkConnectionSetup {
     @Override
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    @Override
+    public boolean wantToReconnect() {
+        return this.wantToReconnect.get();
     }
 }

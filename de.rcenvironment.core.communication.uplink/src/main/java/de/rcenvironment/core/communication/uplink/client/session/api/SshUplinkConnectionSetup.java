@@ -40,7 +40,7 @@ public interface SshUplinkConnectionSetup {
      * @return Displayname for this connection.
      */
     String getDisplayName();
-    
+
     /**
      * @return qualifier for this connection.
      */
@@ -99,13 +99,13 @@ public interface SshUplinkConnectionSetup {
      * @return true, if a passphrase is used.
      */
     boolean getUsePassphrase();
-    
+
     /**
      * Reset count of consecutive failures to 0.
      * 
      */
     void resetConsecutiveConnectionFailures();
-    
+
     /**
      * Raise count of consecutive failures.
      * 
@@ -149,4 +149,12 @@ public interface SshUplinkConnectionSetup {
      * @param displayName the display name
      */
     void setDisplayName(String displayName);
+
+    /**
+     * Gets whether the user wishes to try a reconnect.
+     * 
+     * @return true if the wishes to try a reconnect
+     */
+    boolean wantToReconnect();
+
 }

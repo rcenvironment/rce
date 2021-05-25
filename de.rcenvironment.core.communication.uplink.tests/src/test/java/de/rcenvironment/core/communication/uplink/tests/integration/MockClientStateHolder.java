@@ -83,7 +83,7 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
     }
 
     @Override
-    public synchronized void onFatalSessionError(UplinkProtocolErrorType errorType, String errorMessage) {
+    public synchronized void onFatalErrorMessage(UplinkProtocolErrorType errorType, String errorMessage) {
         Objects.requireNonNull(errorType); // consistency check
         if (sessionErrorMessage != null) {
             inconsistentStateFlag = true;
@@ -94,7 +94,7 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
     }
 
     @Override
-    public synchronized void onSessionInFinalState() {
+    public synchronized void onSessionInFinalState(boolean reasonableToRetry) {
         this.sessionInTerminalState = true;
         sessionInitCompleteLatch.countDown();
     }

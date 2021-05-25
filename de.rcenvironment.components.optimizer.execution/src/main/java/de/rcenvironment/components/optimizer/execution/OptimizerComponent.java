@@ -61,6 +61,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Optimizer implementation of {@link Component}.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#17543)
  */
 @LazyDisposal
 public class OptimizerComponent extends AbstractNestedLoopComponent {
@@ -577,6 +578,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_USE_UNIFIED_STEP);
             String hasBoundValues =
                 componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_KEY_HAS_BOUNDS);
+
             String startValue = componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_STARTVALUE);
             if (startValue.equals("-")) {
                 startValue = "";
@@ -690,7 +692,16 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 startValues.put(e, Double.parseDouble(startValue));
             }
         } else if (!Boolean.parseBoolean(hasStartValue)) {
-            outputValues.put(e, componentContext.readInput(e + OptimizerComponentConstants.STARTVALUE_SIGNATURE));
+            if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                VectorTD startValueVector = (VectorTD) componentContext.readInput(e + OptimizerComponentConstants.STARTVALUE_SIGNATURE);
+                for (int i = 0; i < Integer.parseInt(componentContext
+                    .getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                    outputValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                        startValueVector.getFloatTDOfElement(i));
+                }
+            } else {
+                outputValues.put(e, componentContext.readInput(e + OptimizerComponentConstants.STARTVALUE_SIGNATURE));
+            }
         }
         if (Boolean.parseBoolean(hasStep) && Boolean.parseBoolean(hasUseUnifiedStep)) {
             if (componentContext.getOutputDataType(e) == DataType.Vector) {

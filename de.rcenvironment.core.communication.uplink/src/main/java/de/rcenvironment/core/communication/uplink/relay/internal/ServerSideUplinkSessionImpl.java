@@ -16,6 +16,7 @@ import java.util.Random;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.ServerSideUplinkLowLevelProtocolWrapper;
@@ -274,7 +275,14 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 StringUtils.format("%sUplink session for user \"%s\" (%s) terminated in final state %s, duration: %d msec", logPrefix,
                     loginAccountName, sessionContextInfoString, finalState.name(), execTimeMsec));
             if (!finalState.isTerminal()) {
-                log.warn(logPrefix + "Session terminated in non-terminal state " + finalState.name());
+                if (UNDEFINED_CLIENT_VERSION_PLACEHOLDER == sessionState.getClientVersionInfo()) {
+                    // expected behavior for pre-10.2.0 clients, which are identified here by also not providing version information
+                    log.debug(logPrefix + "Session of outdated client terminated in non-terminal state " + finalState.name()
+                        + " (expected legacy behavior)");
+                } else {
+                    // unexpected for up-to-date clients, so log a warning
+                    log.warn(logPrefix + "Session terminated in non-terminal state " + finalState.name());
+                }
             }
         }
     }
@@ -332,7 +340,7 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 if (HEARTBEAT_LOGGING_ENABLED) {
                     log.debug(logPrefix + "Enqueueing heartbeat message");
                 }
-                enqueueMessageBlockForSending(0, new MessageBlock(MessageType.HEARTBEAT));
+                enqueueMessageBlockForSending(0, new MessageBlock(MessageType.HEARTBEAT), MessageBlockPriority.HIGH);
                 sessionState.markHeartbeatSent();
                 return true;
             } catch (IOException e) {
@@ -349,7 +357,8 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     }
 
     @Override
-    protected void onTerminalStateReached(UplinkSessionState newState) {
+    protected void onTerminalStateReached(UplinkSessionState newState, Optional<UplinkProtocolErrorType> fatalError) {
+        // TODO 10.3.0 also log error type if present?
         writeAuditLogEntryOnSessionTerminating(newState);
     }
 

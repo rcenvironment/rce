@@ -20,7 +20,9 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -36,6 +38,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * A part implementation for the algorithm executor which write config files in python.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#17540)
  */
 public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmExecutor {
 
@@ -252,48 +255,48 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
     @SuppressWarnings("unchecked")
     @Override
     public void readOutputFileFromExternalProgram(Map<String, TypedDatum> outputValueMap) throws IOException {
-        if (messageFromClient != null) {
-            String currentWorkingDir = messageFromClient.getCurrentWorkingDir();
-            if (currentWorkingDir != null) {
-                File[] cwdFiles = new File(currentWorkingDir).listFiles();
-                if (cwdFiles != null) {
-                    File outputFile = cwdFiles[0];
-                    ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-                    Map<String, Object> result = mapper.readValue(outputFile, new HashMap<String, Object>().getClass());
-                    List<Double> outputs = (List<Double>) result.get("designVar");
-                    int offset = 0;
-                    for (int i = 0; i < orderedOutputValueKeys.size(); i += offset) {
-                        offset = readOutputs(outputValueMap, outputs, i);
+        if (messageFromClient == null) {
+            return;
+        }
+
+        String currentWorkingDir = messageFromClient.getCurrentWorkingDir();
+        if (currentWorkingDir == null) {
+            return;
+        }
+
+        File[] cwdFiles = new File(currentWorkingDir).listFiles();
+        if (cwdFiles == null) {
+            return;
+        }
+
+        File outputFile = cwdFiles[0];
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        Map<String, Object> result = mapper.readValue(outputFile, HashMap.class);
+        List<Double> outputs = (List<Double>) result.get("designVar");
+        int offset = 0;
+        for (int i = 0; i < orderedOutputValueKeys.size(); i += offset) {
+            String key = orderedOutputValueKeys.get(i);
+            String realKey = "";
+            if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+                realKey = key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
+            }
+
+            if (!realKey.isEmpty()) {
+                if (compContext.getOutputDataType(realKey) == DataType.Vector && !orderedOutputValueKeys.contains(realKey)) {
+                    VectorTD resultVec = typedDatumFactory.createVector(Integer.parseInt(compContext.getOutputMetaDataValue(
+                        realKey, OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
+                    for (int j = 0; j < resultVec.getRowDimension(); j++) {
+                        resultVec.setFloatTDForElement(typedDatumFactory.createFloat(outputs.get(i + j)), j);
                     }
-                    gradRequest = (Boolean) result.get("gradRequest");
+                    offset = resultVec.getRowDimension() + 1;
+                    outputValueMap.put(realKey, resultVec);
                 }
+            } else {
+                outputValueMap.put(key, typedDatumFactory.createFloat(outputs.get(i)));
+                offset = 1;
             }
         }
-    }
-
-    private int readOutputs(Map<String, TypedDatum> outputValueMap, List<Double> outputs, int i) {
-        int offset;
-        String key = orderedOutputValueKeys.get(i);
-        offset = 1;
-        String realKey = "";
-        if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
-            realKey = key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
-        }
-
-        if (!realKey.isEmpty()) {
-            if (compContext.getOutputDataType(realKey) == DataType.Vector && !orderedOutputValueKeys.contains(realKey)) {
-                VectorTD resultVec = typedDatumFactory.createVector(Integer.parseInt(compContext.getOutputMetaDataValue(
-                    realKey, OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
-                for (int j = 0; j < resultVec.getRowDimension(); j++) {
-                    resultVec.setFloatTDForElement(typedDatumFactory.createFloat(outputs.get(i + j)), j);
-                }
-                outputValueMap.put(realKey, resultVec);
-                offset++;
-            }
-        } else {
-            outputValueMap.put(key, typedDatumFactory.createFloat(outputs.get(i)));
-        }
-        return offset;
+        gradRequest = (Boolean) result.get("gradRequest");
     }
 
     @Override

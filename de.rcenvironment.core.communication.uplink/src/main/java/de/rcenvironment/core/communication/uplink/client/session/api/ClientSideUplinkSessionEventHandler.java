@@ -38,19 +38,25 @@ public interface ClientSideUplinkSessionEventHandler {
     void onActiveSessionTerminating();
 
     /**
-     * Reports an error message either sent by the remote side, or caused by a connection error. This should be called BEFORE using
-     * {@link #setSessionActiveState()} to deactivate the session.
+     * Reports an error message either sent by the remote side, or caused by a connection error. This event is <em>informational</em>,
+     * typically for logging or presenting the message to the user, and should not be used for flow or state control. To reliably detect the
+     * end of an Uplink session, use {@link #onSessionInFinalState()} instead, which is also triggered if no error message is available.
+     * <p>
+     * Implementation note: Callers should invoke this BEFORE using {@link #setSessionActiveState()} to deactivate the session.
      * 
      * @param errorType the type of the error; note that this enum object also signals whether auto-retry is reasonable for this kind of
      *        error (see {@link UplinkProtocolErrorType#getClientRetryFlag()})
      * @param errorMessage the message received from the remote side or generated locally after an error
      */
-    void onFatalSessionError(UplinkProtocolErrorType errorType, String errorMessage);
+    void onFatalErrorMessage(UplinkProtocolErrorType errorType, String errorMessage);
 
     /**
-     * Reports that this session should be considered closed. Before this, the "active" state will have been set to false.
+     * Reports that this session should be considered closed. Before this, the "active" state of the session will have been set to false.
+     * 
+     * @param reasonableToRetry whether it is reasonable to try reconnecting with the same connection parameters (under the condition that
+     *        retry is enabled/desired for this connection in the first place, which is the decision of the code receiving this callback)
      */
-    void onSessionInFinalState();
+    void onSessionInFinalState(boolean reasonableToRetry);
 
     /**
      * Receive and process an updated list of the published tools of a remote source (identified by an opaque "source id"). An empty list

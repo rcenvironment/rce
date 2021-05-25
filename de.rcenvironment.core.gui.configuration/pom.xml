@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.configuration</artifactId>
 	<name>RCE Core GUI Configuration Bundle</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.3-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

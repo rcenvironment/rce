@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.optimizer.dakota.common</artifactId>
 	<name>RCE Optimizer Component Dakota Common Bundle</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.3-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

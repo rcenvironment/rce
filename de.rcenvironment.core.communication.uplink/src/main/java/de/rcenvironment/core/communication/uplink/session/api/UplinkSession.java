@@ -73,13 +73,6 @@ public interface UplinkSession extends AsyncMessageBlockSender {
      */
     void initiateCleanShutdownIfRunning();
 
-    /**
-     * Registers a listener to be executed after session shutdown.
-     * 
-     * @param run Runnable to be executed when the session shutdown is finished.
-     */
-    void registerOnShutdownFinishedListener(Runnable run);
-
     boolean isShuttingDownOrShutDown();
 
 }

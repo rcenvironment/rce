@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.toolkit.core</artifactId>
 	<name>RCE Toolkit - Core</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.3-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<!-- sharing the RCE core parent POM for now -->

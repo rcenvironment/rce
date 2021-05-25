@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.uplink.network.internal;
 import java.util.Objects;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 
@@ -25,12 +26,9 @@ public class MessageBlock {
 
     private final byte[] data;
 
-    public MessageBlock(int type, byte[] data) throws ProtocolException {
-        // check before cast to byte
-        if (type < UplinkProtocolConstants.MIN_TYPE_VALUE || type > UplinkProtocolConstants.MAX_TYPE_VALUE) {
-            throw new ProtocolException("Invalid message block type: " + type);
-        }
-        this.type = MessageType.resolve((byte) type);
+
+    public MessageBlock(MessageType type, byte[] data) throws ProtocolException {
+        this.type = type;
         this.data = Objects.requireNonNull(data);
         // check after null test
         if (data.length > UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH) {
@@ -38,6 +36,10 @@ public class MessageBlock {
                 StringUtils.format("The message data block of %d bytes exceeds the maximum of %d bytes", data.length,
                     UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH));
         }
+    }
+
+    public MessageBlock(int type, byte[] data) throws ProtocolException {
+        this(MessageType.resolve((byte) type), data);
     }
 
     /**

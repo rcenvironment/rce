@@ -153,8 +153,13 @@ public class UplinkToolAccessClientComponent extends DefaultComponent {
             throw new ComponentException("Upload directory could not be created.", e1);
         }
 
-        // Get SSH session
-        ClientSideUplinkSession uplinkSession = uplinkService.getAvtiveSshUplinkSession(connectionId);
+        // Get Uplink session
+        Optional<ClientSideUplinkSession> optionalUplinkSession = uplinkService.getActiveSshUplinkSession(connectionId);
+        if (!optionalUplinkSession.isPresent()) {
+            throw new ComponentException(
+                "Ready to process inputs, but the Uplink connection towards this remote tool is not active anymore");
+        }
+        ClientSideUplinkSession uplinkSession = optionalUplinkSession.get();
 
         Map<String, String> properties = getProperties();
 

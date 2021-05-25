@@ -96,7 +96,7 @@ public enum MessageType {
      */
     TOOL_EXECUTION_EVENTS(33),
     /**
-     * Reports the end of the provider-side tool execution, and transport the {@link ToolExecutionResult}.
+     * Reports the end of the provider-side tool execution, and transport the {@link ToolExecutionResult}. Usage: D2I.
      */
     TOOL_EXECUTION_FINISHED(34),
     /**

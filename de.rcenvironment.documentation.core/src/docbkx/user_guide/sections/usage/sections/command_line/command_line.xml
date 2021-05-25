@@ -599,7 +599,7 @@
 					<tbody>
 						<row>
 							<entry>Cluster</entry>
-							<entry>de.rcenvironment.cluster/3.2</entry>
+							<entry>de.rcenvironment.cluster/3.1</entry>
 							<entry><para>authuser - user name</para><para>authphrase - password (base64 encoded)</para></entry>
 						</row>
 						<row>
@@ -609,12 +609,12 @@
 						</row>
 						<row>
 							<entry>Output Writer</entry>
-							<entry>de.rcenvironment.outputwriter/2.0</entry>
+							<entry>de.rcenvironment.outputwriter/2.1</entry>
 							<entry>targetRootFolder - path to target root folder</entry>
 						</row>
 						<row>
 							<entry>Script</entry>
-							<entry>de.rcenvironment.script/3.4</entry>
+							<entry>de.rcenvironment.script/3.5</entry>
 							<entry>pythonExecutionPath - path to the Python executable (only required if Python is set as
 									script language)</entry>
 						</row>

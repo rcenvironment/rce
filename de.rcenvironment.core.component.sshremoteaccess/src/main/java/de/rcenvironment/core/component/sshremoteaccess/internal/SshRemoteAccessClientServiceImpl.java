@@ -321,7 +321,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         String toolAndHostId = createUniqueToolAndHostId(toolId, hostId, connectionId);
         // If this component was not registered before, register it now.
         if (!registeredComponents.containsKey(toolAndHostId)) {
-            LOG.info(StringUtils.format("Detected new SSH tool %s (version %s) on host %s.", toolName, toolVersion,
+            LOG.debug(StringUtils.format("Detected new SSH Remote Access tool %s (version %s) on host %s", toolName, toolVersion,
                 hostName));
             registerToolAccessComponent(new RemoteAccessComponentDescription(toolId, toolName, toolVersion,
                 hostName,
@@ -364,22 +364,22 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             generateConfiguration(component.getToolName(), component.getToolVersion(), component.getHostName(), component.getHostId(),
                 component.getConnectionId(), component.isWorkflow());
         final ComponentInterfaceBuilder componentInterfaceBuilder = new ComponentInterfaceBuilder()
-                    .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + component.getComponentId())
-                    .setIcon16(readDefaultToolIcon(SIZE_16))
-                    .setIcon32(readDefaultToolIcon(SIZE_32))
-                    .setGroupName(component.getGroup())
-                    .setVersion(component.getToolVersion())
-                    .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
-                    .setConfigurationDefinition(configuration)
-                    .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
-                    .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
-                    .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
-                    .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD);
+            .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + component.getComponentId())
+            .setIcon16(readDefaultToolIcon(SIZE_16))
+            .setIcon32(readDefaultToolIcon(SIZE_32))
+            .setGroupName(component.getGroup())
+            .setVersion(component.getToolVersion())
+            .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
+            .setConfigurationDefinition(configuration)
+            .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
+            .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
+            .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
+            .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD);
         if (component.isWorkflow()) {
-                // Add "WORKFLOW" to display name
-            componentInterfaceBuilder .setDisplayName(
-                    StringUtils.format("%s (%s) [workflow on %s]", component.getToolName(), component.getToolVersion(),
-                        component.getHostName()));
+            // Add "WORKFLOW" to display name
+            componentInterfaceBuilder.setDisplayName(
+                StringUtils.format("%s (%s) [workflow on %s]", component.getToolName(), component.getToolVersion(),
+                    component.getHostName()));
         } else {
             componentInterfaceBuilder
                 .setDisplayName(StringUtils.format("%s [SSH forwarded]", component.getToolName()));

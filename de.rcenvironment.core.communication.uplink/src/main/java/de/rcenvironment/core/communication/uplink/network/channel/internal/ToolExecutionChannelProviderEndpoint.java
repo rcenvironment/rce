@@ -81,12 +81,13 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
             if (directoryDownloadWrapper.isFinished()) {
                 // input files received, start the actual execution
                 channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES; // tool execution is "send only" mode
-                // spawn execution thread
+                // spawn a thread to execute the tool and upload the output files
+                // TODO proper cancellation is not implemented yet; will be addressed in #0017599
                 ConcurrencyUtils.getAsyncTaskService().execute("Uplink: tool execution and output file sending", () -> {
                     try {
                         runToolExecution();
                     } catch (IOException | OperationFailureException e) {
-                        log.error("Error during tool execution", e);
+                        log.warn("Error during tool execution", e);
                         // TODO propagate this error
                         return;
                     }
@@ -94,7 +95,7 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
                         uploadOutputFiles();
                     } catch (IOException e) {
                         // TODO propagate this error
-                        log.error("Error uploading execution output files", e);
+                        log.warn("Error uploading execution output files", e);
                         return;
                     }
                 });

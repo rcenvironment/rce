@@ -1,3 +1,26 @@
+RCE 10.2.3 (May 10, 2021)
+
+# Network
+
+- Uplink: Added network message prioritisation and improved file upload/download behavior 
+  to prevent timeouts in low-bandwidth situations
+- Uplink: Adjusted protocol parameters (e.g. increased timeouts) to further improve stability
+- Uplink: Fixed bugs causing rare stability issues on client and server side
+- Uplink: Improved client-side GUI behavior regarding connect/disconnect/retry
+- Improved logging of various network events, mostly on server side
+- Reduced the volume of low-level SSH events being logged
+
+# Components
+
+- Optimizer: Fixed a bug that prevents the generic optimizer to fail for design variables of type vector       
+- Optimizer: Fixed a bug in the generic optimizer get_start_value() API command that returned None    
+
+# Other
+
+- Minor documentation fix regarding component versions
+- Minor metadata, code, and JavaDoc cleanup
+
+
 RCE 10.2.2 (Feb 04, 2021)
 
 # Network

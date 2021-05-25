@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Utils Incubator Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.incubator;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 10.2.2.qualifier
+Bundle-Version: 10.2.3.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy

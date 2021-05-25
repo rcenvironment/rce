@@ -532,7 +532,7 @@ post.bat</programlisting>
                 while we want to expose the latter input as <code>optimalX</code>. In order to
                 integrate the example workflow prepared above as a component, we thus issue the
                 following
-                command:<programlisting>wf integrate FindOptimalX "<phrase os="windows">C:\Users\user\workflow.wf</phrase><phrase os="linux">/home/user/workflow.wf</phrase>" DiscComp:c:c Optimizer:x_optimal:optimalX</programlisting></para>
+                command:<programlisting>wf integrate FindOptimalX "<phrase os="windows">C:\Users\user\workflow.wf</phrase><phrase os="linux">/home/user/workflow.wf</phrase>"--expose DiscComp:c:c --expose Optimizer:x_optimal:optimalX</programlisting></para>
             <para>When enabling verbose mode via the switch <code>-v</code>, RCE writes the
                 following
                 output<programlisting>Input Adapter : c --[Float,Constant,Required]-> c @ 03b5b758-3b44-4a53-b832-be9991321285

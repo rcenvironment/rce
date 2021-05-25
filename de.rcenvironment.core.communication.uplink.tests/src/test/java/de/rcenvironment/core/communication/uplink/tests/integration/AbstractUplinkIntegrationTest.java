@@ -807,7 +807,7 @@ public abstract class AbstractUplinkIntegrationTest {
         // now test the transfer of "large" documentation, i.e. data that cannot be transfered in a single MessageBlock
 
         // first, check that the test size is actually sufficient
-        assertTrue(DOCUMENTATION_SIZE_LARGER_THAN_MESSAGE_BLOCK > UplinkProtocolConstants.MAX_MESSAGE_BLOCK_DATA_LENGTH);
+        assertTrue(DOCUMENTATION_SIZE_LARGER_THAN_MESSAGE_BLOCK > UplinkProtocolConstants.MAX_FILE_TRANSFER_CHUNK_SIZE);
 
         // test the behavior
         result = clientSession1.fetchDocumentationData(destinationId, DOCUMENTATION_ID_LARGER_THAN_MESSAGE_BLOCK);

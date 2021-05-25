@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Executor Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.executor.tests
-Bundle-Version: 10.2.2.qualifier
+Bundle-Version: 10.2.3.qualifier
 Fragment-Host: de.rcenvironment.core.utils.executor
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
