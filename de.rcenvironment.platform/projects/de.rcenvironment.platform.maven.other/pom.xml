@@ -76,7 +76,7 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
 			<!-- last updated: 2019-11-06, misc_ro -->
-			<version>1.19</version>
+			<version>1.21</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
