@@ -41,9 +41,9 @@ public class LocalServiceUplinkConnectionImplTest extends AbstractUplinkConnecti
         mockServerSideUplinkEndpointService.bindConcurrencyUtilsFactory(ConcurrencyUtils.getFactory());
         mockServerSideUplinkSessionService.bindServerSideUplinkEndpointService(mockServerSideUplinkEndpointService);
 
-        // wrap into UplinkConnection
+        // wrap into UplinkConnection; null parameters = no throughput limiters
         uplinkConnection =
-            new LocalServiceUplinkConnectionImpl(ConcurrencyUtils.getAsyncTaskService(), mockServerSideUplinkSessionService);
+            new LocalServiceUplinkConnectionImpl(ConcurrencyUtils.getAsyncTaskService(), mockServerSideUplinkSessionService, null, null);
     }
 
     /**

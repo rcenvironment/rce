@@ -92,7 +92,7 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
     private static final int NUMBER_400 = 400;
 
     private ToolExecutionRequest request;
-    
+
     private File tempDir;
 
     private File inputDir;
@@ -147,7 +147,7 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
     public ToolExecutionResult execute(ToolExecutionProviderEventCollector eventCollector) throws OperationFailureException {
         prepareWorkflowFile();
         FinalWorkflowState state = executeConfiguredWorkflow(eventCollector);
-        ToolExecutionResult result =  new ToolExecutionResult();
+        ToolExecutionResult result = new ToolExecutionResult();
         result.successful = state.equals(FinalWorkflowState.FINISHED);
         result.cancelled = state.equals(FinalWorkflowState.CANCELLED);
         return result; // dummy
@@ -180,8 +180,8 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
 
             @Override
             public void provideFiles(DirectoryUploadContext uploadContext) throws IOException {
-                DataTransferUtils.uploadDirectory(outputDir, uploadContext, "");
-                //TODO Remove this call as soon as onContextClosing is actually called
+                DataTransferUtils.uploadDirectory(outputDir, uploadContext, "", ""); // TODO proper log prefix
+                // TODO Remove this call as soon as onContextClosing is actually called
                 cleanupTempFiles();
             }
 
@@ -189,7 +189,7 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
     }
 
     @Override
-    //NEVER CALLED IN CURRENT CODE
+    // NEVER CALLED IN CURRENT CODE
     public void onContextClosing() {
         cleanupTempFiles();
     }
@@ -321,7 +321,7 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
         logDir.mkdirs();
 
         // File for collecting console output
-        //File consoleLogFile = new File(outputDir, "console.log");
+        // File consoleLogFile = new File(outputDir, "console.log");
 
         try {
             exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(createdWorkflowFile).setLogDirectory(logDir);
@@ -335,29 +335,17 @@ public class ToolExecutionProviderImpl implements ToolExecutionProvider {
                     if (!consoleRow.getType().equals(ConsoleRow.Type.LIFE_CYCLE_EVENT)) {
                         eventCollector.submitEvent(consoleRow.getType().name(), consoleRow.getPayload());
                     }
-                    /*try {
-                        ConsoleRow.Type type = consoleRow.getType();
-                        switch (type) {
-                        case TOOL_OUT:
-                        case TOOL_ERROR:
-                        case COMPONENT_ERROR:
-                        case COMPONENT_WARN:
-                        case COMPONENT_INFO:
-                            FileUtils.writeStringToFile(consoleLogFile, consoleRow.getPayload() + "\n", true);
-                            break;
-                        case LIFE_CYCLE_EVENT:
-                            break;
-                        default:
-                            break;
-                        }
-
-                    } catch (IOException e) {
-                        log.warn("Could not write console row to log file.");
-                    }*/
+                    /*
+                     * try { ConsoleRow.Type type = consoleRow.getType(); switch (type) { case TOOL_OUT: case TOOL_ERROR: case
+                     * COMPONENT_ERROR: case COMPONENT_WARN: case COMPONENT_INFO: FileUtils.writeStringToFile(consoleLogFile,
+                     * consoleRow.getPayload() + "\n", true); break; case LIFE_CYCLE_EVENT: break; default: break; }
+                     * 
+                     * } catch (IOException e) { log.warn("Could not write console row to log file."); }
+                     */
 
                 }
             });
-            //Delete workflows on success
+            // Delete workflows on success
             exeContextBuilder.setDeletionBehavior(DeletionBehavior.OnExpected);
             exeContextBuilder.setDisposalBehavior(DisposalBehavior.OnExpected);
         } catch (InvalidFilenameException e) {

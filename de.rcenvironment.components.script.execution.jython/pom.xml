@@ -13,5 +13,5 @@
 		<relativePath>../de.rcenvironment.componentgroups.standard/parent.pom</relativePath>
 	</parent>
 
-	<version>10.2.3-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 </project>

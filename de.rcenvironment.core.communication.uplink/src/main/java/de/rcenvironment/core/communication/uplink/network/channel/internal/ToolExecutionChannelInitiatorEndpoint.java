@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.List;
 
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionEventHandler;
-import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionProvider;
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionRequest;
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionRequestResponse;
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionResult;
@@ -20,6 +19,7 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideU
 import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideUplinkSessionEventHandler;
 import de.rcenvironment.core.communication.uplink.client.session.api.ToolExecutionHandle;
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
@@ -32,13 +32,11 @@ import de.rcenvironment.core.utils.common.exception.ProtocolException;
  */
 public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChannelEndpoint {
 
-    private ToolExecutionProvider executionProvider;
+    private volatile ToolExecutionHandle executionHandle; // could probably be reworked to be "final"
 
-    private ToolExecutionHandle executionHandle;
+    private ToolExecutionEventHandler executionEventHandler; // synchronized via access methods
 
-    private ToolExecutionEventHandler executionEventHandler;
-
-    private DirectoryDownloadWrapper directoryDownloadWrapper;
+    private DirectoryDownloadWrapper directoryDownloadWrapper; // synchronized via access methods
 
     public ToolExecutionChannelInitiatorEndpoint(ClientSideUplinkSession session, long channelId,
         ClientSideUplinkSessionEventHandler sessionEventHandler) {
@@ -54,21 +52,25 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
      */
     public void initiateToolExecution(ToolExecutionRequest toolExecutionRequest, ToolExecutionEventHandler eventHandler)
         throws IOException {
-        this.executionEventHandler = eventHandler;
+        this.setExecutionEventHandler(eventHandler);
         executionHandle = new ToolExecutionHandle() {
 
             @Override
             public void requestCancel() {
                 try {
-                    enqueueMessageBlockForSending(messageConverter.createToolCancellationRequest());
+                    // TODO 10.3.0+ (p3) consider moving this to a higher message priority to get ahead of bulk transfers?
+                    enqueueMessageBlockForSending(messageConverter.createToolCancellationRequest(),
+                        MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
                 } catch (IOException e) {
                     // as there is currently no mechanism to explicitly notify the user, simply log this as a warning
-                    log.error("Failed to deliver a tool cancellation request through an Uplink connection: " + e.toString());
+                    log.error(
+                        channelLogPrefix + "Failed to deliver a tool cancellation request through an Uplink connection: " + e.toString());
                 }
             }
         };
-        enqueueMessageBlockForSending(messageConverter.encodeToolExecutionRequest(toolExecutionRequest));
-        channelState = ToolExecutionChannelState.EXPECTING_EXECUTION_REQUEST_RESPONSE;
+        enqueueMessageBlockForSending(messageConverter.encodeToolExecutionRequest(toolExecutionRequest),
+            MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
+        setChannelState(ToolExecutionChannelState.EXPECTING_EXECUTION_REQUEST_RESPONSE);
     }
 
     @Override
@@ -76,7 +78,7 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
         // TODO (p1) 11.0: check: any operations to perform here?
     }
 
-    protected synchronized boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
+    protected boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
         final MessageType messageType = messageBlock.getType();
         if (messageType == MessageType.CHANNEL_CLOSE) {
             // TODO additional teardown?
@@ -84,23 +86,25 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
         }
 
         // note: the protocol exchange is fairly linear, so a full state machine would be overkill at this point -- misc_ro
-        switch (channelState) {
+        switch (getChannelState()) {
         case EXPECTING_EXECUTION_REQUEST_RESPONSE:
             validateActualVersusExpectedMessageType(messageType, MessageType.TOOL_EXECUTION_REQUEST_RESPONSE);
             final ToolExecutionRequestResponse response = messageConverter.decodeToolExecutionRequestResponse(messageBlock);
             if (!response.isAccepted()) {
-                log.debug("Failed to set up remote tool execution, aborting");
+                log.debug(channelLogPrefix + "Failed to set up remote tool execution, aborting");
                 // TODO other error/shutdown events
-                executionEventHandler.onContextClosing();
+                getExecutionEventHandler().onContextClosing();
                 return false;
             }
 
-            log.debug("Successfully set up remote tool execution, preparing to upload the input files");
+            if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                log.debug(channelLogPrefix + "Successfully set up remote tool execution, preparing to upload the input files");
+            }
 
             // expect no return messages while uploading input files
-            channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES;
+            setChannelState(ToolExecutionChannelState.EXPECTING_NO_MESSAGES);
 
-            executionEventHandler.onInputUploadsStarting();
+            getExecutionEventHandler().onInputUploadsStarting();
 
             // spawn a thread to upload input files without blocking the thread processing incoming messages (for all channels)
             // TODO proper cancellation is not implemented yet; will be addressed in #0017599
@@ -108,17 +112,17 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
                 try {
                     uploadInputFiles();
                 } catch (IOException e) {
-                    log.warn("Error while uploading input files for remote tool execution", e);
+                    log.warn(channelLogPrefix + "Error while uploading input files for remote tool execution: " + e.toString());
                     // TODO propagate this error
                     return;
                 }
-                executionEventHandler.onInputUploadsFinished();
+                getExecutionEventHandler().onInputUploadsFinished();
                 // the end of input uploads implies starting the execution on the remote side, so expect related events
                 // TODO 11.0.0 there could be a theoretical race condition where execution events arrive before this new state is set;
                 // very unlikely, especially including network latency, but should be investigated before going 'stable'. A potential
                 // fix might be setting this state before sending out the final message of the upload sequence. -- misc_ro
-                channelState = ToolExecutionChannelState.EXPECTING_EXECUTION_EVENTS;
-                executionEventHandler.onExecutionStarting();
+                setChannelState(ToolExecutionChannelState.EXPECTING_EXECUTION_EVENTS);
+                getExecutionEventHandler().onExecutionStarting();
             });
             return true;
         case EXPECTING_EXECUTION_EVENTS:
@@ -126,43 +130,62 @@ public class ToolExecutionChannelInitiatorEndpoint extends AbstractExecutionChan
                 final List<ToolExecutionProviderEventTransferObject> toolExecutionEvents =
                     messageConverter.decodeToolExecutionEvents(messageBlock);
                 for (ToolExecutionProviderEventTransferObject event : toolExecutionEvents) {
-                    executionEventHandler.processToolExecutionEvent(event.t, event.d);
+                    getExecutionEventHandler().processToolExecutionEvent(event.t, event.d);
                 }
                 return true;
             }
             validateActualVersusExpectedMessageType(messageType, MessageType.TOOL_EXECUTION_FINISHED);
             final ToolExecutionResult toolExecutionResult = messageConverter.decodeToolExecutionResult(messageBlock);
-            executionEventHandler.onExecutionFinished(toolExecutionResult);
+            getExecutionEventHandler().onExecutionFinished(toolExecutionResult);
             // prepare output directory download
-            ensureNotDefinedYet(directoryDownloadWrapper);
-            directoryDownloadWrapper = new DirectoryDownloadWrapper(executionEventHandler.getOutputDirectoryReceiver());
-            executionEventHandler.onOutputDownloadsStarting();
-            channelState = ToolExecutionChannelState.EXPECTING_DIRECTORY_DOWNLOAD;
+            ensureNotDefinedYet(getDirectoryDownloadWrapper());
+            setDirectoryDownloadWrapper(new DirectoryDownloadWrapper(getExecutionEventHandler().getOutputDirectoryReceiver()));
+            getExecutionEventHandler().onOutputDownloadsStarting();
+            setChannelState(ToolExecutionChannelState.EXPECTING_DIRECTORY_DOWNLOAD);
             return true;
         case EXPECTING_DIRECTORY_DOWNLOAD: // output file downloads
-            ensure(directoryDownloadWrapper != null);
-            directoryDownloadWrapper.processMessageBlock(messageBlock);
-            if (directoryDownloadWrapper.isFinished()) {
-                channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES; // all finished
+            ensure(getDirectoryDownloadWrapper() != null);
+            getDirectoryDownloadWrapper().processMessageBlock(messageBlock);
+            if (getDirectoryDownloadWrapper().isFinished()) {
+                setChannelState(ToolExecutionChannelState.EXPECTING_NO_MESSAGES); // all finished
                 // TODO do not actually finish here; expect the final result object
-                executionEventHandler.onOutputDownloadsFinished();
-                executionEventHandler.onContextClosing();
+                getExecutionEventHandler().onOutputDownloadsFinished();
+                getExecutionEventHandler().onContextClosing();
                 return false;
             } else {
                 return true;
             }
         default:
-            throw new ProtocolException("Received an unexpected message block (type: " + messageType + ") while in state " + channelState);
+            throw new ProtocolException(
+                channelLogPrefix + "Received an unexpected message block (type: " + messageType + ") while in state " + getChannelState());
         }
 
     }
 
     private void uploadInputFiles() throws IOException {
-        new DirectoryUploadWrapper(executionEventHandler.getInputDirectoryProvider()).performDirectoryUpload();
+        new DirectoryUploadWrapper(getExecutionEventHandler().getInputDirectoryProvider()).performDirectoryUpload();
     }
 
     public ToolExecutionHandle getExecutionHandle() {
-        return executionHandle;
+        return executionHandle; // volatile
+    }
+
+    // synchronized access methods to minimize synchronization scopes
+
+    private synchronized ToolExecutionEventHandler getExecutionEventHandler() {
+        return executionEventHandler;
+    }
+
+    private synchronized void setExecutionEventHandler(ToolExecutionEventHandler executionEventHandler) {
+        this.executionEventHandler = executionEventHandler;
+    }
+
+    private synchronized DirectoryDownloadWrapper getDirectoryDownloadWrapper() {
+        return directoryDownloadWrapper;
+    }
+
+    private synchronized void setDirectoryDownloadWrapper(DirectoryDownloadWrapper directoryDownloadWrapper) {
+        this.directoryDownloadWrapper = directoryDownloadWrapper;
     }
 
 }

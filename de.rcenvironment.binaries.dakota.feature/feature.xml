@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.binaries.dakota.feature"
       label="RCE Binaries - Dakota (Feature)"
-      version="10.2.3.qualifier"
+      version="10.2.4.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

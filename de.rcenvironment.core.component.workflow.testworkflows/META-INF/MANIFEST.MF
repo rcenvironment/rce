@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Workflow Test Workflows
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow.testworkflows
-Bundle-Version: 10.2.3.qualifier
+Bundle-Version: 10.2.4.qualifier
 Fragment-Host: de.rcenvironment.core.component.workflow.command
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing

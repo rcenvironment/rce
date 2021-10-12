@@ -75,7 +75,7 @@ public class ServerSideUplinkLowLevelProtocolWrapper extends CommonUplinkLowLeve
         } catch (TimeoutException e) {
             // remote error message
             throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VIOLATION,
-                "Failed to receive client data within " + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC
+                "Failed to receive client data within " + UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout()
                     + " msec, closing the connection",
                 true);
         } catch (IOException e) {
@@ -120,7 +120,8 @@ public class ServerSideUplinkLowLevelProtocolWrapper extends CommonUplinkLowLeve
         } catch (TimeoutException e) {
             // remote error message
             throw new UplinkConnectionRefusedException(UplinkProtocolErrorType.PROTOCOL_VIOLATION,
-                "Failed to receive the client's handshake confirmation within " + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC
+                "Failed to receive the client's handshake confirmation within "
+                    + UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout()
                     + " msec, closing the connection",
                 true);
         } // contains no data, just an empty "handshake" message block

@@ -458,7 +458,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                 public WorkflowExecutionException call() throws Exception {
                     try {
                         final String accessToken =
-                            acquireOrRegisterExecutionAuthorizationToken(wfDescriptionNode, distrCompKnowledge, resultMap);
+                            acquireOrRegisterExecutionAuthorizationToken(wfDescriptionNode, distrCompKnowledge);
                         synchronized (resultMap) {
                             // note: map key kept unchanged from previous code; could be improved/clarified
                             resultMap.put(wfDescriptionNode.getIdentifierAsObject().toString(), accessToken);
@@ -489,7 +489,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     private String acquireOrRegisterExecutionAuthorizationToken(WorkflowNode wfDescriptionNode,
-        DistributedComponentKnowledge distrCompKnowledge, Map<String, String> resultMap)
+        DistributedComponentKnowledge distrCompKnowledge)
         throws RemoteOperationException, OperationFailureException {
 
         // extract data

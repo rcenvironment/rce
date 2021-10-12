@@ -52,7 +52,6 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescrip
 import de.rcenvironment.core.communication.uplink.client.session.api.UplinkLogicalNodeMappingService;
 import de.rcenvironment.core.communication.uplink.client.session.internal.ClientSideUplinkSessionParameters;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
-import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState;
 import de.rcenvironment.core.component.integration.documentation.ToolIntegrationDocumentationService;
 import de.rcenvironment.core.configuration.SecureStorageImportService;
 import de.rcenvironment.core.configuration.SecureStorageSection;
@@ -613,6 +612,8 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
                 uplinkSession =
                     uplinkSessionService.createSession(uplinkConnection, sessionParameters, new ClientSideUplinkSessionEventHandler() {
 
+                        // TODO >10.2.4 (p2) use consistent log prefix for all output
+
                         @Override
                         public void onSessionActivating(String namespaceId, String destinationIdPrefix) {
                             setup.setDestinationIdPrefix(namespaceId);
@@ -673,8 +674,8 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
                                     FileCompressionService.compressDirectoryToByteArray(docDir, FileCompressionFormat.ZIP, false);
                                 return Optional.of(new SizeValidatedDataSource(data));
                             } catch (RemoteOperationException | IOException e) {
-                                log.warn("Could not retreive tool documentation from tool documentation service: ", e);
-                                return null;
+                                log.warn("Could not retrieve tool documentation from tool documentation service: " + e.toString());
+                                return null; // TODO >10.2.4 (p2) review: shouldn't this be Optional.empty()?
                             }
                         }
 
@@ -686,8 +687,9 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
                         log.warn("An Uplink connection (" + setup.getDisplayName()
                             + ") finished with a warning or error; inspect the log output above for details");
                     }
-                    log.debug("Finished execution of Uplink session " + uplinkSession.getLocalSessionId() + ", final state: "
-                        + uplinkSession.getState());
+                    // TODO >10.2.4 (p2) introduce proper log prefix
+                    log.debug("[" + uplinkSession.getLocalSessionId() + "] Finished execution of Uplink session "
+                        + uplinkSession.getLocalSessionId() + ", final state: " + uplinkSession.getState());
                 });
 
             } catch (OperationFailureException | LogConfigurationException | JSchException | SshParameterException e) {

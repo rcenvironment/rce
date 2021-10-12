@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
@@ -22,6 +23,7 @@ import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.ServerSideUplinkLowLevelProtocolWrapper;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionLowLevelEventHandler;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
+import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConfiguration;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkEndpointService;
@@ -50,6 +52,8 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
     private static final boolean HEARTBEAT_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.heartbeat");
 
+    private static final boolean BACKPRESSURE_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.backpressure");
+
     private final String sessionContextInfoString; // provided by network connection layer
 
     private final String eventLogConnectionId;
@@ -66,11 +70,20 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
     private Random random = new Random(); // thread safe
 
+    private int heartbeatServerToClientSendIntervalAverage =
+        UplinkProtocolConfiguration.getCurrent().getHeartbeatServerToClientSendIntervalAverage();
+
+    private int heartbeatServerToClientSendIntervalSpread =
+        UplinkProtocolConfiguration.getCurrent().getHeartbeatServerToClientSendIntervalSpread();
+
     private final class ServerSideUplinkLowLevelEventHandlerImpl implements UplinkConnectionLowLevelEventHandler {
 
         private final ServerSideUplinkEndpointService serverSideUplinkEndpointService;
 
         private final String clientInformationString;
+
+        private final Semaphore messageReadBufferSemaphore =
+            new Semaphore(UplinkProtocolConfiguration.getCurrent().getMaxBufferedIncomingMessagesPerSession());
 
         private ServerSideUplinkLowLevelEventHandlerImpl(ServerSideUplinkEndpointService serverSideUplinkEndpointService,
             String clientInformationString) {
@@ -161,8 +174,8 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
             if (incomingData.containsKey(UplinkProtocolConstants.HANDSHAKE_KEY_SIMULATE_HANDSHAKE_RESPONSE_DELAY_ABOVE_TIMEOUT)) {
                 // TODO align with CommonUplinkLowLevelProtocolWrapper#HANDSHAKE_MESSAGE_TIMEOUT; 2 constants for a similar topic
                 try {
-                    Thread.sleep(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC
-                        + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
+                    Thread.sleep(UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout()
+                        + UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout());
                 } catch (InterruptedException e) {
                     log.warn("Interrupted while simulating handshake timeout");
                 }
@@ -223,13 +236,36 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 return;
             }
 
+            long semaphoreBlockedStartTime = 0;
+            if (BACKPRESSURE_LOGGING_ENABLED) {
+                if (messageReadBufferSemaphore.availablePermits() == 0) { // sufficient for information logging
+                    semaphoreBlockedStartTime = System.currentTimeMillis();
+                    log.debug(logPrefix + "Waiting to enqueue the next incoming message for processing");
+                }
+            }
+
+            try {
+                messageReadBufferSemaphore.acquire();
+                if (BACKPRESSURE_LOGGING_ENABLED) {
+                    if (semaphoreBlockedStartTime != 0) {
+                        log.debug(logPrefix + "Proceeding with next incoming message after waiting for "
+                            + (System.currentTimeMillis() - semaphoreBlockedStartTime) + " msec");
+                    }
+                }
+            } catch (InterruptedException e1) {
+                log.debug(logPrefix + "Interrupted while waiting to enqueue the next incoming message; stopping read loop");
+                return;
+            }
+
             // TODO merge/align this with client side implementation?
-            incomingMessageQueue.enqueue(() -> {
+            incomingProcessingQueue.enqueue(() -> {
                 try {
                     serverSideUplinkEndpointService.onMessageBlock(ServerSideUplinkSessionImpl.this, channelId, messageBlock);
                 } catch (ProtocolException e) {
                     // TODO actually handle this
-                    log.error("Error processing a message received by server session " + getLocalSessionId(), e);
+                    log.error(logPrefix + "Error processing a received message", e);
+                } finally {
+                    messageReadBufferSemaphore.release();
                 }
             });
         }
@@ -319,9 +355,8 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     private void scheduleHeartbeatSendTrigger() {
         final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
         // note: "random" is thread-safe
-        int delay = UplinkProtocolConstants.SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_AVERAGE
-            - UplinkProtocolConstants.SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_SPREAD / 2
-            + random.nextInt(UplinkProtocolConstants.SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_SPREAD);
+        int delay = heartbeatServerToClientSendIntervalAverage - heartbeatServerToClientSendIntervalAverage / 2
+            + random.nextInt(heartbeatServerToClientSendIntervalSpread);
         asyncTaskService.scheduleAfterDelay("Send Uplink heartbeat after delay", () -> {
             if (enqueueHeartbeatMessage()) {
                 // success -> schedule the next
@@ -340,7 +375,8 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 if (HEARTBEAT_LOGGING_ENABLED) {
                     log.debug(logPrefix + "Enqueueing heartbeat message");
                 }
-                enqueueMessageBlockForSending(0, new MessageBlock(MessageType.HEARTBEAT), MessageBlockPriority.HIGH);
+                // false = terminate session if the high-priority queue is full; in that case, something is severely wrong already
+                enqueueMessageBlockForSending(0, new MessageBlock(MessageType.HEARTBEAT), MessageBlockPriority.HIGH, false);
                 sessionState.markHeartbeatSent();
                 return true;
             } catch (IOException e) {

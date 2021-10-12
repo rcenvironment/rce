@@ -324,6 +324,20 @@ public class UplinkToolAccessClientServiceImpl implements UplinkToolAccessClient
                         .getComponentPermissionSet(
                             registry.getComponentSelector(registeredComponents.get(toolInstallationId)), true)
                         .equals(permissionSet)) {
+                        if (!sshUplinkService.getConnectionSetup(connectionId).isGateway()) {
+                            /*
+                             * Fix for #0017682: Without this check, the remote Uplink tool's permissions -- intersected with the local
+                             * authorization group memberships -- were always applied as local tool permissions, effectively re-announcing
+                             * the tool in the local network, even if the connection was not configured to act as an Uplink "Gateway". This
+                             * only happened if this specific code path was triggered, though: the initial registration methods above
+                             * correctly perform the "is Gateway" check internally.
+                             * 
+                             * The fix is to still maintain the remote authorization for anything above (e.g. registering the tool in the
+                             * first place, and storing the authorization for tool execution), but reduce it to local-only permission when
+                             * updating the local permissions (the code below).
+                             */
+                            permissionSet = authorizationService.getDefaultAuthorizationObjects().permissionSetLocalOnly();
+                        }
                         registry.setComponentPermissions(
                             registry.getComponentSelector(registeredComponents.get(toolInstallationId)), permissionSet);
                     }

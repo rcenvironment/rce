@@ -22,12 +22,15 @@ import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkL
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlockWithMetadata;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
+import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConfiguration;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSession;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.OperationFailureException;
+import de.rcenvironment.core.utils.common.exception.ProtocolException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
@@ -84,18 +87,13 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
      */
     private static final int GOODBYE_CONFIRMATION_WAIT_TIMEOUT_MSEC = 10 * 1000;
 
-    /**
-     * The maximum number of unsent messages to queue; especially important during file uploads.
-     */
-    private static final int OUTGOING_MESSAGE_QUEUE_SIZE = 10; // TODO arbitrary; adjust as necessary
-
     private static final String LOG_SLASH = "/";
 
     private static final boolean DEBUG_OUTPUT_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.sessions");
 
-    protected final AsyncOrderedExecutionQueue incomingMessageQueue;
+    protected final AsyncOrderedExecutionQueue incomingProcessingQueue;
 
-    protected final AsyncOrderedExecutionQueue outgoingMessageQueue;
+    protected final AsyncOrderedExecutionQueue outgoingProcessingQueue;
 
     protected final UplinkSessionStateHolder sessionState = new UplinkSessionStateHolder();
 
@@ -104,7 +102,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
     protected final Log log = LogFactory.getLog(getClass());
 
-    private final BoundedMessageBlockPrioritizer boundedMessageOutbox = new BoundedMessageBlockPrioritizer(OUTGOING_MESSAGE_QUEUE_SIZE);
+    private final BoundedMessageBlockPrioritizer boundedMessageOutbox = new BoundedMessageBlockPrioritizer();
 
     private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
 
@@ -155,7 +153,9 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
         private long lastHeartbeatSentTime;
 
-        private boolean pendingHeartbeatExchange;
+        private boolean expectingHeartbeatResponse;
+
+        private long handshakeResponseTimeout = UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout();
 
         public synchronized void markClientHandshakeSentOrReceived() {
             if (getMainState() != UplinkSessionState.INITIAL) {
@@ -314,6 +314,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             } else if (mainState != UplinkSessionState.CLEAN_SHUTDOWN) {
                 if (incomingStreamClosedOrEOF) {
                     // typical situation at this point: unexpected breakdown of connection -> local goodbye attempt sent -> closed stream
+                    // TODO (p2) 10.3.0: this can sometimes be triggered from GOODBYE_HANDSHAKE_COMPLETE; investigate, but not critical
                     if (mainState != UplinkSessionState.UNCLEAN_SHUTDOWN_INITIATED) { // expected state; log anything else, but act the same
                         log.warn(logPrefix + "Unexpected transition: " + mainState + "->" + UplinkSessionState.UNCLEAN_SHUTDOWN);
                     }
@@ -481,23 +482,23 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
         public synchronized void markHeartbeatSent() {
             this.lastHeartbeatSentTime = System.currentTimeMillis();
-            this.pendingHeartbeatExchange = true;
+            this.expectingHeartbeatResponse = true;
         }
 
         public synchronized void markHeartbeatResponseReceived() {
-            if (pendingHeartbeatExchange) {
+            if (expectingHeartbeatResponse) {
                 long duration = System.currentTimeMillis() - lastHeartbeatSentTime;
-                if (duration > UplinkProtocolConstants.HEARTBEAT_RESPONSE_TIME_WARNING_THRESHOLD) {
+                if (duration > handshakeResponseTimeout) {
                     log.warn(logPrefix + "Observed long heartbeat round-trip time of " + duration + " msec");
                 }
-                pendingHeartbeatExchange = false;
+                expectingHeartbeatResponse = false;
             } else {
                 log.warn(logPrefix + "Received a " + MessageType.HEARTBEAT_RESPONSE + " message without expecting one");
             }
         }
 
         public synchronized boolean validateHeartbeatResponseIfExpected() {
-            if (pendingHeartbeatExchange) {
+            if (expectingHeartbeatResponse) {
                 long duration = System.currentTimeMillis() - lastHeartbeatSentTime;
                 log.debug(logPrefix + "No heartbeat response received within " + duration + " msec, assuming broken connection or client");
                 initiateUncleanShutdownIfStillRunning();
@@ -510,9 +511,9 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
     protected AbstractUplinkSessionImpl(ConcurrencyUtilsFactory concurrencyUtilsFactory) {
         Objects.requireNonNull(concurrencyUtilsFactory);
-        this.incomingMessageQueue =
+        this.incomingProcessingQueue =
             concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
-        this.outgoingMessageQueue =
+        this.outgoingProcessingQueue =
             concurrencyUtilsFactory.createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
     }
 
@@ -529,13 +530,8 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     }
 
     @Override
-    public void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock) throws IOException {
-        enqueueMessageBlockForSending(channelId, messageBlock, MessageBlockPriority.DEFAULT);
-    }
-
-    @Override
-    public final void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock, MessageBlockPriority priority)
-        throws IOException {
+    public final void enqueueMessageBlockForSending(long channelId, MessageBlock messageBlock, MessageBlockPriority priority,
+        boolean allowBlocking) throws ProtocolException {
 
         if (DEBUG_OUTPUT_ENABLED) {
             log.debug(StringUtils.format("%sEnqueuing message of type %s for sending to channel %d with priority %s, payload size %d bytes",
@@ -544,14 +540,27 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
         final MessageBlockWithMetadata wrappedMessage = new MessageBlockWithMetadata(messageBlock, channelId, priority);
         try {
-            boundedMessageOutbox.submit(wrappedMessage, logPrefix);
+            if (allowBlocking) {
+                boundedMessageOutbox.submitOrBlock(wrappedMessage, logPrefix);
+            } else {
+                try {
+                    boundedMessageOutbox.submitOrFail(wrappedMessage, logPrefix);
+                } catch (OperationFailureException e) {
+                    log.error(logPrefix + "Terminating session after overflow of outgoing message queue of priority level "
+                        + wrappedMessage.getPriority().name()
+                        + " (typically caused by extremely slow or interrupted client connections): " + e.getMessage());
+                    // TODO 10.3.0+ this does not register a "fatal error", so a "Session ended ... without a previous fatal error message"
+                    // will be logged later
+                    initiateUncleanShutdownIfStillRunning();
+                }
+            }
         } catch (InterruptedException e1) {
             Thread.currentThread().interrupt();
-            log.warn(logPrefix + "Interrupted while waiting for rate limiting to enqueue a message of type " + messageBlock.getType());
+            log.warn(logPrefix + "Interrupted while waiting to enqueue a message of type " + messageBlock.getType());
             return;
         }
 
-        outgoingMessageQueue.enqueue(this::sendNextMessageByPriority);
+        outgoingProcessingQueue.enqueue(this::sendNextMessageByPriority);
     }
 
     @Override
@@ -670,7 +679,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             log.warn(logPrefix + "Initiatiating clean shutdown from non-ACTIVE state " + getState());
         }
         sessionState.setShuttingDown(); // prevents enqueueing further outgoing messages
-        outgoingMessageQueue.enqueue(() -> {
+        outgoingProcessingQueue.enqueue(() -> {
             if (DEBUG_OUTPUT_ENABLED) {
                 if (startingState == UplinkSessionState.ACTIVE) {
                     log.debug(logPrefix + "Sending 'goodbye' message to initiate clean shutdown");
@@ -678,6 +687,12 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
                     log.debug(logPrefix + "Sending 'goodbye' message to confirm remote-initiated clean shutdown");
                 }
             }
+
+            // actively drain all queued outgoing messages so the GOODBYE message gets quick access to the stream lock
+            drainOutgoingMessageQueueOnShutdown();
+            // TODO 10.3.0+ (p2): as an alternative, enqueue the GOODBYE in the common queue at high priority;
+            // this would require moving the special handling below into the sending code, though
+
             if (getLowLevelProtocolWrapper().attemptToSendRegularGoodbyeMessage()) {
                 sessionState.markOwnGoodbyeSent();
                 if (sessionState.getRemoteSideHasSentGoodbye()) {
@@ -722,7 +737,7 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     private void initiateUncleanShutdownIfStillRunning() {
         synchronized (sessionState) {
             if (sessionState.isShuttingDownOrShutDown()) {
-                log.debug("Ignoring redundant call to initiate an unclean shutdown");
+                log.debug(logPrefix + "Ignoring redundant call to initiate an unclean shutdown");
                 return;
             }
             if (sessionState.getMainState() == UplinkSessionState.ACTIVE) {
@@ -730,10 +745,26 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
             }
             // on a broken connection, do not send a goodbye message; just close the stream
             sessionState.setShuttingDown(); // prevents enqueueing further outgoing messages
-            outgoingMessageQueue.enqueue(() -> {
+
+            // actively drain all queued outgoing messages so the GOODBYE message gets quick access to the stream lock
+            drainOutgoingMessageQueueOnShutdown();
+
+            outgoingProcessingQueue.enqueue(() -> {
                 getLowLevelProtocolWrapper().terminateSession();
                 sessionState.markOutgoingStreamClosed();
             });
+        }
+    }
+
+    private void drainOutgoingMessageQueueOnShutdown() {
+        while (true) {
+            Optional<MessageBlockWithMetadata> optionalNext = boundedMessageOutbox.takeNext();
+            if (optionalNext.isPresent()) {
+                log.debug(logPrefix + "Draining enqueued message of type " + optionalNext.get().getType()
+                    + " to speed up sending of GOODBYE message on session shutdown");
+            } else {
+                break;
+            }
         }
     }
 
@@ -741,10 +772,20 @@ public abstract class AbstractUplinkSessionImpl implements UplinkSession {
     private void sendNextMessageByPriority() {
 
         // should always return a value, unless there is a consistency error between triggers and queued message elements
-        MessageBlockWithMetadata messageBlock = boundedMessageOutbox.takeNext();
+        Optional<MessageBlockWithMetadata> optionalMessageBlock = boundedMessageOutbox.takeNext();
+        if (!optionalMessageBlock.isPresent()) {
+            if (!isShuttingDownOrShutDown()) {
+                log.error("Potential consistency error: Did not receive a queued " + MessageBlockWithMetadata.class.getSimpleName()
+                    + ", but the session is not shutting down either");
+            }
+            return;
+        }
+
+        MessageBlockWithMetadata messageBlock = optionalMessageBlock.get(); // unwrap
 
         // do not send anything except goodbye messages when shutting down
-        // note: isShuttingDownOrShutDown() requires the session's state lock, so this method must not be called with any locks held
+        // note 1: GOODBYE messages are not actually sent via this queue at this time
+        // note 2: isShuttingDownOrShutDown() requires the session's state lock, so this method must not be called with any locks held
         if (isShuttingDownOrShutDown() && messageBlock.getType() != MessageType.GOODBYE) {
             log.debug(logPrefix + "Discarding enqueued message of type " + messageBlock.getType() + " as the session is shutting down");
             return;

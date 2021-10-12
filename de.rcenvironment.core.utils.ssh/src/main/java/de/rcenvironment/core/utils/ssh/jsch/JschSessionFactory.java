@@ -33,6 +33,10 @@ public final class JschSessionFactory {
 
     private static final int SERVER_ALIVE_INTERVAL = 5000;
 
+    private static final String MAX_AUTH_TRIES_CONFIG_KEY = "MaxAuthTries";
+
+    private static final String MAX_AUTH_TRIES = "1";
+
     private static Log log = LogFactory.getLog(JschSessionFactory.class);
 
     private JschSessionFactory() {
@@ -278,6 +282,9 @@ public final class JschSessionFactory {
         JSch.setLogger(connectionLogger);
 
         jschSession.setServerAliveInterval(SERVER_ALIVE_INTERVAL);
+
+        // Limits the authentication retries to MAX_AUTH_TRIES
+        jschSession.setConfig(MAX_AUTH_TRIES_CONFIG_KEY, MAX_AUTH_TRIES);
 
         jschSession.connect();
         return jschSession;

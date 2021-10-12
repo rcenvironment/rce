@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.configuration.samples.feature"
       label="RCE File Sets - Configuration Samples"
-      version="10.2.3.qualifier"
+      version="10.2.4.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

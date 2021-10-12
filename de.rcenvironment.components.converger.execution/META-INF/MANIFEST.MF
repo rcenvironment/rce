@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.converger.execution
-Bundle-Version: 10.2.3.qualifier
+Bundle-Version: 10.2.4.qualifier
 Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  com.fasterxml.jackson.databind;version="2.9.9",
  com.fasterxml.jackson.databind.node;version="2.9.9",

@@ -20,6 +20,9 @@ import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConne
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkEndpointService;
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSession;
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSessionService;
+import de.rcenvironment.core.utils.common.testutils.ThroughputLimiter;
+import de.rcenvironment.core.utils.common.testutils.ThroughputLimitingInputStream;
+import de.rcenvironment.core.utils.common.testutils.ThroughputLimitingOutputStream;
 import de.rcenvironment.core.utils.testing.LocalTCPTestConnection;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
@@ -48,9 +51,16 @@ public class LocalServiceUplinkConnectionImpl implements UplinkConnection {
 
     private final AtomicInteger simulatedConnectionCounter = new AtomicInteger();
 
-    public LocalServiceUplinkConnectionImpl(AsyncTaskService asyncTaskService, ServerSideUplinkSessionService sessionService) {
+    private ThroughputLimiter outgoingThroughputLimiter;
+
+    private ThroughputLimiter incomingThroughputLimiter;
+
+    public LocalServiceUplinkConnectionImpl(AsyncTaskService asyncTaskService, ServerSideUplinkSessionService sessionService,
+        ThroughputLimiter outgoingThroughputLimiter, ThroughputLimiter incomingThroughputLimiter) {
         this.asyncTaskService = asyncTaskService;
         this.sessionService = sessionService;
+        this.outgoingThroughputLimiter = outgoingThroughputLimiter;
+        this.incomingThroughputLimiter = incomingThroughputLimiter;
     }
 
     @Override
@@ -63,6 +73,14 @@ public class LocalServiceUplinkConnectionImpl implements UplinkConnection {
 
         serverSideOutputStream = localTestConnection.getServerSideOutputStream(); // Client In->Out *Server/Relay*
         serverSideInputStream = localTestConnection.getServerSideInputStream(); // Client Out<-In *Server/Relay*
+
+        // if throughput limiters were registered, this is the time to wrap them around the data streams
+        if (outgoingThroughputLimiter != null) {
+            clientSideOutputStream = new ThroughputLimitingOutputStream(clientSideOutputStream, outgoingThroughputLimiter);
+        }
+        if (incomingThroughputLimiter != null) {
+            clientSideInputStream = new ThroughputLimitingInputStream(clientSideInputStream, incomingThroughputLimiter);
+        }
 
         String testConnectionId = Integer.toString(simulatedConnectionCounter.incrementAndGet());
         String loginAccountName = "test"; // TODO add connection id? requires test adaptations, though

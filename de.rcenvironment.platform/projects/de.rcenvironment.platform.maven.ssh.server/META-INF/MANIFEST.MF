@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - SSH Server
 Bundle-SymbolicName: de.rcenvironment.platform.maven.ssh.server;singleton:=true
-Bundle-Version: 10.2.2.qualifier
+Bundle-Version: 10.2.4.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/sshd-core-2.5.0.jar, lib/maven/sshd-common-2.5.0.jar, lib/maven/sshd-scp-2.5.0.jar
 Export-Package: org.apache.sshd.client.auth;version="2.5.0",

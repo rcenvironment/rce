@@ -27,6 +27,7 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescrip
 import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
+import de.rcenvironment.core.utils.common.testutils.ThroughputLimiter;
 
 /**
  * State holder for the client side of integration tests.
@@ -57,6 +58,10 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
     private boolean inconsistentStateFlag;
 
     private UplinkConnection uplinkConnection;
+
+    private ThroughputLimiter outgoingThroughputLimiter;
+
+    private ThroughputLimiter incomingThroughputLimiter;
 
     MockClientStateHolder(Function<ToolExecutionRequest, MockToolExecutionProvider> actualToolExecutionRequestHandler) {
         this.actualToolExecutionRequestHandler = actualToolExecutionRequestHandler;
@@ -174,4 +179,16 @@ class MockClientStateHolder implements ClientSideUplinkSessionEventHandler {
         this.uplinkConnection = uplinkConnection;
     }
 
+    public void setThroughputLimiters(ThroughputLimiter outgoingThroughputLimiter, ThroughputLimiter incomingThroughputLimiter) {
+        this.outgoingThroughputLimiter = outgoingThroughputLimiter;
+        this.incomingThroughputLimiter = incomingThroughputLimiter;
+    }
+
+    public ThroughputLimiter getOutgoingThroughputLimiter() {
+        return outgoingThroughputLimiter;
+    }
+
+    public ThroughputLimiter getIncomingThroughputLimiter() {
+        return incomingThroughputLimiter;
+    }
 }

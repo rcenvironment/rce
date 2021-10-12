@@ -224,7 +224,7 @@ public class UplinkToolAccessClientComponent extends DefaultComponent {
 
                     @Override
                     public void provideFiles(DirectoryUploadContext uploadContext) throws IOException {
-                        DataTransferUtils.uploadDirectory(uploadDir, uploadContext, "");
+                        DataTransferUtils.uploadDirectory(uploadDir, uploadContext, "", ""); // TODO proper log prefix
                     }
 
                 };

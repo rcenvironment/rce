@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.common.parent.basicSettings</artifactId>
-		<version>10.2.3-SNAPSHOT</version>
+		<version>10.2.4-SNAPSHOT</version>
 		<relativePath>maven/basicSettings/pom.xml</relativePath>
 	</parent>
 

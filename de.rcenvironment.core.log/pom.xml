@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.log</artifactId>
 	<name>RCE Core Log Bundle</name>
-	<version>10.2.3-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

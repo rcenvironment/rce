@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -172,6 +173,8 @@ public class ScpOutputCollectorComponent extends DefaultComponent {
             new File(downloadDir,
                 componentContext.getConfigurationValue(ScpOutputCollectorComponentConstants.OUTPUTS_DESCRIPTION_FILE_CONFIGURATION_KEY));
         try {
+            // TODO >10.2.4 (p1) this happens as a follow-up of failed tool executions; handle them properly
+            Objects.requireNonNull(inputsMap, "Null input map when attempting to write the outputs file");
             mapper.writerWithDefaultPrettyPrinter().writeValue(outputsFile, inputsMap);
         } catch (IOException e) {
             log.error("Could not write output values to outputs file " + outputsFile.getAbsolutePath());

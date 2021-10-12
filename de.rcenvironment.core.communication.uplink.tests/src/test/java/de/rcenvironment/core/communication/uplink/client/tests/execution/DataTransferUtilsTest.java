@@ -91,7 +91,7 @@ public class DataTransferUtilsTest {
         uploadContextMock.provideFile(capture(uploadFileCapture2));
 
         EasyMock.replay(uploadContextMock);
-        DataTransferUtils.uploadDirectory(inputDirectory, uploadContextMock, "someDirName");
+        DataTransferUtils.uploadDirectory(inputDirectory, uploadContextMock, "someDirName", "testLogPrefix");
 
         assertTrue(uploadFileCapture1.getValue().getRelativePath().startsWith("someDirName/fileInDir"));
         assertTrue(uploadFileCapture2.getValue().getRelativePath().startsWith("someDirName/fileInDir"));

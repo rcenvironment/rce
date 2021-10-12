@@ -30,6 +30,8 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  * <li>Basic error/exception handling and initiating session teardown on errors
  * <li>Generalizing logging with session ids, including providing labeled {@link UplinkProtocolMessageConverter} instances
  * </ul>
+ * <p>
+ * Threading notice: This base class does not have any mutable state, and performs no synchronization on itself ("this") by default.
  * 
  * @author Robert Mischke
  */
@@ -43,6 +45,8 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
 
     protected final String sessionId;
 
+    protected final String channelLogPrefix; // TODO >10.2.4 (p3) use this in more places
+
     protected final long channelId;
 
     protected final Log log = LogFactory.getLog(getClass());
@@ -50,24 +54,20 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
     public AbstractChannelEndpoint(AsyncMessageBlockSender asyncMessageBlockSender, String sessionId, long channelId) {
         this.asyncMessageBlockSender = asyncMessageBlockSender;
         this.sessionId = sessionId;
-        this.messageConverter = new UplinkProtocolMessageConverter(this.sessionId + "/c" + channelId);
+        this.channelLogPrefix = StringUtils.format("[%s//%d] ", sessionId, channelId); // TODO >10.2.4 (p3) inject namespace as well
+        this.messageConverter = new UplinkProtocolMessageConverter(sessionId + "/c" + channelId); // >10.2.4 (p3) TODO use common prefix
         this.channelId = channelId;
     }
 
     @Override
     public final void processMessage(MessageBlock messageBlock) throws IOException {
         if (DEBUG_OUTPUT_ENABLED) {
-            log.debug(StringUtils.format("Processing a message of type %s in channel '%s'", messageBlock.getType(), sessionId));
+            log.debug(StringUtils.format("%sProcessing a message of type %s", channelLogPrefix, messageBlock.getType()));
         }
         final MessageType messageType = messageBlock.getType();
         if (messageType == MessageType.HEARTBEAT) {
             // attempt to send a response no matter the local session state
-            try {
-                // implicitly send the response to the channel the heartbeat was received from; typically, this is the default channel
-                enqueueMessageBlockForSending(new MessageBlock(MessageType.HEARTBEAT_RESPONSE), MessageBlockPriority.HIGH);
-            } catch (IOException e) {
-                log.debug("Error attempting to send an Uplink heartbeat response: " + e.toString());
-            }
+            sendHeartbeatResponse();
             // this could received further processing in the future; for now, only send the response
             return;
         } else if (messageType == MessageType.HEARTBEAT_RESPONSE) {
@@ -76,22 +76,22 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
             return;
         }
         try {
-            synchronized (this) { // ensure state visibility when switching execution threads
-                if (!processMessageInternal(messageBlock)) {
-                    if (DEBUG_OUTPUT_ENABLED) {
-                        log.debug("Uplink channel " + channelId + " is terminating");
-                    }
-                    // TODO additional steps to actually close/delete the channel?
+            if (!processMessageInternal(messageBlock)) {
+                if (DEBUG_OUTPUT_ENABLED) {
+                    log.debug(channelLogPrefix + "Uplink channel terminating");
                 }
+                // TODO additional steps to actually close/delete the channel?
             }
         } catch (IOException e) {
             // wrap with context information
             throw new IOException(
-                StringUtils.format("Error while processing a message of type %s in channel '%s'", messageBlock.getType(), sessionId), e);
+                StringUtils.format("%sError while processing a message of type %s'", channelLogPrefix, messageBlock.getType()), e);
         }
     }
 
     /**
+     * The main entry point for subclass behavior. No synchronization is performed by default; subclasses must provide this if necessary.
+     * 
      * @param message the received {@link MessageBlock}
      * @return whether further messages should be processed, i.e. returning false means that this channel shut be shut down
      * @throws IOException on failure to process the message
@@ -99,24 +99,19 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
     protected abstract boolean processMessageInternal(MessageBlock message) throws IOException;
 
     /**
-     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint with {@link MessageBlockPriority#DEFAULT} priority.
+     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint with a specified message-sending priority and
+     * behavior (fail vs. block) on a full queue for that priority.
      * 
      * @param messageBlock the {@link MessageBlock} to send
+     * @param priority the {@link MessageBlockPriority} for selecting which messages to transmit first; the value itself is not transmitted
+     * @param allowBlocking controls this method's behavior when the specified queue is full due to backpressure; false = fail internally
+     *        and terminate the session, true = block this method until there is space in the queue; the latter must be properly handled by
+     *        the calling code to avoid deadlocks
      * @throws IOException on errors or interruption while waiting to enqueue this message
      */
-    protected final void enqueueMessageBlockForSending(MessageBlock messageBlock) throws IOException {
-        asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, messageBlock);
-    }
-
-    /**
-     * Sends a {@link MessageBlock} the the stored channel id of this channel endpoint with the given {@link MessageBlockPriority}.
-     * 
-     * @param messageBlock the {@link MessageBlock} to send
-     * @param priority the {@link MessageBlockPriority} to use for scheduling
-     * @throws IOException on errors or interruption while waiting to enqueue this message
-     */
-    protected final void enqueueMessageBlockForSending(MessageBlock messageBlock, MessageBlockPriority priority) throws IOException {
-        asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, messageBlock, priority);
+    protected final void enqueueMessageBlockForSending(MessageBlock messageBlock, MessageBlockPriority priority, boolean allowBlocking)
+        throws ProtocolException {
+        asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, messageBlock, priority, allowBlocking);
     }
 
     protected final boolean refuseUnexpectedMessageType(MessageBlock message) throws ProtocolException {
@@ -125,4 +120,15 @@ public abstract class AbstractChannelEndpoint implements ChannelEndpoint {
         return false;
     }
 
+    private void sendHeartbeatResponse() {
+        try {
+            // Sends the response to the channel the heartbeat was received from; as heartbeat requests are currently sent to the default
+            // channel only, this is typically the default channel as well.
+            // parameter "false" = terminate session if the high-priority queue is full; in that case, something is severely wrong already
+            asyncMessageBlockSender.enqueueMessageBlockForSending(channelId, new MessageBlock(MessageType.HEARTBEAT_RESPONSE),
+                MessageBlockPriority.HIGH, false);
+        } catch (ProtocolException e) {
+            log.debug("Error attempting to send an Uplink heartbeat response: " + e.toString());
+        }
+    }
 }

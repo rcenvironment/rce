@@ -13,6 +13,7 @@ import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 
 import de.rcenvironment.core.communication.uplink.network.api.AsyncMessageBlockSender;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
@@ -45,7 +46,8 @@ public class DataStreamUploadWrapper {
     public void uploadFromDataSource(long channelId, MessageType messageType, SizeValidatedDataSource dataSource) throws IOException {
         while (!dataSource.receivedCompletely()) {
             final MessageBlock nextChunk = encodeNextDataBlock(messageType, dataSource);
-            messageBlockSender.enqueueMessageBlockForSending(channelId, nextChunk);
+            // parameter "true": allow blocking on queue congestion/backpressure to adapt upload speed
+            messageBlockSender.enqueueMessageBlockForSending(channelId, nextChunk, MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
         }
     }
 

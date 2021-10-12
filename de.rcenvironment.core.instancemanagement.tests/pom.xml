@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.instancemanagement.tests</artifactId>
 	<name>RCE Instance Management Tests</name>
-	<version>10.2.3-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

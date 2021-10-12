@@ -54,9 +54,6 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public abstract class CommonUplinkLowLevelProtocolWrapper {
 
-    // TODO (p3) 10.x/11.0: review: separate values needed?
-    protected static final int HANDSHAKE_MESSAGE_TIMEOUT = UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC;
-
     private static final int HANDSHAKE_MESSAGE_WAIT_CHECK_INTERVAL = 100;
 
     protected final StreamConnectionEndpoint connectionEndpoint;
@@ -126,14 +123,19 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
         synchronized (dataOutputStream) {
             if (verboseLoggingEnabled) {
                 log.debug(
-                    StringUtils.format("%sSending a message of type %s to channel %d, payload size %d bytes",
-                        logPrefix, messageBlock.getType(), channelId, data.length));
+                    StringUtils.format("%s[//%d] Sending a message of type %s, payload size %d bytes",
+                        logPrefix, channelId, messageBlock.getType(), data.length));
             }
             dataOutputStream.writeLong(channelId); // 8 bytes of channel id
             dataOutputStream.writeInt(data.length); // 4 bytes of size data
             dataOutputStream.writeByte(messageBlock.getType().getCode()); // 1 byte of message type
             dataOutputStream.write(data);
             dataOutputStream.flush(); // TODO potential optimization: avoid flushing after every block?
+            if (verboseLoggingEnabled) {
+                log.debug(
+                    StringUtils.format("%s[//%d] Finished sending a message of type %s, payload size %d bytes",
+                        logPrefix, channelId, messageBlock.getType(), data.length));
+            }
         }
     }
 
@@ -184,7 +186,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
 
     protected void expectHandshakeInit() throws IOException, TimeoutException {
         byte[] expectedHandshakeInitBytes = readExpectedBytesWithTimeout(UplinkProtocolConstants.HANDSHAKE_INIT_STRING_BYTE_LENGTH,
-            HANDSHAKE_MESSAGE_TIMEOUT, HANDSHAKE_MESSAGE_WAIT_CHECK_INTERVAL);
+            UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout(), HANDSHAKE_MESSAGE_WAIT_CHECK_INTERVAL);
         final String reveivedHeader = new String(expectedHandshakeInitBytes, UplinkProtocolConstants.DEFAULT_CHARSET);
         if (!reveivedHeader.equals(UplinkProtocolConstants.HANDSHAKE_HEADER_STRING)) {
             throw new ProtocolException("Received invalid handshake init: " + reveivedHeader);
@@ -214,11 +216,11 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
     protected MessageBlock expectHandshakeData() throws UplinkConnectionRefusedException, TimeoutException, IOException {
         MessageBlockWithMetadata messageBlock;
         try {
-            messageBlock = readChannelIdAndMessageBlockWithTimeout(UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC);
+            messageBlock = readChannelIdAndMessageBlockWithTimeout(UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout());
         } catch (TimeoutException e) {
             // improve timeout message
             throw new TimeoutException("The remote side did not send their Uplink handshake response within "
-                + UplinkProtocolConstants.HANDSHAKE_RESPONSE_TIMEOUT_MSEC + " msec");
+                + UplinkProtocolConfiguration.getCurrent().getHandshakeResponseTimeout() + " msec");
         } catch (IOException e) {
             // improve error message
             throw new IOException("Error receiving the remote side's handshake response: " + e.getMessage());
@@ -372,8 +374,8 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
                         log.error(logPrefix + "Not expecting further messages, but encountered a non-EOF exception; "
                             + "still considering the stream as closed/broken as a fallback: " + e.toString());
                         eventHandler.onIncomingStreamClosedOrEOF();
-                        break;
                     }
+                    break;
                 }
             }
         }
@@ -399,6 +401,7 @@ public abstract class CommonUplinkLowLevelProtocolWrapper {
                 StringUtils.format("%sReceived message of type %s for channel %d, payload size %d bytes", logPrefix, message.getType(),
                     channelId, message.getDataLength()));
         }
+        // TODO >10.2.4 (p2) consider either adding a receive semaphore to the client side, too, or even pull it up to this level
         eventHandler.onMessageBlock(channelId, message);
         return true; // continue
     }

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SCP Input Loader Component Common
 Bundle-SymbolicName: de.rcenvironment.components.scpinputloader.common
-Bundle-Version: 10.2.3.qualifier
+Bundle-Version: 10.2.4.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Export-Package: de.rcenvironment.components.scpinputloader.common

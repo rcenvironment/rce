@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.repository</artifactId>
 	<name>RCE Platform - p2 Repository</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-repository</packaging>
 
 	<parent>

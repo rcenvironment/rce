@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.xml.values.gui</artifactId>
 	<name>RCE XML Values Component GUI Bundle</name>
-	<version>10.2.3-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -16,6 +16,7 @@ import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecu
 import de.rcenvironment.core.communication.uplink.client.execution.api.ToolExecutionResult;
 import de.rcenvironment.core.communication.uplink.client.session.api.ClientSideUplinkSessionEventHandler;
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSession;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -42,45 +43,46 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
         super(session, channelId);
         this.sessionEventHandler = sessionEventHandler;
         this.destinationId = destinationId;
-        this.channelState = ToolExecutionChannelState.EXPECTING_EXECUTION_REQUEST;
+        this.setChannelState(ToolExecutionChannelState.EXPECTING_EXECUTION_REQUEST);
     }
 
     @Override
-    public synchronized void dispose() {
-        if (toolExecutionProvider != null) {
-            toolExecutionProvider.onContextClosing();
+    public void dispose() {
+        if (getToolExecutionProvider() != null) {
+            getToolExecutionProvider().onContextClosing(); // never reset, so this separated check is safe
         }
     }
 
     @Override
-    protected synchronized boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
+    protected boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
         final MessageType messageType = messageBlock.getType();
 
         // special case: tool cancellation requests are currently accepted at any time during the tool's life cycle
         if (messageType == MessageType.TOOL_CANCELLATION_REQUEST) {
-            ensure(toolExecutionProvider != null);
-            toolExecutionProvider.requestCancel();
+            ensure(getToolExecutionProvider() != null);
+            getToolExecutionProvider().requestCancel();
             return true; // continue listening for other messages
         }
 
-        switch (channelState) {
+        switch (getChannelState()) {
         case EXPECTING_EXECUTION_REQUEST:
             validateActualVersusExpectedMessageType(messageType, MessageType.TOOL_EXECUTION_REQUEST);
             ToolExecutionRequestResponse response = processToolExecutionRequest(messageConverter.decodeToolExecutionRequest(messageBlock));
-            enqueueMessageBlockForSending(messageConverter.encodeToolExecutionRequestResponse(response));
+            enqueueMessageBlockForSending(messageConverter.encodeToolExecutionRequestResponse(response),
+                MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
             if (response.isAccepted()) {
                 // TODO otherwise, close the channel, and/or send the final result or an error message
-                ensureNotDefinedYet(directoryDownloadWrapper);
-                directoryDownloadWrapper = new DirectoryDownloadWrapper(toolExecutionProvider.getInputDirectoryReceiver());
-                channelState = ToolExecutionChannelState.EXPECTING_DIRECTORY_DOWNLOAD;
+                ensureNotDefinedYet(getDirectoryDownloadWrapper());
+                setDirectoryDownloadWrapper(new DirectoryDownloadWrapper(getToolExecutionProvider().getInputDirectoryReceiver()));
+                setChannelState(ToolExecutionChannelState.EXPECTING_DIRECTORY_DOWNLOAD);
             }
             return true;
         case EXPECTING_DIRECTORY_DOWNLOAD: // input file downloads
-            ensure(directoryDownloadWrapper != null);
-            directoryDownloadWrapper.processMessageBlock(messageBlock);
-            if (directoryDownloadWrapper.isFinished()) {
+            ensure(getDirectoryDownloadWrapper() != null);
+            getDirectoryDownloadWrapper().processMessageBlock(messageBlock);
+            if (getDirectoryDownloadWrapper().isFinished()) {
                 // input files received, start the actual execution
-                channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES; // tool execution is "send only" mode
+                setChannelState(ToolExecutionChannelState.EXPECTING_NO_MESSAGES); // tool execution is "send only" mode
                 // spawn a thread to execute the tool and upload the output files
                 // TODO proper cancellation is not implemented yet; will be addressed in #0017599
                 ConcurrencyUtils.getAsyncTaskService().execute("Uplink: tool execution and output file sending", () -> {
@@ -107,10 +109,10 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
     }
 
     private ToolExecutionRequestResponse processToolExecutionRequest(ToolExecutionRequest toolExecutionRequest) throws ProtocolException {
-        ensureNotDefinedYet(toolExecutionProvider);
+        ensureNotDefinedYet(getToolExecutionProvider());
         // TODO clarify; at this time, a ToolExecutionProvider is *always* created; should tool existence and access permission
         // be checked here already?
-        toolExecutionProvider = sessionEventHandler.setUpToolExecutionProvider(toolExecutionRequest);
+        setToolExecutionProvider(sessionEventHandler.setUpToolExecutionProvider(toolExecutionRequest));
         return new ToolExecutionRequestResponse(true); // always send "success" result for now
     }
 
@@ -118,14 +120,16 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
         ToolExecutionProviderEventCollectorImpl eventCollector =
             new ToolExecutionProviderEventCollectorImpl((batch) -> {
                 try {
-                    enqueueMessageBlockForSending(messageConverter.encodeToolExecutionEvents(batch));
+                    // "true" = not time-critical, so allow blocking if higher-priority messages are present
+                    enqueueMessageBlockForSending(messageConverter.encodeToolExecutionEvents(batch),
+                        MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
                 } catch (IOException e) {
                     // TODO mark failure and do not attempt to send any more?
                     log.error("Error while trying to forward one or more tool execution events: " + e.toString());
                 }
             }, ConcurrencyUtils.getFactory()) {
             };
-        ToolExecutionResult executionResult = toolExecutionProvider.execute(eventCollector);
+        ToolExecutionResult executionResult = getToolExecutionProvider().execute(eventCollector);
         // do not accept further events and wait for queued events to be sent
         try {
             eventCollector.shutdownAndAwaitCompletion();
@@ -134,10 +138,29 @@ public class ToolExecutionChannelProviderEndpoint extends AbstractExecutionChann
             Thread.currentThread().interrupt();
             return;
         }
-        enqueueMessageBlockForSending(messageConverter.encodeToolExecutionResult(executionResult));
+        enqueueMessageBlockForSending(messageConverter.encodeToolExecutionResult(executionResult),
+            MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
     }
 
     private void uploadOutputFiles() throws IOException {
-        new DirectoryUploadWrapper(toolExecutionProvider.getOutputDirectoryProvider()).performDirectoryUpload();
+        new DirectoryUploadWrapper(getToolExecutionProvider().getOutputDirectoryProvider()).performDirectoryUpload();
+    }
+
+    // synchronized access methods to minimize synchronization scopes
+
+    private synchronized ToolExecutionProvider getToolExecutionProvider() {
+        return toolExecutionProvider;
+    }
+
+    private synchronized void setToolExecutionProvider(ToolExecutionProvider toolExecutionProvider) {
+        this.toolExecutionProvider = toolExecutionProvider;
+    }
+
+    private synchronized DirectoryDownloadWrapper getDirectoryDownloadWrapper() {
+        return directoryDownloadWrapper;
+    }
+
+    private synchronized void setDirectoryDownloadWrapper(DirectoryDownloadWrapper directoryDownloadWrapper) {
+        this.directoryDownloadWrapper = directoryDownloadWrapper;
     }
 }

@@ -263,12 +263,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             // log a separate event for visual separation
             AuditLog.append(AuditLogIds.APPLICATION_START, "", AuditLogIds.SEPARATOR_LINE_VALUE);
 
+            // TODO 10.3.0+ (p3) preliminary version format; check and improve if necessary
+            String rceVersionInfo = VersionUtils.getVersionOfProduct().toString().replace(".qualifier", ".dev");
+
             AuditLog.append(AuditLog.newEntry(AuditLogIds.APPLICATION_SESSION_STARTING)
                 .set("profile_location", profileRootPath.toString()) // e.g. for logging to non-default locations
                 .set("os_name", System.getProperty("os.name") + "; " + System.getProperty("os.version"))
                 .set("user_name", System.getProperty("user.name"))
                 .set("user_home", System.getProperty("user.home"))
-                .set("work_dir", System.getProperty("user.dir")));
+                .set("work_dir", System.getProperty("user.dir"))
+                .set("rce_version", rceVersionInfo));
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // dummy data as visual separator

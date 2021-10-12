@@ -5,7 +5,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.other</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - Other</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -75,8 +75,8 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<!-- last updated: 2019-11-06, misc_ro -->
-			<version>1.19</version>
+			<!-- last updated: 2021-08-11, flink -->
+			<version>1.21</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>

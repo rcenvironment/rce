@@ -2,10 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication Uplink Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.core.communication.uplink.tests
-Bundle-Version: 10.2.3.qualifier
+Bundle-Version: 10.2.4.qualifier
 Fragment-Host: de.rcenvironment.core.communication.uplink
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Require-Bundle: de.rcenvironment.core.utils.testing
-Import-Package: de.rcenvironment.core.embedded.ssh.internal
+Import-Package: de.rcenvironment.core.embedded.ssh.internal,
+ de.rcenvironment.core.utils.common.testutils
 Automatic-Module-Name: de.rcenvironment.core.communication.uplink.tests

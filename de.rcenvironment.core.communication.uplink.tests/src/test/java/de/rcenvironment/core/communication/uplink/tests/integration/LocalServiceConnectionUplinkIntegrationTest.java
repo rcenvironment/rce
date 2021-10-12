@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.uplink.tests.integration;
 import de.rcenvironment.core.communication.uplink.client.session.api.UplinkConnection;
 import de.rcenvironment.core.communication.uplink.client.session.impl.LocalServiceUplinkConnectionImpl;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.common.testutils.ThroughputLimiter;
 
 /**
  * A subclass implementation of {@link AbstractUplinkIntegrationTest} using {@link LocalServiceUplinkConnectionImpl}s.
@@ -20,11 +21,13 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 public class LocalServiceConnectionUplinkIntegrationTest extends AbstractUplinkIntegrationTest {
 
     @Override
-    protected LocalServiceUplinkConnectionImpl setUpClientConnection() {
+    protected LocalServiceUplinkConnectionImpl setUpClientConnection(ThroughputLimiter outgoingThroughputLimiter,
+        ThroughputLimiter incomingThroughputLimiter) {
 
         // the mock UplinkConnection to the service
         LocalServiceUplinkConnectionImpl uplinkConnection =
-            new LocalServiceUplinkConnectionImpl(ConcurrencyUtils.getAsyncTaskService(), getMockServerSideUplinkSessionService());
+            new LocalServiceUplinkConnectionImpl(ConcurrencyUtils.getAsyncTaskService(), getMockServerSideUplinkSessionService(),
+                outgoingThroughputLimiter, incomingThroughputLimiter);
         return uplinkConnection;
     }
 

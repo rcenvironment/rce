@@ -30,7 +30,7 @@ public class DocumentationChannelInitiatorEndpoint extends AbstractChannelEndpoi
 
     private Consumer<Optional<SizeValidatedDataSource>> documentationReceiver;
 
-    private DataStreamDownloadWrapper downloadWrapper;
+    private DataStreamDownloadWrapper<SizeValidatedDataSource> downloadWrapper;
 
     public DocumentationChannelInitiatorEndpoint(ClientSideUplinkSession session, long channelId,
         Consumer<Optional<SizeValidatedDataSource>> documentationReceiver) {
@@ -39,7 +39,8 @@ public class DocumentationChannelInitiatorEndpoint extends AbstractChannelEndpoi
     }
 
     @Override
-    protected boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
+    // synchronized for access on "downloadWrapper"; could be reworked to reduce lock scope
+    protected synchronized boolean processMessageInternal(MessageBlock messageBlock) throws IOException {
 
         MessageType messageType = messageBlock.getType();
         switch (messageType) {

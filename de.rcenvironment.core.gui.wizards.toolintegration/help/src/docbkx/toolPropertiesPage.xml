@@ -23,6 +23,20 @@
             which is activated in the properties view of the tool component, the user can define
             that the value for the selected property is not defined while editing the workflow, but
             at workflow start. </para>
+        <para>While the use of properties allows a great amount of flexibility, they also easily
+            lead to inadvertent security issues. Consider, e.g., a tool that copies some data to a
+            configurable directory and removes that directory after its computation as part of
+            cleanup. Malicious users may set the configuration directory to some vital system
+            directory and cause the tool to remove that directory on termination. To prevent users
+            from creating such security issues by accident, RCE does not allow the use of property
+            values containing <code>\"</code>, ASCII-characters in the range
+                <code>0x00</code>-<code>0x1f</code>, <code>\\</code>, <code>/</code>,
+                <code>\*</code>, <code>\?</code>. Moreover, RCE prevents the use of <code>%</code>
+            on Windows systems, and of <code>`</code> and <code>\$</code> on Linux systems.</para>
+        <para>If you would like to allow your users to supply a configuration file or a
+            configuration directory, please add this file as an explicit input to the component.
+            Other options include, e.g., fixing a "whitelist" of safe configuration options and
+            allowing the user a choice of these configuration options via properties.</para>
     </sect1>
     <sect1>
         <title>Groups</title>

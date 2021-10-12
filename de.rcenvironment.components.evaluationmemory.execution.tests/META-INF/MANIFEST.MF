@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Evaluation Memory Component Execution Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.components.evaluationmemory.execution.tests
-Bundle-Version: 10.2.3.qualifier
+Bundle-Version: 10.2.4.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.core.communication.common,

@@ -17,6 +17,7 @@ import de.rcenvironment.core.communication.uplink.common.internal.DataStreamUplo
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.entities.ToolDocumentationRequest;
 import de.rcenvironment.core.communication.uplink.entities.ToolDocumentationResponse;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
@@ -75,7 +76,8 @@ public class DocumentationChannelProviderEndpoint extends AbstractChannelEndpoin
     }
 
     private void sendResponseHeader(boolean available, long size) throws IOException {
-        enqueueMessageBlockForSending(messageConverter.encodeDocumentationResponse(new ToolDocumentationResponse(available, size)));
+        enqueueMessageBlockForSending(messageConverter.encodeDocumentationResponse(new ToolDocumentationResponse(available, size)),
+            MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
     }
 
     private void sendDocumentationData(final long channelId, SizeValidatedDataSource data) throws IOException {

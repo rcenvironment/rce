@@ -67,7 +67,7 @@ public class ComponentExecutionAuthorizationServiceImpl
     // fetched from the map
     private final Deque<String> gcQueue = new LinkedList<>();
 
-    // active tokens and their timeouts
+    // active tokens and their timeouts; all access synchronized on method level
     private final Map<String, Long> activeTokens = new HashMap<>();
 
     private AuthorizationService authorizationService;
@@ -89,7 +89,7 @@ public class ComponentExecutionAuthorizationServiceImpl
 
     @Override
     @AllowRemoteAccess
-    public synchronized String requestExecutionTokenForPublicComponent(String internalComponentId, String componentVersion)
+    public String requestExecutionTokenForPublicComponent(String internalComponentId, String componentVersion)
         throws OperationFailureException {
         final LogicalNodeSessionId destinationNodeId = getLogicalNodeDestinationOfServiceCall();
 
@@ -103,7 +103,7 @@ public class ComponentExecutionAuthorizationServiceImpl
         if (permissionSet.isPublic()) {
             log.debug("Generating access token for public component \"" + internalComponentId + "\" on logical node :"
                 + destinationNodeId.getLogicalNodePart());
-            return generateAndRegisterToken(internalComponentId + ":public");
+            return generateAndRegisterToken(internalComponentId + ":public"); // synchronized
         } else {
             log.debug(StringUtils.format(
                 "Rejecting request for a public execution permission token for component \"%s\" on logical node :%s "
@@ -134,7 +134,7 @@ public class ComponentExecutionAuthorizationServiceImpl
             log.debug(StringUtils.format(
                 "Generating access token for component \"%s\" on logical node :%s, accessible via group membership in \"%s\"",
                 internalComponentId, destinationNodeId.getLogicalNodePart(), groupId));
-            final String accessToken = generateAndRegisterToken(internalComponentId + ":group");
+            final String accessToken = generateAndRegisterToken(internalComponentId + ":group"); // synchronized
             final AuthorizationAccessGroupKeyData groupKeyData = authorizationService.getKeyDataForGroup(groupReference);
             final SymmetricKey secretGroupKey = groupKeyData.getSymmetricKey();
             return cryptographyOperationsProvider.encryptAndEncodeString(secretGroupKey, accessToken);
@@ -152,8 +152,9 @@ public class ComponentExecutionAuthorizationServiceImpl
 
     @Override
     public String createAndRegisterExecutionTokenForLocalComponent(String internalComponentId) {
-        log.debug("Generating access token for local component \"" + internalComponentId + "\"");
-        return generateAndRegisterToken(internalComponentId + ":local");
+        String token = generateAndRegisterToken(internalComponentId + ":local"); // synchronized
+        log.debug("Generated local component access token \"" + token + "\""); // there should be no security issue in logging this
+        return token;
     }
 
     @Override
@@ -191,7 +192,7 @@ public class ComponentExecutionAuthorizationServiceImpl
         this.cryptographyOperationsProvider = newInstance;
     }
 
-    private String generateAndRegisterToken(String id) {
+    private synchronized String generateAndRegisterToken(String id) {
         final String token = id + ":" + IdGenerator.secureRandomHexString(TOKEN_HEX_STRING_LENGTH);
         final long expirationTime = System.currentTimeMillis() + TOKEN_LIFETIME_MSEC;
         activeTokens.put(token, expirationTime);

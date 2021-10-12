@@ -23,11 +23,13 @@ import de.rcenvironment.core.communication.uplink.common.internal.DataStreamUplo
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.entities.FileHeader;
 import de.rcenvironment.core.communication.uplink.entities.FileTransferSectionInfo;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSession;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Common base class of {@link ToolExecutionChannelInitiatorEndpoint} and {@link ToolExecutionChannelProviderEndpoint}.
@@ -36,8 +38,10 @@ import de.rcenvironment.core.utils.common.exception.ProtocolException;
  */
 public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEndpoint {
 
-    // synchronized on "this"
-    protected ToolExecutionChannelState channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES;
+    protected static final boolean VERBOSE_FILE_TRANSFER_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.filetransfers");
+
+    // synchronized via access methods
+    private ToolExecutionChannelState channelState = ToolExecutionChannelState.EXPECTING_NO_MESSAGES;
 
     /**
      * Encapsulates handling the message sequence at the sending end of a directory transfer. Sends messages starting with
@@ -56,20 +60,39 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
 
         public void performDirectoryUpload() throws IOException {
             final List<String> directoryListing = localProvider.provideDirectoryListing();
-            enqueueMessageBlockForSending(messageConverter.encodeFileTransferSectionStart(new FileTransferSectionInfo(directoryListing)));
+            // file transfers are low-priority and not time-critical, so allow blocking instead of failing
+            enqueueMessageBlockForSending(messageConverter.encodeFileTransferSectionStart(new FileTransferSectionInfo(directoryListing)),
+                MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
+
+            if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                log.debug(channelLogPrefix + "Enqueued start signal of file transfer section (local upload)");
+            }
+
             localProvider.provideFiles(new DirectoryUploadContext() {
 
                 @Override
                 public void provideFile(FileDataSource dataSource) throws IOException {
                     FileHeader fileHeader = new FileHeader(dataSource.getSize(), dataSource.getRelativePath());
-                    log.debug(
-                        StringUtils.format("Starting upload of file '%s', size: %d bytes", fileHeader.getPath(), fileHeader.getSize()));
-                    enqueueMessageBlockForSending(messageConverter.encodeFileHeader(fileHeader));
+                    log.debug(StringUtils.format("%sStarting upload of '%s', size: %d bytes", channelLogPrefix, fileHeader.getPath(),
+                        fileHeader.getSize()));
+                    // see above
+                    enqueueMessageBlockForSending(messageConverter.encodeFileHeader(fileHeader),
+                        MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
                     new DataStreamUploadWrapper(asyncMessageBlockSender).uploadFromDataSource(channelId, MessageType.FILE_CONTENT,
                         dataSource);
+                    if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                        log.debug(StringUtils.format("%sFinished upload of '%s'", channelLogPrefix, fileHeader.getPath()));
+                    }
                 }
             });
-            enqueueMessageBlockForSending(new MessageBlock(MessageType.FILE_TRANSFER_SECTION_END));
+
+            // see above
+            enqueueMessageBlockForSending(new MessageBlock(MessageType.FILE_TRANSFER_SECTION_END),
+                MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
+
+            if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                log.debug(channelLogPrefix + "Enqueued end signal of file transfer section (local upload)");
+            }
         }
     }
 
@@ -107,6 +130,9 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                     localReceiver.receiveDirectoryListing(optionalListOfDirectories.get());
                 }
                 initialized = true;
+                if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                    log.debug(channelLogPrefix + "Received start signal of file transfer section (local download)");
+                }
                 return;
             case FILE_HEADER:
                 ensure(initialized);
@@ -116,9 +142,10 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                     receiveFileMethodsLock.acquire();
                 } catch (InterruptedException e1) {
                     Thread.currentThread().interrupt();
-                    log.warn("Interrupted while preparing download of " + fileHeader.getPath());
+                    log.warn(channelLogPrefix + "Interrupted while preparing download of " + fileHeader.getPath());
                 }
-                log.debug(StringUtils.format("Starting download of file '%s', size: %d bytes", fileHeader.getPath(), fileHeader.getSize()));
+                log.debug(StringUtils.format("%sStarting download of file '%s', size: %d bytes", channelLogPrefix, fileHeader.getPath(),
+                    fileHeader.getSize()));
                 currentDownloadWrapper = new DataStreamDownloadWrapper<FileDataSource>() {
 
                     @Override
@@ -135,18 +162,18 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                 ConcurrencyUtils.getAsyncTaskService().execute("Uplink: receive a file download", () -> {
                     try {
                         localReceiver.receiveFile(fileDataSource);
+                        log.debug(channelLogPrefix + "Finished download of " + fileHeader.getPath());
                     } catch (IOException e) {
                         if ("Pipe broken".equals(e.getMessage())) {
                             // rewrite "expected" event to a more user-friendly log message
-                            log.warn("Error while downloading file " + fileHeader.getPath()
+                            log.warn(channelLogPrefix + "Error while downloading file " + fileHeader.getPath()
                                 + ": Either the execution was cancelled, or there was a connection error");
                         } else {
-                            log.warn("Error while downloading file " + fileHeader.getPath(), e);
+                            log.warn(channelLogPrefix + "Error while downloading file " + fileHeader.getPath(), e);
                         }
                         // TODO propagate these errors to the main flow?
                     } finally {
                         receiveFileMethodsLock.release();
-                        log.debug("Finished download of " + fileHeader.getPath());
                     }
                 });
                 return;
@@ -161,9 +188,13 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                 ensure(initialized);
                 ensure(currentDownloadWrapper == null);
                 receivedEndOfTransferMessage = true;
+                if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                    log.debug(channelLogPrefix + "Received end signal of file transfer section (local download)");
+                }
                 return;
             default:
-                throw new ProtocolException("Unexpected message type during directory download: " + messageBlock.getType());
+                throw new ProtocolException(
+                    channelLogPrefix + "Unexpected message type during directory download: " + messageBlock.getType());
             }
         }
 
@@ -174,7 +205,7 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
                     receiveFileMethodsLock.acquire();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new IOException("Interrupted while waiting for all receiveFile() methods to complete");
+                    throw new IOException(channelLogPrefix + "Interrupted while waiting for all receiveFile() methods to complete");
                 }
                 return true;
             } else {
@@ -188,30 +219,39 @@ public abstract class AbstractExecutionChannelEndpoint extends AbstractChannelEn
     }
 
     protected void validateExpectedChannelState(ToolExecutionChannelState expectedState, MessageBlock message) throws ProtocolException {
-        if (channelState != expectedState) {
-            throw new ProtocolException(
-                "Received a message of type " + message.getType() + " in channel state " + channelState.name() + " when it should be "
-                    + expectedState.name());
+        if (getChannelState() != expectedState) {
+            throw new ProtocolException(channelLogPrefix + "Received a message of type " + message.getType() + " in channel state "
+                + getChannelState().name() + " when it should be " + expectedState.name());
         }
     }
 
     protected void validateActualVersusExpectedMessageType(MessageType actual, MessageType expected) throws ProtocolException {
         if (actual != expected) {
-            throw new ProtocolException("Expected a message of type " + expected + ", but received " + actual);
+            throw new ProtocolException(channelLogPrefix + "Expected a message of type " + expected + ", but received " + actual);
         }
     }
 
     protected void ensure(boolean condition) throws ProtocolException {
         if (!condition) {
-            throw new ProtocolException("An internal check or condition was not in the required state; "
+            throw new ProtocolException(channelLogPrefix + "An internal check or condition was not in the required state; "
                 + "this indicates a protocol violation or an internal error");
         }
     }
 
     protected void ensureNotDefinedYet(Object object) throws ProtocolException {
         if (object != null) {
-            throw new ProtocolException("An internal field was about to be initialized, "
+            throw new ProtocolException(channelLogPrefix + "An internal field was about to be initialized, "
                 + "but was already set; this indicates a protocol violation or an internal error");
         }
+    }
+
+    // synchronized access methods to minimize synchronization scopes
+
+    protected final synchronized ToolExecutionChannelState getChannelState() {
+        return channelState;
+    }
+
+    protected final synchronized void setChannelState(ToolExecutionChannelState channelState) {
+        this.channelState = channelState;
     }
 }

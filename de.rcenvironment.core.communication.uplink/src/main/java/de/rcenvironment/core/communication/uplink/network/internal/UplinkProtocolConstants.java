@@ -13,7 +13,8 @@ import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
 
 /**
- * Constants for the Uplink protocol.
+ * Constants for the Uplink protocol. All parameters that should be adjustable by configuration or in unit/integration tests should go into
+ * {@link UplinkProtocolConfiguration} instead.
  *
  * @author Robert Mischke
  */
@@ -139,30 +140,9 @@ public final class UplinkProtocolConstants {
      */
     public static final String SESSION_QUALIFIER_DEFAULT = "default";
 
-    /**
-     * The average interval between sending heartbeat message from server to client.
-     * 
-     * Currently, this is also the implicit timeout for the response, as response reception is currently checked before sending the next
-     * heartbeat for simplicity.
-     * 
-     * TODO split these parameters so they can be adjusted independently?
-     */
-    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_AVERAGE = 30 * 1000; // raised in 10.2.3: 20->30
 
-    /**
-     * The maximum time that each side of the handshake exchange waits for the other side's response. Adjust if necessary.
-     */
-    public static final int HANDSHAKE_RESPONSE_TIMEOUT_MSEC = 2000;
 
-    /**
-     * The variation width of the heartbeat interval; added to avoid heartbeat events all arriving at the same time when started in sync.
-     */
-    public static final int SERVER_TO_CLIENT_HEARTBEAT_SEND_INVERVAL_SPREAD = 2 * 1000;
 
-    /**
-     * If the time between sending a heartbeat and receiving the related response exceeds this time, a warning is logged.
-     */
-    public static final int HEARTBEAT_RESPONSE_TIME_WARNING_THRESHOLD = 5000;
 
     /**
      * The lowest valid message type value.
@@ -220,6 +200,16 @@ public final class UplinkProtocolConstants {
      */
     // note: this was lowered in 10.2.3; was using MAX_MESSAGE_BLOCK_DATA_LENGTH before
     public static final long MAX_FILE_TRANSFER_CHUNK_SIZE = 32 * 1024; // maybe go even lower? should be benchmarked to optimize
+
+    /**
+     * The type id for Uplink channels handling the communication regarding a tool execution.
+     */
+    public static final String CHANNEL_TYPE_TOOL_EXECUTION = "exec";
+
+    /**
+     * The type id for Uplink channels handling the communication regarding a request for a tool's documentation.
+     */
+    public static final String CHANNEL_TYPE_TOOL_DOCUMENTATION = "docs";
 
     /**
      * The maximum expected time between sending one's own handshake data and receiving a response. As this should be a very fast and

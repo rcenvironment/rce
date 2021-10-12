@@ -1,3 +1,24 @@
+RCE 10.2.4 (August 19, 2021)
+
+# Network / Uplink
+
+- Fixed a server-side issue that could cause lockups in low-bandwidth situations
+- Reduced internal memory consumption per file transfer on relay servers
+- Improved message prioritization (e.g. file transfers having lower priority than tool announcements)
+- Fixed a server-side issue where client connections failing their heartbeat check were not closed correctly
+- Fixed a client-side issue where tools received over an Uplink connection could sometimes be forwarded to other users in the local network even with the "Gateway" flag off; not a security issue as those tools were still only visible to users with proper authorization, and could not be executed
+- Fixed a rare client-side issue where file transfers could stall indefinitely on the sender side; also reduced memory consumption
+- Improved log output
+
+# Network / Other
+
+- Fixed SSH connections retrying to login with the same password after the first attempt fails
+
+# Workflow Execution
+
+- Fixed a rare issue where a local tool could be incorrectly rejected by the "allowed to execute" mechanism
+
+
 RCE 10.2.3 (May 10, 2021)
 
 # Network

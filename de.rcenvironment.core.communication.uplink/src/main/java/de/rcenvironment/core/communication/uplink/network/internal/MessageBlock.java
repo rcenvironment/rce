@@ -11,7 +11,6 @@ package de.rcenvironment.core.communication.uplink.network.internal;
 import java.util.Objects;
 
 import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
-import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
 

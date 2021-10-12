@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.p2.other.feature</artifactId>
 	<name>RCE Platform - p2 Bridge Feature - Other Libraries</name>
-	<version>10.2.2-SNAPSHOT</version>
+	<version>10.2.4-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

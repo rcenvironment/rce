@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocol
 import de.rcenvironment.core.communication.uplink.entities.ChannelCreationRequest;
 import de.rcenvironment.core.communication.uplink.entities.ChannelCreationResponse;
 import de.rcenvironment.core.communication.uplink.entities.ToolDocumentationRequest;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.channel.api.ChannelEndpoint;
 import de.rcenvironment.core.communication.uplink.network.channel.internal.AbstractChannelEndpoint;
 import de.rcenvironment.core.communication.uplink.network.channel.internal.DocumentationChannelInitiatorEndpoint;
@@ -39,6 +40,7 @@ import de.rcenvironment.core.communication.uplink.network.internal.CommonUplinkL
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionLowLevelEventHandler;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkConnectionRefusedException;
+import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConfiguration;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolErrorType;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState;
@@ -46,6 +48,7 @@ import de.rcenvironment.core.communication.uplink.session.internal.AbstractUplin
 import de.rcenvironment.core.utils.common.SizeValidatedDataSource;
 import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.exception.ProtocolException;
 import de.rcenvironment.toolkit.modules.concurrency.api.BlockingResponseMapper;
 import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 
@@ -60,13 +63,9 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  */
 public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl implements ClientSideUplinkSession {
 
-    // TODO move these to constants class?
-
-    private static final int CHANNEL_REQUEST_RESULT_TIMEOUT = 20 * 1000; // raised in 10.2.3: 10->20
-
-    private static final int DOCUMENTATION_REQUEST_RESULT_TIMEOUT = 20 * 1000; // raised in 10.2.3: 10->20
-
     private static final AtomicInteger sharedSessionIdGenerator = new AtomicInteger(0);
+
+    private final UplinkProtocolConfiguration uplinkProtocolConfiguration = UplinkProtocolConfiguration.getCurrent();
 
     private final String localSessionId;
 
@@ -149,7 +148,7 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
         @Override
         public void onMessageBlock(long channelId, MessageBlock messageBlock) {
-            incomingMessageQueue.enqueue(() -> {
+            incomingProcessingQueue.enqueue(() -> {
                 try {
                     if (channelId == UplinkProtocolConstants.DEFAULT_CHANNEL_ID) {
                         defaultChannelEndpoint.processMessage(messageBlock);
@@ -230,13 +229,13 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                 final long relayProvidedChannelId = request.getChannelId();
                 final String channelType = request.getType();
                 switch (channelType) {
-                case "docs":
+                case UplinkProtocolConstants.CHANNEL_TYPE_TOOL_DOCUMENTATION:
                     // register an endpoint for the expected incoming documentation request on this channel
                     channelEndpointMap.put(relayProvidedChannelId,
                         new DocumentationChannelProviderEndpoint(ClientSideUplinkSessionImpl.this, relayProvidedChannelId,
                             sessionEventHandler, request.getDestinationId()));
                     break;
-                case "exec":
+                case UplinkProtocolConstants.CHANNEL_TYPE_TOOL_EXECUTION:
                     // register an endpoint for the expected incoming tool execution request on this channel
                     channelEndpointMap.put(relayProvidedChannelId,
                         new ToolExecutionChannelProviderEndpoint(ClientSideUplinkSessionImpl.this, relayProvidedChannelId,
@@ -247,12 +246,13 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                     // TODO send refusal response
                     return true;
                 }
-                log.debug("Accepting offered message channel " + relayProvidedChannelId + " of type '" + channelType + "'");
+                log.debug(logPrefix + "Accepting offered message channel " + relayProvidedChannelId + " of type '" + channelType + "'");
                 // note: the request id must be mirrored back to allow association at the initiating client
                 // TODO security: rule out any possibility of associating with other channel requests here; unlikely as it is, though
                 final ChannelCreationResponse responseToSend =
                     new ChannelCreationResponse(relayProvidedChannelId, request.getRequestId(), true);
-                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(responseToSend));
+                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(responseToSend),
+                    MessageBlockPriority.CHANNEL_INITIATION, false);
                 return true;
             case CHANNEL_INIT_RESPONSE:
                 ChannelCreationResponse receivedResponse = messageConverter.decodeChannelCreationResponse(messageBlock);
@@ -302,7 +302,8 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     @Override
     public void publishToolDescriptorListUpdate(ToolDescriptorListUpdate update) throws IOException {
         final MessageBlock messageBlock = messageConverter.encodeToolDescriptorListUpdate(update);
-        enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageBlock);
+        enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageBlock,
+            MessageBlockPriority.TOOL_DESCRIPTOR_UPDATES, false); // false = fail on queue congestion
     }
 
     @Override
@@ -358,15 +359,19 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
                         optionalDocumentationStream)));
 
             // now send the actual documentation request; as it uses the unique channel, no request id is necessary for mapping
+            // parameter "true": allow blocking on queue congestion/backpressure
             enqueueMessageBlockForSending(relayAssignedChannelId,
-                messageConverter.encodeDocumentationRequest(new ToolDocumentationRequest(docReferenceId)));
+                messageConverter.encodeDocumentationRequest(new ToolDocumentationRequest(docReferenceId)),
+                MessageBlockPriority.BLOCKABLE_CHANNEL_OPERATION, true);
 
+            int timeout = uplinkProtocolConfiguration.getToolDocumentationRequestRoundtripTimeout();
             final Optional<Object> optionalDocResponse =
-                responseMapper.registerRequest("channel_" + relayAssignedChannelId, DOCUMENTATION_REQUEST_RESULT_TIMEOUT).get();
+                responseMapper.registerRequest("channel_" + relayAssignedChannelId, timeout).get();
 
             if (!optionalDocResponse.isPresent()) {
                 return Optional.empty();
             }
+
             return (Optional<SizeValidatedDataSource>) optionalDocResponse.get();
         } catch (IOException | InterruptedException | ExecutionException e) {
             // TODO forward this exception instead?
@@ -390,16 +395,19 @@ public class ClientSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     }
 
     private Optional<ChannelCreationResponse> performChannelCreationRequest(String destinationId, String channelType, String intention)
-        throws IOException, InterruptedException, ExecutionException {
+        throws ProtocolException, InterruptedException, ExecutionException {
 
         // send a channel creation request
         final String requestId = generateRequestId();
         final ChannelCreationRequest request =
             new ChannelCreationRequest(channelType, destinationId, UplinkProtocolConstants.UNDEFINED_CHANNEL_ID, requestId);
         enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
-            messageConverter.encodeChannelCreationRequest(request));
+            // false = fail on queue congestion
+            messageConverter.encodeChannelCreationRequest(request), MessageBlockPriority.CHANNEL_INITIATION, false);
+
         // wait for the response or timeout
-        final Optional<Object> optionalResponse = responseMapper.registerRequest(requestId, CHANNEL_REQUEST_RESULT_TIMEOUT).get();
+        int timeout = uplinkProtocolConfiguration.getChannelRequestRoundtripTimeout();
+        final Optional<Object> optionalResponse = responseMapper.registerRequest(requestId, timeout).get();
         if (!optionalResponse.isPresent()) {
             log.warn("Attempted to open a message channel for " + intention + ", but received no response within the given timeout");
             return Optional.empty();

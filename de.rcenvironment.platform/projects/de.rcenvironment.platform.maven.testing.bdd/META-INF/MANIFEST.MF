@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - BDD Test Utilities
 Bundle-SymbolicName: de.rcenvironment.platform.maven.testing.bdd;singleton:=true
-Bundle-Version: 10.2.2.qualifier
+Bundle-Version: 10.2.4.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 DynamicImport-Package: *
 Bundle-Vendor: DLR

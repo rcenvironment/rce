@@ -32,6 +32,7 @@ import de.rcenvironment.core.communication.uplink.common.internal.MessageType;
 import de.rcenvironment.core.communication.uplink.common.internal.UplinkProtocolMessageConverter;
 import de.rcenvironment.core.communication.uplink.entities.ChannelCreationRequest;
 import de.rcenvironment.core.communication.uplink.entities.ChannelCreationResponse;
+import de.rcenvironment.core.communication.uplink.network.api.MessageBlockPriority;
 import de.rcenvironment.core.communication.uplink.network.channel.internal.AbstractChannelEndpoint;
 import de.rcenvironment.core.communication.uplink.network.internal.MessageBlock;
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConstants;
@@ -161,7 +162,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
         // the time to wait between attempts; this is mostly relevant for automated/scripted setups, so retry fairly quickly
         private static final int DEFAULT_CHANNEL_MATCH_RETRY_INTERVAL = 500;
 
-        private ServerSideUplinkSession initiatingSession;
+        private final ServerSideUplinkSession initiatingSession;
 
         private DefaultChannelRelayEndpoint(ServerSideUplinkSession session) {
             super(session, session.getLocalSessionId(), UplinkProtocolConstants.DEFAULT_CHANNEL_ID);
@@ -184,7 +185,7 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                 log.debug(
                     "Received other message from client, mirroring back (DEVELOPMENT ONLY): "
                         + new String(messageBlock.getData(), Charsets.UTF_8));
-                enqueueMessageBlockForSending(messageBlock);
+                enqueueMessageBlockForSending(messageBlock, MessageBlockPriority.DEFAULT, true);
                 return true;
             }
         }
@@ -206,7 +207,8 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     + "', but there was no client session matching its destination prefix");
                 ChannelCreationResponse failureResponse =
                     new ChannelCreationResponse(UplinkProtocolConstants.UNDEFINED_CHANNEL_ID, request.getRequestId(), false);
-                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(failureResponse));
+                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(failureResponse),
+                    MessageBlockPriority.CHANNEL_INITIATION, false);
                 return true;
             }
             final ServerSideUplinkSession destinationSession = optionalDestinationSession.get();
@@ -215,7 +217,8 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                     + "; this is not allowed");
                 ChannelCreationResponse failureResponse =
                     new ChannelCreationResponse(UplinkProtocolConstants.UNDEFINED_CHANNEL_ID, request.getRequestId(), false);
-                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(failureResponse));
+                enqueueMessageBlockForSending(messageConverter.encodeChannelCreationResponse(failureResponse),
+                    MessageBlockPriority.CHANNEL_INITIATION, false);
                 return true;
             }
             // optimistically register the channel; if the destination session's client refuses, it will be discarded immediately
@@ -226,8 +229,12 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
             log.debug("Forwarding a channel request from session " + initiatingSession + " to session "
                 + destinationSession + "; assigned channel id " + channelId);
             // then forward this message to the destination client
+            // parameter "false": if the receiver does not process requests fast enough, terminate its session
+            // note that this allows session DoS, as other clients trigger these requests, but the source is easily identified;
+            // if this approach triggers session terminations by accident, switching to an event-sourcing-based approach (instead of active
+            // message pushing) should handle this more gracefully, but this should not be necessary for now -- misc_ro
             destinationSession.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
-                messageConverter.encodeChannelCreationRequest(channelOffer));
+                messageConverter.encodeChannelCreationRequest(channelOffer), MessageBlockPriority.CHANNEL_INITIATION, false);
             return true;
         }
 
@@ -250,9 +257,10 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
             // generate the forwarded response
             ChannelCreationResponse forwardedResponse = new ChannelCreationResponse(channelId, receivedResponse.getRequestId(), true);
             // send it back to the channel's initiator
+            // parameter "false": if the receiver does not process responses fast enough, terminate its session
             channelData.getInitiatorSession()
                 .enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
-                    messageConverter.encodeChannelCreationResponse(forwardedResponse));
+                    messageConverter.encodeChannelCreationResponse(forwardedResponse), MessageBlockPriority.CHANNEL_INITIATION, false);
             return true;
         }
 
@@ -312,7 +320,10 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
     @Override
     public void onMessageBlock(ServerSideUplinkSession receivingSession, long channelId, MessageBlock messageBlock)
         throws ProtocolException {
-        final ServerSideSessionHandler sessionHandler = sessionHandlers.get(receivingSession);
+        final ServerSideSessionHandler sessionHandler;
+        synchronized (crossSessionStateLock) {
+            sessionHandler = sessionHandlers.get(receivingSession);
+        }
         if (sessionHandler == null) {
             log.debug("Discarding a message of type " + messageBlock.getType() + " that arrived after session "
                 + receivingSession + " was deactivated");
@@ -369,10 +380,10 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
 
     private void processIncomingToolDescriptorUpdate(ToolDescriptorListUpdate update, ServerSideUplinkSession sourceSession,
         MessageBlock messageBlock) throws IOException {
-        log.debug(
-            "Forwarding a tool descriptor update from session " + sourceSession + " to " + activeSessions.size()
-                + " session(s)");
         synchronized (crossSessionStateLock) {
+            log.debug(
+                "Forwarding a tool descriptor update from session " + sourceSession + " to " + activeSessions.size()
+                    + " session(s)");
             if (!update.getToolDescriptors().isEmpty()) {
                 // non-empty update -> cache it
                 cachedToolDescriptorUpdatesByDestinationId.put(update.getDestinationId(), messageBlock);
@@ -389,11 +400,13 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                         + "', but there was no previous cached entry to remove?");
                 }
             }
-            for (ServerSideUplinkSession session : activeSessions) {
+            // iterate over a *copy* of the current list of active sessions, as send operations may fail and cause sessions to be removed
+            for (ServerSideUplinkSession session : getIterationSafeListOfActiveSessions()) {
                 if (session == sourceSession) {
                     continue; // skip the session that published this update
                 }
-                session.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageBlock);
+                session.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, messageBlock,
+                    MessageBlockPriority.TOOL_DESCRIPTOR_UPDATES, false);
             }
         }
     }
@@ -405,7 +418,9 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                 final MessageBlock cachedMessageBlock = entry.getValue();
                 log.debug("Forwarding a cached tool descriptor list update for destination " + destinationId + " to new session "
                     + session);
-                session.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, cachedMessageBlock);
+                // false = terminate on queue congestion instead of blocking
+                session.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID, cachedMessageBlock,
+                    MessageBlockPriority.TOOL_DESCRIPTOR_UPDATES, false);
             }
         }
     }
@@ -438,13 +453,15 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
                 }
 
                 // iterate over all other sessions and send the message block to each
-                for (ServerSideUplinkSession sessionToInform : activeSessions) {
+                for (ServerSideUplinkSession sessionToInform : getIterationSafeListOfActiveSessions()) {
                     if (sessionToInform == closedSession) {
                         throw new IllegalStateException("The closing session should have been unregisterd at this point");
                     }
                     try {
+                        // parameter "false": if the receiver does not process requests fast enough, terminate its session
+                        // note that this allows session DoS, as other clients trigger these requests, but the source is easily identified
                         sessionToInform.enqueueMessageBlockForSending(UplinkProtocolConstants.DEFAULT_CHANNEL_ID,
-                            emptyToolDescriptorListUpdateMessageBlock);
+                            emptyToolDescriptorListUpdateMessageBlock, MessageBlockPriority.TOOL_DESCRIPTOR_UPDATES, false);
                     } catch (IOException e) {
                         log.warn("Error while sending a tool removal update to session " + sessionToInform);
                     }
@@ -491,9 +508,26 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
         return result;
     }
 
+    /**
+     * Returns a copy of the list of active sessions to allow safe iteration over this list if operations within the loop may modify the
+     * list of active sessions. Most notably, this includes calls to enqueueMessageBlockForSending() in non-blocking mode, as sending may
+     * fail on a full queue, and cause the related session to be terminated.
+     * <p>
+     * Technically, the returned list does not need to be processed with the {@link #crossSessionStateLock} held, although in most cases
+     * this is probably still a good idea.
+     * 
+     * @return a detached copy of the {@link #activeSessions} list
+     */
+    private List<ServerSideUplinkSession> getIterationSafeListOfActiveSessions() {
+        synchronized (crossSessionStateLock) {
+            return new ArrayList<>(activeSessions);
+        }
+    }
+
     private Optional<ServerSideUplinkSession> findSessionForDestinationId(String destinationId) {
         // TODO could be optimized by extracting the session id substring and map lookup
-        synchronized (activeSessions) {
+        synchronized (crossSessionStateLock) {
+            // not using getIterationSafeListOfActiveSessions() as the list is not being modified
             for (ServerSideUplinkSession session : activeSessions) {
                 // note: for this to work and be secure, it is important that the assigned prefixes can never be a prefix of each other,
                 // for example by making them end with a reserved character (currently "/") that can never occur in the prefix id itself
@@ -526,9 +560,37 @@ public class ServerSideUplinkEndpointServiceImpl implements ServerSideUplinkEndp
             return;
         }
         if (sourceSession == channelData.getInitiatorSession()) {
-            channelData.getDestinationSession().enqueueMessageBlockForSending(channelId, messageBlock);
+            /*
+             * Note: Both options for the 4th parameter (terminating the receiver's session vs. blocking) are currently unsatisfactory here.
+             * Blocking does not propagate backpressure to the sender, so it can cause the message receive queue to grow without limitation;
+             * but terminating the receiver's session can result in a fast data source sending more data than the receiver can handle, and
+             * terminate its session. Blocking on the caller side as it is, however, can block the sender's heartbeat messages from getting
+             * processed, and may terminate this side's session.
+             * 
+             * Ideally, there would be an active flow control mechanism to block the sender to a rate matching the receiver's capacity
+             * instead. This is mitigated for now by the fact that the relay's network capacity will often serve as a common limit on
+             * transfer speed, and that data transfers are always requested or agreed on by both sides. The latter causes sender and
+             * receiver to "synchronize" at the end of each transfer. For large files, however, it is still possible for a fast sender to
+             * exhaust the receiver's available bandwidth, and potentially terminate its session this way. To mitigate this, the number of
+             * queued incoming message was also limited in 10.2.4 to allow backpressure to reach the sender's TCP connection. (See
+             * UplinkProtocolConfiguration#getMaxBufferedIncomingMessagesPerSession()).
+             * 
+             * As of 10.2.4, this approach still an improvement over the previous situation, as it protects the relay's availability at the
+             * cost of terminating individual sessions. If this causes problems in normal real-life operation, the fairly arbitrary queue
+             * limits should be tweaked first. Another approach might be per-channel termination (instead of terminating the whole session),
+             * but this is not supported in the current protocol yet either.
+             * 
+             * Regardless of the chosen approach, some sort of protocol-level solution (e.g. active flow control, channel termination)
+             * should be implemented in 11.0.0. -- R. Mischke, Jul 2021
+             */
+
+            // parameter "true": for now, block if the forwarding queue is full
+            channelData.getDestinationSession().enqueueMessageBlockForSending(channelId, messageBlock,
+                MessageBlockPriority.FORWARDING, true);
         } else if (sourceSession == channelData.getDestinationSession()) {
-            channelData.getInitiatorSession().enqueueMessageBlockForSending(channelId, messageBlock);
+            // see comments above
+            channelData.getInitiatorSession().enqueueMessageBlockForSending(channelId, messageBlock,
+                MessageBlockPriority.FORWARDING, true);
         } else {
             log.error(
                 "Detected an attempt to send a message block to an unauthorized channel: source session "

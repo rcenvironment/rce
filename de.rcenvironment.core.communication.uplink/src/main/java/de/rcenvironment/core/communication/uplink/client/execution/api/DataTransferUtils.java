@@ -8,15 +8,21 @@
 
 package de.rcenvironment.core.communication.uplink.client.execution.api;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * A class containing utility methods for data upload and download.
@@ -28,6 +34,12 @@ public final class DataTransferUtils {
 
     private static final String SLASH = "/";
 
+    private static final boolean VERBOSE_FILE_TRANSFER_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.filetransfers");
+
+    // warn on files above 4GB - 1B
+    // note that most likely, our current data management will fail before that; TODO test actual boundary sizes
+    private static final long MAXIMUM_EXPECTED_FILE_SIZE = 4L * 1024 * 1024 * 1024 - 1;
+
     private DataTransferUtils() {}
 
     /**
@@ -35,24 +47,49 @@ public final class DataTransferUtils {
      * 
      * @param directory The directory to upload
      * @param uploadContext the upload context
-     * @param remotePath The relative remote path of this file, typically "" for the root folder.
+     * @param remotePath The relative remote path of this file, typically "" for the root folder
+     * @param logPrefix a string to prepend to all log output for association
      * @throws IOException on upload error.
      */
-    public static void uploadDirectory(File directory, DirectoryUploadContext uploadContext, String remotePath) throws IOException {
+    public static void uploadDirectory(File directory, DirectoryUploadContext uploadContext, String remotePath, String logPrefix)
+        throws IOException {
         final File[] files = directory.listFiles();
         if (files == null) {
-            LogFactory.getLog(DataTransferUtils.class)
-                .warn("Attempted to upload " + directory + ", but it does not seem to be a directory");
+            staticLogger().warn(logPrefix + "Attempted to upload " + directory + ", but it does not seem to be a directory");
             return;
         }
+
+        if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+            staticLogger()
+                .debug(StringUtils.format("%sUploading %d file(s) found in '%s'", logPrefix, files.length, directory.toString()));
+        }
+
         for (File file : files) {
             if (file.isDirectory()) {
-                uploadDirectory(file, uploadContext, remotePath + SLASH + file.getName());
+                if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                    staticLogger().debug(StringUtils.format("%sRecursing into directory '%s'", logPrefix, file.toString()));
+                }
+                uploadDirectory(file, uploadContext, remotePath + SLASH + file.getName(), logPrefix);
             } else {
-                // TODO consider reworking this to direct streaming, ie without reading into a byte array first
-                byte[] fileContentBytes = Files.readAllBytes(file.toPath());
-                uploadContext.provideFile(new FileDataSource(remotePath + SLASH + file.getName(), fileContentBytes.length,
-                    new ByteArrayInputStream(fileContentBytes)));
+                Path path = file.toPath();
+                long fileSize = Files.size(path);
+                if (fileSize < 0) {
+                    throw new IOException("Error determining file size of " + path.toString() + ", received " + fileSize);
+                }
+                if (fileSize > MAXIMUM_EXPECTED_FILE_SIZE) {
+                    // log, but proceed anyway
+                    staticLogger().warn("Excessive upload file size for " + path.toString() + ": " + fileSize);
+                }
+                if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                    staticLogger()
+                        .debug(StringUtils.format("%sUploading local file '%s' of %d bytes", logPrefix, file.toString(), fileSize));
+                }
+                try (InputStream bufferedFileStream = new BufferedInputStream(Files.newInputStream(path))) {
+                    uploadContext.provideFile(new FileDataSource(remotePath + SLASH + file.getName(), fileSize, bufferedFileStream));
+                }
+                if (VERBOSE_FILE_TRANSFER_LOGGING_ENABLED) {
+                    staticLogger().debug(StringUtils.format("%sFinished uploading local file '%s'", logPrefix, file.toString()));
+                }
             }
         }
     }
@@ -68,7 +105,7 @@ public final class DataTransferUtils {
     public static void getDirectoryListing(File directory, List<String> listOfDirs, String remotePath) throws IOException {
         final File[] files = directory.listFiles();
         if (files == null) {
-            LogFactory.getLog(DataTransferUtils.class)
+            staticLogger()
                 .warn("Attempted to upload " + directory + ", but it does not seem to be a directory");
             return;
         }
@@ -141,4 +178,9 @@ public final class DataTransferUtils {
             }
         }
     }
+
+    private static Log staticLogger() {
+        return LogFactory.getLog(DataTransferUtils.class);
+    }
+
 }

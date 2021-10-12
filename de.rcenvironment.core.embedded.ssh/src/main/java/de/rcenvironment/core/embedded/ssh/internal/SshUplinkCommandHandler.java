@@ -76,22 +76,27 @@ public class SshUplinkCommandHandler implements Command {
         @Override
         public synchronized void close() {
             if (closed) {
-                // TODO consider logging/aborting to remove redundant calls in the future; fine for now
+                log.debug("Ignoring a repeated call to close the Uplink pseudo-command handler of SSH session "
+                    + System.identityHashCode(channelSession.getSession()));
                 return;
             }
+
+            closed = true; // set this early to prevent infinite loops even if any step below fails
+
+            // terminate the Uplink pseudo-command to make the SSHD server close the underlying SSH/TCP connection
+            SshUplinkCommandHandler.this.destroy(channelSession);
+
             // close the command's input stream (the output stream from this perspective) first
+            // TODO 10.3.0+ review if this is still needed, or if the pseudo-command exit trigger above is sufficient now
             try {
                 if (SshUplinkCommandHandler.this.outputStream != null) {
                     SshUplinkCommandHandler.this.outputStream.close();
                 } else {
-                    log.warn("Unexpected null stream");
+                    log.warn("Unexpected null outputStream");
                 }
             } catch (IOException e) {
                 log.debug("Non-critical exception closing the connection output stream before shutdown: " + e);
             }
-            // terminate the Uplink pseudo-command to make the SSHD server close the underlying SSH/TCP connection
-            SshUplinkCommandHandler.this.destroy(channelSession);
-            closed = true;
         }
     }
 
@@ -135,6 +140,7 @@ public class SshUplinkCommandHandler implements Command {
 
     @Override
     public void destroy(ChannelSession channelSession) {
+        // TODO 10.3.0+ review: code 0 is also sent if the pseudo-command is terminated due to an error, e.g. a failed heartbeat check
         sendTerminationSignal(0); // note: exit code 0 is only sent if no signal was sent before
     }
 
@@ -167,6 +173,7 @@ public class SshUplinkCommandHandler implements Command {
         synchronized (this) {
             if (!terminationSignalSent) {
                 terminationSignalSent = true;
+                log.debug("Sending SSH command termination signal, exit code " + exitCode);
                 callback.onExit(exitCode);
             }
         }
