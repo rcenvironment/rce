@@ -73,7 +73,7 @@ public class ParametricStudyEndpointSelectionPane extends EndpointSelectionPane 
                 dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(),
                 newMetaData);
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class ParametricStudyEndpointSelectionPane extends EndpointSelectionPane 
             for (String key : sortedKeyMap.values()) {
 
                 if (!metaData.getVisibility(key).equals(Visibility.developerConfigurable)
-                    && metadataIsActive(key, metaData.getActivationFilter(key))) {
+                    && metadataIsActive(metaData.getActivationFilter(key))) {
                     String value = metadataValues.get(key);
                     if (value == null || value.equals("")) {
                         value = metaData.getDefaultValue(key);

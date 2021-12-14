@@ -1,4 +1,4 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="properties">
 	<title>Security Properties of RCE Features</title>
 	<para>
@@ -15,22 +15,22 @@
 		).
 	</para>
 	<sect1 id="default_network">
-		<title>Security Properties of RCE's Default ("Internal") Network Connections </title>
-		<para> The default or "internal" network connections of RCE are designed for close collaboration
-			within a working group, and are only intended to be used within trusted networks. If you
-			require secure connections across the boundaries of trusted networks (especially across
-			the internet), or collaborate with external partners, the encrypted and authenticated
-				<link linkend="ssh_server_port">SSH Remote Access</link> or <link linkend="uplink"
-				>SSH Uplink</link> features should be used instead. </para>
+		<title>Security Properties of RCE's Default ("LocalNet") Network Connections </title>
+		<para> The default or "internal" network connections of RCE (informally called "LocalNet"
+			connections) are designed for close collaboration within a working group, and are only
+			intended to be used within trusted networks. If you require secure connections across
+			the boundaries of trusted networks (especially across the internet), or collaborate with
+			external partners, the encrypted and authenticated <link linkend="uplink">SSH
+				Uplink</link> connections should be used instead. </para>
 		<para> A default RCE installation does <emphasis>not</emphasis> open a network port for these
 			connections unless explicitly configured to do so. </para>
 		<para> For a general overview of RCE's default network approach, please refer to the standard RCE
 			User Guide (available at
-				<uri>https://rcenvironment.de/pages/documentation/documentation.html </uri> for the
+				<uri>https://rcenvironment.de/pages/documentation/documentation.html</uri>  for the
 			latest release). </para>
 		<para> If RCE is configured to accept incoming network connections, the port number(s) to be used
 			can be freely chosen within the range permitted by the operating system. As RCE should
-			never be run with elevated privileges (SYSTEM, root or equivalent), this typically
+			never be run with elevated privileges (SYSTEM, root, or equivalent), this typically
 			limits RCE to ports 1024 and above.</para>
 		<para> Incoming connections can be restricted to certain IPv4 addresses. However, these filters
 			are static, so this feature is only useful for either restricting connections to
@@ -43,18 +43,12 @@
 	</sect1>
 	<sect1 id="ssh_server_port">
 		<title>Security Properties of RCE's SSH Server Port</title>
-		<para>
-			RCE offers a built-in SSH server port, which is disabled by default:
-			An RCE installation does not open a port for accepting SSH
-			connections unless explicitly configured to do so. This port is
-			provided using the Java library Apache SSHD (
-			<uri>https://mina.apache.org/sshd-project/</uri>
-			).
-			<note>
-				<title>Version of Library Apache SSHD</title>
-				<para> In RCE 10.x, the latest stable release (2.3.0) is being used. </para>
-			</note>
-		</para>
+		<para> RCE offers a built-in SSH server port, which is disabled by default: An RCE installation
+			does not open a port for accepting SSH connections unless explicitly configured to do
+			so. This port is provided using the Java library Apache SSHD (
+				<uri>https://mina.apache.org/sshd-project/</uri> ). We regularily review this and
+			other related libraries for security updates, and issue new RCE releases when
+			necessary.</para>
 		<para> If RCE's SSH server port is enabled, the port number may be
 			freely chosen.
 		</para>
@@ -148,7 +142,7 @@
 		<!-- TODO describe the interaction with local/default networks, especially regarding tool forwarding --> 
 	</sect1>
 	<sect1 id="tool_integration">
-		<title>Security Properties of RCE Tool Integration</title>
+		<title>Security Properties of RCE's Tool Integration</title>
 		<para> For general information about RCE's Tool Integration concepts
 			and configuration, please refer to the RCE User Guide (available here
 			for the latest 10.x release).

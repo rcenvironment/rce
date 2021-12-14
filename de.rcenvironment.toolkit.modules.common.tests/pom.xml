@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.toolkit.modules.common.tests</artifactId>
 	<name>RCE Toolkit - Common Modules Tests</name>
-	<version>10.2.4-SNAPSHOT</version>
+	<version>10.3.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<!-- sharing the RCE core parent POM for now -->

@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.datamodel.api.DataType;
 
@@ -29,7 +29,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  */
 public class DefaultComponentValidatorTest {
 
-    private ComponentDescriptionMockCreater componentDescriptionMockCreater;
+    private ComponentDescriptionMockCreator componentDescriptionMockCreater;
 
     private DefaultComponentValidator validator;
 
@@ -38,7 +38,7 @@ public class DefaultComponentValidatorTest {
     /** Basic setup. */
     @Before
     public void setUp() {
-        componentDescriptionMockCreater = new ComponentDescriptionMockCreater();
+        componentDescriptionMockCreater = new ComponentDescriptionMockCreator();
 
         validator = new DefaultComponentValidator();
     }

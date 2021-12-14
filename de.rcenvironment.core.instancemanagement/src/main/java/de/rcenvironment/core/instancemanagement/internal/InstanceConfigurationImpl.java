@@ -616,13 +616,29 @@ public class InstanceConfigurationImpl {
     }
 
     /**
-     * Enabled SSH access for the IM master.
+     * Enable SSH access for the IM master.
      * 
-     * @param port the desired port to set.
-     * @param passphrase the passphrase for the account.
+     * @param port The port on which the SSH server shall listen.
+     * @param passphrase The passphrase for the account.
      * @throws InstanceConfigurationException on failure.
      */
-    public void enableImSshAccess(int port, String passphrase) throws InstanceConfigurationException {
+    public void enableImSshAccessWithDefaultRole(int port, String passphrase) throws InstanceConfigurationException {
+        this.enableImSshAccess(port, passphrase, InstanceManagementConstants.IM_MASTER_DEFAULT_ROLE);
+    }
+
+    /**
+     * Enable SSH access for the IM master.
+     * 
+     * @param port The port on which the SSH server shall listen.
+     * @param passphrase The passphrase for the account.
+     * @param role The role the IM master account shall have
+     * @throws InstanceConfigurationException on failure.
+     */
+    public void enableImSshAccessWithRole(int port, String passphrase, String role) throws InstanceConfigurationException {
+        this.enableImSshAccess(port, passphrase, role);
+    }
+    
+    private void enableImSshAccess(int port, String passphrase, String role) throws InstanceConfigurationException {
         enableSshServer();
         if (getSshServerIp() == null) {
             setSshServerIP(InstanceManagementConstants.LOCALHOST);
@@ -642,8 +658,7 @@ public class InstanceConfigurationImpl {
                 newSegment = writableAccountsSegment.getOrCreateWritableSubSegment(InstanceManagementConstants.IM_MASTER_USER_NAME);
             }
             newSegment.setString(builder.sshServer().getSshAccounts()
-                .getOrCreateSshAccount(InstanceManagementConstants.IM_MASTER_USER_NAME).role().getConfigurationKey(),
-                InstanceManagementConstants.IM_MASTER_ROLE);
+                        .getOrCreateSshAccount(InstanceManagementConstants.IM_MASTER_USER_NAME).role().getConfigurationKey(), role);
             newSegment.setBoolean(builder.sshServer().getSshAccounts()
                 .getOrCreateSshAccount(InstanceManagementConstants.IM_MASTER_USER_NAME).enabled().getConfigurationKey(),
                 true);

@@ -1,0 +1,280 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1>
+	<title>Installation as a Service on a <phrase os="linux">Linux Server</phrase><phrase
+		os="windows">Windows Server</phrase></title>
+	<para>For ad-hoc or temporary RCE network setups, running a headless RCE from the command
+		line is perfectly fine. For more permanent installations, however, we recommend
+		installing RCE as a <phrase os="windows">Windows service</phrase><phrase
+		os="linux">Linux systemd Service</phrase> instead. This has the advantage that
+		RCE automatically shuts down when the server is shut down, and automatically restarts
+		when the server does.</para>
+	<sect2 os="linux">
+	    <title>RCE as a Linux systemd Service</title>
+		<para>This section describes setting up RCE as an auto-start service on Linux.</para>
+	    <para>Please note that the "<code>rce-daemon</code>" command provided with previous RCE releases
+		    for managing System V services is <emphasis role="italic">deprecated</emphasis>, and will
+	    	most likely be removed in RCE 11.0.</para>
+	    <para>Execute these steps to configure an RCE instance to run as a systemd service:</para>
+	    <itemizedlist>
+	        <listitem>
+	            <para>If not already present, install RCE using the .deb or .rpm package. (While
+	                installing a service from the plain .zip distribution is possible, the extra
+	                steps regarding file locations and permissions are not covered by this
+	                guide.)</para>
+	        </listitem>
+	        <listitem>
+	            <para>Choose a <emphasis>command-line id</emphasis> for the instance; in the
+	                templates below, this is marked as <code>&lt;ID></code>. Ideally, it should only
+	                consist of ASCII letters and numbers to prevent command-line
+	                complications.</para>
+	        </listitem>
+	        <listitem>
+	            <para>Choose a <emphasis>human-readable description</emphasis> for the instance; in
+	                the templates below, this is marked as <code>&lt;your_description></code>.
+	                Unlike the ID, this is much more flexible regarding allowed characters. This
+	                description is shown when listing services using systemd commands.</para>
+	        </listitem>
+	        <listitem>
+	            <para>Choose a <emphasis>user and group</emphasis> to run the RCE instance under. Both
+					the user and the group must already exist. In the template below, replace
+						<code>&lt;User></code> and <code>&lt;Group></code> with the respective names
+					(e.g. "user1") or numeric ids (e.g. "1000").</para>
+	        </listitem>
+	        <listitem>
+	            <para>Choose a <emphasis>profile folder</emphasis>; in the template below, this is
+	                marked as <code>&lt;profile_folder_name></code>. In a standard file system
+	                layout, the instance's full profile path will be
+	                    <code>/home/&lt;UID>/.rce/&lt;profile_folder_name></code>. This folder does
+	                not need to exist, as RCE will create it automatically when that profile is
+	                first used (as long as the chosen user/group has sufficient permissions to do
+	                so).</para>
+	        </listitem>
+	        <listitem>
+	            <para>Copy the template below into a file named <code>rce-&lt;ID>.service</code> in
+	                    <code>/etc/systemd/system/</code>. Note that on typical systems, you will
+	                need root/sudo permissions to create or edit this file.</para>
+	        </listitem>
+	        <listitem>
+	            <para>By default, make sure this file's permissions are <code>0644</code> and
+	                ownership is <code>root:root</code>.</para>
+	        </listitem>
+	        <listitem>
+	            <para>Replace all &lt;placeholders> (description, UID/GID, and the profile folder)
+	                in that file.</para>
+	        </listitem>
+	        <listitem>
+	            <para><emphasis role="bold">Important: </emphasis>execute the command
+	                    <code>systemctl daemon-reload</code> (as root or via sudo) after editing the
+	                service file to apply the changes.</para>
+	        </listitem>
+	        <listitem>
+	            <para>In systemd terminology, the created .service file is called (or represents) a
+	                "service unit", which is then controlled through various standard commands. See
+	                the sect2 "Useful management commands" below for a list of commands. For now,
+	                just use <code>systemctl start rce-&lt;ID></code> to start the instance, and
+	                    <code>systemctl status rce-&lt;ID></code> to see if it started as expected.
+	                If it did, use <code>systemctl enable rce-&lt;ID></code> to auto-start the
+	                service whenever the host machine is rebooted.</para>
+	        </listitem>
+	    </itemizedlist>
+	    <para><emphasis role="bold">The .service unit file template</emphasis></para>
+	    <para>Lines ending with a backslash ("\") are only wrapped for layouting purposes; these can
+	        also be merged into single long lines.</para>
+	    <programlisting>[Unit]
+	Description=&lt;your_description (without quotes)>
+	 
+	After=network-online.target
+	Wants=network-online.target
+	 
+	[Service]
+	User=&lt;User>
+	Group=&lt;Group>
+	ExecStart=/usr/bin/rce -p &lt;profile_folder_name> \
+	  --headless --launcher.suppressErrors -nosplash
+	ExecStop=/usr/bin/rce -p &lt;profile_folder_name> \
+	  --shutdown --launcher.suppressErrors -nosplash
+	Type=simple
+	 
+	[Install]
+	WantedBy=multi-user.target</programlisting>
+	    <para><emphasis role="bold">Useful management commands</emphasis></para>
+	    <para>These commands must be either run as "root" or prefixed with "sudo".</para>
+	    <itemizedlist>
+	        <listitem>
+	            <para>systemctl start rce-&lt;ID> - starts the service</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl stop rce-&lt;ID> - stops the service</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl restart rce-&lt;ID> - unsurprisingly, restarts the service</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl status rce-&lt;ID> - display the service's status and its latest
+	                output</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl enable rce-&lt;ID> - marks the service to auto-start after a
+	                reboot</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl disable rce-&lt;ID> - disables auto-start after a reboot</para>
+	        </listitem>
+	        <listitem>
+	            <para>systemctl list-units "rce-*" - lists all installed RCE services</para>
+	        </listitem>
+	        <!-- TODO also add journalctl commands? -->
+	    </itemizedlist>
+	</sect2>
+	<sect2 os="windows">
+	    <title>RCE as a Windows Service</title>
+		<para>Executing the following steps will install RCE as an auto-start service on Windows.</para>
+	    <para>
+	        <orderedlist>
+	            <listitem>
+	                <para>Navigate to the <code>extras\windows_service</code> folder inside your
+	                    installation folder of RCE named <code>rce</code></para>
+	            </listitem>
+	            <listitem>
+	                <para>Open the file <code>install_as_service.bat</code> and adjust these
+	                    settings:</para>
+	                <para>
+	                    <itemizedlist>
+	                        <listitem>
+	                            <para>Set RCE_ROOT_PATH to the location of your RCE installation
+									(typically, the location which you are editing these files in).
+									RCE must already be present (and unpacked) in this location; the
+									service installer does not copy any files there.</para>
+	                        </listitem>
+	                        <listitem>
+	                            <para>Set RCE_SERVICE_USER to the name of the existing user
+	                                account that the RCE service should run as.<note>
+	                                    <para>This user account will be used to run RCE and all
+	                                        local tools that are invoked by it. Make sure that
+	                                        this user has appropriate system permissions to run
+	                                        these tools' executables, and read/write all related
+	                                        files.</para>
+	                                </note></para>
+	                        </listitem>
+	                    </itemizedlist>
+	                </para>
+	            </listitem>
+	            <listitem>
+	                <para>Execute with administrator rights
+	                    <programlisting>install_as_service.bat</programlisting> by
+	                    double-clicking or on the command line</para>
+	            </listitem>
+	            <listitem>
+	                <para>Open the Windows Service Managment Console (e.g. execute
+	                    "services.msc" on the command line)</para>
+	            </listitem>
+	            <listitem>
+	                <para>Look for entry "RCE Service", do a right-click and click
+	                    "Properties"</para>
+	            </listitem>
+	            <listitem>
+	                <para>Click on the "Log On" tab and fill in the correspondig password for
+	                    the user account set to the RCE_SERVICE_USER variable. By clicking the
+	                    "Apply" button a message should inform you that the privilege to "Log on
+	                    as service" was added to the account.<note>
+	                        <para>To add the "Log on as a service" right to an account on your
+	                            local computer manually:</para>
+	                        <orderedlist>
+	                            <listitem>
+	                                <para>Open Local Security Policy.</para>
+	                            </listitem>
+	                            <listitem>
+	                                <para>In the console tree, double-click <emphasis
+	                                        role="bold">Local Policies</emphasis>, and then
+	                                    click <emphasis role="bold">User Rights
+	                                        Assignments</emphasis>.</para>
+	                            </listitem>
+	                            <listitem>
+	                                <para>In the details pane, double-click <emphasis
+	                                        role="bold">Log on as a service</emphasis>.</para>
+	                            </listitem>
+	                            <listitem>
+	                                <para>Click <emphasis role="bold">Add User or
+	                                        Group</emphasis> and add the appropriate account to
+	                                    the list of accounts that possess the <emphasis
+	                                        role="bold">Log on as a service</emphasis>
+	                                    right.</para>
+	                            </listitem>
+	                        </orderedlist>
+	                    </note></para>
+	            </listitem>
+	            <listitem>
+	                <para>Close the properties dialog by clicking "Ok"</para>
+	            </listitem>
+	        </orderedlist>
+	    </para>
+	    <para>To manually start the RCE service:</para>
+	    <para>
+	        <orderedlist>
+	            <listitem>
+	                <para>Open the Windows Service Managment Console (e.g. execute
+	                        <code>services.msc</code> on the command line)</para>
+	            </listitem>
+	            <listitem>
+	                <para>Right-click on the entry "RCE Service" and select "Start"</para>
+	            </listitem>
+	        </orderedlist>
+	    </para>
+	    <para>To stop the RCE service:</para>
+	    <para>
+	        <orderedlist>
+	            <listitem>
+	                <para>Open the Windows Service Managment Console (e.g. execute
+	                        <code>services.msc</code> on the command line)</para>
+	            </listitem>
+	            <listitem>
+	                <para>Right-click on the entry "RCE Service" and select "Stop"</para>
+	            </listitem>
+	        </orderedlist>
+	    </para>
+	    <para>To uninstall the RCE service:</para>
+	    <para>
+	        <orderedlist>
+	            <listitem>
+	                <para>Navigate to the <code>extras\windows_service</code> folder inside your
+	                    installation folder of RCE named <code>rce</code>
+	                </para>
+	            </listitem>
+	            <listitem>
+	                <para>Open the file <code>uninstall_service.bat</code> and set the absolute
+	                    path of the variable RCE_ROOT_PATH to the location of your RCE
+	                    installation</para>
+	            </listitem>
+	            <listitem>
+	                <para>Execute with administrator rights
+	                    <programlisting>uninstall_service.bat</programlisting> by
+	                    double-clicking or on the command line</para>
+	            </listitem>
+	        </orderedlist>
+	    </para>
+	</sect2>
+	<sect2>
+	    <title><phrase os="linux">Daemon</phrase><phrase os="windows">Service</phrase>
+	        Configuration</title>
+	    <para>After installation, the <phrase os="linux">daemon</phrase><phrase os="windows"
+	            >service</phrase> instance will be started automatically. This will create a
+	        default configuration file if it does not exist yet.</para>
+	    <para os="linux">To configure the daemon instance edit and save the configuration file
+	    	(<emphasis>configuration.json</emphasis>) that is located in the <emphasis>profile folder</emphasis>.  Then
+			use <code>systemctl restart rce-&lt;ID></code> to apply the new configuration.</para>
+	    <para os="windows">To configure the service instance, locate the RCE configuration file
+	        in the service user's home directory - by default, it is located at
+	            <code>C:\users\&lt;user id>\.rce\default\configuration.json</code>. Edit this
+	        file and restart the service to apply the changes.</para>
+	    <para>For importing SSH credentials and authorization group keys into a <phrase
+	            os="linux">daemon</phrase><phrase os="windows">service</phrase>, please refer to
+	        section "Importing authorization data without GUI access" in the User Guide. As of RCE 10, file-based imports are only
+	        processed on startup, so a restart is required for this, too.</para>
+	    <note>
+	        <para>The need to restart the <phrase os="linux">daemon</phrase><phrase os="windows"
+	                >service</phrase> is temporary; future versions of RCE will apply
+	            configuration changes as soon as configuration files are changed or new import
+	            files are placed in the respective folders.</para>
+	    </note>
+	</sect2>
+</sect1>

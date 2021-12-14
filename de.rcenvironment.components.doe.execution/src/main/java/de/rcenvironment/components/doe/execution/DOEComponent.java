@@ -19,7 +19,9 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEComponentHistoryDataItem;
 import de.rcenvironment.components.doe.common.DOEConstants;
@@ -176,7 +178,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                     valuesTable[0].length,
                     outputs.size()));
             }
-            for (int i = 0; i <= endSample && i < valuesTable.length; i++) {
+            for (int i = runNumber; i <= endSample && i < valuesTable.length; i++) {
                 for (int j = 0; j < valuesTable[i].length; j++) {
                     if (valuesTable[i][j] == null) {
                         throw new ComponentException("Values in table are incomplete");

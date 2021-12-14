@@ -373,7 +373,6 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
         Runnable newServerThread = new Runnable() {
 
             @Override
-            @TaskDescription("Optimizer Server Socket")
             public void run() {
                 try {
                     if (serverSocket != null) {
@@ -391,7 +390,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 }
             }
         };
-        ConcurrencyUtils.getAsyncTaskService().execute(newServerThread);
+        ConcurrencyUtils.getAsyncTaskService().execute("Optimizer Server Socket", newServerThread);
         return newServerThread;
     }
 

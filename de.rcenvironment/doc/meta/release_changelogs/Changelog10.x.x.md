@@ -1,3 +1,70 @@
+RCE 10.3.0 (December 9, 2021)
+
+# Palette View
+
+- Implementation of a new workflow palette with the following features:
+  - By default, all components are sorted into the top-level groups 'Standard Components', 'User Integrated Tools' and 'User Integrated Workflows'
+  - Groups and subgroups can be added, edited and deleted
+  - Workflow components can be moved into custom groups
+  - Workflow components can be reset to their default group
+  - The "Manage Custom Groups" dialog allows users to organize their user-defined groups, especially when components are not available on the network 
+  - Empty groups can be hidden in the palette
+  - Additional component information can be displayed in a dedicated dialog
+  - A filter mechanism enables the search for components 
+  - The component help (F1) can be opened directly from the palette 
+
+# System Monitoring
+
+- Major rework of the System Monitoring (CPU/RAM usage information) feature, including fixes and performance improvements
+
+# Network View
+
+- Added a "Show configuration snippet" feature
+  - Selecting this from the context menu of a connection shows a dialog containing an auto-generated configuration block ("snippet")
+  - This snippet can copied into the main JSON configuration file to make the connection persistent
+- Minor bug fixes in the Network View
+
+# Tool Integration
+
+- A new parameter "comment" has been added for tool properties of integrated tools in order to give the workflow designer some more information about this property
+- Added export functionality for the tool documentation to the Properties view
+
+# Workflow Components
+
+- Design of Experiments
+  - Minor gui improvements in the properties view for the method selection
+  - Minor bug fixes when using the Design of Experiments component
+- VampZero Initializer
+  - Set the component to deprecated
+
+# Command Console
+
+- Added 'wf start' command to start a workflow without waiting for its termination
+
+# Security and Third-Party Libraries
+
+- Upgraded Apache SSHD (SSH/Uplink server port) to 2.7.0
+- Upgraded Bouncy Castle (Cryptography) to 1.69
+- Upgraded Cucumber (QA library) to 1.2.6
+- Upgraded Ant (QA dependency) to 1.10.12
+
+# Documentation
+
+- Added description of setting up RCE as a systemd service to the Administrator Guide
+- Moved description of setting up RCE as a Windows services from the User to the Administrator Guide
+- Various improvements in the Administrator Guide, especially regarding Uplink
+
+# Other
+
+- Reduced the volume of debug.log messages on Uplink relay (server) instances
+- Added internal property "rce.eventLogOutput" to redirect event log output to the console (value "stdout" or "stderr") or to a different file (value "file:<path>")
+- Added CPU, RAM, PID, and JVM version information to the event log on startup
+- Some mior fixes concerning the undo behaviour
+- The validator of the Input Provider has been improved
+- Fixed a bug in the runtime view of the Optimizer that resulted to NaN values when data was saved
+- Minor fixes, documentation and usability improvements
+
+
 RCE 10.2.4 (August 19, 2021)
 
 # Network / Uplink

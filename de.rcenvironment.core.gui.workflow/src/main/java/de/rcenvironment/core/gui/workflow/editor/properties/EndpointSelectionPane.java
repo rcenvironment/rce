@@ -23,6 +23,8 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -38,7 +40,6 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
@@ -71,6 +72,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
  * @author Christian Weiss
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Kathrin Schaffert (added TableColumnControlListener)
  */
 public class EndpointSelectionPane implements Refreshable {
 
@@ -194,7 +196,6 @@ public class EndpointSelectionPane implements Refreshable {
         icon = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_RCE_ICON_16);
     }
 
-
     private static int getButtons(boolean readOnly) {
         int buttons = ALL_READ_ONLY;
         if (!readOnly) {
@@ -248,7 +249,7 @@ public class EndpointSelectionPane implements Refreshable {
         tableLayoutData.heightHint = minHeight; // effectively min height
         tableComposite.setLayoutData(tableLayoutData);
 
-        Listener tableListener = getTableListener(parent);
+        Listener tableListener = getTableListener();
         table.addListener(SWT.Dispose, tableListener);
         table.addListener(SWT.KeyDown, tableListener);
         table.addListener(SWT.MouseMove, tableListener);
@@ -356,41 +357,28 @@ public class EndpointSelectionPane implements Refreshable {
         updateTable();
     }
 
-
     protected ComponentInstanceProperties getConfiguration() {
         return configuration;
     }
 
-    private Listener getTableListener(final Composite parent) {
-        Listener tableListener = new Listener() {
-
-            private Shell tip = null;
-
-            @Override
-            public void handleEvent(Event event) {
-                switch (event.type) {
-                case SWT.Dispose:
-                case SWT.KeyDown:
-                case SWT.MouseMove:
-                    if (tip == null) {
-                        break;
-                    }
-                    tip.dispose();
-                    tip = null;
-                    break;
-                case SWT.MouseHover:
-                    break;
-                case SWT.MouseDoubleClick:
-                    if (buttonEdit != null && buttonEdit.isEnabled() && event.button == 1) {
-                        onEditClicked();
-                    }
-                    break;
-                default:
-                    break;
+    private Listener getTableListener() {
+        return (Event event) -> {
+            switch (event.type) {
+            case SWT.Dispose:
+            case SWT.KeyDown:
+            case SWT.MouseMove:
+                break;
+            case SWT.MouseHover:
+                break;
+            case SWT.MouseDoubleClick:
+                if (buttonEdit != null && buttonEdit.isEnabled() && event.button == 1) {
+                    onEditClicked();
                 }
+                break;
+            default:
+                break;
             }
         };
-        return tableListener;
     }
 
     /**
@@ -437,6 +425,7 @@ public class EndpointSelectionPane implements Refreshable {
         TableColumn col = null;
         try {
             col = new TableColumn(table, SWT.NONE, index);
+            col.addControlListener(new TableColumnControlListener());
             decorateColumn(title, col);
             // Due to a layout gui bug under linux, this exception must be catched.
             // Afterwards, the decoration of the column can be done without an error.
@@ -453,6 +442,24 @@ public class EndpointSelectionPane implements Refreshable {
         final int columnWeight = 20;
         tableLayout.setColumnData(col, new ColumnWeightData(columnWeight, true));
         col.setText(key);
+    }
+
+    private class TableColumnControlListener implements ControlListener {
+
+        @Override
+        public void controlMoved(ControlEvent arg0) {
+            // nothing to do here
+        }
+
+        @Override
+        public void controlResized(ControlEvent event) {
+            TableColumn source = (TableColumn) event.getSource();
+            final int columnWeight = 20;
+            if (source.getWidth() < columnWeight) {
+                source.setWidth(columnWeight);
+            }
+        }
+
     }
 
     /**
@@ -541,7 +548,7 @@ public class EndpointSelectionPane implements Refreshable {
                             getMetaData(name), configuration.getConfigurationDescription())
                             && guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)) != null) {
                             item.setText(guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)),
-                                getMetaDataWithGuiNames(name).get(key).toString());
+                                getMetaDataWithGuiNames(name).get(key));
                             if (!isValueEditable(name, key)) {
                                 item.setForeground(guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)),
                                     display.getSystemColor(SWT.COLOR_DARK_GRAY));
@@ -560,13 +567,14 @@ public class EndpointSelectionPane implements Refreshable {
                         } else {
                             if (getMetaDataDescription(name) != null && getMetaDataDescription(name).getDefaultValue(key) != null) {
                                 item.setText(guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)),
-                                    getMetaDataDescription(name).getDefaultValue(key).toString());
+                                    getMetaDataDescription(name).getDefaultValue(key));
                             }
                         }
                     }
                 }
             }
-            for (String key : guiKeyToColumnNumberMap.keySet()) {
+            for (String key : guiKeyToColumnNumberMap.keySet()) { // NOSONAR: it is OK to use a keySet here, because only the keys are
+                                                                  // needed below
                 if (item.getText(guiKeyToColumnNumberMap.get(key)) == null
                     || item.getText(guiKeyToColumnNumberMap.get(key)).isEmpty()) {
                     lastIndex = Math.max(lastIndex, guiKeyToColumnNumberMap.get(key));
@@ -715,7 +723,6 @@ public class EndpointSelectionPane implements Refreshable {
                 // remove selected; relies on proper button activation
                 onRemovedClicked();
             }
-            // updateTable();
         }
     }
 
@@ -729,15 +736,15 @@ public class EndpointSelectionPane implements Refreshable {
 
         @Override
         public void keyPressed(KeyEvent event) {
-            if (event.keyCode == SWT.DEL) {
-                if (buttonRemove.isEnabled()) {
-                    onRemovedClicked();
-                }
+            if (event.keyCode == SWT.DEL && buttonRemove.isEnabled()) {
+                onRemovedClicked();
             }
         }
 
         @Override
-        public void keyReleased(KeyEvent event) {}
+        public void keyReleased(KeyEvent event) {
+            // no implementation needed
+        }
 
     }
 
@@ -767,7 +774,7 @@ public class EndpointSelectionPane implements Refreshable {
         execute(command);
     }
 
-    protected void onEditClicked(String name, EndpointEditDialog dialog, Map<String, String> newMetaData) {
+    protected void onEditClicked(String name, EndpointEditDialog dialog) {
 
         dialog.initializeValues(name);
 
@@ -777,12 +784,11 @@ public class EndpointSelectionPane implements Refreshable {
 
             String newName = dialog.getChosenName();
             DataType newType = dialog.getChosenDataType();
-            newMetaData = dialog.getMetadataValues();
-            if (isEndpointChanged(oldDesc, newName, newType, newMetaData)) {
+            Map<String, String> newMetaData = dialog.getMetadataValues();
+            if (isEndpointChanged(oldDesc, newName, newType, newMetaData)
+                && EndpointHandlingHelper.editEndpointDataType(endpointType, oldDesc, newType)) {
 
-                if (EndpointHandlingHelper.editEndpointDataType(endpointType, oldDesc, newType)) {
-                    editEndpoint(oldDesc, newName, newType, newMetaData);
-                }
+                editEndpoint(oldDesc, newName, newType, newMetaData);
             }
         }
     }
@@ -796,7 +802,7 @@ public class EndpointSelectionPane implements Refreshable {
             EndpointActionType.EDIT, configuration, endpointType,
             endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier(), isStaticEndpoint,
             endpoint.getEndpointDefinition().getMetaDataDefinition(), newMetaData, readOnlyType);
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 
     protected void editEndpoint(EndpointDescription oldDesc, String newName, DataType newType, Map<String, String> newMetaData) {
@@ -831,7 +837,7 @@ public class EndpointSelectionPane implements Refreshable {
 
     protected boolean isEndpointChanged(EndpointDescription oldDesc, String newName, DataType newType, Map<String, String> newMetaData) {
         if (oldDesc.getName().equals(newName) && oldDesc.getDataType().equals(newType)) {
-            for (String key : newMetaData.keySet()) {
+            for (String key : newMetaData.keySet()) { // NOSONAR: it is OK to use a keySet here, because only the keys are needed below
                 if (!oldDesc.getMetaData().containsKey(key) || !oldDesc.getMetaDataValue(key).equals(newMetaData.get(key))) {
                     return true;
                 }

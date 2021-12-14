@@ -143,10 +143,14 @@ public class WfCommandPlugin implements CommandPlugin {
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<>();
         contributions.add(new CommandDescription("wf", "", false, "short form of \"wf list\""));
+        contributions.add(new CommandDescription("wf start",
+            "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] [--compact-output] "
+                + "[-p <JSON placeholder file>] <workflow file>",
+            false, "starts a workflow from the given file and returns its workflow id if validation passed"));
         contributions.add(new CommandDescription("wf run",
             "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] [--compact-output] "
                 + "[-p <JSON placeholder file>] <workflow file>",
-            false, "execute a workflow file"));
+            false, "starts a workflow from the given file and waits for its completion"));
         contributions.add(new CommandDescription("wf verify",
             "[--dispose <onexpected|never|always>] [--delete <onexpected|never|always>] "
                 + "[--pr <parallel runs>] [--sr <sequential runs>] [-p <JSON placeholder file>] "
@@ -190,7 +194,10 @@ public class WfCommandPlugin implements CommandPlugin {
         } else {
             if ("run".equals(subCmd)) {
                 // "wf run <filename>"
-                performWfRun(context);
+                performWfRunOrStart(context, true); // true = wait for termination
+            } else if ("start".equals(subCmd)) {
+                // "wf start <filename>"
+                performWfRunOrStart(context, false); // false = spawn, but don't wait
             } else if ("verify".equals(subCmd)) {
                 // "wf verify ..."
                 performWfVerify(context);
@@ -307,7 +314,7 @@ public class WfCommandPlugin implements CommandPlugin {
         this.workflowVerificationService = service;
     }
 
-    private void performWfRun(CommandContext cmdCtx) throws CommandException {
+    private void performWfRunOrStart(CommandContext cmdCtx, boolean waitForTermination) throws CommandException {
         // "wf run [--dispose <...>] [--compact-output] [-p <JSON placeholder file>] <filename>"
 
         HeadlessWorkflowExecutionService.DisposalBehavior dispose = readOptionalDisposeParameter(cmdCtx);
@@ -346,7 +353,16 @@ public class WfCommandPlugin implements CommandPlugin {
                 exeContextBuilder.setDisposalBehavior(dispose);
                 exeContextBuilder.setDeletionBehavior(delete);
 
-                workflowExecutionService.executeWorkflow(exeContextBuilder.buildExtended());
+                if (waitForTermination) {
+                    // spawn and wait for termination
+                    workflowExecutionService.executeWorkflow(exeContextBuilder.buildExtended());
+                } else {
+                    // spawn only
+                    WorkflowExecutionInformation execInfo =
+                        workflowExecutionService.startHeadlessWorkflowExecution(exeContextBuilder.buildExtended());
+                    // print workflow id; only reached if no validation errors occurred
+                    cmdCtx.println("Workflow Id: " + execInfo.getWorkflowExecutionHandle().getIdentifier());
+                }
             } catch (WorkflowExecutionException | IOException e) {
                 log.error("Exception while executing workflow: " + wfFile.getAbsolutePath(), e);
                 throw CommandException.executionError(ComponentUtils.createErrorLogMessage(e), cmdCtx);
@@ -355,7 +371,7 @@ public class WfCommandPlugin implements CommandPlugin {
             }
         } else {
             cmdCtx.getOutputReceiver()
-                .addOutput(StringUtils.format("'%s' not executed due to validation errors (see log messages above) (full path: %s)",
+                .addOutput(StringUtils.format("'%s' not executed due to validation errors (see log file for details) (full path: %s)",
                     wfFile.getName(), wfFile.getAbsolutePath()));
         }
     }

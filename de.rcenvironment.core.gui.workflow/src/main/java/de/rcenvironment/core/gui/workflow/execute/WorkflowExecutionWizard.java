@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,6 +37,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.PlatformService;
@@ -71,6 +75,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.provenance.api.ProvenanceEventListener;
 
 /**
  * {@link Wizard} to start the execution of a workflow.
@@ -434,6 +439,8 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
             return;
         }
 
+        notifyProvenanceServiceAboutLoadedWorkflowFile(wfExeInfo);
+
         // before starting the workflow, ensure that the console model is
         // initialized
         // so that no console output gets lost; this is lazily initialized here
@@ -457,6 +464,20 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
             }
         });
 
+    }
+
+    private void notifyProvenanceServiceAboutLoadedWorkflowFile(final WorkflowExecutionInformation wfExeInfo) {
+        /*
+         * We explicitly use FrameworkUtil and BundleContext here instead of the more convenient serviceRegistryAccess, since the latter
+         * throws an exception if no corresponding listener plugin is installed
+         */
+        final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+        final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+            Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+        final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+        provenanceService.ifPresent(service ->
+            service.workflowFileLoaded(wfExeInfo.getExecutionIdentifier(), wfFile.getRawLocation().makeAbsolute().toFile())
+        );
     }
 
     private void handleWorkflowExecutionError(WorkflowDescription clonedWfDesc, final Throwable e) {

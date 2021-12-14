@@ -45,7 +45,7 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
         final String javaVersion = System.getProperty("java.version");
 
         final Optional<Boolean> isGreaterThan8u161 = isVersionCompatible(javaVersion);
-        
+
         if (isGreaterThan8u161.isPresent()) {
             // Sonar complains at the following line since we use a Boolean as an if-condition, which may be null. We are, however, certain
             // that the value is not null at this position, since it is taken from an Optional<Boolean>. If the encapsulated value were
@@ -118,14 +118,20 @@ public class JavaVersionValidator extends DefaultInstanceValidator {
      * @return True if the given version is later than 8u161, false otherwise.
      */
     private boolean tryCheckJava8VersionString(String javaVersion) {
-        // The version string of java 8 is of the form 1.8.X_YYY, where YYY designates the update-version of the runtime. We aim to
-        // parse the YYY-part and check it for being greater or equal to 161.
-        if (!javaVersion.contains("_")) {
+        // The version string of java 8 is of the form 1.8.X_YYY or 1.8.X-YYY , where YYY designates the update-version of the runtime. We
+        // aim to parse the YYY-part and check it for being greater or equal to 161.
+        final int underscoreIndex;
+        if (javaVersion.contains("_")) {
+            underscoreIndex = javaVersion.indexOf('_');
+        } else if (javaVersion.contains("-")) {
+            underscoreIndex = javaVersion.indexOf('-');
+        } else {
             final String errorMessage =
-                String.format("Could not locate underscore indicating start of update-version. Java version string: %s", javaVersion);
+                String.format("Could not locate underscore or minus indicating start of update-version. Java version string: %s",
+                    javaVersion);
             throw new IllegalArgumentException(errorMessage);
         }
-        final int underscoreIndex = javaVersion.indexOf('_');
+
         final StringBuilder updateStringBuilder = new StringBuilder();
 
         int currentIndex = underscoreIndex + 1;

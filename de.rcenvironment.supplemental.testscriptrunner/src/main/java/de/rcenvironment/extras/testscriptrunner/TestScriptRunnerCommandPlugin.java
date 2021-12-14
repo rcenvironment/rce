@@ -38,6 +38,7 @@ import de.rcenvironment.extras.testscriptrunner.definitions.impl.InstanceStateSt
 import de.rcenvironment.extras.testscriptrunner.definitions.impl.WorkflowStepDefinitions;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter;
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ExecutionResult;
+import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ReportOutputFormat;
 
 /**
  * {@link CommandPlugin} for executing BDD test scripts via the "run-test" command.
@@ -47,7 +48,7 @@ import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAd
  */
 public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
-    private static final String USAGE_INFO_PARAMETER_PART = "<comma-separated test ids>|--all <build id>";
+    private static final String USAGE_INFO_PARAMETER_PART = "[--format pretty|json] <comma-separated test ids>|--all <build id>";
 
     private static final String SEPARATOR_TEXT_LINE =
         "-----------------------------------------------------------------------------------------------";
@@ -124,22 +125,22 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
     private void performRunTests(CommandContext context) throws IOException, CommandException {
 
-        if (context.getOriginalTokens().size() != 3) {
+        if (context.getOriginalTokens().size() != 3 && context.getOriginalTokens().size() != 5) {
             throw CommandException.syntaxError(
                 "Wrong number of parameters\n"
                     + "  Usage: run-test[s] " + USAGE_INFO_PARAMETER_PART + "\n"
-                    + "  Example: run-test Test03 snapshots/trunk",
+                    + "  Example: run-test Test03 snapshots/trunk" + "\n"
+                    + "  Example: run-test --format json Test03 snapshots/trunk",
                 context);
         }
-        String tagNameFilter = context.consumeNextToken();
-        if ("--all".equals(tagNameFilter)) {
-            tagNameFilter = null; // execute all
-        }
+
+        final CucumberTestFrameworkAdapter.ReportOutputFormat reportFormat = extractReportFormat(context);
+        final String tagNameFilter = extractTagNameFilter(context);
 
         String buildUnderTestId = context.consumeNextToken();
 
         final ExecutionResult result = testFrameworkAdapter.executeTestScripts(scriptLocationRoot, tagNameFilter,
-            context.getOutputReceiver(), buildUnderTestId, reportsRootDir);
+            context.getOutputReceiver(), buildUnderTestId, reportsRootDir, reportFormat);
 
         List<String> reportLines = result.getReportFileLines();
         if (reportLines != null) {
@@ -165,6 +166,39 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
                 context.println(line);
             }
             context.println(SEPARATOR_TEXT_LINE);
+        }
+    }
+
+    private String extractTagNameFilter(CommandContext context) {
+        String tagNameFilter = context.consumeNextToken();
+        if ("--all".equals(tagNameFilter)) {
+            tagNameFilter = null; // execute all
+        }
+        return tagNameFilter;
+    }
+
+    private CucumberTestFrameworkAdapter.ReportOutputFormat extractReportFormat(CommandContext context) throws CommandException {
+        if (!context.consumeNextTokenIfEquals("--format")) {
+            return ReportOutputFormat.PRETTY;
+        }
+
+        final String formatSpecifier = context.consumeNextToken();
+        /*
+         * Here we manually match user input to supported output formats. Judging by lines of code, it would be easier to do something like
+         * `ReportOutputFormat.values().filter(val -> val.getFormatSpecifier().equals(formatSpecifier)).findAny()`. This, however, would tie
+         * our user interface on the RCE side directly to the plugin specification on the Cucumber side. Currently, the two are aligned,
+         * e.g., RCE users specify "pretty" if they want to use the Cucumber-output-plugin "pretty". In the future, however, the two may
+         * diverge.
+         */
+        switch (formatSpecifier) {
+        case "pretty":
+            return ReportOutputFormat.PRETTY;
+        case "json":
+            return ReportOutputFormat.JSON;
+        default:
+            throw CommandException.syntaxError(
+                StringUtils.format("Unknown report format specifier '%s'. Supported report formats: pretty, json", formatSpecifier),
+                context);
         }
     }
 

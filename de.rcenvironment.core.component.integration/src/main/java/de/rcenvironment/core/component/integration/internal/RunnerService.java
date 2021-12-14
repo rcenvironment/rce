@@ -21,11 +21,12 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 public class RunnerService {
 
     /**
+     * @param categoryName The name for the category of runnable submitted.
      * @param runnable Some runnable that shall be executed.
      * @param taskId A string explanation of the task performed by the given runnable.
      */
     // TODO this needs an API solution for providing the task description / category name in the new concept -- misc_ro
-    public void execute(Runnable runnable, String taskId) {
-        ConcurrencyUtils.getAsyncTaskService().execute(runnable, taskId);
+    public void execute(String categoryName, Runnable runnable, String taskId) {
+        ConcurrencyUtils.getAsyncTaskService().execute(categoryName, taskId, runnable);
     }
 }

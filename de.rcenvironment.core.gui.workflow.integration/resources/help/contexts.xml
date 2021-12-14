@@ -1,5 +1,5 @@
 <contexts>
 	<context id="*" title="User-integrated Component Help">
-		<description>You can find the help for this component in the <b>Properties</b> view under the <b>Description</b> tab. It will be provided here soon.</description>
+		<description>If provided by the tool integrator, you can find the documentation for this component in the context menu via the menu item <b>Open Documentation</b>.</description>
 	</context>
 </contexts>

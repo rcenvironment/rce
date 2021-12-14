@@ -405,9 +405,10 @@ public class InstanceOperationsImpl {
 
     }
 
-    private void deleteIMFile(final File profile, final String name) throws IOException {
+    // TODO decide whether the absence of the directory or file should be logged as a warning
+    private void deleteIMFile(final File directory, final String name) throws IOException {
 
-        if (profile.isDirectory()) {
+        if (directory.isDirectory()) {
 
             String fileName = "";
             if (name.equals("installation")) {
@@ -416,7 +417,11 @@ public class InstanceOperationsImpl {
                 fileName = INSTANCEMANAGEMENT_LOCK;
             }
 
-            for (File f : profile.listFiles()) {
+            File[] filesInDirectory = directory.listFiles();
+            if (filesInDirectory == null) {
+                return; // empty directory, nothing to do
+            }
+            for (File f : filesInDirectory) {
 
                 if (f.getName().equals(fileName)) {
 

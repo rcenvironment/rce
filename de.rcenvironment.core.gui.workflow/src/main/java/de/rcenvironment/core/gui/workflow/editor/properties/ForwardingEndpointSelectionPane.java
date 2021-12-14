@@ -59,6 +59,6 @@ public class ForwardingEndpointSelectionPane extends EndpointSelectionPane {
                 endpoint.getEndpointDefinition().getMetaDataDefinition(), newMetaData);
         }
 
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 }

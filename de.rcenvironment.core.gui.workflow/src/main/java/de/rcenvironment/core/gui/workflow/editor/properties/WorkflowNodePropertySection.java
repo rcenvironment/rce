@@ -12,6 +12,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -87,6 +88,7 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
  * @author Christian Weiss
  * @author Doreen Seider
  * @author Markus Kunde
+ * @author Kathrin Schaffert (added setProperties(...))
  */
 public abstract class WorkflowNodePropertySection extends WorkflowPropertySection implements WorkflowNodeCommand.Executor {
 
@@ -462,43 +464,56 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Use this method to set two configuration values at the same time.
+     * Use this method to set more than one configuration value at the same time.
      */
-    protected void setProperties(final String key1, final String newValue1,
-        final String key2, final String newValue2) {
+    protected void setProperties(final String key1, final String newValue1, final String... keysAndValues) {
 
-        WorkflowNodeCommand command1 = null;
-        WorkflowNodeCommand command2 = null;
+        if (keysAndValues.length % 2 == 1) {
+            throw new InvalidParameterException("Method setProperties must be called with an even number of arguments.");
+        }
+
+        WorkflowCommand currentCommand = reduceKeyValueListToWorkflowCommand(key1, newValue1, keysAndValues);
+
+        if (currentCommand != null) {
+            currentCommand.setCommandStack(getCommandStack());
+            currentCommand.initialize();
+            if (currentCommand.canExecute()) {
+                getCommandStack().execute(new CommandWrapper(currentCommand));
+            }
+        }
+    }
+
+    private WorkflowCommand reduceKeyValueListToWorkflowCommand(final String key1, final String newValue1, final String... keysAndValues) {
+        WorkflowCommand currentCommand = null;
 
         final String oldValue1 = WorkflowNodeUtil.getConfigurationValue(node, key1);
-        final String oldValue2 = WorkflowNodeUtil.getConfigurationValue(node, key2);
 
-        if ((newValue1 != null && !newValue1.equals(oldValue1))
-            || (newValue1 == null && newValue1 != oldValue1)) {
-            command1 = new SetConfigurationValueCommand(key1, oldValue1, newValue1);
+        final WorkflowCommand initialCommand = buildSetConfigurationValueCommand(key1, oldValue1, newValue1);
+        if (initialCommand != null) {
+            currentCommand = initialCommand;
         }
-        if ((newValue2 != null && !newValue2.equals(oldValue2))
-            || (newValue2 == null && newValue2 != oldValue2)) {
-            command2 = new SetConfigurationValueCommand(key2, oldValue2, newValue2);
-        }
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            final String key = keysAndValues[i];
+            final String newValue = keysAndValues[i + 1];
+            final String oldValue = WorkflowNodeUtil.getConfigurationValue(node, key);
 
-        if (command1 != null) {
-            if (command2 != null) {
-                final CompositeCommand compositeCommand = new CompositeCommand(command1, command2);
-                compositeCommand.setCommandStack(getCommandStack());
-                command1.setWorkflowNode(node);
-                command2.setWorkflowNode(node);
-                compositeCommand.initialize();
-                if (compositeCommand.canExecute()) {
-                    getCommandStack().execute(new CommandWrapper(compositeCommand));
-                }
-            } else {
-                execute(command1);
+            final WorkflowCommand newCommand = buildSetConfigurationValueCommand(key, oldValue, newValue);
+            if (currentCommand != null && newCommand != null) {
+                currentCommand = new CompositeCommand(currentCommand, newCommand);
+            } else if (currentCommand == null && newCommand != null) {
+                currentCommand = newCommand;
             }
+        }
+        return currentCommand;
+    }
+
+    private WorkflowCommand buildSetConfigurationValueCommand(String key, String oldValue, String newValue) {
+        if ((newValue != null && !newValue.equals(oldValue)) || (newValue == null && oldValue != null)) {
+            final SetConfigurationValueCommand newCommand = new SetConfigurationValueCommand(key, oldValue, newValue);
+            newCommand.setWorkflowNode(node);
+            return newCommand;
         } else {
-            if (command2 != null) {
-                execute(command2);
-            }
+            return null;
         }
     }
 
@@ -618,7 +633,6 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
-
 
         @Override
         public void execute2() {
@@ -793,8 +807,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         }
 
         @Override
-        public void focusGained(final FocusEvent event) {
-        }
+        public void focusGained(final FocusEvent event) {}
 
         /**
          * 

@@ -109,17 +109,15 @@ public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySec
             String key1 = (String) (button).getData(CONTROL_PROPERTY_KEY);
             if (button.getSelection()) {
                 for (Control control : button.getParent().getChildren()) {
-                    if (!(control instanceof Button)) {
-                        continue;
-                    }
-                    if (((Button) control).equals(button)) {
+                    if (!(control instanceof Button) || ((Button) control).equals(button)) {
                         continue;
                     }
 
                     final String key2 = (String) control.getData(CONTROL_PROPERTY_KEY);
                     String val = getConfiguration().getConfigurationDescription().getConfigurationValue(key2);
-                    if (Boolean.valueOf(val)) {
+                    if (Boolean.TRUE.equals(Boolean.valueOf(val))) {
                         setProperties(key1, String.valueOf(true), key2, String.valueOf(false));
+                        break;
                     }
                 }
             }

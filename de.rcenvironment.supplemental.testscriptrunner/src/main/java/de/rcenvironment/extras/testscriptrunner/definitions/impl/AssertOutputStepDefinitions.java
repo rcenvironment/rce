@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.ArrayList;
 
 import cucumber.api.DataTable;
 import cucumber.api.java.en.Then;
@@ -28,6 +29,7 @@ import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitio
  * 
  * @author Marlon Schroeter
  * @author Robert Mischke (based on code from)
+ * @author Matthias Wagner
  */
 public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitionBase {
 
@@ -55,7 +57,7 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             assertPropertyOfLastCommandOutput(instance, shouldContain, useRegex, subString);
         }
 
@@ -84,9 +86,32 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             assertRelativeFileContains(instance, relativeFilePath, shouldContain, useRegex, subString);
 
+        }
+    }
+
+    /**
+     * Class implementing InstanceIterator for asserting relative file may contain only allowed warnings.
+     * 
+     * @author Matthias Wagner (based on class AssertFileEmpty)
+     */
+    private class AssertFileMayContainOnly implements InstanceIterator {
+
+        private String relativeFilePath;
+        private String allowedWarnings;
+        private String[] allowedWarningList;
+
+        AssertFileMayContainOnly(String relativeFilePath, String allowedWarnings) {
+            this.relativeFilePath = relativeFilePath;
+            this.allowedWarnings = allowedWarnings;
+            this.allowedWarningList = this.allowedWarnings.split("\\r?\\n");
+        }
+
+        @Override
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
+            assertRelativeFileMayContainOnly(instance, relativeFilePath, allowedWarningList);
         }
     }
 
@@ -104,7 +129,7 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             assertRelativeFileIsEmpty(instance, relativeFilePath);
         }
     }
@@ -126,7 +151,7 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             assertErrorContents(instance, errorTable, unspecifiedAccepted);
         }
     }
@@ -141,12 +166,11 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
      * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
      * @param subString the substring or pattern expected to be present or absent in the command's output
-     * @throws Throwable on failure
      */
     @Then("^the(?: last)? output(?: of(?: (all|each))?(?: instance[s]?)?(?: \"([^\"]*)\")?)? should( not)? contain"
         + "( the pattern)? \"([^\"]*)\"$")
     public void thenLastOutputContains(String allFlag, String instanceIds, String negationFlag, String useRegexpMarker, String subString)
-        throws Throwable {
+        throws Exception {
         final boolean shouldContain = negationFlag == null;
         final boolean useRegex = useRegexpMarker != null;
         if (allFlag == null && instanceIds == null) {
@@ -169,12 +193,11 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      * @param notFlag either null or "not " to test for absence of the given substring
      * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
      * @param subString the subString to look for in the specified log files
-     * @throws Throwable on failure
      */
     @Then("^the file[s]? \"([^\"]*)\"(?: of(?: (all|each))?(?: instance[s]?)?(?: \"([^\"]*)\")?)? should( not)? contain"
         + "( the pattern)? \"([^\"]+)\"$")
     public void thenFilesContain(String relativeFilePathList, String allFlag, String instanceIds, String notFlag, String useRegexpMarker,
-        String subString) throws Throwable {
+        String subString) throws Exception {
         final boolean shouldContain = notFlag == null;
         final boolean useRegex = useRegexpMarker != null;
         for (String relativeFilePath : parseCommaSeparatedList(relativeFilePathList)) {
@@ -191,10 +214,9 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      *        {@code instanceIds} and is defined in {@link #resolveInstanceList()}
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
-     * @throws Throwable on failure
      */
     @Then("^the file[s]? \"([^\"]*)\"(?: of(?: (all|each))?(?: instance[s]?)?(?: \"([^\"]*)\")?)? should be absent or empty$")
-    public void thenFilesExist(String relativeFilePathList, String allFlag, String instanceIds) throws Throwable {
+    public void thenFilesExist(String relativeFilePathList, String allFlag, String instanceIds) throws Exception {
         for (String relativeFilePath : parseCommaSeparatedList(relativeFilePathList)) {
             AssertFileEmpty assertFileEmpty = new AssertFileEmpty(relativeFilePath);
             iterateInstances(assertFileEmpty, allFlag, instanceIds);
@@ -208,10 +230,9 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      *        {@code instanceIds} and is defined in {@link #resolveInstanceList()}
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
-     * @throws Throwable on failure
      */
     @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should indicate a clean shutdown with no warnings or errors$")
-    public void thenLogOutputCleanShutdown(String allFlag, String instanceIds) throws Throwable {
+    public void thenLogOutputCleanShutdown(String allFlag, String instanceIds) throws Exception {
         AssertFileEmpty warningLogEmpty = new AssertFileEmpty(StepDefinitionConstants.WARNINGS_LOG_FILE_NAME);
         AssertFileContains debugLogContainsNoneUnfinished =
             new AssertFileContains(true, false, "Known unfinished operations on shutdown: <none>",
@@ -220,6 +241,31 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
             new AssertFileContains(true, false, "Main application shutdown complete, exit code: 0",
                 StepDefinitionConstants.DEBUG_LOG_FILE_NAME);
         iterateInstances(warningLogEmpty, allFlag, instanceIds);
+        iterateInstances(debugLogContainsNoneUnfinished, allFlag, instanceIds);
+        iterateInstances(debugLogContainsExitCode0, allFlag, instanceIds);
+    }
+
+    /**
+     * Enhanced test all relevant log files for a clean shutdown, with allowing the specified warnings.
+     * 
+     * @param allFlag a phrase whose presence (non-null) influences which instances are effected. How it does that depends on the value of
+     *        {@code instanceIds} and is defined in {@link #resolveInstanceList()}
+     * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
+     *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
+     * @param allowedWarnings indicates which warnings may be tolerated. They are to be listed in the feature between 
+     * two lines with just """, and each tolerated warning in one line. 
+     * The warning text given in the feature file  may be substring of a warning message.
+     */
+    @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should indicate a clean shutdown with these allowed warnings or errors:$")
+    public void thenLogOutputCleanShutdownWithAllowedWarnings(String allFlag, String instanceIds, String allowedWarnings) throws Exception {
+        AssertFileMayContainOnly warningLogContainOnly = new AssertFileMayContainOnly(StepDefinitionConstants.WARNINGS_LOG_FILE_NAME, allowedWarnings);
+        AssertFileContains debugLogContainsNoneUnfinished =
+            new AssertFileContains(true, false, "Known unfinished operations on shutdown: <none>",
+                StepDefinitionConstants.DEBUG_LOG_FILE_NAME);
+        AssertFileContains debugLogContainsExitCode0 =
+            new AssertFileContains(true, false, "Main application shutdown complete, exit code: 0",
+                StepDefinitionConstants.DEBUG_LOG_FILE_NAME);
+        iterateInstances(warningLogContainOnly, allFlag, instanceIds);
         iterateInstances(debugLogContainsNoneUnfinished, allFlag, instanceIds);
         iterateInstances(debugLogContainsExitCode0, allFlag, instanceIds);
     }
@@ -234,11 +280,12 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      * @param negationFlag a flag that changes the expected outcome to "subString NOT present"
      * @param useRegexpMarker a flag that causes "subString" to be treated as a regular expression if present
      * @param subString the subString or pattern expected to be present or absent in the command's output
-     * @throws Throwable on failure
      */
-    @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should (not )?contain (the pattern )?\"([^\"]*)\"$")
-    public void thenLogOutputContains(String allFlag, String instanceIds, String negationFlag, String useRegexpMarker, String subString)
-        throws Throwable {
+    @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should (not )?contain (the pattern )?\"((?:[^\"]|\\\")*)\"$")
+    public void thenLogOutputContainsAtShutdown(String allFlag, String instanceIds, String negationFlag, String useRegexpMarker, String subString)
+        throws Exception {
+        subString = subString.replace("\\\"", "\"");
+
         thenFilesContain(StepDefinitionConstants.DEBUG_LOG_FILE_NAME, allFlag, instanceIds, negationFlag, useRegexpMarker, subString);
     }
 
@@ -250,10 +297,9 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
      * @param type currently supports error oder warning
-     * @throws Throwable on failure
      */
     @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should not contain(?: any) (error|warning)[s]?$")
-    public void thenLogOutputNoErrors(String allFlag, String instanceIds, String type) throws Throwable {
+    public void thenLogOutputNoErrors(String allFlag, String instanceIds, String type) {
         thenLogOutputNumberErrors(allFlag, instanceIds, 0, null, type);
     }
 
@@ -268,12 +314,11 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      * @param upperBoundInput if present maximum number of allowed errors in warning log. If not present, lowerBound becomes exact number of
      *        allowed errors.
      * @param type currently supports error oder warning
-     * @throws Throwable on failure
      */
     @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should contain (\\d+)(?: to (\\d+))? (error|warning)[s]?$")
     public void thenLogOutputNumberErrors(final String allFlag, final String instanceIds, final Integer lowerBoundInput,
         final Integer upperBoundInput, final String type)
-        throws Throwable {
+        {
 
         final int[] assertReturn = assertBounds(lowerBoundInput, upperBoundInput);
         final int lowerBound = assertReturn[0];
@@ -301,10 +346,9 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
      *        cause a failure. If equal to "conform to" unexpected occurrences are ignored.
      * @param errorTable a table of errors consisting of . Each row represents an error which is to be checked for (non) existence. If
      *        ErrorMessage is left blank, all messages are accepted.
-     * @throws Throwable on failure
      */
     @Then("^the log output of( all)?(?: instance[s]?)?(?: \"([^\"]*)\")? should (consist of|conform to):$")
-    public void thenLogOutputConformance(String allFlag, String instanceIds, String mode, DataTable errorTable) throws Throwable {
+    public void thenLogOutputConformance(String allFlag, String instanceIds, String mode, DataTable errorTable) throws Exception {
         AssertErrorLog assertErrorLog = new AssertErrorLog(errorTable, mode.equals("conform to"));
         iterateInstances(assertErrorLog, allFlag, instanceIds);
     }
@@ -312,10 +356,10 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
     private void assertNumberErrorsOrWarningsInsideBoundaries(final int numberErrorsOrWarnings, final int lowerBound, final int upperBound,
         final ManagedInstance instance, final String type) {
         if (numberErrorsOrWarnings < lowerBound || numberErrorsOrWarnings > upperBound) {
-            fail(StringUtils.format("Expected between %s and %s $ss on instance %s. Saw %s instead.", lowerBound, upperBound, type,
+            fail(StringUtils.format("Expected between %s and %s %ss on instance %s. Saw %s instead.", lowerBound, upperBound, type,
                 instance, numberErrorsOrWarnings));
         } else {
-            printToCommandConsole(StringUtils.format("Expected between %s and %s $ss on instance %s. Saw %s as expected.", lowerBound,
+            printToCommandConsole(StringUtils.format("Expected between %s and %s %ss on instance %s. Saw %s as expected.", lowerBound,
                 upperBound, type, instance, numberErrorsOrWarnings));
         }
     }
@@ -326,7 +370,7 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         try {
             warningLog = instance.getProfileRelativeFileContent(StepDefinitionConstants.WARNINGS_LOG_FILE_NAME, false);
         } catch (IOException e) {
-            fail(StringUtils.format("Trying to acces warinings log of instance %s produced an error: %s", instance, e));
+            fail(StringUtils.format("Trying to acces warnings log of instance %s produced an error: %s", instance, e));
         }
         Matcher m = typePattern.matcher(warningLog);
         while (m.find()) {
@@ -361,7 +405,7 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         return baseFormat;
     }
 
-    private void assertErrorContents(ManagedInstance instance, DataTable errorTable, boolean unspecifiedAccepted) throws Throwable {
+    private void assertErrorContents(ManagedInstance instance, DataTable errorTable, boolean unspecifiedAccepted) throws Exception {
         for (String line : instance.getProfileRelativeFileContent(StepDefinitionConstants.WARNINGS_LOG_FILE_NAME, false).split("\\r?\\n")) {
             handleErrorLine(line, errorTable, unspecifiedAccepted);
         }
@@ -454,6 +498,53 @@ public class AssertOutputStepDefinitions extends InstanceManagementStepDefinitio
         } else {
             subStringContained(fileContent, subString, shouldContain, useRegex,
                 StringUtils.format("The file \"%s\" of instance \"%s\"", relativeFilePath, instance));
+        }
+    }
+
+    private void assertRelativeFileMayContainOnly(ManagedInstance instance, String relativeFilePath, String[] allowedWarnings)
+        throws IOException {
+        final String fileContent = instance.getProfileRelativeFileContent(relativeFilePath, false);
+        ArrayList<String> failedLines = new ArrayList<String>();
+
+        if (fileContent == null) {
+            printToCommandConsole(
+                StringUtils.format("Success: the file \"%s\" in profile \"%s\" is absent.", relativeFilePath, instance));
+        } else {
+            if (fileContent.isEmpty()) {
+                printToCommandConsole(
+                    StringUtils.format("Success: the file \"%s\" in profile \"%s\" is empty.", relativeFilePath, instance));
+            } else {
+                int allowedWarningsCount = 0;
+                ArrayList<String> detectedAllowedWarnings = new ArrayList<String>();
+                int warnCount = 0;
+                String[] linesOfFile = instance.getProfileRelativeFileContent(StepDefinitionConstants.WARNINGS_LOG_FILE_NAME, false).split("\\r?\\n");
+                for (String line : linesOfFile) {
+                    Boolean warningWasAllowed = false;
+                    for (String warning: allowedWarnings) {
+                        if (line.contains(warning)) {
+                            warningWasAllowed = true;
+                            detectedAllowedWarnings.add(line);
+                            allowedWarningsCount++;
+                            break;
+                        }
+                    }
+                    if (!warningWasAllowed) {
+                        warnCount++;
+                        failedLines.add(line);
+                    }
+                }
+                if (warnCount > 0) {
+                    fail(StringUtils.format(
+                        "The file \"%s\" in profile \"%s\" should not show these warnings: "
+                            + "(error count: %d warnings); full file content:\n%s", 
+                            relativeFilePath, instance, warnCount, failedLines));
+                } else {
+                    printToCommandConsole("Detected " + allowedWarningsCount + " allowed warnings  for instance \"" + instance + "\":");
+                    for (String warning : detectedAllowedWarnings) {
+                        printToCommandConsole("  - " + warning);
+                    }
+                }
+            }
         }
     }
 

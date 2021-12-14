@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -67,6 +68,8 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
     private static final String NEW_WORKFLOW_TITLE = "New Workflow";
 
     private static final String WF_EDITOR_ID = "de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor";
+
+    private static final String PALETTE_VIEW_ID = "de.rcenvironment.core.gui.palette.view.PaletteView";
 
     /** The current selection in the navigator. */
     private static IStructuredSelection workbenchSelection;
@@ -179,6 +182,13 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
         // reveal file in project explorer
         IViewPart view = activePage.findView(IPageLayout.ID_PROJECT_EXPLORER);
         ((ISetSelectionTarget) view).selectReveal(new StructuredSelection(newWorkflowFile));
+        if (activePage.findView(PALETTE_VIEW_ID) == null) {
+            try {
+                activePage.showView(PALETTE_VIEW_ID, null, IWorkbenchPage.VIEW_VISIBLE);
+            } catch (PartInitException e) {
+                LogFactory.getLog(getClass()).error("Could not open the palette view.", e);
+            }
+        }
     }
 
     

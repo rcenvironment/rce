@@ -162,6 +162,6 @@ public final class ExcelUtils {
      * Destroys garbage.
      */
     public static void destroyGarbage() {
-        ConcurrencyUtils.getAsyncTaskService().execute(new GarbageDestroyer());
+        ConcurrencyUtils.getAsyncTaskService().execute("Run garbage collector.", new GarbageDestroyer());
     }
 }

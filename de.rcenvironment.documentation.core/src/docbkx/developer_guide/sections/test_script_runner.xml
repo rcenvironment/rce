@@ -22,25 +22,106 @@
             block on the root JSON level, and adjust the settings as necessary:</para>
         <para>
             <literallayout><code>"instanceManagement": {
-  "dataRootDirectory": "<phrase os="windows">C:\\MyWorkdir\\rce-im-dat</phrase><phrase os="linux">/tmp/rce-im-dat</phrase>"
+  "dataRootDirectory": "<phrase os="windows">C:\\MyWorkdir\\rce-im-dat</phrase><phrase os="linux">/tmp/rce-im-dat</phrase>",
+  "installationsRootDirectory": "<phrase os="windows">C:\\MyWorkdir\\rce-im-inst</phrase><phrase os="linux">/tmp/rce-im-inst</phrase>"
 }</code></literallayout>
         </para>
-        <para>Note that there are additional Instance Management configuration parameters available;
-            however, these are not usually needed for using the TSR.</para>
+        <para>There are additional Instance Management configuration parameters available. These
+            are, however not usually needed for using the TSR.</para>
         <note>
             <para>It is <emphasis>strongly</emphasis> recommended to use a short full filesystem
-                path as the <code>dataRootDirectory</code>, as RCE installations will be placed
+                path as the <code>dataRootDirectory</code> and the
+                    <code>installationsRootDirectory</code>, as RCE installations will be placed
                 inside of it, and long filesystem paths are known to cause problems with these. The
-                exact maximum lenght will be determined, documented, and maybe also automatically
-                checked in the future.</para>
+                maximum lenght will be determined, documented, and maybe also automatically checked
+                in the future.</para>
         </note>
     </sect2>
     <sect2>
-        <title>Usage</title>
+        <title>Test Definitions</title>
+        <para>We use the language <link xlink:href="https://cucumber.io/docs/gherkin/"
+                >Gherkin</link>, a structured natural language, to define our tests and execute them
+            using <link xlink:href="https://cucumber.io/">Cucumber</link>. In the nomenclature of
+            Gherkin, a single test is called a <emphasis>scenario</emphasis>, while multiple
+            scenarios make up a <emphasis>feature</emphasis>. The tests are defined in
+                <code>*.feature</code> files in the directory
+                <code>/de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts</code>.<note>
+                <para>If you would like to edit <code>.feature</code>-files directly from Eclipse,
+                    we recommend using the <emphasis>Cucumber Eclipse Plugin</emphasis>, which can
+                    be found in the Eclipse Marketplace. </para>
+            </note>We show one test (or scenario)
+            below:<programlisting>@Start01
+@DefaultTestSuite
+Scenario: Concurrent headless instance starting and stopping
+
+  Given instances "Node1, Node2, Node3, Node4, Node5" using the default build
+  When  starting all instances concurrently
+  Then  instances "Node1, Node2, Node3, Node4, Node5" should be running
+  
+  When  stopping all instances concurrently
+  Then  the log output of all instances should indicate a clean shutdown with no warnings or errors</programlisting></para>
+        <para>Each test has one or more <emphasis>test IDs</emphasis> denoted by the annotation-like
+            tags above the indivual test scenarios, e.g. <code>@Start01</code> or
+                <code>@DefaultTestSuite</code>. These IDs serve to later refer to that test for
+            execution. The same ID may also be assigned to multiple tests. Thus, the test script
+            runner can, e.g., be asked to execute all tests with a test ID of
+                <code>DefaultTestSuite</code>. The values of the test IDs can be chosen almost
+            arbitrarily. The only reserved IDs are <code>@Disabled</code> and
+            <code>@disabled</code>, which prevent the test from being executed at all. </para>
+        <para>In order to execute a test written in Gherkin, Cucumber requires an implementation of
+            each individual line in the test. Each line is called a <emphasis>test step</emphasis>,
+            while the code implementing the desired behavior is called a <emphasis>test step
+                definition</emphasis>. In RCE, the test step definitions are location in the bundle
+                <code>de.rcenvironment.supplemental.testscriptrunner</code> in the package
+                <code>de.rcenvironment.extras.testscriptrunner.definitions.impl</code>. Please refer
+            to those implementations for the canonical overview over available test steps. In the
+            following, we list some of the more commonly used test steps. We denote placeholders
+            using angular brackets.</para>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>Given running instance &lt;instance id> using the default build</term>
+                    <listitem>
+                        <para>Starts an instance of RCE without a GUI. The instance id is used to
+                            refer to this instance in later test steps.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>When executing workflow &lt;workflow id> on node &lt;instance id></term>
+                    <listitem>
+                        <para>Executes the given workflow on the given instance and waits for the
+                            termination of that workflow. The workflow id must correspond to the
+                            basename of a workflow file in the directory
+                                <code>de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts/workflows</code>,
+                            i.e., the file name without the suffix <code>.wf</code>.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Then that workflow run should be identical to &lt;golden master id></term>
+                    <listitem>
+                        <para>Can only be used after using the test step "When executing workflow
+                            &lt;workflow id> on node &lt;instance id>". Asserts that the workflow
+                            execution is identical to that stored in the directory
+                                <code>de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts/golden_masters</code>.
+                            The golden master id must correspond to the basename of a file in that
+                            directory, i.e., to the file name without the suffix <code>.json</code>.
+                            You can export a workflow execution to serve as a golden master via the
+                            command <code>tc export_wf_run</code> in a running RCE instance.</para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </sect2>
+    <sect2>
+        <title>Executing Tests</title>
         <para>The TSR is invoked by a single RCE console command (<code>run-test</code>), with an
             alias for readability (<code>run-tests</code>). The general syntax is:</para>
-        <para><code>run-test[s] &lt;comma-separated list of test ids>|--all &lt;build
-            id></code></para>
+        <para><code>run-test[s] [--format pretty|json] &lt;comma-separated list of test ids>|--all
+                &lt;build id></code></para>
+        <para>By default, the result of the test is printed in human-readable format. If you would
+            like output in the JSON-format instead, you may use the option <code>--format</code>,
+            which requires either <code>pretty</code> or <code>json</code> as its only
+            parameter.</para>
         <para>There are three typical scenarios for calling this command: <itemizedlist>
                 <listitem>
                     <para>from within an RCE instance launched from Eclipse during development,
@@ -91,13 +172,10 @@
                         standard product build to execute.</para>
                 </listitem>
             </orderedlist></para>
-        <para>The actual test scripts are located in <code>*.feature</code> files in the
-                <code>/de.rcenvironment.supplemental.testscriptrunner.scripts/resources/scripts</code>
-            directory. The "test ids" in the command description are the annotation-like tags above
-            the indivual test scenarios, e.g. "@Test01". These can be specified in the command with
-            or without the "@" character. "<code>--all</code>" executes all available test
-            scenarios. The reserved "<code>@Disabled</code>" and "<code>@disabled</code>" tags can
-            be used to mark tests as excluded in the <code>*.feature</code> files.</para>
+        <para>Recall that each test has one or more test ids, denoted by annotation-like tags. These
+            test ids can be specified in the command <code>run-test[s]</code> with or without the
+                <code>@</code> character. "<code>--all</code>" executes all available test
+            scenarios. </para>
     </sect2>
     <sect2>
         <title>Examples</title>
@@ -108,6 +186,15 @@
                 <listitem>
                     <para><code>run-test Test02,Test04 snapshots/trunk</code> - runs two specific
                         tests on the latest snapshot build</para>
+                </listitem>
+                <listitem>
+                    <para><code>run-test --format pretty Test02,Test04 snapshots/trunk</code> -
+                        equivalent to the command above</para>
+                </listitem>
+                <listitem>
+                    <para><code>run-test --format json Test02,Test04 snapshots/trunk</code> - runs
+                        two specific tests on the latest snapshot build and outputs the result in
+                        JSON format</para>
                 </listitem>
                 <listitem>
                     <para><code>run-test DefaultTestSuite :self</code> - runs the default collection

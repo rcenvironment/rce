@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,66 +49,104 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
 
         List<ComponentValidationMessage> messages = new ArrayList<>();
 
-        final boolean hasOutputs = !getOutputs(componentDescription).isEmpty();
         int outputCount = getOutputs(componentDescription).size();
 
         String methodName = getProperty(componentDescription, DOEConstants.KEY_METHOD);
         int runNumber = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER));
         
-        if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) || methodName.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
-            || methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
-            if (!hasOutputs) {
-                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
-                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minOneOutput,
-                    Messages.minOneOutput);
-                messages.add(outputTooLow);
-                return messages;
-            }
-        } else {
-            if (!hasOutputs || outputCount < 2) {
-                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
-                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minTwoOutputs,
-                    Messages.minTwoOutputs);
-                messages.add(outputTooLow);
-                return messages;
-            }
-        }
-
-        if (runNumber == 0) {
-            final ComponentValidationMessage noRun = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER, Messages.noRunNumber,
-                Messages.noRunNumber);
-            messages.add(noRun);
+        Optional<ComponentValidationMessage> outputValidationMessage = checkForOutputs(outputCount, methodName);
+        if (outputValidationMessage.isPresent()) {
+            messages.add(outputValidationMessage.get());
             return messages;
         }
 
-        final ComponentValidationMessage tooManySamplesMessage = new ComponentValidationMessage(
-            ComponentValidationMessage.Type.ERROR, "", Messages.tooManySamples, Messages.tooManySamples);
-
-        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
-            if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
-                messages.add(tooManySamplesMessage);
-                return messages;
-            }
-        } else {
-            if (runNumber >= DOEAlgorithms.MAXMIMAL_RUNS) {
-                messages.add(tooManySamplesMessage);
-                return messages;
-            }
-        }
-        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT) && runNumber < 2) {
-            final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
-                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER,
-                Messages.numLevelsInvalid, Messages.numLevelsInvalid);
-            messages.add(noInputMessage);
+        Optional<ComponentValidationMessage> runNumberValidationMessage = checkForRunNumberGreaterZero(runNumber);
+        if (runNumberValidationMessage.isPresent()) {
+            messages.add(runNumberValidationMessage.get());
             return messages;
         }
+
+        Optional<ComponentValidationMessage> tooManySamplesValidationMessage = checkForTooManySamples(outputCount, methodName, runNumber);
+        if (tooManySamplesValidationMessage.isPresent()) {
+            messages.add(tooManySamplesValidationMessage.get());
+            return messages;
+        }
+
+        Optional<ComponentValidationMessage> invalidLevelsValidationMessage = checkForNumberOfLevels(methodName, runNumber);
+        if (invalidLevelsValidationMessage.isPresent()) {
+            messages.add(invalidLevelsValidationMessage.get());
+            return messages;
+        }
+
         if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
             checkStartAndEndSample(componentDescription, messages);
             checkTableDimensions(componentDescription, messages);
         }
 
         return messages;
+    }
+
+    private Optional<ComponentValidationMessage> checkForNumberOfLevels(String methodName, int runNumber) {
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT) && runNumber < 2) {
+            final ComponentValidationMessage noInputMessage = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER,
+                Messages.numLevelsInvalid, Messages.numLevelsInvalid);
+            return Optional.of(noInputMessage);
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<ComponentValidationMessage> checkForTooManySamples(int outputCount, String methodName, int runNumber) {
+
+        final ComponentValidationMessage tooManySamplesMessage = new ComponentValidationMessage(
+            ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER, Messages.tooManySamples, Messages.tooManySamples);
+
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
+            if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
+                return Optional.of(tooManySamplesMessage);
+            }
+        } else {
+            if (runNumber >= DOEAlgorithms.MAXMIMAL_RUNS) {
+                return Optional.of(tooManySamplesMessage);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<ComponentValidationMessage> checkForRunNumberGreaterZero(int runNumber) {
+        if (runNumber == 0) {
+            final ComponentValidationMessage noRun = new ComponentValidationMessage(
+                ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_RUN_NUMBER, Messages.noRunNumber,
+                Messages.noRunNumber);
+            return Optional.of(noRun);
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<ComponentValidationMessage> checkForOutputs(int outputCount, String methodName) {
+        final boolean hasOutputs = (outputCount != 0);
+
+        if (methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE) || methodName.equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO)
+            || methodName.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
+            if (!hasOutputs) {
+                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
+                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minOneOutput,
+                    Messages.minOneOutput);
+                return Optional.of(outputTooLow);
+            }
+        } else {
+            if (!hasOutputs || outputCount < 2) {
+                final ComponentValidationMessage outputTooLow = new ComponentValidationMessage(
+                    ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_METHOD, Messages.minTwoOutputs,
+                    Messages.minTwoOutputs);
+                return Optional.of(outputTooLow);
+            }
+        }
+
+        return Optional.empty();
     }
 
     @Override
@@ -150,9 +189,10 @@ public class DOEComponentValidator extends AbstractLoopComponentValidator {
                     ComponentValidationMessage.Type.ERROR, DOEConstants.KEY_TABLE,
                     Messages.undefinedValues, Messages.undefinedValues);
 
-                int runNumber = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_RUN_NUMBER));
+                int startSample = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_START_SAMPLE));
+                int endSample = Integer.parseInt(getProperty(componentDescription, DOEConstants.KEY_END_SAMPLE));
 
-                for (int i = 0; (i < runNumber)
+                for (int i = startSample; (i <= endSample)
                     && (tableValues != null && i < tableValues.length); i++) {
                     for (int j = 0; j < tableValues[i].length; j++) {
                         if (tableValues[i][j] == null) {

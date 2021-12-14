@@ -43,6 +43,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
+import de.rcenvironment.core.component.api.ComponentGroupPathRules;
 import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
@@ -52,6 +53,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 /**
  * @author Sascha Zur
  * @author Brigitte Boden
+ * @author Kathrin Schaffert
  */
 public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
@@ -84,7 +86,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
     private final List<String> usedToolnames;
 
-    private Text groupNameText;
+    private Text groupPathText;
 
     private Text descriptionTextArea;
 
@@ -109,7 +111,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     private PathChooserButtonListener docPathChooserButtonListener;
 
     private String nameOrigin = null;
-
 
     protected ToolCharacteristicsPage(String pageName, Map<String, Object> configurationMap, List<String> usedToolnames,
         List<String> groupNames) {
@@ -182,13 +183,13 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
             }
         });
-        groupNameText =
-            addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.groupNameText,
+        groupPathText =
+            addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.groupPathText,
                 ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
         GridData groupNameTextData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-        groupNameText.setLayoutData(groupNameTextData);
-        groupNameText.addModifyListener(e -> {
-            groupValid = validateGroupName();
+        groupPathText.setLayoutData(groupNameTextData);
+        groupPathText.addModifyListener(e -> {
+            groupValid = validateGroupPath();
             validate(true);
         });
         Button chooseGroupButton = new Button(toolPropertiesGroup, SWT.PUSH);
@@ -320,9 +321,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         return "";
     }
 
-    private String validateGroupName() {
-        Optional<String> validationResult = ComponentIdRules.validateComponentGroupNameRules(groupNameText.getText());
-        if (!groupNameText.getText().isEmpty() && validationResult.isPresent()) {
+    private String validateGroupPath() {
+        Optional<String> validationResult = ComponentGroupPathRules.validateComponentGroupPathRules(groupPathText.getText());
+        if (!groupPathText.getText().isEmpty() && validationResult.isPresent()) {
             return StringUtils.format(STRING_GROUPNAME_INVALID, validationResult.get());
         }
         return "";
@@ -339,11 +340,11 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         dlg.setStatusLineAboveButtons(false);
         dlg.setMessage(Messages.chooseGroupDlgMessage);
         dlg.setTitle(Messages.chooseGroupDlgTitle);
-        if (!groupNameText.getText().isEmpty() && groupNames.contains(groupNameText.getText())) {
-            dlg.setInitialSelections(groupNameText.getText());
+        if (!groupPathText.getText().isEmpty() && groupNames.contains(groupPathText.getText())) {
+            dlg.setInitialSelections(groupPathText.getText());
         }
         if (dlg.open() == Window.OK) {
-            groupNameText.setText(dlg.getFirstResult().toString());
+            groupPathText.setText(dlg.getFirstResult().toString());
         }
     }
 
@@ -479,9 +480,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             documenationText.setText("");
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME) != null) {
-            groupNameText.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME));
+            groupPathText.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME));
         } else {
-            groupNameText.setText("");
+            groupPathText.setText("");
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION) != null) {
             descriptionTextArea.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION));

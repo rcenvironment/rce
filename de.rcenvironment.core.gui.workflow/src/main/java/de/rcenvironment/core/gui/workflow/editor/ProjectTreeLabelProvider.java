@@ -16,9 +16,8 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 /**
- * LabelProvider for the ProjectTreeViewer of the WorkflowProjectWizard. It
- * provides an Eclipse-style project icon for root nodes and an Eclipse-style
- * folder icon for non-root nodes.
+ * LabelProvider for the ProjectTreeViewer of the WorkflowProjectWizard. It provides an Eclipse-style project icon for root nodes and an
+ * Eclipse-style folder icon for non-root nodes.
  * 
  * @author Oliver Seebach
  * 
@@ -26,9 +25,10 @@ import org.eclipse.swt.graphics.Image;
 public class ProjectTreeLabelProvider extends LabelProvider {
 
     private static final Image FOLDER = ImageDescriptor.createFromURL(
-            WorkflowPaletteFactory.class.getResource("/resources/icons/folder16.png")).createImage();
+        ProjectTreeLabelProvider.class.getResource("/resources/icons/folder16.png")).createImage();
+
     private static final Image PROJECT = ImageDescriptor.createFromURL(
-            WorkflowPaletteFactory.class.getResource("/resources/icons/project16.png")).createImage();
+        ProjectTreeLabelProvider.class.getResource("/resources/icons/project16.png")).createImage();
 
     @Override
     public String getText(Object element) {

@@ -76,7 +76,7 @@ public class XPathChooserPropertyViewPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(),
                 newMetaData);
 
-        super.onEditClicked(name, dialog, newMetaData);
+        super.onEditClicked(name, dialog);
     }
 
 }

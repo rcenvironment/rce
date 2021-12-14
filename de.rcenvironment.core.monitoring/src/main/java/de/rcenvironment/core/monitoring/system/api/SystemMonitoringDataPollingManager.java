@@ -33,6 +33,8 @@ public class SystemMonitoringDataPollingManager {
 
     private static final int REFRESH_INTERVAL_MSEC = 5000; // TODO make configurable
 
+    private static final int START_INTERVAL_MSEC = 100;
+
     private final CommunicationService communicationService;
 
     private final AsyncTaskService asyncTaskService;
@@ -67,8 +69,8 @@ public class SystemMonitoringDataPollingManager {
         final AsyncSystemMonitoringDataFetchTask backgroundTask =
             new AsyncSystemMonitoringDataFetchTask(callbackListener, remoteService);
         final Future<?> newFuture =
-            asyncTaskService.scheduleAtFixedInterval("System Monitoring: Background fetching of system data", backgroundTask,
-                REFRESH_INTERVAL_MSEC);
+            asyncTaskService.scheduleAtFixedRateAfterDelay("System Monitoring: Background fetching of system data", backgroundTask,
+                START_INTERVAL_MSEC, REFRESH_INTERVAL_MSEC);
         futureMap.put(nodeId, newFuture);
         log.debug("Started system monitoring background task for node " + nodeId);
     }

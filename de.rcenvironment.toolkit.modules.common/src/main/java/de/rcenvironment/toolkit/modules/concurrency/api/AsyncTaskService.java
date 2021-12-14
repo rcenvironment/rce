@@ -30,34 +30,12 @@ public interface AsyncTaskService {
     /**
      * Adds a task for asynchronous execution.
      * 
-     * @param task the {@link Runnable} to execute
-     * 
-     * @see ExecutorService#execute(Runnable)
-     */
-    @Deprecated
-    void execute(Runnable task);
-
-    /**
-     * Adds a task for asynchronous execution.
-     * 
      * @param categoryName a human-readable short description of this type of task; used in statistics and monitoring output
      * @param task the {@link Runnable} or lambda to execute
      * 
      * @see ExecutorService#execute(Runnable)
      */
     void execute(String categoryName, Runnable task);
-
-    /**
-     * Adds a task for asynchronous execution, with an additional task id to identify the task in monitoring and debug output.
-     * 
-     * @param task the {@link Runnable} to execute
-     * @param taskId the task id to attach to this task (can be null to disable); task ids for the same {@link Runnable} must be unique
-     *        while they are active
-     * 
-     * @see ExecutorService#execute(Runnable)
-     */
-    @Deprecated
-    void execute(Runnable task, String taskId);
 
     /**
      * Adds a task for asynchronous execution.

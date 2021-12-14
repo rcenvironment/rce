@@ -21,10 +21,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.channel.ChannelListener;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
+import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.osgi.service.component.annotations.Activate;
@@ -307,10 +309,12 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         serverInstance.setPort(sshConfiguration.getPort());
 
         logger.debug("Configuring SSH session idle timeout of " + sshConfiguration.getIdleTimeoutSeconds() + " seconds");
-        serverInstance.getProperties().put(SshServer.IDLE_TIMEOUT, TimeUnit.SECONDS.toMillis(sshConfiguration.getIdleTimeoutSeconds()));
+        PropertyResolverUtils.updateProperty(serverInstance, CoreModuleProperties.IDLE_TIMEOUT.getName(),
+            TimeUnit.SECONDS.toMillis(sshConfiguration.getIdleTimeoutSeconds()));
         // set the allowed time before the first authentication attempt; default is 120 seconds
         // TODO make this configurable?
-        serverInstance.getProperties().put(SshServer.AUTH_TIMEOUT, TimeUnit.SECONDS.toMillis(10));
+        PropertyResolverUtils.updateProperty(serverInstance, CoreModuleProperties.AUTH_TIMEOUT.getName(),
+            TimeUnit.SECONDS.toMillis(10));
         return serverInstance;
     }
 
@@ -339,7 +343,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             buffer.append("/");
             buffer.append(entry.getValue());
         }
-        sshServer.getProperties().put(SshServer.SERVER_IDENTIFICATION, buffer.toString());
+        PropertyResolverUtils.updateProperty(sshServer, CoreModuleProperties.SERVER_IDENTIFICATION.getName(), buffer.toString());
     }
 
     private void registerConnectionLifecycleListeners(SshServer serverInstance) {

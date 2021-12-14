@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<chapter>
+    <title>Palette View Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The Palette view displays all the local and currently available remote workflow
+            components of the current RCE instance in a tree structure.</para>
+        <para>By default, workflow components are grouped as defined by their respective integrator.
+            In addition to the standard grouping, however, workflow components can be moved into
+            custom groups. For this purpose, custom groups and subgroups can be added, edited or
+            deleted. The workflow components can always be reset to their respective standard
+            group.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>By default, components are assigned to one of the following top level groups, depending
+            on their type:</para>
+        <itemizedlist>
+            <listitem>
+                <para>Standard Components: Built-in components provided by RCE supplying multi-purpose
+            functionalities (see User Guide; Section 3.2.3 Workflow Components).</para>
+            </listitem>
+            <listitem>
+                <para>User Integrated Tools: Software tools or scripts that are integrated into RCE
+                    using the "Tool Integration" feature and then represent a workflow component
+                    (see User Guide; Section 3.4.1 Integrating External Tools as Components).</para>
+            </listitem>
+            <listitem>
+                <para>User Integrated Workflows: RCE workflows consisting of several workflow
+                    components that are themselves integrated as a component using the "Workflow as
+                    Component" feature (see User Guide; Section 3.4.2 Integrating Workflows as
+                    Components).</para>
+            </listitem>
+        </itemizedlist>
+        <para>Toolbar items allow to filter the tree by components, sort groups and collapse and
+            expand all groups.</para>
+        <para><inlinegraphic fileref="../../images/image001.PNG"/></para>
+        <para>Workflow components can be moved into user-defined groups. These custom groups are
+            indicated by a small decorator <inlinegraphic
+                fileref="../../images/decorator_custom.png"/> overlaying the folder icon. Custom
+            groups can be added, edited and deleted via the context menu or the "Manage Custom
+            Groups" dialog. This dialog can also be accessed via the context menu of the Palette
+            view as well as via the main menu (Configuration -> Custom Palette Groups) or the main
+            toolbar. </para>
+        <para><inlinegraphic fileref="../../images/image002.PNG"/></para>
+        <para>It is not possible to add custom groups to the top level group "Standard Components"
+            as this subgroup structure is predefined by RCE. However, custom top level groups can be
+            added and different types of workflow components can be moved into them.</para>
+        <para>All integrated tools are assigned to a default group. If no default group is defined,
+            the tool is subordinated to the top level "User Integrated Tools". Other integrated
+            tools can be moved here but these groups will not be changed to a custom group. Since
+            these are default groups, they can neither be empty nor renamed. If all tools are
+            removed from a default group, this group disappears from the view. However, after
+            resetting a tool, the group will be visible again.</para>
+        <para>Moving components or resetting them to their default group is also possible via the
+            context menu. In addition, the tool documentation can be opend or exported from here and
+            the edit tool dialog as well as the tool integration and deactivation dialog can be
+            accessed.</para>
+        <para><inlinegraphic fileref="../../images/image003.PNG"/></para>
+        <para>The "Manage Custom Groups" dialog shows all custom group assignments of local and
+            remote components regardless of whether or not they are currently available in the
+            network. This means that custom group assignments of components that are not available
+            can also be reset via this dialog. In this table, multiple entries can be selected at
+            the same time via Ctrl or Shift in order to reset components or delete groups. <note>
+                <para>Unavailable remote components are not visible in the Palette view and can only
+                    be reset via the "Manage Custom Groups" dialog.</para>
+                <para>A custom group can only be deleted if it is empty. This prevents the deletion
+                    of groups with remote assignments that are currently unavailable.</para>
+            </note></para>
+        <para><inlinegraphic fileref="../../images/image004.PNG"/></para>
+    </sect1>
+</chapter>

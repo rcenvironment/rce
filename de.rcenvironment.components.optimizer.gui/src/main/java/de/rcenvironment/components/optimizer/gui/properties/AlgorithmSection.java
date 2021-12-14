@@ -170,35 +170,16 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
     }
 
     @Override
-    protected AlgorithmSectionUpdater createUpdater() {
-        return new AlgorithmSectionUpdater();
-    }
-
-    /**
-     * Algorithm Section {@link DefaultUpdater} implementation of the handler to update the Algorithm Section UI.
-     * 
-     * @author Kathrin Schaffert
-     *
-     */
-    protected class AlgorithmSectionUpdater extends DefaultUpdater {
-
-        @Override
-        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
-            super.updateControl(control, propertyName, newValue, oldValue);
-            if (propertyName.equals(OptimizerComponentConstants.ALGORITHMS)) {
-                aboutToBeShown();
-                refreshAlgorithmSection();
-            }
-        }
-    }
-    
-    @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
+        setMethodConfigurationsIfNotExisting();
+    }
+
+    public void setMethodConfigurationsIfNotExisting() {
         String configString = getConfiguration().getConfigurationDescription()
             .getConfigurationValue(OptimizerComponentConstants.METHODCONFIGURATIONS);
-        Map<String, MethodDescription> allConfiguredDescriptions = null;
         if (configString == null || configString.isEmpty()) {
+            Map<String, MethodDescription> allConfiguredDescriptions = null;
             try {
                 allConfiguredDescriptions = OptimizerFileLoader.getAllMethodDescriptions(getAlgorithmFolder());
                 if (allConfiguredDescriptions != null) {
@@ -499,6 +480,32 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
 
             setProperties(OptimizerComponentConstants.ALGORITHMS, key, OptimizerComponentConstants.OPTIMIZER_PACKAGE,
                 methodDescriptions.get(comboMainAlgorithmSelection.getText()).getOptimizerPackage());
+        }
+    }
+
+    @Override
+    protected AlgorithmSectionUpdater createUpdater() {
+        return new AlgorithmSectionUpdater();
+    }
+
+    /**
+     * Algorithm Section {@link DefaultUpdater} implementation of the handler to update the Algorithm Section UI.
+     * 
+     * @author Kathrin Schaffert
+     *
+     */
+    protected class AlgorithmSectionUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            super.updateControl(control, propertyName, newValue, oldValue);
+
+            if (propertyName.equals(OptimizerComponentConstants.ALGORITHMS) && control instanceof Combo && !newValue.equals(oldValue)) {
+                if (newValue.equals("")) {
+                    setMethodConfigurationsIfNotExisting();
+                }
+                refreshAlgorithmSection();
+            }
         }
     }
 }

@@ -116,7 +116,7 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
     @Override
     public void asyncExecBenchmark(BenchmarkSetup setup, TextOutputReceiver outputReceiver) {
         BenchmarkProcess benchmark = createBenchmarkProcess(setup, outputReceiver);
-        ConcurrencyUtils.getAsyncTaskService().execute(benchmark);
+        ConcurrencyUtils.getAsyncTaskService().execute(benchmark.getCategoryName(), benchmark);
     }
 
     @Override

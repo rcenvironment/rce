@@ -15,6 +15,7 @@
 		"ip" : "127.0.0.1",
 		"port" : 31055,
 		"accounts" : {
+			// The account name is currently limited to eight characters. Longer names will be cut off!
 			"ra_demo" : {
 				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$qxCBuEvq0xWoOlox2dVbCu8zCYsyxQMBe5SAnS2HId0uaEp59aAu2",

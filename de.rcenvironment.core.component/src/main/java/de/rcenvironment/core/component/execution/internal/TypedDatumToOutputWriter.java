@@ -11,9 +11,13 @@ package de.rcenvironment.core.component.execution.internal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.EndpointDatumDispatchService;
@@ -22,6 +26,7 @@ import de.rcenvironment.core.component.model.endpoint.impl.EndpointDatumImpl;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.provenance.api.ProvenanceEventListener;
 
 /**
  * Writes {@link TypedDatum}s to outputs.
@@ -71,6 +76,8 @@ public class TypedDatumToOutputWriter {
         // map from each output of the component to a list of all connected recipients
         Map<String, List<EndpointDatumRecipient>> endpointDatumRecipients = compExeCtx.getEndpointDatumRecipients();
         for (EndpointDatumRecipient epRecipient : endpointDatumRecipients.getOrDefault(outputName, new LinkedList<>())) {
+            notifyProvenanceServiceAboutForwardedDatum(outputName, datumToSend, epRecipient);
+
             if (!considerRecipient(epRecipient, inputCompExeId, inputName)) {
                 continue;
             }
@@ -93,6 +100,18 @@ public class TypedDatumToOutputWriter {
                     epRecipient.getInputName(), epRecipient.getInputsComponentInstanceName()));
             }
         }
+    }
+
+    private void notifyProvenanceServiceAboutForwardedDatum(String outputName, TypedDatum datumToSend, EndpointDatumRecipient epRecipient) {
+        final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+        final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+            Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+        final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+
+        provenanceService.ifPresent(service -> 
+            service.datumForwarded(compExeCtx.getExecutionIdentifier(), outputName, epRecipient.getInputsComponentExecutionIdentifier(),
+                    epRecipient.getInputName(), datumToSend)
+        );
     }
     
     private boolean considerRecipient(EndpointDatumRecipient epRecipient, String inputCompExeId, String inputName) {

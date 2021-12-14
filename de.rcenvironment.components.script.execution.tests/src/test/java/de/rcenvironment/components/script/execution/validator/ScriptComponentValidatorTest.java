@@ -29,7 +29,7 @@ import de.rcenvironment.components.script.execution.validator.ScriptComponentVal
 import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.PythonVersionRegexValidator;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.scripting.python.PythonComponentConstants;
 
@@ -52,7 +52,7 @@ public class ScriptComponentValidatorTest {
 
     private ScriptComponentValidator validator;
 
-    private ComponentDescriptionMockCreater componentDescriptionHelper;
+    private ComponentDescriptionMockCreator componentDescriptionHelper;
 
     /**
      * 
@@ -62,7 +62,7 @@ public class ScriptComponentValidatorTest {
     @Before
     public void setUp() {
         validator = new ScriptComponentValidator();
-        componentDescriptionHelper = new ComponentDescriptionMockCreater();
+        componentDescriptionHelper = new ComponentDescriptionMockCreator();
     }
 
     /**

@@ -280,7 +280,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                         values[i][0] =
                             new TypedValue(next.getValue(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME));
                         for (int j = 0; j < dimensions.size(); j++) {
-                            values[i][j + 1] = new TypedValue(next.getValue("Output: " + dimensions.get(j).getName()));
+                            values[i][j + 1] = new TypedValue(next.getValue(dimensions.get(j).getName()));
                         }
                         for (int j = dimensions.size() + 1; j < measures.size() + dimensions.size() + 1; j++) {
                             values[i][j] = new TypedValue(next.getValue(measures.get(j - dimensions.size() - 1).getName()));
@@ -336,18 +336,14 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             /** The key to use to lookup the values in a dataset (which is a map-like structure). */
             private final String key;
 
-            private boolean isMeasure;
-
             /**
              * Instantiates a new {@link ValueLabelProvider} providing labels for the values with
              * the given key.
              * 
              * @param key
-             * @param isMeasure
              */
-            ValueLabelProvider(final String key, boolean isMeasure) {
+            ValueLabelProvider(final String key) {
                 this.key = key;
-                this.isMeasure = isMeasure;
             }
 
             /**
@@ -360,41 +356,33 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 if (!(element instanceof OptimizerResultSet)) {
                     return null;
                 }
-                String keyToLookup = key;
-                if (isMeasure) {
-                    keyToLookup = "Output: " + keyToLookup;
-                }
-                final double value = ((OptimizerResultSet) element).getValue(keyToLookup);
-                String result;
-                result = String.valueOf(value);
-                return result;
+                final double value = ((OptimizerResultSet) element).getValue(key);
+                return String.valueOf(value);
             }
 
         }
-        List<Dimension> list = getSortedDimensions(structure);
-        final TableViewerColumn itColumn = new TableViewerColumn(tableViewer,
-            SWT.NONE);
+
+        final TableViewerColumn itColumn = new TableViewerColumn(tableViewer, SWT.NONE);
         itColumn.getColumn().setText(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME);
         itColumn.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
         itColumn.getColumn().setMoveable(true);
-        itColumn.setLabelProvider(new ValueLabelProvider(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME, false));
+        itColumn.setLabelProvider(new ValueLabelProvider(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME));
 
+        List<Dimension> list = getSortedDimensions(structure);
         for (final Dimension dimension : list) {
-            final TableViewerColumn column = new TableViewerColumn(tableViewer,
-                SWT.NONE);
+            final TableViewerColumn column = new TableViewerColumn(tableViewer, SWT.NONE);
             column.getColumn().setText(dimension.getName());
             column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
             column.getColumn().setMoveable(true);
-            column.setLabelProvider(new ValueLabelProvider(dimension.getName(), true));
+            column.setLabelProvider(new ValueLabelProvider(dimension.getName()));
         }
         List<Measure> measureList = getSortedMeasures(structure);
         for (final Measure measure : measureList) {
-            final TableViewerColumn column = new TableViewerColumn(tableViewer,
-                SWT.NONE);
+            final TableViewerColumn column = new TableViewerColumn(tableViewer, SWT.NONE);
             column.getColumn().setText(measure.getName());
             column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
             column.getColumn().setMoveable(true);
-            column.setLabelProvider(new ValueLabelProvider(measure.getName(), false));
+            column.setLabelProvider(new ValueLabelProvider(measure.getName()));
         }
     }
 

@@ -5,8 +5,8 @@
     <title>Choose Configuration</title>
     <sect1>
         <title>Synopsis</title>
-        <para>First page of the wizard to edit an existing configuration from the configuration
-            folder or to load an existing configuration from disk.</para>
+        <para>Edit an existing tool configuration from the configuration folder or load an existing
+            configuration from disk.</para>
     </sect1>
     <sect1>
         <title>Usage</title>

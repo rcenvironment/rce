@@ -208,7 +208,17 @@ public interface InstanceConfigurationOperationSequence {
      * @param accessPort the port to bind the SSH server to
      * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
      */
-    InstanceConfigurationOperationSequence enableImSshAccess(int accessPort);
+    InstanceConfigurationOperationSequence enableImSshAccessWithDefaultRole(int accessPort);
+
+    /**
+     * Adds an operation to enable the embedded SSH server, and configure a reserved type of SSH account used to execute commands from the
+     * IM master instance.
+     * 
+     * @param accessPort the port to bind the SSH server to
+     * @param role the role that the IM master account shall have
+     * @return the {@link InstanceConfigurationOperationSequence} instance itself (for command chaining)
+     */
+    InstanceConfigurationOperationSequence enableImSshAccessWithRole(int accessPort, String role);
 
     /**
      * Adds an operation to set the request timeout.

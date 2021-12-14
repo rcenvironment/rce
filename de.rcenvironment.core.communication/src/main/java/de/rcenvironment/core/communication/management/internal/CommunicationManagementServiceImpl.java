@@ -144,7 +144,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
                     connectOnStartup);
                 log.debug(StringUtils.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
                     setup.getDisplayName(), ncp.getAttributes()));
-                if (setup.getConnnectOnStartup()) {
+                if (setup.getConnectOnStartup()) {
                     setup.signalStartIntent();
                 }
             }

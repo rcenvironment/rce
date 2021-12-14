@@ -60,7 +60,7 @@ public abstract class InstanceManagementStepDefinitionBase extends AbstractStepD
      */
     protected interface InstanceIterator {
 
-        void iterateActionOverInstance(ManagedInstance instance) throws Throwable;
+        void iterateActionOverInstance(ManagedInstance instance) throws Exception;
     }
 
     /**
@@ -114,7 +114,7 @@ public abstract class InstanceManagementStepDefinitionBase extends AbstractStepD
 
     }
 
-    protected void iterateInstances(InstanceIterator instanceIterator, String allFlag, String instanceIds) throws Throwable {
+    protected void iterateInstances(InstanceIterator instanceIterator, String allFlag, String instanceIds) throws Exception {
         for (final ManagedInstance instance : resolveInstanceList(allFlag != null, instanceIds)) {
             instanceIterator.iterateActionOverInstance(instance);
         }
@@ -228,7 +228,7 @@ public abstract class InstanceManagementStepDefinitionBase extends AbstractStepD
                 instances.add(resolveInstance(instanceId));
             }
         } else {
-            // allFlag being set and a list of instance being provided is ambiguous and therefor not supported
+            // allFlag being set and a list of instance being provided is ambiguous and therefore not supported
             fail("calling this operation for all instances and providing a list is not supported. Choose either one.");
             return null; // never reached
         }

@@ -10,15 +10,16 @@
     </sect1>
     <sect1>
         <title>Usage</title>
-        <para>Properties are a means to let the user of the integrated tool configure some
-            attributes when creating a workflow. For example, if your tool is able to run with
-            multiple cores, you can define a key “numCores” and later add it as placeholder in your
-            command execution script or pre/post execution script (e.g. “tool.exe
-            ${prop:numCores}”). This key will then be shown in the properties tab in the workflow
-            editor and the value for it can be defined there.</para>
-        <para>Properties have a display name that makes them more readable for others. Also, a
-            default value can be defined, to provide some useful presettings.</para>
-        <para>It is not mandatory to define properties.</para>
+        <para>Properties are a means to provide the user of the integrated tool some attributes for
+            configuration the tool when using it in a workflow. For example, if the tool is able to
+            run with multiple cores, a key “numCores”  can be defined and later added via a
+            placeholder in your command execution script or pre/post execution script (e.g.
+            “tool.exe ${prop:numCores}”). This key is then displayed in the properties view of the
+            integrated component and the value can be set there.</para>
+        <para>Properties have a display name that makes them more readable for others. Set a default
+            value, to provide some useful presettings. A comment can be added to provide some useful
+            information to the tool user.</para>
+        <para>The use of properties is optional. </para>
         <para>Since RCE 8.0 it is possible to define properties as placeholders. With this option,
             which is activated in the properties view of the tool component, the user can define
             that the value for the selected property is not defined while editing the workflow, but
@@ -40,9 +41,9 @@
     </sect1>
     <sect1>
         <title>Groups</title>
-        <para>With groups you can categorize the properties and group properties for the same
-            context. It is also possible to create a file for each group at runtime, which contains
-            the keys and the respective values. These files will be located in the “Config” folder
-            in a temporary directory with the name that you can also define here.</para>
+        <para>Properties can be categorized in groups, for example for a specific context. </para>
+        <para>Optionally, the property configurations can be stored at runtime in a file per group
+            located in the “Config” folder in a temporary directory. These files contain the keys
+            and the respective values. The file names can be adjusted. </para>
     </sect1>
 </chapter>

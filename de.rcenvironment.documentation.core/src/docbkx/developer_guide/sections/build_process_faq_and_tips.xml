@@ -89,5 +89,18 @@
                     referenced repository builds to that new location.</para>
             </answer>
         </qandaentry>
+        <qandaentry>
+            <question>
+                <para>A package import in Eclipse fails with the error message "The import xxx
+                    cannot be resolved" although the imports and exports are set correctly in the
+                    respective Manifest files. What else can I try to solve the problem?</para>
+            </question>
+            <answer>
+                <para>Go to the Project Explorer and select the affected bundle. Open the context
+                    menu and select "Plug-in Tools > Update Classpath...". Select all affected
+                    bundles (possibly including the Fragment-Host) from the dialog list provided and
+                    finish.</para>
+            </answer>
+        </qandaentry>
         </qandaset>
 </sect1>

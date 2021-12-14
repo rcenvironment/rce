@@ -17,8 +17,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -42,6 +44,9 @@ import de.rcenvironment.extras.testscriptrunner.definitions.common.InstanceManag
 import de.rcenvironment.extras.testscriptrunner.definitions.common.ManagedInstance;
 import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioExecutionContext;
 import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitionConstants;
+import de.rcenvironment.extras.testscriptrunner.internal.GildedManagedInstance;
+import de.rcenvironment.extras.testscriptrunner.internal.GoldenMaster;
+import de.rcenvironment.extras.testscriptrunner.internal.GoldenMasters;
 import junit.framework.AssertionFailedError;
 
 /**
@@ -52,6 +57,8 @@ import junit.framework.AssertionFailedError;
  * @author Kathrin Schaffert (bug fixes)
  */
 public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBase {
+
+    private static final String WORKFLOWS = "workflows";
 
     private static final String JSON = ".json";
 
@@ -74,10 +81,13 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     private ManagedInstance lastWorkflowInitiatingInstance;
 
     // only contains workflows executed via dedicated teststep
-    private Map<String, String> runningWorkflows = new ConcurrentHashMap<String, String>();
+    private Map<String, String> runningWorkflows = new ConcurrentHashMap<>();
+
+    private final GoldenMasters goldenMasters;
 
     public WorkflowStepDefinitions(TestScenarioExecutionContext executionContext) {
         super(executionContext);
+        this.goldenMasters = new GoldenMasters(executionContext.getTestScriptLocation().toPath().resolve("golden_masters"));
     }
 
     /**
@@ -116,13 +126,25 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      */
     private class AssertWorkflowDataAction implements InstanceAction {
 
-        private ManagedInstance comparator;
+        protected final ManagedInstance comparator;
 
-        private List<String> workflowNames;
+        protected File tempDir;
+
+        protected File tmpDirBase;
+
+        private final List<String> workflowNames;
 
         AssertWorkflowDataAction(ManagedInstance comparator, List<String> workflowNames) {
             this.comparator = comparator;
             this.workflowNames = workflowNames;
+            try {
+                this.tempDir = TempFileServiceAccess.getInstance().createManagedTempDir("wf_run_export");
+                this.tmpDirBase = new File(tempDir, "base");
+            } catch (IOException e) {
+                fail("Could not create temporary directory");
+                this.tempDir = null;
+                this.tmpDirBase = null;
+            }
         }
 
         @Override
@@ -131,46 +153,67 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
             instance.setLastCommandOutput(commandOutput);
             executionContext.setLastInstanceWithSingleCommandExecution(instance);
 
-            final File tempDir = TempFileServiceAccess.getInstance().createManagedTempDir("wf_run_export");
-            File tmpDirBase = new File(tempDir, "base");
             File tmpDirInst = new File(tempDir, instance.getId());
 
-            Boolean baseExists = tmpDirBase.exists();
+            boolean createGoldenMasters = !tmpDirBase.exists();
 
             for (String workflowName : workflowNames) {
-                Pattern p = Pattern.compile("'(" + workflowName + "[\\d-_:]+)'");
-                Matcher m = p.matcher(commandOutput);
-                while (m.find()) {
-                    String workflowRun = m.group(1);
+                for (String workflowRun : findWorkflowRunsByPattern(instance, workflowName)) {
+                    final String masterPath = StringUtils.format("%s\\%s.json", tmpDirBase, workflowRun.replace(":", "_"));
 
-                    if (!baseExists) {
-                        String outputExportBase = executeCommandOnInstance(comparator,
-                            StringUtils.format("tc export_wf_run %s %s", tmpDirBase, workflowRun), false);
-                        printToCommandConsole(outputExportBase);
-                        if (!outputExportBase.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_EXPORT)) {
-                            fail(StringUtils.format("The workflow run %s could not be exported from instance %s", workflowRun, comparator));
-                        }
+                    if (createGoldenMasters) {
+                        createGoldenMaster(workflowRun);
                     }
 
-                    String outputExportInst =
-                        executeCommandOnInstance(instance, StringUtils.format("tc export_wf_run %s %s", tmpDirInst, workflowRun), false);
-                    printToCommandConsole(outputExportInst);
-                    if (!outputExportInst.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_EXPORT)) {
-                        fail(StringUtils.format("The workflow run %s could not be exported from instance %s", workflowRun, instance));
-                    }
+                    final String exportedRunPath = exportWorkflowRun(instance, tmpDirInst, workflowRun);
 
-                    String outputComparison = executeCommandOnInstance(comparator, StringUtils.format("tc compare_wf_runs %s %s",
-                        StringUtils.format("%s\\%s.json", tmpDirBase, workflowRun.replaceAll(":", "_")),
-                        StringUtils.format("%s\\%s.json", tmpDirInst, workflowRun.replaceAll(":", "_"))),
-                        false);
-                    printToCommandConsole(outputComparison);
-                    if (!outputComparison.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_COMPARISON_IDENTICAL)) {
+                    boolean runsAreEqual = compareWorkflowRuns(masterPath, exportedRunPath);
+                    if (!runsAreEqual) {
                         fail(StringUtils.format("The workflow run %s is not identical on instance %s and instance %s", workflowRun,
                             comparator, instance));
                     }
                 }
             }
+        }
 
+        protected Iterable<String> findWorkflowRunsByPattern(final ManagedInstance instance, String workflowName) {
+            String commandOutput = executeCommandOnInstance(instance, LIST_WORKFLOWS_COMMAND, false);
+            instance.setLastCommandOutput(commandOutput);
+            executionContext.setLastInstanceWithSingleCommandExecution(instance);
+
+            Pattern p = Pattern.compile("'(" + workflowName + "[\\d-_:]+)'");
+            Matcher m = p.matcher(commandOutput);
+            final List<String> returnValue = new LinkedList<>();
+            while (m.find()) {
+                returnValue.add(m.group(1));
+            }
+            return returnValue;
+        }
+
+        protected void createGoldenMaster(String workflowRun) {
+            String outputExportBase = executeCommandOnInstance(comparator,
+                StringUtils.format("tc export_wf_run %s %s", tmpDirBase, workflowRun), false);
+            printToCommandConsole(outputExportBase);
+            if (!outputExportBase.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_EXPORT)) {
+                fail(StringUtils.format("The workflow run %s could not be exported from instance %s", workflowRun, comparator));
+            }
+        }
+
+        protected String exportWorkflowRun(ManagedInstance instance, File tmpDirInst, String workflowRun) {
+            String outputExportInst =
+                executeCommandOnInstance(instance, StringUtils.format("tc export_wf_run %s %s", tmpDirInst, workflowRun), false);
+            printToCommandConsole(outputExportInst);
+            if (!outputExportInst.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_EXPORT)) {
+                fail(StringUtils.format("The workflow run %s could not be exported from instance %s", workflowRun, instance));
+            }
+            return StringUtils.format("%s\\%s.json", tmpDirInst, workflowRun.replace(":", "_"));
+        }
+
+        protected boolean compareWorkflowRuns(final String masterPath, final String exportedRunPath) {
+            String outputComparison = executeCommandOnInstance(comparator, StringUtils.format("tc compare_wf_runs %s %s",
+                masterPath, exportedRunPath), false);
+            printToCommandConsole(outputComparison);
+            return outputComparison.contains(StepDefinitionConstants.SUCCESS_MESSAGE_WORKFLOW_COMPARISON_IDENTICAL);
         }
 
     }
@@ -182,11 +225,10 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      *        is optional; optional corresponding placeholder file is to be given in brackets - e.g. "wf [placeholder]"
      * @param instanceId the instance to execute the command on
      * @param timeoutString custom timeout in seconds, after which waiting for execution of workflow is aborted
-     * @throws Throwable on failure
      */
     @When("^executing (?:the )?workflow[s]? \"([^\"]*)\" on (?:instance )?\"([^\"]*)\"$(?: in (\\d+) seconds)?")
     public void whenExecutingWorkflowOnInstance(final String workflowInputSequence, final String instanceId, final String timeoutString)
-        throws Throwable {
+        throws Exception {
         for (final String workflowInput : parseCommaSeparatedList(workflowInputSequence)) {
 
             final String workflowName;
@@ -212,7 +254,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     private String injectValuesIntoPlaceholderFile(String placeholderTemplate) throws IOException {
 
         Path testLocation = executionContext.getTestScriptLocation().toPath();
-        Path subdir = testLocation.resolve(Paths.get("workflows", "placeholder_values"));
+        Path subdir = testLocation.resolve(Paths.get(WORKFLOWS, "placeholder_values"));
         Path originalPlaceholderFileLocation = subdir.resolve(placeholderTemplate);
 
         List<String> template = Files.readAllLines(originalPlaceholderFileLocation);
@@ -260,12 +302,12 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * 
      * @param fileOrDir file or directory in the scripts directory, which is to be copied
      * @param instanceId instance who is the target of the copying
-     * @throws Throwable on failure
      */
     @When("^copying \"([^\"]*)\" into (?:the )?workspace of \"([^\"]*)\"")
-    public void whenCopyingIntoWorksspace(String fileOrDir, String instanceId) throws Throwable {
+    public void whenCopyingIntoWorkspace(String fileOrDir, String instanceId) throws Exception {
         ManagedInstance instance = resolveInstance(instanceId);
         printToCommandConsole(StringUtils.format("Copying %s to instance %s", fileOrDir, instance));
+        TestContext.setWorkflowProjectDirectory(fileOrDir);
         File workspace = instance.getAbsolutePathFromRelative("workspace");
         if (!workspace.exists()) {
             workspace.mkdir();
@@ -283,6 +325,37 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     }
 
     /**
+     * Copies configuration files to the installation site of the software under test in preparation of running a workflow.
+     * Note: It uses (via "TestContext") the given build of test step "using the ... build".
+     * Note: It uses (via "TestContext") the origin project directory  of test step "copying ... into workspace( of ...").
+     * Both of the above are set during their steps; so without these steps this step is likely to fail (there are no default values or so in TestContext)!
+     * This step is required as a special copy action for input files, for now (2021-10-26) especially of workflow 0203.
+     * 
+     * @param fileNamesToCopy list of (configuration) files which have to be copied
+     * @param workflowGroupDir target directory of the workflow for the copying (e. g. "02_Component Groups")
+     *///(?: workflow[s]?)? \"([^\"]+)\"
+    @When("^copying configuration file[s]? \"([^\"]+)\" of workflow group \"([^\"]*)\" into installation workspace")
+    public void whenPreparingInstallationWorkspace(String fileNamesToCopy, String workflowGroupDir) throws Exception {
+        String originDir = TestContext.getWorkflowProjectDirectory() + File.separator + workflowGroupDir;
+        //String[] filesToCopy = {"CPACS.xml", "MappingRules.xsl", "XMLMerger_Integrate.xml"};
+        String projectName = "Workflow Examples Project";
+        String sutDir = TestContext.getTestedInstanceInstallationRoot() + File.separator + "workspace" + File.separator + projectName + File.separator + workflowGroupDir;
+        printToCommandConsole("   +++   SUT DIR: " + sutDir);
+        
+        String[] filesToCopy = fileNamesToCopy.split(",[ ]");
+        for (String fileToCopy : filesToCopy) {
+            File originFile = Paths.get(executionContext.getTestScriptLocation().toString(), new File(originDir + File.separator + fileToCopy).getPath()).toFile();
+            File destFile = new File(sutDir + File.separator + fileToCopy);
+            // Delete previous versions on the destination location
+            if (destFile.exists()) {
+                FileUtils.forceDelete(destFile);
+            }
+            printToCommandConsole("   +++   copy files: " + originFile + destFile);
+            FileUtils.copyFile(originFile, destFile);
+        }
+    }
+
+    /**
      * Starts a workflow via IM SSH access on the given instance.
      * 
      * TODO decide: clean up workflow log files on test success? TODO synchronize alteration of runningWorkflowMap
@@ -291,10 +364,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * @param placeholderFile the name of the placeholder file in the "placeholder_values" sub-folder directory; the .json suffix is
      *        optional
      * @param instanceId the instance to execute the command on
-     * @throws Throwable on failure
      */
     @When("^starting (?:the )?workflow \"([^\"]*)\" (?:using \"([^\"]*)\" as placeholder file)?on (?:instance )?\"([^\"]*)\"$")
-    public void whenStartingWorkflowOnInstance(String workflowNameInput, String placeholderFile, String instanceId) throws Throwable {
+    public void whenStartingWorkflowOnInstance(String workflowNameInput, String placeholderFile, String instanceId) throws Exception {
         final ManagedInstance instance = resolveInstance(instanceId);
         String workflowPath = addExtension(workflowNameInput, WORKFLOW_EXTENSION);
         if (placeholderFile != null && !placeholderFile.endsWith(JSON)) {
@@ -463,13 +535,41 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
             workflowName, state));
     }
 
+    @Then("^that workflow run should be identical to \"([^\"]*)\"$")
+    public void thenThatWorkflowRunShouldBeIdenticalTo(String goldenMasterId) throws Throwable {
+        final Optional<GoldenMaster> master = this.goldenMasters.get(goldenMasterId);
+
+        if (!master.isPresent()) {
+            fail(StringUtils.format("Golden master '%s' not present", goldenMasterId));
+            return; // Superfluous return to terminate the control flow for analysis by SonarCube
+        }
+
+        final File tempDir = TempFileServiceAccess.getInstance().createManagedTempDir();
+        final GildedManagedInstance instance = new GildedManagedInstance(
+            lastWorkflowInitiatingInstance,
+            this::printToCommandConsole,
+            (instanceParam, command) -> executeCommandOnInstance(instanceParam, command, false));
+
+        final File tmpDirInst = new File(tempDir, lastWorkflowInitiatingInstance.getId());
+
+        for (String workflowRunName : instance.findWorkflowRunsByPattern(master.get().getWorkflowName())) {
+
+            final String exportedRunPath = instance.exportWorkflowRun(tmpDirInst, workflowRunName);
+
+            boolean runsAreEqual = instance.compareWorkflowRuns(master.get().getAbsolutePath(), exportedRunPath);
+            if (!runsAreEqual) {
+                fail(StringUtils.format("The workflow run %s is not identical to the golden master on instance %s", workflowRunName,
+                    lastWorkflowInitiatingInstance));
+            }
+        }
+    }
+
     /**
      * @param instanceId The id of the instance whose workflows have to be finished
      * @param timeoutString custom timeout in seconds, after which waiting is aborted
-     * @throws Throwable on failure
      */
     @When("^waiting until all workflows on \"([^\"]*)\" are not running anymore(?: or (\\d+) seconds have passed)?")
-    public void whenWaitingUntilAllWorkflowsFinished(String instanceId, String timeoutString) throws Throwable {
+    public void whenWaitingUntilAllWorkflowsFinished(String instanceId, String timeoutString) throws Exception {
 
         final int timeoutInSecs = parseTimeout(timeoutString);
         long countMillis = TimeUnit.SECONDS.toMillis(timeoutInSecs);
@@ -552,16 +652,15 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * @param negationFlag a flag that changes the expected outcome to "substring NOT present"
      * @param useRegexpMarker a flag that causes "substring" to be treated as a regular expression if present
      * @param substring the substring or pattern expected to be present or absent in the workflow log file
-     * @throws Throwable on failure
      */
     @Then("^the workflow log should (not )?contain (the pattern )?\"(.*)\"$")
-    public void thenWorkflowLogContains(String negationFlag, String useRegexpMarker, String substring) throws Throwable {
+    public void thenWorkflowLogContains(String negationFlag, String useRegexpMarker, String substring) throws Exception {
         if (lastWorkflowLogDir == null) {
             fail("Test error: No workflow log present yet");
             return; // to satisfy flow check; never reached
         }
 
-        String wfLogFileContent = null;
+        String wfLogFileContent = "";
         Path wfLogFile = lastWorkflowLogDir.resolve("workflow.log");
         if (Files.exists(lastWorkflowLogDir.resolve("workflow.log.tmp")) || Files.isRegularFile(wfLogFile)) {
             int tries = 3;
@@ -592,10 +691,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * Verifies that a certain workflow state was reached, typically FINISHED.
      * 
      * @param state the state to test for
-     * @throws Throwable on failure
      */
     @Then("^the workflow should have reached the (\\w+) state$")
-    public void thenWorkflowReachedState(String state) throws Throwable {
+    public void thenWorkflowReachedState(String state) throws Exception {
         // delegate
         thenWorkflowLogContainsCaller(false, false, "NEW_STATE:" + state);
     }
@@ -605,10 +703,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * 
      * @param nodeName the node name to test for
      * @param nodeId optionally, the node id to test for
-     * @throws Throwable on failure
      */
     @Then("^the workflow controller should have been \"([^\"]+)\"(?: using node id \"(\\w+)\")?$")
-    public void thenWorkflowController(String nodeName, String nodeId) throws Throwable {
+    public void thenWorkflowController(String nodeName, String nodeId) throws Exception {
         // delegate
         thenWorkflowLogContainsCaller(false, false,
             "Location of workflow controller: \"" + nodeName + StepDefinitionConstants.ESCAPED_DOUBLE_QUOTE);
@@ -621,10 +718,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * @param nodeName the node name to test for
      * @param uplinkFlag name of the uplink instance via which the component is made accessible
      * @param nodeId optionally, the node id to test for
-     * @throws Throwable on failure
      */
     @Then("^workflow component \"([^\"]+)\" should have been run on \"([^\"]+)\"( via uplink)?(?: using node id \"(\\w+)\")?$")
-    public void thenComponentRanOn(String compName, String nodeName, String uplinkFlag, String nodeId) throws Throwable {
+    public void thenComponentRanOn(String compName, String nodeName, String uplinkFlag, String nodeId) throws Exception {
         if (uplinkFlag != null) {
             nodeName += " \\(via [^)]+\\)";
         }
@@ -640,10 +736,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * Verifies that a certain instance was used as the execution location for the given workflow component, with an optional node id test.
      * 
      * @param compName the workflow name of the component to test for
-     * @throws Throwable on failure
      */
     @Then("^workflow component \"([^\"]+)\" should have been cancelled$")
-    public void thenComponentCancelledOn(String compName) throws Throwable {
+    public void thenComponentCancelledOn(String compName) throws Exception {
         whenWaitingUntilWorkflowReachedState(lastWorkflowName, lastWorkflowInitiatingInstance.getId(), "cancelled", null);
         thenComponentTerminated(compName);
     }
@@ -652,10 +747,9 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
      * Verifies that a certain instance was used as the execution location for the given workflow component, with an optional node id test.
      * 
      * @param compName the workflow name of the component to test for
-     * @throws Throwable on failure
      */
     @Then("^workflow component \"([^\"]+)\" should be terminated$")
-    public void thenComponentTerminated(String compName) throws Throwable {
+    public void thenComponentTerminated(String compName) throws Exception {
         String regexp = "\\[LIFE_CYCLE_EVENT\\] \\[" + compName + "\\] COMPONENT_TERMINATED";
         thenWorkflowLogContainsCaller(false, true, regexp);
     }
@@ -699,14 +793,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
     }
 
     private String convertWorkflowPathToName(String workflowPath) {
-        final String workflowName;
-
-        if (workflowPath.contains(File.separator)) {
-            workflowName = workflowPath.substring(workflowPath.lastIndexOf(File.separator) + 1);
-        } else {
-            workflowName = workflowPath;
-        }
-        return workflowName;
+        return (new File(workflowPath)).getName();
     }
 
     private String[] startWorkflowOnInstance(final ManagedInstance instance, String workflowName, String placeholderFile)
@@ -714,7 +801,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
         boolean hasPlaceholder = placeholderFile != null;
         final String instanceId = instance.getId();
 
-        Path originalWfFileLocation = executionContext.getTestScriptLocation().toPath().resolve("workflows").resolve(workflowName);
+        Path originalWfFileLocation = executionContext.getTestScriptLocation().toPath().resolve(WORKFLOWS).resolve(workflowName);
         if (!Files.isRegularFile(originalWfFileLocation)) {
             throw new AssertionError("No workflow file found at expected location " + originalWfFileLocation);
         }
@@ -728,7 +815,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
         if (hasPlaceholder) {
             if (!(new File(placeholderFile).isAbsolute())) {
                 Path testLocation = executionContext.getTestScriptLocation().toPath();
-                Path subdir = testLocation.resolve("workflows\\placeholder_values");
+                Path subdir = testLocation.resolve(WORKFLOWS).resolve("placeholder_values");
                 Path originalPlaceholderFileLocation = subdir.resolve(placeholderFile);
                 if (!Files.isRegularFile(originalPlaceholderFileLocation)) {
                     throw new AssertionError("No placeholder file found at expected location " + originalWfFileLocation);
@@ -771,7 +858,7 @@ public class WorkflowStepDefinitions extends InstanceManagementStepDefinitionBas
 
     }
 
-    private void thenWorkflowLogContainsCaller(boolean negate, boolean useRegex, String contents) throws Throwable {
+    private void thenWorkflowLogContainsCaller(boolean negate, boolean useRegex, String contents) throws Exception {
         String negationFlag = null;
         String regexFlag = null;
 

@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.UserAuthFactory;
 import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

@@ -73,6 +73,7 @@
 		<module>${projects-root}/de.rcenvironment.core.launcher.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.log</module>
 		<module>${projects-root}/de.rcenvironment.core.log.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.log.provenance</module>
 		<module>${projects-root}/de.rcenvironment.core.login</module>
 		<module>${projects-root}/de.rcenvironment.core.login.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.encryption</module>
@@ -122,6 +123,7 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.introduction</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.palette</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.remoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.tiglviewer</module>

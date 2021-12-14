@@ -1,0 +1,186 @@
+<?xml version='1.0'?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="new_bundle">
+    <title>Adding a new Bundle with Production Code</title>
+    <para>Here, we describe how to add a new bundle to RCE. This bundle will only contain production
+        code, but no test code. In RCE, unit tests reside in "companion bundles" to those deployed
+        in production. The process for how to add a "testing bundle" to RCE is undocumented as of
+        yet.</para>
+    <sect2>
+        <title>RCE Structure</title>
+        <para>RCE is built on top of the Eclipse RCP framework. Speaking in terms of RCP, RCE is a
+                <emphasis>product</emphasis>, which consists of a number of
+                <emphasis>features</emphasis>, which in turn consist of a number of
+                <emphasis>plug-ins</emphasis>. The product itself is defined in the file
+                <code>de.rcenvironment/maven/modules/repository.mainProduct/rce_default.product</code>.
+            Each feature and each plug-in corresponds to one top-level directory in the
+            RCE-repository. There exist, however, top-level directories which do not correspond to
+            either a feature or a plug-in, e.g., <code>de.rcenvironment</code>.</para>
+        <para>A plug-in consists of a number of Java packages and a manifest which defines how the
+            feature interacts with other features. This interaction takes the form of, e.g.
+            providing editors, views, or hooking into so-called <emphasis>extension
+                points</emphasis> defined by other features. As with most RCP-based applications,
+            some features of RCE are provided by Eclipse or some other third-party developer, while
+            others are developed by the RCE developers. </para>
+        <para>When compiling RCE, Maven compiles each feature and each plug-in more or less
+            individually before packaging all features and plug-ins into the resulting zip. At
+            runtime, all plug-ins are connected to one another using OSGi, which mainly serves as
+            our dependency injection framework. Speaking in terms of OSGi, each plug-in is an
+                <emphasis>OSGi bundle</emphasis> and vice versa. We use the terms (Eclipse) Project,
+            (OSGi) Bundle, and (Eclipse) Plug-in interchangeably in this guide.</para>
+        <para>In order to create a new bundle, you have to<orderedlist>
+                <listitem>
+                    <para>Create a new Eclipse project in a top-level directory in the root
+                        directory of the RCE repository</para>
+                </listitem>
+                <listitem>
+                    <para>Add the new bundle (i.e., the new plug-in) to the Maven build process so
+                        that it is compiled and packaged as a plugin when building via Maven</para>
+                </listitem>
+                <listitem>
+                    <para>Add the new plug-in to an existing feature so that it is included in the
+                        RCE product</para>
+                </listitem>
+            </orderedlist>We adress each of these points individually in the following
+            sections</para>
+    </sect2>
+    <sect2>
+        <title>Create a new Eclipse Project</title>
+        <para>There are two major ways to create a new Eclipse Project containing code for
+            productive use: Either by copying an existing bundle and subsequently importing that
+            bundle into Eclipse, or by creating a new bundle from scratch using the Eclipse IDE.
+            Here, we only describe the former method.</para>
+        <para>First, choose some <emphasis>bundle identifier</emphasis> as well as a human-readable
+                <emphasis>display name</emphasis> for your new bundle. For this guide, we pick the
+            identifier <code>de.rcenvironment.core.newbundle</code> and the display name
+                <emphasis>RCE Core New Bundle</emphasis>.</para>
+        <para>Then, create a copy of some top-level directory in the repository and rename it with
+            the name of your bundle identifier. That directory should contain the subdirectories
+                <code>META-INF</code>, <code>src</code>, as well as the files
+                <code>.checkstyle</code>, <code>.classpath</code>, <code>.project</code>,
+                <code>build.properties</code>, and <code>pom.xml</code>.</para>
+        <para>Adapt the file <code>META-INF/MANIFEST.MF</code> by changing the
+                <code>Bundle-Name</code> to the display name of your bundle and the
+                <code>Bundle-SymbolicName</code> as well as the <code>Automatic-ModuleName</code> to
+            the identifier of your bundle. Moreover, since we are creating an empty bundle that does
+            not yet export any Java packages or imports any dependencies, remove the entries
+                <code>Export-Package</code> and <code>Import-Package</code>. After these changes,
+            the file <code>META-INF/MANIFEST.MF</code> should look as
+            follows:<programlisting>Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core New Bundle
+Bundle-SymbolicName: de.rcenvironment.core.newbundle
+Bundle-Version: 10.2.2.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.core.newbundle</programlisting></para>
+        <para>Remove the file <code>.checkstyle</code>. We will direct Eclipse to regenerate that
+            file towards the end of this section.</para>
+        <para>Adapt the file <code>pom.xml</code> by setting the <code>artifactId</code> and the
+                <code>name</code> to the id and the display name of your bundle, respectively. After
+            these changes, the file pom.xml should look similar to
+            this:<programlisting>&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	&lt;modelVersion>4.0.0&lt;/modelVersion>
+
+	&lt;artifactId>de.rcenvironment.core.newbundle&lt;/artifactId>
+	&lt;name>RCE Core New Bundle&lt;/name>
+	&lt;version>10.2.2-SNAPSHOT&lt;/version>
+	&lt;packaging>eclipse-plugin&lt;/packaging>
+
+	&lt;parent>
+		&lt;groupId>de.rcenvironment&lt;/groupId>
+		&lt;artifactId>de.rcenvironment.componentgroups.standard.parent&lt;/artifactId>
+		&lt;version>1.0.0&lt;/version>
+		&lt;relativePath>../de.rcenvironment.componentgroups.standard/parent.pom&lt;/relativePath>
+	&lt;/parent>
+&lt;/project>
+</programlisting></para>
+        <para>After finishing these adaptations, import the new bundle into RCE via <code>File ->
+                Import -> General -> Existing Projects into Workspace</code>. Since you have copied
+            an existing Eclipse project, Eclipse should recognize the new project and import
+            it.</para>
+    </sect2>
+    <sect2>
+        <title>Add the new Bundle to Maven</title>
+        <para>Recall that RCE can be built either via Eclipse (during development) or via Maven.
+            Since you have already imported your new project into Eclipse in the previous step, it
+            will automatically be built during development. Thus, it remains to include the new
+            project / bundle / plug-in into the Maven build.</para>
+        <para>There exist multiple <emphasis>build scopes</emphasis>, each of which consists of a
+            list of projects that Maven should build. Each build scope is defined in an individial
+                <code>pom.xml</code> file in a subdirectory of
+                <code>de.rcenvironment/maven/modules</code>. Pick one or more of these build scopes
+            in which you want to include your new bundle <note>
+                <para>In most cases either <code>components.all</code> or <code>core.combined</code>
+                    are a reasonable choice of build scope.</para>
+            </note></para>
+        <para>Once you have picked a build scope, open the <code>pom.xml</code> contained in that
+            directory and add the path to your new bundle to the list of modules already contained
+            in the <code>pom.xml</code>. In our example, we pick the build scope
+                <code>core.combined</code> and obtain a file
+                <code>de.rcenvironment/maven/modules/core.combined/pom.xml</code> similar to the
+            following:<programlisting>&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	&lt;modelVersion>4.0.0&lt;/modelVersion>
+
+	&lt;artifactId>de.rcenvironment.modules.core.combined&lt;/artifactId>
+	&lt;name>RCE Module ${project.artifactId}&lt;/name>
+	&lt;packaging>pom&lt;/packaging>
+
+	&lt;parent>
+		&lt;groupId>de.rcenvironment&lt;/groupId>
+		&lt;artifactId>de.rcenvironment.maven.parent.module&lt;/artifactId>
+		&lt;version>1.0.0&lt;/version>
+		&lt;relativePath>../../parent/module&lt;/relativePath>
+	&lt;/parent>
+
+	&lt;modules>
+             ... truncated for brevity ...
+		&lt;module>${projects-root}/de.rcenvironment.core.newbundle&lt;/module>
+             ... truncated for brevity ...
+      &lt;/modules>
+&lt;/projects></programlisting></para>
+        <para>Now your bundle will be compiled and packaged when building a snapshot. The resulting
+            plug-in, however, will not be included in the final snapshot: Recall that, speaking in
+            terms of Eclipse RCP, RCE is a product, which consists of features, which in turn
+            consist of plug-ins. At this point, your new plug-in is not yet part of a feature, thus
+            it does not get deployed into the product.</para>
+    </sect2>
+    <sect2>
+        <title>Add the new Plug-in to the RCE product</title>
+        <para>Pick some existing feature to which you want to add your new plug-in. Features are
+            contained in top-level directories ending in <code>.feature</code>. In this example, we
+            choose the feature <code>de.rcenvironment.core.feature</code>. Among others, this
+            directory contains the file <code>feature.xml</code>, which defines the plug-ins that
+            constitute this feature. You can either edit this file via Eclipse or manually via a
+            text editor of choice.</para>
+        <para>When opening the file in Eclipse, Eclipse will provide a graphical editor for the
+            file. Here, you can add your new bundle via <code>Included Plug-Ins -> Add...</code>. If
+            you are using a plain text editor, add an entry similar to  <code>&lt;plugin
+                id="de.rcenvironment.core.newbundle" download-size="0" install-size="0"
+                version="0.0.0" unpack="false"/></code> as a child of the top-level element
+                <code>&lt;feature></code> in the file <code>feature.xml</code>.</para>
+        <para>Independently of the used method, your plug-in is now part of the feature you have
+            chosen and will be included in the RCE product.</para>
+    </sect2>
+</sect1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

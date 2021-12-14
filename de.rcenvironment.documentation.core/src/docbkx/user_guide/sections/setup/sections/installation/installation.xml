@@ -8,9 +8,9 @@
             (JRE), version 8u161 or above. If you do not already have one on your machine, <phrase
                 os="linux">use your system's package manager to install it; the most common choice
                 is the OpenJDK JRE.</phrase><phrase os="windows">you can download it from
-                <programlisting><uri>http://www.java.com/download/</uri></programlisting>and install
-                it. Starting with RCE 8.x we only publish 64 bit packages of RCE. Therefore, please
-                make sure to install the 64 bit version of the JRE.</phrase><note>
+                <programlisting><uri>https://www.java.com/de/download/</uri></programlisting>and
+                install it. Starting with RCE 8.x we only publish 64 bit packages of RCE. Therefore,
+                please make sure to install the 64 bit version of the JRE.</phrase><note>
                 <para>Some pre-installed components of RCE have additional dependencies. Please
                     refer to <link linkend="workflow_components">Section 2.3 (Workflow
                         Components)</link> for more details.</para>
@@ -64,12 +64,12 @@
             compromised communication channels between developers and users. Thus, if the artifact,
             the signatures, and the signing key were available at the same location, an attacker
             that takes control over that location could easily forge all three components.</para>
-        <para>One common way to distribute such keyfiles is via so-called public keyservers. We have
-            thus published the signing key for RCE at the SKS-keyservers (<ulink
-                url="https://sks-keyservers.net/">https://sks-keyservers.net/</ulink>). In case you
-            are unable to access those keyservers, we have furthermore published the keyfile via
+        <para>One common way to distribute such keyfiles is via so-called public keyservers. We had
+            previously published the signing key for RCE at the SKS-keyservers, which are no longer
+            available. Nevertheless, we have published the keyfile via
                 <ulink url="https://github.com">https://github.com</ulink> in the repository called
                 <code>rce-signing</code> owned by the organization <code>rcenvironment</code>.
+            For now, this is the key supplier to use until we determine a new public key server.
             Please verify the integrity of the obtained keyfile by checking its fingerprint against
             the one published by us via a trusted channel (e.g., the RCE Twitter account). We omit
             giving direct links as well as the key's fingerprint here on purpose. This slightly
@@ -192,7 +192,7 @@
                 opening<programlisting>Settings -> Repositories -> Additional Repositories / Other Sources (or similar) -> Add New...</programlisting></para>
             <para>When using apt as your package manager, you can add the repository by executing
                 the following command in a
-                terminal:<programlisting>sudo echo "deb https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/deb/ /"
+                terminal:<programlisting>echo "deb https://software.dlr.de/updates/rce/10.x/products/standard/releases/latest/deb/ /"
   >/etc/apt/sources.list.d/dlr_rce_10_releases.list</programlisting></para>
             <para>Although this command is split across multiple lines in this guide, it must be
                 executed as a single line. Further, this command requires superuser-rights and will
@@ -296,209 +296,9 @@
             example, type <code>rce stop</code> and press enter.</para>
     </sect2>
     <sect2>
-        <title>Installation as a <phrase os="linux">Daemon on a Linux Server</phrase><phrase
-                os="windows">Service on a Windows Server</phrase></title>
-        <para>For ad-hoc or temporary RCE network setups, running a headless RCE from the command
-            line is perfectly fine. For more permanent installations, however, we recommend
-            installing RCE as a <phrase os="windows">Windows service</phrase><phrase
-                os="linux">system daemon</phrase> instead. This has the advantage that
-            RCE automatically shuts down when the server is shut down, and automatically restarts
-            when the server does.</para>
-        <sect3>
-            <title>Installation and <phrase os="linux">Daemon</phrase><phrase os="windows"
-                    >Service</phrase> Management</title>
-            <para>Executing the following steps will install RCE as <phrase os="linux"
-                    >daemon</phrase><phrase os="windows">service</phrase>. An RCE <phrase os="linux"
-                    >daemon</phrase><phrase os="windows">service</phrase> will start automatically
-                on system boot and stop before system shutdown.</para>
-            <para os="linux">The recommended (and supported) way to install a Linux daemon is to
-                install RCE from a .deb or .rpm package, or (equivalently) installing it from the
-                APT repository. While installing a daemon from the .zip file distribution can be
-                made to work, it creates unnecessary complications regarding installation paths and
-                file permissions. As registering a daemon requires root privileges anyway, there
-                should be no reason to use the .zip file; if you have a compelling use case for
-                this, please contact the RCE team at <code>rce@dlr.de</code>.</para>
-            <para os="linux">Once RCE is properly installed, registering it as a daemon is very
-                simple. A command named <code>rce-daemon</code> is provided to control the whole
-                daemon life cycle. The only manual step you need to perform before using that
-                command is creating a user account that the daemon will run under. For now, this
-                account has to be named <code>rce-daemon</code>; use your distribution's console
-                commands or GUI tools to add it. (Please note that this account needs to have a home
-                directory to hold the daemon's profile directory.) Future RCE versions will make
-                this account name customizable.</para>
-            <note os="linux"><para>As of RCE 10, the daemon wrapper still uses the System V approach. Migration to systemd is
-                    planned for RCE 11.</para></note>
-            <para os="linux">Once this user account is created, you can use the following commands
-                to manage the daemon installation:<itemizedlist>
-                    <listitem>
-                        <para><code>rce-daemon install</code> - installs and starts the daemon
-                            instance</para>
-                    </listitem>
-                    <listitem>
-                        <para><code>rce-daemon uninstall</code> - stops and uninstalls the daemon
-                            instance; the profile directory remains unchanged</para>
-                    </listitem>
-                    <listitem>
-                        <para><code>rce-daemon start</code> / <code>rce-daemon stop</code> /
-                                <code>rce-daemon restart</code> - standard daemon controls</para>
-                    </listitem>
-                    <listitem>
-                        <para><code>rce-daemon locate</code> - prints the location of the daemon's
-                            RCE instance's profile directory and relevant files</para>
-                    </listitem>
-                    <listitem>
-                        <para><code>rce-daemon status</code> - displays if the RCE daemon is
-                            currently running or not</para>
-                    </listitem>
-                </itemizedlist></para>
-            <para os="windows">
-                <orderedlist>
-                    <listitem>
-                        <para>Navigate to the <code>extras\windows_service</code> folder inside your
-                            installation folder of RCE named <code>rce</code></para>
-                    </listitem>
-                    <listitem>
-                        <para>Open the file <code>install_as_service.bat</code> and adjust these
-                            settings:</para>
-                        <para>
-                            <itemizedlist>
-                                <listitem>
-                                    <para>Set RCE_ROOT_PATH to the location of your RCE installation
-                                        (typically, the location which you are editing these files
-                                        in). RCE must already be present (and unpacked) in this
-                                        location; the daemon installer does not copy any files
-                                        there.</para>
-                                </listitem>
-                                <listitem>
-                                    <para>Set RCE_SERVICE_USER to the name of the existing user
-                                        account that the RCE service should run as.<note>
-                                            <para>This user account will be used to run RCE and all
-                                                local tools that are invoked by it. Make sure that
-                                                this user has appropriate system permissions to run
-                                                these tools' executables, and read/write all related
-                                                files.</para>
-                                        </note></para>
-                                </listitem>
-                            </itemizedlist>
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>Execute with administrator rights
-                            <programlisting>install_as_service.bat</programlisting> by
-                            double-clicking or on the command line</para>
-                    </listitem>
-                    <listitem>
-                        <para>Open the Windows Service Managment Console (e.g. execute
-                            "services.msc" on the command line)</para>
-                    </listitem>
-                    <listitem>
-                        <para>Look for entry "RCE Service", do a right-click and click
-                            "Properties"</para>
-                    </listitem>
-                    <listitem>
-                        <para>Click on the "Log On" tab and fill in the correspondig password for
-                            the user account set to the RCE_SERVICE_USER variable. By clicking the
-                            "Apply" button a message should inform you that the privilege to "Log on
-                            as service" was added to the account.<note>
-                                <para>To add the "Log on as a service" right to an account on your
-                                    local computer manually:</para>
-                                <orderedlist>
-                                    <listitem>
-                                        <para>Open Local Security Policy.</para>
-                                    </listitem>
-                                    <listitem>
-                                        <para>In the console tree, double-click <emphasis
-                                                role="bold">Local Policies</emphasis>, and then
-                                            click <emphasis role="bold">User Rights
-                                                Assignments</emphasis>.</para>
-                                    </listitem>
-                                    <listitem>
-                                        <para>In the details pane, double-click <emphasis
-                                                role="bold">Log on as a service</emphasis>.</para>
-                                    </listitem>
-                                    <listitem>
-                                        <para>Click <emphasis role="bold">Add User or
-                                                Group</emphasis> and add the appropriate account to
-                                            the list of accounts that possess the <emphasis
-                                                role="bold">Log on as a service</emphasis>
-                                            right.</para>
-                                    </listitem>
-                                </orderedlist>
-                            </note></para>
-                    </listitem>
-                    <listitem>
-                        <para>Close the properties dialog by clicking "Ok"</para>
-                    </listitem>
-                </orderedlist>
-            </para>
-            <para os="windows">To manually start the RCE service:</para>
-            <para os="windows">
-                <orderedlist>
-                    <listitem>
-                        <para>Open the Windows Service Managment Console (e.g. execute
-                                <code>services.msc</code> on the command line)</para>
-                    </listitem>
-                    <listitem>
-                        <para>Right-click on the entry "RCE Service" and select "Start"</para>
-                    </listitem>
-                </orderedlist>
-            </para>
-            <para os="windows">To stop the RCE service:</para>
-            <para os="windows">
-                <orderedlist>
-                    <listitem>
-                        <para>Open the Windows Service Managment Console (e.g. execute
-                                <code>services.msc</code> on the command line)</para>
-                    </listitem>
-                    <listitem>
-                        <para>Right-click on the entry "RCE Service" and select "Stop"</para>
-                    </listitem>
-                </orderedlist>
-            </para>
-            <para os="windows">To uninstall the RCE service:</para>
-            <para os="windows">
-                <orderedlist>
-                    <listitem>
-                        <para>Navigate to the <code>extras\windows_service</code> folder inside your
-                            installation folder of RCE named <code>rce</code>
-                        </para>
-                    </listitem>
-                    <listitem>
-                        <para>Open the file <code>uninstall_service.bat</code> and set the absolute
-                            path of the variable RCE_ROOT_PATH to the location of your RCE
-                            installation</para>
-                    </listitem>
-                    <listitem>
-                        <para>Execute with administrator rights
-                            <programlisting>uninstall_service.bat</programlisting> by
-                            double-clicking or on the command line</para>
-                    </listitem>
-                </orderedlist>
-            </para>
-        </sect3>
-        <sect3>
-            <title><phrase os="linux">Daemon</phrase><phrase os="windows">Service</phrase>
-                Configuration</title>
-            <para>After installation, the <phrase os="linux">daemon</phrase><phrase os="windows"
-                    >service</phrase> instance will be started automatically. This will create a
-                default configuration file if it does not exist yet.</para>
-            <para os="linux">To configure the daemon instance, use <code>rce-daemon locate</code> to
-                find its configuration file, edit and save it, and then use <code>rce-daemon
-                    restart</code> to apply the new configuration.</para>
-            <para os="windows">To configure the service instance, locate the RCE configuration file
-                in the service user's home directory - by default, it is located at
-                    <code>C:\users\&lt;user id>\.rce\default\configuration.json</code>. Edit this
-                file and restart the service to apply the changes.</para>
-            <para>For importing SSH credentials and authorization group keys into a <phrase
-                    os="linux">daemon</phrase><phrase os="windows">service</phrase>, please refer to
-                section <xref linkend="authdata-import"/>. As of RCE 10, file-based imports are only
-                processed on startup, so a restart is required for this, too.</para>
-            <note>
-                <para>The need to restart the <phrase os="linux">daemon</phrase><phrase os="windows"
-                        >service</phrase> is temporary; future versions of RCE will apply
-                    configuration changes as soon as configuration files are changed or new import
-                    files are placed in the respective folders.</para>
-            </note>
-        </sect3>
+        <title>Installation as a Service on a <phrase os="linux">Linux Server</phrase><phrase
+                os="windows">Windows Server</phrase></title>
+        <para>Please refer to the section "<phrase os="linux">RCE as a Linux systemd Service</phrase><phrase os="windows">RCE as a Windows Service</phrase>" in the "RCE Administration
+			and Security Guide" to install RCE as a service.</para>
     </sect2>
 </sect1>

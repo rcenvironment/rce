@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 
 import org.apache.commons.io.FileUtils;
@@ -83,7 +84,7 @@ public class PersistentWorkflowDescriptionLoaderServiceImpl implements Persisten
                 }
             }
             return wd;
-        } catch (IOException | ParseException | RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
         }
     }
@@ -131,7 +132,7 @@ public class PersistentWorkflowDescriptionLoaderServiceImpl implements Persisten
                         FileUtils.copyFile(wfFile, new File(wfFile.getParentFile().getAbsolutePath(), backupFilename));
                     }
                     try {
-                        updateWorkflow(persistentDescription, wfFile, nonSilentUpdateRequired);
+                        updateWorkflow(persistentDescription, wfFile);
                         onWorkflowFileUpdated(wfFile, !nonSilentUpdateRequired, backupFilename, callback);
                     } catch (IOException | RuntimeException e) {
                         if (nonSilentUpdateRequired) {
@@ -145,7 +146,7 @@ public class PersistentWorkflowDescriptionLoaderServiceImpl implements Persisten
                 }
             }
             return loadWorkflowDescriptionFromFile(wfFile, callback);
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
         }
     }
@@ -162,7 +163,7 @@ public class PersistentWorkflowDescriptionLoaderServiceImpl implements Persisten
         wfUpdateService = newService;
     }
 
-    private int readWorkflowVersionNumber(File wfFile) throws ParseException, IOException {
+    private int readWorkflowVersionNumber(File wfFile) throws IOException {
         try (InputStream fileInputStream = new FileInputStream(wfFile)) {
             return new WorkflowDescriptionPersistenceHandler().readWorkflowVersionNumber(fileInputStream);
         }
@@ -171,11 +172,10 @@ public class PersistentWorkflowDescriptionLoaderServiceImpl implements Persisten
     /**
      * Invokes the update of the workflow description and stores the updated workflow description in the specified file.
      */
-    private void updateWorkflow(PersistentWorkflowDescription persWfDescr, File file, boolean hasNonSilentUpdate) throws IOException {
+    private void updateWorkflow(PersistentWorkflowDescription persWfDescr, File file) throws IOException {
         try (InputStream tempInputStream = IOUtils.toInputStream(wfUpdateService
-            .performWorkflowDescriptionUpdate(persWfDescr).getWorkflowDescriptionAsString(), WorkflowConstants.ENCODING_UTF8)) {
+            .performWorkflowDescriptionUpdate(persWfDescr).getWorkflowDescriptionAsString(), StandardCharsets.UTF_8)) {
             FileUtils.write(file, IOUtils.toString(tempInputStream));
-            tempInputStream.close();
         }
     }
 

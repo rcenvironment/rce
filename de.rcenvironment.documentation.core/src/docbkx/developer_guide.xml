@@ -33,16 +33,19 @@
 	<chapter>
 		<title>Coding Guidelines</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+			href="developer_guide/sections/new_bundle.xml" />
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/new_component.xml" />
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/debugging_monitoring.xml" />
 	</chapter>
 	
-	<!--
 	<chapter>
-		<title>System Architecture</title>
+		<title>Debugging</title>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+			href="developer_guide/sections/debugging.xml" />
+		
 	</chapter>
-	-->
 	
 	<chapter>
 		<title>Quality Assurance and Testing</title>

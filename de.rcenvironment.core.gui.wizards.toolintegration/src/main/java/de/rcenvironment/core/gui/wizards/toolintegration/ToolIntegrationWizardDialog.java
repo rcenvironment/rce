@@ -40,13 +40,27 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
 
     private final boolean isEdit;
 
-    public ToolIntegrationWizardDialog(Shell parentShell, IWizard newWizard,
-        boolean isEdit) {
+    private final boolean hasPreselectedTool;
+
+    protected ToolIntegrationWizardDialog(Shell parentShell, IWizard newWizard, boolean isEdit, boolean hasPreselectedTool) {
         super(parentShell, newWizard);
         setShellStyle(SWT.CLOSE | SWT.MAX | SWT.TITLE | SWT.BORDER | SWT.RESIZE
             | getDefaultOrientation());
         this.isEdit = isEdit;
         ((ToolIntegrationWizard) newWizard).setIsEdit(isEdit);
+        this.hasPreselectedTool = hasPreselectedTool;
+    }
+
+    public static ToolIntegrationWizardDialog createIntegrationWizard(Shell parentShell, IWizard newWizard) {
+        return new ToolIntegrationWizardDialog(parentShell, newWizard, false, false);
+    }
+
+    public static ToolIntegrationWizardDialog createIntegrationEditWizardWithPreselectedTool(Shell parentShell, IWizard newWizard) {
+        return new ToolIntegrationWizardDialog(parentShell, newWizard, true, true);
+    }
+
+    public static ToolIntegrationWizardDialog createIntegrationEditWizardWithoutPreselectedTool(Shell parentShell, IWizard newWizard) {
+        return new ToolIntegrationWizardDialog(parentShell, newWizard, true, false);
     }
 
     @Override
@@ -82,10 +96,10 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         for (IWizardPage p : getWizard().getPages()) {
             canFinish &= p.isPageComplete();
         }
-        if (backButton != null) {
+        if (backButton != null && getCurrentPage() != null) {
             backButton.setEnabled(getCurrentPage().getPreviousPage() != null);
         }
-        if (nextButton != null) {
+        if (nextButton != null && getCurrentPage() != null) {
             canFlipToNextPage = getCurrentPage().canFlipToNextPage();
             nextButton.setEnabled(canFlipToNextPage);
             saveAsButton.setEnabled(canFlipToNextPage);
@@ -120,7 +134,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
 
         case IDialogConstants.FINISH_ID:
             if (!isEdit) {
-                finishPressed();           
+                finishPressed();
                 break;
             }
             synchronized (LOCK_OBJECT) {
@@ -150,6 +164,9 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
     public int open() {
         int returnValue = super.open();
         ((ToolIntegrationWizard) getWizard()).open();
+        if (this.hasPreselectedTool) {
+            nextPressed();
+        }
         return returnValue;
     }
 }

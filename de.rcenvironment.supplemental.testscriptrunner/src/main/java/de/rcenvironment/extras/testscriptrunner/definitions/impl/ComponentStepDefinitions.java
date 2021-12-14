@@ -41,11 +41,12 @@ import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitio
  * @author Marlon Schroeter
  * @author Robert Mischke (based on code from)
  * @author Alexander Weinert (component information steps)
+ * @author Kathrin Schaffert (#17502, #17506)
  */
 public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBase {
-    
+
     private String lastStaticInputQueried;
-    
+
     private String lastStaticOutputQueried;
 
     private final List<Endpoint> staticInputsOfLastComponent = new LinkedList<>();
@@ -144,7 +145,7 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             for (String tool : parseCommaSeparatedList(toolList)) {
                 printToCommandConsole(StringUtils.format("Removing tool %s from instance %s", tool, instance));
                 File toolFile = instance.getAbsolutePathFromRelative(StringUtils.format("integration/tools/%s", tool));
@@ -214,10 +215,9 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
      *        {@code instanceIds} and is defined in {@link #resolveInstanceList()}
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
-     * @throws Throwable on failure
      */
     @Given("^adding(?: tool[s]?)? \"([^\"]+)\" to( all)?(?: instance[s]?)?(?: \"([^\"]+)\")?$")
-    public void givenAddingTools(String tools, String allFlag, String instanceIds) throws Throwable {
+    public void givenAddingTools(String tools, String allFlag, String instanceIds) throws Exception {
         AddToolIterator addToolIterator = new AddToolIterator(tools);
         iterateInstances(addToolIterator, allFlag, instanceIds);
     }
@@ -230,10 +230,9 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
      *        {@code instanceIds} and is defined in {@link #resolveInstanceList()}
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
-     * @throws Throwable on failure
      */
     @When("^removing(?: tool[s]?)? \"([^\"]+)\"(?: from)?( all)?(?: instance[s]?)?(?: \"([^\"]+)\")?$")
-    public void whenRemovingTools(String tools, String allFlag, String instanceIds) throws Throwable {
+    public void whenRemovingTools(String tools, String allFlag, String instanceIds) throws Exception {
         RemoveToolIterator removeToolIterator = new RemoveToolIterator(tools);
         iterateInstances(removeToolIterator, allFlag, instanceIds);
     }
@@ -241,8 +240,9 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
     @When("^integrating workflow \"([^\"]*)\" as component \"([^\"]*)\" on instance \"([^\"]*)\" with the following endpoint definitions:$")
     public void whenIntegratingWorkflow(String workflowName, String componentName, String instanceId, DataTable endpointDefinitionTable) {
         final List<List<String>> endpointDefinitions = endpointDefinitionTable.cells(0);
+
         final String endpointsDefinitionsString = endpointDefinitions.stream()
-            .map(row -> row.get(0))
+            .map(row -> ("--expose " + row.get(0)))
             .collect(Collectors.joining(" "));
 
         final Path originalWfFileLocation = executionContext.getTestScriptLocation().toPath().resolve("workflows").resolve(workflowName);
@@ -258,10 +258,9 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
      * 
      * @param instanceId the instance to query
      * @param componentsTable the expected component data to see (or not see in case of the reserved "absent" marker)
-     * @throws Throwable on failure
      */
     @Then("^instance \"([^\"]*)\" should see these components:$")
-    public void thenInstanceSeesComponents(String instanceId, DataTable componentsTable) throws Throwable {
+    public void thenInstanceSeesComponents(String instanceId, DataTable componentsTable) {
         final ManagedInstance instance = resolveInstance(instanceId);
 
         Map<String, ComponentVisibilityState> visibilityMap = new HashMap<>();
@@ -326,7 +325,7 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
     }
 
     @Then("^instance \"([^\"]*)\" should see the component \"([^\"]*)\"$")
-    public void instanceShouldSeeTheComponent(String instanceId, String componentId) throws Throwable {
+    public void instanceShouldSeeTheComponent(String instanceId, String componentId) {
         final ManagedInstance instance = resolveInstance(instanceId);
         final String command = StringUtils.format("components show %s", componentId);
         final String output = executeCommandOnInstance(instance, command, false);
@@ -367,13 +366,12 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
             currentLine = outputLines[currentIndex];
         }
         currentIndex += 1;
-        currentLine = outputLines[currentIndex];
 
         final List<String> dynamicOutputLines = new LinkedList<>();
         while (currentIndex < outputLines.length) {
+            currentLine = outputLines[currentIndex];
             dynamicOutputLines.add(currentLine);
             currentIndex += 1;
-            currentLine = outputLines[currentIndex];
         }
 
     }
@@ -383,33 +381,33 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
         this.lastStaticInputQueried = inputName;
         assertTrue(this.staticInputsOfLastComponent.stream().anyMatch(endpoint -> endpoint.name.equals(inputName)));
     }
-    
+
     @Then("^that input should have the default data type \"([^\"]*)\"$")
-    public void thatInputShouldBeOfType(String expectedDefaultDataType) throws Throwable {
+    public void thatInputShouldBeOfType(String expectedDefaultDataType) {
         final Endpoint lastInputQueried = getLastStaticInputQueried();
         assertEquals(expectedDefaultDataType, lastInputQueried.defaultDatatype);
     }
 
     @Then("^that input should have the input handling \"([^\"]*)\"$")
-    public void thatInputShouldHaveTheInputHandling(String expectedInputHandling) throws Throwable {
+    public void thatInputShouldHaveTheInputHandling(String expectedInputHandling)  {
         final Endpoint lastInputQueried = getLastStaticInputQueried();
         assertEquals(expectedInputHandling, lastInputQueried.defaultInputHandling);
     }
 
     @Then("^that input should have the execution constraint \"([^\"]*)\"$")
-    public void thatInputShouldHaveTheExecutionConstraint(String expectedExecutionConstraint) throws Throwable {
+    public void thatInputShouldHaveTheExecutionConstraint(String expectedExecutionConstraint) {
         final Endpoint lastInputQueried = getLastStaticInputQueried();
         assertEquals(expectedExecutionConstraint, lastInputQueried.defaultExecutionConstraint);
     }
 
     @Then("^that component should have a static output with name \"([^\"]*)\"$")
-    public void thatComponentShouldHaveAnOutputWithName(String outputName) throws Throwable {
+    public void thatComponentShouldHaveAnOutputWithName(String outputName) {
         this.lastStaticOutputQueried = outputName;
         assertTrue(this.staticOutputsOfLastComponent.stream().anyMatch(endpoint -> endpoint.name.equals(outputName)));
     }
 
     @Then("^that output should have the default data type \"([^\"]*)\"$")
-    public void thatOutputShouldBeOfType(String expectedDefaultDataType) throws Throwable {
+    public void thatOutputShouldBeOfType(String expectedDefaultDataType) {
         final Endpoint lastOutputQueried = getLastStaticOutputQueried();
         assertEquals(expectedDefaultDataType, lastOutputQueried.defaultDatatype);
     }
@@ -419,11 +417,11 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
             .filter(endpoint -> endpoint.name.equals(this.lastStaticInputQueried))
             .findAny().get();
     }
-    
+
     private Endpoint getLastStaticOutputQueried() {
         return this.staticOutputsOfLastComponent.stream()
             .filter(endpoint -> endpoint.name.equals(this.lastStaticOutputQueried))
             .findAny().get();
     }
-        
+
 }

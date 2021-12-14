@@ -8,12 +8,17 @@
 
 package de.rcenvironment.core.gui.communication.views.contributors;
 
+import java.util.Map;
+
 import org.eclipse.swt.widgets.Shell;
+
+import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 
 /**
  * Dialog to edit an existing network connection.
  *
  * @author Oliver Seebach
+ * @author Kathrin Schaffert (#17494)
  */
 public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog {
 
@@ -38,7 +43,7 @@ public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog
             String settings = this.networkContactPointID.substring(index);
             settings = settings.replaceAll("[()]", "");
 
-            setSettingsText(settings);
+            setConnectionSettings(settings);
 
             port = this.networkContactPointID.substring(this.networkContactPointID.indexOf(COLON) + 1, index);
 
@@ -64,41 +69,35 @@ public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog
         this.hint = HINT;
     }
 
-    private void setSettingsText(String settings) {
-
-        ConnectionSettings set = new ConnectionSettings();
+    private void setConnectionSettings(String settings) {
 
         try {
 
-            String numberOnly = settings.replaceAll("[^0-9,.]", "");
+            Map<String, String> attributes = NetworkContactPointUtils.parseAttributePart(settings);
 
-            if (numberOnly.charAt(numberOnly.length() - 1) == ',') {
-                numberOnly = numberOnly.substring(0, numberOnly.length() - 1);
+            if (attributes.containsKey(CONNECT_ON_STARTUP)) {
+                connectionSettings.setConnectOnStartup(Boolean.valueOf(attributes.get(CONNECT_ON_STARTUP)));
             }
-
-            if (numberOnly.startsWith(COM)) {
-                numberOnly = numberOnly.substring(1);
+            if (attributes.containsKey(USE_DEFAULT_SETTINGS)) {
+                connectionSettings.setUseDefaultSettings(Boolean.valueOf(attributes.get(USE_DEFAULT_SETTINGS)));
             }
-
-            int indexFirstCom = numberOnly.indexOf(",");
-            int indexSecondCom = numberOnly.indexOf(COM, numberOnly.indexOf(COM) + 1);
-
-            String multi = numberOnly.substring(0, indexFirstCom);
-            multi = multi.replaceAll("[^0-9.]", "");
-
-            String initialDelay = numberOnly.substring(indexFirstCom, indexSecondCom);
-            initialDelay = initialDelay.replaceAll(DECIMAL, "");
-
-            String maxDelay = numberOnly.substring(indexSecondCom);
-            maxDelay = maxDelay.replaceAll(DECIMAL, "");
-
-            settingsText = set.createStringForsettings(Integer.parseInt(initialDelay), Integer.parseInt(maxDelay),
-                Double.parseDouble(multi));
+            if (attributes.containsKey(AUTO_RETRY_INITIAL_DELAY_STR)) {
+                connectionSettings.setAutoRetryInitialDelay(
+                    Integer.valueOf(attributes.get(AUTO_RETRY_INITIAL_DELAY_STR)));
+            }
+            if (attributes.containsKey(AUTO_RETRY_MAXI_DELAY_STR)) {
+                connectionSettings
+                    .setAutoRetryMaximumDelay(Integer.valueOf(attributes.get(AUTO_RETRY_MAXI_DELAY_STR)));
+            }
+            if (attributes.containsKey(AUTO_RETRY_DELAY_MULTIPL)) {
+                connectionSettings
+                    .setAutoRetryDelayMultiplier(Double.valueOf(attributes.get(AUTO_RETRY_DELAY_MULTIPL)));
+            }
 
         } catch (NumberFormatException ex) {
-            final double multi = 1.5;
-            final int max = 300;
-            settingsText = set.createStringForsettings(5, max, multi);
+            // should never happen
+            throw new NumberFormatException(
+                "The connection settings format is incorrect. The edit dialog cannot be displayed." + ex.toString());
         }
 
     }

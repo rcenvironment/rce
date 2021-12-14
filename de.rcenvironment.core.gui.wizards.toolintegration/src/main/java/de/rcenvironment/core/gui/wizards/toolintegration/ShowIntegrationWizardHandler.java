@@ -26,12 +26,12 @@ public class ShowIntegrationWizardHandler extends AbstractHandler {
 
     @Override
     public Object execute(final ExecutionEvent event) throws ExecutionException {
-        final IWizard integrationWizard = new ToolIntegrationWizard(true, ToolIntegrationConstants.NEW_WIZARD_COMMON);
+        final IWizard integrationWizard = new ToolIntegrationWizard(true, ToolIntegrationConstants.NEW_WIZARD);
         Display display = Display.getCurrent();
         if (display == null) {
             display = Display.getDefault();
         }
-        final WizardDialog wizardDialog = new ToolIntegrationWizardDialog(display.getActiveShell(), integrationWizard, false);
+        final WizardDialog wizardDialog = ToolIntegrationWizardDialog.createIntegrationWizard(display.getActiveShell(), integrationWizard);
         wizardDialog.setBlockOnOpen(false);
         wizardDialog.open();
         return null;

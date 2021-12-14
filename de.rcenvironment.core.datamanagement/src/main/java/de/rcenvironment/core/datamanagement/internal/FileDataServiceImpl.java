@@ -346,7 +346,7 @@ public class FileDataServiceImpl implements FileDataService {
                         }
                     }
                 };
-                ConcurrencyUtils.getAsyncTaskService().execute(asyncUploader);
+                ConcurrencyUtils.getAsyncTaskService().execute("Async upload", asyncUploader);
 
                 long totalRead2 = 0; // other counter is held by writer thread; duplicate to avoid sync
                 do {

@@ -28,6 +28,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * GUI Section for information about the integrated tool and its creator.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#17711: added Export Documentation button)
  */
 public class ToolInformationSection extends ValidatingWorkflowNodePropertySection {
 
@@ -77,24 +78,15 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
 
         Button toolDocumentationButton = new Button(infoComposite, SWT.PUSH);
         GridData docuData = new GridData();
-        docuData.horizontalSpan = 2;
+        docuData.horizontalSpan = 1;
         toolDocumentationButton.setLayoutData(docuData);
         toolDocumentationButton.setText("Open Documentation");
+        toolDocumentationButton.addSelectionListener(createDocumentationButtonSelectionListener(false));
 
-        toolDocumentationButton.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                String identifier = getConfiguration().getComponentIdentifierWithVersion();
-                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier, false);
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                widgetSelected(arg0);
-            }
-
-        });
+        Button exportDocumentationButton = new Button(infoComposite, SWT.PUSH);
+        exportDocumentationButton.setLayoutData(docuData);
+        exportDocumentationButton.setText("Export Documentation");
+        exportDocumentationButton.addSelectionListener(createDocumentationButtonSelectionListener(true));
 
         infoSection.setClient(infoComposite);
 
@@ -136,4 +128,21 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
         }
     }
 
+    protected SelectionListener createDocumentationButtonSelectionListener(boolean export) {
+
+        return new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                String identifier = getConfiguration().getComponentIdentifierWithVersion();
+                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier, export);
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        };
+    }
+    
 }

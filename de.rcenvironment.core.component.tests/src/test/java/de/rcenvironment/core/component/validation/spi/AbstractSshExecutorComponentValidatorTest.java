@@ -18,7 +18,7 @@ import org.junit.Test;
 
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 
 /**
@@ -29,7 +29,7 @@ import de.rcenvironment.core.component.validation.api.ComponentValidationMessage
  */
 public class AbstractSshExecutorComponentValidatorTest {
 
-    private ComponentDescriptionMockCreater componentDescriptionMockCreater;
+    private ComponentDescriptionMockCreator componentDescriptionMockCreater;
 
     private AbstractSshExecutorComponentValidator abstractSshExecutorComponentValidator;
 
@@ -38,7 +38,7 @@ public class AbstractSshExecutorComponentValidatorTest {
     /** Basic Setup. */
     @Before
     public void setUp() {
-        componentDescriptionMockCreater = new ComponentDescriptionMockCreater();
+        componentDescriptionMockCreater = new ComponentDescriptionMockCreator();
 
         abstractSshExecutorComponentValidator = new AbstractSshExecutorComponentValidator() {
 

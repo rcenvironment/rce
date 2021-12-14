@@ -211,8 +211,15 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     }
 
     @Override
-    public InstanceConfigurationOperationSequence enableImSshAccess(int accessPort) {
+    public InstanceConfigurationOperationSequence enableImSshAccessWithDefaultRole(int accessPort) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS, accessPort));
+        return this;
+    }
+
+    @Override
+    public InstanceConfigurationOperationSequence enableImSshAccessWithRole(int accessPort, String role) {
+        appendStep(
+            new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS, accessPort, role));
         return this;
     }
 

@@ -39,6 +39,7 @@ import de.rcenvironment.extras.testscriptrunner.definitions.helper.StepDefinitio
  * @author Robert Mischke
  * @author Lukas Rosenbach
  * @author Marlon Schroeter
+ * @author Kathrin Schaffert (minor bugfix in regex #17471)
  */
 public class InstanceInstantiationStepDefinitions extends InstanceManagementStepDefinitionBase {
 
@@ -52,6 +53,8 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
      * Test step that sets up a single shared installation and one or more instances, while also registering this installation for these
      * instances.
      * 
+     * NOTE: The (default) values (e. g. user name, password) are taken from extras.testscriptrunner.definitions.helper.ConnectionOptionConstants
+     * 
      * TODO add instance configuration; currently they are only registered
      * 
      * @param keepProfile an optional phrase that prevents the profile to be wiped, resetting only the configuration file
@@ -61,16 +64,17 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
      *        release) or a specific (when null) build shall be used
      * @param buildExplicit the URL part (e.g. "snapshots/trunk") defining the build to use, or a symbolic installation id (e.g. ":self" or
      *        "local:...")
-     * @throws Throwable on failure
+     * @param imMasterRole The SSH role to be used for the IM master account
      */
-    @Given("^(?:the )?(same )?(running )?instance[s]? \"([^\"]*)\" using (?:the (default|legacy|base) build|build \"([^\"]*)\")$")
+    @Given("^(?:the )?(same )?(running )?instance[s]? \"([^\"]*)\" using (?:the (default|legacy|base) build|build \"([^\"]*)\")(?: with im master role \"([^\"]*)\")?$")
     public void givenInstancesUsingBuild(String keepProfile, String autoStartPhrase, String instanceList, String buildShort,
-        String buildExplicit)
-        throws Throwable {
+        String buildExplicit, String imMasterRole)
+            throws Exception {
 
-        final boolean wipeProfile = keepProfile == null;   
+        final boolean wipeProfile = keepProfile == null;
         final PrefixingTextOutForwarder imOperationOutputReceiver = getTextoutReceiverForIMOperations();
         final String installationId = parseInstallationId(buildShort, buildExplicit, imOperationOutputReceiver);
+        TestContext.setTestedInstanceInstallationRoot(installationId);
 
         final List<String> instanceDefinitionParts = parseCommaSeparatedList(instanceList);
         final List<String> instanceIds = new ArrayList<>();
@@ -99,7 +103,7 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
             }
             instance.setServerPort(StepDefinitionConstants.CONNECTION_TYPE_SSH, 0, imSshPortNumber);
 
-            configureInstance(imOperationOutputReceiver, instanceId, optionString, imSshPortNumber, wipeProfile);
+            configureInstance(imOperationOutputReceiver, instanceId, optionString, imSshPortNumber, wipeProfile, imMasterRole);
         }
         if (autoStartPhrase != null) {
             printToCommandConsole(StringUtils.format("Auto-starting instance(s) \"%s\"", instanceList));
@@ -129,7 +133,8 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
     }
 
     private void configureInstance(final PrefixingTextOutForwarder imOperationOutputReceiver, final String instanceId,
-        final String optionString, final int imSshPortNumber, final boolean wipe) throws InstanceConfigurationException, IOException {
+        final String optionString, final int imSshPortNumber, final boolean wipe, String imMasterRole)
+        throws InstanceConfigurationException, IOException {
         InstanceConfigurationOperationSequence setupSequence = INSTANCE_MANAGEMENT_SERVICE.newConfigurationOperationSequence();
         if (wipe) {
             setupSequence = setupSequence.wipeConfiguration();
@@ -147,7 +152,12 @@ public class InstanceInstantiationStepDefinitions extends InstanceManagementStep
         if (idMatcher.find()) {
             customNodeId = idMatcher.group(1);
         }
-        setupSequence = setupSequence.enableImSshAccess(imSshPortNumber).setName(instanceId);
+        if (imMasterRole == null) {
+            setupSequence = setupSequence.enableImSshAccessWithDefaultRole(imSshPortNumber);
+        } else {
+            setupSequence = setupSequence.enableImSshAccessWithRole(imSshPortNumber, imMasterRole);
+        }
+        setupSequence = setupSequence.setName(instanceId);
         if (customNodeId != null) {
             setupSequence = setupSequence.setCustomNodeId(customNodeId);
         }

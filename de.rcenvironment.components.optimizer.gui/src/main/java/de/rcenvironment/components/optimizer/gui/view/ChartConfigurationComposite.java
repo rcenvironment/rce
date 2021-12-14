@@ -52,7 +52,6 @@ import org.eclipse.swt.widgets.Tree;
 
 import de.rcenvironment.components.optimizer.common.Dimension;
 import de.rcenvironment.components.optimizer.common.Measure;
-import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.components.optimizer.gui.properties.Messages;
 import de.rcenvironment.components.optimizer.gui.view.OptimizerDatastore.OptimizerResultSetAddListener;
@@ -67,6 +66,7 @@ import de.rcenvironment.core.gui.utils.common.configuration.ConfigurationViewerL
  * 
  * @author Christian Weiss
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#14696)
  */
 public class ChartConfigurationComposite extends Composite implements
     ISelectionProvider {
@@ -608,11 +608,7 @@ public class ChartConfigurationComposite extends Composite implements
          */
         private void addDataset(OptimizerResultSet dataset) {
             double xdata = 0;
-            if (!dimension.getName().equals(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME)) {
-                xdata = dataset.getValue("Output: " + dimension.getName());
-            } else {
-                xdata = dataset.getValue(dimension.getName());
-            }
+            xdata = dataset.getValue(dimension.getName());
             final double ydata = dataset.getValue(measure.getName());
             final Sample sample = new Sample(xdata, ydata);
             addSample(sample);

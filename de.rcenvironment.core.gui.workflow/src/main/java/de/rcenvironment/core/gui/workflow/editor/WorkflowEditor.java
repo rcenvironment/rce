@@ -16,15 +16,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EventObject;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
@@ -59,54 +53,31 @@ import org.eclipse.gef.MouseWheelHandler;
 import org.eclipse.gef.MouseWheelZoomHandler;
 import org.eclipse.gef.SnapToGeometry;
 import org.eclipse.gef.SnapToGrid;
+import org.eclipse.gef.Tool;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CommandStack;
-import org.eclipse.gef.dnd.TemplateTransferDragSourceListener;
 import org.eclipse.gef.dnd.TemplateTransferDropTargetListener;
 import org.eclipse.gef.editparts.AbstractGraphicalEditPart;
 import org.eclipse.gef.editparts.ZoomManager;
-import org.eclipse.gef.palette.CombinedTemplateCreationEntry;
-import org.eclipse.gef.palette.ConnectionCreationToolEntry;
-import org.eclipse.gef.palette.PaletteDrawer;
-import org.eclipse.gef.palette.PaletteEntry;
-import org.eclipse.gef.palette.PaletteGroup;
-import org.eclipse.gef.palette.PaletteRoot;
+import org.eclipse.gef.requests.CreationFactory;
 import org.eclipse.gef.ui.actions.ToggleGridAction;
 import org.eclipse.gef.ui.actions.ToggleSnapToGeometryAction;
 import org.eclipse.gef.ui.actions.ZoomInAction;
 import org.eclipse.gef.ui.actions.ZoomOutAction;
-import org.eclipse.gef.ui.palette.FlyoutPaletteComposite;
-import org.eclipse.gef.ui.palette.FlyoutPaletteComposite.FlyoutPreferences;
-import org.eclipse.gef.ui.palette.PaletteViewer;
-import org.eclipse.gef.ui.palette.PaletteViewerProvider;
-import org.eclipse.gef.ui.parts.GraphicalEditorWithFlyoutPalette;
+import org.eclipse.gef.ui.parts.GraphicalEditor;
 import org.eclipse.help.IContextProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.events.MenuAdapter;
-import org.eclipse.swt.events.MenuDetectEvent;
-import org.eclipse.swt.events.MenuDetectListener;
-import org.eclipse.swt.events.MenuEvent;
-import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -116,53 +87,32 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.contexts.IContextService;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
-import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
-import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.api.ComponentUtils;
-import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
-import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
-import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
-import de.rcenvironment.core.component.model.api.ComponentDescription;
-import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
-import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
-import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeIdentifier;
-import de.rcenvironment.core.gui.resources.api.ImageManager;
-import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.EditorsHelper;
 import de.rcenvironment.core.gui.utils.incubator.ContextMenuItemRemover;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWizardHandler;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationRemoveHandler;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationWizardHandler;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.WorkflowNodeLabelConnectionHelper;
-import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeDeleteCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeLabelConnectionCreateCommand;
-import de.rcenvironment.core.gui.workflow.editor.documentation.ToolIntegrationDocumentationGUIHelper;
 import de.rcenvironment.core.gui.workflow.editor.handlers.OpenConnectionEditorHandler;
 import de.rcenvironment.core.gui.workflow.editor.handlers.OpenConnectionsViewHandler;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowDescriptionValidationUtils;
@@ -189,9 +139,10 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Jan Flink
  * @author Martin Misiak
  * @author Brigitte Boden
+ * @author Alexander Weinert
  */
-public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
-    implements ITabbedPropertySheetPageContributor, DistributedComponentKnowledgeListener {
+public class WorkflowEditor extends GraphicalEditor
+    implements ITabbedPropertySheetPageContributor {
 
     /** Property change event. */
     public static final int PROP_FINAL_WORKFLOW_DESCRIPTION_SET = 0x300;
@@ -214,25 +165,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
 
     private static final int MOVEMENT = 1;
 
-    private static final String REMOTEACCESS = "remoteaccess";
-
     private static final Log LOGGER = LogFactory.getLog(WorkflowEditor.class);
 
-    private static final char SELECTION_KEYCODE = 's'; // for ALT + s as shortcut
-
-    private static final char CONNECTION_KEYCODE = 'd'; // for ALT + d as shortcut
-
     private static final char OPEN_CONNECTION_VIEW_KEYCODE = 'c'; // for ALT + c as shortcut
-
-    private static final String MENU_LISTENER_MARKER = "MENU_LISTENER_MARKER";
-
-    private static final String TOOL_DEACTIVATE_LABEL = "Deactivate Tool...";
-
-    private static final String TOOL_EDIT_LABEL = "Edit Tool...";
-
-    private static final String TOOL_INTEGRATE_LABEL = "Integrate Tool...";
-
-    private static final String TOOLINTEGRATION_ITEM = "toolIntegrationItem";
 
     private static final int MINUS_ONE = -1;
 
@@ -252,25 +187,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
 
     protected WorkflowDescription workflowDescription;
 
-    private boolean allLabelsShown = false;
-
     private TabbedPropertySheetPage tabbedPropertySheetPage;
 
     private GraphicalViewer viewer;
-
-    private PaletteRoot paletteRoot;
-
-    private MenuItem toolIntegrationPaletteMenuItem;
-
-    private MenuItem editToolPaletteMenuItem;
-
-    private MenuItem deactivateToolPaletteMenuItem;
-
-    private MenuItem documentationToolPaletteMenuItem;
-
-    private PaletteViewer paletteViewer = null;
-
-    private ConnectionCreationToolEntry connectionCreationToolEntry = null;
 
     private int mouseX;
 
@@ -294,35 +213,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         return workflowDescription;
     }
 
-    // Switch activate tool in palette to the Draw Connection tool
-    private void switchToConnectionTool() {
-        if (connectionCreationToolEntry == null) {
-            for (Object paletteGroupObject : paletteViewer.getPaletteRoot().getChildren()) {
-                if (paletteGroupObject instanceof PaletteGroup) {
-                    PaletteGroup paletteGroup = (PaletteGroup) paletteGroupObject;
-                    for (Object paletteEntryObject : paletteGroup.getChildren()) {
-                        if (paletteEntryObject instanceof ConnectionCreationToolEntry) {
-                            ConnectionCreationToolEntry entry = (ConnectionCreationToolEntry) paletteEntryObject;
-                            connectionCreationToolEntry = entry;
-                            paletteViewer.setActiveTool(entry);
-                        }
-                    }
-                }
-            }
-        } else {
-            paletteViewer.setActiveTool(connectionCreationToolEntry);
-        }
-    }
-
-    // Switch activate tool in palette to the Selection tool
-    private void switchToSelectionTool() {
-        paletteViewer.setActiveTool(paletteViewer.getPaletteRoot().getDefaultEntry());
-    }
-
-    public PaletteViewer getPaletteViewer() {
-        return paletteViewer;
-    }
-
     public CommandStack getEditorsCommandStack() {
         return getCommandStack();
     }
@@ -335,35 +225,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         } catch (ExecutionException e1) {
             e1.printStackTrace();
         }
-    }
-
-    @Override
-    protected PaletteRoot getPaletteRoot() {
-        final List<DistributedComponentEntry> componentInstallations = new ArrayList<>();
-        IProgressService service = (IProgressService) PlatformUI.getWorkbench().getService(IProgressService.class);
-        try {
-            service.run(false, false, new IRunnableWithProgress() {
-
-                @Override
-                public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-                    try {
-                        monitor.beginTask(Messages.fetchingComponents, 3);
-                        monitor.worked(2);
-                        componentInstallations.addAll(getInitialComponentKnowledge().getAllInstallations());
-                        monitor.worked(1);
-                    } finally {
-                        monitor.done();
-                    }
-                }
-            });
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        WorkflowPaletteFactory factory = new WorkflowPaletteFactory();
-        paletteRoot = factory.createPalette(componentInstallations);
-        return paletteRoot;
     }
 
     @Override
@@ -392,8 +253,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         viewer.setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
         tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
 
-        registerChangeListeners();
-
         viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
             @Override
@@ -414,14 +273,12 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
                         String id = ci.getIdentifierAndVersion().substring(0,
                             ci.getIdentifierAndVersion().lastIndexOf(ComponentConstants.ID_SEPARATOR));
                         if (toolIntegrationRegistry.hasTIContextMatchingPrefix(id)) {
-                            PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(),
-                                ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
+                            setHelp(ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
                         } else {
-                            PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), id);
-                            LogFactory.getLog(this.getClass()).debug(StringUtils.format("Set help ID to %s", id));
+                            setHelp(id);
                         }
                     } else {
-                        PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), null);
+                        setHelp(null);
                     }
                 }
                 removeConnectionColorsAndLabel();
@@ -467,9 +324,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
             }
 
         });
-
-        // Avoid graphical artifacts during loading from workflow file.
-        getGraphicalControl().setVisible(true);
 
         // Snap to grid and geometry actions, enable geometry automatically.
         getActionRegistry().registerAction(new ToggleGridAction(getGraphicalViewer()));
@@ -563,182 +417,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         super.dispose();
     }
 
-    @Override
-    protected PaletteViewerProvider createPaletteViewerProvider() {
-        return new PaletteViewerProvider(getEditDomain()) {
-
-            @Override
-            protected void configurePaletteViewer(final PaletteViewer v) {
-                super.configurePaletteViewer(v);
-                paletteViewer = v;
-                v.getControl().addKeyListener(new KeyAdapter() {
-
-                    @Override
-                    public void keyPressed(KeyEvent e) {
-                        if (e.stateMask == SWT.ALT && e.keyCode == CONNECTION_KEYCODE) {
-                            switchToConnectionTool();
-                        } else if (e.stateMask == SWT.ALT && e.keyCode == SELECTION_KEYCODE) {
-                            switchToSelectionTool();
-                        }
-                    }
-                });
-                // adds tool integration add, edit and deactivate wizards to palette's context
-                // menu
-                v.getControl().addMenuDetectListener(new MenuDetectListener() {
-
-                    @Override
-                    public void menuDetected(MenuDetectEvent menuDetectEvent) {
-                        final Menu menu = ((Control) menuDetectEvent.widget).getMenu();
-                        // prevents multiple listener registration
-                        if (menu.getData(MENU_LISTENER_MARKER) == null) {
-                            menu.setData(MENU_LISTENER_MARKER, true);
-                            menu.addMenuListener(new MenuAdapter() {
-
-                                @Override
-                                public void menuShown(MenuEvent menuEvent) {
-                                    Object selection = ((StructuredSelection) v.getSelection()).getFirstElement();
-                                    if (selection instanceof EditPart) {
-                                        String toolName = ((PaletteEntry) ((EditPart) selection).getModel())
-                                            .getDescription();
-                                        // Context menu for integrated tools
-                                        if (toolName != null && getSelectedPaletteComponent(toolName) != null
-                                            && getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifier().matches(
-                                                ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID)) {
-                                            extendPaletteContextMenu(menu,
-                                                getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion());
-                                        }
-                                        // Context menu for SSH remote access tools
-                                        if (toolName != null && getSelectedPaletteComponent(toolName) != null
-                                            && getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion()
-                                                .matches(
-                                                    "de.rcenvironment.remoteaccess.*")) {
-                                            extendPaletteContextMenuForSshComponent(menu,
-                                                getSelectedPaletteComponent(toolName).getComponentInterface().getIdentifierAndVersion());
-                                        }
-                                    }
-                                }
-
-                                private void extendPaletteContextMenu(Menu menu, String toolID) {
-                                    // add separator
-                                    MenuItem separator = new MenuItem(menu, SWT.SEPARATOR);
-                                    separator.setData(TOOLINTEGRATION_ITEM, true);
-                                    // add tool integration menu items
-                                    addShowToolIntegrationWizard(menu);
-                                    addShowEditToolIntegrationWizard(menu);
-                                    addShowDeleteToolIntegrationWizard(menu);
-                                    addGetDocumentation(menu, toolID);
-                                    addExportDocumentation(menu, toolID);
-                                }
-
-                                private void extendPaletteContextMenuForSshComponent(Menu menu, String toolID) {
-                                    // add separator
-                                    MenuItem separator = new MenuItem(menu, SWT.SEPARATOR);
-                                    separator.setData(TOOLINTEGRATION_ITEM, true);
-                                    // add ssh tool menu items
-                                    addGetDocumentation(menu, toolID);
-                                    addExportDocumentation(menu, toolID);
-                                }
-                            });
-                        }
-                    }
-                });
-                v.getControl().addMouseListener(new MouseAdapter() {
-
-                    private final int offset = 20;
-
-                    @Override
-                    public void mouseDoubleClick(MouseEvent e) {
-                        if (v.getActiveTool().getLabel().equals(WorkflowLabel.PALETTE_ENTRY_NAME)) {
-                            WorkflowLabel label = new WorkflowLabel(WorkflowLabel.INITIAL_TEXT);
-                            WorkflowDescription model = (WorkflowDescription) viewer.getContents().getModel();
-                            // Proper size is set within the command
-                            Rectangle rectangle = new Rectangle(TILE_OFFSET, TILE_OFFSET, MINUS_ONE, MINUS_ONE);
-                            WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(label,
-                                model, rectangle);
-                            WorkflowNodeLabelConnectionCreateCommand createCommand = helper.createCommand();
-                            getEditorsCommandStack().execute(createCommand);
-                            getExistingPaletteGroups();
-                            v.setActiveTool(v.getPaletteRoot().getDefaultEntry());
-                        }
-                        WorkflowDescription model = (WorkflowDescription) viewer.getContents().getModel();
-                        ComponentInstallation installation = getSelectedPaletteComponent(v.getActiveTool().getLabel());
-
-                        // Set bounds of new component, if intersects with existing translate by
-                        // 30,30
-                        Rectangle rectangle = new Rectangle(TILE_OFFSET, TILE_OFFSET, TILE_SIZE, TILE_SIZE);
-                        for (WorkflowNode node : model.getWorkflowNodes()) {
-                            Rectangle nodeRect = new Rectangle(node.getX(), node.getY(), TILE_SIZE, TILE_SIZE);
-                            if (nodeRect.intersects(rectangle)) {
-                                rectangle.translate(offset, offset);
-                            }
-                        }
-
-                        // if tool was found, add it
-                        if (installation != null) {
-                            ComponentDescription description = new ComponentDescription(installation);
-                            description.initializeWithDefaults();
-                            WorkflowNode node = new WorkflowNode(description);
-                            WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(node,
-                                model, rectangle);
-                            WorkflowNodeLabelConnectionCreateCommand createCommand = helper.createCommand();
-                            getEditorsCommandStack().execute(createCommand);
-                            // activate properties tab for added node
-                            for (Object editpart : viewer.getContents().getChildren()) {
-                                if (editpart instanceof EditPart && editpart instanceof WorkflowNodePart) {
-                                    EditPart currentEditPart = (EditPart) editpart;
-                                    if (((WorkflowNode) currentEditPart.getModel()).equals(node)) {
-                                        viewer.select(currentEditPart);
-                                        tabbedPropertySheetPage.selectionChanged(WorkflowEditor.this,
-                                            viewer.getSelection());
-                                        break;
-                                    }
-                                }
-                            }
-                            // set active tool to "select" when double click was performed.
-                            // getExistingPaletteGroups() has to be called, for whatever reason
-                            getExistingPaletteGroups();
-                            v.setActiveTool(v.getPaletteRoot().getDefaultEntry());
-                        }
-                    }
-
-                });
-                v.addDragSourceListener(new TemplateTransferDragSourceListener(v));
-            }
-        };
-
-    }
-
-    private ComponentInstallation getSelectedPaletteComponent(final String label) {
-        PlatformService platformService = serviceRegistryAccess.getService(PlatformService.class);
-        LogicalNodeId localNode = platformService.getLocalDefaultLogicalNodeId();
-        Collection<DistributedComponentEntry> installations = getInitialComponentKnowledge().getAllInstallations();
-        installations = ComponentUtils.eliminateComponentInterfaceDuplicates(installations, localNode);
-
-        ComponentInstallation installation = null;
-        for (DistributedComponentEntry entry : installations) {
-            ComponentInstallation inst = entry.getComponentInstallation();
-            String name = (inst.getComponentInterface().getDisplayName());
-            if (inst.getComponentInterface().getVersion() != null
-                && (toolIntegrationRegistry.hasTIContextMatchingPrefix(inst.getComponentInterface().getIdentifierAndVersion())
-                    || inst.getComponentInterface().getIdentifierAndVersion()
-                        .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + REMOTEACCESS))) {
-                name = name
-                    + StringUtils.format(COMPONENTNAMES_WITH_VERSION, inst.getComponentInterface().getVersion());
-            }
-            if (name.equals(label)) {
-                installation = inst;
-                break;
-            }
-        }
-        return installation;
-    }
-
-    @Override
-    protected void configureGraphicalViewer() {
-        super.configureGraphicalViewer();
-        getGraphicalControl().setVisible(false);
-    }
-
     /**
      * Used in {@link #setInput(IEditorInput)}. Can be overridden.
      */
@@ -771,7 +449,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
                             public void run() {
                                 if (viewer.getControl() != null) {
                                     viewer.setContents(workflowDescription);
-                                    getGraphicalControl().setVisible(true);
                                     if (getEditorSite() != null) {
                                         setFocus();
                                     }
@@ -955,95 +632,25 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         List<?> list = viewer.getRootEditPart().getChildren();
         WorkflowDescriptionValidationUtils.validateWorkflowDescription(workflowDescription, false, true);
         for (Object object : list) {
-            if (object instanceof WorkflowPart) {
-                WorkflowPart workflowPart = (WorkflowPart) object;
-                List<?> children = workflowPart.getChildren();
-                for (Object child : children) {
-                    if (child instanceof WorkflowNodePart) {
-                        WorkflowNodePart workflowNodePart = (WorkflowNodePart) child;
-                        if (!((WorkflowNode) workflowNodePart.getModel()).isValid()) {
-                            workflowNodePart.updateValid();
-                        }
-                    }
+            if (!(object instanceof WorkflowPart)) {
+                continue;
+            }
+
+            WorkflowPart workflowPart = (WorkflowPart) object;
+            List<?> children = workflowPart.getChildren();
+            for (Object child : children) {
+                if (!(child instanceof WorkflowNodePart)) {
+                    continue;
+                }
+
+                WorkflowNodePart workflowNodePart = (WorkflowNodePart) child;
+                final WorkflowNode workflowNode = (WorkflowNode) workflowNodePart.getModel();
+                if (!workflowNode.isValid()) {
+                    workflowNodePart.updateValid();
                 }
             }
         }
         firePropertyChange(PROP_WORKFLOW_VAILDATION_FINISHED);
-    }
-
-    private void cleanNewDescriptionOfDisabledAndNotAvailableNodes(WorkflowDescription newWorkflowDescription) {
-        Set<WorkflowNode> nodesToDelete = new HashSet<>();
-        nodesToDelete.addAll(getDisabledNodes(newWorkflowDescription));
-        nodesToDelete.addAll(getNotAvailableNodes(newWorkflowDescription));
-        if (!nodesToDelete.isEmpty()) {
-            new WorkflowNodeDeleteCommand(newWorkflowDescription, new ArrayList<WorkflowNode>(nodesToDelete)).execute();
-        }
-    }
-
-    private List<WorkflowNode> getInvalidWorkflowNodes(WorkflowDescription newWorkflowDescription) {
-        List<WorkflowNode> result = new ArrayList<>();
-        for (WorkflowNode node : newWorkflowDescription.getWorkflowNodes()) {
-            if (!node.isValid()) {
-                result.add(node);
-            }
-        }
-        return result;
-    }
-
-    private List<WorkflowNode> getNotAvailableNodes(WorkflowDescription newWorkflowDescription) {
-        List<WorkflowNode> result = new ArrayList<>();
-        for (WorkflowNode node : newWorkflowDescription.getWorkflowNodes()) {
-            if (!isNodeAvailable(node)) {
-                result.add(node);
-            }
-        }
-        return result;
-    }
-
-    private List<WorkflowNode> getDisabledNodes(WorkflowDescription newWorkflowDescription) {
-        List<WorkflowNode> result = new ArrayList<>();
-        for (WorkflowNode node : newWorkflowDescription.getWorkflowNodes()) {
-            if (!node.isEnabled()) {
-                result.add(node);
-            }
-        }
-        return result;
-    }
-
-    private boolean isNodeAvailable(WorkflowNode node) {
-        return !node.getComponentDescription().getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX);
-    }
-
-    private void markTargetsOfInvalidOrDisabledOrNotAvailableNodesInvalid(WorkflowDescription newWorkflowDescription) {
-        Set<WorkflowNode> nodesOfInterest = new HashSet<>();
-        nodesOfInterest.addAll(getInvalidWorkflowNodes(newWorkflowDescription));
-        nodesOfInterest.addAll(getNotAvailableNodes(newWorkflowDescription));
-        nodesOfInterest.addAll(getDisabledNodes(newWorkflowDescription));
-
-        for (WorkflowNode node : nodesOfInterest) {
-            for (Connection connection : newWorkflowDescription.getConnections()) {
-                if (connection.getSourceNode().equals(node) && connection.getTargetNode().isEnabled()
-                    && !nodesOfInterest.contains(connection.getTargetNode())) {
-                    EndpointDescription inputEp = connection.getInput();
-
-                    EndpointDefinition.InputExecutionContraint exeConstraint = inputEp.getEndpointDefinition()
-                        .getDefaultInputExecutionConstraint();
-                    if (inputEp.getMetaDataValue(
-                        ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null) {
-                        exeConstraint = EndpointDefinition.InputExecutionContraint.valueOf(inputEp
-                            .getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT));
-                    }
-
-                    if (exeConstraint.equals(EndpointDefinition.InputExecutionContraint.Required)) {
-                        newWorkflowDescription.getWorkflowNode(connection.getTargetNode().getIdentifierAsObject())
-                            .setValid(false);
-                        // this triggers a visual update of the component in the editor later on
-                        workflowDescription.getWorkflowNode(connection.getTargetNode().getIdentifierAsObject())
-                            .setValid(false);
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -1142,13 +749,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
     }
 
     @Override
-    protected FlyoutPreferences getPalettePreferences() {
-        FlyoutPreferences prefs = super.getPalettePreferences();
-        prefs.setPaletteState(FlyoutPaletteComposite.STATE_PINNED_OPEN);
-        return prefs;
-    }
-
-    @Override
     public boolean isSaveAsAllowed() {
         return true;
     }
@@ -1157,461 +757,12 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
         return viewer;
     }
 
-    /**
-     * Registers an event listener for network changes as an OSGi service (whiteboard pattern).
-     * 
-     * @param display
-     */
-    private void registerChangeListeners() {
-        serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class, this);
-    }
-
-    private List<String> getExistingPaletteGroups() {
-        List<String> paletteGroups = new ArrayList<String>();
-        for (Object child : paletteRoot.getChildren()) {
-            if (child instanceof PaletteDrawer) {
-                paletteGroups.add(((PaletteDrawer) child).getLabel());
-            }
-        }
-        return paletteGroups;
-    }
-
-    private List<String> getExistingPaletteEntries() {
-        List<String> paletteEntries = new ArrayList<String>();
-        for (Object child : paletteRoot.getChildren()) {
-            if (child instanceof PaletteDrawer) {
-                for (Object innerChild : ((PaletteDrawer) child).getChildren()) {
-                    if (innerChild instanceof PaletteEntry) {
-                        paletteEntries.add(((PaletteEntry) innerChild).getLabel());
-                    }
-                }
-            }
-        }
-        return paletteEntries;
-    }
-
-    private List<String> getExistingComponentNames(Collection<DistributedComponentEntry> entries) {
-        List<String> existingComponentNames = new ArrayList<String>();
-        for (DistributedComponentEntry entry : entries) {
-            ComponentInstallation installation = entry.getComponentInstallation();
-            String name = installation.getComponentInterface().getDisplayName();
-            if (installation.getComponentInterface().getVersion() != null
-                && (toolIntegrationRegistry.hasTIContextMatchingPrefix(installation.getComponentInterface().getIdentifierAndVersion())
-                    || installation.getComponentInterface().getIdentifierAndVersion()
-                        .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "remoteaccess"))) {
-                name = name + StringUtils.format(COMPONENTNAMES_WITH_VERSION,
-                    installation.getComponentInterface().getVersion());
-            }
-            existingComponentNames.add(name);
-        }
-        return existingComponentNames;
-    }
-
-    private CombinedTemplateCreationEntry createPaletteEntry(ComponentInstallation installation) {
-        // set the default platform of the ComponendDescription
-        // to null
-        ComponentInterface componentInterface = installation.getComponentInterface();
-        // prepare the icon of the component
-        ImageDescriptor imageDescriptor = null;
-        Image image = ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class)
-            .getComponentImageContainer(componentInterface).getComponentIcon16();
-        imageDescriptor = ImageDescriptor.createFromImage(image);
-
-        String name = componentInterface.getDisplayName();
-        if (componentInterface.getVersion() != null
-            && (toolIntegrationRegistry.hasTIContextMatchingPrefix(componentInterface.getIdentifierAndVersion())
-                || componentInterface.getIdentifierAndVersion()
-                    .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + REMOTEACCESS))) {
-            name = name + StringUtils.format(COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
-        }
-        // create the palette entry
-        CombinedTemplateCreationEntry component = new CombinedTemplateCreationEntry(name, name,
-            new WorkflowNodeFactory(installation), imageDescriptor, imageDescriptor);
-
-        return component;
-    }
-
-    private void addComponentToGroup(CombinedTemplateCreationEntry component, String groupLabel) {
-        for (Object group : paletteRoot.getChildren()) {
-            if (group instanceof PaletteDrawer) {
-                if (((PaletteDrawer) group).getLabel().equals(groupLabel)) {
-                    ((PaletteDrawer) group).add(getIndexForComponentToAdd((PaletteDrawer) group, component.getLabel()),
-                        component);
-                }
-            }
-        }
-    }
-
-    private int getIndexForComponentToAdd(PaletteDrawer group, String componentLabel) {
-        int index = 0;
-        for (Object child : group.getChildren()) {
-            if (child instanceof PaletteEntry) {
-                if (((PaletteEntry) child).getLabel().compareToIgnoreCase(componentLabel) > 0) {
-                    return index;
-                }
-            }
-            index++;
-        }
-        return index;
-    }
-
-    private PaletteDrawer createPaletteDrawer(String groupLabel) {
-        PaletteDrawer group = new PaletteDrawer(groupLabel);
-        group.setDescription(groupLabel);
-        group.setInitialState(PaletteDrawer.INITIAL_STATE_CLOSED);
-        paletteRoot.add(getIndexForGroupToAdd(groupLabel), group);
-        return group;
-    }
-
-    private int getIndexForGroupToAdd(String groupLabel) {
-        int index = 0;
-
-        // if group starts with underscore, append it to the end.
-        if (groupLabel.startsWith("_")) {
-            return paletteRoot.getChildren().size();
-        }
-
-        for (Object group : paletteRoot.getChildren()) {
-            if (group instanceof PaletteDrawer) {
-
-                if (((PaletteDrawer) group).getLabel().compareToIgnoreCase(groupLabel) > 0) {
-                    return index;
-                }
-            }
-            index++;
-        }
-        return index;
-    }
-
-    private void removeComponentFromGroup(PaletteDrawer group, PaletteEntry entry) {
-        group.remove(entry);
-        if (group.getChildren().size() <= 0) {
-            paletteRoot.remove(group);
-        }
-    }
-
-    private synchronized void refreshPalette(Collection<DistributedComponentEntry> entries) {
-        // create entry lists
-        List<String> componentNames = getExistingComponentNames(entries);
-        // getting the componentImageContaineService
-        ComponentImageContainerService componentImageContainerService =
-            ServiceRegistry.createAccessFor(this).getService(ComponentImageContainerService.class);
-
-        // order: remove entries, add entries and update icons; reduces count of icon calls
-        // the new order will not change the behavior if a component is "changed" by unpublish and publish but allow icon updates if the
-        // "change" does not affect the name
-
-        // check for every palette entry if contained in existing components -
-        // if not : remove
-        Map<PaletteDrawer, List<PaletteEntry>> componentsToRemove = new HashMap<PaletteDrawer, List<PaletteEntry>>();
-
-        for (Object group : paletteRoot.getChildren()) {
-            if (group instanceof PaletteDrawer) {
-                for (Object component : ((PaletteDrawer) group).getChildren()) {
-                    if (component instanceof PaletteEntry) {
-                        if (!componentNames.contains(((PaletteEntry) component).getLabel())) {
-                            if (!componentsToRemove.containsKey(group)) {
-                                componentsToRemove.put((PaletteDrawer) group, new ArrayList<PaletteEntry>());
-                            }
-                            componentsToRemove.get(group).add((PaletteEntry) component);
-                        }
-                    }
-                }
-            }
-        }
-        for (PaletteDrawer group : componentsToRemove.keySet()) {
-            for (PaletteEntry entry : componentsToRemove.get(group)) {
-                removeComponentFromGroup(group, entry);
-            }
-        }
-        
-       //create list with the palette state at the moment of execution 
-        List<String> paletteEntries = getExistingPaletteEntries();
-        List<String> paletteGroups = getExistingPaletteGroups();
-
-        // check for every component entry if contained in current palette - if not :
-        // add
-        for (DistributedComponentEntry entry : entries) {
-            ComponentInstallation installation = entry.getComponentInstallation();
-            String name = (installation.getComponentInterface().getDisplayName());
-            if (installation.getComponentInterface().getVersion() != null
-                && (toolIntegrationRegistry.hasTIContextMatchingPrefix(installation.getComponentInterface().getIdentifierAndVersion())
-                    || installation.getComponentInterface().getIdentifierAndVersion()
-                        .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + REMOTEACCESS))) {
-                name = name + StringUtils.format(COMPONENTNAMES_WITH_VERSION,
-                    installation.getComponentInterface().getVersion());
-            }
-            if (!paletteEntries.contains(name)) {
-                String group = installation.getComponentInterface().getGroupName();
-                CombinedTemplateCreationEntry component = createPaletteEntry(installation);
-                paletteEntries.add(name);
-                if (!paletteGroups.contains(group)) {
-                    createPaletteDrawer(group);
-                    paletteGroups.add(group);
-                }
-                addComponentToGroup(component, group);
-            } else {
-                // if the component is not new, the component has to be already there, so the icon will be updated
-                for (Object group : paletteRoot.getChildren()) {
-                    if (group instanceof PaletteDrawer) {
-                        for (Object component : ((PaletteDrawer) group).getChildren()) {
-                            if (component instanceof PaletteEntry && ((PaletteEntry) component).getLabel().equals(name)) {
-                                ImageDescriptor descriptor = ImageDescriptor.createFromImage(componentImageContainerService
-                                    .getComponentImageContainer(entry.getComponentInterface()).getComponentIcon16());
-                                ((PaletteEntry) component).setLargeIcon(descriptor);
-                                ((PaletteEntry) component).setSmallIcon(descriptor);
-
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-    @Override
-    public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
-        final Collection<DistributedComponentEntry> cis = newState.getAllInstallations();
-        if (PlatformUI.isWorkbenchRunning() && !PlatformUI.getWorkbench().getDisplay().isDisposed()) {
-            PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-
-                @Override
-                public void run() {
-                    if (viewer != null && viewer.getControl() != null && !viewer.getControl().isDisposed()) {
-                        refreshPalette(cis);
-                        // TODO review: Seems not to be necessary to set the viewers content at this
-                        // place and causes the editor to refresh
-                        // the view (https://mantis.sc.dlr.de/view.php?id=14697). Was added in revision
-                        // 18983 for unknown reasons.
-                        // flink 2016/11/04
-                        // viewer.setContents(workflowDescription);
-                    } else {
-                        LogFactory.getLog(getClass()).warn("Got callback (onDistributedComponentKnowledgeChanged)"
-                            + " but widget(s) already disposed; the listener might not be disposed properly");
-                    }
-                }
-            });
-        }
-    }
-
     public int getMouseX() {
         return mouseX;
     }
 
     public int getMouseY() {
         return mouseY;
-    }
-
-    // removed as it causes NPE on start up, if connection is not established, when
-    // workflow is
-    // opened under some circumstances
-    // @Override
-    // public void
-    // onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge
-    // newState) {
-    //
-    // final Collection<ComponentInstallation> componentInstallations =
-    // newState.getAllInstallations();
-    //
-    // refreshWorkflowDescription(componentInstallations);
-    //
-    // if (PlatformUI.isWorkbenchRunning() &&
-    // !PlatformUI.getWorkbench().getDisplay().isDisposed())
-    // {
-    //
-    // PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-    //
-    // @Override
-    // public void run() {
-    // viewer.setContents(workflowDescription);
-    // WorkflowPart wfPart = (WorkflowPart)
-    // viewer.getRootEditPart().getChildren().get(0);
-    // EditPart contents = wfPart.getViewer().getContents();
-    // for (Object o : contents.getChildren()) {
-    // ((WorkflowNodePart) o).refresh();
-    // }
-    // refreshPalette(componentInstallations);
-    // }
-    // });
-    // }
-    // }
-    //
-    // // should be moved to non-gui code
-    // private void refreshWorkflowDescription(Collection<ComponentInstallation>
-    // componentInstallations) {
-    // for (WorkflowNode workflowNode : workflowDescription.getWorkflowNodes()) {
-    // ComponentInstallation componentInstallation =
-    // workflowNode.getComponentDescription().getComponentInstallation();
-    // ComponentInstallation alternativeComponentInstallation = null;
-    // if (componentInstallation.getComponentInterface().getIdentifier()
-    // .startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
-    // alternativeComponentInstallation = ComponentUtils.getComponentInstallation(
-    // componentInstallation.getComponentInterface()
-    // .getIdentifier().replace(ComponentUtils.MISSING_COMPONENT_PREFIX, ""),
-    // componentInstallations);
-    // } else if (!componentInstallations.contains(componentInstallation)) {
-    // // if it is not an user-integrated component (the interface of a
-    // user-integrated component
-    // might changed, which results in
-    // // synchronization issues with the underlying wf file and the workflow
-    // description in the
-    // editor)
-    // if
-    // (!toolIntegrationRegistry.hasId(componentInstallation.getComponentRevision()
-    // .getComponentInterface().getIdentifier())) {
-    // alternativeComponentInstallation = ComponentUtils.getComponentInstallation(
-    // componentInstallation.getComponentInterface()
-    // .getIdentifier(), componentInstallations);
-    // }
-    // if (alternativeComponentInstallation == null) {
-    // ComponentInterface componentInterface =
-    // componentInstallation.getComponentInterface();
-    // alternativeComponentInstallation =
-    // ComponentUtils.createPlaceholderComponentInstallation(
-    // componentInterface.getIdentifier(),
-    // componentInterface.getVersion(),
-    // componentInterface.getDisplayName(),
-    // componentInstallation.getNodeId());
-    // }
-    // }
-    // if (alternativeComponentInstallation != null) {
-    // workflowNode.getComponentDescription()
-    // .setComponentInstallation(alternativeComponentInstallation);
-    // }
-    // }
-    // }
-
-    private DistributedComponentKnowledge getInitialComponentKnowledge() {
-        DistributedComponentKnowledgeService registry = serviceRegistryAccess
-            .getService(DistributedComponentKnowledgeService.class);
-        return registry.getCurrentSnapshot();
-    }
-
-    private void addShowToolIntegrationWizard(Menu menu) {
-        toolIntegrationPaletteMenuItem = new MenuItem(menu, SWT.NONE);
-        toolIntegrationPaletteMenuItem.setText(TOOL_INTEGRATE_LABEL);
-        toolIntegrationPaletteMenuItem.setData(TOOLINTEGRATION_ITEM, true);
-        toolIntegrationPaletteMenuItem
-            .setImage(ImageManager.getInstance().getSharedImage(StandardImages.INTEGRATION_NEW));
-        toolIntegrationPaletteMenuItem.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent) {
-
-                ShowIntegrationWizardHandler handler = new ShowIntegrationWizardHandler();
-                try {
-                    handler.execute(new ExecutionEvent());
-                } catch (ExecutionException e) {
-                    LogFactory.getLog(getClass()).error("Opening Tool Integration wizard failed", e);
-                }
-
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent selectionEvent) {
-                widgetSelected(selectionEvent);
-            }
-        });
-    }
-
-    private void addShowEditToolIntegrationWizard(Menu menu) {
-        editToolPaletteMenuItem = new MenuItem(menu, SWT.NONE);
-        editToolPaletteMenuItem.setText(TOOL_EDIT_LABEL);
-        editToolPaletteMenuItem.setData(TOOLINTEGRATION_ITEM, true);
-        editToolPaletteMenuItem.setImage(ImageManager.getInstance().getSharedImage(StandardImages.INTEGRATION_EDIT));
-        editToolPaletteMenuItem.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent) {
-
-                ShowIntegrationEditWizardHandler handler = new ShowIntegrationEditWizardHandler();
-                try {
-                    handler.execute(new ExecutionEvent());
-                } catch (ExecutionException e) {
-                    LogFactory.getLog(getClass()).error("Opening Tool Edit wizard failed", e);
-                }
-
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent selectionEvent) {
-                widgetSelected(selectionEvent);
-            }
-        });
-    }
-
-    private void addShowDeleteToolIntegrationWizard(Menu menu) {
-        deactivateToolPaletteMenuItem = new MenuItem(menu, SWT.NONE);
-        deactivateToolPaletteMenuItem.setText(TOOL_DEACTIVATE_LABEL);
-        deactivateToolPaletteMenuItem.setData(TOOLINTEGRATION_ITEM, true);
-        deactivateToolPaletteMenuItem
-            .setImage(ImageManager.getInstance().getSharedImage(StandardImages.INTEGRATION_REMOVE));
-        deactivateToolPaletteMenuItem.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent) {
-
-                ShowIntegrationRemoveHandler handler = new ShowIntegrationRemoveHandler();
-                try {
-                    handler.execute(new ExecutionEvent());
-                } catch (ExecutionException e) {
-                    LogFactory.getLog(getClass()).error("Opening Tool Deactivation wizard failed", e);
-                }
-
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent selectionEvent) {
-                widgetSelected(selectionEvent);
-            }
-        });
-    }
-
-    private void addGetDocumentation(Menu menu, final String toolID) {
-        documentationToolPaletteMenuItem = new MenuItem(menu, SWT.NONE);
-        documentationToolPaletteMenuItem.setText("Open Documentation");
-        documentationToolPaletteMenuItem.setData(TOOLINTEGRATION_ITEM, true);
-
-        documentationToolPaletteMenuItem.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent) {
-                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(toolID, false);
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent selectionEvent) {
-                widgetSelected(selectionEvent);
-            }
-        });
-    }
-
-    private void addExportDocumentation(Menu menu, final String toolID) {
-        documentationToolPaletteMenuItem = new MenuItem(menu, SWT.NONE);
-        documentationToolPaletteMenuItem.setText("Export Documentation");
-        documentationToolPaletteMenuItem.setData(TOOLINTEGRATION_ITEM, true);
-
-        documentationToolPaletteMenuItem.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent) {
-                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(toolID, true);
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent selectionEvent) {
-                widgetSelected(selectionEvent);
-            }
-        });
-    }
-
-    public boolean isAllLabelsShown() {
-        return allLabelsShown;
-    }
-
-    public void setAllLabelsShown(boolean allLabelsShown) {
-        this.allLabelsShown = allLabelsShown;
     }
 
     /**
@@ -1725,6 +876,65 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette
             file.getWorkspace().addResourceChangeListener(resourceListener);
             setPartName(file.getName());
         }
+    }
+
+    public void onPaletteDoubleClick(Tool tool) {
+        if (!(tool instanceof PaletteCreationTool)) {
+            return;
+        }
+        PaletteCreationTool creationTool = (PaletteCreationTool) tool;
+        CreationFactory factory = creationTool.getFactory();
+        Object objectType = factory.getObjectType();
+        Object newObject = factory.getNewObject();
+
+        WorkflowNodeLabelConnectionCreateCommand createCommand = getCreateCommand(newObject, objectType);
+        getEditorsCommandStack().execute(createCommand);
+
+        // select new part and activate corresponding properties view
+        for (Object editpart : viewer.getContents().getChildren()) {
+            if (editpart instanceof EditPart) {
+                EditPart currentEditPart = (EditPart) editpart;
+                if (currentEditPart.getModel().equals(newObject)) {
+                    viewer.select(currentEditPart);
+                    tabbedPropertySheetPage.selectionChanged(WorkflowEditor.this,
+                        viewer.getSelection());
+                    break;
+                }
+            }
+        }
+    }
+
+    private WorkflowNodeLabelConnectionCreateCommand getCreateCommand(Object newObject, Object objectType) {
+        final int offset = 20;
+        WorkflowDescription model = (WorkflowDescription) viewer.getContents().getModel();
+        if (objectType == WorkflowNode.class) {
+            // Set bounds of new component, if intersects with existing translate by
+            // 30,30
+            Rectangle rectangle = new Rectangle(TILE_OFFSET, TILE_OFFSET, TILE_SIZE, TILE_SIZE);
+            for (WorkflowNode node : model.getWorkflowNodes()) {
+                Rectangle nodeRect = new Rectangle(node.getX(), node.getY(), TILE_SIZE, TILE_SIZE);
+                if (nodeRect.intersects(rectangle)) {
+                    rectangle.translate(offset, offset);
+                }
+            }
+            WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(
+                (WorkflowNode) newObject, model, rectangle);
+            return helper.createCommand();
+        }
+
+        if (objectType == WorkflowLabel.class) {
+            Rectangle rectangle = new Rectangle(TILE_OFFSET, TILE_OFFSET, MINUS_ONE, MINUS_ONE);
+            WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(
+                (WorkflowLabel) newObject, model,
+                rectangle);
+            return helper.createCommand();
+        }
+        return null;
+    }
+
+    public void setHelp(String id) {
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), id);
+//        LogFactory.getLog(this.getClass()).debug(StringUtils.format("Set help ID to %s", id));
     }
 
     /**

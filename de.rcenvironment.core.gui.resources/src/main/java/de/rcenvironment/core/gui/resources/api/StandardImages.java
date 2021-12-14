@@ -105,6 +105,11 @@ public enum StandardImages implements ImageSource {
     FOLDER_16(fromEclipseShared(ISharedImages.IMG_OBJ_FOLDER)),
 
     /**
+     * 16x16 folder icon.
+     */
+    FOLDER_CLOSED_16(fromLocalBundle("folder_closed.png")),
+
+    /**
      * 16x16 file icon.
      */
     FILE_16(fromEclipseShared(ISharedImages.IMG_OBJ_FILE)),
@@ -442,7 +447,88 @@ public enum StandardImages implements ImageSource {
     /**
      * Default 32px icon for integrated tools.
      */
-    INTEGRATED_TOOL_DEFAULT_32(fromLocalBundle("tool32.png"));
+    INTEGRATED_TOOL_DEFAULT_32(fromLocalBundle("tool32.png")),
+
+    /**
+     * Arrow cursor icon for e.g. the selection tool.
+     */
+    ARROW(fromLocalBundle("arrow16.gif")),
+
+    /**
+     * Toolbar icon for sorting alphabetically.
+     */
+    SORT_ALPHA_ASC(fromLocalBundle("sortAlphaAsc.gif")),
+
+    /**
+     * Toolbar icon for sorting alphabetically.
+     */
+    SORT_ALPHA_DESC(fromLocalBundle("sortAlphaDesc.gif")),
+
+    /**
+     * Palette icon for the connection tool.
+     */
+    CONNECTION_TOOL(fromLocalBundle("connection_16.gif")),
+
+    /**
+     * Palette icon for the workflow label tool.
+     */
+    WORKFLOW_LABEL(fromLocalBundle("label_16.png")),
+
+    /**
+     * Icon for adding a new component group in the palette view.
+     */
+    PALETTE_GROUPS_MOVE(fromLocalBundle("palette_groups_move.png")),
+
+    /**
+     * Icon for adding a new component group in the palette view.
+     */
+    PALETTE_GROUPS_ADD(fromLocalBundle("palette_groups_add.png")),
+
+    /**
+     * Icon for adding a new component sub group in the palette view.
+     */
+    PALETTE_GROUPS_ADD_SUBGROUP(fromLocalBundle("palette_groups_add_subgroup.png")),
+
+    /**
+     * Icon for edit a component group in the palette view.
+     */
+    PALETTE_GROUPS_EDIT(fromLocalBundle("palette_groups_edit.png")),
+
+    /**
+     * Icon for deletion of component groups in the palette view.
+     */
+    PALETTE_GROUPS_DELETE(fromLocalBundle("palette_groups_delete.png")),
+
+    /**
+     * Icon for restore component groups in the palette view.
+     */
+    PALETTE_GROUPS_RESTORE(fromLocalBundle("palette_groups_restore.png")),
+
+    /**
+     * Icon for restore component groups in the palette view.
+     */
+    PALETTE_GROUPS_MANAGE(fromLocalBundle("palette_groups_manage.png")),
+
+    /**
+     * Icon decorator for custom items.
+     */
+    DECORATOR_CUSTOM(fromLocalBundle("decorator_custom.png")),
+
+    /**
+     * Icon decorator for deprecated items.
+     */
+    DECORATOR_DEPRECATED(fromLocalBundle("decorator_deprecated.png")),
+
+    /**
+     * Toolbar icon to expand all tree nodes of a tree.
+     */
+    EXPAND_ALL(fromLocalBundle("expandall.gif")),
+
+    /**
+     * Toolbar icon to collapse all tree nodes of a tree.
+     */
+    COLLAPSE_ALL(fromEclipseShared(ISharedImages.IMG_ELCL_COLLAPSEALL));
+
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 
@@ -466,3 +552,4 @@ public enum StandardImages implements ImageSource {
         return ImageUtils.getEclipseImageDescriptor(eclipseId);
     }
 }
+

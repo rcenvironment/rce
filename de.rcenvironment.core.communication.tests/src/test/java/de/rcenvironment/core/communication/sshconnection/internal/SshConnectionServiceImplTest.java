@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SshServer;
@@ -163,7 +165,7 @@ public class SshConnectionServiceImplTest {
         buffer.append("RemoteAccess");
         buffer.append("/");
         buffer.append(SshConnectionConstants.REQUIRED_PROTOCOL_VERSION);
-        sshServer.getProperties().put(SshServer.SERVER_IDENTIFICATION, buffer.toString());
+        PropertyResolverUtils.updateProperty(sshServer, CoreModuleProperties.SERVER_IDENTIFICATION.getName(), buffer.toString());
         sshServer.start();
     }
 

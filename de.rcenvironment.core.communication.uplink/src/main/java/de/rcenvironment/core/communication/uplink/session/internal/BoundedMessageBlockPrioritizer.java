@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.uplink.network.internal.MessageBlockW
 import de.rcenvironment.core.communication.uplink.network.internal.UplinkProtocolConfiguration;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Utility class that encapsulates {@link MessageBlock} prioritisation as well as buffer limiting. The latter sets an upper limit of
@@ -39,6 +40,9 @@ import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 public class BoundedMessageBlockPrioritizer {
 
     private static final int NUM_PRIORITY_LEVELS = MessageBlockPriority.values().length;
+
+    // note: "flow control" is not quite accurate (yet?), but avoids switching to a different id later
+    private static final boolean VERBOSE_LOGGING_ENABLED = DebugSettings.getVerboseLoggingEnabled("uplink.flowcontrol");
 
     private final List<LinkedBlockingQueue<MessageBlockWithMetadata>> queuesByPriority =
         new ArrayList<LinkedBlockingQueue<MessageBlockWithMetadata>>(NUM_PRIORITY_LEVELS);
@@ -94,9 +98,11 @@ public class BoundedMessageBlockPrioritizer {
                 // virtually always true; guards against the exotic case of the complete queue being drained between these calls
                 if (headElement != null) {
                     long waitTimeOfHeadElement = System.currentTimeMillis() - headElement.getLocalQueueStartTime();
-                    log.debug(StringUtils.format("%sStalling a message of type %s as there are already "
-                        + "%d messages queued for priority %s; longest queue time: %d msec",
-                        logPrefix, messageBlock.getType(), queue.size(), priority.name(), waitTimeOfHeadElement));
+                    if (VERBOSE_LOGGING_ENABLED) {
+                        log.debug(StringUtils.format("%sStalling a message of type %s as there are already "
+                            + "%d messages queued for priority %s; longest queue time: %d msec",
+                            logPrefix, messageBlock.getType(), queue.size(), priority.name(), waitTimeOfHeadElement));
+                    }
                 }
                 queue.put(messageBlock); // will usually block, unless space became available by a concurrent thread consuming an element
             }

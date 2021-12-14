@@ -97,6 +97,8 @@ public final class SshAccountRole {
             allowedCommandPatterns.add("wf.*");
             allowedCommandPatterns.add("ra-admin.*");
             allowedCommandPatterns.add("tc.*");
+            allowedCommandPatterns.add("uplink.*");
+            allowedCommandPatterns.add("force-crash.*");
             allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_AUTH);
             break;
         case SshConstants.ROLE_NAME_DEVELOPER:

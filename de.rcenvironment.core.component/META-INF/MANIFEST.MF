@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component
 Bundle-SymbolicName: de.rcenvironment.core.component;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 10.2.4.qualifier
+Bundle-Version: 10.3.0.qualifier
 Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.authorization.api,
  de.rcenvironment.core.component.authorization.impl,
@@ -10,6 +10,7 @@ Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.execution.impl,
  de.rcenvironment.core.component.management.api,
+ de.rcenvironment.core.component.management.internal,
  de.rcenvironment.core.component.management.utils,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.configuration.api,
@@ -61,6 +62,7 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.formatter,
+ de.rcenvironment.provenance.api,
  de.rcenvironment.toolkit.modules.concurrency.api,
  de.rcenvironment.toolkit.modules.concurrency.api.threadcontext,
  de.rcenvironment.toolkit.modules.objectbindings.api,

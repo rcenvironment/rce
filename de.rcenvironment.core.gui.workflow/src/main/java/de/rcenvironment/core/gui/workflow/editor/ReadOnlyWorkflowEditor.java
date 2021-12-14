@@ -114,29 +114,29 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
     /**
      * Effectively disables hit-testing of the visual components of the tool palette.
      */
-    @Override
-    protected PaletteViewerProvider createPaletteViewerProvider() {
-        return new PaletteViewerProvider(getEditDomain()) {
-
-            @Override
-            public PaletteViewer createPaletteViewer(Composite parent) {
-                PaletteViewer pv = super.createPaletteViewer(parent);
-                pv.getVisualPartMap().clear();
-                return pv;
-            }
-
-        };
-    }
+//    @Override
+//    protected PaletteViewerProvider createPaletteViewerProvider() {
+//        return new PaletteViewerProvider(getEditDomain()) {
+//
+//            @Override
+//            public PaletteViewer createPaletteViewer(Composite parent) {
+//                PaletteViewer pv = super.createPaletteViewer(parent);
+//                pv.getVisualPartMap().clear();
+//                return pv;
+//            }
+//
+//        };
+//    }
 
     /**
      * Default palette-state is set to hidden.
      */
-    @Override
-    protected FlyoutPreferences getPalettePreferences() {
-        FlyoutPreferences prefs = super.getPalettePreferences();
-        prefs.setPaletteState(8);
-        return prefs;
-    }
+//    @Override
+//    protected FlyoutPreferences getPalettePreferences() {
+//        FlyoutPreferences prefs = super.getPalettePreferences();
+//        prefs.setPaletteState(8);
+//        return prefs;
+//    }
 
     @Override
     protected void loadWorkflowFromFile(final File wfFile, final GUIWorkflowDescriptionLoaderCallback wfdc) {
@@ -160,7 +160,7 @@ public class ReadOnlyWorkflowEditor extends WorkflowEditor {
                             public void run() {
                                 if (getViewer().getControl() != null) {
                                     getViewer().setContents(workflowDescription);
-                                    getGraphicalControl().setVisible(true);
+//                                    getGraphicalControl().setVisible(true);
                                     if (getEditorSite() != null) {
                                         setFocus();
                                     }

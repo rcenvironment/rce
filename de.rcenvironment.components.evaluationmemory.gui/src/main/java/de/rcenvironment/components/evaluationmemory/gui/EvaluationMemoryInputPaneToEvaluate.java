@@ -103,7 +103,7 @@ public class EvaluationMemoryInputPaneToEvaluate extends InputCoupledWithOutputS
             new EvaluationMemoryEndpointEditDialog(parentShell, EndpointActionType.EDIT, configuration, endpointType, dynEndpointIdToManage,
                 false, metaDataDefinition, newMetaData);
 
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 
     /**

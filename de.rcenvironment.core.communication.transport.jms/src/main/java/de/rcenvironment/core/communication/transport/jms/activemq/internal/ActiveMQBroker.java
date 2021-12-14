@@ -183,15 +183,17 @@ public class ActiveMQBroker implements JmsBroker {
 
     private void spawnInboxConsumers(Connection connection) throws JMSException {
         log.debug("Spawning initial inbox consumer for " + scp.toString());
-        threadPool.execute(new InitialInboxConsumer(connection, scp, remoteInitiatedConnectionFactory));
+        threadPool.execute("JMS Network Transport: Incoming connection listener",
+            new InitialInboxConsumer(connection, scp, remoteInitiatedConnectionFactory));
 
         log.debug("Spawning " + numRequestConsumers + " request inbox consumer(s) for " + scp);
         final MessageChannelEndpointHandler endpointHandler = scp.getEndpointHandler();
         for (int i = 1; i <= numRequestConsumers; i++) {
             threadPool.execute(
-                new RequestInboxConsumer(JmsProtocolConstants.QUEUE_NAME_C2B_REQUEST_INBOX, connection, endpointHandler),
+                "JMS Network Transport: Incoming request listener",
                 StringUtils.format("Shared C2B Request Inbox Consumer #%d (worker #%d for %s')",
-                    sharedInboxConsumerIdGenerator.incrementAndGet(), i, scp.toString()));
+                    sharedInboxConsumerIdGenerator.incrementAndGet(), i, scp.toString()),
+                new RequestInboxConsumer(JmsProtocolConstants.QUEUE_NAME_C2B_REQUEST_INBOX, connection, endpointHandler));
         }
     }
 

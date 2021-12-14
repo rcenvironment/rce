@@ -55,12 +55,12 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
     }
 
     @Override
-    protected void onEditClicked(String name, EndpointEditDialog dialog, Map<String, String> newMetaData) {
+    protected void onEditClicked(String name, EndpointEditDialog dialog) {
 
         if (!endpointManager.getEndpointDescription(name).getDynamicEndpointIdentifier().equals(dynEndpointIdToManage)) {
             dialog.setReadOnlyType(EndpointSelectionPane.NAME_AND_TYPE_READ_ONLY);
         }
-        super.onEditClicked(name, dialog, newMetaData);
+        super.onEditClicked(name, dialog);
     }
 
     @Override

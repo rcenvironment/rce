@@ -18,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
@@ -61,7 +63,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Sascha Zur
  * @author Robert Mischke (disabled mixed-in component publishing)
- * @author Alexander Weinert (refactoring and
+ * @author Alexander Weinert (refactoring)
  */
 public class ToolIntegrationWizard extends Wizard {
 
@@ -179,15 +181,11 @@ public class ToolIntegrationWizard extends Wizard {
                 public IStatus runInUIThread(IProgressMonitor arg0) {
                     if (shell != null) {
                         MessageBox infoDialog = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
-                        String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
-                        if (groupName == null || groupName.isEmpty()) {
-                            groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
-                        }
                         if (!isEdit) {
                             infoDialog.setText("Tool integrated");
                             infoDialog.setMessage(
-                                StringUtils.format("Tool \"%s\" was successfully integrated to group \"%s\".",
-                                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
+                                StringUtils.format("Tool \"%s\" was successfully integrated.",
+                                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
                         } else {
                             infoDialog.setText("Tool updated");
                             infoDialog.setMessage(StringUtils.format("Tool \"%s\" was successfully updated.",
@@ -254,7 +252,7 @@ public class ToolIntegrationWizard extends Wizard {
 
     private final ServiceRegistryAccess serviceRegistryAccess;
 
-    private ChooseConfigurationPage editConfigurationPage;
+    private ChooseConfigurationPage chooseConfigurationPage;
 
     private ToolIntegrationContext integrationContext;
 
@@ -271,6 +269,8 @@ public class ToolIntegrationWizard extends Wizard {
     private File toolDocuTarget;
 
     private File iconTarget;
+
+    private Optional<String> preselectedToolname = Optional.empty();
 
     /**
      * Constructor for Wizard.
@@ -291,6 +291,11 @@ public class ToolIntegrationWizard extends Wizard {
         isEdit = false;
     }
 
+    public ToolIntegrationWizard(boolean progressMonitor, String type, String preselectedToolname) {
+        this(progressMonitor, type);
+        this.preselectedToolname = Optional.of(preselectedToolname);
+    }
+
     @Override
     public void addPages() {
         List<String> toolNames = new LinkedList<>();
@@ -307,9 +312,15 @@ public class ToolIntegrationWizard extends Wizard {
         installations = ComponentUtils.eliminateComponentInterfaceDuplicates(installations, localNode);
         for (DistributedComponentEntry ci : installations) {
             ComponentInterface componentInterface = ci.getComponentInterface();
-            String groupName = componentInterface.getGroupName();
-            if (!groupName.startsWith("_") && !groupNames.contains(groupName)) {
-                groupNames.add(groupName);
+            String toolID = componentInterface.getIdentifier();
+            if (toolID.startsWith("de.rcenvironment.integration.common") || toolID.startsWith("de.rcenvironment.integration.cpacs")
+                || toolID.startsWith("common") || toolID.startsWith("cpacs")) {
+                List<String> groupList = getAllSubgroups(componentInterface.getGroupName());
+                for (String groupName : groupList) {
+                    if (!groupNames.contains(groupName)) {
+                        groupNames.add(groupName);
+                    }
+                }
             }
         }
 
@@ -321,12 +332,12 @@ public class ToolIntegrationWizard extends Wizard {
             (context -> !context.getClass().getCanonicalName()
                 .equals("de.rcenvironment.core.component.integration.workflow.internal.WorkflowIntegrationContext"));
 
-        final Collection<ToolIntegrationContext> integrationContextsToShow = 
+        final Collection<ToolIntegrationContext> integrationContextsToShow =
             integrationContextRegistry.getAllIntegrationContexts().stream()
-            .filter(isNotWorkflowIntegrationContext)
-            .collect(Collectors.toSet());
+                .filter(isNotWorkflowIntegrationContext)
+                .collect(Collectors.toSet());
 
-        editConfigurationPage = new ChooseConfigurationPage(Messages.chooseConfigPageTitle,
+        chooseConfigurationPage = ChooseConfigurationPage.createWithoutPreselectedTool(Messages.chooseConfigPageTitle,
             integrationContextsToShow, this, wizardType);
 
         characteristicsPage = new ToolCharacteristicsPage(Messages.firstToolIntegrationPageTitle, configurationMap,
@@ -337,7 +348,7 @@ public class ToolIntegrationWizard extends Wizard {
         toolPage = new ToolConfigurationPage(Messages.toolPage, configurationMap);
         scriptPage = new ScriptConfigurationPage(Messages.scriptPage, configurationMap);
 
-        addPage(editConfigurationPage);
+        addPage(chooseConfigurationPage);
         addPage(characteristicsPage);
         addPage(inOutputPage);
         addPage(propertyPage);
@@ -356,6 +367,17 @@ public class ToolIntegrationWizard extends Wizard {
             }
         }
 
+    }
+
+    private List<String> getAllSubgroups(String groupPath) {
+        List<String> strList = new ArrayList<>();
+        strList.add(groupPath);
+        while (groupPath.contains("/")) {
+            int i = groupPath.lastIndexOf("/");
+            groupPath = groupPath.substring(0, i);
+            strList.add(groupPath);
+        }
+        return strList;
     }
 
     private DistributedComponentKnowledge getInitialComponentKnowledge() {
@@ -419,7 +441,7 @@ public class ToolIntegrationWizard extends Wizard {
                 previousPage = currentAdditionalPages.get(currentAdditionalPages.indexOf(page) - 1);
             } else if (currentAdditionalPages.contains(page) && currentAdditionalPages.indexOf(page) == 0) {
                 previousPage = scriptPage;
-            } else if (page.equals(editConfigurationPage)) {
+            } else if (page.equals(chooseConfigurationPage)) {
                 return null;
             } else {
                 previousPage = super.getPreviousPage(page);
@@ -584,6 +606,14 @@ public class ToolIntegrationWizard extends Wizard {
         }
     }
 
+    @Override
+    public void createPageControls(Composite pageContainer) {
+        super.createPageControls(pageContainer);
+        this.preselectedToolname.ifPresent(toolname -> {
+            this.chooseConfigurationPage.selectToolConfiguration(toolname);
+        });
+    }
+
     /**
      * Updated all pages registered in the wizard if a configuration changes.
      */
@@ -725,7 +755,7 @@ public class ToolIntegrationWizard extends Wizard {
      * 
      */
     public void open() {
-        editConfigurationPage.updatePage();
+        chooseConfigurationPage.updatePage();
     }
 
     protected void setIsEdit(boolean isEditNew) {

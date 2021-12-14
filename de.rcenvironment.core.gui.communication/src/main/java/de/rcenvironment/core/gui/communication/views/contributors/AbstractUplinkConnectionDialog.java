@@ -35,13 +35,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Abstract class for UplinkConnectionDialogs, such as AddSshUplinkConnectionDialog and EditSshUplinkConnectionDialog.
  * 
  * @author Brigitte Boden
- * @author Kathrin Schaffert (#16953)
+ * @author Kathrin Schaffert (#16953, #17518)
  */
 public abstract class AbstractUplinkConnectionDialog extends Dialog implements PasteListener, VerifyListener {
 
-    private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Keyfile with passphrase protection";
+    private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Key file with passphrase protection";
 
-    private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Keyfile without passphrase protection";
+    private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Key file without passphrase protection";
 
     private static final String PASSPHRASE_AUTH = "Passphrase";
 
@@ -241,7 +241,14 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         usernameLabel.setText(USERNAME_LABEL);
         final Text usernameText = new Text(container, SWT.SINGLE | SWT.BORDER);
         usernameText.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+        usernameText.setTextLimit(8);
         usernameText.setText(username);
+
+        @SuppressWarnings("unused") final Label placeholderLabel1 = new Label(container, SWT.NONE); // used for layouting
+
+        Label characterRestrictionNotice = new Label(container, SWT.None);
+        characterRestrictionNotice
+            .setText("Note: The username is limited to eight characters.");
 
         Label authTypeLabel = new Label(container, SWT.NULL);
         authTypeLabel.setText(AUTH_TYPE_LABEL);
@@ -265,6 +272,7 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
 
         final Composite keyfileComposite = new Composite(container, SWT.NONE);
         GridLayout klayout = new GridLayout(2, false);
+        klayout.marginWidth = 0;
         keyfileComposite.setLayout(klayout);
         keyfileComposite.setVisible(useKeyFile);
         keyfileComposite.setLayoutData((new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL)));
@@ -284,7 +292,7 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         @SuppressWarnings("unused") final Label placeholderLabel2 = new Label(container, SWT.NONE); // used for layouting
 
         appendAndReturnStorePasswordButton(container, storePassphraseCheckboxGridData);
-        
+
         appendAndReturnQualifierLabel(container);
         final Text qualifierText = appendAndReturnQualifierText(container);
 
@@ -293,7 +301,8 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         Label qualifierNote = new Label(container, SWT.None);
         qualifierNote.setText("Note: A Client ID must be configured if more than"
             + "\none RCE instance uses the same user credentials for"
-            + "\nuplink connections. Can otherwise be left blank.");
+            + "\nuplink connections. Can otherwise be left blank."
+            + "\nA Client ID is currently limited to eight characters.");
 
         createButtonsAndHint(container, isGatewayCheckboxGridData, connectImmediateCheckboxGridData, autoRetryCheckboxGridData,
             separatorGridData);
@@ -338,7 +347,7 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         GridData autoRetryCheckboxGridData, GridData separatorGridData) {
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
         separator.setLayoutData(separatorGridData);
-        
+
         isGatewayButton = new Button(container, SWT.CHECK);
         isGatewayButton.setSelection(isGateway);
         isGatewayButton.setText("Is Gateway");
@@ -491,7 +500,7 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         qualifierText.addModifyListener(arg0 -> {
             qualifier = qualifierText.getText();
         });
-        
+
         isGateway = isGatewayButton.getSelection();
         isGatewayButton.addSelectionListener(new SelectionListener() {
 
@@ -643,7 +652,7 @@ public abstract class AbstractUplinkConnectionDialog extends Dialog implements P
         }
         return null;
     }
-    
+
     public boolean isGateway() {
         return isGateway;
     }

@@ -23,6 +23,7 @@ import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 
 /**
  * @author Alexander Weinert
+ * @author Kathrin Schaffert (#17480)
  */
 public class ConfigurationMap {
 
@@ -39,7 +40,7 @@ public class ConfigurationMap {
     public static ConfigurationMap fromMap(Map<String, Object> configurationMap) {
         return new ConfigurationMap(configurationMap);
     }
-    
+
     /**
      * @param migration Some migration that is to be applied to the map backing this configuration
      */
@@ -66,7 +67,7 @@ public class ConfigurationMap {
         return firstLaunchSettings;
     }
 
-    public String getGroupName() {
+    public String getGroupPath() {
         return (String) rawConfigurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
     }
 
@@ -217,6 +218,8 @@ public class ConfigurationMap {
                         Map<String, String> configMetadata = new HashMap<>();
                         configMetadata.put(ConfigurationDefinitionConstants.KEY_METADATA_GUI_NAME,
                             property.get(ToolIntegrationConstants.KEY_PROPERTY_DISPLAYNAME));
+                        configMetadata.put(ConfigurationDefinitionConstants.KEY_METADATA_COMMENT,
+                            property.get(ToolIntegrationConstants.KEY_PROPERTY_COMMENT));
                         if (configFileName != null) {
                             configMetadata.put(ToolIntegrationConstants.KEY_PROPERTY_CONFIG_FILENAME, configFileName);
                         }

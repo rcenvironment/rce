@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +28,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -52,6 +56,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -60,7 +65,9 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
+import de.rcenvironment.provenance.api.ProvenanceEventListener;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
@@ -204,6 +211,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private ScheduledFuture<?> heartbeatFuture;
 
     private volatile String latestVerificationToken;
+
+    private Map<String, TypedDatum> outputsWritten = new HashMap<>();
 
     private Runnable heartbeatRunnable = new Runnable() {
 
@@ -579,7 +588,14 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 ((ComponentExecutionContextImpl) compExeRelatedInstances.compExeCtx)
                     .setWorkingDirectory(createWorkingDirectory());
                 componentContext = new ComponentContextImpl(compExeRelatedInstances.compExeCtx, compExeRelatedInstances.compCtxBridge,
-                    compExeRelatedInstances.compExeStorageBridge);
+                    compExeRelatedInstances.compExeStorageBridge) {
+
+                    @Override
+                    public void writeOutput(String outputName, TypedDatum value) {
+                        super.writeOutput(outputName, value);
+                        outputsWritten.put(outputName, value);
+                    }
+                };
                 synchronized (compExeRelatedInstances.component) {
                     compExeRelatedInstances.component.get().setComponentContext(componentContext);
                 }
@@ -624,7 +640,13 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         @TaskDescription("Start component")
         public void run() {
             try {
+                if (compExeType == ComponentExecutor.ComponentExecutionType.StartAsRun) {
+                    writeProvenanceStart();
+                }
                 compExecutorRef.get().executeByConsideringLimitations();
+                if (compExeType == ComponentExecutor.ComponentExecutionType.StartAsRun) {
+                    writeProvenanceStop();
+                }
                 if (compExeType == ComponentExecutor.ComponentExecutionType.StartAsRun) {
                     checkForIntermediateButNoFinalHistoryDataItemWritten();
                     postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_AS_RUN_SUCCESSFUL));
@@ -637,6 +659,28 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_FAILED, e.getMessage()));
             }
         }
+
+        private void writeProvenanceStart() {
+            final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+            final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+                Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+            final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+
+            provenanceService.ifPresent(service -> service.workflowNodeExecutionStarted(componentContext.getWorkflowExecutionIdentifier(),
+                componentContext.getComponentName(),
+                componentContext.getComponentIdentifier(), componentContext.getExecutionIdentifier(),
+                componentContext.getNodeId().toString()));
+        }
+
+        private void writeProvenanceStop() {
+            final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+            final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+                Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+            final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+
+            provenanceService.ifPresent(service -> service.workflowNodeExecutionFinished(componentContext.getExecutionIdentifier()));
+        }
+
     }
 
     private File createWorkingDirectory() throws ComponentExecutionException {
@@ -691,7 +735,9 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         public void run() {
             try {
                 compExeRelatedInstances.compExeRelatedStates.executionCount.incrementAndGet();
+                writeProvenanceStart();
                 compExecutorRef.get().executeByConsideringLimitations();
+                writeProvenanceStop();
                 checkForIntermediateButNoFinalHistoryDataItemWritten();
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUTS_SUCCESSFUL));
             } catch (ComponentExecutionException e) {
@@ -701,6 +747,28 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                     e.getMessage()));
             }
         }
+
+        private void writeProvenanceStart() {
+            final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+            final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+                Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+            final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+
+            provenanceService.ifPresent(service -> service.workflowNodeExecutionStarted(componentContext.getWorkflowExecutionIdentifier(),
+                componentContext.getComponentName(),
+                componentContext.getComponentIdentifier(), componentContext.getExecutionIdentifier(),
+                componentContext.getNodeId().toString()));
+        }
+
+        private void writeProvenanceStop() {
+            final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+            final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+                Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+            final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+
+            provenanceService.ifPresent(service -> service.workflowNodeExecutionFinished(componentContext.getExecutionIdentifier()));
+        }
+
     }
 
     /**

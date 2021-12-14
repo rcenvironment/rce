@@ -84,7 +84,7 @@ public class ToolIntegrationFileWatcherManagerTest {
         EasyMock.expectLastCall();
         EasyMock.replay(watcher);
 
-        runnerService.execute(watcher, "FileWatcher context");
+        runnerService.execute(EasyMock.anyString(), EasyMock.eq(watcher), EasyMock.eq("FileWatcher context"));
         EasyMock.expectLastCall();
         EasyMock.replay(runnerService);
 

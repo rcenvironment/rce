@@ -80,6 +80,10 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
         private volatile boolean cancelled = false;
 
         RequestSender(String queueName, Connection connection) {}
+        
+        public String getCategoryName() {
+            return "JMS Network Transport: Message channel request sender";
+        }
 
         @Override
         @TaskDescription("JMS Network Transport: Message channel request sender")
@@ -252,12 +256,12 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
 
     private void startRequestSender(String taskName) throws JMSException {
         requestSender = new RequestSender(outgoingRequestQueueName, connection);
-        threadPool.execute(requestSender, taskName);
+        threadPool.execute(requestSender.getCategoryName(), taskName, requestSender);
     }
 
     private void startResponseConsumer(String taskName) throws JMSException {
         responseInboxConsumer = new NonBlockingResponseInboxConsumer(sharedResponseQueueName, connection);
-        threadPool.execute(responseInboxConsumer, taskName);
+        threadPool.execute("JMS Network Transport: Non-blocking response listener", taskName, responseInboxConsumer);
     }
 
     @Override

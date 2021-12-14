@@ -207,6 +207,19 @@
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.integration" />
    </extension>
+    <extension
+         point="de.rcenvironment.core.gui.workflow.editorActions">
+         
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.EditToolIntegrationAction"
+            component="de.rcenvironment.integration.*"
+            default="true"
+            id="de.rcenvironment.integration.editIntegration"
+            label="Edit Tool Integration">
+      </action>
+      
+   </extension>
+
    <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">
          

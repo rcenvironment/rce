@@ -328,28 +328,21 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                     }
                     Map<String, Double> newOutput = new HashMap<>();
                     for (int i = 0; i < varCount; i++) {
-                        String x = fr.readLine();
+                        String x = fr.readLine().trim();
                         if (x != null) {
-                            String[] xStrg = x.split(" ");
-
-                            // Search for first not empty field
-                            int j = 0;
-                            while (xStrg != null && xStrg[j].isEmpty()) {
-                                j++;
-                            }
+                            String[] xStrg = x.split(" ", 2);
                             if (xStrg == null) {
                                 continue;
                             }
-                            if (!(xStrg[j].contains("nan"))) {
-                                newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
+                            if (!(xStrg[0].contains("nan"))) {
+                                newOutput.put(xStrg[1], Double.parseDouble(xStrg[0]));
                             } else {
-                                newOutput.put(xStrg[j + 1], Double.NaN);
+                                newOutput.put(xStrg[1], Double.NaN);
                             }
                         }
 
                     }
 
-                    fr.readLine();
                     // read active set number
                     String asvLineString = fr.readLine();
 

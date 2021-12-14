@@ -2,7 +2,7 @@
 "de.rcenvironment.inputprovider/3.2" : {
 	"input" : "3"
 },
-"de.rcenvironment.outputwriter/2.0" : {
+"de.rcenvironment.outputwriter/2.1" : {
 	"targetRootFolder" : $$TEMP_DIR$$
 }
 }

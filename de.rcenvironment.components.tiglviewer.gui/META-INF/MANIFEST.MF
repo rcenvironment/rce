@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE TiGL Viewer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.gui;singleton:=true
-Bundle-Version: 10.2.4.qualifier
+Bundle-Version: 10.3.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Activator: de.rcenvironment.components.tiglviewer.gui.internal.Activator

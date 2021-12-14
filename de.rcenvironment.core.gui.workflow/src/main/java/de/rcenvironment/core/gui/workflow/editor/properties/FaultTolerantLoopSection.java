@@ -105,14 +105,12 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         GridData gridData = new GridData(SWT.CENTER & WidgetGroupFactory.ALIGN_CENTER);
         gridData.widthHint = width;
         rerunTimesAndFailTextNAV.setLayoutData(gridData);
-        rerunTimesAndFailTextNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
-            LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV);
+        rerunTimesAndFailTextNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV);
         rerunTimesAndFailTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndFailTextNAV,
             NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
         factory.createLabel(compositeNAV, "time(s) and fail if maximum exceeded");
 
-        rerunAndDiscardRadioButtonNAV = factory.createButton(compositeNAV,
-            "Rerun the evaluation loop at the maximum of", SWT.RADIO);
+        rerunAndDiscardRadioButtonNAV = factory.createButton(compositeNAV, "Rerun the evaluation loop at the maximum of", SWT.RADIO);
         rerunAndDiscardRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV,
             LoopBehaviorInCaseOfFailure.RerunAndDiscard);
         rerunAndDiscardRadioButtonNAV.addSelectionListener(listenerNAV);
@@ -121,20 +119,17 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         gridData = new GridData();
         gridData.widthHint = width;
         rerunTimesAndDiscardTextNAV.setLayoutData(gridData);
-        rerunTimesAndDiscardTextNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
-            LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV);
+        rerunTimesAndDiscardTextNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV);
         rerunTimesAndDiscardTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndDiscardTextNAV,
             NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
         rerunTimesAndDiscardLabelNAV = factory.createLabel(compositeNAV, "time(s) and discard if maximum exceeded");
 
         failLoopIfAnyRunFailedCheckboxNAV = factory.createButton(compositeNAV, TEXT_FINALLY_FAIL, SWT.CHECK);
         spanHorizontal(failLoopIfAnyRunFailedCheckboxNAV);
-        failLoopIfAnyRunFailedCheckboxNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
-            LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV);
+        failLoopIfAnyRunFailedCheckboxNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV);
         onlyFailLoopCheckboxNAV = factory.createButton(compositeNAV, TEXT_ONLY_FAIL_LOOP, SWT.CHECK);
         spanHorizontal(onlyFailLoopCheckboxNAV);
-        onlyFailLoopCheckboxNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
-            LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV);
+        onlyFailLoopCheckboxNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV);
 
         sectionPropertiesNAV.setClient(compositeNAV);
 
@@ -172,6 +167,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
     @Override
     protected void setWorkflowNode(WorkflowNode workflowNode) {
         super.setWorkflowNode(workflowNode);
+
         LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfFailureNAV = LoopBehaviorInCaseOfFailure.fromString(
             getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV));
         LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfFailureCmpFlr = LoopBehaviorInCaseOfFailure.fromString(
@@ -203,16 +199,9 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
                     || loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndDiscard)));
         }
 
-        setSelectionOfCheckbox();
-    }
-
-    @Override
-    public void aboutToBeShown() {
-        super.aboutToBeShown();
-
         setActivationOfCheckboxes();
     }
-    
+
     private void setActivationOfCheckboxes() {
         boolean isNestedLoop = Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
         failLoopIfAnyRunFailedCheckboxNAV
@@ -225,9 +214,17 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
     private void setSelectionOfCheckbox() {
         if (!failLoopIfAnyRunFailedCheckboxNAV.isEnabled()) {
             failLoopIfAnyRunFailedCheckboxNAV.setSelection(false);
+            setProperty(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV, "false");
+        } else {
+            String prop = getProperty(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV);
+            failLoopIfAnyRunFailedCheckboxNAV.setSelection(Boolean.parseBoolean(prop));
         }
         if (!onlyFailLoopCheckboxNAV.isEnabled()) {
             onlyFailLoopCheckboxNAV.setSelection(false);
+            setProperty(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV, "false");
+        } else {
+            String prop = getProperty(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV);
+            onlyFailLoopCheckboxNAV.setSelection(Boolean.parseBoolean(prop));
         }
     }
 
@@ -250,8 +247,6 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
                 button.getData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV).toString());
             rerunTimesAndFailTextNAV.setEnabled(button == rerunAndFailRadioButtonNAV);
             rerunTimesAndDiscardTextNAV.setEnabled(button == rerunAndDiscardRadioButtonNAV);
-
-            setActivationOfCheckboxes();
         }
 
     }
@@ -277,23 +272,35 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
 
     }
 
-    /**
-     * Refreshes the {@link FaultTolerantLoopSection} UI.
-     * 
-     * @author Kathrin Schaffert
-     */
-    public void refreshFaultToleranceSection() {
-        if (discardAndContinueRadioButtonNAV.isDisposed()) {
-            return;
+    @Override
+    protected FaultToleranceController createController() {
+        return new FaultToleranceController();
+    }
+
+    protected class FaultToleranceController extends DefaultController {
+
+        @Override
+        public void widgetDefaultSelected(SelectionEvent event) {
+            // implementation not needed
         }
-        setWorkflowNode(node);
+
+        @Override
+        public void widgetSelected(SelectionEvent event) {
+            Button button = ((Button) event.getSource());
+
+            if (button.getData(CONTROL_PROPERTY_KEY) != null
+                && (button.getData(CONTROL_PROPERTY_KEY).equals(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV)
+                    || button.getData(CONTROL_PROPERTY_KEY).equals(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV))) {
+                super.widgetSelected(event);
+            }
+        }
     }
 
     @Override
     protected FaultToleranceUpdater createUpdater() {
         return new FaultToleranceUpdater();
     }
-    
+
     /**
      * Fault Tolerance {@link DefaultUpdater} implementation of the handler to update the Fault Tolerance UI.
      * 
@@ -304,11 +311,21 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
 
         @Override
         public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
-            super.updateControl(control, propertyName, newValue, oldValue);
-            refreshFaultToleranceSection();
+
+            if (control instanceof Text) {
+                super.updateControl(control, propertyName, newValue, oldValue);
+            }
+            if (control instanceof Button && oldValue != null) {
+                if (!propertyName.equals(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV)
+                    && !propertyName.equals(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV)
+                ) {
+                    setWorkflowNode(node);
+                } else {
+                    super.updateControl(control, propertyName, newValue, oldValue);
+                }
+            }
         }
 
     }
-
 
 }

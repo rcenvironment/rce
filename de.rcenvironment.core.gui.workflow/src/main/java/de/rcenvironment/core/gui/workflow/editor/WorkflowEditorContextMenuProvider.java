@@ -116,6 +116,9 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
 
                         @Override
                         public boolean isEnabled() {
+                            if (!action.isEnabled()) {
+                                return false;
+                            }
                             @SuppressWarnings("rawtypes") List selection = ((GraphicalViewer) viewer).getSelectedEditParts();
                             return selection.size() == 1 && selection.get(0).getClass() == WorkflowNodePart.class;
                         }

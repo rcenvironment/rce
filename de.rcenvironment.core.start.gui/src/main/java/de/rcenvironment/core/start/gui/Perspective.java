@@ -26,6 +26,7 @@ public class Perspective implements IPerspectiveFactory {
         
         // relative positions of the views.
         final float leftRatio = 0.2f;
+        final float rightRation = 0.8f;
         final float bottomRatio = 0.7f;
         
         layout.addPerspectiveShortcut("de.rcenvironment.core");
@@ -38,6 +39,7 @@ public class Perspective implements IPerspectiveFactory {
         layout.addShowViewShortcut("de.rcenvironment.core.gui.command.CommandConsoleViewer");
         layout.addShowViewShortcut("de.rcenvironment.core.gui.communication.views.NetworkView");
         layout.addShowViewShortcut("de.rcenvironment.core.gui.authorization.ComponentPublishingView");
+        layout.addShowViewShortcut("de.rcenvironment.core.gui.palette.view.PaletteView");
         
         String editorArea = layout.getEditorArea();
         IFolderLayout left = layout.createFolder("de.rcenvironment.core.Perspective.left", IPageLayout.LEFT, leftRatio, editorArea);
@@ -47,6 +49,7 @@ public class Perspective implements IPerspectiveFactory {
                 "de.rcenvironment.core.Perspective.left");
         bottomLeft.addView(IPageLayout.ID_OUTLINE);
         layout.createPlaceholderFolder("de.rcenvironment.core.Perspective.bottom", IPageLayout.BOTTOM, bottomRatio, editorArea);
+        layout.createPlaceholderFolder("de.rcenvironment.core.Perspective.right", IPageLayout.RIGHT, rightRation, editorArea);
     }
 
 }

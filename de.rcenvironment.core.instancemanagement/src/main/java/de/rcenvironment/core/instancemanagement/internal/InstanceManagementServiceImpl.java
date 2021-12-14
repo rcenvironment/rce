@@ -526,8 +526,18 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 userOutputReceiver.addOutput("Setting temp directory" + OF_INSTANCE + instanceId);
                 break;
             case InstanceManagementConstants.SUBCOMMAND_ENABLE_IM_SSH_ACCESS:
-                configOperations.enableImSshAccess(((Integer) entry.getSingleParameter()), getHashedPassphrase());
-                userOutputReceiver.addOutput("Configuring ssh access for IM on instance" + instanceId);
+                final int port = (Integer) parameters[0];
+                if (parameters.length == 1) {
+                    configOperations.enableImSshAccessWithDefaultRole(port, getHashedPassphrase());
+                    userOutputReceiver.addOutput("Configuring ssh access for IM on instance" + instanceId + " using default role");
+                } else if (parameters.length == 2) {
+                    final String role = (String) parameters[1];
+                    configOperations.enableImSshAccessWithRole(port, getHashedPassphrase(), role);
+                    userOutputReceiver.addOutput("Configuring ssh access for IM on instance" + instanceId + " using role " + role);
+                } else {
+                    throw new InstanceConfigurationException(
+                        "EnableIMSSHAccess may only have one or two parameters. Instead has " + parameters.length);
+                }
                 break;
             case InstanceManagementConstants.SUBCOMMAND_CONFIGURE_SSH_SERVER:
                 configOperations.enableSshServer();
@@ -1140,14 +1150,15 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 throw new IOException("Two or more configured directories are equal, but they must be unique");
             }
 
-            // TODO run this check on Windows only?
-            if (installationsRootDir.getPath().length() > MAX_INSTALLATION_ROOT_PATH_LENGTH) {
-                final String errorMessage = String.format(
-                    "The configured IM installation root path (%s) is too long; the maximal allowed length is %d characters. "
-                        + "Change or set the " + INSTALLATIONS_ROOT_DIR_PROPERTY + " option to change it.",
-                    installationsRootDir.getPath(),
-                    MAX_INSTALLATION_ROOT_PATH_LENGTH);
-                throw new IOException(errorMessage);
+            if (OSFamily.isWindows()) {
+                if (installationsRootDir.getPath().length() > MAX_INSTALLATION_ROOT_PATH_LENGTH) {
+                    final String errorMessage = String.format(
+                        "The configured IM installation root path (%s) is too long; the maximal allowed length is %d characters. "
+                            + "Change or set the " + INSTALLATIONS_ROOT_DIR_PROPERTY + " option to change it.",
+                        installationsRootDir.getPath(),
+                        MAX_INSTALLATION_ROOT_PATH_LENGTH);
+                    throw new IOException(errorMessage);
+                }
             }
 
             prepareAndValidateDirectory(DATA_ROOT_DIRECTORY_PROPERTY, dataRootDir);

@@ -90,28 +90,7 @@ public final class ComponentIdRules {
     }
 
     /**
-     * Checks whether the given string is a valid display group for a component/tool. The current rules are similar to those for
-     * component/tool ids, except that group names do not need to be valid filenames (e.g. a group called "COM1" is allowed).
-     * 
-     * @param input the input string to test
-     * @return An {@link Optional} human-readable error message if (and only if) there is a violation.
-     */
-    public static Optional<String> validateComponentGroupNameRules(String input) {
-        if (input.length() < MINIMUM_ID_LENGTH) {
-            return Optional.of(MINIMUM_ID_LENGTH_ERROR_MESSAGE);
-        }
-        if (input.length() > MAXIMUM_ID_LENGTH) {
-            return Optional.of(StringUtils.format(MAXIMUM_ID_LENGTH_ERROR_MESSAGE, MAXIMUM_ID_LENGTH));
-        }
-        Optional<String> commonValidationError = CommonIdRules.validateCommonIdRules(input); // note: id rule set
-        if (commonValidationError.isPresent()) {
-            return commonValidationError;
-        }
-        return Optional.empty(); // passed
-    }
-
-    /**
-     * Checks the tool id, version, and group name properties of the given {@link ComponentInterface} using the individual valiation methods
+     * Checks the tool id, version, and group path properties of the given {@link ComponentInterface} using the individual valiation methods
      * above.
      * 
      * @param componentInterface the {@link ComponentInterface} to test
@@ -127,9 +106,11 @@ public final class ComponentIdRules {
         if (validationError.isPresent()) {
             return Optional.of("Invalid component version: " + validationError.get());
         }
-        validationError = validateComponentGroupNameRules(componentInterface.getGroupName());
-        if (validationError.isPresent()) {
-            return Optional.of("Invalid component group name: " + validationError.get());
+        if (componentInterface.getGroupName() != null) {
+            validationError = ComponentGroupPathRules.validateComponentGroupPathRules(componentInterface.getGroupName());
+            if (validationError.isPresent()) {
+                return Optional.of("Invalid component group name: " + validationError.get());
+            }
         }
         return Optional.empty(); // passed
     }

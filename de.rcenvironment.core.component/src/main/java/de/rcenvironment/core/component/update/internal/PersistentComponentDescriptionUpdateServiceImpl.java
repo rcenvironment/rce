@@ -116,8 +116,10 @@ public class PersistentComponentDescriptionUpdateServiceImpl implements Remotabl
     }
 
     protected void removePersistentComponentDescriptionUpdater(PersistentComponentDescriptionUpdater updater) {
-        synchronized (updaters) {
-            updaters.remove(updater.getComponentIdentifiersAffectedByUpdate());
+        for (String identifier : updater.getComponentIdentifiersAffectedByUpdate()) {
+            synchronized (updaters) {
+                updaters.remove(identifier);
+            }
         }
     }
 }

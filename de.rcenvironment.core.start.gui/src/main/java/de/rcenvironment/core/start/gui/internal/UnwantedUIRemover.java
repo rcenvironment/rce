@@ -134,8 +134,10 @@ public final class UnwantedUIRemover {
          */
         "org.eclipse.debug.ui.VariableView",
 
-        // Palette:
-        // "org.eclipse.gef.ui.palette_view",
+        /**
+         * Palette
+         */
+        "org.eclipse.gef.ui.palette_view",
 
         // Help:
         // "org.eclipse.help.ui.HelpView",

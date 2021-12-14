@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SSH Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.component.sshremoteaccess;singleton:=true
-Bundle-Version: 10.2.4.qualifier
+Bundle-Version: 10.3.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.fasterxml.jackson.databind;version="2.9.9",
@@ -37,7 +37,8 @@ Import-Package: com.fasterxml.jackson.databind;version="2.9.9",
  org.apache.commons.csv;version="1.1.0",
  org.apache.commons.io;version="1.4.9999",
  org.apache.commons.logging;version="1.1.1",
- org.apache.sshd.common.keyprovider;version="2.5.0",
+ org.apache.sshd.common;version="2.7.0",
+ org.apache.sshd.common.keyprovider;version="2.7.0",
  org.osgi.service.component.annotations;version="1.2.0"
 Service-Component: OSGI-INF/generated/*.xml
 Export-Package: de.rcenvironment.core.component.sshremoteaccess

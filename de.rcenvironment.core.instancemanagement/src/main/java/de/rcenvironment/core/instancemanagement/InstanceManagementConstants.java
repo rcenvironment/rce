@@ -177,7 +177,7 @@ public final class InstanceManagementConstants {
     /**
      * Constant.
      */
-    public static final String IM_MASTER_ROLE = "instance_management_delegate_user";
+    public static final String IM_MASTER_DEFAULT_ROLE = "instance_management_delegate_user";
 
     /**
      * Constant.

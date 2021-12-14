@@ -1,31 +1,124 @@
 <!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <sect1 id="configuration">
-	<title>Configuration</title>
-	<para>This section describes the configuration of RCE. Configuration is done within one single
-		configuration file. It is located in the profile directory. From the graphical user
-		interface, you can easily access it from the tool bar or the  <emphasis role="italic"
-			>Configuration</emphasis> menu. </para>
-		<note>To apply changes you need to restart RCE.</note>
-	<para>The format of the configuration file is JSON. See <ulink url="http://www.json.org/"><emphasis role="underline"
-	>http://www.json.org/</emphasis></ulink> for the format definition. Also refer to
-	the example configuration files in the installation data directory.
-	</para>
-	<sect2>
-		<title>Configuration Locations and Files</title>
-		<para>Starting with RCE 6.0.0, all user data is strictly separated from the RCE installation
-			itself. Each set of user data is contained in a so-called "profile". Each profile
-			defines what is called an RCE "instance". Each profile (and therefore, each instance)
-			belongs to exactly one user, and each user can have multiple profiles. The default
-			profile is located within the user's "home" directory (<phrase os="windows"
-				>"C:\users\&lt;user id>\" on Windows</phrase><phrase os="linux">"/home/&lt;user
-				id>/" on Linux</phrase>), in the ".rce/default" sub-folder.<note>
-				<para>Note that ".rce" is a hidden directory; you may need to set operating-specific
-					options to see hidden files and directories.</para>
+	<title>Configuration and Profiles</title>
+	<para>Each instance of RCE reads its configurations from the <emphasis>profile
+		directory</emphasis>, or <emphasis>profile</emphasis> for short. In this document, if the
+		distinction is irrelevant or clear from context, we use these terms interchangeably. On
+			<phrase os="windows">Windows</phrase><phrase os="linux">Linux</phrase> systems, the
+		profile is, by default, located in the <emphasis>main RCE directory</emphasis>
+		<phrase os="windows"><code>C:\Users\&lt;username>\.rce\default</code></phrase><phrase
+			os="linux"><code>~/.rce/default</code>, where <code>~</code> denotes the path to your
+			home directory. Normally, this is <code>/home/&lt;username>/</code></phrase>.</para>
+	<para>If this directory or any of its parent directories do not exist, RCE creates them at first
+		startup and populates them with a default configuration. RCE creates the directory
+			<code>.rce</code> as a hidden directory. Thus, you will have to enable the display of
+		hidden directories in order to see that directory.</para>
+	<sect2 id="profile_directory">
+		<title>Choosing the Profile Directory</title>
+		<para>Since RCE uses the profile directory to load its configuration at startup, it is not
+			possible to change the profile directory at runtime. Instead, when running RCE via the
+			commandline, you can use the commandline switch <code>-p</code> to change the profile at
+			startup. Currently, there is no way to select the profile via the graphical interface of
+			RCE.</para>
+		<para>You can temporarily (i.e., for a single execution of RCE) change the profile directory
+			by supplying its path as a parameter for the commandline switch <code>-p</code>. If you
+			supply a relative path (i.e., one not starting with <phrase os="windows"
+					><code>C:\</code> or some other drive name</phrase><phrase os="linux"
+					><code>/</code></phrase>), RCE resolves that path relative to its main
+			directory, i.e., to <phrase os="windows"
+				><code>C:\Users\&lt;username>\.rce</code></phrase><phrase os="linux"
+					><code>~/.rce</code></phrase>. If you supply an absolute path, RCE treats that
+			path as the path to its profile directory.<note>
+				<para>You can change the path to which RCE resolves relative profile directories by
+					editing the file rce.ini in the main folder of your RCE installation. Add the
+					line <code>-Drce.profiles.parentDir="&lt;directory>"</code> and replace
+						<code>&lt;directory></code> with the absolute path to a directory which
+					contains your profiles.</para>
 			</note></para>
-		<para>All manual configuration takes place in the profile's central configuration file,
-			"configuration.json". As of RCE 9.0.0, most configuration settings only take effect on
-			startup, so you need to restart RCE after editing it. (This will be changed in a future
-			release.) This applies to all types of installations.</para>
+		<para>In either case, RCE creates the profile directory and its parents if they do not
+			exist. The range of valid profile names is mainly restricted by your OS's range of valid
+			directory names. We strongly recommend to restrict your profile names to the range of
+			printable ASCII characters. Furthermore, the profile name <code>common</code> is
+			reserved for internal use of RCE.</para>
+		<para>If you want to change the profile location permanently, you can do so by supplying the
+			commandline switch <code>-p</code> without a parameter. In this case, RCE starts with a
+			text-based profile selection UI which allows you to set a new location of the default
+			profile. We show this profile selection UI in the following figure.</para>
+		<figure>
+			<title>Profile Selection UI</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/profileSelectionUI.png" contentwidth="420"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<para>Choosing the second option ("Select the default profile for future runs") will present
+			a list of available profiles. On selection of one of these profiles, RCE will not be
+			started using this profile, but instead the selected profile will be marked as the
+			default profile for future runs. This selection is only stored for the current user and
+			for the current installation location of RCE. Different users on the same machine can
+			therefore configure different default profiles. Furthermore, different installations of
+			RCE can have different default profiles configured.</para>
+		<note>
+			<para>The Profile Selection UI will only display profiles if they have been started once
+				with RCE 7.0 or newer.</para>
+		</note>
+		<para>No two instances of RCE may use the same profile simultaneously. Upon startup, RCE
+			checks whether some other instance of RCE is already running which uses the given
+			profile. In this case, RCE displays an error message stating that it "failed to lock
+			profile directory" and shuts down. If you want to start multiple instances of RCE
+			simultaneously on the same machine, you have to specify a different profile for each
+			instance.</para>
+		<example>
+			<title>Choosing the Profile Directory</title>
+			<para>Install RCE on some system that has not had RCE installed previously. For the sake
+				of this example, we assume the current user to be called <code>rceuser</code><phrase
+					os="linux"> and to have its home directory set to
+					<code>/home/rceuser</code></phrase>.</para>
+			<para>Start RCE without any parameters (i.e., via <phrase os="windows"
+						><code>rce.exe</code></phrase><phrase os="linux"
+				><code>./rce</code></phrase>). RCE will use the profile <phrase os="windows"
+						><code>C:\Users\rceuser\.rce</code></phrase><phrase os="linux"
+						><code>/home/rceuser/.rce</code></phrase>. Execute that command a second
+				time in a second <phrase os="windows">cmd</phrase><phrase os="linux"
+					>terminal</phrase> while the first instance is still running. Startup of RCE
+				will fail, since the profile is already used by the first instance of RCE.</para>
+			<para>Now execute the command <phrase os="windows"><code>rce.exe -p
+						secondinstance</code></phrase><phrase os="linux"><code>./rce -p
+						secondinstance</code></phrase> in a second <phrase os="windows"
+					>cmd</phrase><phrase os="linux">terminal</phrase>. You will have two instances
+				of RCE running, one using the profile <phrase os="windows"
+						><code>C:\Users\rceuser\.rce\default</code></phrase><phrase os="linux"
+						><code>/home/rceuser/.rce/default</code></phrase>, the other using the
+				profile <phrase os="windows"
+					><code>C:\Users\rceuser\.rce\secondinstance</code></phrase><phrase os="linux"
+						><code>/home/rceuser/.rce/secondinstance</code></phrase>.</para>
+			<para>Finally, execute the command <phrase os="windows"><code>rce.exe -p</code></phrase><phrase
+					os="linux"><code>./rce -p</code></phrase>. RCE will offer you a list of profiles
+				that you have most recently used. Pick the profile <code>secondinstance</code> as
+				the default profile. If you now close all running instances of RCE and restart RCE
+				without any parameters (i.e., via <phrase os="windows"
+					><code>rce.exe</code></phrase><phrase os="linux"><code>./rce</code></phrase>),
+				RCE will start using the profile <code>secondinstance</code>.</para>
+		</example>
+	</sect2>
+	<sect2>
+		<title>Contents of the Profile Directory</title>
+		<para>As stated above, each profile contains the static configuration of RCE as well as its
+			integrated tools. The former is defined via the JSON-file
+				<code>configuration.json</code>. For an in-depth introduction to the JSON file
+			format, please refer to <ulink url="http://www.json.org/">https://www.json.org/</ulink>. 
+			The file <code>configuration.json</code> is located in the root of the profile directory,
+			while the integrated tools are defined in the directory <code>integration</code> and its
+			subdirectories.</para>
+		<para>To change the static configuration of RCE, change the contents of the file
+			configuration.json and restart RCE. You can either change the contents of this file
+			manually using your favorite text editor, or from the GUI of RCE via the toolbar or the
+			menu entry <emphasis>Configuration</emphasis>. <note>
+				<para>Recall that RCE only parses its configuration during startup. Thus, if you
+					change the contents of the file <code>configuration.json</code>, you have to
+					restart RCE to apply these changes.</para>
+			</note></para>
 	</sect2>
 	<sect2>
 		<title>Configuration Parameters</title>

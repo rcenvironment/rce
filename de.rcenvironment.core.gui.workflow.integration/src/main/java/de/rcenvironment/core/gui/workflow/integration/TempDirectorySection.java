@@ -44,12 +44,12 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         parent.setLayout(new GridLayout(1, true));
-        
+
         final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         composite.setLayout(new GridLayout(1, true));
         composite.setData(CONTROL_PROPERTY_KEY, ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
-        
+
         final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
         scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         scriptSection.setText(Messages.tempDirectorySection);
@@ -92,12 +92,6 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         onSuccessDeleteTempDirectoryButton.setData(CONTROL_PROPERTY_KEY, ToolIntegrationConstants.KEY_KEEP_ON_FAILURE);
     }
 
-    @Override
-    public void aboutToBeShown() {
-        super.aboutToBeShown();
-        setActivationOfCheckboxes();
-    }
-
     private void determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive, boolean deleteAlwaysActive) {
         if (deleteOnceActive) {
             onceDeleteTempDirectoryButton.setSelection(true);
@@ -117,9 +111,9 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
     @Override
     public void refreshSection() {
         super.refreshSection();
-        aboutToBeShown();
+        setActivationOfCheckboxes();
     }
-       
+
     @Override
     protected TempSectionUpdater createUpdater() {
         return new TempSectionUpdater();
@@ -136,7 +130,9 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         @Override
         public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
             super.updateControl(control, propertyName, newValue, oldValue);
-            setActivationOfCheckboxes();
+            if (oldValue != null) {
+                setActivationOfCheckboxes();
+            }
         }
     }
 
@@ -161,7 +157,6 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
             setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR, key);
-            setActivationOfCheckboxes();
         }
     }
 
@@ -201,9 +196,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
             determineDeletionBehaviour(deleteNeverActive, deleteOnceActive, deleteAlwaysActive);
         }
         onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
-        onSuccessDeleteTempDirectoryButton.setSelection(isKeepButtonActive()
-            && Boolean.parseBoolean(getProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE)));
-        setPropertyNotUndoable(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
+        onSuccessDeleteTempDirectoryButton.setSelection(Boolean.parseBoolean(getProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE)));
 
     }
 

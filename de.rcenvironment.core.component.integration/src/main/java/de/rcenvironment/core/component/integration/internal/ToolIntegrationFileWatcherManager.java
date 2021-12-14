@@ -130,7 +130,7 @@ public class ToolIntegrationFileWatcherManager {
         }
         try {
             ToolIntegrationFileWatcher integrationWatcher = fileWatcherFactory.create(context);
-            runnerService.execute(integrationWatcher, "FileWatcher " + context.getContextId());
+            runnerService.execute("Filewatcher for integration files", integrationWatcher, "FileWatcher " + context.getContextId());
 
             final Path toolIntegrationPath = constructPath(integrationRootFolder);
             integrationWatcher.registerRecursive(toolIntegrationPath);

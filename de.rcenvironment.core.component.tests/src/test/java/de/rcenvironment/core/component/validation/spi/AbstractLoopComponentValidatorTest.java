@@ -18,7 +18,7 @@ import org.junit.Test;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 
 /**
@@ -31,7 +31,7 @@ public class AbstractLoopComponentValidatorTest {
 
     private AbstractLoopComponentValidator validator;
 
-    private ComponentDescriptionMockCreater componentDescriptionMockCreater;
+    private ComponentDescriptionMockCreator componentDescriptionMockCreater;
 
     private List<ComponentValidationMessage> messages;
 
@@ -56,7 +56,7 @@ public class AbstractLoopComponentValidatorTest {
             }
         };
 
-        componentDescriptionMockCreater = new ComponentDescriptionMockCreater();
+        componentDescriptionMockCreater = new ComponentDescriptionMockCreator();
     }
 
     /** Test Rerun And Fail but no max reruns set. */

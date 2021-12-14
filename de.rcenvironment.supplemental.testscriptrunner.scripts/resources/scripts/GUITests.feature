@@ -16,6 +16,7 @@ Scenario: For testing purposes
   Then  the log output of "NodeA" should indicate a clean shutdown with no warnings or errors
     
 @GUI01
+@BasicIntegrationTestSuite
 Scenario Outline: Open all views and check for errors
 
   Given instance "NodeA" using the default build
@@ -52,6 +53,7 @@ Scenario Outline: Open all views and check for errors
 #    |TIGL_Viewer            |
 
 @GUI02
+@BasicIntegrationTestSuite
 Scenario Outline: Open view, close view and open view and check for errors 
 
 #waiting necessary for command to have an effect. Should be improved to not

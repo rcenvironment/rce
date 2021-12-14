@@ -1,0 +1,3 @@
+de.rcenvironment.integration.workflow.integratedWf/0.0,integratedWf,INTEGRATED_WORKFLOW;MyGroup
+de.rcenvironment.integration.common.myLocalTool/4,myLocalTool,INTEGRATED_TOOL;MyGroup/MySubgroup
+de.rcenvironment.excel/3.1,Excel,STANDARD_COMPONENT;MyGroup

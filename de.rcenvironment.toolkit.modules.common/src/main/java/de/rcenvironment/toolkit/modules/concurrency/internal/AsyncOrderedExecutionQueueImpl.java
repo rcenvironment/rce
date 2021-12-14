@@ -45,7 +45,6 @@ public class AsyncOrderedExecutionQueueImpl implements AsyncOrderedExecutionQueu
     private final class DispatchRunnable implements Runnable {
 
         @Override
-        @TaskDescription(ASYNC_TASK_DESCRIPTION)
         public void run() {
             // dispatch all currently queued elements in the same execution to avoid thread switching and thread pool overhead
             while (dispatchSingleElement()) {
@@ -146,7 +145,7 @@ public class AsyncOrderedExecutionQueueImpl implements AsyncOrderedExecutionQueu
             isFirst = queue.size() == 1;
         }
         if (isFirst) {
-            threadPool.execute(dispatchRunnable);
+            threadPool.execute(ASYNC_TASK_DESCRIPTION, dispatchRunnable);
         }
     }
 

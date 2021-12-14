@@ -753,7 +753,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             throw CommandException.syntaxError("Unexpected parameter type. Port must be a numeric value.", currentContext.get());
         }
         final int accessPort = Integer.parseInt(parameters.get(0));
-        changeSequence.enableImSshAccess(accessPort);
+        changeSequence.enableImSshAccessWithDefaultRole(accessPort);
     }
 
     private void configureSshServer(InstanceConfigurationOperationSequence changeSequence, List<String> parameters)

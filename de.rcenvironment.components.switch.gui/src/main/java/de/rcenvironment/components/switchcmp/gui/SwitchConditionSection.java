@@ -614,7 +614,7 @@ public class SwitchConditionSection extends ValidatingWorkflowNodePropertySectio
 
         try {
             if (!configStr.equals(mapper.writeValueAsString(contentList)) && selected != null
-                && Integer.parseInt(selected) < contentList.size()) {
+                && Integer.parseInt(selected) <= contentList.size()) {
                 setProperty(SwitchComponentConstants.CONDITION_KEY, mapper.writeValueAsString(contentList));
             } else {
                 setProperties(SwitchComponentConstants.CONDITION_KEY, mapper.writeValueAsString(contentList),

@@ -177,7 +177,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             false);
 
         localImage = getLocalImage();
-        informationFigure = createImageFigure(localImage, 
+        informationFigure = createImageFigure(localImage,
             INFORMATION_FIGURE_OFFSET_X, INFORMATION_FIGURE_OFFSET_Y,
             INFORMATION_FIGURE_SIZE,
             Messages.localExecutionOnly,
@@ -342,6 +342,10 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             final int localX = 22;
             final int localY = 22;
             informationFigure.setBounds(new Rectangle(localX, localY, size, size));
+            final int deprecatedX = 10;
+            final int deprecatedY = 10;
+            final int deprecatedSize = 20;
+            deprecatedFigure.setBounds(new Rectangle(deprecatedX, deprecatedY, deprecatedSize, deprecatedSize));
         }
         figure.add(errorFigure);
         figure.add(warningFigure);
@@ -478,7 +482,13 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         if (!node.isEnabled()) {
             enabled = "disabled";
         } else if (node.getComponentDescription().getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
-            enabled = "not available";
+            String actualVersion = node.getComponentDescription().getComponentInterface().getVersion();
+            if (!actualVersion.isEmpty()) {
+                enabled = de.rcenvironment.core.utils.common.StringUtils
+                    .format("current version %s is not available; another version may be avaiable", actualVersion);
+            } else {
+                enabled = "curent version is unknown; another version may be avaiable";
+            }
         }
         if (Boolean.valueOf(node.getConfigurationDescription()
             .getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_IS_MOCK_MODE))) {
@@ -539,7 +549,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         } else {
             informationFigure.setVisible(false);
         }
-
         deprecatedFigure.setVisible(((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
             .getComponentInterface().getIsDeprecated());
 

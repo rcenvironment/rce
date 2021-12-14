@@ -14,6 +14,7 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
@@ -49,6 +50,8 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
     private static String windowTitle = "%s (%s)";
 
+    private IWorkbenchWindowConfigurer windowConfigurer;
+
     public ApplicationWorkbenchAdvisor() {}
 
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
@@ -57,7 +60,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
     @Override
     public WorkbenchWindowAdvisor createWorkbenchWindowAdvisor(IWorkbenchWindowConfigurer configurer) {
-        IWorkbenchWindowConfigurer windowConfigurer = configurer;
+        windowConfigurer = configurer;
         String platformName = configService.getInstanceName();
         String appName = Platform.getProduct().getName();
         if (platformName != null && appName != null) {
@@ -129,6 +132,15 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
                 // register listener to programmatically set project explorer's resources when closing and reopening it
                 PlatformUI.getWorkbench().getActiveWorkbenchWindow().getPartService().addPartListener(new WorkbenchWindowPartListener());
+
+                // Check, if the workspace needs to be migrated from the Eclipse FlyoutEditorPalette to RCE's palette view implementation
+                // In this case, the default RCE perspective has to be reset.
+                String workbenchNode = "org.eclipse.ui.workbench";
+                String migratedPaletteFlag = "rcePaletteView";
+                if (!(InstanceScope.INSTANCE.getNode(workbenchNode).getBoolean(migratedPaletteFlag, false))) {
+                    windowConfigurer.getWindow().getActivePage().resetPerspective();
+                    InstanceScope.INSTANCE.getNode(workbenchNode).putBoolean(migratedPaletteFlag, true);
+                }
             }
         });
     }

@@ -12,4 +12,6 @@
     
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../common/sections/preface/operating_systems.xml"/>
     
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../common/sections/preface/known_issues.xml"/>
+    
 </chapter>

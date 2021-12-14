@@ -53,6 +53,7 @@ import de.rcenvironment.extras.testscriptrunner.definitions.common.TestScenarioE
  * command plugin when installed into a standalone RCE product.
  *
  * @author Robert Mischke
+ * @author Alexander Weinert (Sonar cleanup, support for multiple output formats)
  */
 public class CucumberTestFrameworkAdapter {
 
@@ -71,6 +72,31 @@ public class CucumberTestFrameworkAdapter {
     private final Backend javaBackend;
 
     private final Log log = LogFactory.getLog(getClass());
+
+    public enum ReportOutputFormat {
+
+        /** Report formatted by cucumber "pretty" plugin. */
+        PRETTY("pretty", ".txt"),
+        /** Report formatted by cucumber "json" plugin. Deprecated in Cucumber. */
+        JSON("json", ".json");
+
+        private final String formatSpecifier;
+
+        private final String reportFileSuffix;
+
+        ReportOutputFormat(String formatSpecifierParam, String reportFileSuffixParam) {
+            this.formatSpecifier = formatSpecifierParam;
+            this.reportFileSuffix = reportFileSuffixParam;
+        }
+
+        public String getFormatSpecifier() {
+            return this.formatSpecifier;
+        }
+
+        public String getReportFileSuffix() {
+            return this.reportFileSuffix;
+        }
+    }
 
     /**
      * Simple container for execution result data.
@@ -150,12 +176,19 @@ public class CucumberTestFrameworkAdapter {
      */
     public ExecutionResult executeTestScripts(File scriptLocationRoot, String tagNameSelection, TextOutputReceiver outputReceiver,
         String buildUnderTestId, File reportDir) throws IOException {
+        return executeTestScripts(scriptLocationRoot, tagNameSelection, outputReceiver, buildUnderTestId, reportDir,
+            ReportOutputFormat.PRETTY);
+    }
+
+    public ExecutionResult executeTestScripts(File scriptLocationRoot, String tagNameSelection, TextOutputReceiver outputReceiver,
+        String buildUnderTestId, File reportDir, ReportOutputFormat reportFormat) throws IOException {
 
         // TODO (p2) check whether this can be reworked to use an individual file per run; this would enable parallel runs
         final String reportDirUriString = reportDir.toURI().toASCIIString();
-        File reportFile = new File(reportDir, "plain.txt");
+        final String reportFileName = "plain" + reportFormat.getReportFileSuffix();
+        File reportFile = new File(reportDir, reportFileName);
         if (reportFile.isFile()) {
-            reportFile.delete(); // ignore return value; result is checked below, along with potential existence as directory
+            reportFile.delete(); // NOSONAR ignore return value; result is checked below, along with potential existence as directory
         }
         if (reportFile.isFile()) {
             throw new IOException("Failed to delete pre-existing report file " + reportFile.getAbsolutePath());
@@ -189,35 +222,37 @@ public class CucumberTestFrameworkAdapter {
         }
 
         // see https://cucumber.io/docs/reference/jvm#cli-runner for options reference
-        cliParts.addAll(Arrays.asList(new String[] {
+        cliParts.addAll(Arrays.asList(
             CLI_OPTION_GLUE_CODE, "de.rcenvironment.extras.testscriptrunner.definitions", // register definitions
             CLI_OPTION_STRICT_MODE, // strict mode: treat undefined and pending steps as errors
             CLI_OPTION_MONOCHROME, // monochrome output
             CLI_OPTION_SNIPPETS, "camelcase", // use CamelCase in snippets (instead of underscore separators)
-            CLI_OPTION_PLUGIN, "pretty:" + reportDirUriString + "/plain.txt", // add and configure plain text report
+            CLI_OPTION_PLUGIN, StringUtils.format("%s:%s/%s", reportFormat.getFormatSpecifier(), reportDirUriString, reportFileName),
             // "-p", "html:" + reportDirUriString + "/html", // add and configure html report
             scriptLocationRoot.getAbsolutePath() // define the location of test script files ("features")
-        }));
+        ));
 
         RuntimeOptions runtimeOptions = new RuntimeOptions(cliParts) {
 
             @Override
             // overridden to inject a FileResourceLoader; otherwise, no script files are found when running as a plugin -- misc_ro
             public List<CucumberFeature> cucumberFeatures(ResourceLoader resourceLoader) {
-                List<CucumberFeature> result =
-                    CucumberFeature.load(new FileResourceLoader(), getFeaturePaths(), getFilters(), System.out);
-                return result;
+                return CucumberFeature.load(new FileResourceLoader(), getFeaturePaths(), getFilters(), System.out); // NOSONAR, since here
+                                                                                                                    // we actually want
+                                                                                                                    // Cucumber to print
+                                                                                                                    // to stdout
             }
         };
 
         ClassLoader classLoader = getClass().getClassLoader(); // the bundle classloader
         ResourceLoader resourceLoader = new ClasspathResourceLoader(classLoader);
-        ArrayList<Backend> backends = new ArrayList<Backend>();
+        ArrayList<Backend> backends = new ArrayList<>();
         backends.add(javaBackend);
 
         Runtime runtime = new Runtime(resourceLoader, classLoader, backends, runtimeOptions);
 
-        PrintStream oldStdOut = System.out;
+        PrintStream oldStdOut = System.out; // NOSONAR, since here we actually want to preserve the existing output stream instead of
+                                            // printing something to it
         ByteArrayOutputStream outputBuffer = new ByteArrayOutputStream();
         final PrintStream outputWriter = new PrintStream(outputBuffer, false, "UTF-8");
         System.setOut(outputWriter);
@@ -234,7 +269,8 @@ public class CucumberTestFrameworkAdapter {
 
         if (reportFile.isFile()) {
             final List<String> reportLines = FileUtils.readLines(reportFile, Charsets.UTF_8); // TODO charset correct?
-            final List<String> capturedStdOutLines = IOUtils.readLines(new ByteArrayInputStream(outputBuffer.toByteArray()), "UTF-8");
+            final List<String> capturedStdOutLines =
+                IOUtils.readLines(new ByteArrayInputStream(outputBuffer.toByteArray()), Charsets.UTF_8);
             return new ExecutionResult(reportLines, capturedStdOutLines);
         } else {
             return null;

@@ -174,7 +174,6 @@ public class TorqueClusterServiceTest {
                 assertEquals(startTime3, information.getStartTime());
             }
         }
-        assertFalse(resultJobInformation.contains(jobId4));
-        
+        assertFalse(resultJobInformation.stream().anyMatch(info -> info.getJobId().equals(jobId4)));
     }
 }

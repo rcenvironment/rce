@@ -6,7 +6,7 @@
           "inputFile": "%s",
           "inputDir": "%s"
      },
-	 "de.rcenvironment.outputwriter/2.0": {
+	 "de.rcenvironment.outputwriter/2.1": {
           "targetRootFolder": "%s"
      },
 	 "de.rcenvironment.evaluationmemory/2/em-1": {

@@ -117,7 +117,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         refreshOutputCombos();
 
         ComponentInstanceProperties config = getConfiguration();
-        
+
         config.addPropertyChangeListener(new PropertyChangeListener() {
 
             @Override
@@ -782,12 +782,9 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
             } catch (IOException e) {
                 logger.error("Failed to write database component's statements to file system.");
             }
-            if (currentStatementsString != null) {
-                if (getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY) == null) {
-                    setProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY, currentStatementsString);
-                } else if (!getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY).equals(currentStatementsString)) {
-                    setProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY, currentStatementsString);
-                }
+            if (currentStatementsString != null && (getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY) == null
+                || !getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY).equals(currentStatementsString))) {
+                setProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY, currentStatementsString);
             }
         }
     }

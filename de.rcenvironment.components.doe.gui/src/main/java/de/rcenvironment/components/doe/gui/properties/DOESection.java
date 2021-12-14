@@ -35,7 +35,6 @@ import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.ICellEditorValidator;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
@@ -43,12 +42,10 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.FileTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -136,7 +133,11 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
     private Button codedValuesButton;
 
+    private Label startLabel;
+
     private Text startSample;
+
+    private Label endLabel;
 
     private Text endSample;
 
@@ -154,15 +155,22 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
         final Section sectionProperties = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
         sectionProperties.setText(Messages.sectionHeader);
-        sectionProperties.marginWidth = 5;
-        sectionProperties.marginHeight = 5;
         Composite mainComposite = new Composite(sectionProperties, SWT.NONE);
         mainComposite.setLayout(new GridLayout(1, false));
         mainComposite.setBackground(Display.getCurrent().getSystemColor(1));
         GridData mainData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
         mainComposite.setLayoutData(mainData);
 
-        Composite algorithmComposite = new Composite(mainComposite, SWT.NONE);
+        Composite upperMainComposite = new Composite(mainComposite, SWT.NONE);
+        GridLayout upperMainLayout = new GridLayout(2, false);
+        upperMainLayout.marginWidth = 0;
+        upperMainLayout.marginHeight = 0;
+        upperMainComposite.setLayout(upperMainLayout);
+        upperMainComposite.setBackground(Display.getCurrent().getSystemColor(1));
+        GridData upperMainData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
+        upperMainComposite.setLayoutData(upperMainData);
+
+        Composite algorithmComposite = new Composite(upperMainComposite, SWT.NONE);
         algorithmComposite.setLayout(new GridLayout(4, false));
         algorithmComposite.setBackground(Display.getCurrent().getSystemColor(1));
 
@@ -178,13 +186,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         seedSpinner = new Spinner(algorithmComposite, SWT.BORDER);
         seedSpinner.setMaximum(Integer.MAX_VALUE);
         seedSpinner.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_SEED_NUMBER);
-        seedSpinner.addModifyListener(new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent arg0) {
-                fillTable();
-            }
-        });
 
         Composite runComposite = new Composite(algorithmComposite, SWT.NONE);
         GridLayout runLayout = new GridLayout(2, false);
@@ -199,56 +200,46 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         runSpinner = new Spinner(runComposite, SWT.BORDER);
         runSpinner.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_RUN_NUMBER);
         runSpinner.setMaximum(Integer.MAX_VALUE);
-        runSpinner.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                fillTable();
-                if (getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
-                    ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-                    try {
-                        setPropertyNotUndoable(DOEConstants.KEY_TABLE, mapper.writeValueAsString(viewer.getInput()));
-                    } catch (IOException e) {
-                        LOGGER.error(e);
-                    }
-                }
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                // not needed yet
-            }
-        });
         GridData spinnerData = new GridData();
         runSpinner.setLayoutData(spinnerData);
 
-        GridLayout failedrunLayout = new GridLayout(3, false);
-        failedrunLayout.marginWidth = 0;
-        tableComposite = new Composite(mainComposite, SWT.NONE);
-        tableComposite.setLayout(failedrunLayout);
-        tableComposite.setBackground(Display.getCurrent().getSystemColor(1));
-        GridData tableData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
-        tableComposite.setLayoutData(tableData);
-        Label startLabel = new Label(tableComposite, SWT.NONE);
+        Composite sampleComposite = new Composite(upperMainComposite, SWT.NONE);
+        sampleComposite.setLayout(new GridLayout(2, false));
+        sampleComposite.setBackground(Display.getCurrent().getSystemColor(1));
+        GridData sampleData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
+        final int horizontalIndentSample = 50;
+        sampleData.horizontalIndent = horizontalIndentSample;
+        sampleComposite.setLayoutData(sampleData);
+
+        startLabel = new Label(sampleComposite, SWT.NONE);
         startLabel.setText(Messages.sampleStart);
-        startSample = new Text(tableComposite, SWT.BORDER);
+        startSample = new Text(sampleComposite, SWT.BORDER);
         GridData startData = new GridData();
-        final int minWidthSamples = 60;
+        final int minWidthSamples = 30;
         startData.widthHint = minWidthSamples;
-        startData.horizontalSpan = 2;
         startSample.addVerifyListener(new NumericalTextConstraintListener(startSample, NumericalTextConstraintListener.ONLY_INTEGER
             | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
         startSample.setLayoutData(startData);
         startSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_START_SAMPLE);
-        new Label(tableComposite, SWT.NONE).setText(Messages.sampleEnd);
-        endSample = new Text(tableComposite, SWT.BORDER);
+        endLabel = new Label(sampleComposite, SWT.NONE);
+        endLabel.setText(Messages.sampleEnd);
+        endSample = new Text(sampleComposite, SWT.BORDER);
         GridData endData = new GridData();
         endData.widthHint = minWidthSamples;
-        endData.horizontalSpan = 2;
         endSample.setLayoutData(endData);
         endSample.addVerifyListener(new NumericalTextConstraintListener(endSample, NumericalTextConstraintListener.ONLY_INTEGER
             | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
         endSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_END_SAMPLE);
+
+        GridLayout tableCompositeLayout = new GridLayout(3, false);
+        tableCompositeLayout.marginWidth = 0;
+        tableCompositeLayout.marginHeight = 0;
+        tableComposite = new Composite(mainComposite, SWT.NONE);
+        tableComposite.setLayout(tableCompositeLayout);
+        tableComposite.setBackground(Display.getCurrent().getSystemColor(1));
+        GridData tableData = new GridData(GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | GridData.FILL_BOTH);
+        tableComposite.setLayoutData(tableData);
+
         addTableComposite();
         sectionProperties.setClient(mainComposite);
     }
@@ -321,7 +312,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 fillTable();
-
             }
         });
         outputsWarningLabel = new Label(buttonsComp, SWT.NONE);
@@ -367,70 +357,81 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
     private boolean loadTableFromFile(String path) {
         boolean success = true;
-        try {
-            File csvData = new File(path);
-            CSVParser parser =
-                CSVParser.parse(FileUtils.readFileToString(csvData),
-                    CSVFormat.newFormat(';').withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n"));
-            List<CSVRecord> records = parser.getRecords();
+        List<CSVRecord> records = parseFileToCSVRecordList(path);
+        if (records == null) {
+            return false;
+        }
+        if (Character.isLetter((records.get(0).get(0).charAt(0)))) {
+            records.remove(0);
+        }
+        tableValues = new String[records.size()][];
+        success = extractValuesFromRecord(records, tableValues);
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-            if (Character.isLetter((records.get(0).get(0).charAt(0)))) {
-                records.remove(0);
+        if (success) {
+            try {
+                setProperties(
+                    DOEConstants.KEY_TABLE, mapper.writeValueAsString(tableValues),
+                    DOEConstants.KEY_START_SAMPLE, "0",
+                    DOEConstants.KEY_END_SAMPLE, Integer.toString(records.size() - 1),
+                    DOEConstants.KEY_RUN_NUMBER, Integer.toString(records.size()));
+            } catch (IOException e) {
+                LOGGER.error(e);
+                return false;
             }
-            String[][] values = new String[records.size()][];
-            int count = 0;
-            for (CSVRecord record : records) {
-                int size = getOutputs().size();
-                values[count] = new String[size];
-                for (int i = 0; i < size; i++) {
-                    if (record.size() > i) {
-                        String number = record.get(i);
-                        if (number.equals("null")) {
-                            values[count][i] = "";
-                        } else {
-                            Matcher matcher = Pattern.compile("(\\+|-)?\\d+(,|.)?\\d*(e|E)?(\\+|-)?\\d*").matcher(number);
-
-                            if (count == 0 && i == 0 && matcher.find()) {
-                                number = matcher.group();
-                            }
-                            values[count][i] = number.replaceAll("\"", " ").replaceAll(",", ".");
-                        }
-                    } else {
-                        values[count][i] = "";
-                    }
-                }
-                count++;
-            }
-            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-            setProperty(DOEConstants.KEY_TABLE, mapper.writeValueAsString(values));
-            setProperty(DOEConstants.KEY_START_SAMPLE, "0");
-            setProperty(DOEConstants.KEY_END_SAMPLE, Integer.toString(count - 1));
-            setProperty(DOEConstants.KEY_RUN_NUMBER, Integer.toString(count));
-            setProperty(DOEConstants.KEY_METHOD, DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE);
-            algorithmSelection.select(algorithmSelection.indexOf(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE));
             refreshSection();
-            if (values[0] != null && values[0].length > getOutputs().size()) {
-                MessageDialog.openInformation(this.getComposite().getShell(), "Warning",
-                    "There are more values per run in the loaded table than outputs defined.");
-            }
-        } catch (IOException e) {
-            LOGGER.error(e);
-            success = false;
-            if (!success) {
-                MessageDialog
-                    .openInformation(this.getComposite().getShell(), ERROR, "Could not load table from file.\n\nReason: " + e.getMessage());
-            }
-
-        } catch (NumberFormatException e) {
-            LOGGER.error(e);
-            success = false;
-            if (!success) {
-                MessageDialog.openInformation(this.getComposite().getShell(), ERROR,
-                    "Could not load table because of a syntax error.\n\nReason: " + e.getMessage());
-            }
-
         }
         return success;
+    }
+
+    private List<CSVRecord> parseFileToCSVRecordList(String path) {
+        File csvData = new File(path);
+        CSVParser parser;
+        List<CSVRecord> records = null;
+        try {
+            parser = CSVParser.parse(FileUtils.readFileToString(csvData),
+                CSVFormat.newFormat(';').withIgnoreSurroundingSpaces().withAllowMissingColumnNames().withRecordSeparator("\n"));
+            records = parser.getRecords();
+        } catch (IOException e) {
+            MessageDialog
+                .openInformation(this.getComposite().getShell(), ERROR, "Could not parse file.\n\nReason: " + e.getMessage());
+        }
+        return records;
+    }
+
+    private boolean extractValuesFromRecord(List<CSVRecord> records, String[][] values) {
+        int count = 0;
+        for (CSVRecord record : records) {
+            int size = getOutputs().size();
+            values[count] = new String[size];
+            for (int i = 0; i < size; i++) {
+                if (record.size() > i) {
+                    String number = record.get(i);
+                    if (number.equals("null")) {
+                        values[count][i] = "";
+                    } else {
+                        Matcher matcher = Pattern.compile("(\\+|-)?\\d+(,|.)?\\d*(e|E)?(\\+|-)?\\d*").matcher(number);
+
+                        if (count == 0 && i == 0 && matcher.find()) {
+                            number = matcher.group();
+                        }
+                        values[count][i] = number.replaceAll("\"", " ").replace(",", ".");
+                        try {
+                            Double.valueOf(values[count][i]);
+                        } catch (NumberFormatException e) {
+                            String message = "Could not load table from file. The Table contains values that are not of type double.\n "
+                                + e.getMessage();
+                            MessageDialog.openInformation(this.getComposite().getShell(), ERROR, message);
+                            return false;
+                        }
+                    }
+                } else {
+                    values[count][i] = "";
+                }
+            }
+            count++;
+        }
+        return true;
     }
 
     private void fillTableHeader() {
@@ -442,47 +443,19 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             }
             Arrays.sort(titles);
             table.setRedraw(false);
-            while (table.getColumnCount() > 0) {
-                table.getColumns()[0].dispose();
+            for (TableColumn column : table.getColumns()) {
+                column.dispose();
             }
-
             for (int i = 0; i < titles.length + 1; i++) {
                 TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
                 if (i == 0) {
                     column.getColumn().setText(Messages.sampleNum);
                 } else {
                     column.getColumn().setText(titles[i - 1]);
-                }
-                final int k = i;
-                column.setLabelProvider(new ColumnLabelProvider() {
-
-                    @Override
-                    public String getText(Object element) {
-                        String returnValue = "";
-                        if (tableValues != null) {
-                            if (k == 0) {
-                                for (int i = 0; i < tableValues.length; i++) {
-                                    if (tableValues[i] == (String[]) element) {
-
-                                        returnValue = String.valueOf(i);
-                                    }
-                                }
-                            } else {
-                                if (k - 1 < ((String[]) element).length) {
-                                    returnValue = String.valueOf(((String[]) element)[k - 1]);
-                                }
-                            }
-                        }
-                        if (returnValue == null || returnValue.equals(NULL)) {
-                            returnValue = "";
-                        }
-                        return returnValue;
-                    }
-                });
-                table.getColumn(i).pack();
-                if (i != 0) {
                     column.setEditingSupport(new TextEditingSupport(viewer, table, i));
                 }
+                column.setLabelProvider(createTableColumnLabelProvider(i));
+                table.getColumn(i).pack();
             }
 
             for (int i = 0; i < titles.length; i++) {
@@ -492,19 +465,44 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         }
     }
 
-    @Override
-    public void refreshSection() {
-        super.refreshSection();
-        aboutToBeShown();
+    private ColumnLabelProvider createTableColumnLabelProvider(final int k) {
+        return new ColumnLabelProvider() {
+
+            @Override
+            public String getText(Object element) {
+                String returnValue = "";
+                if (tableValues != null) {
+                    if (k == 0) {
+                        for (int i = 0; i < tableValues.length; i++) {
+                            if (tableValues[i] == (String[]) element) {
+                                returnValue = String.valueOf(i);
+                            }
+                        }
+                    } else {
+                        if (k - 1 < ((String[]) element).length) {
+                            returnValue = String.valueOf(((String[]) element)[k - 1]);
+                        }
+                    }
+                }
+                if (returnValue == null || returnValue.equals(NULL)) {
+                    returnValue = "";
+                }
+                return returnValue;
+            }
+        };
     }
 
     @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
+        refreshDOESection();
+    }
+
+    private void refreshDOESection() {
         fillTableHeader();
         algorithmSelection.setText(getProperty(DOEConstants.KEY_METHOD));
         fillTable();
-        updateActivation();
+        updateActivationAndWarningMessages();
         if (startSample.getText() != null && !startSample.getText().isEmpty() && getProperty(DOEConstants.KEY_START_SAMPLE) != null
             && !startSample.getText().equals(getProperty(DOEConstants.KEY_START_SAMPLE))) {
             startSample.setText(getProperty(DOEConstants.KEY_START_SAMPLE));
@@ -524,85 +522,93 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
     /**
      * Fill the design table.
      */
-    public void fillTable() {
-        table.setRedraw(false);
+    private void fillTable() {
+
         table.clearAll();
+
         if (getOutputs() == null) {
-            table.setRedraw(true);
             return;
         }
         int varCount = getOutputs().size();
         if (varCount < 2 && !(algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
             || algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)
             || algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO))) {
-            table.setRedraw(true);
             return;
         }
+
         tableValues = createTableValues();
-
-        if (tableValues != null && !(tableValues.length * varCount > MAX_GUI_ELEMENTS)) {
-            viewer.setInput(tableValues);
-            String[] endpointNames = new String[this.getOutputs().size()];
-            int j = 0;
-            for (EndpointDescription e : this.getOutputs()) {
-                endpointNames[j++] = e.getName();
+        if (tableValues.length == 0) {
+            return;
+        }
+        if (tableValues.length * varCount > MAX_GUI_ELEMENTS) {
+            if (outputsWarningLabel != null) {
+                outputsWarningLabel.setVisible(true);
+                outputsWarningLabel.setText(Messages.tooMuchElements);
+                outputsWarningLabel.pack();
             }
-            Arrays.sort(endpointNames);
-
-            for (int i = 0; i < tableValues.length; i++) {
-                TableItem current = null;
-                if (table.getItemCount() == 0 || table.getItemCount() <= i) {
-                    current = new TableItem(table, SWT.NONE);
-                } else {
-                    current = table.getItem(i);
-                }
-                current.setText(0, String.valueOf(i));
-                for (int k = 0; k < tableValues[i].length; k++) {
-                    if (!getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-                        && codedValuesButton.getSelection()) {
-                        EndpointDescription currentEndpoint = null;
-                        for (EndpointDescription e : getOutputs()) {
-                            if (e.getName().equals(endpointNames[k])) {
-                                currentEndpoint = e;
-                            }
-                        }
-                        if (currentEndpoint != null && tableValues != null && tableValues[i] != null && tableValues[i][k] != null) {
-                            Double low = Double.valueOf(currentEndpoint.getMetaDataValue(DOEConstants.META_KEY_LOWER));
-                            Double up = Double.valueOf(currentEndpoint.getMetaDataValue(DOEConstants.META_KEY_UPPER));
-                            tableValues[i][k] = String.valueOf(DOEAlgorithms.convertValue(low, up,
-                                Double.parseDouble(tableValues[i][k])));
-                        }
-                    }
-                }
-            }
-            viewer.refresh();
-            for (TableColumn c : table.getColumns()) {
-                c.pack();
-            }
-
-        } else if (outputsWarningLabel != null && tableValues != null && (tableValues.length * varCount > MAX_GUI_ELEMENTS)) {
-            outputsWarningLabel.setVisible(true);
-            outputsWarningLabel.setText(Messages.tooMuchElements);
-            outputsWarningLabel.pack();
+            return;
         }
 
-        table.setRedraw(true);
+        viewer.setInput(tableValues);
+
+        if (codedValuesButton.getSelection() && !getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+            updateCodedValues();
+        }
+
+        viewer.refresh();
+        for (TableColumn c : table.getColumns()) {
+            c.pack();
+        }
+    }
+
+    private void updateCodedValues() {
+        String[] endpointNames = new String[this.getOutputs().size()];
+        int j = 0;
+        for (EndpointDescription e : this.getOutputs()) {
+            endpointNames[j++] = e.getName();
+        }
+        Arrays.sort(endpointNames);
+
+        for (int i = 0; i < tableValues.length; i++) {
+            TableItem current = null;
+            if (table.getItemCount() == 0 || table.getItemCount() <= i) {
+                current = new TableItem(table, SWT.NONE);
+            } else {
+                current = table.getItem(i);
+            }
+            current.setText(0, String.valueOf(i));
+
+            for (int k = 0; k < tableValues[i].length; k++) { // NOSONAR because if tableValues were null here, this code wouldn't have been
+                                                              // reached
+                EndpointDescription currentEndpoint = null;
+                for (EndpointDescription e : getOutputs()) {
+                    if (e.getName().equals(endpointNames[k])) {
+                        currentEndpoint = e;
+                    }
+                }
+                if (currentEndpoint != null && tableValues != null && tableValues[i] != null && tableValues[i][k] != null) {
+                    Double low = Double.valueOf(currentEndpoint.getMetaDataValue(DOEConstants.META_KEY_LOWER));
+                    Double up = Double.valueOf(currentEndpoint.getMetaDataValue(DOEConstants.META_KEY_UPPER));
+                    tableValues[i][k] = String.valueOf(DOEAlgorithms.convertValue(low, up,
+                        Double.parseDouble(tableValues[i][k])));
+                }
+            }
+        }
     }
 
     private String[][] createTableValues() {
-        int varCount = getOutputs().size();
         String algorithm = algorithmSelection.getText();
-        if (varCount == 0 && !algorithm.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
-            return null;
+        if (algorithm.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
+            return createTableValuesForCustomTableInput();
         }
-        int runCount = 0;
-        if (runSpinner != null) {
-            runCount = runSpinner.getSelection();
+
+        int varCount = getOutputs().size();
+        if (varCount == 0) {
+            return new String[0][0];
         }
-        int seedCount = 0;
-        if (seedSpinner != null) {
-            seedCount = seedSpinner.getSelection();
-        }
+        final int runCount = getRunCount();
+        final int seedCount = getSeedCount();
+
         Double[][] tableValuesDouble = null;
         switch (algorithm) {
         case DOEConstants.DOE_ALGORITHM_FULLFACT:
@@ -619,47 +625,42 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE:
             ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
-                if (getProperty(DOEConstants.KEY_TABLE) != null && !getProperty(DOEConstants.KEY_TABLE).isEmpty()) {
-                    tableValuesDouble = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
+                String tableString = getProperty(DOEConstants.KEY_TABLE);
+                if (tableString == null || tableString.isEmpty()) {
+                    break;
                 }
-                if (tableValuesDouble != null && tableValuesDouble.length > 0 && runCount != tableValuesDouble.length) {
-                    tableValuesDouble = Arrays.copyOf(tableValuesDouble, runCount);
+
+                Double[][] currentTableValues = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
+                if (currentTableValues == null) {
+                    break;
                 }
-                String endSampleString = getProperty(DOEConstants.KEY_END_SAMPLE);
-                if (endSampleString != null && !endSampleString.isEmpty() && runCount > 0
-                    && Integer.parseInt(endSampleString) >= runCount) {
-                    setProperty(DOEConstants.KEY_END_SAMPLE, String.valueOf(runCount - 1));
-                }
-                String startSampleString = getProperty(DOEConstants.KEY_START_SAMPLE);
-                if (startSampleString != null && !startSampleString.isEmpty()) {
-                    if (endSampleString != null && !endSampleString.isEmpty()
-                        && Integer.parseInt(startSampleString) > Integer.parseInt(endSampleString)) {
-                        setProperty(DOEConstants.KEY_START_SAMPLE, endSampleString);
-                    } else if (Integer.parseInt(startSampleString) >= runCount && runCount != 0) {
-                        setProperty(DOEConstants.KEY_START_SAMPLE, String.valueOf(runCount - 1));
+
+                int columnNum = this.getOutputs().size();
+                if (currentTableValues[0].length != columnNum || currentTableValues.length != runCount) {
+                    tableValuesDouble = new Double[runCount][columnNum];
+                    int rows = Math.min(runCount, currentTableValues.length);
+                    int columns = Math.min(columnNum, currentTableValues[0].length);
+                    for (int i = 0; i < rows; i++) {
+                        tableValuesDouble[i] = Arrays.copyOf(Arrays.copyOfRange(currentTableValues[i], 0, columns), columnNum);
                     }
+                } else {
+                    tableValuesDouble = currentTableValues;
                 }
             } catch (IOException e) {
                 LOGGER.error(COULD_NOT_READ_TABLE_ERROR, e);
             }
-
-            break;
-        case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT:
-            if (node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
-                Map<String, String> metaData = new HashMap<>();
-                node.getInputDescriptionsManager().addDynamicEndpointDescription(DOEConstants.CUSTOM_TABLE_ENDPOINT_ID,
-                    DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, DataType.Matrix,
-                    metaData);
-            }
-
             break;
         default:
             break;
         }
-        if (!algorithm.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)
-            && !node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
+        if (!node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
             node.getInputDescriptionsManager().removeDynamicEndpointDescription(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME);
         }
+
+        return writeTableValuesAsStringArray(varCount, tableValuesDouble);
+    }
+
+    private String[][] writeTableValuesAsStringArray(int varCount, Double[][] tableValuesDouble) {
         if (tableValuesDouble != null && tableValuesDouble.length > 0) {
             String[][] returnValues = new String[tableValuesDouble.length][tableValuesDouble[0].length];
             for (int i = 0; i < tableValuesDouble.length; i++) {
@@ -673,23 +674,48 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                     Arrays.fill(returnValues[i], "");
                 }
             }
-            this.tableValues = returnValues;
             return returnValues;
-        }
-        if (!DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(algorithm)) {
-            this.tableValues = new String[0][varCount];
+        } else if (!DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(algorithmSelection.getText())) {
+            return new String[0][0];
         } else {
-            this.tableValues = new String[runCount][varCount];
+            return new String[getRunCount()][varCount];
         }
-        return this.tableValues;
     }
 
-    private void updateActivation() {
+    private String[][] createTableValuesForCustomTableInput() {
+
+        if (node.getInputDescriptionsManager().isValidEndpointName(DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME)) {
+            Map<String, String> metaData = new HashMap<>();
+            node.getInputDescriptionsManager().addDynamicEndpointDescription(DOEConstants.CUSTOM_TABLE_ENDPOINT_ID,
+                DOEConstants.CUSTOM_TABLE_ENDPOINT_NAME, DataType.Matrix,
+                metaData);
+        }
+
+        return new String[0][0];
+    }
+
+    private int getRunCount() {
+        if (runSpinner == null) {
+            throw new NullPointerException("runSpinner should not be null");
+        }
+        return runSpinner.getSelection();
+    }
+
+    private int getSeedCount() {
+        if (seedSpinner == null) {
+            throw new NullPointerException("seedSpinner should not be null");
+        }
+        return seedSpinner.getSelection();
+    }
+
+    private void updateActivationAndWarningMessages() {
         boolean isCustomDesignTable = algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE);
         loadTable.setEnabled(isCustomDesignTable);
         clearTableButton.setEnabled(isCustomDesignTable);
-        startSample.setEnabled(isCustomDesignTable);
-        endSample.setEnabled(isCustomDesignTable);
+        startLabel.setVisible(isCustomDesignTable);
+        startSample.setVisible(isCustomDesignTable);
+        endLabel.setVisible(isCustomDesignTable);
+        endSample.setVisible(isCustomDesignTable);
         runLabel.setEnabled(true);
         runSpinner.setEnabled(true);
         seedSpinner.setEnabled(false);
@@ -728,30 +754,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             outputsWarningLabel.setText(Messages.minTwoOutputs);
             activateGUIElements(false);
         } else if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
-            if ((getProperty(DOEConstants.KEY_TABLE) == null || getProperty(DOEConstants.KEY_TABLE).isEmpty())) {
-                outputsWarningLabel.setVisible(true);
-                outputsWarningLabel.setText(Messages.noTableLong);
-            } else if (getProperty(DOEConstants.KEY_TABLE) != null) {
-                ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-                try {
-                    Double[][] tableValuesDouble = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
-                    int runNumber = Integer.parseInt(getProperty(DOEConstants.KEY_RUN_NUMBER));
-                    for (int i = 0; (i <= runNumber && (tableValuesDouble != null) && i < tableValuesDouble.length); i++) {
-                        for (int j = 0; j < tableValuesDouble[i].length; j++) {
-                            if (tableValuesDouble[i][j] == null) {
-                                outputsWarningLabel.setVisible(true);
-                                outputsWarningLabel.setText(Messages.noTableLong);
-                            }
-                        }
-                        if (outputsWarningLabel.isVisible()) {
-                            break;
-                        }
-                    }
-
-                } catch (IOException e) {
-                    logger.error(e.getStackTrace());
-                }
-            }
+            checkCustomTable();
         }
 
         if (outputsWarningLabel != null && !outputsWarningLabel.isVisible() && tableValues != null
@@ -761,11 +764,44 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             outputsWarningLabel.setText(Messages.tooMuchElements);
         }
 
-        if (outputsWarningLabel.getText().isEmpty()) {
-            outputsWarningLabel.setVisible(false);
+        if (outputsWarningLabel != null) {
+            if (outputsWarningLabel.getText().isEmpty()) {
+                outputsWarningLabel.setVisible(false);
+            }
+            outputsWarningLabel.pack();
         }
-        outputsWarningLabel.pack();
+
         runLabel.getParent().pack();
+    }
+
+    private void checkCustomTable() {
+        if ((getProperty(DOEConstants.KEY_TABLE) == null || getProperty(DOEConstants.KEY_TABLE).isEmpty())) {
+            outputsWarningLabel.setVisible(true);
+            outputsWarningLabel.setText(Messages.noTableLong);
+        } else if (getProperty(DOEConstants.KEY_TABLE) != null) {
+            checkForEmptyCells();
+        }
+    }
+
+    private void checkForEmptyCells() {
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        try {
+            Double[][] tableValuesDouble = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
+            int runNumber = Integer.parseInt(getProperty(DOEConstants.KEY_RUN_NUMBER));
+            for (int i = 0; (i <= runNumber && (tableValuesDouble != null) && i < tableValuesDouble.length); i++) {
+                for (int j = 0; j < tableValuesDouble[i].length; j++) {
+                    if (tableValuesDouble[i][j] == null) {
+                        outputsWarningLabel.setVisible(true);
+                        outputsWarningLabel.setText(Messages.noTableLong);
+                    }
+                }
+                if (outputsWarningLabel.isVisible()) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            logger.error(e.getStackTrace());
+        }
     }
 
     private void activateGUIElements(boolean enabled) {
@@ -774,8 +810,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         loadTable.setEnabled(enabled);
         clearTableButton.setEnabled(enabled);
         codedValuesButton.setEnabled(enabled);
-        startSample.setEnabled(enabled);
-        endSample.setEnabled(enabled);
         runSpinner.setEnabled(enabled);
         seedSpinner.setEnabled(enabled);
         table.clearAll();
@@ -800,9 +834,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             } else {
                 setProperty(DOEConstants.KEY_METHOD, algorithmSelection.getText());
             }
-            refreshSection();
         }
-
     }
 
     /**
@@ -821,20 +853,16 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         TextEditingSupport(ColumnViewer viewer, Table table, int columnNumber) {
             super(viewer);
             this.editor = new TextCellEditor(table);
-            editor.setValidator(new ICellEditorValidator() {
-
-                @Override
-                public String isValid(Object arg0) {
-                    try {
-                        Double.parseDouble((String) arg0);
-                    } catch (NumberFormatException e) {
-                        if (((String) arg0).isEmpty()) {
-                            return null;
-                        }
-                        return "No";
+            editor.setValidator((Object arg0) -> {
+                try {
+                    Double.parseDouble((String) arg0);
+                } catch (NumberFormatException e) {
+                    if (((String) arg0).isEmpty()) {
+                        return null;
                     }
-                    return null;
+                    return "No";
                 }
+                return null;
             });
             this.columnNumber = columnNumber;
             this.viewer = viewer;
@@ -842,10 +870,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
         @Override
         protected boolean canEdit(Object arg0) {
-            if (getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
-                return true;
-            }
-            return false;
+            return getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE);
         }
 
         @Override
@@ -880,7 +905,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                 LOGGER.error(e);
             }
             viewer.refresh();
-            refreshSection();
         }
     }
 
@@ -896,11 +920,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         }
 
         @Override
-        public void drop(DropTargetEvent event) {
-            super.drop(event);
-        }
-
-        @Override
         public boolean performDrop(Object arg0) {
             String[] fileDrops = (String[]) arg0;
             if (fileDrops.length != 1 || !fileDrops[0].endsWith(DOEConstants.TABLE_FILE_EXTENTION)) {
@@ -911,7 +930,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                 if (success) {
                     algorithmSelection.select(algorithmSelection.indexOf(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE));
                     setProperty(DOEConstants.KEY_METHOD, DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE);
-                    updateActivation();
+                    updateActivationAndWarningMessages();
                     fillTable();
                 }
             }
@@ -942,6 +961,76 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
     }
 
     @Override
+    protected DOESectionController createController() {
+        return new DOESectionController();
+    }
+
+    protected class DOESectionController extends DefaultController {
+
+        @Override
+        public void modifyText(ModifyEvent event) {
+
+            final Object source = event.getSource();
+            if (source instanceof Control) {
+                final Control control = (Control) source;
+                final String property = (String) control.getData(CONTROL_PROPERTY_KEY);
+
+                if (property.equals(DOEConstants.KEY_START_SAMPLE)) {
+                    setStartSample();
+                }
+                if (property.equals(DOEConstants.KEY_END_SAMPLE)) {
+                    setEndSample();
+                }
+            }
+        }
+
+        private void setEndSample() {
+            String startSampleString = getProperty(DOEConstants.KEY_START_SAMPLE);
+            String endSampleString = endSample.getText();
+            String currentEndSample = getProperty(DOEConstants.KEY_END_SAMPLE);
+            int runCount = runSpinner.getSelection();
+            if (startSampleString != null && !startSampleString.isEmpty() && endSampleString != null && !endSampleString.isEmpty()
+                && !currentEndSample.equals(endSampleString) && runCount > 0) {
+                if (Integer.parseInt(endSampleString) >= runCount) {
+                    if (!getProperty(DOEConstants.KEY_END_SAMPLE).equals(String.valueOf(runCount - 1))) {
+                        setProperty(DOEConstants.KEY_END_SAMPLE, String.valueOf(runCount - 1));
+                    } else {
+                        endSample.setText(String.valueOf(runCount - 1));
+                    }
+                } else if (Integer.parseInt(endSampleString) < Integer.parseInt(startSampleString)) {
+                    if (!getProperty(DOEConstants.KEY_END_SAMPLE).equals(startSampleString)) {
+                        setProperty(DOEConstants.KEY_END_SAMPLE, startSampleString);
+                    } else {
+                        endSample.setText(startSampleString);
+                    }
+
+                } else {
+                    setProperty(DOEConstants.KEY_END_SAMPLE, endSampleString);
+                }
+            }
+        }
+
+        private void setStartSample() {
+            String startSampleString = startSample.getText();
+            String currentStartSampleString = getProperty(DOEConstants.KEY_START_SAMPLE);
+            String endSampleString = getProperty(DOEConstants.KEY_END_SAMPLE);
+            if (startSampleString != null && !startSampleString.isEmpty() && !currentStartSampleString.equals(startSampleString)
+                && endSampleString != null
+                && !endSampleString.isEmpty()) {
+                if (Integer.parseInt(startSampleString) > Integer.parseInt(endSampleString)) {
+                    if (!getProperty(DOEConstants.KEY_START_SAMPLE).equals(endSampleString)) {
+                        setProperty(DOEConstants.KEY_START_SAMPLE, endSampleString);
+                    } else {
+                        startSample.setText(endSampleString);
+                    }
+                } else if (Integer.parseInt(startSampleString) <= Integer.parseInt(endSampleString)) {
+                    setProperty(DOEConstants.KEY_START_SAMPLE, startSampleString);
+                }
+            }
+        }
+    }
+
+    @Override
     protected DOESectionUpdater createUpdater() {
         return new DOESectionUpdater();
     }
@@ -957,8 +1046,35 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         @Override
         public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
             super.updateControl(control, propertyName, newValue, oldValue);
-            aboutToBeShown();
+            if ((control instanceof Combo && oldValue != null) || control instanceof Table) {
+                refreshDOESection();
+            }
+            if (control instanceof Spinner && oldValue != null) {
+                fillTable();
+                if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+                    ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+                    try {
+                        setPropertyNotUndoable(DOEConstants.KEY_TABLE, mapper.writeValueAsString(viewer.getInput()));
+                    } catch (IOException e) {
+                        LOGGER.error(e);
+                    }
+                }
+                if (propertyName.equals(DOEConstants.KEY_RUN_NUMBER)) {
+                    updateStartAndEndSample();
+                }
+            }
         }
 
+        private void updateStartAndEndSample() {
+            int startSampleInt = Integer.parseInt(startSample.getText());
+            int endSampleInt = Integer.parseInt(endSample.getText());
+            int runCount = runSpinner.getSelection();
+            if (endSampleInt >= runCount) {
+                if (runCount - 1 < startSampleInt) {
+                    startSample.setText(String.valueOf(runCount - 1));
+                }
+                endSample.setText(String.valueOf(runCount - 1));
+            }
+        }
     }
 }

@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 
@@ -35,8 +34,6 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.workflow.EndpointHandlingHelper;
-import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
@@ -63,7 +60,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void onAddClicked() {
-        Set<String> paths = new TreeSet<String>();
+        Set<String> paths = new TreeSet<>();
         for (String endpointName : getDynamicEndpointNames()) {
             paths.add(getMetaData(endpointName).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
         }
@@ -80,7 +77,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void onEditClicked() {
-        Set<String> paths = new TreeSet<String>();
+        Set<String> paths = new TreeSet<>();
         for (String endpointName : getDynamicEndpointNames()) {
             paths.add(getMetaData(endpointName).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
         }
@@ -96,29 +93,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(),
                 newMetaData, paths);
 
-        onEditClicked(name, dialog, newMetaData);
-    }
-
-    @Override
-    protected void onEditClicked(String name, EndpointEditDialog dialog, Map<String, String> newMetaData) {
-
-        dialog.initializeValues(name);
-
-        if (dialog.open() == Dialog.OK) {
-
-            EndpointDescription oldDesc = endpointManager.getEndpointDescription(name);
-
-            String newName = dialog.getChosenName();
-            DataType newType = dialog.getChosenDataType();
-            newMetaData = dialog.getMetadataValues();
-
-            if (isEndpointChanged(oldDesc, newName, newType, newMetaData)) {
-
-                if (EndpointHandlingHelper.editEndpointDataType(endpointType, oldDesc, newType)) {
-                    editEndpoint(oldDesc, newName, newType, newMetaData);
-                }
-            }
-        }
+        onEditClicked(name, dialog);
     }
 
     @Override
@@ -136,13 +111,13 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
 
         switch (editConfirmed(oldDesc, newName, newType, outputName)) {
 
-        case InputInvolvedInTarget:
+        case INPUT_INVOLVED_IN_TARGET:
             executeEditCommand(oldDesc, newDesc, true);
             break;
-        case DoNotRemoveCompatibleTypes:
+        case DO_NOT_REMOVE_COMPATIBLE_TYPES:
             executeEditCommand(oldDesc, newDesc, false);
             break;
-        case InputNotInvolvedInTarget:
+        case INPUT_NOT_INVOLVED_IN_TARGET:
             return;
         default:
             return;
@@ -170,22 +145,21 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         DataType[] compatibleTypes = new DataType[] { DataType.Integer, DataType.Float };
         List<DataType> compatibleTypesList = Arrays.asList(compatibleTypes);
         if (outputName == null) {
-            return DataTypeInputHandling.InputInvolvedInTarget;
+            return DataTypeInputHandling.INPUT_INVOLVED_IN_TARGET;
         }
         if (compatibleTypesList.contains(newDataType) && compatibleTypesList.contains(oldDesc.getDataType())) {
-            return DataTypeInputHandling.DoNotRemoveCompatibleTypes;
+            return DataTypeInputHandling.DO_NOT_REMOVE_COMPATIBLE_TYPES;
         }
-        if (newDataType.equals(DataType.DirectoryReference) || newDataType.equals(DataType.FileReference) || newName != oldDesc
-            .getName()) {
-
-            if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
-                Messages.editingInputWithOutputLocationDialogTitle,
-                StringUtils.format(Messages.editingInputWithOutputLocationDialogText,
-                    oldDesc.getName(), outputName))) {
-                return DataTypeInputHandling.InputNotInvolvedInTarget;
-            }
+        if (!newDataType.equals(DataType.DirectoryReference) && !newDataType.equals(DataType.FileReference)
+            && newName.equals(oldDesc.getName())) {
+            return DataTypeInputHandling.INPUT_INVOLVED_IN_TARGET;
+        } else if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
+            Messages.editingInputWithOutputLocationDialogTitle,
+            StringUtils.format(Messages.editingInputWithOutputLocationDialogText,
+                oldDesc.getName(), outputName))) {
+            return DataTypeInputHandling.INPUT_NOT_INVOLVED_IN_TARGET;
         }
-        return DataTypeInputHandling.InputInvolvedInTarget;
+        return DataTypeInputHandling.INPUT_INVOLVED_IN_TARGET;
     }
 
     /**
@@ -197,15 +171,15 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
      *
      */
     protected enum DataTypeInputHandling {
-        InputInvolvedInTarget,
-        InputNotInvolvedInTarget,
-        DoNotRemoveCompatibleTypes
+        INPUT_INVOLVED_IN_TARGET,
+        INPUT_NOT_INVOLVED_IN_TARGET,
+        DO_NOT_REMOVE_COMPATIBLE_TYPES
     }
 
     @Override
     protected void executeRemoveCommand(List<String> names) {
-        Set<String> outputLocationIds = new HashSet<String>();
-        Set<String> outputLocationNames = new HashSet<String>();
+        Set<String> outputLocationIds = new HashSet<>();
+        Set<String> outputLocationNames = new HashSet<>();
         for (String inputName : names) {
             if (outputIdForInputName(inputName) != null) {
                 outputLocationIds.add(outputIdForInputName(inputName));
@@ -228,19 +202,19 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
      * @return <code>true</code> if edit operation shall be performed <code>false</code> otherwise
      */
     protected static boolean deleteConfirmed(Set<String> outputLocationNames) {
-        if (!outputLocationNames.isEmpty()) {
-            if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
-                Messages.editingInputWithOutputLocationDialogTitle,
-                StringUtils.format(Messages.deletingInputWithOutputLocationDialogText,
-                    outputLocationNames.toString()))) {
-                return false;
-            }
+        if (outputLocationNames.isEmpty()) {
+            return true;
+        } else if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
+            Messages.editingInputWithOutputLocationDialogTitle,
+            StringUtils.format(Messages.deletingInputWithOutputLocationDialogText,
+                outputLocationNames.toString()))) {
+            return false;
         }
         return true;
     }
 
     private List<String> getDynamicEndpointNames() {
-        List<String> result = new LinkedList<String>();
+        List<String> result = new LinkedList<>();
         for (EndpointDescription e : endpointManager.getDynamicEndpointDescriptions()) {
             result.add(e.getName());
         }

@@ -18,6 +18,7 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannel;
  * Represents a connection setup, ie a configured network destination that a logical message channel can be established to.
  * 
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#16977)
  */
 public interface ConnectionSetup {
 
@@ -71,7 +72,7 @@ public interface ConnectionSetup {
     /**
      * @return true if this connection should automatically try to connect on instance startup
      */
-    boolean getConnnectOnStartup();
+    boolean getConnectOnStartup();
 
     /**
      * @return the string definition of the {@link NetworkContactPoint} to connect to
@@ -98,5 +99,30 @@ public interface ConnectionSetup {
      * @return true iff host and port are equal to the ones in this setup.
      */
     boolean equalsHostAndPort(NetworkContactPoint netCP);
+
+    /**
+     * @return the port the Contact Point connects to
+     */
+    int getContactPointPort();
+
+    /**
+     * @return the host the Contact Point connects to
+     */
+    String getContactPointHost();
+
+    /**
+     * @return the initial delay for the connection to retry automatically
+     */
+    int getAutoRetryInitialDelayMsec();
+
+    /**
+     * @return the maximum delay for the connection to retry automatically
+     */
+    int getAutoRetryMaximumDelayMsec();
+
+    /**
+     * @return the delay multiplier for the automatic connection retry
+     */
+    float getAutoRetryDelayMultiplier();
 
 }

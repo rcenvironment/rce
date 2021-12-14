@@ -56,6 +56,6 @@ public class SwitchConditionInputSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(),
                 newMetaData);
 
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 }

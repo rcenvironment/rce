@@ -262,7 +262,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(),
                 newMetaData, xlFile);
 
-        super.onEditClicked(name, dialog, newMetaData);
+        super.onEditClicked(name, dialog);
     }
 
     /**

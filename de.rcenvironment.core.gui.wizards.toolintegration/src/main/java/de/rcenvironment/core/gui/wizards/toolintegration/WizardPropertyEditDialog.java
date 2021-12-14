@@ -31,8 +31,13 @@ import de.rcenvironment.core.gui.utils.common.configuration.VariableNameVerifyLi
  * A dialog for editing a single endpoint configuration.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert
  */
 public class WizardPropertyEditDialog extends Dialog {
+
+    private static final int COMMENT_TEXTFIELD_WIDTH = 180;
+
+    private static final int COMMENT_TEXTFIELD_HEIGHT = 50;
 
     private Text keyText;
 
@@ -43,6 +48,8 @@ public class WizardPropertyEditDialog extends Dialog {
     private String title;
 
     private Text defaultValueText;
+
+    private Text commentText;
 
     private List<String> allPropertyNames;
 
@@ -93,6 +100,9 @@ public class WizardPropertyEditDialog extends Dialog {
         if (config.get(PropertyConfigurationPage.KEY_PROPERTY_DEFAULT_VALUE) != null) {
             defaultValueText.setText(config.get(PropertyConfigurationPage.KEY_PROPERTY_DEFAULT_VALUE));
         }
+        if (config.get(PropertyConfigurationPage.KEY_PROPERTY_COMMENT) != null) {
+            commentText.setText(config.get(PropertyConfigurationPage.KEY_PROPERTY_COMMENT));
+        }
     }
 
     protected void createPropertySettings(Composite parent) {
@@ -100,12 +110,13 @@ public class WizardPropertyEditDialog extends Dialog {
         container.setLayout(new GridLayout(1, true));
 
         Composite propertyContainer = new Composite(container, SWT.None);
-        propertyContainer.setLayout(new GridLayout(2, true));
+        propertyContainer.setLayout(new GridLayout(3, true));
 
         Label keyLabel = new Label(propertyContainer, SWT.NONE);
         keyLabel.setText(Messages.keyColon);
         keyText = new Text(propertyContainer, SWT.BORDER);
         GridData textGridData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        textGridData.horizontalSpan = 2;
         keyText.setLayoutData(textGridData);
         keyText.addListener(SWT.Verify, new VariableNameVerifyListener(false));
 
@@ -113,19 +124,31 @@ public class WizardPropertyEditDialog extends Dialog {
         displayName.setText(Messages.displayNameColon);
         displayNameText = new Text(propertyContainer, SWT.BORDER);
         GridData displayGridData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        displayGridData.horizontalSpan = 2;
         displayNameText.setLayoutData(displayGridData);
 
         Label defaultValueLabel = new Label(propertyContainer, SWT.NONE);
         defaultValueLabel.setText(Messages.defaultValueColon);
         defaultValueText = new Text(propertyContainer, SWT.BORDER);
         GridData defaultValueData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        defaultValueData.horizontalSpan = 2;
         defaultValueText.setLayoutData(defaultValueData);
+
+        Label commentLabel = new Label(propertyContainer, SWT.NONE);
+        commentLabel.setText(Messages.commentColon);
+        commentText = new Text(propertyContainer, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
+        GridData commentData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+        commentData.horizontalSpan = 2;
+        commentData.widthHint = COMMENT_TEXTFIELD_WIDTH;
+        commentData.heightHint = COMMENT_TEXTFIELD_HEIGHT;
+        commentText.setLayoutData(commentData);
     }
 
     private void saveAllConfig() {
         config.put(PropertyConfigurationPage.KEY_PROPERTY_KEY, keyText.getText());
         config.put(PropertyConfigurationPage.KEY_PROPERTY_DISPLAY_NAME, displayNameText.getText());
         config.put(PropertyConfigurationPage.KEY_PROPERTY_DEFAULT_VALUE, defaultValueText.getText());
+        config.put(PropertyConfigurationPage.KEY_PROPERTY_COMMENT, commentText.getText());
     }
 
     /**
@@ -154,6 +177,7 @@ public class WizardPropertyEditDialog extends Dialog {
         keyText.addListener(SWT.Verify, new VariableNameVerifyListener(true));
         displayNameText.addModifyListener(ml);
         defaultValueText.addModifyListener(ml);
+        commentText.addModifyListener(ml);
 
     }
 

@@ -150,38 +150,6 @@
 			</table>
 		</para>
 	</sect2>
-	<sect2 id="profile_selection_ui">
-		<title>Profile Selection UI</title>
-		<para>During startup of the instance, the Profile Selection UI allows to select a profile folder
-			which should be used for the current run of RCE. Furthermore it allows to specify a
-			default profile for future runs. You can access the Profile Selection UI by executing
-			RCE from the command line with the option "rce --profile".</para>
-		<figure>
-			<title>Profile Selection UI</title>
-			<mediaobject>
-				<imageobject>
-					<imagedata fileref="images/profileSelectionUI.png" contentwidth="420"/>
-				</imageobject>
-			</mediaobject>
-		</figure>
-		
-		<para>If the first option "Select a profile and start RCE" is chosen, a list of available profiles is presented. On selection of one of these profiles, RCE is started using this profile.</para>
-		
-		<para>If the second option "Select the default profile for future runs" is chosen, a list of
-			available profiles is presented. On selection of one of these profiles, RCE will not be
-			started using this profile, but instead the selected profile will be marked as the
-			default profile for future runs. This selection can be temporarily overwritten again by
-			using the '-profile "&lt;profile id or path>"' option. The default profile setting will
-			be stored for the current user and the current installation location of RCE. Different
-			users on the same machine can therefore configure different default profiles.
-			Furthermore, different installations of RCE can have different default profiles
-			configured.</para>
-		
-		<note>
-			<para>The Profile Selection UI will only display profiles if they have been started once with RCE 7.0 or newer.</para>
-		</note>
-		
-	</sect2>
 	<sect2>
 		<title>Command Shell</title>
 		<para>RCE provides an integrated shell (sometimes referred to as "console") for executing
@@ -497,6 +465,28 @@
 										&lt;final state></code>".</para>
 								<para>The "-p" option can be used to define a placeholder value file
 									(see below).</para>
+								<para>Please note that the output structure of this command,
+									especially when combined with <code>--compact-output</code>, has
+									room for improvement. To maintain backwards compatibility,
+									however, no major changes will be made before RCE 11.0.</para>
+							</entry>
+						</row>
+						<row>
+							<entry>wf start [--delete &lt;onfinished|always|never>]
+								[--compact-output] [-p &lt;placeholder value file>] &lt;workflow
+								file></entry>
+							<entry>
+								<para>This command has the same behavior and parameters as "wf run",
+									but does not wait until the workflow completes. It returns after
+									the workflow has either started, or has failed to start.</para>
+								<para>On successfully starting the workflow, a text line "Workflow
+									Id: &lt;...>" is printed with the workflow's assigned id. This
+									line is intended for easy parsing by scripted setups.</para>
+								<para>Please note that the output structure of this command,
+									especially when combined with <code>--compact-output</code>, is
+									preliminary and has room for improvement. To maintain backwards
+									compatibility, however, no major changes will be made before RCE
+									11.0.</para>
 							</entry>
 						</row>
 						<row>

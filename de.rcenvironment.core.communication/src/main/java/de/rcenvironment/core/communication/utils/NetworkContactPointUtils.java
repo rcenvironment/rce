@@ -58,7 +58,7 @@ public final class NetworkContactPointUtils {
         return ncp;
     }
 
-    private static Map<String, String> parseAttributePart(String attributePart) {
+    public static Map<String, String> parseAttributePart(String attributePart) {
         Map<String, String> newAttributes = new HashMap<String, String>();
         String[] attributeEntries = attributePart.split(",");
         for (String entry : attributeEntries) {

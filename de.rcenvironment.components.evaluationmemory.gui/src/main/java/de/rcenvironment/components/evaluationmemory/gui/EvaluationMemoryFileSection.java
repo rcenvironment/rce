@@ -8,14 +8,11 @@
 
 package de.rcenvironment.components.evaluationmemory.gui;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.PaintEvent;
-import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -55,6 +52,16 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     private Button strictButton;
 
     private Button lenientButton;
+
+    private PropertyChangeListener propertyListener = evt -> {
+        if (evt.getNewValue() instanceof EndpointChange && !strictButton.isDisposed()) {
+            if (containsTolerantInputs()) {
+                enableToleranceOverlapButtons();
+            } else {
+                disableToleranceOverlapButtons();
+            }
+        }
+    };
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage propSheetPage) {
@@ -117,20 +124,6 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         TabbedPropertySheetWidgetFactory factory = propSheetPage.getWidgetFactory();
 
         appendToleranceOverlapConfigurationSection(parent, factory);
-
-        parent.addPaintListener(new PaintListener() {
-
-            @Override
-            public void paintControl(PaintEvent event) {
-                final boolean containsTolerantInputs = containsTolerantInputs();
-                if (containsTolerantInputs) {
-                    enableToleranceOverlapButtons();
-                } else {
-                    disableToleranceOverlapButtons();
-                }
-
-            }
-        });
     }
 
     private void appendToleranceOverlapConfigurationSection(final Composite parent, TabbedPropertySheetWidgetFactory factory) {
@@ -202,19 +195,7 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         super.setWorkflowNode(workflowNode);
 
         ComponentInstanceProperties config = getConfiguration();
-        config.addPropertyChangeListener(new PropertyChangeListener() {
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getNewValue() instanceof EndpointChange && !strictButton.isDisposed()) {
-                    if (containsTolerantInputs()) {
-                        enableToleranceOverlapButtons();
-                    } else {
-                        disableToleranceOverlapButtons();
-                    }
-                }
-            }
-        });
+        config.addPropertyChangeListener(propertyListener);
     }
 
     private void enableFilePickerWidgets(boolean enabled) {
@@ -230,6 +211,26 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     private void enableToleranceOverlapButtons() {
         this.strictButton.setEnabled(true);
         this.lenientButton.setEnabled(true);
+    }
+
+    @Override
+    public void refreshSection() {
+        super.refreshSection();
+
+        final boolean containsTolerantInputs = containsTolerantInputs();
+        if (containsTolerantInputs) {
+            enableToleranceOverlapButtons();
+        } else {
+            disableToleranceOverlapButtons();
+        }
+
+    }
+
+    @Override
+    protected void beforeTearingDownModelBinding() {
+        super.beforeTearingDownModelBinding();
+        ComponentInstanceProperties config = getConfiguration();
+        config.removePropertyChangeListener(propertyListener);
     }
 
     @Override

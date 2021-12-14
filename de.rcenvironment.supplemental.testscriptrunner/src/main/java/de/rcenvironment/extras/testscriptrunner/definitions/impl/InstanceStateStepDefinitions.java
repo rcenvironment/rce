@@ -50,7 +50,7 @@ public class InstanceStateStepDefinitions extends InstanceManagementStepDefiniti
         }
 
         @Override
-        public void iterateActionOverInstance(ManagedInstance instance) throws Throwable {
+        public void iterateActionOverInstance(ManagedInstance instance) throws Exception {
             boolean isRunning = INSTANCE_MANAGEMENT_SERVICE.isInstanceRunning(instance.getId());
             if (isRunning != shouldBeRunning) {
                 throw new AssertionError(StringUtils.format(
@@ -116,12 +116,11 @@ public class InstanceStateStepDefinitions extends InstanceManagementStepDefiniti
      *        order","concurrently","sequentially". If null sequentially is the default.
      * @param startWithGuiFlag a phrase that is present (non-null) if the instances should be started with GUIs
      * @param commandArguments console arguments that are used to start the instance.
-     * @throws Throwable on failure
      */
     @When("^starting( all)? instance[s]?(?: \"([^\"]*)\")?(?: (in the given order|concurrently|in a random order))?"
         + "( in GUI mode)?(?: with console command[s]? (-{1,2}.+))?$")
     public void whenStartingInstances(String allFlag, String instanceIds, String executionDesc, String startWithGuiFlag,
-        String commandArguments) throws Throwable {
+        String commandArguments) {
         StartInstanceAction startInstanceAction;
         if (startWithGuiFlag == null) {
             startInstanceAction = new StartInstanceAction(startWithGuiFlag != null);
@@ -145,10 +144,9 @@ public class InstanceStateStepDefinitions extends InstanceManagementStepDefiniti
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
      * @param executionDesc a string indicating the mode in which the instances are stopped. Can be choosen from "in the given
      *        order","concurrently","sequentially". If null sequentially is the default.
-     * @throws Throwable on failure
      */
     @When("^stopping( all)? instance[s]?(?: \"([^\"]*)\")?(?: (in the given order|concurrently|in a random order))?$")
-    public void whenStoppingInstances(String allFlag, String instanceIds, String executionDesc) throws Throwable {
+    public void whenStoppingInstances(String allFlag, String instanceIds, String executionDesc) {
         performActionOnInstances(
             new StopInstanceAction(),
             resolveInstanceList(allFlag != null, instanceIds),
@@ -162,11 +160,10 @@ public class InstanceStateStepDefinitions extends InstanceManagementStepDefiniti
      * @param action a phrase indicating what should happen with the instance; currently supported: "shutdown", "restart"
      * @param instanceId the id of the instance to modify
      * @param delaySeconds the delay, in seconds, after which the action should be performed
-     * @throws Throwable on failure
      */
     @When("^scheduling (?:a|an instance) (shutdown|restart|reconnect) of \"([^\"]+)\" after (\\d+) second[s]?$")
     public void whenSchedulingNodeActionsAfterDelay(final String action, final String instanceId, final int delaySeconds)
-        throws Throwable {
+        {
 
         // TODO ensure proper integration with test cleanup
         // TODO as this is the first asynchronous test action, check thread safety
@@ -214,12 +211,12 @@ public class InstanceStateStepDefinitions extends InstanceManagementStepDefiniti
      * @param instanceIds a comma-separated list of instances, which when present (non-null) influences which instances are effected. How it
      *        does that depends on the value of {@code allFlag} and is defined in {@link #resolveInstanceList()}
      * @param state the expected state (stopped/running)
-     * @throws Throwable on failure
      */
     @Then("^(all )?(?:instance[s]? )?(?:\"([^\"]*)\" )?should be (stopped|running)$")
-    public void thenInstancesShouldBeInState(String allFlag, String instanceIds, String state) throws Throwable {
+    public void thenInstancesShouldBeInState(String allFlag, String instanceIds, String state) throws Exception {
         AssertStateIterator assertStateIterator = new AssertStateIterator("running".equals(state));
         iterateInstances(assertStateIterator, allFlag, instanceIds);
+        printToCommandConsole("Verified the status \"" + state + "\" of instance \"" + instanceIds + "\"");
     }
     
     private void cycleAllOutgoingConnectionsOf(ManagedInstance instance) {

@@ -117,6 +117,9 @@ public class Messages extends NLS {
     public static String defaultValueColon;
 
     /** NLS Constant. */
+    public static String commentColon;
+
+    /** NLS Constant. */
     public static String displayName;
 
     /** NLS Constant. */
@@ -297,7 +300,10 @@ public class Messages extends NLS {
     public static String nameIntegrator;
 
     /** NLS Constant. */
-    public static String property;
+    public static String addProperty;
+
+    /** NLS Constant. */
+    public static String editProperty;
 
     /** NLS Constant. */
     public static String configuration;
@@ -309,7 +315,7 @@ public class Messages extends NLS {
     public static String integrateLabel;
 
     /** NLS Constant. */
-    public static String groupNameText;
+    public static String groupPathText;
 
     /** NLS Constant. */
     public static String updateLabel;

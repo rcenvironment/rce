@@ -10,19 +10,9 @@
 		bind="bindObjectBindingsService"
 	/>
 	<reference
-		name="SystemMonitoringDataService"
-		interface="de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService"
-		bind="bindSystemMonitoringDataService"
-	/>
-	<reference
 		name="AsyncTaskService"
 		interface="de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService"
 		bind="bindAsyncTaskService"
-	/>
-	<reference
-		name="ConcurrencyUtilsFactory"
-		interface="de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory"
-		bind="bindConcurrencyUtilsFactory"
 	/>
 	<reference
 		name="Communication Service"

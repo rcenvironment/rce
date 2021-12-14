@@ -11,11 +11,13 @@ package de.rcenvironment.core.gui.wizards.toolintegration;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
@@ -49,6 +51,7 @@ import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.rcenvironment.core.component.api.ComponentGroupPathRules;
 import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
@@ -76,7 +79,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     private final ToolIntegrationWizard wizard;
 
-    private final String pageType;
+    private final boolean isEditWizard;
 
     private Button newIntegrationButton = null;
 
@@ -90,21 +93,36 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     private final Map<String, Map<String, Object>> allConfigurations;
 
-    private Map<String, String> displayedToolNames;
+    private Map<String, String> displayedToolNamesToToolNames;
+
+    protected static ChooseConfigurationPage createWithoutPreselectedTool(String pageName,
+        Collection<ToolIntegrationContext> allIntegrationContexts,
+        ToolIntegrationWizard wizard, String type) {
+        return new ChooseConfigurationPage(pageName, allIntegrationContexts, wizard, type);
+    }
 
     protected ChooseConfigurationPage(String pageName, Collection<ToolIntegrationContext> allIntegrationContexts,
         ToolIntegrationWizard wizard, String type) {
         super(pageName);
         setTitle(pageName);
-        if (type.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+
+        if (ToolIntegrationConstants.NEW_WIZARD.equals(type)) {
+            this.isEditWizard = false;
+        } else if (ToolIntegrationConstants.EDIT_WIZARD.equals(type)) {
+            this.isEditWizard = true;
+        } else {
+            throw new IllegalArgumentException(StringUtils.format("Unexpected wizard type '%s'", type));
+        }
+
+        if (this.isNewWizard()) {
             setDescription(Messages.newIntegrationDescription);
         } else {
             setDescription(Messages.editIntegrationDescription);
         }
-        pageType = type;
+
         this.wizard = wizard;
         this.allIntegrationContexts = allIntegrationContexts;
-        allConfigurations = new TreeMap<String, Map<String, Object>>();
+        allConfigurations = new TreeMap<>();
     }
 
     @Override
@@ -116,7 +134,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
         container.setLayoutData(containerData);
 
-        if (pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+        if (isNewWizard()) {
             createNewIntegrationPart(container);
             createTemplatePart(container);
             createInactivePart(container);
@@ -124,18 +142,18 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             new Label(container, SWT.NONE).setText(Messages.chooseConfigToEdit);
         }
 
-        final Map<String, String> configs = readExistingConfigurations(pageType);
+        final Map<String, String> configs = readExistingConfigurations();
         ListViewer toolListViewer = new ListViewer(container, SWT.SINGLE | SWT.BORDER);
         toolListViewer.addDoubleClickListener(new ToolIntegrationDoubleClickListener(this));
         toolList = toolListViewer.getList();
         GridData toolListData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL);
         toolList.setLayoutData(toolListData);
 
-        displayedToolNames = new TreeMap<>();
+        displayedToolNamesToToolNames = new TreeMap<>();
 
         for (String toolName : configs.keySet()) {
             String displayedToolName = createDisplayedToolName(toolName);
-            displayedToolNames.put(displayedToolName, toolName);
+            displayedToolNamesToToolNames.put(displayedToolName, toolName);
             toolList.add(displayedToolName);
         }
 
@@ -154,14 +172,12 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                     textChosenConfig.setText("");
                     if (selectedItems.length > 0) {
 
-                        String toolName = displayedToolNames.get(toolList.getItem(selectedItems[0]));
+                        String toolName = getToolNameFromDisplayedToolName(toolList.getItem(selectedItems[0]));
 
-                        File configJson =
-                            new File(configs.get(toolName));
-                        loadConfigurationFromFile(configJson);
+                        loadToolConfigurationIntoWizard(toolName);
                     }
                     setPageComplete(true);
-                    if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
+                    if (isEditWizard()) {
 
                         ToolIntegrationWizard wiz = (ToolIntegrationWizard) getWizard();
                         wiz.updateAllPages();
@@ -176,7 +192,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             }
         });
 
-        if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
+        if (isEditWizard()) {
             Button loadConfigButton = new Button(container, SWT.PUSH);
             loadConfigButton.setText(Messages.loadConfigurationButton);
             loadConfigButton.addSelectionListener(new SelectionListener() {
@@ -224,12 +240,42 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         setControl(container);
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
 
-        if (pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+        if (isNewWizard()) {
             helpSystem.setHelp(this.getControl(), "de.rcenvironment.core.gui.wizard.toolintegration.integration_chooseconfig");
         } else {
             helpSystem.setHelp(this.getControl(), "de.rcenvironment.core.gui.wizard.toolintegration.integration_editconfig");
         }
+    }
 
+    public void selectToolConfiguration(String toolname) {
+        this.loadToolConfigurationIntoWizard(toolname);
+        this.selectTool(toolname);
+    }
+
+    private void loadToolConfigurationIntoWizard(String toolName) {
+        final Map<String, String> configs = readExistingConfigurations();
+        File configJson = new File(configs.get(toolName));
+        loadConfigurationFromFile(configJson);
+    }
+
+    private String getToolNameFromDisplayedToolName(String displayedToolName) {
+        return displayedToolNamesToToolNames.get(displayedToolName);
+    }
+
+    private void selectTool(String toolname) {
+        final int toolIndex = getToolIndexByToolname(toolname);
+        toolList.setSelection(toolIndex);
+    }
+
+    private int getToolIndexByToolname(String toolname) {
+        for (int i = 0; i < toolList.getItemCount(); ++i) {
+            final String currentDisplayedName = toolList.getItem(i);
+            final String currentToolName = getToolNameFromDisplayedToolName(currentDisplayedName);
+            if (currentToolName.equals(toolname)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Toolname " + toolname + " not found in toollist");
     }
 
     private void createInactivePart(Composite container) {
@@ -386,12 +432,12 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     @Override
     public void setPageComplete(boolean complete) {
-        if (complete && pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
+        if (complete && isEditWizard()) {
             complete &= textChosenConfig.getText() != null && !textChosenConfig.getText().isEmpty();
-        } else if (complete && pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
+        } else if (complete && isNewWizard()
             && loadInactiveConfigurationButton.getSelection()) {
             complete &= textChosenConfig.getText() != null && !textChosenConfig.getText().isEmpty();
-        } else if (complete && pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
+        } else if (complete && isNewWizard()
             && loadTemplateButton.getSelection()) {
             complete &= templateListViewer.getSelection() != null && !templateListViewer.getSelection().isEmpty();
         }
@@ -474,14 +520,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         if (configJson.exists() && configJson.isFile()) {
             Map<String, Object> configurationMap = null;
             try {
-                configurationMap = mapper.readValue(configJson, new HashMap<String, Object>().getClass());
-
-                // tool publication mixed into tool integration is disabled for now; see Mantis #16044
-                // ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-                // ToolIntegrationService integrationService = serviceRegistryAccess.getService(ToolIntegrationService.class);
-                // if (integrationService.getPublishedComponents().contains(configJson.getParentFile().getName())) {
-                // configurationMap.put(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT, true);
-                // }
+                configurationMap = mapper.readValue(configJson, HashMap.class);
             } catch (IOException e) {
                 LOGGER.error(e);
             }
@@ -494,11 +533,8 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             wizard.setPreviousConfiguration(configurationMap, configJson);
             // if tool is active, the integration wizard is supposed to behave like an edit wizard
             // otherwise it should behave as if the tool is integrated -schr_m
-            if ((Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE)) {
-                wizard.setIsEdit(true);
-            } else {
-                wizard.setIsEdit(false);
-            }
+            wizard.setIsEdit(configurationMap != null && configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) != null
+                && (Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE));
             wizard.removeAdditionalPages();
             if (configurationMap != null) {
                 wizard.setAdditionalPages((String) configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
@@ -509,59 +545,124 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         }
     }
 
-    private Map<String, String> readExistingConfigurations(String type) {
+    private class ToolConfiguration {
+
+        private Map<String, Object> configurationMap;
+
+        protected ToolConfiguration(Map<String, Object> configurationMap) {
+            this.configurationMap = configurationMap;
+        }
+
+        public boolean isActive() {
+            final Object isActiveValue = configurationMap.get(ToolIntegrationConstants.IS_ACTIVE);
+            return isActiveValue != null && ((Boolean) isActiveValue);
+        }
+
+        public boolean isInactive() {
+            final Object isActiveValue = configurationMap.get(ToolIntegrationConstants.IS_ACTIVE);
+            return isActiveValue != null && !((Boolean) isActiveValue);
+        }
+
+        public String getToolName() {
+            return (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+        }
+
+        public Map<String, Object> toMap() {
+            return new HashMap<>(this.configurationMap);
+        }
+    }
+
+    private class ToolIntegrationContextDirectory {
+
+        private final File directoryFile;
+
+        ToolIntegrationContextDirectory(File directoryFile) {
+            this.directoryFile = directoryFile;
+        }
+
+        private boolean isPotentiallyValid() {
+            return directoryFile.exists() && directoryFile.isDirectory() && directoryFile.listFiles() != null
+                && directoryFile.listFiles().length > 0;
+        }
+
+        public File[] listFiles() {
+            return this.directoryFile.listFiles();
+        }
+
+    }
+
+    private class ToolIntegrationDirectory {
+
+        private final File toolFolder;
+
+        ToolIntegrationDirectory(File toolFolder) {
+            this.toolFolder = toolFolder;
+        }
+
+        private boolean isPotentiallyValid() {
+            return toolFolder != null && toolFolder.isDirectory() && !toolFolder.getName().equals("null")
+                && toolFolder.listFiles() != null && toolFolder.listFiles().length > 0;
+        }
+
+        /**
+         * @param context The integration context for which to find the configuration file. Must not be null.
+         * @param toolFolder The folder to search for the configuration file. toolFolder.isDirectory() must be true.
+         * @return The configuration file for the given context if such a file exists in the given toolFolder, null otherwise.
+         */
+        public Optional<File> tryFindConfigurationFile(ToolIntegrationContext context) {
+            return Arrays.stream(toolFolder.listFiles())
+                .filter(f -> f.getName().equals(context.getConfigurationFilename()))
+                .findAny();
+        }
+    }
+
+    private Map<String, String> readExistingConfigurations() {
 
         Map<String, String> allConfigs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (ToolIntegrationContext context : allIntegrationContexts) {
             String configFolder = context.getRootPathToToolIntegrationDirectory();
-            File toolIntegrationFile = new File(configFolder, context.getNameOfToolIntegrationDirectory());
-            if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles() != null
-                && toolIntegrationFile.listFiles().length > 0) {
-                for (File toolFolder : toolIntegrationFile.listFiles()) {
-                    if (toolFolder != null && toolFolder.isDirectory() && !toolFolder.getName().equals("null")
-                        && toolFolder.listFiles() != null && toolFolder.listFiles().length > 0) {
-                        final File f = tryFindConfigurationFile(context, toolFolder);
-                        if (f != null) {
-                            try {
-                                @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
-                                    mapper.readValue(f, new HashMap<String, Object>().getClass());
-                                if (type.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
-                                    && configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) != null
-                                    && !((Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE))) {
-                                    allConfigs.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
-                                        f.getAbsolutePath());
+            final ToolIntegrationContextDirectory toolIntegrationContextFolder =
+                new ToolIntegrationContextDirectory(new File(configFolder, context.getNameOfToolIntegrationDirectory()));
 
-                                } else if (!type.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
-                                    && configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) != null
-                                    && ((Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE))) {
-                                    allConfigs.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
-                                        f.getAbsolutePath());
-                                }
-                                allConfigurations.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
-                                    configurationMap);
-                            } catch (IOException e) {
-                                LOGGER.error("Could not read configuration file: ", e);
-                            }
-                        }
+            if (!toolIntegrationContextFolder.isPotentiallyValid()) {
+                continue;
+            }
+
+            for (File toolFolder : toolIntegrationContextFolder.listFiles()) {
+                final ToolIntegrationDirectory integrationDirectory = new ToolIntegrationDirectory(toolFolder);
+                if (!integrationDirectory.isPotentiallyValid()) {
+                    continue;
+                }
+
+                final Optional<File> f = integrationDirectory.tryFindConfigurationFile(context);
+                if (!f.isPresent()) {
+                    continue;
+                }
+
+                try {
+                    @SuppressWarnings("unchecked") ToolConfiguration toolConfiguration =
+                        new ToolConfiguration(mapper.readValue(f.get(), HashMap.class));
+
+                    final String toolName = toolConfiguration.getToolName();
+                    if ((this.isNewWizard() && toolConfiguration.isInactive())
+                        || (this.isEditWizard() && toolConfiguration.isActive())) {
+                        allConfigs.put(toolName, f.get().getAbsolutePath());
                     }
+                    allConfigurations.put(toolName, toolConfiguration.toMap());
+                } catch (IOException e) {
+                    LOGGER.error("Could not read configuration file: ", e);
                 }
             }
         }
         return allConfigs;
     }
 
-    /**
-     * @param context The integration context for which to find the configuration file. Must not be null.
-     * @param toolFolder The folder to search for the configuration file. toolFolder.isDirectory() must be true.
-     * @return The configuration file for the given context if such a file exists in the given toolFolder, null otherwise.
-     */
-    private File tryFindConfigurationFile(ToolIntegrationContext context, File toolFolder) {
-        for (File f : toolFolder.listFiles()) {
-            if (f.getName().equals(context.getConfigurationFilename())) {
-                return f;
-            }
-        }
-        return null;
+    private boolean isNewWizard() {
+        return !isEditWizard;
+    }
+
+    private boolean isEditWizard() {
+        return isEditWizard;
     }
 
     /**
@@ -575,7 +676,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        if (pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+        if (isNewWizard()) {
             helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_chooseconfig");
         } else {
             helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_editconfig");
@@ -590,7 +691,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     @Override
     public void updatePage() {
-        if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)
+        if (isEditWizard()
             && isCurrentPage()
             && (textChosenConfig.getText() == null || textChosenConfig.getText().isEmpty())) {
             setPageComplete(false);
@@ -637,8 +738,8 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         }
         if (allConfigurations.get(toolName).get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME) != null) {
             String groupName = (String) allConfigurations.get(toolName).get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
-            if (!groupName.isEmpty() && ComponentIdRules
-                .validateComponentGroupNameRules(groupName)
+            if (!groupName.isEmpty() && ComponentGroupPathRules
+                .validateComponentGroupPathRules(groupName)
                 .isPresent()) {
                 errorString.append(" [INVALID GROUP NAME]");
                 disabled = true;

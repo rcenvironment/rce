@@ -6,47 +6,47 @@
     <sect1>
         <title>Synopsis</title>
         <para>Define some characteristics of the tool such as name or icon and give some information
-            about yourself.</para>
+            about the tool integrator.</para>
     </sect1>
     <sect1>
         <title>Usage</title>
-        <para>On this page, some characteristics of the tool for the integrated component are
-            defined. Information for the tool user or graphical elements is optional.</para>
+        <para>On this page, some characteristics of the integrated tool are defined. Information on
+            the tool integrator or graphical elements are optional.</para>
         <para>Required fields:<itemizedlist>
                 <listitem>                                
                                 <para><emphasis role="bold">Name:</emphasis> This field defines the
-                                    name of the component. The name is very important, because the
-                                    tool will be displayed in the workflow editor palette with this
-                                    name. Note that the name must not contain special characters.
-                                    The name will not be accepted if there is another locally
-                                    created tool with the same name. </para>
+                        name of the component. The tool is displayed with this name in the palette
+                        view. Note that the name must not contain special characters. Furthermore
+                        the name will not be accepted if there is another locally created tool with
+                        the same name. </para>
                 </listitem>
             </itemizedlist></para>
         <para>Optional fields:<itemizedlist>
                 <listitem>
-                    <para><emphasis role="bold">Icon Path:</emphasis> An icon for the tool can be
-                        selected here. At best, it is larger than 32x32 pixels and has the same
-                        width and height. You can select to copy it into the configuration folder,
-                        so there is no absolute path link for it any more.</para>
+                    <para><emphasis role="bold">Icon Path:</emphasis> Select an icon for the tool.
+                        At best, it is larger than 32x32 pixels and has the same width and height.
+                        To avoid an absolute path link to the icon, select to copy it to the
+                        configuration folder.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis role="bold">Group Name:</emphasis> This defines the group in the
-                        workflow editor palette in which the component will be shown.</para>
+                    <para><emphasis role="bold">Group Path:</emphasis> Define a path here under
+                        which the component is displayed  in the palette view. Subgroups can be
+                        seperated by "/".</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis role="bold">Documentation:</emphasis> Here you can choose to add
-                        a documentation file for your tool. Note that the file must be a PDF or a TXT
-                        document and it must not be greater than 50 MB.</para>
+                    <para><emphasis role="bold">Documentation:</emphasis> Add a documentation file
+                        for the tool. Note that the file must be a PDF or a TXT document and it must
+                        not be greater than 50 MB.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis role="bold">Description:</emphasis> You can provide a
-                        description of your tool here, which can be seen by other users when
-                        configuring a workflow.</para>
+                    <para><emphasis role="bold">Description:</emphasis> Provide a description of the
+                        tool, that can be viewed by other users in the network when using the
+                        component in a workflow.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis role="bold">Name/E-Mail:</emphasis> You can provide some contact
-                        information about yourself in this field, for example if someone has
-                        questions or wants to provide suggestions.</para>
+                    <para><emphasis role="bold">Name/E-Mail:</emphasis> In this field, specify some
+                        contact information, if anyone has questions or want to make
+                        suggestions.</para>
                 </listitem>
             </itemizedlist></para> 
     </sect1>

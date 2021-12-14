@@ -69,7 +69,7 @@
                   style="push"
                   tooltip="Manage authorization groups.">
             </command>
-      </menuContribution>       
+      </menuContribution>
    </extension>
    
 </plugin>

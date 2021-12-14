@@ -73,12 +73,10 @@ public class InstanceCommandStepDefinitions extends InstanceManagementStepDefini
      *        the order or concurrence of the commands, but the order or concurrence of the instances on which the commands are executed.
      *        The commands are executed in the given ordering. Can be choosen from "in the given order","concurrently","in a random order". 
      *        If null sequentially is the default.
-     * @throws Throwable on failure
      */
     @When("^executing(?: the)? command[s]? \"([^\"]*)\" on( all)?(?: instance[s])?(?: \"([^\"]*)\")?"
         + "(?: (in the given order|concurrently|in a random order))?$")
-    public void whenExecutingCommandOnInstances(String commandList, String allFlag, String instanceIds, String executionDesc)
-        throws Throwable {
+    public void whenExecutingCommandOnInstances(String commandList, String allFlag, String instanceIds, String executionDesc) {
         performActionOnInstances(
             new ExecuteCommandOnInstanceAction(parseCommaSeparatedList(commandList), true),
             resolveInstanceList(allFlag != null, instanceIds),
@@ -88,11 +86,10 @@ public class InstanceCommandStepDefinitions extends InstanceManagementStepDefini
     /**
      * Executes command order on top layer UI screen.
      * 
-     * @param operations comma-seperated list of operations to execute
-     * @throws Throwable on failure
+     * @param operations comma-separated list of operations to execute
      */
     @When("^executing command order \"([^\"]*)\"(?: on(?: the)? top layer(?: UI)?)?$")
-    public void whenClosingConfigureUIAfterStartUp(String operations) throws Throwable {
+    public void whenClosingConfigureUIAfterStartUp(String operations) {
 
         try {
             final Robot robot = new Robot();

@@ -372,7 +372,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         for (int i = 1; i <= CONCURRENT_CS_TEST_NUM_CLIENTS; i++) {
             final int i2 = i;
-            threadPool.execute(new Runnable() {
+            threadPool.execute("Start thread", new Runnable() {
 
                 @Override
                 public void run() {

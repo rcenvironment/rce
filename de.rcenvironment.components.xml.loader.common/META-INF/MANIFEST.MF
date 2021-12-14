@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Loader Component Common
 Bundle-SymbolicName: de.rcenvironment.components.xml.loader.common
-Bundle-Version: 10.2.4.qualifier
+Bundle-Version: 10.3.0.qualifier
 Export-Package: de.rcenvironment.components.xml.loader.common;version="6.0.0"
 RCE-Component: false
 Bundle-ClassPath: .

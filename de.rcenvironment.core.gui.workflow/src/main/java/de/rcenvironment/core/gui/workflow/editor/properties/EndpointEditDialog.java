@@ -57,6 +57,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  * @author Sascha Zur
+ * @author Kathrin Schaffert (refactoring)
  */
 public class EndpointEditDialog extends Dialog {
 
@@ -135,7 +136,7 @@ public class EndpointEditDialog extends Dialog {
         EndpointType direction, String id, boolean isStatic,
         EndpointMetaDataDefinition metaData, Map<String, String> metadataValues, int readOnlyType) {
         super(parentShell);
-        setShellStyle(SWT.CLOSE | SWT.TITLE | SWT.BORDER | SWT.RESIZE | SWT.APPLICATION_MODAL);
+        setShellStyle(SWT.CLOSE | SWT.TITLE | SWT.RESIZE | SWT.BORDER | SWT.APPLICATION_MODAL);
         this.configuration = configuration;
         type = direction;
         this.id = id;
@@ -235,12 +236,9 @@ public class EndpointEditDialog extends Dialog {
                 Map<String, Map<Integer, String>> groups = new TreeMap<>();
                 for (String key : metaData.getMetaDataKeys()) {
                     String group = metaData.getGuiGroup(key);
-                    Map<Integer, String> groupTree;
-                    if (groups.containsKey(group)) {
-                        groupTree = groups.get(group);
-                    } else {
-                        groupTree = new TreeMap<>();
-                    }
+
+                    Map<Integer, String> groupTree = groups.getOrDefault(group, new TreeMap<>());
+
                     int position = metaData.getGuiPosition(key);
                     if (position < 0) {
                         groupTree.put(groupTree.size(), key);
@@ -252,8 +250,8 @@ public class EndpointEditDialog extends Dialog {
                     }
                     groups.put(group, groupTree);
                 }
-                for (String groupKey : groups.keySet()) {
-                    createSettingsTab(settingsComposite, groupKey, groups.get(groupKey));
+                for (Entry<String, Map<Integer, String>> entry : groups.entrySet()) {
+                    createSettingsTab(settingsComposite, entry.getKey(), entry.getValue());
                 }
             }
 
@@ -291,8 +289,9 @@ public class EndpointEditDialog extends Dialog {
      */
     protected void createSettings(Map<Integer, String> sortedKeyMap, Composite container) {
         for (String key : sortedKeyMap.values()) {
+
             if (!metaData.getVisibility(key).equals(Visibility.developerConfigurable)
-                && metadataIsActive(key, metaData.getActivationFilter(key))) {
+                && metadataIsActive(metaData.getActivationFilter(key))) {
 
                 String value = metadataValues.get(key);
                 if (value == null || value.equals("")) {
@@ -318,13 +317,12 @@ public class EndpointEditDialog extends Dialog {
         }
     }
 
-    protected boolean metadataIsActive(String key, Map<String, List<String>> activationFilter) {
+    protected boolean metadataIsActive(Map<String, List<String>> activationFilter) {
         if (activationFilter != null) {
             boolean hasActiveFilter = false;
-
-            for (String config : activationFilter.keySet()) {
-                for (String value : activationFilter.get(config)) {
-                    if (configuration.getConfigurationDescription().getActualConfigurationValue(config).equals(value)) {
+            for (Entry<String, List<String>> entry : activationFilter.entrySet()) {
+                for (String value : entry.getValue()) {
+                    if (configuration.getConfigurationDescription().getActualConfigurationValue(entry.getKey()).equals(value)) {
                         hasActiveFilter = true;
                     }
                 }
@@ -338,11 +336,7 @@ public class EndpointEditDialog extends Dialog {
         new Label(container, SWT.NONE).setText(text);
         Button result = new Button(container, SWT.CHECK);
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        if (value.equals("true")) {
-            result.setSelection(true);
-        } else {
-            result.setSelection(false);
-        }
+        result.setSelection(value.equals("true"));
         return result;
     }
 
@@ -549,13 +543,7 @@ public class EndpointEditDialog extends Dialog {
     }
 
     private void installModifyListeners() {
-        ModifyListener modifyListener = new ModifyListener() {
-
-            @Override
-            public void modifyText(ModifyEvent e) {
-                validateInput();
-            }
-        };
+        ModifyListener modifyListener = (ModifyEvent e) -> validateInput();
         textfieldName.addModifyListener(modifyListener);
         comboDataType.addSelectionListener(new SelectionAdapter() {
 
@@ -576,7 +564,8 @@ public class EndpointEditDialog extends Dialog {
         nameIsValid |= epManager.isValidEndpointName(name);
 
         // enable/disable "ok"
-        getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid & validateMetaDataInputs());
+        boolean inputsValid = validateMetaDataInputs();
+        getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid && inputsValid);
     }
 
     /**
@@ -599,11 +588,12 @@ public class EndpointEditDialog extends Dialog {
      */
     protected boolean validateMetaDataInputs() {
         boolean isValid = true;
-        for (Widget widget : widgetToKeyMap.keySet()) {
+        for (Entry<Widget, String> entry : widgetToKeyMap.entrySet()) {
             String key = "";
-            if (metaData.getMetaDataKeys().contains(widgetToKeyMap.get(widget))) {
-                key = widgetToKeyMap.get(widget);
+            if (metaData.getMetaDataKeys().contains(entry.getValue())) {
+                key = entry.getValue();
             }
+            Widget widget = entry.getKey();
             String dataType = metaData.getDataType(key);
             String validation = metaData.getValidation(key);
             boolean visible = metaData.isDefinedForDataType(key, guiNameToDataType.get(comboDataType.getText()));
@@ -612,61 +602,68 @@ public class EndpointEditDialog extends Dialog {
                 EndpointHelper.checkMetadataFilter(metaData.getGuiActivationFilter(key), metadataValues, configDesc) && visible;
             if (!dataType.equals(EndpointMetaDataConstants.TYPE_BOOL)
                 && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
-                if (((Text) widget).getText().equals("") && (visible && enabled)
+                String widgetText = ((Text) widget).getText();
+                if (widgetText.equals("") && (visible && enabled)
                     && (validation != null && (validation.contains("required")))) {
                     isValid = false;
-                } else if (!((Text) widget).getText().equals("")) {
+                } else if (!widgetText.equals("")) {
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_INT)) {
                         int value = Integer.MAX_VALUE;
                         try {
-                            value = Integer.parseInt(((Text) widget).getText());
+                            value = Integer.parseInt(widgetText);
                             isValid &= checkValidation(value, validation);
                         } catch (NumberFormatException e) {
-                            value = Integer.MAX_VALUE;
-                            isValid &= false;
+                            isValid = false;
                         }
                     }
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_BOOL)) {
                         try {
-                            Boolean.parseBoolean(((Text) widget).getText());
+                            Boolean.parseBoolean(widgetText);
                         } catch (NumberFormatException e) {
-                            isValid &= false;
+                            isValid = false;
                         }
                     }
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_FLOAT)) {
                         double value = Double.MAX_VALUE;
                         try {
-                            value = Double.parseDouble(((Text) widget).getText());
+                            value = Double.parseDouble(widgetText);
                             isValid &= checkValidation(value, validation);
                         } catch (NumberFormatException e) {
-                            value = Double.MAX_VALUE;
-                            isValid &= false;
+                            isValid = false;
                         }
                     }
                 }
             }
 
-            if (widget instanceof Text) {
-                ((Text) widget).getParent().setVisible(visible);
-                ((Text) widget).setEnabled(enabled);
-            } else if (widget instanceof Combo) {
-                ((Combo) widget).getParent().setVisible(visible);
-                ((Combo) widget).setEnabled(enabled);
-            } else if (widget instanceof Button) {
-                ((Button) widget).getParent().setVisible(visible);
-                ((Button) widget).setEnabled(enabled);
-            }
-            if (!enabled) {
-                if (widget instanceof Button) {
-                    metadataValues.put(widgetToKeyMap.get(widget), metaData.getDefaultValue(widgetToKeyMap.get(widget)));
-                } else {
-                    metadataValues.put(widgetToKeyMap.get(widget), MINUS);
-                }
-            } else if (widget instanceof Text) {
-                metadataValues.put(widgetToKeyMap.get(widget), ((Text) widget).getText());
-            }
+            setVisibilityAndActivation(widget, visible, enabled);
+            updateMetadataValues(widget, key, enabled);
         }
         return isValid;
+    }
+
+    private void updateMetadataValues(Widget widget, String key, boolean enabled) {
+        if (!enabled) {
+            if (widget instanceof Button) {
+                metadataValues.put(key, metaData.getDefaultValue(widgetToKeyMap.get(widget)));
+            } else {
+                metadataValues.put(key, MINUS);
+            }
+        } else if (widget instanceof Text) {
+            metadataValues.put(key, ((Text) widget).getText());
+        }
+    }
+
+    private void setVisibilityAndActivation(Widget widget, boolean visible, boolean enabled) {
+        if (widget instanceof Text) {
+            ((Text) widget).getParent().setVisible(visible);
+            ((Text) widget).setEnabled(enabled);
+        } else if (widget instanceof Combo) {
+            ((Combo) widget).getParent().setVisible(visible);
+            ((Combo) widget).setEnabled(enabled);
+        } else if (widget instanceof Button) {
+            ((Button) widget).getParent().setVisible(visible);
+            ((Button) widget).setEnabled(enabled);
+        }
     }
 
     protected boolean checkValidation(double value, String validation) {

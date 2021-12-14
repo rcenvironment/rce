@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.instancemanagement.internal;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -30,9 +30,9 @@ public class HttpDownloadUrlsTest {
     // note: we are explicitly testing the HTTP URL here to ensure backwards compatibility after switching to HTTPS by default - misc_ro
     private static final String URL_ADDRESS = "http://software.dlr.de/updates/rce/8.x/";
 
-    private static final int HTTP_CODE_OK = 200;
+    private static final int HTTP_PERMANENT_REDIRECT = 301;
 
-    private static final int EXPECTED_HTTP_CODE_FOR_REDIRECT_FROM_HTTP_URL = 302;
+    private static final int HTTP_TEMPORARY_REDIRECT = 302;
 
     private static final int MINUS_ONE = -1;
 
@@ -54,7 +54,8 @@ public class HttpDownloadUrlsTest {
             fail(e.getMessage());
         }
 
-        assertEquals("Unexpected HTTP response code", EXPECTED_HTTP_CODE_FOR_REDIRECT_FROM_HTTP_URL, httpCode);
+        assertTrue("Unexpected HTTP response code: " + httpCode,
+            httpCode == HTTP_PERMANENT_REDIRECT || httpCode == HTTP_TEMPORARY_REDIRECT);
     }
 
 }

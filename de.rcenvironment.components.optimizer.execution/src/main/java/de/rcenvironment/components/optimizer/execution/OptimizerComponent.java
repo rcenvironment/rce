@@ -134,7 +134,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             methodConfigurations, outputValues, input, componentContext, boundMaps, stepValues);
         programThreadInterrupted = false;
 
-        ConcurrencyUtils.getAsyncTaskService().execute(optimizer);
+        ConcurrencyUtils.getAsyncTaskService().execute("Optimizer Algorithm Executor", optimizer);
         if (optimizer.isInitFailed()) {
             throw new ComponentException("Failed to prepare optimizer", optimizer.getStartFailedException());
         }
@@ -563,7 +563,6 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
     }
 
     private void firstRun() throws ComponentException {
-        final String errorMessage = "Failed to start optimizer";
         outputValues = new HashMap<>();
         startValues = new HashMap<>();
         stepValues = new HashMap<>();
@@ -674,7 +673,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 initFailed = true;
             }
         } else {
-            throw new ComponentException(errorMessage);
+            throw new ComponentException("Failed to start optimizer");
         }
     }
 
@@ -740,13 +739,13 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                     if (componentContext.getOutputDataType(e) == DataType.Vector) {
                         for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
                             OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                            runtimeViewValues.put("Output: " + e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                            runtimeViewValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
                                 ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
                             iteration.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
                                 ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i).getFloatValue());
                         }
                     } else {
-                        runtimeViewValues.put("Output: " + e, outputValues.get(e));
+                        runtimeViewValues.put(e, outputValues.get(e));
                         iteration.put(e, ((FloatTD) outputValues.get(e)).getFloatValue());
                     }
                 } else {

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+	<!-- Hide standard Eclipse gef palette view from Windows->Show View -->
+	<extension point="org.eclipse.ui.activities">  
+	  <activity id="de.rcenvironment.core.gui.palette.activity.suppress.general.palette" name="Suppress general palette view">
+	  </activity>
+	  <activityPatternBinding
+	     activityId="de.rcenvironment.core.gui.palette.activity.suppress.general.palette"
+	     isEqualityPattern="true"
+	     pattern="org.eclipse.gef/org.eclipse.gef.ui.palette_view">
+	  </activityPatternBinding>
+	 </extension>
+
+	<extension
+         point="org.eclipse.ui.views">
+    	<view
+    		allowMultiple="false"
+            name="Palette"            
+            icon="platform:/plugin/org.eclipse.gef/org/eclipse/gef/internal/icons/palette_view.gif"
+            category="de.rcenvironment.core"
+            class="de.rcenvironment.core.gui.palette.view.PaletteView"
+            id="de.rcenvironment.core.gui.palette.view.PaletteView">
+    	</view>
+	</extension>
+	<extension point="org.eclipse.ui.perspectiveExtensions">
+		<perspectiveExtension 
+			targetID="de.rcenvironment.core">
+	   		<view id="de.rcenvironment.core.gui.palette.view.PaletteView" 
+        		relative="de.rcenvironment.core.Perspective.right" 
+    			relationship="right" visible="true" />	
+		</perspectiveExtension> 
+	</extension>
+	
+	<extension
+   		id="de.rcenvironment.core.gui.palette.keybinding"
+   		point="org.eclipse.ui.bindings">
+   		<key
+            commandId="de.rcenvironment.core.gui.palette.selectconnectiontool"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M3+D">
+     	</key> 
+     	<key
+            commandId="de.rcenvironment.core.gui.palette.selectselectiontool"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M3+S">
+      	</key>
+      	<key
+            commandId="de.rcenvironment.core.gui.palette.selectselectiontool"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="ESC">
+     	</key>
+		<key
+            commandId="de.rcenvironment.core.gui.palette.helpview"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="F1">
+      </key>  
+   </extension>
+
+   <extension
+         point="org.eclipse.ui.commands">
+         <category
+            id="de.rcenvironment.rce.gui.palette.category"
+            name="Palette Commands">
+      </category>
+         <command
+            id="de.rcenvironment.core.gui.palette.selectconnectiontool"
+            name="Mouse-Mode: Draw Connection" 
+            categoryId="de.rcenvironment.rce.gui.palette.category">
+      </command>
+      <command
+            id="de.rcenvironment.core.gui.palette.selectselectiontool"
+            name="Mouse-Mode: Select"
+            categoryId="de.rcenvironment.rce.gui.palette.category">
+      </command>  
+      <command
+            categoryId="de.rcenvironment.rce.gui.palette.category"
+            description="Manage custom groups."
+            id="de.rcenvironment.rce.gui.palette.customgroups.command"
+            name="Custom Groups">
+      </command>
+      <command
+            id="de.rcenvironment.core.gui.palette.helpview"
+            name="Help">
+      </command>    
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+      		class="de.rcenvironment.core.gui.palette.handlers.SelectConnectionToolHandler"
+      		commandId="de.rcenvironment.core.gui.palette.selectconnectiontool">
+      		 <enabledWhen>
+    	     	<reference
+    	     		definitionId="paletteViewShown">
+	     		</reference>
+         	</enabledWhen>
+	   </handler>
+	   <handler
+      		class="de.rcenvironment.core.gui.palette.handlers.SelectSelectionToolHandler"
+      		commandId="de.rcenvironment.core.gui.palette.selectselectiontool">
+      		 <enabledWhen>
+    	     	<reference
+    	     		definitionId="paletteViewShown">
+	     		</reference>
+         	</enabledWhen>
+	   </handler>
+      <handler
+            class="de.rcenvironment.core.gui.palette.handlers.ManageCustomGroupsHandler"
+            commandId="de.rcenvironment.rce.gui.palette.customgroups.command">
+	          <enabledWhen>
+	          	<reference
+	                   definitionId="paletteViewShown">
+	             </reference>
+			  </enabledWhen>
+      </handler>
+      <handler
+            class="de.rcenvironment.core.gui.palette.handlers.OpenHelpViewHandler"
+            commandId="de.rcenvironment.core.gui.palette.helpview">
+         <enabledWhen>
+            <reference
+                  definitionId="enablePaletteContextHelp">
+            </reference>
+         </enabledWhen>
+      </handler>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=de.rcenvironment.core.gui.authorization.toolbar">
+         <toolbar
+               id="de.rcenvironment.core.gui.customgroups.toolbar">
+            <command
+                  commandId="de.rcenvironment.rce.gui.palette.customgroups.command"
+                  icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/palette_groups_manage.png"
+                  label="Manage Custom Groups..."
+                  tooltip="Manage the customized component groups in the palette."
+                  categoryId="de.rcenvironment.rce.gui.palette.category">
+            </command>
+         </toolbar>
+      </menuContribution>
+      <menuContribution
+            locationURI="menu:de.rcenvironment.configuration.menu?after=de.rcenvironment.rce.gui.authorization.authorizationgroups.command">
+      		<separator name="separator_palette_groups" visible="true" />
+            <command
+                  commandId="de.rcenvironment.rce.gui.palette.customgroups.command"
+                  icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/palette_groups_manage.png"
+                  label="Manage Custom Palette Groups..."
+                  style="push"
+                  tooltip="Manage the customized component groups in the palette." 
+                  categoryId="de.rcenvironment.rce.gui.palette.category">
+            </command>
+      </menuContribution>
+   </extension>
+   <extension
+   		point="org.eclipse.core.expressions.propertyTesters">
+  	 <propertyTester
+        class="de.rcenvironment.core.gui.palette.view.PaletteViewPropertyTester"
+        type="java.lang.Object"
+        namespace="de.rcenvironment.core.gui.palette"
+        properties="isPaletteViewShown"
+        id="de.rcenvironment.core.gui.palette.propertytester"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.definitions">
+     <definition
+            id="paletteViewShown">
+ 	    <test property="de.rcenvironment.core.gui.palette.isPaletteViewShown" value="true">
+        </test>
+	 </definition>
+	 <definition
+            id="enablePaletteContextHelp">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.palette.view.palettetreenodes.PaletteTreeNode">
+	            </instanceof>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="1">
+	            </count>
+			</with>
+        </and>
+      </definition>
+   </extension>
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+
+   <extension point="org.eclipse.help.toc">
+  		<toc file="help/toc_palette_view.xml"/>
+   </extension>
+
+</plugin>

@@ -6,7 +6,7 @@
           "inputFile": "path to any file",
           "inputDir": "path to any directory"
      },
-	 "de.rcenvironment.outputwriter/1.1": {
+	 "de.rcenvironment.outputwriter/2.1": {
           "targetRootFolder": "path to any directory"
      },
 	 "de.rcenvironment.database/1.0": {

@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -49,7 +49,7 @@ public class InputProviderValidatortTest {
 
     private static IProject project;
 
-    private ComponentDescriptionMockCreater componentDescriptionHelper;
+    private ComponentDescriptionMockCreator componentDescriptionHelper;
 
     private InputProviderComponentValidator validator;
 
@@ -76,7 +76,7 @@ public class InputProviderValidatortTest {
     @Before
     public void setUp() throws Exception {
         TempFileServiceAccess.setupUnitTestEnvironment();
-        componentDescriptionHelper = new ComponentDescriptionMockCreater();
+        componentDescriptionHelper = new ComponentDescriptionMockCreator();
         validator = new InputProviderComponentValidator();
     }
 
@@ -112,7 +112,7 @@ public class InputProviderValidatortTest {
         List<ComponentValidationMessage> messages =
             validator.validateComponentSpecific(componentDescriptionHelper.createComponentDescriptionMock());
 
-        expectOneErrorMessage(messages);
+        expectOneWarningMessage(messages);
     }
 
     /**
@@ -192,12 +192,12 @@ public class InputProviderValidatortTest {
      * @throws IOException not expected
      */
     @Test
-    public void testDirectoryWtihAbsoulteFileReference() throws IOException {
+    public void testDirectoryWithAbsoluteFileReference() throws IOException {
         File testFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(TEST_FILE);
         addSimulatedOutput(DataType.DirectoryReference, testFile.getAbsolutePath());
         List<ComponentValidationMessage> messages =
             validator.validateComponentSpecific(componentDescriptionHelper.createComponentDescriptionMock());
-        expectOneErrorMessage(messages);
+        expectOneWarningMessage(messages);
     }
 
     /**
@@ -250,6 +250,11 @@ public class InputProviderValidatortTest {
     private void expectOneErrorMessage(List<ComponentValidationMessage> messages) {
         assertEquals(1, messages.size());
         assertEquals(ComponentValidationMessage.Type.ERROR, messages.get(0).getType());
+    }
+    
+    private void expectOneWarningMessage(List<ComponentValidationMessage> messages) {
+        assertEquals(1, messages.size());
+        assertEquals(ComponentValidationMessage.Type.WARNING, messages.get(0).getType());
     }
 
 }

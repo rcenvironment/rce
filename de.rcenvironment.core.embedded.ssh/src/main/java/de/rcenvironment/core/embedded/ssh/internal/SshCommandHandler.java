@@ -20,12 +20,12 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
 import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.server.session.ServerSessionAware;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
@@ -40,7 +40,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Sebastian Holtappels
  * @author Robert Mischke
  */
-public class SshCommandHandler implements Command, Runnable, SessionAware {
+public class SshCommandHandler implements Command, Runnable, ServerSessionAware {
 
     private InputStream in;
 
@@ -87,7 +87,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
         if (isPotentiallyAllowedToRunCommands()) {
             outputAdapter.setActiveUser(loginName);
             // TODO review: thread safety? - misc_ro
-            ConcurrencyUtils.getAsyncTaskService().execute(this);
+            ConcurrencyUtils.getAsyncTaskService().execute("SSH command session", this);
         } else {
             outputAdapter.addOutput("Your account is not allowed to run an interactive shell or execute commands.");
             logger.warn("Blocked command/shell access for account " + loginName);

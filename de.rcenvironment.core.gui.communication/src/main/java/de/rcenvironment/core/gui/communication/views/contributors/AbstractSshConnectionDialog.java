@@ -41,9 +41,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public abstract class AbstractSshConnectionDialog extends Dialog implements PasteListener, VerifyListener {
 
-    private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Keyfile with passphrase protection";
+    private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Key file with passphrase protection";
 
-    private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Keyfile without passphrase protection";
+    private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Key file without passphrase protection";
 
     private static final String PASSPHRASE_AUTH = "Passphrase";
 
@@ -248,6 +248,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog implements Past
 
         final Composite keyfileComposite = new Composite(container, SWT.NONE);
         GridLayout klayout = new GridLayout(2, false);
+        klayout.marginWidth = 0;
         keyfileComposite.setLayout(klayout);
         keyfileComposite.setVisible(useKeyFile);
         keyfileComposite.setLayoutData((new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL)));

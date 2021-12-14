@@ -11,6 +11,7 @@ package de.rcenvironment.core.gui.wizards.toolintegration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -47,9 +48,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#17480)
  */
 public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
-
 
     /** Constant for the key "key" in the configuration map. */
     public static final String KEY_PROPERTY_KEY = ToolIntegrationConstants.KEY_PROPERTY_KEY;
@@ -59,6 +60,9 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
     /** Constant for the key "defaultValue" in the configuration map. */
     public static final String KEY_PROPERTY_DEFAULT_VALUE = ToolIntegrationConstants.KEY_PROPERTY_DEFAULT_VALUE;
+
+    /** Constant for the key "comment" in the configuration map. */
+    public static final String KEY_PROPERTY_COMMENT = ToolIntegrationConstants.KEY_PROPERTY_COMMENT;
 
     private static final String STANDARD_SUFFIX = ToolIntegrationConstants.DEFAULT_CONFIG_FILE_SUFFIX;
 
@@ -278,12 +282,15 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
         col2.setText(Messages.displayName);
         TableColumn col3 = new TableColumn(propertyTable, SWT.NONE);
         col3.setText(Messages.defaultValue);
+        TableColumn col4 = new TableColumn(propertyTable, SWT.NONE);
+        col4.setText("Comment");
 
         // layout data for the columns
         final int columnWeight = 30;
         tableLayout.setColumnData(col1, new ColumnWeightData(columnWeight - 5, true));
         tableLayout.setColumnData(col2, new ColumnWeightData(columnWeight, true));
         tableLayout.setColumnData(col3, new ColumnWeightData(columnWeight - 5, true));
+        tableLayout.setColumnData(col4, new ColumnWeightData(columnWeight, true));
         //
         tableButtonAdd = new Button(client, SWT.FLAT);
         tableButtonAdd.setText(Messages.add);
@@ -448,12 +455,19 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
         if (propGroupList.getSelectionCount() > 0) {
             Map<String, Object> tabProperties = (Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0]);
 
-            for (String key : tabProperties.keySet()) {
+            for (Entry<String, Object> entry : tabProperties.entrySet()) {
+                String key = entry.getKey();
                 if (!(key.equals(CONFIG_FILE_NAME) || key.equals(CREATE_CONFIG_FILE))) {
                     TableItem item = new TableItem(propertyTable, SWT.None);
                     item.setText(0, key);
-                    item.setText(1, ((Map<String, String>) tabProperties.get(key)).get(KEY_PROPERTY_DISPLAY_NAME));
-                    item.setText(2, ((Map<String, String>) tabProperties.get(key)).get(KEY_PROPERTY_DEFAULT_VALUE));
+                    Map<String, String> propertyMetaData = (Map<String, String>) entry.getValue();
+                    item.setText(1, propertyMetaData.get(KEY_PROPERTY_DISPLAY_NAME));
+                    item.setText(2, propertyMetaData.get(KEY_PROPERTY_DEFAULT_VALUE));
+                    if (propertyMetaData.get(KEY_PROPERTY_COMMENT) != null) {
+                        item.setText(3, propertyMetaData.get(KEY_PROPERTY_COMMENT));
+                    } else {
+                        item.setText(3, "");
+                    }
                 }
             }
         }
@@ -793,7 +807,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
                 .get(selection[0].getText()));
             String oldpropertyConfig = selection[0].getText();
             WizardPropertyEditDialog wped =
-                new WizardPropertyEditDialog(null, Messages.edit + " " + Messages.property, propertyConfigCopy,
+                new WizardPropertyEditDialog(null, Messages.editProperty, propertyConfigCopy,
                     getAllPropertyNames(), getAllPropertyDisplayNames());
             int exit = wped.open();
             if (exit == Dialog.OK) {
@@ -823,7 +837,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
     private void addProperty() {
 
         WizardPropertyEditDialog wped =
-            new WizardPropertyEditDialog(null, Messages.add + " " + Messages.property, new HashMap<String, String>(),
+            new WizardPropertyEditDialog(null, Messages.addProperty, new HashMap<String, String>(),
                 getAllPropertyNames(),
                 getAllPropertyDisplayNames());
         int exit = wped.open();

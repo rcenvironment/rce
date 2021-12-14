@@ -108,5 +108,17 @@ public enum WorkflowState {
     public String getDisplayName() {
         return displayName;
     }
+
+    public boolean isResumable() {
+        return this.equals(WorkflowState.PAUSED);
+    }
+    
+    public boolean isPausable() {
+        return this.equals(WorkflowState.RUNNING);
+    }
+    
+    public boolean isCancellable() {
+        return this.equals(WorkflowState.RUNNING) || this.equals(WorkflowState.PAUSED);
+    }
     
 }

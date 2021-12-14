@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.datamodel.api.DataType;
 
@@ -31,7 +31,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  */
 public class ConvergerComponentValidatorTest {
 
-    private ComponentDescriptionMockCreater componentDescription;
+    private ComponentDescriptionMockCreator componentDescription;
 
     private ConvergerComponentValidator validator;
 
@@ -40,7 +40,7 @@ public class ConvergerComponentValidatorTest {
     /** Basic setup. */
     @Before
     public void setUp() {
-        componentDescription = new ComponentDescriptionMockCreater();
+        componentDescription = new ComponentDescriptionMockCreator();
         validator = new ConvergerComponentValidator();
     }
 
@@ -83,14 +83,14 @@ public class ConvergerComponentValidatorTest {
         for (ComponentValidationMessage message : messages) {
             assertFalse(message.getProperty().equals(ConvergerComponentConstants.KEY_EPS_A));
         }
-        componentDescription = new ComponentDescriptionMockCreater();
+        componentDescription = new ComponentDescriptionMockCreator();
         addSimulatedInput();
         componentDescription.addConfigurationValue(ConvergerComponentConstants.KEY_EPS_R, "b");
         messages = validator.validateLoopComponentSpecific(componentDescription.createComponentDescriptionMock());
         for (ComponentValidationMessage message : messages) {
             assertFalse(message.getProperty().equals(ConvergerComponentConstants.KEY_EPS_R));
         }
-        componentDescription = new ComponentDescriptionMockCreater();
+        componentDescription = new ComponentDescriptionMockCreator();
         addSimulatedInput();
         componentDescription.addConfigurationValue(ConvergerComponentConstants.KEY_ITERATIONS_TO_CONSIDER, "c");
         messages = validator.validateLoopComponentSpecific(componentDescription.createComponentDescriptionMock());

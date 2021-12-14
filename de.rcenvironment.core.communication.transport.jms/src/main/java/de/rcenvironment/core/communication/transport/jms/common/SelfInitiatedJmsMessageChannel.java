@@ -141,8 +141,9 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
                 StringUtils.format("B2C Request Inbox Consumer for channel %s @ %s", remoteHandshakeInformation.getChannelId(),
                     tempQueueManager.getB2CRequestQueue());
             ConcurrencyUtils.getAsyncTaskService().execute(
-                new RequestInboxConsumer(tempQueueManager.getB2CRequestQueue(), connection, remoteInitiatedConnectionEndpointHandler),
-                uniqueTaskId);
+                "JMS Network Transport: Incoming request listener",
+                uniqueTaskId,
+                new RequestInboxConsumer(tempQueueManager.getB2CRequestQueue(), connection, remoteInitiatedConnectionEndpointHandler));
 
             String outgoingRequestQueueName = tempQueueManager.getC2BRequestQueue();
             String incomingResponseQueueName = tempQueueManager.getC2BResponseQueue();

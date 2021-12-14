@@ -57,6 +57,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * Default {@link ConnectionSetup} implementation.
  * 
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#16977)
  */
 // TODO >5.0.0: improve threading/locking model after reworking state machine base class - misc_ro
 public class ConnectionSetupImpl implements ConnectionSetup {
@@ -104,7 +105,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
     private long id;
 
-    private boolean connnectOnStartup;
+    private boolean connectOnStartup;
 
     private boolean autoRetryEnabled;
 
@@ -209,9 +210,12 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                 this.taskId = taskId;
                 this.isAutoRetry = isAutoRetry;
             }
+            
+            public String getTaskDescription() {
+                return "Communication Layer: ConnectionSetup connecting";
+            }
 
             @Override
-            @TaskDescription("Communication Layer: ConnectionSetup connecting")
             public void run() {
                 try {
                     future = channelService.connect(ncp, true);
@@ -281,9 +285,12 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             private AsyncDisconnectTask(MessageChannel channel) {
                 this.channel = channel;
             }
+            
+            private String getTaskDescription() {
+                return "Communication Layer: ConnectionSetup disconnecting";
+            }
 
             @Override
-            @TaskDescription("Communication Layer: ConnectionSetup disconnecting")
             public void run() {
                 channelService.closeOutgoingChannel(channel);
             }
@@ -390,6 +397,8 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                     return DISCONNECTED;
                 case WAITING_TO_RECONNECT:
                     lastDisconnectReason = ACTIVE_SHUTDOWN;
+                    return DISCONNECTED;
+                case DISCONNECTED: // fixes MANTIS ID 0017578
                     return DISCONNECTED;
                 default:
                     // FIXME implement: connect cancelling, ...
@@ -526,11 +535,12 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             }
             currentConnectTaskId++;
             currentConnectTask = new AsyncConnectTask(currentConnectTaskId, isAutoRetry);
-            threadPool.execute(currentConnectTask);
+            threadPool.execute(currentConnectTask.getTaskDescription(), currentConnectTask);
         }
 
         private void disconnectAsync(final MessageChannel channel) {
-            threadPool.execute(new AsyncDisconnectTask(channel));
+            final AsyncDisconnectTask task = new AsyncDisconnectTask(channel);
+            threadPool.execute(task.getTaskDescription(), task);
         }
 
         @Override
@@ -585,12 +595,12 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
     }
 
-    public ConnectionSetupImpl(NetworkContactPoint ncp, String displayName, long id, boolean connnectOnStartup,
+    public ConnectionSetupImpl(NetworkContactPoint ncp, String displayName, long id, boolean connectOnStartup,
         MessageChannelService channelService, ConnectionSetupListener listener) {
         this.ncp = ncp;
         this.displayName = displayName;
         this.id = id;
-        this.connnectOnStartup = connnectOnStartup;
+        this.connectOnStartup = connectOnStartup;
         this.channelService = channelService;
         this.listener = listener;
         Map<String, String> attributes = ncp.getAttributes();
@@ -646,13 +656,35 @@ public class ConnectionSetupImpl implements ConnectionSetup {
     }
 
     @Override
-    public boolean getConnnectOnStartup() {
-        return connnectOnStartup;
+    public String getContactPointHost() {
+        return ncp.getHost();
+    }
+
+    @Override
+    public int getContactPointPort() {
+        return ncp.getPort();
+    }
+
+    @Override
+    public boolean getConnectOnStartup() {
+        return connectOnStartup;
     }
 
     @Override
     public String getDisplayName() {
         return displayName;
+    }
+
+    public int getAutoRetryInitialDelayMsec() {
+        return autoRetryInitialDelayMsec;
+    }
+
+    public int getAutoRetryMaximumDelayMsec() {
+        return autoRetryMaximumDelayMsec;
+    }
+
+    public float getAutoRetryDelayMultiplier() {
+        return autoRetryDelayMultiplier;
     }
 
     @Override
@@ -726,46 +758,67 @@ public class ConnectionSetupImpl implements ConnectionSetup {
         this.autoRetryEnabled = false;
         this.autoRetryDelayMultiplier = 1.0f;
         this.autoRetryMaximumDelayMsec = NO_MAXIMUM_AUTO_RETRY_DELAY;
+
         // parse
         String attrInitialDelay = attributes.get("autoRetryInitialDelay");
-        if (attrInitialDelay != null) {
-            try {
-                this.autoRetryInitialDelayMsec = SEC_TO_MSEC_FACTOR * Integer.parseInt(attrInitialDelay);
-                if (autoRetryInitialDelayMsec < MINIMUM_INITIAL_DELAY_MSEC) {
-                    log.warn("Initial auto-retry delay cannot be less than " + MINIMUM_INITIAL_DELAY_MSEC + "; disabling for connection "
-                        + getDisplayName());
-                    return; // disable auto-retry
-                }
-                String attrMultiplier = attributes.get("autoRetryDelayMultiplier");
-                if (attrMultiplier == null || attrMultiplier.isEmpty()) {
-                    autoRetryDelayMultiplier = 1.0f;
-                } else {
-                    // Note: always expects dot-separated float (as intended), regardless of locale
-                    autoRetryDelayMultiplier = Float.parseFloat(attrMultiplier);
-                }
-                if (autoRetryDelayMultiplier < 1.0f) {
-                    log.warn("Auto-retry backoff multiplier cannot be less than 1; setting to 1");
-                    autoRetryDelayMultiplier = 1.0f;
-                }
-                String attrMaxDelay = attributes.get("autoRetryMaximumDelay");
-                if (attrMaxDelay != null) {
-                    this.autoRetryMaximumDelayMsec = SEC_TO_MSEC_FACTOR * Integer.parseInt(attrMaxDelay);
-                    if (autoRetryMaximumDelayMsec < autoRetryInitialDelayMsec) {
-                        log.warn("Maximum auto-retry delay cannot be less than initial delay; disabling maximum delay for connection "
-                            + getDisplayName());
-                        autoRetryMaximumDelayMsec = NO_MAXIMUM_AUTO_RETRY_DELAY;
-                    }
-                }
-                // no parse exceptions -> enable
-                this.autoRetryEnabled = true;
-                log.debug(StringUtils.format(
-                    "Parsed auto-retry settings for connection \"%s\": Initial delay=%d msec, maximum=%d msec, multiplier=%s",
-                    getDisplayName(), autoRetryInitialDelayMsec, autoRetryMaximumDelayMsec, autoRetryDelayMultiplier));
-            } catch (NumberFormatException e) {
-                log.warn("Failed to parse auto-retry settings for connection setup " + getNetworkContactPointString());
-            }
+        if (attrInitialDelay == null) {
+            return;
         }
 
+        try {
+            this.autoRetryInitialDelayMsec = SEC_TO_MSEC_FACTOR * Integer.parseInt(attrInitialDelay);
+        } catch (NumberFormatException e) {
+            logAutoRetrySettingsParseFailure("initial auto-retry delay", attrInitialDelay);
+            return;
+        }
+
+        if (autoRetryInitialDelayMsec < MINIMUM_INITIAL_DELAY_MSEC) {
+            log.warn("Initial auto-retry delay cannot be less than " + MINIMUM_INITIAL_DELAY_MSEC + "; disabling for connection "
+                + getDisplayName());
+            return; // disable auto-retry
+        }
+
+        String attrMultiplier = attributes.get("autoRetryDelayMultiplier");
+        try {
+            if (attrMultiplier == null || attrMultiplier.isEmpty()) {
+                autoRetryDelayMultiplier = 1.0f;
+            } else {
+                // Note: always expects dot-separated float (as intended), regardless of locale
+                autoRetryDelayMultiplier = Float.parseFloat(attrMultiplier);
+            }
+        } catch (NumberFormatException e) {
+            logAutoRetrySettingsParseFailure("auto-retry delay multiplier", attrMultiplier);
+            return;
+        }
+
+        if (autoRetryDelayMultiplier < 1.0f) {
+            log.warn("Auto-retry backoff multiplier cannot be less than 1; setting to 1");
+            autoRetryDelayMultiplier = 1.0f;
+        }
+        String attrMaxDelay = attributes.get("autoRetryMaximumDelay");
+        try {
+            if (attrMaxDelay != null) {
+                this.autoRetryMaximumDelayMsec = SEC_TO_MSEC_FACTOR * Integer.parseInt(attrMaxDelay);
+                if (autoRetryMaximumDelayMsec < autoRetryInitialDelayMsec) {
+                    log.warn("Maximum auto-retry delay cannot be less than initial delay; disabling maximum delay for connection "
+                        + getDisplayName());
+                    autoRetryMaximumDelayMsec = NO_MAXIMUM_AUTO_RETRY_DELAY;
+                }
+            }
+        } catch (NumberFormatException e) {
+            logAutoRetrySettingsParseFailure("maximum auto-retry delay", attrMaxDelay);
+            return;
+        }
+
+        // no parse exceptions -> enable
+        this.autoRetryEnabled = true;
+        log.debug(StringUtils.format(
+            "Parsed auto-retry settings for connection \"%s\": Initial delay=%d msec, maximum=%d msec, multiplier=%s",
+            getDisplayName(), autoRetryInitialDelayMsec, autoRetryMaximumDelayMsec, autoRetryDelayMultiplier));
     }
 
+    private void logAutoRetrySettingsParseFailure(String attributeName, String attributeValue) {
+        log.warn(StringUtils.format("Failed to parse %s \"%s\" for connection setup %s", attributeName, attributeValue,
+            getNetworkContactPointString()));
+    }
 }

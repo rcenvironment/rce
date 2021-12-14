@@ -397,14 +397,6 @@
             id="de.rcenvironment.core.gui.workflow.integration"
             name="%toolIntegrationName ">
       </category>
-      <command
-            id="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool"
-            name="Mouse-Mode: Draw Connection">
-      </command>
-      <command
-            id="de.rcenvironment.core.gui.workflow.editor.selectselectiontool"
-            name="Mouse-Mode: Select">
-      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -709,6 +701,39 @@
                </enabledWhen>
             </command>
          </toolbar>
+         <toolbar id="de.rcenvironment.core.gui.workflow.execution.secondtoolbar">
+            <command
+				commandId="de.rcenvironment.core.gui.workflowproject.pause"
+            	icon="resources/icons/states/suspend_enabled.gif"
+            	label="Suspend Workflow"
+            	style="push"
+            	tooltip="Pause">
+				 <visibleWhen>
+					<reference definitionId="workflowRunSelected">
+					</reference>
+				 </visibleWhen>
+			</command>
+            <command
+				commandId="de.rcenvironment.core.gui.workflowproject.resume"
+            	icon="resources/icons/states/resume_enabled.gif"
+            	label="Resume Workflow"
+            	style="push"
+            	tooltip="Resume">
+            	<visibleWhen>
+					<reference definitionId="workflowRunSelected" />
+				</visibleWhen>
+            	</command>
+            <command
+				commandId="de.rcenvironment.core.gui.workflowproject.cancel"
+            	icon="resources/icons/states/cancel_enabled.gif"
+            	label="Cancel Workflow"
+            	style="push"
+            	tooltip="Cancel">
+				 <visibleWhen>
+					<reference definitionId="workflowRunSelected" />
+				 </visibleWhen>
+			</command>
+         </toolbar>
       </menuContribution>
    </extension>
    <extension
@@ -725,6 +750,27 @@
       <handler
             class="de.rcenvironment.core.gui.workflow.editor.ShowNewWorkflowProjectWizardHandler"
             commandId="de.rcenvironment.core.gui.workflowproject.create">
+      </handler>
+      <handler
+            class="de.rcenvironment.core.gui.workflow.view.ResumeWorkflowHandler"
+            commandId="de.rcenvironment.core.gui.workflowproject.resume">
+         <enabledWhen>
+				<test property="de.rcenvironment.runtimeEditorPropertyTester.enableResume" />
+         </enabledWhen>
+      </handler>
+      <handler
+            class="de.rcenvironment.core.gui.workflow.view.PauseWorkflowHandler"
+            commandId="de.rcenvironment.core.gui.workflowproject.pause">
+			 <enabledWhen>
+				<test property="de.rcenvironment.runtimeEditorPropertyTester.enablePause" />
+			 </enabledWhen>
+      </handler>
+      <handler
+            class="de.rcenvironment.core.gui.workflow.view.CancelWorkflowHandler"
+            commandId="de.rcenvironment.core.gui.workflowproject.cancel">
+         <enabledWhen>
+				<test property="de.rcenvironment.runtimeEditorPropertyTester.enableCancel" />
+         </enabledWhen>
       </handler>
       <handler
             class="de.rcenvironment.core.gui.workflow.verify.OpenComponentResultVerificationWizardHandler"
@@ -938,27 +984,14 @@
             </reference>
          </visibleWhen>
       </handler>
-      <handler
-      		class="de.rcenvironment.core.gui.workflow.editor.handlers.SelectConnectionToolHandler"
-      		commandId="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool">
-      		 <enabledWhen>
-    	     	<reference
-    	     		definitionId="workflowSelected">
-	     		</reference>
-         	</enabledWhen>
-	   </handler>
-	   <handler
-      		class="de.rcenvironment.core.gui.workflow.editor.handlers.SelectSelectionToolHandler"
-      		commandId="de.rcenvironment.core.gui.workflow.editor.selectselectiontool">
-      		 <enabledWhen>
-    	     	<reference
-    	     		definitionId="workflowSelected">
-	     		</reference>
-         	</enabledWhen>
-	   </handler>
    </extension>
    <extension
          point="org.eclipse.core.expressions.definitions">
+      <definition id="workflowRunSelected">
+		<with variable="activeEditorId">
+		   <equals value="de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor"> </equals>
+		</with>
+      </definition>
       <definition
             id="workflowSelected">
 	       <or>
@@ -1201,8 +1234,6 @@
             </with>
         </and>
       </definition>
-      
-      
       
       <definition
             id="enableContextHelp">
@@ -1551,20 +1582,6 @@
       </key>
    </extension>
    <extension
-   		id="de.rcenvironment.core.gui.workflow.keybinding.workflow.tools"
-   		point="org.eclipse.ui.bindings">
-   		<key
-            commandId="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M3+D">
-     	</key> 
-     	<key
-            commandId="de.rcenvironment.core.gui.workflow.editor.selectselectiontool"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M3+S">
-      	</key> 
-   </extension>
-   <extension
          point="org.eclipse.ui.activities">
       <activity
             id="de.rcenvironment.core.gui.workflow.deleteExternalToolButton"
@@ -1589,18 +1606,17 @@
    			parentId="org.eclipse.ui.contexts.window">
    		</context>
    </extension>
-      
-      <!-- View part default location for palette --> 
-   <extension point="org.eclipse.ui.perspectiveExtensions">
-      <perspectiveExtension targetID="de.rcenvironment.core">
-         <view id="org.eclipse.gef.ui.palette_view"
-            relationship="stack"
-            relative="de.rcenvironment.core.Perspective.left"
-            visible="false">
-         </view>
-      </perspectiveExtension>
-   </extension>
    
+   <extension point="org.eclipse.core.expressions.propertyTesters">
+    <propertyTester
+        class="de.rcenvironment.core.gui.workflow.execute.RuntimeEditorPropertyTester"
+        id="de.rcenvironment.rce.gui.workflow.runtimeEditorPropertyTester"
+        namespace="de.rcenvironment.runtimeEditorPropertyTester"
+        properties="enableResume, enablePause, enableCancel"
+        type="java.lang.Object">
+    </propertyTester>
+	</extension>
+      
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
    </extension>

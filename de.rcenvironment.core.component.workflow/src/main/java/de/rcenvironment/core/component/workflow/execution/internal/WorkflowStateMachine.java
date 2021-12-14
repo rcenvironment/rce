@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -26,6 +27,9 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.ReliableRPCStreamHandle;
@@ -75,6 +79,7 @@ import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachin
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
+import de.rcenvironment.provenance.api.ProvenanceEventListener;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
@@ -151,6 +156,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private final WorkflowExecutionStatsService wfExeStatsService;
 
     private final EndpointDatumDispatchService endpointDatumDispatchService;
+    
+    private final ProvenanceFacade provenanceFacade;
 
     private String wfNameAndIdMessagePart;
 
@@ -194,6 +201,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         componentExecutionService = null;
         wfExeStatsService = null;
         endpointDatumDispatchService = null;
+        provenanceFacade = null;
     }
 
     public WorkflowStateMachine(WorkflowStateMachineContext wfStateMachineCtx) {
@@ -212,6 +220,12 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         componentExecutionService = serviceRegistryAccess.getService(ComponentExecutionService.class);
         wfExeStatsService = serviceRegistryAccess.getService(WorkflowExecutionStatsService.class);
         endpointDatumDispatchService = serviceRegistryAccess.getService(EndpointDatumDispatchService.class);
+
+        final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+        final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+            Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+        final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
+        provenanceFacade = new ProvenanceFacade(provenanceService);
 
         initializeEventProcessors();
     }
@@ -429,6 +443,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                             String compExeId = componentExecutionService.init(compExeCtx,
                                 executionAuthTokens.get(finalWfNode.getIdentifierAsObject().toString()), referenceTimestamp);
                             // store node id and rRPC stream handle
+                            provenanceFacade.onComponentInit(compExeId, wfNode.getName());
                             componentNodeIds.put(compExeId, compExeCtx.getNodeId());
                             componentControllerCommandDestinations.setNetworkDestinationForComponentController(compExeId,
                                 reliableWfCtrlToCompCtrlRPCStream);
@@ -715,6 +730,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         @TaskDescription("Start workflow")
         public void run() {
             sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType.WORKFLOW_STARTING);
+            
+            provenanceFacade.onWorkflowStart(wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription(), wfStateMachineCtx.getWorkflowExecutionContext());
 
             ParallelComponentCaller ppc = new ParallelComponentCaller(componentNodeIds.keySet(),
                 wfStateMachineCtx.getWorkflowExecutionContext()) {
@@ -1485,6 +1502,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
+            provenanceFacade.onWorkflowFinish();
+            
             WorkflowState state = currentState;
             if (checkStateChange(currentState, WorkflowState.FINISHED)) {
                 state = WorkflowState.FINISHED;

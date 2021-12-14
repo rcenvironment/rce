@@ -90,26 +90,6 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
 
     }
 
-    /**
-     * Open file choosing dialog for XML file.
-     * 
-     */
-    private void fileChoosing() {
-
-        final IFile file = PropertyTabGuiHelper.selectFileFromProjects(content.getShell(), Messages.loadTitle, Messages.loadMessage);
-        if (file != null) {
-            StringWriter writer = new StringWriter();
-            try {
-                IOUtils.copy(file.getContents(), writer);
-                String theString = writer.toString();
-                setProperty(XmlLoaderComponentConstants.XMLCONTENT, theString);
-            } catch (IOException | CoreException e) {
-                logger.error("Cannot read content from file.", e);
-            }
-            setXMLContent();
-        }
-    }
-
     @Override
     protected void refreshBeforeValidation() {
         setXMLContent();
@@ -118,7 +98,6 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
     private void setXMLContent() {
         if (getProperty(XmlLoaderComponentConstants.XMLCONTENT) != null) {
             fileContentText.setText(getProperty(XmlLoaderComponentConstants.XMLCONTENT));
-            return;
         }
     }
 
@@ -141,6 +120,26 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
                 fileChoosing();
             }
         }
+
+        /**
+         * Open file choosing dialog for XML file.
+         * 
+         */
+        private void fileChoosing() {
+
+            final IFile file = PropertyTabGuiHelper.selectFileFromProjects(content.getShell(), Messages.loadTitle, Messages.loadMessage);
+            if (file != null) {
+                StringWriter writer = new StringWriter();
+                try {
+                    IOUtils.copy(file.getContents(), writer);
+                    String theString = writer.toString();
+                    setProperty(XmlLoaderComponentConstants.XMLCONTENT, theString);
+                } catch (IOException | CoreException e) {
+                    logger.error("Cannot read content from file.", e);
+                }
+                setXMLContent();
+            }
+        }
     }
 
     @Override
@@ -161,7 +160,7 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
         public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
             super.updateControl(control, propertyName, newValue, oldValue);
 
-            if (control instanceof Composite) {
+            if (propertyName.equals(XmlLoaderComponentConstants.XMLCONTENT)) {
                 if (newValue == null) {
                     fileContentText.setText("");
                 } else {

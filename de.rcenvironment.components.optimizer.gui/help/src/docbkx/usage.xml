@@ -14,9 +14,9 @@
             software will be started in the background. Different optimization packages can be
             installed.</para>
         <para>One package that is delivered with RCE on Windows x64 and Linux x64 machines is
-            Dakota. Dakota was tested on the following distributions: Windows 7, Suse Linux 11 SP 2,
-            CentOS 7 and Debian 7. In addition, Dakota was already run on Suse Linux 12 and Debian
-            8.</para>
+            Dakota. Dakota was tested on the following distributions: Windows 10, Windows Server 2019, 
+            Ubuntu 18.04, and CentOS 8.
+        </para>
         <para>For more information about the Dakota Package see the <ulink url="https://dakota.sandia.gov/">Dakota Project
                 page</ulink>.</para>
     </sect1>

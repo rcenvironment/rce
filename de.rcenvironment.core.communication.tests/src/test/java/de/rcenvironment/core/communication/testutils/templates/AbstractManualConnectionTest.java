@@ -251,7 +251,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
             for (int i = 0; i < MRM_TEST_NUM_MESSAGES; i++) {
                 maxParallelSendLimit.acquire();
                 final String requestContent = Integer.toString(i);
-                threadPool.execute(new Runnable() {
+                threadPool.execute("Send message", new Runnable() {
 
                     @Override
                     public void run() {

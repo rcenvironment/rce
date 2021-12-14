@@ -9,7 +9,8 @@
 package de.rcenvironment.core.gui.communication.views.contributors;
 
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -37,6 +38,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * Contributes the subtree showing the list of current {@link ConnectionSetup}s.
  * 
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#16977)
+ * @author Jan Flink
  */
 public class ConnectionSetupsListContributor extends NetworkViewContributorBase {
 
@@ -46,9 +49,11 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
      * Tree wrapper for a {@link ConnectionSetup}.
      * 
      * @author Robert Mischke
+     * @author Kathrin Schaffert (#16977 added case SHOW_CONFIGURATION_SNIPPET)
      */
     private final class ConnectionSetupNode implements SelfRenderingNetworkViewNode, StandardUserNodeActionNode {
 
+        private static final int INT_1000 = 1000;
         private final ConnectionSetup connectionSetup;
 
         ConnectionSetupNode(ConnectionSetup connectionSetup) {
@@ -101,6 +106,8 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
             case EDIT:
             case DELETE:
                 return state == ConnectionSetupState.DISCONNECTED;
+            case SHOW_CONFIGURATION_SNIPPET:
+                return true;
             default:
                 return false;
             }
@@ -120,6 +127,9 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
                 break;
             case DELETE:
                 performDelete();
+                break;
+            case SHOW_CONFIGURATION_SNIPPET:
+                performShowConfigurationSnippet();
                 break;
             default:
                 break;
@@ -146,15 +156,11 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
                             newNetworkConnection.signalStartIntent();
                         }
                     } else {
-                        display.asyncExec(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
-                                errorDialog.setMessage(StringUtils.format("SSH connection with host '%s' and port '%d' already exists.",
-                                    ncp.getHost(), ncp.getPort()));
-                                errorDialog.open();
-                            }
+                        display.asyncExec(() -> {
+                            MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                            errorDialog.setMessage(StringUtils.format("SSH connection with host '%s' and port '%d' already exists.",
+                                ncp.getHost(), ncp.getPort()));
+                            errorDialog.open();
                         });
                     }
                 }
@@ -172,6 +178,29 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
             if (dialog.open() == SWT.OK) {
                 connectionSetupService.disposeConnectionSetup(connectionSetup);
             }
+        }
+
+        private void performShowConfigurationSnippet() {
+            display.asyncExec(() -> {
+                ConfigurationSnippetDialog showConfigurationSnippetDialog =
+                    new ConfigurationSnippetDialog(treeViewer.getTree().getShell(), "network", "connections",
+                        connectionSetup.getDisplayName(), getConfigurationEntries());
+                showConfigurationSnippetDialog.open();
+            });
+        }
+
+        private Map<String, Object> getConfigurationEntries() {
+
+            Map<String, Object> configurationEntries = new LinkedHashMap<>();
+
+            configurationEntries.put("host", connectionSetup.getContactPointHost());
+            configurationEntries.put("port", connectionSetup.getContactPointPort());
+            configurationEntries.put("connectOnStartup", connectionSetup.getConnectOnStartup());
+            configurationEntries.put("autoRetryInitialDelay", connectionSetup.getAutoRetryInitialDelayMsec() / INT_1000);
+            configurationEntries.put("autoRetryMaximumDelay", connectionSetup.getAutoRetryMaximumDelayMsec() / INT_1000);
+            configurationEntries.put("autoRetryDelayMultiplier", connectionSetup.getAutoRetryDelayMultiplier());
+
+            return configurationEntries;
         }
     }
 
@@ -237,13 +266,8 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
         }
         // get and sort actual setups
         final ConnectionSetup[] setups = currentModel.connectionSetups.toArray(new ConnectionSetup[currentModel.connectionSetups.size()]);
-        Arrays.sort(setups, new Comparator<ConnectionSetup>() {
-
-            @Override
-            public int compare(ConnectionSetup o1, ConnectionSetup o2) {
-                return o1.getDisplayName().compareTo(o2.getDisplayName());
-            }
-        });
+        Arrays.sort(setups, (ConnectionSetup o1, ConnectionSetup o2) -> o1.getDisplayName().compareTo(o2.getDisplayName()));
+        
         // wrap into node class
         final ConnectionSetupNode[] nodes = new ConnectionSetupNode[setups.length];
         int pos = 0;
@@ -296,17 +320,11 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
 
             //
             if (connectionSetupService.connectionAlreadyExists(ncp)) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(),
-                            SWT.ICON_ERROR | SWT.OK);
-                        errorDialog.setMessage(
-                            StringUtils.format("Connection with host %s and port %d already exists.",
-                                ncp.getHost(), ncp.getPort()));
-                        errorDialog.open();
-                    }
+                display.asyncExec(() -> {
+                    MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                    errorDialog.setMessage(
+                        StringUtils.format("Connection with host %s and port %d already exists.", ncp.getHost(), ncp.getPort()));
+                    errorDialog.open();
                 });
                 return;
             }

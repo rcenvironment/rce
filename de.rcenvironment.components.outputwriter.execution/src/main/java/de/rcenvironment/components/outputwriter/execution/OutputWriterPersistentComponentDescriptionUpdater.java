@@ -31,7 +31,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
 public class OutputWriterPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
     private static final String V1_1 = "1.1";
-    
+
     private static final String V2_0 = "2.0";
 
     private static final String V2_1 = "2.1";
@@ -60,21 +60,15 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
     @Override
     public PersistentComponentDescription performComponentDescriptionUpdate(int formatVersion, PersistentComponentDescription description,
         boolean silent) throws IOException {
-        if (!silent) {
-            switch (formatVersion) {
-            case PersistentDescriptionFormatVersion.AFTER_VERSION_THREE:
-                if (description.getComponentVersion().compareTo(V1_1) < 0) {
-                    description = updateFromV10ToV11(description);
-                }
-                if (description.getComponentVersion().compareTo(V2_0) < 0) {
-                    description = updateFromV11ToV20(description);
-                }
-                if (description.getComponentVersion().compareTo(V2_1) < 0) {
-                    description = updateFromV11ToV21(description);
-                }
-                break;
-            default:
-                break;
+        if (!silent && formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+            if (description.getComponentVersion().compareTo(V1_1) < 0) {
+                description = updateFromV10ToV11(description);
+            }
+            if (description.getComponentVersion().compareTo(V2_0) < 0) {
+                description = updateFromV11ToV20(description); // NOSONAR because Sonar does not understand this code pattern
+            }
+            if (description.getComponentVersion().compareTo(V2_1) < 0) {
+                description = updateFromV11ToV21(description);
             }
         }
         return description;
@@ -84,7 +78,7 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
         throws IOException {
 
         final String affectedConfigFieldName = "OWWritePath";
-        
+
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
         if (configurationsNode != null && configurationsNode.has(affectedConfigFieldName)) {
@@ -98,11 +92,10 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
 
         return description;
     }
-    
-    
+
     private PersistentComponentDescription updateFromV11ToV20(PersistentComponentDescription description) {
-        
-        //No update required, just update version
+
+        // No update required, just update version
         description.setComponentVersion(V2_0);
 
         return description;

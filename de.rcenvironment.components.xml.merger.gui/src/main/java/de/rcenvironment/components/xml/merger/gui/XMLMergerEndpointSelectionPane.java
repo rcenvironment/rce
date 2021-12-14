@@ -73,7 +73,7 @@ public class XMLMergerEndpointSelectionPane extends XPathChooserPropertyViewPane
                     .getMetaDataDefinition(),
                 newMetaData);
 
-        super.onEditClicked(name, dialog, newMetaData);
+        super.onEditClicked(name, dialog);
     }
 
 }

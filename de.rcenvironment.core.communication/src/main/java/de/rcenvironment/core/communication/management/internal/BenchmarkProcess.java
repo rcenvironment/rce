@@ -102,9 +102,12 @@ public class BenchmarkProcess implements Runnable {
         this.communicationService = communicationService;
         this.outputReceiver = outputReceiver;
     }
+    
+    public String getCategoryName() {
+        return "Communication Layer: benchmark main task";
+    }
 
     @Override
-    @TaskDescription("Communication Layer: benchmark main task")
     public void run() {
         outputReceiver.onStart();
 
@@ -118,7 +121,7 @@ public class BenchmarkProcess implements Runnable {
                 AtomicInteger messageCounter = new AtomicInteger(subtask.getNumMessages());
                 for (int senderIndex = 0; senderIndex < subtask.getThreadsPerTarget(); senderIndex++) {
                     SenderTask sender = new SenderTask(subtask, nodeId, messageCounter);
-                    ConcurrencyUtils.getAsyncTaskService().execute(sender);
+                    ConcurrencyUtils.getAsyncTaskService().execute("Communication Layer: benchmark sender task", sender);
                 }
             }
         }

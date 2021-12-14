@@ -61,6 +61,20 @@ public final class AuditLog {
         }
 
         /**
+         * Convenience method for adding long values. Note that these are (currently) not logged as "native" JSON integers, but converted to
+         * string values.
+         * 
+         * @param key the string key
+         * @param value the long value to be converted to and used as a string value
+         * 
+         * @return this instance (for command chaining)
+         */
+        public LogEntry set(String key, long value) {
+            set(key, Long.toString(value));
+            return this;
+        }
+
+        /**
          * Convenience method for adding integer values. Note that these are (currently) not logged as "native" JSON integers, but converted
          * to string values.
          * 
@@ -86,6 +100,7 @@ public final class AuditLog {
             data.putAll(dataMap);
             return this;
         }
+
     }
 
     /**

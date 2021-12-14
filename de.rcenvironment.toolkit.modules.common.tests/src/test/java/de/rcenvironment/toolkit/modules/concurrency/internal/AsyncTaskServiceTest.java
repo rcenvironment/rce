@@ -86,7 +86,6 @@ public class AsyncTaskServiceTest extends AbstractConcurrencyModuleTest {
         Runnable runnable = new Runnable() {
 
             @Override
-            @TaskDescription("testThreadCount() Runnable")
             public void run() {
                 try {
                     latchIn.await();
@@ -96,9 +95,9 @@ public class AsyncTaskServiceTest extends AbstractConcurrencyModuleTest {
                 }
             }
         };
-        threadPool.execute(runnable);
+        threadPool.execute("testThreadCount() Runnable", runnable);
         assertEquals(1, threadPoolManagement.getCurrentThreadCount());
-        threadPool.execute(runnable);
+        threadPool.execute("testThreadCount() Runnable", runnable);
         assertEquals(2, threadPoolManagement.getCurrentThreadCount());
         // wait for Runnables
         latchIn.countDown();
@@ -155,7 +154,7 @@ public class AsyncTaskServiceTest extends AbstractConcurrencyModuleTest {
 
         final CountDownLatch counter = new CountDownLatch(taskCount);
         for (int i = 0; i < taskCount; i++) {
-            threadPool.execute(() -> {
+            threadPool.execute("Test task", () -> {
 
                 sleep(10);
                 counter.countDown();

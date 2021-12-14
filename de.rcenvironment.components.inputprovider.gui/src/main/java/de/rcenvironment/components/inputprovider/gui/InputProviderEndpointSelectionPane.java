@@ -129,7 +129,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
                 dynEndpointIdToManage, false, icon, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData);
 
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
         setNoteVisible(areFilesOrDirectoriesDefined());
     }
 

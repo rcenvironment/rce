@@ -9,10 +9,10 @@
 package de.rcenvironment.core.gui.communication.views.contributors;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
@@ -42,6 +42,8 @@ import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
  * 
  * @author Brigitte Boden
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#16977)
+ * @author Jan Flink
  */
 public class SshConnectionSetupsListContributor extends NetworkViewContributorBase {
 
@@ -51,6 +53,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
      * Tree wrapper {@link SshSessionConfiguration}.
      * 
      * @author Brigitte Boden
+     * @author Kathrin Schaffert (#16977 added case SHOW_CONFIGURATION_SNIPPET)
      */
     private final class SshConnectionSetupNode implements SelfRenderingNetworkViewNode, StandardUserNodeActionNode {
 
@@ -81,6 +84,8 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 return !(sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry());
             case DELETE:
                 return !(sshConnectionSetup.isConnected() || sshConnectionSetup.isWaitingForRetry());
+            case SHOW_CONFIGURATION_SNIPPET:
+                return true;
             default:
                 return false;
             }
@@ -90,30 +95,26 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
         public void performAction(StandardUserNodeActionType actionType) {
             switch (actionType) {
             case START:
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (sshConnectionSetup.getUsePassphrase()) {
-                            String passphrase = sshConnectionService.retrieveSshConnectionPassword(connectionId);
-                            if (passphrase == null) {
-                                // If no stored passphrase is found, show dialog to the user
-                                EnterPassphraseDialog dialog = new EnterPassphraseDialog(treeViewer.getTree().getShell());
-                                if (dialog.open() == Window.OK) {
-                                    passphrase = dialog.getPassphrase();
-                                    sshConnectionService.setAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
-                                        dialog.getStorePassphrase());
-                                }
+                display.asyncExec(() -> {
+                    if (sshConnectionSetup.getUsePassphrase()) {
+                        String passphrase = sshConnectionService.retrieveSshConnectionPassword(connectionId);
+                        if (passphrase == null || passphrase.isEmpty()) {
+                            // If no stored passphrase is found, show dialog to the user
+                            EnterPassphraseDialog dialog = new EnterPassphraseDialog(treeViewer.getTree().getShell());
+                            if (dialog.open() == Window.OK) {
+                                passphrase = dialog.getPassphrase();
+                                sshConnectionService.setAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
+                                    dialog.getStorePassphrase());
                             }
-                            final String passphraseToConnect = passphrase;
-                            ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
-                                () -> sshConnectionService.connectSession(connectionId, passphraseToConnect));
-
-                        } else {
-                            ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
-                                () -> sshConnectionService.connectSession(connectionId));
-
                         }
+                        final String passphraseToConnect = passphrase;
+                        ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
+                            () -> sshConnectionService.connectSession(connectionId, passphraseToConnect));
+
+                    } else {
+                        ConcurrencyUtils.getAsyncTaskService().execute("Connect SSH session.",
+                            () -> sshConnectionService.connectSession(connectionId));
+
                     }
                 });
                 break;
@@ -129,6 +130,9 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 ConcurrencyUtils.getAsyncTaskService().execute("Dispose SSH Connection.",
                     () -> sshConnectionService.disposeConnection(connectionId));
 
+                break;
+            case SHOW_CONFIGURATION_SNIPPET:
+                performShowConfigurationSnippet();
                 break;
             default:
                 break;
@@ -177,6 +181,36 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             }
         }
 
+        private void performShowConfigurationSnippet() {
+            display.asyncExec(() -> {
+                ConfigurationSnippetDialog showConfigurationSnippetDialog =
+                    new ConfigurationSnippetDialog(treeViewer.getTree().getShell(), "sshRemoteAccess", "sshConnections",
+                        "MySSHConnectionID",
+                        getConfigurationEntries());
+                showConfigurationSnippetDialog.open();
+            });
+        }
+
+        private Map<String, Object> getConfigurationEntries() {
+
+            Map<String, Object> configurationEntries = new LinkedHashMap<>();
+
+            configurationEntries.put("displayName", sshConnectionSetup.getDisplayName());
+            configurationEntries.put("host", sshConnectionSetup.getHost());
+            configurationEntries.put("port", sshConnectionSetup.getPort());
+            configurationEntries.put("connectOnStartup", sshConnectionSetup.getConnectOnStartUp());
+            configurationEntries.put("autoRetry", sshConnectionSetup.getAutoRetry());
+            configurationEntries.put("loginName", sshConnectionSetup.getUsername());
+            if (sshConnectionSetup.getKeyfileLocation() != null) {
+                configurationEntries.put("keyfileLocation", sshConnectionSetup.getKeyfileLocation());
+            }
+            if (!sshConnectionSetup.getUsePassphrase()) {
+                configurationEntries.put("noPassphrase", Boolean.TRUE);
+            }
+
+            return configurationEntries;
+        }
+
         @Override
         public String getText() {
             String status = "connected";
@@ -205,8 +239,6 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
     }
 
     private static final int ROOT_PRIORITY = 40;
-
-    private final Log log = LogFactory.getLog(getClass());
 
     private SelfRenderingNetworkViewNode rootNode;
 
@@ -287,15 +319,11 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 keyfileLocation, usePassphrase, connectImmediately, autoRetry, usePassphrase);
 
             if (sshConnectionService.sshConnectionAlreadyExists(contextSsh)) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
-                        errorDialog.setMessage(StringUtils.format("SSH connection with host %s and port %d already exists.",
-                            host, port));
-                        errorDialog.open();
-                    }
+                display.asyncExec(() -> {
+                    MessageBox errorDialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                    errorDialog.setMessage(StringUtils.format("SSH connection with host %s and port %d already exists.",
+                        host, port));
+                    errorDialog.open();
                 });
                 return;
             }
@@ -373,34 +401,26 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
             @Override
             public void onCollectionChanged(final Collection<SshConnectionSetup> connections) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        sshConnectionSetups = connections;
-                        if (treeViewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        treeViewer.refresh(PARENT_ANCHOR, false);
-                        treeViewer.setExpandedState(rootNode, true);
+                display.asyncExec(() -> {
+                    sshConnectionSetups = connections;
+                    if (treeViewer.getControl().isDisposed()) {
+                        return;
                     }
+                    treeViewer.refresh(PARENT_ANCHOR, false);
+                    treeViewer.setExpandedState(rootNode, true);
                 });
             }
 
             @Override
             public void onConnected(final SshConnectionSetup setup) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (treeViewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        Object node = getSetupNodeForSetup(setup);
-                        treeViewer.refresh(node);
-                        treeViewer.setExpandedState(node, true);
-                        callback.onStateChanged(node);
+                display.asyncExec(() -> {
+                    if (treeViewer.getControl().isDisposed()) {
+                        return;
                     }
+                    Object node = getSetupNodeForSetup(setup);
+                    treeViewer.refresh(node);
+                    treeViewer.setExpandedState(node, true);
+                    callback.onStateChanged(node);
                 });
             }
 
@@ -409,50 +429,38 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 boolean willAutoRetry) {
                 // Show popup message only for first consecutive failure, not for every retry.
                 if (firstConsecutiveFailure) {
-                    display.asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            MessageBox dialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
-                            String retryMessage = "\n\nWill not try to reconnect.";
-                            if (willAutoRetry) {
-                                retryMessage = "\n\nWill automatically try to reconnect.";
-                            }
-                            dialog
-                                .setMessage(StringUtils.format("SSH connection attempt to host %s on port %s failed:\n%s%s",
-                                    setup.getHost(),
-                                    setup.getPort(), reason, retryMessage));
-                            dialog.open();
+                    display.asyncExec(() -> {
+                        MessageBox dialog = new MessageBox(treeViewer.getTree().getShell(), SWT.ICON_ERROR | SWT.OK);
+                        String retryMessage = "\n\nWill not try to reconnect.";
+                        if (willAutoRetry) {
+                            retryMessage = "\n\nWill automatically try to reconnect.";
                         }
+                        dialog
+                            .setMessage(StringUtils.format("SSH connection attempt to host %s on port %s failed:\n%s%s",
+                                setup.getHost(),
+                                setup.getPort(), reason, retryMessage));
+                        dialog.open();
                     });
                 }
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (treeViewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        Object node = getSetupNodeForSetup(setup);
-                        treeViewer.refresh(node);
-                        callback.onStateChanged(node);
+                display.asyncExec(() -> {
+                    if (treeViewer.getControl().isDisposed()) {
+                        return;
                     }
+                    Object node = getSetupNodeForSetup(setup);
+                    treeViewer.refresh(node);
+                    callback.onStateChanged(node);
                 });
             }
 
             @Override
             public void onConnectionClosed(final SshConnectionSetup setup, boolean willAutoRetry) {
-                display.asyncExec(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (treeViewer.getControl().isDisposed()) {
-                            return;
-                        }
-                        Object node = getSetupNodeForSetup(setup);
-                        treeViewer.refresh(node);
-                        callback.onStateChanged(node);
+                display.asyncExec(() -> {
+                    if (treeViewer.getControl().isDisposed()) {
+                        return;
                     }
+                    Object node = getSetupNodeForSetup(setup);
+                    treeViewer.refresh(node);
+                    callback.onStateChanged(node);
                 });
             }
 

@@ -9,6 +9,7 @@
 package de.rcenvironment.components.inputprovider.execution.validator;
 
 import java.io.File;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,8 +39,15 @@ import de.rcenvironment.core.utils.common.StringUtils;
  *
  * @author Marc Stammerjohann
  * @author Jascha Riedel
+ * @author Kathrin Schaffert (#17716)
  */
 public class InputProviderComponentValidator extends AbstractComponentValidator {
+
+    private static final String INVALID_PATH_MESSAGE = "The specified output \"%s\" is not valid on the current system. "
+        + "\n Please make sure that the path exists when running the workflow. \n (%s)";
+
+    private static final String MISSING_PATH_MESSAGE = "The specified output \"%s\" is missing on the current system. "
+        + "\n Please make sure that the output exists when running the workflow.";
 
     @Override
     public String getIdentifier() {
@@ -48,7 +56,7 @@ public class InputProviderComponentValidator extends AbstractComponentValidator 
 
     @Override
     protected List<ComponentValidationMessage> validateComponentSpecific(ComponentDescription componentDescription) {
-        List<ComponentValidationMessage> messages = new ArrayList<ComponentValidationMessage>();
+        List<ComponentValidationMessage> messages = new ArrayList<>();
         validateExistingEndpoints(componentDescription, messages, DataType.FileReference);
         validateExistingEndpoints(componentDescription, messages, DataType.DirectoryReference);
         return messages;
@@ -56,12 +64,12 @@ public class InputProviderComponentValidator extends AbstractComponentValidator 
 
     @Override
     protected List<ComponentValidationMessage> validateOnWorkflowStartComponentSpecific(
-            ComponentDescription componentDescription) {
+        ComponentDescription componentDescription) {
         return null;
     }
 
     private void validateExistingEndpoints(ComponentDescription componentDescription,
-            List<ComponentValidationMessage> messages, DataType dataType) {
+        List<ComponentValidationMessage> messages, DataType dataType) {
         Set<EndpointDescription> outputs = getOutputs(componentDescription, dataType);
         for (EndpointDescription outputDescription : outputs) {
             Map<String, String> metaData = outputDescription.getMetaData();
@@ -78,76 +86,81 @@ public class InputProviderComponentValidator extends AbstractComponentValidator 
     /**
      * Validate the input provider, if selected files exists.
      * 
-     * @param fileName
-     *            of the file
-     * @param values
-     *            of the {@link EndpointDescription}
+     * @param fileName of the file
+     * @param values of the {@link EndpointDescription}
      */
     private void validateExistingFiles(List<ComponentValidationMessage> messages, String outputName,
-            Collection<String> values, String fileName) {
+        Collection<String> values, String fileName) {
         if (!values.contains(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
-
-            if (Paths.get(fileName).isAbsolute()) {
-                validateFileFromFileSystem(messages, outputName, fileName);
-            } else {
-                validateFileFromProject(messages, outputName, fileName);
+            try {
+                if (Paths.get(fileName).isAbsolute()) {
+                    validateFileFromFileSystem(messages, fileName);
+                } else {
+                    validateFileFromProject(messages, outputName, fileName);
+                }
+            } catch (InvalidPathException e) {
+                String text = StringUtils.format(INVALID_PATH_MESSAGE, fileName, e.getMessage());
+                messages.add(
+                    new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, true));
             }
         }
     }
 
     private void validateFileFromProject(List<ComponentValidationMessage> messages, String outputName,
-            String fileName) {
+        String fileName) {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot workspaceRoot = workspace.getRoot();
         IResource member = workspaceRoot.findMember(fileName);
 
         if (member == null || !member.exists()) {
-            createFileDoesNotExistMessage(messages, outputName, fileName);
+            createFileDoesNotExistMessage(messages, fileName);
         } else {
             if (!(member instanceof IFile)) {
                 String text = StringUtils.format("'%s': '%s' is not a file", outputName, fileName);
                 messages.add(
-                        new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
+                    new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
             }
         }
     }
 
-    private void validateFileFromFileSystem(List<ComponentValidationMessage> messages, String outputName,
-            String fileName) {
+    private void validateFileFromFileSystem(List<ComponentValidationMessage> messages, String fileName) {
         File newFile = new File(fileName);
         if (!newFile.isFile()) {
-            createFileDoesNotExistMessage(messages, outputName, fileName);
+            createFileDoesNotExistMessage(messages, fileName);
         }
     }
 
-    private void createFileDoesNotExistMessage(List<ComponentValidationMessage> messages, String outputName,
-            String fileName) {
-        String text = StringUtils.format("'%s': missing file '%s'", outputName, fileName);
-        messages.add(new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
+    private void createFileDoesNotExistMessage(List<ComponentValidationMessage> messages, String fileName) {
+        String text = StringUtils.format(MISSING_PATH_MESSAGE, fileName);
+        messages.add(new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, true));
     }
 
     /**
      * Validate the input provider, if a selected directory exists.
      * 
-     * @param name
-     *            of the directory
-     * @param values
-     *            of the {@link EndpointDescription}
+     * @param name of the directory
+     * @param values of the {@link EndpointDescription}
      */
     private void validateExistingDirectories(List<ComponentValidationMessage> messages, String outputName,
-            Collection<String> values, String pathName) {
+        Collection<String> values, String pathName) {
         if (pathName.equals(RemoteAccessConstants.WF_PLACEHOLDER_INPUT_DIR)) {
             String text = StringUtils.format("'%s': '%s' only valid if used via remote access", outputName, pathName);
             messages.add(
-                    new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, false));
+                new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, false));
             return;
         }
 
         if (!values.contains(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
-            if (Paths.get(pathName).isAbsolute()) {
-                validateDirFromFileSystem(messages, outputName, pathName);
-            } else {
-                validateDirFromProject(messages, outputName, pathName);
+            try {
+                if (Paths.get(pathName).isAbsolute()) {
+                    validateDirFromFileSystem(messages, pathName);
+                } else {
+                    validateDirFromProject(messages, outputName, pathName);
+                }
+            } catch (InvalidPathException e) {
+                String text = StringUtils.format(INVALID_PATH_MESSAGE, pathName, e.getMessage());
+                messages.add(
+                    new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, true));
             }
         }
     }
@@ -157,28 +170,26 @@ public class InputProviderComponentValidator extends AbstractComponentValidator 
         IWorkspaceRoot workspaceRoot = workspace.getRoot();
         IResource member = workspaceRoot.findMember(pathName);
         if (member == null || !member.exists()) {
-            createDirDoesNotExistMessage(messages, outputName, pathName);
+            createDirDoesNotExistMessage(messages, pathName);
         } else {
             if (!(member instanceof IFolder)) {
                 String text = StringUtils.format("'%s': '%s' is not a directory", outputName, pathName);
                 messages.add(
-                        new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
+                    new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
             }
         }
     }
 
-    private void validateDirFromFileSystem(List<ComponentValidationMessage> messages, String outputName,
-            String pathName) {
+    private void validateDirFromFileSystem(List<ComponentValidationMessage> messages, String pathName) {
         File newFile = new File(pathName);
         if (!newFile.isDirectory()) {
-            createDirDoesNotExistMessage(messages, outputName, pathName);
+            createDirDoesNotExistMessage(messages, pathName);
         }
     }
 
-    private void createDirDoesNotExistMessage(List<ComponentValidationMessage> messages, String outputName,
-            String pathName) {
-        String text = StringUtils.format("'%s': missing directory '%s'", outputName, pathName);
-        messages.add(new ComponentValidationMessage(ComponentValidationMessage.Type.ERROR, "", text, text, true));
+    private void createDirDoesNotExistMessage(List<ComponentValidationMessage> messages, String pathName) {
+        String text = StringUtils.format(MISSING_PATH_MESSAGE, pathName);
+        messages.add(new ComponentValidationMessage(ComponentValidationMessage.Type.WARNING, "", text, text, true));
     }
 
 }

@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 import de.rcenvironment.core.datamodel.api.DataType;
 
@@ -31,7 +31,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  */
 public class EvaluationMemoryComponentValidatorTest {
 
-    private ComponentDescriptionMockCreater componentDescriptionMockCreater;
+    private ComponentDescriptionMockCreator componentDescriptionMockCreater;
 
     private EvaluationMemoryComponentValidator validator;
 
@@ -40,7 +40,7 @@ public class EvaluationMemoryComponentValidatorTest {
     /** Basic setup for the tests. */
     @Before
     public void setUp() {
-        componentDescriptionMockCreater = new ComponentDescriptionMockCreater();
+        componentDescriptionMockCreater = new ComponentDescriptionMockCreator();
         validator = new EvaluationMemoryComponentValidator();
 
     }

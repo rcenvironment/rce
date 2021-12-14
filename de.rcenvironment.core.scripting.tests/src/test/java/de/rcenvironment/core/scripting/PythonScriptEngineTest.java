@@ -93,7 +93,7 @@ public class PythonScriptEngineTest {
         for (int i = 0; i < scriptEvalCount; i++) {
 
             final String suffix = String.valueOf(i);
-            threadPool.execute(() -> {
+            threadPool.execute("Execute script", () -> {
 
 
                     if (isSynchronized) {

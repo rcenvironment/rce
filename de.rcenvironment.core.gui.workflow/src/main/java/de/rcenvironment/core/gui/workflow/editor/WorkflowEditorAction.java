@@ -48,5 +48,14 @@ public abstract class WorkflowEditorAction {
      * Performs the action.
      */
     public abstract void run();
+
+    /**
+     * The default-implementation always returns true. Subclasses may override this method to dynamically en- and disable themselves.
+     * 
+     * @return True if this action is enabled for the current workflow node, false otherwise
+     */
+    public boolean isEnabled() {
+        return true;
+    }
     
 }

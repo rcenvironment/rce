@@ -12,6 +12,7 @@ package de.rcenvironment.core.component.model.configuration.api;
  * Constants used in JSON files to describe endpoints.
  * 
  * @author Doreen Seider
+ * @author Kathrin Schaffert (added KEY_METADATA_COMMENT)
  */
 public final class ConfigurationDefinitionConstants {
 
@@ -35,6 +36,9 @@ public final class ConfigurationDefinitionConstants {
 
     /** Key to get the display name of the configuration. */
     public static final String KEY_METADATA_GUI_NAME = "guiName";
+
+    /** Key to get the comment of a property configuration. */
+    public static final String KEY_METADATA_COMMENT = "comment";
 
     /** Key to get the group in the gui. */
     public static final String KEY_METADATA_GUI_GROUP_NAME = "guiGroupPosition";

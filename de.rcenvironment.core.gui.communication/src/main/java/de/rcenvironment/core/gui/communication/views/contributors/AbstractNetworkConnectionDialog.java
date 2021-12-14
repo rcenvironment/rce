@@ -41,8 +41,19 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Oliver Seebach
  * @author Hendrik Abbenhaus
+ * @author Kathrin Schaffert (refactoring, #17494)
  */
 public abstract class AbstractNetworkConnectionDialog extends Dialog implements ModifyListener, VerifyListener, PasteListener {
+
+    protected static final String CONNECT_ON_STARTUP = "connectOnStartup";
+
+    protected static final String USE_DEFAULT_SETTINGS = "useDefaultSettings";
+
+    protected static final String AUTO_RETRY_INITIAL_DELAY_STR = "autoRetryInitialDelay";
+
+    protected static final String AUTO_RETRY_MAXI_DELAY_STR = "autoRetryMaximumDelay";
+
+    protected static final String AUTO_RETRY_DELAY_MULTIPL = "autoRetryDelayMultiplier";
 
     protected static final String ACTIVEMQ_PREFIX = "activemq-tcp:";
 
@@ -64,19 +75,9 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
     private static final String PORT_LABEL = "Port" + COLON;
 
-    private static final String AUTO_RETRY_INITIAL_DELAY_STR = "autoRetryInitialDelay";
-
-    private static final String AUTO_RETRY_MAXI_DELAY_STR = "autoRetryMaximumDelay";
-
-    private static final String AUTO_RETRY_DELAY_MULTIPL = "autoRetryDelayMultiplier";
-
     private static final String SETTINGS = "Settings" + COLON;
 
     private static final int CHECKBOX_LABEL_WIDTH = 300;
-
-    private static Text portTextField;
-
-    private static PasteListeningText hostTextField;
 
     protected String connectionName = "";
 
@@ -88,13 +89,15 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
     protected String port = "";
 
-    protected String settingsText = "";
+    protected ConnectionSettings connectionSettings = new ConnectionSettings();
 
-    private boolean connectImmediately = true;
-    
     private NetworkContactPoint parsedNetworkContactPoint;
 
     private final Log log = LogFactory.getLog(getClass());
+
+    private Text portTextField;
+
+    private PasteListeningText hostTextField;
 
     private Button useDefaultNameButton;
 
@@ -104,25 +107,20 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
     private Text settingsTextField;
 
-    private Label nameLabel;
-
     private boolean isDefaultName = true;
 
     private Composite container;
-
-    private ConnectionSettings settings;
 
     protected AbstractNetworkConnectionDialog(Shell parentShell) {
         super(parentShell);
     }
 
-    public AbstractNetworkConnectionDialog(Shell parentShell, String connectionName, String connectionString) {
+    protected AbstractNetworkConnectionDialog(Shell parentShell, String connectionName, String connectionString) {
         super(parentShell);
         this.connectionName = connectionName;
         this.networkContactPointID = connectionString;
         this.host = networkContactPointID.substring(0, networkContactPointID.indexOf(COLON));
         this.port = networkContactPointID.substring(networkContactPointID.indexOf(COLON) + 1);
-        this.settings = new ConnectionSettings();
     }
 
     @Override
@@ -141,7 +139,6 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
     @Override
     protected Control createDialogArea(Composite parent) {
-        settings = new ConnectionSettings();
         container = (Composite) super.createDialogArea(parent);
         GridLayout layout = new GridLayout(2, false);
         GridData containerGridData = new GridData(SWT.FILL, SWT.FILL, false, false);
@@ -183,7 +180,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         separatorGridData.grabExcessHorizontalSpace = true;
         separatorGridData.horizontalSpan = 2;
 
-        nameLabel = new Label(container, SWT.NULL);
+        Label nameLabel = new Label(container, SWT.NULL);
         nameLabel.setText(NAME_LABEL);
 
         nameText = new Text(container, SWT.SINGLE | SWT.BORDER);
@@ -204,12 +201,10 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
             public void widgetSelected(SelectionEvent e) {
                 nameText.setEnabled(!useDefaultNameButton.getSelection());
                 nameText.setText("");
-                if (useDefaultNameButton.getSelection()) {
-                    if (!hostTextField.getText().isEmpty() 
-                        && !portTextField.getText().isEmpty()) {
-                        nameText.setText(hostTextField.getText() 
-                            + COLON + portTextField.getText());
-                    }
+                if (useDefaultNameButton.getSelection() && !hostTextField.getText().isEmpty()
+                    && !portTextField.getText().isEmpty()) {
+                    nameText.setText(hostTextField.getText()
+                        + COLON + portTextField.getText());
                 }
                 updateOkButtonActivation();
 
@@ -220,15 +215,13 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
                 widgetDefaultSelected(e);
             }
         });
-        
-
 
         buildSettingsField();
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
         separator.setLayoutData(separatorGridData);
 
         final Button immediateConnectButton = new Button(container, SWT.CHECK);
-        immediateConnectButton.setSelection(true);
+        immediateConnectButton.setSelection(connectionSettings.isConnectOnStartup());
         immediateConnectButton.setText("Connect immediately");
         immediateConnectButton.setLayoutData(connectImmediateCheckboxGridData);
 
@@ -239,20 +232,19 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         persistHint.setLayoutData(hintGridData);
 
         nameText.addModifyListener(new ModifyListener() {
-            
+
             @SuppressWarnings("unused")
             @Override
             public void modifyText(ModifyEvent e) {
                 connectionName = nameText.getText();
-              
+
             }
         });
-        connectImmediately = immediateConnectButton.getSelection();
         immediateConnectButton.addSelectionListener(new SelectionListener() {
 
             @Override
             public void widgetSelected(SelectionEvent event) {
-                connectImmediately = immediateConnectButton.getSelection();
+                connectionSettings.setConnectOnStartup(immediateConnectButton.getSelection());
             }
 
             @Override
@@ -264,16 +256,12 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         return container;
     }
 
-   
-    
-    
-    
     @Override
     public void modifyText(ModifyEvent e) {
         host = hostTextField.getText();
         port = portTextField.getText();
         if (useDefaultNameButton.getSelection()) {
-            if (!hostTextField.getText().isEmpty() 
+            if (!hostTextField.getText().isEmpty()
                 && !portTextField.getText().isEmpty()) {
                 nameText.setText(hostTextField.getText()
                     + COLON + portTextField.getText());
@@ -283,13 +271,14 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         }
         updateOkButtonActivation();
     }
-    
+
     /**
-    *
-    * Paste host and port.
-    * @param text String
-    *
-    **/
+     *
+     * Paste host and port.
+     * 
+     * @param text String
+     *
+     **/
     @Override
     public void paste(String text) {
         CustomPasteHandler.paste(text, hostTextField, portTextField);
@@ -304,19 +293,14 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
     }
 
     private void buildSettingsField() {
-        final int maxDefault = 300;
-        final double multi = 1.5;
 
         Label cpSettingsLbl = new Label(container, SWT.NULL);
         cpSettingsLbl.setText(SETTINGS);
 
         settingsTextField = new Text(container, SWT.SINGLE | SWT.BORDER);
         settingsTextField.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
-        settingsTextField.setEnabled(!settingsText.isEmpty());
-        settingsTextField.setText(settingsText);
-        if (settingsText.isEmpty()) {
-            settingsTextField.setText(settings.createStringForsettings(5, maxDefault, multi));
-        }
+        settingsTextField.setEnabled(!connectionSettings.isUseDefaultSettings());
+        settingsTextField.setText(connectionSettings.getSettingsString());
 
         final Label placeholderLabel = new Label(container, SWT.NONE); // used for layouting
         placeholderLabel.setText("");
@@ -326,19 +310,19 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         useDefaultData.grabExcessHorizontalSpace = false;
 
         useDefaultSettings = new Button(container, SWT.CHECK);
-        useDefaultSettings.setSelection(settingsText.isEmpty());
+        useDefaultSettings.setSelection(connectionSettings.isUseDefaultSettings());
         useDefaultSettings.setText("Use default settings");
         useDefaultSettings.setLayoutData(useDefaultData);
 
         useDefaultSettings.addSelectionListener(new SelectionAdapter() {
 
-            private ConnectionSettings settings = new ConnectionSettings();
-
             @Override
             public void widgetSelected(SelectionEvent e) {
                 settingsTextField.setEnabled(!useDefaultSettings.getSelection());
+                connectionSettings.setUseDefaultSettings(useDefaultSettings.getSelection());
                 if (useDefaultSettings.getSelection()) {
-                    settingsTextField.setText(settings.createStringForsettings(5, maxDefault, multi));
+                    connectionSettings.setDefaultValues();
+                    settingsTextField.setText(connectionSettings.getSettingsString());
                 }
             }
         });
@@ -363,7 +347,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
 
         try {
             catchSettingsFields();
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | StringIndexOutOfBoundsException ex) {
             String errorMessage = StringUtils.format("The settings are not in a valid format.");
             log.debug(errorMessage);
             MessageDialog.openError(this.getParentShell(), "Invalid format", errorMessage);
@@ -371,11 +355,12 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         }
 
         try {
-            settings.setConnectOnStartup(connectImmediately);
-
             String hostAndPortString = StringUtils.format("%s:%s", host, port);
             String temp =
-                hostAndPortString + "(" + settings.getSettingsString() + COM + "connectOnStartup=" + settings.isConnectOnStartup() + ")";
+                hostAndPortString + "(" + connectionSettings.getSettingsString() + COM + CONNECT_ON_STARTUP + " = "
+                    + connectionSettings.isConnectOnStartup() + COM + USE_DEFAULT_SETTINGS + " = "
+                    + connectionSettings.isUseDefaultSettings()
+                    + ")";
             String contactPoint = removeEmptySpaces(temp);
 
             if (!contactPoint.startsWith(ACTIVEMQ_PREFIX)) {
@@ -396,7 +381,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         }
     }
 
-    private void catchSettingsFields() {
+    private void catchSettingsFields() throws IllegalArgumentException, StringIndexOutOfBoundsException {
 
         String text = settingsTextField.getText();
 
@@ -415,36 +400,31 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
         String numberOnly = settingsTextField.getText().replaceAll("[^0-9=,.]", "");
 
         if (settingsTextField.getText().contains(AUTO_RETRY_INITIAL_DELAY_STR)) {
-            if (!numberOnly.isEmpty() && numberOnly.contains(COM)) {
-                indexFirstCom = numberOnly.indexOf(COM);
-                String temp = numberOnly.substring(0, indexFirstCom);
-                String initDelay = temp.replaceAll(DECIMAL, "");
-                settings.setAutoRetryInitialDelay(Integer.parseInt(initDelay));
-            }
+            indexFirstCom = numberOnly.indexOf(COM);
+            String temp = numberOnly.substring(0, indexFirstCom);
+            String initDelay = temp.replaceAll(DECIMAL, "");
+            connectionSettings.setAutoRetryInitialDelay(Integer.parseInt(initDelay));
         }
 
         if (settingsTextField.getText().contains(AUTO_RETRY_MAXI_DELAY_STR)) {
             indexSecondCom = numberOnly.indexOf(COM, numberOnly.indexOf(COM) + 1);
             String temp = numberOnly.substring(indexFirstCom, indexSecondCom);
             String maxiDelay = temp.replaceAll(DECIMAL, "");
-            settings.setAutoRetryMaximumDelay(Integer.parseInt(maxiDelay));
+            connectionSettings.setAutoRetryMaximumDelay(Integer.parseInt(maxiDelay));
 
         }
 
         if (settingsTextField.getText().contains(AUTO_RETRY_DELAY_MULTIPL)) {
             String temp = numberOnly.substring(indexSecondCom);
             String multiplier = temp.replaceAll("[^0-9.]", "");
-            settings.setAutoRetryDelayMultiplier(Double.parseDouble(multiplier));
+            connectionSettings.setAutoRetryDelayMultiplier(Double.parseDouble(multiplier));
 
         }
 
     }
-    
-    
 
     private String removeEmptySpaces(String string) {
-        String temp = string.replaceAll("\\s", "");
-        return temp;
+        return string.replaceAll("\\s", "");
     }
 
     @Override
@@ -473,7 +453,7 @@ public abstract class AbstractNetworkConnectionDialog extends Dialog implements 
     }
 
     public boolean getConnectImmediately() {
-        return connectImmediately;
+        return connectionSettings.isConnectOnStartup();
     }
 
     protected void activateDefaultName() {

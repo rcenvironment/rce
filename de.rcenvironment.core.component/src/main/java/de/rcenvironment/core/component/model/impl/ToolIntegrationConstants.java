@@ -15,6 +15,7 @@ import java.util.UUID;
  * Constants for the ToolIntegrationWizard.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (added KEY_PROPERTY_COMMENT)
  */
 public final class ToolIntegrationConstants {
 
@@ -131,10 +132,16 @@ public final class ToolIntegrationConstants {
     public static final String KEY_PROPERTIES = "toolProperties";
 
     /** Constant. */
+    public static final String KEY_PROPERTY_KEY = "propertyKey";
+
+    /** Constant. */
     public static final String KEY_PROPERTY_DISPLAYNAME = "propertyDisplayName";
 
     /** Constant. */
-    public static final String KEY_PROPERTY_KEY = "propertyKey";
+    public static final String KEY_PROPERTY_DEFAULT_VALUE = "propertyDefaultValue";
+
+    /** Constant. */
+    public static final String KEY_PROPERTY_COMMENT = "propertyComment";
 
     /** Constant. */
     public static final String KEY_ENDPOINT_FOLDER = "endpointFolder";
@@ -174,9 +181,6 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
-
-    /** Constant. */
-    public static final String KEY_PROPERTY_DEFAULT_VALUE = "propertyDefaultValue";
 
     /** Constant. */
     public static final String KEY_PROPERTY_CREATE_CONFIG_FILE = "propertyCreateConfigFile";
@@ -259,10 +263,10 @@ public final class ToolIntegrationConstants {
     public static final String CHOSEN_DELETE_TEMP_DIR_BEHAVIOR = "chosenDeleteTempDirBehavior";
 
     /** Constant. */
-    public static final String NEW_WIZARD_COMMON = "NEW_COMMON";
+    public static final String NEW_WIZARD = "NEW_COMMON";
 
     /** Constant. */
-    public static final String EDIT_WIZRAD_COMMON = "EDIT_COMMON";
+    public static final String EDIT_WIZARD = "EDIT_COMMON";
 
     /** Constant. */
     public static final String METADATA_IGNORE_ON_STARTUP = "ignoreOnStartup";

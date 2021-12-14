@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.model.api.Deprecated;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
 import de.rcenvironment.core.component.xml.api.EndpointXMLService;
@@ -37,6 +38,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Markus Litz
  * @author Markus Kunde
  */
+
+@Deprecated
 public class VampZeroInitializerComponent extends DefaultComponent {
 
     private ComponentContext componentContext;

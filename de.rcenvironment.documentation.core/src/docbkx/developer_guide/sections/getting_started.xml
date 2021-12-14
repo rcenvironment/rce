@@ -1,82 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://docbook.org/xml/4.4/docbookx.dtd">
 <sect1>
-    <title>Getting Started with RCE development</title>
+    <title>Getting Started with RCE Development</title>
     <para>This section covers setting up a development environment for running, modifying and
-        extending RCE on your local machine.</para>
+        extending RCE on your local machine. After completing this section you should be able to
+        build and run a development version of RCE from your local development environment.</para>
+    <para>The development environment is built on top of<itemizedlist>
+            <listitem>
+                <para>AdoptOpenJDK 8 and</para>
+            </listitem>
+            <listitem>
+                <para>Eclipse for RCP and RAP Developers, Version 2019-09</para>
+            </listitem>
+            <listitem>
+                <para>Eclipse Checkstyle Plug-in</para>
+            </listitem>
+        </itemizedlist></para>
     <sect2>
-        <title>Preparing Eclipse</title>
+        <title>Install JDK, Eclipse, and the Checkstyle Plugin</title>
         <para>
             <itemizedlist>
                 <listitem>
                     <para>Make sure you have a <ulink
-                            url="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
-                            >Java Development Kit</ulink>, Version 8u161 or higher, installed on
-                        your system.<note>
-                            <para>If you are installing a JDK on a centrally administered computer
+                            url="https://www.oracle.com/java/technologies/downloads/">Java
+                            Development Kit</ulink> installed on your system in version 8u161 or
+                        higher. The canonical choice of JDK is <ulink
+                            url="https://adoptopenjdk.net/?variant=openjdk8">AdoptOpenJDK Version
+                            8</ulink>. <note>
+                            <para>If you are installing a JDK on a centrally administrated computer
                                 that already has Java installed, it is usually a good idea to
                                     <emphasis>uncheck</emphasis> the "Install public JRE" option
                                 during installation.</para>
                         </note></para>
-                    <para>Currently, Oracle JDK 8.x is the reference development platform. In the
-                        near future, however, this will most likely be replaced by OpenJDK on both
-                        Windows and Linux to simplify licensing issues. OpenJDK has already been
-                        successfully tested in version 8 and 11, on Windows and Linux, for
-                        development and building. Note that automated JUnit test execution as part
-                        of the build process is currently only possible with 8.x versions of the
-                        JDK; this will be extended to JDK 11 soon.</para>
                 </listitem>
                 <listitem>
-                    <para>Download and run "Eclipse for RCP/RAP Developers", Version "Photon
-                        (4.8.x)" or later from <ulink url="https://www.eclipse.org/downloads/"
-                            >https://www.eclipse.org/downloads/</ulink>. Using the latest Eclipse
-                        release instead is usually fine; however, there may be slight differences
-                        between this guide and that version's UI.</para>
+                    <para>Download and unpack "Eclipse for RCP and RAP Developers" in version
+                        "2019-09" from the <ulink
+                            url="https://www.eclipse.org/downloads/packages/release/2019-09/r/eclipse-ide-rcp-and-rap-developers-includes-incubating-components"
+                            >Eclipse Foundation</ulink>. In the following sections, this version is
+                        assumed.</para>
+                    <note>
+                        <para>AdoptOpenJDK 8 and Eclipse 2019-09 are most widespread among
+                            developers and provides a relatively stable basis for development.
+                            However, newer versions of both have been reported to work anecdotally.
+                        </para>
+                    </note>
                 </listitem>
                 <listitem>
-                    <para>Adapt your eclipse.ini file (see <ulink
-                            url="http://wiki.eclipse.org/Eclipse.ini"
-                            >http://wiki.eclipse.org/Eclipse.ini</ulink> for details):<itemizedlist>
+                    <para>Adapt the <code>eclipse.ini</code> file found in the base directory of
+                        your Eclipse installation. The following changes are required for productive
+                        development of RCE. For additional options, please refer to the Eclipse
+                        documentation at <ulink url="https://wiki.eclipse.org/Eclipse.ini"
+                        >https://wiki.eclipse.org/Eclipse.ini</ulink>.<itemizedlist>
                             <listitem>
-                                <para>Set the proper path to your JDK installation (the
-                                        <code>-vm</code> parameter; e.g. <code>&lt;your
+                                <para>Set the proper path to your JDK installation by adapting the
+                                        <code>-vm</code> parameter: <code>&lt;your
                                         path>/jdk8/bin</code> immediately below the <code>-vm</code>
-                                    line).</para>
+                                    line.</para>
                             </listitem>
                             <listitem>
-                                <para>Change the maximum heap size to at least 2 GiB (adapt the
-                                        <code>-Xmx</code> line somewhere below <code>-vmargs</code>,
-                                    e.g. to <code>-Xmx2048m</code>, or add it if it does not exist
-                                    yet)</para>
+                                <para>Change the maximum heap size to at least 2 GiB by adapting the
+                                        <code>-Xmx</code> parameter somewhere below
+                                        <code>-vmargs</code>. Change this line to, e.g.
+                                        <code>-Xmx2048m</code>. Add such a line if it does not
+                                    exist.</para>
                             </listitem>
                         </itemizedlist></para>
                 </listitem>
                 <listitem>
-                	<para>
-                		In the eclipse preferences (avaible from "Window"-> "Preferences"), open the page 
-                		"Plugin-Development" -> "DS Annotations" and check the box for "Generate descriptors
-                		for annotated sources." Set the descriptor directory to "OSGI-INF/generated".
-                	</para>
-                </listitem>
-                <listitem>
-                    <para>Optionally, install these plugins (for example using "Help > Eclipse
-                        Marketplace"): </para>
-                    <itemizedlist>
-                        <listitem>
-                            <para><ulink
-                                    url="https://code.google.com/a/eclipselabs.org/p/workspacemechanic/"
-                                    >Workspace Mechanic</ulink> - used to apply common workspace
-                                settings. Not strictly required, but convenient.</para>
-                        </listitem>
-                        <listitem>
-                            <para><ulink url="http://eclipse-cs.sourceforge.net/">Checkstyle-CS
-                                </ulink> - Eclipse integration for Checkstyle (version 6.19 or
-                                above; see the note in section "Configuring CheckStyle" ). Not
-                                required for local development, but mandatory before committing
-                                changes into the central code base.</para>
-                        </listitem>
-                    </itemizedlist>
+                    <para>Start Eclipse and install the "Eclipse Checkstyle Plug-in" via Help ->
+                        Eclipse Marketplace -> Checkstyle. Restart Eclipse if you are
+                        prompted.</para>
                 </listitem>
             </itemizedlist>
         </para>
@@ -96,6 +90,12 @@
                         next steps.</para>
                 </listitem>
                 <listitem>
+                    <para> In the eclipse preferences (avaible from "Window"-> "Preferences"), open
+                        the page "Plugin-Development" -> "DS Annotations" and check the box for
+                        "Generate descriptors for annotated sources." Set the descriptor directory
+                        to "OSGI-INF/generated". </para>
+                </listitem>
+                <listitem>
                     <para>There are currently three ways to properly import the complete RCE source
                         code: from the SVN repository, from provided zip files, or from GitHub. At
                         the moment, only the SVN approach provides access to the current development
@@ -108,10 +108,10 @@
                     <para>
                         <itemizedlist>
                             <listitem>
-                                <para>Install <ulink url="http://subclipse.tigris.org/"
-                                        >Subclipse</ulink> (or alternatively <ulink
-                                        url="http://www.polarion.com/products/svn/subversive.php"
-                                        >Subversive</ulink>) if you don't already have an Eclipse
+                                <para>Install <ulink url="https://marketplace.eclipse.org/content/subclipse"
+                                    >Subclipse</ulink> (or alternatively <ulink 
+                                    url="https://polarion.plm.automation.siemens.com/products/svn/subversive"
+                                    >Subversive</ulink>) if you don't already have an Eclipse
                                     SVN plugin installed. Note that when using Subclipse, you may
                                     have to switch to the "SvnKit" SVN interface in the "Team > SVN"
                                     preferences; this is normal.</para>
@@ -121,9 +121,9 @@
                                     SVN). </para>
                             </listitem>
                             <listitem>
-                                <para>Add
-                                        <code>https://svn.sistec.dlr.de/svn/rce/new/rce/trunk</code>
-                                    as a new SVN repository location.</para>
+                                <para>Add <code><ulink url="https://svn.dlr.de/rce/new/rce/trunk"
+                                    >https://svn.dlr.de/rce/new/rce/trunk</ulink></code> as
+                                    a new SVN repository location.</para>
                             </listitem>
                             <listitem>
                                 <para>Expand the location entry and select all projects (the entries
@@ -147,8 +147,8 @@
                             <listitem>
                                 <para>Browse to the "source" sub-folder of a release's download
                                     location, for example
-                                        <uri>https://software.dlr.de/updates/rce/8.x/products/standard/releases/8.1.0/source/</uri>
-                                    for the 8.1.0 release. Download both zip files, "source" and
+                                    <uri>https://updates-external.sc.dlr.de/rce/10.x/products/standard/releases/10.1.0/source/</uri>
+                                    for the 10.1.0 release. Download both zip files, "source" and
                                     "additions"; the latter contains binary artifacts like the
                                     Dakota and TiGLViewer executables.</para>
                             </listitem>
@@ -225,7 +225,7 @@
                             </listitem>
                             <listitem>
                                 <para>Select the "Locations" list entry starting with
-                                        "<code>https://software.dlr.de/</code>" and click "Update".
+                                    "<code>https://updates-external.sc.dlr.de/</code>" and click "Update".
                                     After a while, the list entry's description should end with
                                     something similar to "242 plugins available" (the exact number
                                     may vary). Save the file if necessary.</para>
@@ -287,9 +287,9 @@
                     Explorer" on the left.</para>
             </listitem>
             <listitem>
-                <para>A good starting point is the "default" configuration. Expand the "default"
-                    sub-folder, right-click the "rce.default.launch" file and choose "Run As >
-                    rce.default.launch" from the context menu.</para>
+                <para>A good starting point is the "default" configuration. Right-click the
+                    "rce.default.launch" file and choose "Run As > rce.default.launch" from the
+                    context menu.</para>
             </listitem>
             <listitem>
                 <para>RCE should now start and prompt for an RCE workspace location. Confirm the
@@ -334,7 +334,7 @@
                 </listitem>
             </itemizedlist>Using your system's file browser, navigate to the folder of your choice.
             Using any SVN tool, check out
-                <code>https://svn.sistec.dlr.de/svn/rce/new/meta/eclipse/mechanic</code> into a
+            <code>https://svn.dlr.de/rce/new/meta/eclipse/mechanic/</code> into a
             sub-folder called "<code>checkout</code>" within it. (Note that the actual name of the
             sub-folder is not relevant; adapt if you like.) This sub-folder now contains common
             rules on its top level, and optional or experimental rules in sub-folders. Copy all
@@ -343,13 +343,13 @@
                 <para>These rule files will most likely be integrated into the main project at some
                     point, making this extra checkout step unnecessary. Please note that these rule
                     files are currently not available as part of the <ulink
-                        url="https://github.com/rcenvironment/rce">GitHub source code mirror</ulink>
+                    url="https://github.com/rcenvironment/rce">GitHub source code mirror</ulink>
                     or the released source zip files either, which makes them inaccessible unless
                     you have access to the internal SVN server.</para>
             </note></para>
         <para>The next time you open a workspace, Workspace Mechanic should pick up these rule files
             and show a notice asking if it should apply them. See the plugin's <ulink
-                url="https://github.com/alfsch/workspacemechanic/">web site</ulink> for further
+            url="https://github.com/alfsch/workspacemechanic/">web site</ulink> for further
             information.</para>
     </sect2>
     <sect2>
@@ -369,7 +369,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Choose "Project relative configuration", click "Browse" and choose
+                <para>Choose "Project Relative Configuration", click "Browse" and choose
                         <code>de.rcenvironment/checkstyle/checks.xml</code>. </para>
             </listitem>
             <listitem>
@@ -378,7 +378,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Close the preferences with "Ok" and confirm the rebuild. </para>
+                <para>Close the preferences with "Apply and Close" and confirm the rebuild. </para>
             </listitem>
         </itemizedlist>
         <para>
@@ -410,14 +410,14 @@
             <note>
                 <para>There are rare cases where these code formatter settings lead to source files
                     that are not being accepted by our CheckStyle rules. These inconsistencies are
-                    being collected and tracked in issue #0005898, and will be fixed/addressed in a
-                    future update.</para>
+                    being collected and tracked in issue <ulink url="https://mantis.sc.dlr.de/view.php?id=5898">#0005898</ulink>,
+                    and will be fixed/addressed in a future update.</para>
             </note>
         </para>
     </sect2>
     <sect2>
         <title>Building a standalone RCE version from Eclipse</title>
-        <para>You can also build a standalone version of RCE from Eclipse using Maven.</para>
+        <para>You can also build a standalone version of RCE from Eclipse using Maven 3.5.3. </para>
         <itemizedlist>
             <listitem>
                 <para>There are several pre-defined build configurations for RCE. To find them,
@@ -426,7 +426,12 @@
             </listitem>
             <listitem>
                 <para>To run a .launch file, right-click on it and choose the single entry in the
-                    "Run As" submenu of the context menu that appears.</para>
+                    "Run As" submenu of the context menu that appears.<note>
+                        <para>Be aware to configure the recommended Maven Runtime Environment in
+                            version 3.5.3. In Eclipse you can select for each .launch file a
+                            locally installed Maven Runtime via "Run > Run Configurations ...".
+                        </para>
+                    </note></para>
             </listitem>
             <listitem>
                 <para>Building a standalone RCE installation (which is called a "product" in Eclipse
@@ -447,7 +452,7 @@
                         <listitem>
                             <para>The most flexible way to build RCE from source is to compile a
                                 local platform repository yourself. This is simply done by
-                                navigaring to the "<code>de.rcenvironment.platform/eclipse</code>
+                                navigating to the "<code>de.rcenvironment.platform/eclipse</code>
                                 folder (from the root of your workspace) and executing the single
                                 .launch file that is located there. On the first run, the build
                                 process may download quite a few resources from Maven Central;

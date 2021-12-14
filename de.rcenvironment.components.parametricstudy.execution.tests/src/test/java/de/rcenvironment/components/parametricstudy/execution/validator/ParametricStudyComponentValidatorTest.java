@@ -16,7 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreater;
+import de.rcenvironment.core.component.model.testutils.ComponentDescriptionMockCreator;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
 
 /**
@@ -27,14 +27,14 @@ import de.rcenvironment.core.component.validation.api.ComponentValidationMessage
  */
 public class ParametricStudyComponentValidatorTest {
 
-    private ComponentDescriptionMockCreater componentDescriptionMockCreater;
+    private ComponentDescriptionMockCreator componentDescriptionMockCreater;
 
     private ParametricStudyComponentValidator validator;
 
     /** Basic setup. */
     @Before
     public void setUp() {
-        componentDescriptionMockCreater = new ComponentDescriptionMockCreater();
+        componentDescriptionMockCreater = new ComponentDescriptionMockCreator();
         validator = new ParametricStudyComponentValidator();
     }
 

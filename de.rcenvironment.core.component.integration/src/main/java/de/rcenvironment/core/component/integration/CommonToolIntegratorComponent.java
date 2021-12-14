@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -38,6 +39,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.Platform;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
@@ -77,6 +81,7 @@ import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUti
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
+import de.rcenvironment.provenance.api.ProvenanceEventListener;
 import de.rcenvironment.toolkit.utils.text.TextLinesReceiver;
 
 /**
@@ -205,6 +210,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     private Set<String> outputsWithNotAValueWritten = new HashSet<>();
 
     private volatile boolean canceled;
+    
+    private Optional<ProvenanceEventListener> provenanceService;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -225,6 +232,11 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         datamanagementService = componentContext.getService(ComponentDataManagementService.class);
         scriptingService = componentContext.getService(ScriptingService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
+        final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+        final Optional<ServiceReference<ProvenanceEventListener>> provenanceReference =
+            Optional.ofNullable(context.getServiceReference(ProvenanceEventListener.class));
+        provenanceService = provenanceReference.map(context::getService);
+
         lastRunStaticInputValues = new HashMap<>();
         lastRunStaticOutputValues = new HashMap<>();
         // Create basic folder structure and prepare sandbox
@@ -398,6 +410,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     @Override
     public void processInputs() throws ComponentException {
+        provenanceService.ifPresent(service -> 
+            service.toolRunStarted(this.componentContext.getExecutionIdentifier(), this.componentContext.getComponentName(), "0.0.1", "0.1")
+        );
+
         Map<String, TypedDatum> inputValues = new HashMap<>();
         if (componentContext != null && componentContext.getInputsWithDatum() != null) {
             for (String inputName : componentContext.getInputsWithDatum()) {
@@ -494,6 +510,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
 
         storeHistoryDataItem();
+        provenanceService.ifPresent(service -> 
+            service.toolRunFinished(this.componentContext.getExecutionIdentifier())
+        );
     }
 
     private void deleteCurrentWorkingDirectoryIfRequired() {

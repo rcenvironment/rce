@@ -102,7 +102,7 @@ public class OptimizerEndpointSelectionPane extends EndpointSelectionPane {
                     .getMetaDataDefinition(),
                 newMetaData);
 
-        super.onEditClicked(name, dialog, newMetaData);
+        super.onEditClicked(name, dialog);
     }
 
     @Override

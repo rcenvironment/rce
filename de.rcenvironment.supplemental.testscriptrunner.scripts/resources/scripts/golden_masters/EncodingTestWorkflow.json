@@ -1,0 +1,23 @@
+{
+  "title" : "EncodingTestWorkflow_2021-06-07_07:57:45_01",
+  "finalState" : "FINISHED",
+  "components" : [ {
+    "name" : "Echo",
+    "component" : "de.rcenvironment.integration.common.Echo/0.0",
+    "runs" : [ {
+      "runCounter" : -1,
+      "finalState" : "FINISHED",
+      "inputs" : [ ],
+      "outputs" : [ ]
+    }, {
+      "runCounter" : 1,
+      "finalState" : "FINISHED",
+      "inputs" : [ ],
+      "outputs" : [ {
+        "name" : "prop",
+        "datum" : "{\"t\":\"STxt\",\"v\":\"äöü123\"}",
+        "counter" : 0
+      } ]
+    } ]
+  } ]
+}

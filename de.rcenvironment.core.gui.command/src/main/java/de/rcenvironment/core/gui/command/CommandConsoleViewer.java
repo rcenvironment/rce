@@ -517,7 +517,7 @@ public class CommandConsoleViewer extends ViewPart {
                         increaseCurrentLine(); // TODO problematic
                         insertRCEPrompt();
                         // run command in separate thread to keep the UI responsive
-                        ConcurrencyUtils.getAsyncTaskService().execute(new ExecuteCommand(command));
+                        ConcurrencyUtils.getAsyncTaskService().execute("Execute Command", new ExecuteCommand(command));
                     }
                 }
             } else if (keyEvent.keyCode == SWT.HOME) {

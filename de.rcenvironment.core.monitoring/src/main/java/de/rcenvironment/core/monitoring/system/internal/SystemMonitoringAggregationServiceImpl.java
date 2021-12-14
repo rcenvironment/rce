@@ -8,18 +8,15 @@
 
 package de.rcenvironment.core.monitoring.system.internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,18 +33,13 @@ import de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregat
 import de.rcenvironment.core.monitoring.system.api.OperatingSystemException;
 import de.rcenvironment.core.monitoring.system.api.RemotableSystemMonitoringService;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringConstants;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataService;
 import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
-import de.rcenvironment.core.monitoring.system.api.model.ProcessInformation;
 import de.rcenvironment.core.monitoring.system.api.model.SystemLoadInformation;
-import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
-import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
-import de.rcenvironment.toolkit.utils.common.DefaultTimeSource;
 
 /**
  * Aggregates low-level system monitoring data to higher-level data structures, with internal caching where appropriate.
@@ -55,19 +47,15 @@ import de.rcenvironment.toolkit.utils.common.DefaultTimeSource;
  * @author David Scholz (original "snapshot" code)
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Dominik Schneider
  */
 public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMonitoringService, LocalSystemMonitoringAggregationService {
 
-    private static final int COMPLETE_SNAPSHOT_CACHE_LIFETIME_MSEC = 2000;
+    private static final int MAX_ITEMS = 20;
 
-    private static final int SYSTEM_LOAD_INFORMATION_COLLECTION_BUFFER_SIZE = 30;
+    private static final int INTERVAL = 3000;
 
     private SystemIntegrationAdapter adapter;
-
-    /**
-     * The low-level service to fetch system data from.
-     */
-    private SystemMonitoringDataService systemDataService;
 
     /**
      * Used to register periodic background tasks.
@@ -82,19 +70,11 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
     // description of provided data sources
     private Map<String, String> topicIdToDescriptionMap = new HashMap<>();
 
-    private FullSystemAndProcessDataSnapshot cachedFullSnapshot;
+    private SystemMonitoringDataCollector dataCollector;
 
-    private long cachedFullSnapshotTimestamp = 0;
+    private SystemMonitoringDataProcessor dataProcessor;
 
-    private final Log log = LogFactory.getLog(SystemMonitoringDataServiceImpl.class);
-
-    private ScheduledFuture<?> systemLoadCollectorFuture;
-
-    private SystemLoadInformationCollector systemLoadInformationCollector;
-
-    // TODO remove?
-    @SuppressWarnings("unused")
-    private ConcurrencyUtilsFactory concurrencyUtilsFactory;
+    private final Log log = LogFactory.getLog(SystemMonitoringAggregationServiceImpl.class);
 
     private CommunicationService communicationService;
 
@@ -103,12 +83,11 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
             // do not activate this service if is was spawned as part of a default test environment
             return;
         }
-        
-        Objects.requireNonNull(systemDataService);
+
         Objects.requireNonNull(objectBindingsService);
         Objects.requireNonNull(asyncTaskService);
 
-        adapter = SystemIntegrationEntryPoint.getAdapter();
+        adapter = this.getAdapter();
         Objects.requireNonNull(adapter); // split for readability
 
         topicIdToDescriptionMap.put(SystemMonitoringConstants.PERIODIC_MONITORING_TOPIC_SIMPLE_SYSTEM_INFO,
@@ -116,14 +95,16 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
 
         objectBindingsService.addBinding(PeriodicMonitoringDataContributor.class, setUpPeriodicMonitoringDataContributorAdapter(), this);
 
-        systemLoadInformationCollector =
-            new SystemLoadInformationCollector(systemDataService, SYSTEM_LOAD_INFORMATION_COLLECTION_BUFFER_SIZE, new DefaultTimeSource(),
-                MINIMUM_TIME_DELTA_TO_ACCEPT_BETWEEN_UPDATES, MAXIMUM_TIME_DELTA_TO_ACCEPT_BEFORE_STARTING_OVER);
-        // this is one of the few places where "scheduleAtFixedRate()" is actually appropriate -- misc_ro
-        systemLoadCollectorFuture =
-            asyncTaskService.scheduleAtFixedRate("System Monitoring: Collect system load information", systemLoadInformationCollector,
-                SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC);
-        log.debug("System load collector initialized");
+        this.dataCollector = new SystemMonitoringDataCollector(this.adapter, this.asyncTaskService);
+        this.dataCollector.startCollection(MAX_ITEMS, INTERVAL);
+        log.debug("System data collector initialized and collection started");
+
+        this.dataProcessor = new SystemMonitoringDataProcessor(this.dataCollector.getRingBuffer(), this.adapter);
+
+    }
+
+    protected SystemIntegrationAdapter getAdapter() {
+        return SystemIntegrationEntryPoint.getAdapter();
     }
 
     protected void deactivate(BundleContext bundleContext) {
@@ -131,10 +112,6 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
             // do not activate this service if is was spawned as part of a default test environment
             return;
         }
-        
-        systemLoadInformationCollector = null;
-        systemLoadCollectorFuture.cancel(false); // short-running; no need to interrupt
-        systemLoadCollectorFuture = null;
 
         objectBindingsService.removeAllBindingsOfOwner(this);
     }
@@ -143,16 +120,8 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         objectBindingsService = newInstance;
     }
 
-    protected void bindSystemMonitoringDataService(SystemMonitoringDataService newInstance) {
-        this.systemDataService = newInstance;
-    }
-
     protected void bindAsyncTaskService(AsyncTaskService newInstance) {
         this.asyncTaskService = newInstance;
-    }
-
-    protected void bindConcurrencyUtilsFactory(ConcurrencyUtilsFactory newInstance) {
-        this.concurrencyUtilsFactory = newInstance;
     }
 
     protected void bindCommunicationService(CommunicationService newInstance) {
@@ -162,24 +131,14 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
     @Override
     @AllowRemoteAccess
     public synchronized FullSystemAndProcessDataSnapshot getCompleteSnapshot() throws OperatingSystemException {
-
-        if (hasValidCachedFullSnapshot()) {
-            return cachedFullSnapshot;
-        }
-
-        FullSystemAndProcessDataSnapshot newSnapshot = createFullSnapshot();
-
-        cachedFullSnapshot = newSnapshot;
-        cachedFullSnapshotTimestamp = System.currentTimeMillis();
-
-        return newSnapshot;
+        return createFullSnapshot();
     }
 
     @Override
     @AllowRemoteAccess
     public SystemLoadInformation getSystemLoadInformation(Integer maxSamples) {
         // note: method is synchronized internally, no need to do it here too
-        return systemLoadInformationCollector.getSystemLoadInformation(maxSamples);
+        return this.dataProcessor.getSystemLoadInformation(maxSamples);
     }
 
     @Override
@@ -226,112 +185,22 @@ public class SystemMonitoringAggregationServiceImpl implements RemotableSystemMo
         }
     }
 
-    /**
-     * Clears cached model (intended for tests).
-     */
-    protected void clearFullSnapshotCache() {
-        cachedFullSnapshot = null;
-        cachedFullSnapshotTimestamp = 0;
-    }
-
-    private FullSystemAndProcessDataSnapshot createFullSnapshot() throws OperatingSystemException {
-        final double systemCPUUsage = systemDataService.getTotalCPUUsage(); // valid percentage or Double.NaN
-        final double cpuIdle;
-        if (Double.isNaN(systemCPUUsage)) {
-            cpuIdle = Double.NaN;
-        } else {
-            // do not query again, but derive from total CPU for consistency
-            cpuIdle = SystemMonitoringUtils.ONE_HUNDRED_PERCENT_CPU_VALUE - systemCPUUsage;
-        }
-
-        long systemRAMUsage = systemDataService.getTotalUsedRAM();
-
-        final List<ProcessInformation> subProcesses;
-        final List<ProcessInformation> ownProcesses;
-
-        // process info may or may not be already available
-        if (adapter.areSelfPidsAndProcessStatesAvailable()) {
-            subProcesses = systemDataService.getFullChildProcessInformation(adapter.getSelfJavaPid());
-            ownProcesses = new ArrayList<>();
-            ownProcesses.add(new ProcessInformation(adapter.getSelfJavaPid(), adapter.getSelfJavaProcessName(), Collections
-                .<ProcessInformation> emptyList(),
-                systemDataService.getProcessCPUUsage(adapter.getSelfJavaPid()),
-                systemDataService.getProcessRAMUsage(adapter.getSelfJavaPid())));
-            if (OSFamily.isLinux()) {
-                ownProcesses.add(new ProcessInformation(adapter.getSelfLauncherPid(), adapter.getSelfLauncherProcessName(), Collections
-                    .<ProcessInformation> emptyList(),
-                    systemDataService.getProcessCPUUsage(adapter.getSelfLauncherPid()),
-                    systemDataService.getProcessRAMUsage(adapter.getSelfLauncherPid())));
-                // move Linux "Webkit*" processes (related to the integrated help browser) to "own processes"
-                for (Iterator<ProcessInformation> it = subProcesses.iterator(); it.hasNext();) {
-                    ProcessInformation proc = it.next();
-                    String processName = proc.getName();
-                    if (processName.startsWith("WebKit")) {
-                        ownProcesses.add(proc);
-                        it.remove();
-                    }
-                }
-            } else if (OSFamily.isWindows()) {
-                for (Iterator<ProcessInformation> it = subProcesses.iterator(); it.hasNext();) {
-                    // eliminate "conhost" on Windows systems (see #17328)
-                    String processName = it.next().getName();
-                    if (processName.equals("conhost")) {
-                        // as this has only been observed during Maven tests, just drop it instead of muddying the "own processes" pool
-                        log.debug("Eliminated 'conhost' from the list of sub-processes; "
-                            + "this is normal during integration tests, please report any other sightings");
-                        it.remove();
-                    }
-                }
-            } else {
-                throw new IllegalStateException();
-            }
-
-        } else {
-            subProcesses = new ArrayList<>();
-            ownProcesses = new ArrayList<>();
-        }
-
-        return new FullSystemAndProcessDataSnapshot(systemCPUUsage, systemRAMUsage, systemDataService.getTotalSystemRAM(),
-            cpuIdle, subProcesses, ownProcesses);
+    private FullSystemAndProcessDataSnapshot createFullSnapshot() {
+        this.dataCollector.resetPartialCollectionFallback();
+        return this.dataProcessor.createFullSystemSnapshot();
     }
 
     private String createSimpleSystemMonitoringSummary() {
-        try {
-            double nodeCpuUsage;
-            long ram;
-            long systemRamUsage;
-            if (hasValidCachedFullSnapshot()) {
-                nodeCpuUsage = cachedFullSnapshot.getNodeCPUusage();
-                ram = cachedFullSnapshot.getNodeSystemRAM();
-                systemRamUsage = cachedFullSnapshot.getNodeRAMUsage();
-            } else {
-                ram = systemDataService.getTotalSystemRAM();
-                nodeCpuUsage = systemDataService.getTotalCPUUsage();
-                systemRamUsage = systemDataService.getTotalUsedRAM();
-            }
-            return StringUtils.format("System CPU usage: %.2f%%, System RAM usage: %d / %d MiB", nodeCpuUsage
-                * SystemMonitoringConstants.PERCENTAGE_TO_DISPLAY_VALUE_MULTIPLIER, systemRamUsage, ram);
-        } catch (OperatingSystemException e) {
-            return "Error gathering system data: " + e.getMessage();
-        }
-    }
-
-    private boolean hasValidCachedFullSnapshot() {
-        return cachedFullSnapshotTimestamp >= (System.currentTimeMillis() - COMPLETE_SNAPSHOT_CACHE_LIFETIME_MSEC)
-            && cachedFullSnapshot != null;
+        FullSystemAndProcessDataSnapshot snapshot = createFullSnapshot();
+        double nodeCpuUsage = snapshot.getNodeCPUusage();
+        long ram = snapshot.getNodeRAMUsage();
+        long systemRamUsage = snapshot.getNodeRAMUsage();
+        return StringUtils.format("System CPU usage: %.2f%%, System RAM usage: %d / %d MiB", nodeCpuUsage
+            * SystemMonitoringConstants.PERCENTAGE_TO_DISPLAY_VALUE_MULTIPLIER, systemRamUsage, ram);
     }
 
     private String logDetailedMonitoringData() {
-        if (hasValidCachedFullSnapshot()) {
-            return cachedFullSnapshot.toString();
-        } else {
-            try {
-                return getCompleteSnapshot().toString();
-            } catch (OperatingSystemException e) {
-                log.error(e);
-                return "<error>";
-            }
-        }
+        return createFullSnapshot().toString();
     }
 
     private PeriodicMonitoringDataContributor setUpPeriodicMonitoringDataContributorAdapter() {

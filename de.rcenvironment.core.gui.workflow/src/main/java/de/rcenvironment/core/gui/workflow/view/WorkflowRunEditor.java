@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchListener;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.services.IEvaluationService;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
@@ -86,6 +87,8 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
 
     private AtomicBoolean initialWorkflowStateSet = new AtomicBoolean(false);
 
+    private WorkflowState currentEditorWorkflowState = WorkflowState.UNKNOWN;
+
     public WorkflowRunEditor() {
         setEditDomain(new DefaultEditDomain(this));
         registerWorkbenchListener();
@@ -109,6 +112,10 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
 
     public boolean isWorkflowExecutionInformationSet() {
         return wfExeInfo != null;
+    }
+    
+    public WorkflowExecutionInformation getWorkflowExecutionInformation() {
+        return this.wfExeInfo;
     }
 
     @Override
@@ -304,6 +311,7 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
     @Override
     public synchronized void onWorkflowStateChanged(final WorkflowState newState) {
         initialWorkflowStateSet.set(true);
+        this.currentEditorWorkflowState = newState;
         if (newState == WorkflowState.DISPOSING || newState == WorkflowState.DISPOSED) {
             Display.getDefault().asyncExec(new Runnable() {
 
@@ -319,10 +327,18 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
                 public void run() {
                     updateTitle(newState);
                     updateTabIcon(newState);
+                    updateButtonActivation();
                 }
             });
         }
 
+    }
+
+    protected void updateButtonActivation() {
+        IEvaluationService service = PlatformUI.getWorkbench().getService(IEvaluationService.class);
+        service.requestEvaluation("de.rcenvironment.runtimeEditorPropertyTester.enableResume");
+        service.requestEvaluation("de.rcenvironment.runtimeEditorPropertyTester.enablePause");
+        service.requestEvaluation("de.rcenvironment.runtimeEditorPropertyTester.enableCancel");
     }
 
     @Override
@@ -332,6 +348,10 @@ public class WorkflowRunEditor extends GraphicalEditor implements ITabbedPropert
 
     public GraphicalViewer getViewer() {
         return viewer;
+    }
+
+    public WorkflowState getCurrentEditorWorkflowState() {
+        return currentEditorWorkflowState;
     }
 
 }

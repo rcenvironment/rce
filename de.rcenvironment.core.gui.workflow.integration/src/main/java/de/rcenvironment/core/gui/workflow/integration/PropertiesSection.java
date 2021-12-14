@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.FocusEvent;
@@ -38,6 +40,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationMetaDataDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
 import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
@@ -51,25 +54,21 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  */
 public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
 
-    private static final int LIST_HEIGHT = 100;
+    private static final int COLUMN_WEIGHT = 8;
+
+    private static final int COLUMN_WEIGHT_PLACEHOLDER = 6;
+
+    private static final int COLUMN_WEIGHT_COMMENT = 20;
 
     private static final int LIST_WIDTH = 150;
 
-    private static final int COLUMN_WIDTH = 200;
-
-    private static final int COMLUMN_WIDTH_PLACEHOLDER = 140;
+    private static final int MIN_TABLE_WIDTH = 400;
 
     private List propGroupList;
 
     private Table propertyTable;
 
     private int groupSelection;
-
-    private TableColumn valueColumn;
-
-    private TableColumn nameColumn;
-
-    private TableColumn placeholderColumn;
 
     private Map<String, String> previousValues;
 
@@ -92,35 +91,46 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
 
         new Label(propertiesComposite, SWT.NONE).setText(Messages.propGroupsLabel);
         new Label(propertiesComposite, SWT.NONE).setText(Messages.properties);
-
+        
         propGroupList = new List(propertiesComposite, SWT.BORDER | SWT.SINGLE | SWT.V_SCROLL);
-        GridData groupsListGridData = new GridData(GridData.FILL_VERTICAL);
+        GridData groupsListGridData = new GridData(GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
         groupsListGridData.widthHint = LIST_WIDTH;
-        groupsListGridData.heightHint = LIST_HEIGHT;
-        groupsListGridData.grabExcessVerticalSpace = true;
         propGroupList.setLayoutData(groupsListGridData);
         propGroupList.addSelectionListener(new PropertyGroupTableListener(propGroupList));
 
-        propertyTable = new Table(propertiesComposite, SWT.MULTI | SWT.HIDE_SELECTION | SWT.BORDER);
+        Composite tableComposite = new Composite(propertiesComposite, SWT.NONE);
+        GridData tableGridData =  new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
+        tableGridData.minimumWidth = MIN_TABLE_WIDTH;
+        tableGridData.grabExcessHorizontalSpace = true;
+        tableComposite.setLayoutData(tableGridData);
+        TableColumnLayout tableLayout = new TableColumnLayout();
+        tableComposite.setLayout(tableLayout);
+        
+        propertyTable = new Table(tableComposite, SWT.HIDE_SELECTION | SWT.BORDER);
         propertyTable.setHeaderVisible(true);
         propertyTable.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
-
-        nameColumn = new TableColumn(propertyTable, SWT.NONE);
-        nameColumn.setText(Messages.name);
-        nameColumn.setResizable(true);
-        nameColumn.setWidth(COLUMN_WIDTH);
-        valueColumn = new TableColumn(propertyTable, SWT.NONE);
-        valueColumn.setText(Messages.value);
-        valueColumn.setResizable(false);
-        valueColumn.setWidth(COLUMN_WIDTH);
-        valueColumn.setAlignment(SWT.CENTER);
-
-        placeholderColumn = new TableColumn(propertyTable, SWT.NONE);
-        placeholderColumn.setText("Define at workflow start");
-        placeholderColumn.setResizable(false);
-        placeholderColumn.setWidth(COMLUMN_WIDTH_PLACEHOLDER);
         propertyTable.setLinesVisible(true);
 
+        TableColumn nameColumn = new TableColumn(propertyTable, SWT.NONE);
+        nameColumn.setText(Messages.name);
+
+        TableColumn valueColumn = new TableColumn(propertyTable, SWT.NONE);
+        valueColumn.setText(Messages.value);
+        valueColumn.setAlignment(SWT.CENTER);
+
+        TableColumn placeholderColumn = new TableColumn(propertyTable, SWT.NONE);
+        placeholderColumn.setText("Define at workflow start");
+        placeholderColumn.setAlignment(SWT.CENTER);
+
+        TableColumn commentColumn = new TableColumn(propertyTable, SWT.NONE);
+        commentColumn.setText("Comment");
+        
+        // Layout the column weight
+        tableLayout.setColumnData(propertyTable.getColumn(0), new ColumnWeightData(COLUMN_WEIGHT));
+        tableLayout.setColumnData(propertyTable.getColumn(1), new ColumnWeightData(COLUMN_WEIGHT));
+        tableLayout.setColumnData(propertyTable.getColumn(2), new ColumnWeightData(COLUMN_WEIGHT_PLACEHOLDER));
+        tableLayout.setColumnData(propertyTable.getColumn(3), new ColumnWeightData(COLUMN_WEIGHT_COMMENT));
+        
         TableItem nullItem = new TableItem(propertyTable, SWT.NONE);
         nullItem.setText("");
 
@@ -155,52 +165,47 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             Collections.sort(groupKeys);
             previousValues = new HashMap<>();
             for (final String groupKey : groupKeys) {
-                addSinglePropertyLine(config, groupKey, metadata.getGuiName(groupKey));
+                addSinglePropertyLine(config, groupKey,
+                    metadata.getMetaDataValue(groupKey, ConfigurationDefinitionConstants.KEY_METADATA_COMMENT),
+                    metadata.getGuiName(groupKey));
             }
         }
     }
 
-    protected void addSinglePropertyLine(Map<String, String> config, final String propertyKey, final String displayName) {
-        TableItem configItem = new TableItem(propertyTable, SWT.NONE);
-        configItem.setText(displayName);
+    protected void addSinglePropertyLine(Map<String, String> config, final String defaultValuePropertyKey, final String commentString,
+        final String displayName) {
+        TableItem configItem = new TableItem(propertyTable, SWT.BEGINNING);
+        configItem.setText(0, displayName);
+        if (commentString != null) {
+            configItem.setText(3, commentString);
+        }
         TableEditor editor = new TableEditor(propertyTable);
         final Text textField = new Text(propertyTable, SWT.NONE);
-        textField.setData(CONTROL_PROPERTY_KEY, propertyKey);
+        textField.setData(CONTROL_PROPERTY_KEY, defaultValuePropertyKey);
         final Button checkBox = new Button(propertyTable, SWT.CHECK | SWT.CENTER);
-        checkBox.setData(CONTROL_PROPERTY_KEY, propertyKey);
+        checkBox.setData(CONTROL_PROPERTY_KEY, defaultValuePropertyKey);
         // because of technical issues, we have to distinguish empty string "" and space character string " " here
         // empty string "", if checkbox "Define at workflow start" is checked (default situation)
         // space character string " ", if checkbox is not checked, but no value is set during execution
         // K. Schaffert, 30.04.2019
-        if (!(config.get(propertyKey).equals("") || config.get(propertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX))) { // checkbox
-                                                                                                                    // unchecked
-            textField.setText(config.get(propertyKey));
+        if (!(config.get(defaultValuePropertyKey).equals("")
+            || config.get(defaultValuePropertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX))) { // checkbox
+                                                                                                 // unchecked
+            textField.setText(config.get(defaultValuePropertyKey));
             textField.setEnabled(true);
             checkBox.setSelection(false);
-            previousValues.put(propertyKey, config.get(propertyKey));
+            previousValues.put(defaultValuePropertyKey, config.get(defaultValuePropertyKey));
         } else { // checkbox checked
-            if (config.get(propertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
-                textField.setText(config.get(propertyKey));
+            if (config.get(defaultValuePropertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
+                textField.setText(config.get(defaultValuePropertyKey));
             }
             textField.setEnabled(false);
             checkBox.setSelection(true);
-            previousValues.put(propertyKey, " "); // has to be stored, in case checkbox will be unchecked later
-                                               // but no default value available
+            previousValues.put(defaultValuePropertyKey, " "); // has to be stored, in case checkbox will be unchecked later
+            // but no default value available
         }
 
-        textField.addFocusListener(new FocusListener() {
-
-            @Override
-            public void focusLost(FocusEvent arg0) {
-                getPreviousValues().put(propertyKey, ((Text) arg0.getSource()).getText());
-                setProperty(propertyKey, ((Text) arg0.getSource()).getText());
-            }
-
-            @Override
-            public void focusGained(FocusEvent arg0) {
-                // currently not needed
-            }
-        });
+        textField.addFocusListener(new PropertyTableFocusListener(defaultValuePropertyKey));
 
         editor.grabHorizontal = true;
         editor.setEditor(textField, configItem, 1);
@@ -210,40 +215,7 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         checkBox.pack();
         boxEditor.minimumWidth = checkBox.getSize().x;
         boxEditor.horizontalAlignment = SWT.CENTER;
-        checkBox.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent evt) {
-
-                if (checkBox.getSelection()) {
-                    onCheckboxChecked(propertyKey);
-                } else {
-                    onCheckboxUnchecked(propertyKey);
-                }
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent evt) {
-                widgetSelected(evt);
-            }
-
-            protected void onCheckboxChecked(final String groupKey) {
-                setProperty(groupKey, "${property." + groupKey + "}");
-            }
-
-            protected void onCheckboxUnchecked(final String groupKey) {
-                String defaultValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
-                    .getDefaultValue(groupKey);
-                // default value available && previous value is empty string
-                if (!defaultValue.equals("") && previousValues.get(groupKey).equals(" ")) {
-                    // default value is set
-                    setProperty(groupKey, defaultValue);
-                } else {
-                    // previous value is set
-                    setProperty(groupKey, previousValues.get(groupKey));
-                }
-            }
-        });
+        checkBox.addSelectionListener(new PropertyTableCheckboxSelectionListener(defaultValuePropertyKey, checkBox));
         boxEditor.horizontalAlignment = SWT.CENTER;
         boxEditor.setEditor(checkBox, configItem, 2);
     }
@@ -310,6 +282,74 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         aboutToBeShown();
     }
 
+    private final class PropertyTableFocusListener implements FocusListener {
+
+        private final String defaultValuePropertyKey;
+
+        private PropertyTableFocusListener(String defaultValuePropertyKey) {
+            this.defaultValuePropertyKey = defaultValuePropertyKey;
+        }
+
+        @Override
+        public void focusLost(FocusEvent arg0) {
+            getPreviousValues().put(defaultValuePropertyKey, ((Text) arg0.getSource()).getText());
+            setProperty(defaultValuePropertyKey, ((Text) arg0.getSource()).getText());
+        }
+
+        @Override
+        public void focusGained(FocusEvent arg0) {
+            // currently not needed
+        }
+
+        private Map<String, String> getPreviousValues() {
+            return previousValues;
+        }
+    }
+
+    private final class PropertyTableCheckboxSelectionListener implements SelectionListener {
+
+        private final String defaultValuePropertyKey;
+
+        private final Button checkBox;
+
+        private PropertyTableCheckboxSelectionListener(String defaultValuePropertyKey, Button checkBox) {
+            this.defaultValuePropertyKey = defaultValuePropertyKey;
+            this.checkBox = checkBox;
+        }
+
+        @Override
+        public void widgetSelected(SelectionEvent evt) {
+
+            if (checkBox.getSelection()) {
+                onCheckboxChecked(defaultValuePropertyKey);
+            } else {
+                onCheckboxUnchecked(defaultValuePropertyKey);
+            }
+        }
+
+        @Override
+        public void widgetDefaultSelected(SelectionEvent evt) {
+            widgetSelected(evt);
+        }
+
+        protected void onCheckboxChecked(final String groupKey) {
+            setProperty(groupKey, "${property." + groupKey + "}");
+        }
+
+        protected void onCheckboxUnchecked(final String groupKey) {
+            String defaultValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
+                .getDefaultValue(groupKey);
+            // default value available && previous value is empty string
+            if (!defaultValue.equals("") && previousValues.get(groupKey).equals(" ")) {
+                // default value is set
+                setProperty(groupKey, defaultValue);
+            } else {
+                // previous value is set
+                setProperty(groupKey, previousValues.get(groupKey));
+            }
+        }
+    }
+
     /**
      * {@link SelectionListener} for the property group list.
      * 
@@ -357,13 +397,9 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             propertyTable.setRedraw(false);
             if (control instanceof Button) {
                 for (Control c : control.getParent().getChildren()) {
-                    if (!(c instanceof Text)) {
+                    if (!(c instanceof Text) || !c.getData(CONTROL_PROPERTY_KEY).equals(control.getData(CONTROL_PROPERTY_KEY))) {
                         continue;
                     }
-                    if (!c.getData(CONTROL_PROPERTY_KEY).equals(control.getData(CONTROL_PROPERTY_KEY))) {
-                        continue;
-                    }
-
                     if (newValue == null || newValue.equals("") || newValue.matches(ComponentUtils.PLACEHOLDER_REGEX)) { // checkbox checked
                         ((Text) c).setEnabled(false);
                         ((Button) control).setSelection(true);
@@ -384,9 +420,5 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             }
             propertyTable.setRedraw(true);
         }
-    }
-
-    private Map<String, String> getPreviousValues() {
-        return this.previousValues;
     }
 }

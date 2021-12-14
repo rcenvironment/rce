@@ -61,7 +61,7 @@ public class SwitchDataInputSelectionPane extends EndpointSelectionPane {
                 dynEndpointIdToManage, false, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(),
                 newMetaData);
-        onEditClicked(name, dialog, newMetaData);
+        onEditClicked(name, dialog);
     }
 
     @Override

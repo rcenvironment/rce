@@ -77,7 +77,7 @@ public final class WorkflowIntegrationContext implements ToolIntegrationContext 
 
     @Override
     public String getDefaultComponentGroupId() {
-        return "Workflows";
+        return "User Integrated Workflows";
     }
 
     @Override

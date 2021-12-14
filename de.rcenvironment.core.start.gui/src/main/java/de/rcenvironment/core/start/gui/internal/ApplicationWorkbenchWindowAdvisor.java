@@ -24,6 +24,8 @@ import org.eclipse.ui.application.IActionBarConfigurer;
 import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 
+import de.rcenvironment.core.start.Application;
+
 /**
  * This class advises the creation of windows of the {@link Application}.
  * 
@@ -75,7 +77,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
             InstanceScope.INSTANCE.getNode(workbenchNode).putBoolean(mirgratedPreferenceFlag, true);
         }
     }
-    
+
     @Override
     public boolean preWindowShellClose() {
         try {

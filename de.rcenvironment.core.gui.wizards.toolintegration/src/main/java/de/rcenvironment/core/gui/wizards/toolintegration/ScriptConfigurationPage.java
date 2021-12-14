@@ -229,11 +229,11 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             propertiesCombos[i].removeAll();
             if (configurationMap.containsKey(ToolIntegrationConstants.KEY_PROPERTIES)) {
                 Map<String, Object> properties = (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
-                for (String propTabName : properties.keySet()) {
-                    Map<String, Object> proptab = (Map<String, Object>) properties.get(propTabName);
-                    for (String propkey : proptab.keySet()) {
-                        if (proptab.get(propkey) instanceof Map<?, ?>) {
-                            Map<String, String> property = (Map<String, String>) proptab.get(propkey);
+                for (Object proptabObject : properties.values()) {
+                    Map<String, Object> proptab = (Map<String, Object>) proptabObject;
+                    for (Object propertyObject : proptab.values()) {
+                        if (propertyObject instanceof Map<?, ?>) {
+                            Map<String, String> property = (Map<String, String>) propertyObject;
                             propertiesCombos[i].add((property.get(ToolIntegrationConstants.KEY_PROPERTY_DISPLAYNAME)));
                         }
                     }
@@ -567,13 +567,16 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         if (buttonIndex > 0) {
             GridData labelDataOutput = new GridData();
             labelDataOutput.horizontalSpan = 2;
+
             Label outputLabel = new Label(buttonComposite, SWT.NONE);
             outputLabel.setText(Messages.outputs);
             outputLabel.setLayoutData(labelDataOutput);
+
             CCombo outputCombo = new CCombo(buttonComposite, SWT.READ_ONLY | SWT.BORDER);
             GridData outputComboData = new GridData(GridData.FILL_HORIZONTAL);
             outputComboData.widthHint = COMBO_WIDTH;
             outputCombo.setLayoutData(outputComboData);
+
             Button outputInsertButton = new Button(buttonComposite, SWT.PUSH);
             outputInsertButton.setLayoutData(insertButtonData);
             outputInsertButton.setText(Messages.insertButtonLabel);
@@ -811,9 +814,11 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                     Map<String, Object> properties = (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
                     for (String propTabName : properties.keySet()) {
                         Map<String, Object> proptab = (Map<String, Object>) properties.get(propTabName);
-                        for (String propkey : proptab.keySet()) {
-                            if (proptab.get(propkey) instanceof Map<?, ?>) {
-                                Map<String, String> property = (Map<String, String>) proptab.get(propkey);
+                        for (Map.Entry<String, Object> proptabEntry : proptab.entrySet()) {
+                            final String propkey = proptabEntry.getKey();
+                            final Object propertyObject = proptabEntry.getValue();
+                            if (propertyObject instanceof Map<?, ?>) {
+                                Map<String, String> property = (Map<String, String>) propertyObject;
                                 if (property.get(ToolIntegrationConstants.KEY_PROPERTY_DISPLAYNAME).equals(insertText)) {
                                     currentText.insert(QUOTE + ToolIntegrationConstants.PLACEHOLDER_PREFIX
                                         + ToolIntegrationConstants.PLACEHOLDER_PROPERTY_PREFIX

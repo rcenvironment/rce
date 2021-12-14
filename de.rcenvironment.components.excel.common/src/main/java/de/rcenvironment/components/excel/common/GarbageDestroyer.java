@@ -17,7 +17,6 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  */
 public class GarbageDestroyer implements Runnable {
 
-    @TaskDescription("Run garbage collector.")
     @Override
     public void run() {
         System.gc();

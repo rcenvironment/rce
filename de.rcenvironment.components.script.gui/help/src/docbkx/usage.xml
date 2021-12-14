@@ -149,6 +149,25 @@
 				the factory, the file is written to the temp directory. Use the
 					<emphasis>RCE_write_output</emphasis> command to forward the file in a
 				workflow.</para>
+			<para>Example Script:</para>
+			<para> Assume that the Script Component receives an input called "float" with value 1.0.
+				<programlisting>f = RCE.read_input("float")							// read input
+
+input_file = RCE.create_input_file()						// create an empty input file 
+					
+input_file.add_comment("This is an example input file")			// add comment
+input_file.add_variable("float",f)						// add float variable 
+input_file.add_dictionary("exampleDict")					// create empty dictionary
+input_file.add_value_to_dictionary("exampleDict","key1","value1")	// add (key,value) pair to dictionary
+input_file.add_value_to_dictionary("exampleDict","key2","value2") 
+					
+file = input_file.write_to_file("example.py")			    // write input file to data management</programlisting>
+				To foward the file in a workflow to an output called "file",
+				use:<programlisting>RCE.write_output("file", file)</programlisting> The written file
+				looks like
+				this:<programlisting># This is an example input file
+float = 1.0
+exampleDict = {'key1': 'value1', 'key2': 'value2'}</programlisting></para>
 		</sect2>
 	</sect1>
 	<sect1>

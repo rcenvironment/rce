@@ -45,6 +45,7 @@ import de.rcenvironment.core.configuration.bootstrap.profile.ProfileException;
 import de.rcenvironment.core.utils.common.AuditLog;
 import de.rcenvironment.core.utils.common.AuditLogFileBackend;
 import de.rcenvironment.core.utils.common.AuditLogIds;
+import de.rcenvironment.core.utils.common.EventLogPrintStreamBackend;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -76,6 +77,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     protected static final String MAIN_CONFIGURATION_FILENAME = "configuration.json";
 
     protected static final String JDBC_SUBDIRECTORY_PATH = "extras/database_connectors";
+
+    // TODO 10.4.0+ (p3): consider moving event log initialization into a separate class
+    private static final String DEFAULT_OUTPUT_FILE_PATH = "event.log";
+
+    private static final String SYSTEM_PROPERTY_OUTPUT_OVERRIDE = "rce.eventLogOutput";
+
+    private static final String OUTPUT_OVERRIDE_VALUE_STDOUT = "stdout";
+
+    private static final String OUTPUT_OVERRIDE_VALUE_STDERR = "stderr";
+
+    private static final String OUTPUT_OVERRIDE_VALUE_FILE_PREFIX = "file:";
 
     // debug option that writes/exports the active configuration to the profile's output folder
     private static final boolean AUTO_EXPORT_CONFIGURATION_ON_STARTUP = false;
@@ -255,26 +267,61 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // initializeInstanceDataDirectory();
     }
 
+    // TODO 10.4.0+ (p3): consider extracting this initialization into a separate class
     private void initializeAuditLog() {
         try {
-            Path profileRootPath = getConfigurablePath(ConfigurablePathId.PROFILE_ROOT).toPath();
-            AuditLog.initialize(new AuditLogFileBackend(profileRootPath.resolve("event.log")));
+            final Path profileRootPath = getConfigurablePath(ConfigurablePathId.PROFILE_ROOT).toPath();
+            final String outputOverrideValue = System.getProperty(SYSTEM_PROPERTY_OUTPUT_OVERRIDE);
+
+            if (!StringUtils.isNullorEmpty(outputOverrideValue)) {
+                if (outputOverrideValue.equals(OUTPUT_OVERRIDE_VALUE_STDOUT)) {
+                    log.debug("Redirecting event log output to StdOut");
+                    AuditLog.initialize(new EventLogPrintStreamBackend(System.out, false));
+                } else if (outputOverrideValue.equals(OUTPUT_OVERRIDE_VALUE_STDERR)) {
+                    log.debug("Redirecting event log output to StdErr");
+                    AuditLog.initialize(new EventLogPrintStreamBackend(System.err, false));
+                } else if (outputOverrideValue.startsWith(OUTPUT_OVERRIDE_VALUE_FILE_PREFIX)) {
+                    // cut away prefix
+                    String outputFilePath = outputOverrideValue.substring(OUTPUT_OVERRIDE_VALUE_FILE_PREFIX.length());
+                    // resolve against profile path
+                    Path resolvedPath = profileRootPath.resolve(outputFilePath);
+                    // attempt to initialize
+                    log.debug("Redirecting event log output to " + resolvedPath);
+                    try {
+                        AuditLog.initialize(new AuditLogFileBackend(resolvedPath));
+                    } catch (IOException e) {
+                        log.error("Failed to create the event log using the custom path '" + resolvedPath
+                            + "'; attempting to use the default file (<profile>/event.log) instead");
+                        initializeWithDefaultEventLogFile(); // intentional "fall through" if this throws an exception again
+                    }
+                } else {
+                    // neither expected format matched -> fall back to default log
+                    log.error("Invalid event log output override value '" + outputOverrideValue + "', falling back to default behavior");
+                    initializeWithDefaultEventLogFile();
+                }
+            } else {
+                initializeWithDefaultEventLogFile();
+            }
 
             // log a separate event for visual separation
             AuditLog.append(AuditLogIds.APPLICATION_START, "", AuditLogIds.SEPARATOR_LINE_VALUE);
 
+            // prepare version information
             // TODO 10.3.0+ (p3) preliminary version format; check and improve if necessary
             String rceVersionInfo = VersionUtils.getVersionOfProduct().toString().replace(".qualifier", ".dev");
+
+            Runtime systemRuntime = Runtime.getRuntime();
 
             AuditLog.append(AuditLog.newEntry(AuditLogIds.APPLICATION_SESSION_STARTING)
                 .set("profile_location", profileRootPath.toString()) // e.g. for logging to non-default locations
                 .set("os_name", System.getProperty("os.name") + "; " + System.getProperty("os.version"))
+                .set("jvm_version", System.getProperty("java.version"))
                 .set("user_name", System.getProperty("user.name"))
                 .set("user_home", System.getProperty("user.home"))
                 .set("work_dir", System.getProperty("user.dir"))
                 .set("rce_version", rceVersionInfo));
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            systemRuntime.addShutdownHook(new Thread(() -> {
                 // dummy data as visual separator
                 AuditLog.append(AuditLogIds.APPLICATION_TERMINATING, null);
                 AuditLog.close();
@@ -282,6 +329,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         } catch (IOException e) {
             log.error("Failed to initialize audit log: " + e.toString());
         }
+    }
+
+    private void initializeWithDefaultEventLogFile() throws IOException {
+        Path profileRootPath = getConfigurablePath(ConfigurablePathId.PROFILE_ROOT).toPath();
+        AuditLog.initialize(new AuditLogFileBackend(profileRootPath.resolve(DEFAULT_OUTPUT_FILE_PATH)));
     }
 
     /**

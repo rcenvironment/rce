@@ -365,25 +365,8 @@ public final class AsyncTaskServiceImpl implements AsyncTaskService, ThreadPoolM
     }
 
     @Override
-    @Deprecated
-    public void execute(Runnable task) {
-        execute(task, null); // delegate with a "null" task id
-    }
-
-    @Override
     public void execute(String categoryName, Runnable runnable) {
         execute(categoryName, null, runnable); // delegate with a "null" task id
-    }
-
-    @Override
-    @Deprecated
-    public void execute(Runnable runnable, String taskId) {
-        try {
-            getNullSafeExecutorService().execute(new WrappedRunnable(runnable, getStatisticsEntry(runnable.getClass()), taskId));
-        } catch (RejectedExecutionException e) {
-            logExecutionRejectedAfterShutdown(runnable);
-            throw e;
-        }
     }
 
     @Override

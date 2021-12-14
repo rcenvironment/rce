@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.ComponentGroupPathRules;
 import de.rcenvironment.core.component.api.ComponentIdRules;
 import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
@@ -213,9 +214,9 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         final String docuHash = createDocumentationHash(configurationMap, context);
         final String toolName = configurationMap.getToolName();
         final String version = configurationMap.getToolVersion();
-        String groupName = configurationMap.getGroupName();
+        String groupPath = configurationMap.getGroupPath();
 
-        if (!areConfigurationIdsValid(toolName, version, groupName)) {
+        if (!areConfigurationIdsValid(toolName, version, groupPath)) {
             removeTool(toolComponentID, context);
             return;
         }
@@ -241,8 +242,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
             configuration = ComponentConfigurationModelFactory.createEmptyConfigurationDefinition();
         }
 
-        if (groupName == null || groupName.isEmpty()) {
-            groupName = context.getDefaultComponentGroupId();
+        if (groupPath == null || groupPath.isEmpty()) {
+            groupPath = context.getDefaultComponentGroupId();
         }
 
         List<String> supportedIds = new LinkedList<>();
@@ -251,7 +252,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         ComponentInterface componentInterface = new ComponentInterfaceBuilder().setIdentifier(toolComponentID)
             .setIdentifiers(supportedIds)
             .setDisplayName(configurationMap.getToolName())
-            .setGroupName(groupName).setIcon16(icon16).setIcon32(icon32).setDocumentationHash(docuHash)
+            .setGroupName(groupPath).setIcon16(icon16).setIcon32(icon32).setDocumentationHash(docuHash)
             .setVersion(version).setInputDefinitionsProvider(inputProvider)
             .setOutputDefinitionsProvider(outputProvider).setConfigurationDefinition(configuration)
             .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
@@ -299,7 +300,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         log.debug("ToolIntegration: Registered new Component " + toolComponentID);
     }
 
-    private boolean areConfigurationIdsValid(String toolName, String version, String groupName) {
+    private boolean areConfigurationIdsValid(String toolName, String version, String groupPath) {
         boolean valid = true;
         Optional<String> toolNameValidation = ComponentIdRules.validateComponentIdRules(toolName);
         if (toolNameValidation.isPresent()) {
@@ -313,8 +314,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
                 valid = false;
             }
         }
-        if (groupName != null && !groupName.isEmpty()) {
-            Optional<String> groupValidation = ComponentIdRules.validateComponentGroupNameRules(groupName);
+        if (groupPath != null && !groupPath.isEmpty()) {
+            Optional<String> groupValidation = ComponentGroupPathRules.validateComponentGroupPathRules(groupPath);
             if (groupValidation.isPresent()) {
                 log.warn(StringUtils.format(WARNING_INVALID_TOOL, toolName, "group name", groupValidation.get()));
                 valid = false;

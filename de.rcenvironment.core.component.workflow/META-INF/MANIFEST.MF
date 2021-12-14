@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 10.2.4.qualifier
+Bundle-Version: 10.3.0.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.execution.api,
  de.rcenvironment.core.component.workflow.execution.headless.api,
@@ -61,6 +61,7 @@ Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.provenance.api,
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.codec.binary,
  org.apache.commons.collections4.map;version="4.0.0",

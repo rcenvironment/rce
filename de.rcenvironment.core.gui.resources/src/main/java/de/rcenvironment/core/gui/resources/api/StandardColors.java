@@ -61,8 +61,17 @@ public enum StandardColors implements ColorSource {
     /**
      * White.
      */
-    RCE_WHITE(fromRGB(0xFF, 0xFF, 0xFF));
+    RCE_WHITE(fromRGB(0xFF, 0xFF, 0xFF)),
 
+    /**
+     * Light grey.
+     */
+    RCE_LIGHT_GREY(fromRGB(0xEF, 0xEF, 0xEF)),
+
+    /**
+     * Light blue.
+     */
+    RCE_LIGHT_BLUE(fromRGB(0xed, 0xf4, 0xff));
 
     private final ColorDescriptor colorDescriptor;
 

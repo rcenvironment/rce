@@ -1,0 +1,14 @@
+<contexts>
+	<context id="paletteContext" title="RCE Palette View Help">
+		<description>The Palette view displays all local and currently available remote workflow components of the current RCE instance.
+		
+Workflow components can be moved into custom groups. For this purpose, custom groups and subgroups can be added, edited or deleted. The workflow components can always be reset to their respective standard group.
+		
+With the <b>Select</b> tool, workflow components can be selected in the Workflow Editor to e.g. open the appropriate Properties view. 
+To connect two components in the Workflow Editor, the <b>Draw Connection</b> tool can be used. For further details we refer to the Connection Editor help.
+The <b>Add Label</b> tool can add colored labels to a workflow, e.g. to describe partial areas of a workflow.</description>
+		<topic href="help/generated/html/usagePaletteView.xhtml" label="Palette View Usage"></topic>
+		<topic href="PLUGINS_ROOT/de.rcenvironment.core.gui.workflow/help/generated/html/usageConnectionEditor.xhtml" label="Connection Editor Usage"></topic> 
+		<topic href="PLUGINS_ROOT/de.rcenvironment.core.gui.workflow/help/generated/html/usageWorkflowLabel.xhtml" label="Workflow Label Usage"></topic> 
+	</context>
+</contexts>

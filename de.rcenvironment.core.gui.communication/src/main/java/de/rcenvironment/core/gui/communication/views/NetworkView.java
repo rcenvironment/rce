@@ -78,7 +78,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Oliver Seebach
  * @author David Scholz
  * @author Brigitte Boden
- * @author Kathrin Schaffert (#16726 changed double-click event from editAction to startAction)
+ * @author Kathrin Schaffert (#16726 changed double-click event from editAction to startAction / #16977 added
+ *         showConfigurationSnippetAction)
  */
 public class NetworkView extends ViewPart {
 
@@ -98,6 +99,9 @@ public class NetworkView extends ViewPart {
 
     private static final ImageDescriptor EDIT =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/edit16.gif"));
+
+    private static final ImageDescriptor SNIPPET =
+        ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/snippet16.gif"));
 
     private static final ImageDescriptor START =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/run_enabled.gif"));
@@ -136,6 +140,8 @@ public class NetworkView extends ViewPart {
     private Action startAction;
 
     private Action stopAction;
+
+    private Action showConfigurationSnippetAction;
 
     private NetworkViewContentProvider contentProvider;
 
@@ -211,10 +217,10 @@ public class NetworkView extends ViewPart {
                 viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
             }
         };
-        //add "show group ids next to group names" option
+        // add "show group ids next to group names" option
         // TODO add icon
         toggleFullGroupNamesAction = new Action("Show Group IDs Next to Group Names", SWT.TOGGLE) {
-            
+
             @Override
             public void run() {
                 infoContributer.setShowFullId(this.isChecked());
@@ -262,7 +268,7 @@ public class NetworkView extends ViewPart {
                 networkConnectionsContributor.showAddConnectionDialog();
             }
         };
-        
+
         // add "add uplink connection" option
         addUplinkConnectionAction = new Action("Add Uplink Connection...", ADDUPLINK) {
 
@@ -315,6 +321,14 @@ public class NetworkView extends ViewPart {
             @Override
             public void run() {
                 executeStandardUserNodeAction(StandardUserNodeActionType.STOP);
+            }
+        };
+
+        showConfigurationSnippetAction = new Action("Show Configuration Snippet", SNIPPET) {
+
+            @Override
+            public void run() {
+                executeStandardUserNodeAction(StandardUserNodeActionType.SHOW_CONFIGURATION_SNIPPET);
             }
         };
     }
@@ -424,8 +438,8 @@ public class NetworkView extends ViewPart {
 
         // note: saving contributors in a field is usually not required, but we don't go for a full-blown plugin structure here - misc_ro
         networkConnectionsContributor = new ConnectionSetupsListContributor();
-        sshUplinkConnectionsContributor = new SshUplinkConnectionSetupsListContributor(node -> updatePossibleActionsForSelection(node));
-        sshConnectionsContributor = new SshConnectionSetupsListContributor(node -> updatePossibleActionsForSelection(node));
+        sshUplinkConnectionsContributor = new SshUplinkConnectionSetupsListContributor(this::updatePossibleActionsForSelection);
+        sshConnectionsContributor = new SshConnectionSetupsListContributor(this::updatePossibleActionsForSelection);
         infoContributer = new InstanceComponentsInfoContributor();
 
         result.add(networkConnectionsContributor);
@@ -495,26 +509,9 @@ public class NetworkView extends ViewPart {
             }
         });
 
-        // We are not going to refactor the anonymous implementation of the functional interface DistributedComponentKnowledgeListener into
-        // a lambda expression, since doing so in the current state would incur a nested lambda expression. For the sake of readability we
-        // opt for this slightly more verbose variant pending further refactoring
-        serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class, new DistributedComponentKnowledgeListener() {
-
-            @Override
-            public void onDistributedComponentKnowledgeChanged(final DistributedComponentKnowledge newKnowledge) {
-                display.asyncExec(() -> {
-                    model.componentKnowledge = newKnowledge;
-                    if (viewer.getControl().isDisposed()) {
-                        return;
-                    }
-                    TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
-                    viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
-                    viewer.setExpandedTreePaths(expandedTreePaths);
-                });
-            }
-        });
+        serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class,
+            (DistributedComponentKnowledgeListener) this::refreshViewer);
         // TODO move this listener into the contributor for better separation
-        // We again refrain from refactoring the ConnectionSetupListenerAdapter into a lambda expression for similar reasons as above.
         serviceRegistryAccess.registerService(ConnectionSetupListener.class, new ConnectionSetupListenerAdapter() {
 
             @Override
@@ -548,7 +545,19 @@ public class NetworkView extends ViewPart {
                     }
                     viewer.update(node, null);
                 }
-            };
+            }
+        });
+    }
+
+    private void refreshViewer(DistributedComponentKnowledge newKnowledge) {
+        display.asyncExec(() -> {
+            model.componentKnowledge = newKnowledge;
+            if (viewer.getControl().isDisposed()) {
+                return;
+            }
+            TreePath[] expandedTreePaths = viewer.getExpandedTreePaths();
+            viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
+            viewer.setExpandedTreePaths(expandedTreePaths);
         });
     }
 
@@ -576,6 +585,7 @@ public class NetworkView extends ViewPart {
             editAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.EDIT));
             deleteAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.DELETE));
             copyToClipBoardAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.COPY_TO_CLIPBOARD));
+            showConfigurationSnippetAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.SHOW_CONFIGURATION_SNIPPET));
         } else if (node instanceof NetworkGraphNodeWithContext) {
             // TODO special handling; migrate
             disableAllActions();
@@ -594,6 +604,7 @@ public class NetworkView extends ViewPart {
         startAction.setEnabled(false);
         stopAction.setEnabled(false);
         copyToClipBoardAction.setEnabled(false);
+        showConfigurationSnippetAction.setEnabled(false);
     }
 
     private void executeStandardUserNodeAction(StandardUserNodeActionType actionType) {
@@ -643,6 +654,7 @@ public class NetworkView extends ViewPart {
         menuManager.add(deleteAction);
         menuManager.add(new Separator());
         menuManager.add(copyToClipBoardAction);
+        menuManager.add(showConfigurationSnippetAction);
         menuManager.add(new Separator());
         menuManager.add(subMenuManager); // "Advanced"
         menuManager.updateAll(true);

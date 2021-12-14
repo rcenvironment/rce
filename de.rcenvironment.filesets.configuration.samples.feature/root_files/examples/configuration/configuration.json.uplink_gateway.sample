@@ -18,13 +18,13 @@
 		"uplinkConnections" : {
 			"exampleUplinkConnectionID" : {
 				"displayName" : "example",
-				"clientID": "gateway1",
+				"clientID": "gateway1",		// ClientID's are currently limited to eight characters. Longer ID's will be cut off!
 				"host" : "127.0.0.1",
 				"port" : 31055,
 				"connectOnStartup": false,
 				"autoRetry" : false,
 				"isGateway" : true,
-				"loginName" : "ra_demo"
+				"loginName" : "ra_demo"		// The loginName is currently limited to eight characters. Longer names will be cut off!
 				//The passphrase is not stored here, it has to be entered when connecting.
 			}
 		}

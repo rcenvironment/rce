@@ -44,12 +44,9 @@ public class BendpointDeleteAllCommand extends Command {
     @Override
     public void execute() {
         for (Connection connection : connections){
-            if (!removedBendpointsPerConnection.keySet().contains(connection)){
-                removedBendpointsPerConnection.put(connection.getSourceNode().getIdentifierAsObject().toString() 
-                    + SOURCE_TARGET_SEPARATOR 
-                    + connection.getTargetNode().getIdentifierAsObject().toString()
-                    , connection.getBendpoints());
-            }
+            final String key = connection.getSourceNode().getIdentifierAsObject().toString() + SOURCE_TARGET_SEPARATOR
+                + connection.getTargetNode().getIdentifierAsObject().toString();
+            removedBendpointsPerConnection.putIfAbsent(key, connection.getBendpoints());
             connection.removeAllBendpoints();
         }
         ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedWrapper, 

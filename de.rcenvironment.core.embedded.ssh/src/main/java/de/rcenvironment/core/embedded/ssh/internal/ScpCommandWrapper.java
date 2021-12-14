@@ -19,14 +19,14 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.file.FileSystemAware;
+import org.apache.sshd.scp.server.ScpCommand;
+import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.scp.ScpCommand;
-import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.server.session.ServerSessionAware;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.embedded.ssh.api.ScpContext;
@@ -43,7 +43,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Brigitte Boden
  */
-public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware {
+public class ScpCommandWrapper implements Command, FileSystemAware, ServerSessionAware {
 
     private static final int NOT_FOUND_INDEX = -1; // indexOf() result on no match
 
