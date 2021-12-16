@@ -173,7 +173,7 @@ public class WfCommandPlugin implements CommandPlugin {
         contributions.add(new CommandDescription("wf self-test",
             "[--dispose <onexpected|never|always>] [--delete <onexpected|never|always>] "
                 + "[--pr <parallel runs>] [--sr <sequential runs>] [--python <python exe path; default: 'python'>]"
-                + " [--cases <comma-seperated list of case files; default: 'core'>]",
+                + " [--cases <comma-separated list of case files; default: 'core'>]",
             true, "batch test workflow files of the test workflow files bundle"));
         contributions.add(new CommandDescription("wf list-self-test-cases", "",
             true, "list available test cases for wf self-test"));
