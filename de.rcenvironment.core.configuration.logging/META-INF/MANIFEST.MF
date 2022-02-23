@@ -2,9 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration Logging
 Bundle-SymbolicName: de.rcenvironment.core.configuration.logging
-Bundle-Version: 10.3.0.qualifier
-Fragment-Host: org.ops4j.pax.logging.pax-logging-service
+Bundle-Version: 10.3.1.qualifier
+Fragment-Host: org.ops4j.pax.logging.pax-logging-log4j2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.core.configuration.logging
 Bundle-Vendor: DLR
 Automatic-Module-Name: de.rcenvironment.core.configuration.logging
+Import-Package: org.apache.log4j;version="1.2.17",
+ org.apache.log4j.helpers;version="1.2.17",
+ org.apache.log4j.spi;version="1.2.17",
+ org.osgi.framework;version="1.9.0"

@@ -1,3 +1,48 @@
+RCE 10.3.1 (February 23, 2022)
+
+# Application Infrastructure
+
+- Fixed a bug where rapidly starting multiple RCE profiles in parallel could interfere with
+  each other and cause startup errors. While this was virtually impossible to trigger
+  in normal usage, it could affect automated/scripted RCE deployments.
+- Improved the logging system, improving its robustness during startup and possibly its 
+  performance in situations where log entries could be written rapidly, e.g., during workflow 
+  execution on busy servers.
+
+# GUI
+
+- Fixed an issue where opening the tool integration wizard directly from the context menu of
+  a workflow component was not possible if the component was previously renamed.
+- Fixed an error where the workflow execution validation report dialog could not be opened
+  when running RCE with Java 11.
+
+# Third-Party Libraries
+
+- Migrated to log4j 2.x (from 1.x, which is EOL). While there were no known security issues
+  in log4j 1.x that affected RCE, we still recommend upgrading as a general precaution.
+
+# Other
+
+- Merged typo fixes (GitHub pull request 39)
+- Internal preparations for improved command-line parameter handling
+- Fixed minor internal issues
+- Updated year references to 2022
+
+# Security / EOL Policy
+
+We are preparing a formalized policy regarding RCE releases and their security/EOL status; 
+see https://rcenvironment.de/clarification-of-our-version-support-eol-policy.html for more 
+information. Until we finalize this policy and establish a permanent place for related
+information, we define this as the preliminary security/EOL status of RCE releases:
+
+- Minimum RCE version including all security fixes/upgrades ("security baseline"): 10.3.1
+- Minimum recommended version for significant bugfixes/improvements: 10.3.1
+- Explicit, immediate end-of-life (EOL) versions: 10.1.0 or older
+
+While we do not have a formalized EOL date for RCE versions 10.1.1 to 10.3.0 yet, we
+always recommend upgrading all installations to the minimium security baseline.
+
+
 RCE 10.3.0 (December 9, 2021)
 
 # Palette View

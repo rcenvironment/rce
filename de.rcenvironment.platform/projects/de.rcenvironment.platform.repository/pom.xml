@@ -1,10 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.platform.repository</artifactId>
 	<name>RCE Platform - p2 Repository</name>
-	<version>10.3.0-SNAPSHOT</version>
+	<version>10.3.1-SNAPSHOT</version>
 	<packaging>eclipse-repository</packaging>
 
 	<parent>
@@ -28,6 +29,35 @@
 				<configuration>
 					<includeAllDependencies>true</includeAllDependencies>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<!-- This is a post-build fix for an obsolete commons-logging bundle 
+									JAR which is included in the standard repository scope as a transitive dependency 
+									of one or more Eclipse RCP feature(s). Besides potentially containing security 
+									issues, this bundle is particularly problematic because other bundles may 
+									be wired to it as their log output receiver, leading to log messages being 
+									lost outside our logging setup. (MANTIS ID 0017862) As there seems to be 
+									no easy way to filter this out within the Tycho build setup, deleting the 
+									JAR is a pragmatic way of removing the plugin from the output repository. 
+									Even as the repository metadata still references this jar, no problems have 
+									been observed using this modified repository so far. (misc_ro, Feb 2022) -->
+								<delete
+									file="${project.build.directory}/repository/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar" />
+								<echo
+									message="Deleted org.apache.commons.logging_1.1.1.v201101211721.jar from repository/plugins/ (see MANTIS ID 0017862)" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<!-- TODO make switchable by property? -->
 			<plugin>

@@ -13,7 +13,7 @@
         <para>On this page, some characteristics of the integrated tool are defined. Information on
             the tool integrator or graphical elements are optional.</para>
         <para>Required fields:<itemizedlist>
-                <listitem>                                
+                <listitem>
                                 <para><emphasis role="bold">Name:</emphasis> This field defines the
                         name of the component. The tool is displayed with this name in the palette
                         view. Note that the name must not contain special characters. Furthermore
@@ -31,7 +31,7 @@
                 <listitem>
                     <para><emphasis role="bold">Group Path:</emphasis> Define a path here under
                         which the component is displayed  in the palette view. Subgroups can be
-                        seperated by "/".</para>
+                        separated by "/".</para>
                 </listitem>
                 <listitem>
                     <para><emphasis role="bold">Documentation:</emphasis> Add a documentation file

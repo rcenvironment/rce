@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven_osgi.paxlogging.feature"
       label="RCE Platform - Maven-OSGi Bridge Feature - PAX Logging"
-      version="10.3.0.qualifier"
+      version="10.3.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -120,21 +120,16 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="org.ops4j.pax.logging.pax-logging-api"
          download-size="0"
          install-size="0"
-         version="1.10.1"
+         version="2.1.0"
          unpack="false"/>
 
    <plugin
-         id="org.ops4j.pax.logging.pax-logging-service"
+         id="org.ops4j.pax.logging.pax-logging-log4j2"
          download-size="0"
          install-size="0"
-         version="1.10.1"
+         version="2.1.0"
          unpack="false"/>
 
-   <plugin
-         id="org.ops4j.pax.configmanager"
-         download-size="0"
-         install-size="0"
-         version="0.2.3"
-         unpack="false"/>
-
+    <!-- FIXME replacement for org.ops4j.pax.configmanager (from org.ops4j.pax.confman:pax-confman-propsloader)? -->
+ 
 </feature>

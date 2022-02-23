@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -178,7 +178,7 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         Thread.sleep(WAIT_INTERVAL);
         synchronized (order) {
-            componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(componentKnowledgeMock);
+            componentExecutionPermitsService.simulateOnDistributedComponentKnowledgeChanged(componentKnowledgeMock);
             order.incrementAndGet();
         }
         Thread.sleep(WAIT_INTERVAL);
@@ -190,7 +190,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         EasyMock.replay(updatedComponentKnowledgeMock);
 
         synchronized (order) {
-            componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
+            componentExecutionPermitsService.simulateOnDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
             order.incrementAndGet();
         }
         assertEquals(3, acquireTask.get().intValue());
@@ -235,7 +235,7 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         Thread.sleep(WAIT_INTERVAL);
         synchronized (order) {
-            componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(componentKnowledgeMock);
+            componentExecutionPermitsService.simulateOnDistributedComponentKnowledgeChanged(componentKnowledgeMock);
             order.incrementAndGet();
         }
         Thread.sleep(WAIT_INTERVAL);
@@ -246,7 +246,7 @@ public class ComponentExecutionPermitsServiceImplTest {
             .andReturn(ComponentTestUtils.convertToListOfDistributedComponentEntries(mockInstallations)).anyTimes();
         EasyMock.replay(updatedComponentKnowledgeMock);
         synchronized (order) {
-            componentExecutionPermitsService.onDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
+            componentExecutionPermitsService.simulateOnDistributedComponentKnowledgeChanged(updatedComponentKnowledgeMock);
             order.incrementAndGet();
         }
         Thread.sleep(WAIT_INTERVAL);

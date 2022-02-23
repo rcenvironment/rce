@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -8,7 +8,9 @@
 
 package de.rcenvironment.toolkit.core.internal;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -77,7 +79,9 @@ public final class ToolkitInstanceTracker {
 
     private synchronized void onJvmShutdown() {
         final Log log = LogFactory.getLog(getClass());
-        final int count = activeInstances.size();
+        // create a detached copy of the current list of instances to iterate over them while they unregister themselves
+        List<Toolkit> copyOfActiveInstancesList = new ArrayList<>(activeInstances);
+        final int count = copyOfActiveInstancesList.size();
 
         if (count == 1) {
             log.debug("There is a single undisposed toolkit instance on JVM shutdown; this can be safely ignored after unit tests");
@@ -88,9 +92,14 @@ public final class ToolkitInstanceTracker {
 
         if (count != 0) {
             log.debug("Shutting down " + count + " toolkit instance(s)");
-            for (Toolkit instance : activeInstances) {
+            for (Toolkit instance : copyOfActiveInstancesList) {
                 instance.shutdown();
             }
+        }
+
+        if (activeInstances.size() != 0) {
+            log.warn("Unexpected state: After disposing all toolkit instances, "
+                + "the tracking count is not zero, but " + activeInstances.size());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -328,7 +328,7 @@ public class BootstrapConfigurationTest {
     @Ignore
     @Test
     public void testInvalidProfileVersionAndFallbackDisabled() throws ParameterException, IOException, ProfileException {
-        System.setProperty(BootstrapConfiguration.DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE, "");
+        System.setProperty(BootstrapConfiguration.SYSTEM_PROPERTY_EXIT_ON_LOCKED_PROFILE, "");
 
         // create a profile directory with a future version
         File tempProfileDir = tempFileService.createManagedTempDir();
@@ -350,7 +350,7 @@ public class BootstrapConfigurationTest {
             assertEquals(1, e.getExitCode());
         }
 
-        System.clearProperty(BootstrapConfiguration.DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE);
+        System.clearProperty(BootstrapConfiguration.SYSTEM_PROPERTY_EXIT_ON_LOCKED_PROFILE);
     }
 
     /**

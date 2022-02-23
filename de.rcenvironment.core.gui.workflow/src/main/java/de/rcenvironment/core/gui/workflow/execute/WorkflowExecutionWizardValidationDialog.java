@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.execute;
 
-import java.awt.GraphicsEnvironment;
 import java.text.CollationKey;
 import java.text.Collator;
 import java.util.ArrayList;
@@ -67,8 +66,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
     private static final int MINUS_ONE = -1;
 
     /**
-     * This ensures that the table extends to the end of the window since
-     * grabExcessVerticalSpace does not seem to work correctly.
+     * This ensures that the table extends to the end of the window since grabExcessVerticalSpace does not seem to work correctly.
      */
     private static final int MINIMUM_TABLE_SIZE = 10000;
 
@@ -93,8 +91,8 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
     private final ImageManager imageManger = ImageManager.getInstance();
 
     public WorkflowExecutionWizardValidationDialog(Shell parentShell,
-            Map<String, List<ComponentValidationMessage>> messagesMap, WorkflowDescription wfDescription,
-            PlaceholderPage placeholderPage) {
+        Map<String, List<ComponentValidationMessage>> messagesMap, WorkflowDescription wfDescription,
+        PlaceholderPage placeholderPage) {
         super(parentShell);
         this.messagesMap = messagesMap;
         this.wfDescription = wfDescription;
@@ -121,10 +119,8 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
         Composite container = new Composite(area, SWT.FILL);
 
         GridData data = new GridData(GridData.FILL_BOTH);
-        data.heightHint = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode()
-                .getHeight() * 2 / 5;
-        data.widthHint = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode()
-                .getWidth() * 2 / 3;
+        data.heightHint = getShell().getDisplay().getPrimaryMonitor().getBounds().height * 2 / 5;
+        data.widthHint = getShell().getDisplay().getPrimaryMonitor().getBounds().width * 2 / 3;
         data.grabExcessVerticalSpace = true;
         container.setLayoutData(data);
         GridLayout layout = new GridLayout(1, false);
@@ -248,7 +244,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
                     if (dataType != null && dataType.equals("text")) {
                         addMessageItem(currentNode, Type.ERROR, Messages.textExceedsMaxLength + placeholderName);
                     } else {
-                        addMessageItem(currentNode, Type.ERROR, Messages.missingPlaceholder + placeholderName); 
+                        addMessageItem(currentNode, Type.ERROR, Messages.missingPlaceholder + placeholderName);
                     }
                 }
             }
@@ -331,8 +327,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
         }
 
         @Override
-        public void keyReleased(KeyEvent arg0) {
-        }
+        public void keyReleased(KeyEvent arg0) {}
 
     }
 
@@ -345,8 +340,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
     private class TableCopyMouseListener implements MouseListener {
 
         @Override
-        public void mouseDoubleClick(MouseEvent arg0) {
-        }
+        public void mouseDoubleClick(MouseEvent arg0) {}
 
         @Override
         public void mouseDown(MouseEvent event) {
@@ -360,8 +354,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
                 newItem.addSelectionListener(new SelectionListener() {
 
                     @Override
-                    public void widgetDefaultSelected(SelectionEvent arg0) {
-                    }
+                    public void widgetDefaultSelected(SelectionEvent arg0) {}
 
                     @Override
                     public void widgetSelected(SelectionEvent arg0) {
@@ -380,8 +373,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
         }
 
         @Override
-        public void mouseUp(MouseEvent arg0) {
-        }
+        public void mouseUp(MouseEvent arg0) {}
     }
 
     /**
@@ -392,8 +384,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
     private class SortColumnListener implements SelectionListener {
 
         @Override
-        public void widgetDefaultSelected(SelectionEvent arg0) {
-        }
+        public void widgetDefaultSelected(SelectionEvent arg0) {}
 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
@@ -498,7 +489,7 @@ public class WorkflowExecutionWizardValidationDialog extends TitleAreaDialog {
 
         private Object[] getItemData(TableItem item) {
             return new Object[] { item.getText(0), item.getText(1), item.getText(2), item.getImage(0), item.getImage(1),
-                    item.getImage(2) };
+                item.getImage(2) };
         }
 
         private void setItemData(TableItem item, Object[] object) {

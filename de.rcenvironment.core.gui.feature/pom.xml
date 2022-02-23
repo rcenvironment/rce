@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.feature</artifactId>
 	<name>RCE Core GUI Feature</name>
-	<version>10.3.0-SNAPSHOT</version>
+	<version>10.3.1-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

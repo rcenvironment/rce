@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -26,7 +26,7 @@ public class EditToolIntegrationAction extends WorkflowEditorAction {
     @Override
     public void run() {
         try {
-            new ShowIntegrationEditWizardHandler(workflowNode.getName()).execute(new ExecutionEvent());
+            new ShowIntegrationEditWizardHandler(workflowNode.getComponentDescription().getName()).execute(new ExecutionEvent());
         } catch (ExecutionException e) {
             LogFactory.getLog(getClass()).error("Opening Tool Edit wizard failed", e);
         }

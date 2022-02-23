@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -34,9 +34,12 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 public final class BootstrapConfiguration {
 
     /**
-     * System property for exit code 1 on locked profile.
+     * If this system property is defined, the application will always terminate if the selected profile is already locked, i.e. in use.
+     * 
+     * TODO (p3) 10.4.0+: The former JavaDoc stated that exit code 1 is returned in that case, but a "SystemExitException(0)" is created;
+     * however, the unit test validates an exit code of 1. This should be clarified and documented.
      */
-    public static final String DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE = "rce.launch.exitOnLockedProfile";
+    public static final String SYSTEM_PROPERTY_EXIT_ON_LOCKED_PROFILE = "rce.launch.exitOnLockedProfile";
 
     /**
      * Standard OSGi "osgi.install.area" property.
@@ -87,6 +90,8 @@ public final class BootstrapConfiguration {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private boolean shouldPerformProfileInitialization;
+
     /**
      * Performs the bootstrap profile initialization.
      * 
@@ -101,13 +106,23 @@ public final class BootstrapConfiguration {
 
         EclipseLaunchParameters launchParameters = EclipseLaunchParameters.getInstance();
 
+        // set behavioral control fields
         launchedAsShutdownTrigger = launchParameters.containsToken("--shutdown");
+        shouldPerformProfileInitialization = !RuntimeDetection.isImplicitServiceActivationDenied();
+        runningInTestEnvironment = RuntimeDetection.isTestEnvironment();
 
-        runningInTestEnvironment = RuntimeDetection.isImplicitServiceActivationDenied();
-        if (!runningInTestEnvironment) {
-            // do not activate this in a default test environment
+        if (shouldPerformProfileInitialization) {
+            // only initialize the profile directory if not running in a unit/integration test environment
             initializeProfileAndRelatedOptions();
-            redirectLoggingToProfileDir();
+            // rename existing previous log files in the profile directory (and deletes the "previous previous")
+            LogArchiver.run(finalProfile.getProfileDirectory());
+        }
+
+        if (!runningInTestEnvironment) {
+            // relocate debug and warnings log files to the profile directory (which was not known at startup)
+            reconfigureLogSystemWithProfileDir();
+            // install a listener that logs OSGi bundle events (started, stopped, ...)
+            BundleTracker.install();
         }
 
     }
@@ -125,7 +140,7 @@ public final class BootstrapConfiguration {
 
         // For headless mode, fallback profile is automatically disabled.
         final boolean fallbackProfileDisabled =
-            System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
+            System.getProperties().containsKey(SYSTEM_PROPERTY_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
                 || launchParameters.containsToken("--batch");
 
         final boolean profileUpgradeRequested = launchParameters.containsToken("--upgrade-profile");
@@ -273,9 +288,9 @@ public final class BootstrapConfiguration {
                     profilePath = selectedProfile.getProfileDirectory().getAbsolutePath();
                     this.profileOptionHintToPrint = "(as specified by the profile selection dialog)";
                 }
-            } else if (runningInTestEnvironment) {
-                // this normally shouldn't be used at all, as profile initialization is completely disabled in test mode now; but if this
-                // method is called anyway, use a temporary profile path
+            } else if (!shouldPerformProfileInitialization) {
+                // if profile initialization is completely disabled, but this method is called anyway,
+                // use a temporary profile path (a "-launchProfile" temp directory)
                 TempFileServiceAccess.setupUnitTestEnvironment();
                 try {
                     profilePath = TempFileServiceAccess.getInstance().createManagedTempDir("launchProfile").getAbsolutePath();
@@ -310,15 +325,14 @@ public final class BootstrapConfiguration {
      * final profile is known, the logging will be reconfigured to write new log messages into log files within the profile directory.
      * Furthermore, all logged messages from the old log file will be copied to the start of the new log file.
      */
-    private void redirectLoggingToProfileDir() {
+    private void reconfigureLogSystemWithProfileDir() {
 
-        // deletes the old previous log and renames the existing old log to the new previous log
-        LogArchiver.run(finalProfile.getProfileDirectory());
         String logfilesPrefix = "";
         if (launchedAsShutdownTrigger) {
             logfilesPrefix = "shutdown-";
         }
-        LoggingReconfigurationHelper.reconfigure(finalProfile.getProfileDirectory(), logfilesPrefix);
+
+        new LogSystemConfigurator().relocateLogFilesToProfileDirectory(finalProfile.getProfileDirectory(), logfilesPrefix);
     }
 
     public File getProfileDirectory() {
@@ -400,4 +414,5 @@ public final class BootstrapConfiguration {
                 + "' is null when it is required to determine the installation data directory");
         }
     }
+
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2015 IBM Corporation and others.
- * Copyright 2016-2021 DLR, Germany
+ * Copyright 2016-2022 DLR, Germany
  *  
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -67,6 +67,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.eclipse.equinox.internal.launcher.Constants;
+
+import de.rcenvironment.core.launcher.internal.RCELauncherCustomization;
 
 /**
  * The launcher for Eclipse.
@@ -616,8 +618,7 @@ public class Main {
 		setupVMProperties();
 		processConfiguration();
 
-		// make the bundle.configuration.location absolute AFTER osgi.install.area was set by processing the configuration
-		RCELauncherHelper.setConfigurationLocationAbsolute();
+		RCELauncherCustomization.hookAfterInitialConfigurationProcessing();
 
 		if (protectBase && (System.getProperty(PROP_SHARED_CONFIG_AREA) == null)) {
 			System.err.println("This application is configured to run in a cascaded mode only."); //$NON-NLS-1$
@@ -1556,12 +1557,12 @@ public class Main {
 	public int run(String[] args) {
 		int result = 0;
 		try {
-
-			RCELauncherHelper.setSystemPropertyToMarkCustomLaunch();
-            RCELauncherHelper.setSystemPropertyToIdentifyLauncher();
-			RCELauncherHelper.setSystemPropertyToIdentifyInstance();
-
+		
+		    RCELauncherCustomization.initialize(args);
+		    args = RCELauncherCustomization.rewriteCommandLineArguments(args);
+		
 			basicRun(args);
+			
 			String exitCode = System.getProperty(PROP_EXITCODE);
 			try {
 				result = exitCode == null ? 0 : Integer.parseInt(exitCode);
@@ -1639,14 +1640,11 @@ public class Main {
 				continue;
 			}
 
-			// RCE: replace --console with -console
-			RCELauncherHelper.replaceDoubleDashConsoleOption(args, i);
-
 			// look for and consume the nosplash directive.  This supercedes any
 			// -showsplash command that might be present.
 			// RCE: in addition to checking for the nosplash directive, we are also checking if an argument is present that implicitly
 			// should prevent the display of the splash screen
-			if (args[i].equalsIgnoreCase(NOSPLASH) || RCELauncherHelper.implicitNoSplash(args[i])) {
+			if (args[i].equalsIgnoreCase(NOSPLASH)) {
 				splashDown = true;
 				found = true;
 			}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.component.execution.internal;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +18,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -24,25 +28,24 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ComponentExecutionPermitsService}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (migrated service and listener setup)
  */
+@Component
 public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionPermitsService,
-    DistributedComponentKnowledgeListener {
+    AdditionalServicesProvider {
 
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
     // component id -> semaphore object
     private Map<String, ResizableSemaphore> semaphores = null;
-
-    @Override
-    public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
-        updateSemaphores(newState);
-    }
 
     private synchronized void updateSemaphores(DistributedComponentKnowledge componentKnowledge) {
         if (semaphores == null) {
@@ -97,6 +100,26 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
         if (semaphores.containsKey(componentIdentifier)) {
             semaphores.get(componentIdentifier).release();
         }
+    }
+
+    @Override
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        ArrayList<AdditionalServiceDeclaration> result = new ArrayList<>();
+        result
+            .add(new AdditionalServiceDeclaration(DistributedComponentKnowledgeListener.class, new DistributedComponentKnowledgeListener() {
+
+                @Override
+                public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
+                    updateSemaphores(newState);
+                }
+
+            }));
+        return result;
+    }
+
+    // test access method
+    protected void simulateOnDistributedComponentKnowledgeChanged(DistributedComponentKnowledge componentKnowledge) {
+        updateSemaphores(componentKnowledge);
     }
 
     /**
@@ -155,6 +178,7 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
         }
     }
 
+    @Reference
     protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService service) {
         componentKnowledgeService = service;
     }

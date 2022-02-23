@@ -5,7 +5,7 @@
 1=Green Monkey
 
 # Copyright information
-3=\u00A92010-2021 DLR, Germany. All rights reserved.\n\u00A92006-2010 DLR, Fraunhofer SCAI, Germany. All rights reserved.\n
+3=\u00A92010-2022 DLR, Germany. All rights reserved.\n\u00A92006-2010 DLR, Fraunhofer SCAI, Germany. All rights reserved.\n
 
 # dynamic content via system properties, set in GUIRunner.java
 0=$rce.version$

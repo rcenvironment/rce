@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="10.3.0.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="10.3.1.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -158,32 +158,32 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </features>
 
    <configurations>
-      <plugin id="de.rcenvironment.core.command" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.communication" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.communication.file.service" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.component" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.component.workflow" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.configuration" autoStart="true" startLevel="0" />
+      <plugin id="de.rcenvironment.core.command" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.communication" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.communication.file.service" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.component" autoStart="true" startLevel="4" />
+      <plugin id="de.rcenvironment.core.component.workflow" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.configuration" autoStart="true" startLevel="9" />
       <plugin id="de.rcenvironment.core.configuration.bootstrap" autoStart="true" startLevel="3" />
-      <plugin id="de.rcenvironment.core.datamanagement" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.datamanagement.backend.data.efs" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.datamanagement.backend.metadata.derby" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.embedded.ssh" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.jetty" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.log" autoStart="true" startLevel="0" />
-      <plugin id="de.rcenvironment.core.login" autoStart="true" startLevel="0" />
+      <plugin id="de.rcenvironment.core.configuration.logging" autoStart="false" startLevel="2" />
+      <plugin id="de.rcenvironment.core.datamanagement" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.datamanagement.backend.data.efs" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.datamanagement.backend.metadata.derby" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.embedded.ssh" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.jetty" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.log" autoStart="true" startLevel="9" />
+      <plugin id="de.rcenvironment.core.login" autoStart="true" startLevel="9" />
       <plugin id="de.rcenvironment.core.shutdown" autoStart="true" startLevel="3" />
       <plugin id="de.rcenvironment.core.toolkitbridge" autoStart="true" startLevel="3" />
-      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
-      <plugin id="org.eclipse.equinox.cm" autoStart="true" startLevel="1" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="4" />
       <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="3" />
-      <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="3" />
-      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="2" />
-      <plugin id="org.eclipse.osgi.services" autoStart="true" startLevel="1" />
-      <plugin id="org.eclipse.osgi.util" autoStart="true" startLevel="1" />
-      <plugin id="org.ops4j.pax.configmanager" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="5" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+      <plugin id="org.eclipse.osgi.services" autoStart="true" startLevel="3" />
+      <plugin id="org.eclipse.osgi.util" autoStart="true" startLevel="3" />
       <plugin id="org.ops4j.pax.logging.pax-logging-api" autoStart="true" startLevel="2" />
-      <plugin id="org.ops4j.pax.logging.pax-logging-service" autoStart="true" startLevel="2" />
+      <plugin id="org.ops4j.pax.logging.pax-logging-log4j2" autoStart="true" startLevel="2" />
+      <property name="osgi.startLevel" value="9" />
    </configurations>
 
 </product>

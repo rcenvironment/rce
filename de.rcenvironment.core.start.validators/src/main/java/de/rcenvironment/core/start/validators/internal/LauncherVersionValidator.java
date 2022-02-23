@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -11,7 +11,7 @@ package de.rcenvironment.core.start.validators.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.launcher.integration.RCELauncherIntegration;
+import de.rcenvironment.core.launcher.api.RCELauncherConstants;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
@@ -31,7 +31,7 @@ public class LauncherVersionValidator extends DefaultInstanceValidator {
     @Override
     public InstanceValidationResult validate() {
 
-        String runningLauncherVersionStr = System.getProperty(RCELauncherIntegration.PROP_RCE_LAUNCHER_VERSION);
+        String runningLauncherVersionStr = System.getProperty(RCELauncherConstants.SYSTEM_PROPERTY_KEY_RCE_LAUNCHER_VERSION);
         if (runningLauncherVersionStr == null) {
             // RCE is currently running with a launcher which does not write its version number (RCE <= 8.0.2)
 
@@ -47,9 +47,9 @@ public class LauncherVersionValidator extends DefaultInstanceValidator {
         try {
             int runningLauncherVersion = Integer.parseInt(runningLauncherVersionStr);
 
-            if (runningLauncherVersion != RCELauncherIntegration.LAUNCHER_VERSION) {
+            if (runningLauncherVersion != RCELauncherConstants.RCE_LAUNCHER_VERSION) {
                 log.warn(StringUtils.format("RCE was started with launcher version %d but version %d was expected.", runningLauncherVersion,
-                    RCELauncherIntegration.LAUNCHER_VERSION));
+                    RCELauncherConstants.RCE_LAUNCHER_VERSION));
             }
 
             // TODO add appropriate behavior for version mismatches

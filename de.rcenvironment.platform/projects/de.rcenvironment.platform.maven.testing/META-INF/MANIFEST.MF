@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Test Utilities
 Bundle-SymbolicName: de.rcenvironment.platform.maven.testing;singleton:=true
-Bundle-Version: 10.3.0.qualifier
+Bundle-Version: 10.3.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: net.sf.cglib.core;version="2.2.2",
  net.sf.cglib.proxy;version="2.2.2",

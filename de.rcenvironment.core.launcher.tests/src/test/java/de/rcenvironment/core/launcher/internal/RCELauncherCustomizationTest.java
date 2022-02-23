@@ -6,7 +6,7 @@
  * https://rcenvironment.de/
  */
 
-package org.eclipse.equinox.launcher;
+package de.rcenvironment.core.launcher.internal;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.not;
@@ -23,14 +23,17 @@ import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
- * Tests for {@link RCELauncherHelper}.
+ * Tests for {@link RCELauncherCustomization}.
  *
  * @author Tobias Brieden
+ * @author Robert Mischke (adaptations)
  */
-public class RCELauncherHelperTest {
+public class RCELauncherCustomizationTest {
 
     private static final String PROBLEMATIC_SUBPATH = " ++_hallo&";
+
     private static final String RELATIVE_PATH = "configuration";
+
     private TempFileService tempFileService;
 
     /**
@@ -53,21 +56,24 @@ public class RCELauncherHelperTest {
     public void testSetConfigurationLocationAbsoluteWithUnescapedSpaces() throws IOException {
 
         // setup
-        System.setProperty(RCELauncherHelper.PROP_BUNDLE_CONFIGURATION_LOCATION, RELATIVE_PATH);
+        System.setProperty(RCELauncherCustomization.SYSTEM_PROPERTY_KEY_BUNDLE_CONFIGURATION_LOCATION, RELATIVE_PATH);
         File tmpDir = tempFileService.createManagedTempDir();
         File problematicDir = tmpDir.toPath().resolve(PROBLEMATIC_SUBPATH).toFile();
         assertTrue(problematicDir.mkdir());
         assertTrue(problematicDir.isDirectory());
         assertTrue(problematicDir.exists());
         // We use toURL here because it does not escape properly!
-        System.setProperty(RCELauncherHelper.PROP_OSGI_INSTALL_AREA, problematicDir.toURL().toString());
+        System.setProperty(RCELauncherCustomization.SYSTEM_PROPERTY_KEY_OSGI_INSTALL_AREA, problematicDir.toURL().toString());
 
-        // execution
-        RCELauncherHelper.setConfigurationLocationAbsolute();
+        // initialize (precondition for next call)
+        RCELauncherCustomization.initialize(new String[0]);
+
+        // execute configuration processing hook; should resolve to an absolute configuration location
+        RCELauncherCustomization.hookAfterInitialConfigurationProcessing();
 
         // assertions
-        assertThat(System.getProperty(RCELauncherHelper.PROP_BUNDLE_CONFIGURATION_LOCATION), not(RELATIVE_PATH));
-        assertThat(System.getProperty(RCELauncherHelper.PROP_BUNDLE_CONFIGURATION_LOCATION),
+        assertThat(System.getProperty(RCELauncherCustomization.SYSTEM_PROPERTY_KEY_BUNDLE_CONFIGURATION_LOCATION), not(RELATIVE_PATH));
+        assertThat(System.getProperty(RCELauncherCustomization.SYSTEM_PROPERTY_KEY_BUNDLE_CONFIGURATION_LOCATION),
             endsWith(PROBLEMATIC_SUBPATH + File.separator + RELATIVE_PATH));
 
     }

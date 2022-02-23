@@ -30,7 +30,8 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dorg.ops4j.pax.logging.DefaultServiceLog.level=WARN);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xms512m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
-	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar);
 	
 requires.1.namespace=org.eclipse.equinox.p2.iu
 requires.1.name=de.rcenvironment.products.rce.default.maxheap.2gb
@@ -98,3 +99,37 @@ units.4.requires.1.namespace=org.eclipse.equinox.p2.eclipse.type
 units.4.requires.1.name=bundle
 units.4.requires.1.version=[1.0.0,2.0.0)
 units.4.requires.1.greedy=false
+
+# Replace the IU of org.apache.commons.logging bundle's, a transitive dependency of RCP. This should both affect
+# clean product builds and the upgrade process of older installations.
+
+units.5.id=org.apache.commons.logging
+units.5.version=1.1.1.v201101211721
+units.5.instructions.install=\
+	org.eclipse.equinox.p2.touchpoint.eclipse.uninstallBundle(bundle:${artifact});
+units.5.instructions.configure=\
+	org.eclipse.equinox.p2.touchpoint.eclipse.uninstallBundle(bundle:${artifact});
+
+# Register a placeholder IU that formally "provides" the org.apache.commons.logging bundle, allowing RCP 
+# bundles to resolve against it at product build and upgrade time, while not actually installing a bundle JAR.
+# As long as bundles only use Import-Package statements in their manifests, the features of the removed JAR
+# should be substituted by the pax-logging bundle, which is the actual point of this replacement. -- misc_ro
+# Additionally, this IU also attempts to delete the original JAR from the plugins folder, as this does not
+# seem to be included in the p2 "uninstall" action.
+
+requires.6.namespace=org.eclipse.equinox.p2.iu
+requires.6.name=org.apache.commons.logging.placeholder
+requires.6.range=[$version$,$version$]
+
+units.6.id=org.apache.commons.logging.placeholder
+units.6.version=$version$
+units.6.provides.0.namespace=org.eclipse.equinox.p2.iu
+units.6.provides.0.name=org.apache.commons.logging
+units.6.provides.0.version=1.1.1.v201101211721
+units.6.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.6.provides.1.name=org.apache.commons.logging.placeholder
+units.6.provides.1.version=$version$
+units.6.instructions.install=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar);
+units.6.instructions.configure=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar);

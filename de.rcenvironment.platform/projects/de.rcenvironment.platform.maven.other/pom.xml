@@ -5,7 +5,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.other</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - Other</name>
-	<version>10.3.0-SNAPSHOT</version>
+	<version>10.3.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

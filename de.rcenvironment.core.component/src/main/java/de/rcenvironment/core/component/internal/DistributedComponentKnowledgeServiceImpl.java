@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -73,7 +73,8 @@ public class DistributedComponentKnowledgeServiceImpl
     private final AsyncOrderedCallbackManager<DistributedComponentKnowledgeListener> componentKnowledgeCallbackManager =
         ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
-    private volatile DistributedComponentKnowledgeSnapshot currentSnapshot;
+    // field initialized with a placeholder snapshot to avoid NPEs in early listeners
+    private volatile DistributedComponentKnowledgeSnapshot currentSnapshot = createInitialKnowledgeSnapshot();
 
     // TODO could be made more specific by using InstanceNodeSessionId as map key; requires change of query methods first, though
     private Map<String, DistributedNodeComponentKnowledge> mutableMapOfRemoteEntriesForNextSnapshot = new HashMap<>();
@@ -277,7 +278,7 @@ public class DistributedComponentKnowledgeServiceImpl
     public void activate() {
         synchronized (internalStateLock) {
             // create placeholder to use until the first update
-            setNewSnapshot(new DistributedComponentKnowledgeSnapshot(localInstanceSessionId));
+            setNewSnapshot(createInitialKnowledgeSnapshot());
         }
     }
 
@@ -633,6 +634,10 @@ public class DistributedComponentKnowledgeServiceImpl
 
     private boolean isComponentInstallationProperty(NodeProperty property) {
         return property.getKey().startsWith(SINGLE_INSTALLATION_PROPERTY_PREFIX);
+    }
+
+    private DistributedComponentKnowledgeSnapshot createInitialKnowledgeSnapshot() {
+        return new DistributedComponentKnowledgeSnapshot(localInstanceSessionId);
     }
 
     private void setNewSnapshot(final DistributedComponentKnowledgeSnapshot newSnapshot) {

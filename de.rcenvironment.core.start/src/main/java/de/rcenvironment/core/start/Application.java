@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -40,6 +40,7 @@ public class Application implements IApplication {
     public Object start(IApplicationContext context) throws Exception {
 
         org.eclipse.core.runtime.Platform.addLogListener(new EclipseLogListener());
+        log.debug("Registered custom Eclipse log listener/forwarder");
 
         // check command-line options for validity; TODO convert into validator?
         if (CommandLineArguments.hasConfigurationErrors()) {

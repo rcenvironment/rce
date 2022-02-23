@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2021 DLR, Germany
+ * Copyright 2006-2022 DLR, Germany
  * 
  * SPDX-License-Identifier: EPL-1.0
  * 
@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ServiceScope;
 
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -37,16 +36,17 @@ import de.rcenvironment.core.component.model.impl.ComponentImageManagerImpl.Icon
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 
 /**
- * 
  * Implementation of {@link ComponentImageCacheService}.
  * 
  * @author Dominik Schneider
- *
+ * @author Robert Mischke (migrated service listener setup)
  */
-@Component(scope = ServiceScope.SINGLETON)
-public class ComponentImageCacheImpl implements ComponentImageCacheService, DistributedComponentKnowledgeListener {
+@Component
+public class ComponentImageCacheImpl implements ComponentImageCacheService, AdditionalServicesProvider {
 
     private static final String CACHE_DIRECTORY = "componentIconCache";
 
@@ -379,10 +379,7 @@ public class ComponentImageCacheImpl implements ComponentImageCacheService, Dist
         syncFilesWithQueue();
     }
 
-    @Override
-    public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
-        addUnknownComponentsToCache(newState);
-    }
+    // TODO (p3) adjust order of public vs private methods
 
     @Override
     public String getIconHash(String componentId) {
@@ -391,5 +388,19 @@ public class ComponentImageCacheImpl implements ComponentImageCacheService, Dist
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        ArrayList<AdditionalServiceDeclaration> result = new ArrayList<>();
+        result
+            .add(new AdditionalServiceDeclaration(DistributedComponentKnowledgeListener.class, new DistributedComponentKnowledgeListener() {
+
+                @Override
+                public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
+                    addUnknownComponentsToCache(newState);
+                }
+            }));
+        return result;
     }
 }

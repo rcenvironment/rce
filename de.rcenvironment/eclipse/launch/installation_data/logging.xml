@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="debug" strict="true"
+	name="RCE Log Configuration"
+	packages="de.rcenvironment.core.configuration.logging">
+
+	<Appenders>
+		<Appender type="Console" name="STDOUT">
+			<Layout type="PatternLayout" pattern="%d %-5p - %c - %m%n" />
+			<!-- Note: this level is different from the product's configuration ("debug" 
+				instead of "info"); we may merge these by setting a system property via a 
+				command-line parameter in the future -->
+			<ThresholdFilter level="debug" />
+		</Appender>
+		<Appender type="SelectableLocationFileAppender"
+			name="DEBUG_LOG"
+			initialLocation="${sys:rce.startupLogsPath}/${sys:rce.instanceRunId}-debug.log"
+			finalLocation="${sys:rce.profilePath}/${sys:rce.logFilenamesPrefix}debug.log">
+			<Layout type="PatternLayout" pattern="%d %-5p - %c - %m%n" />
+		</Appender>
+		<Appender type="SelectableLocationFileAppender"
+			name="WARNINGS_LOG"
+			initialLocation="${sys:rce.startupLogsPath}/${sys:rce.instanceRunId}-warnings.log"
+			finalLocation="${sys:rce.profilePath}/${sys:rce.logFilenamesPrefix}warnings.log">
+			<Layout type="PatternLayout" pattern="%d %-5p - %c - %m%n" />
+			<ThresholdFilter level="warn" />
+		</Appender>
+	</Appenders>
+
+	<Loggers>
+		<!-- global/default configuration -->
+		<Root level="debug" includeLocation="false">
+			<AppenderRef ref="STDOUT" />
+			<AppenderRef ref="DEBUG_LOG" />
+			<AppenderRef ref="WARNINGS_LOG" />
+		</Root>
+
+		<!-- suppress irrelevant messages -->
+		<Logger name="com.ibm" level="warn" />
+		<Logger name="com.sun.mail.smtp" level="warn" />
+		<Logger name="com.sun.xml" level="warn" />
+		<Logger name="de.vonloesch.pdf4Eclipse" level="warn" />
+		<Logger name="httpclient.wire.header" level="warn" />
+		<Logger name="httpclient.wire.content" level="warn" />
+		<Logger name="java.awt" level="warn" />
+		<Logger name="javax.activation" level="warn" />
+		<Logger name="javax.mail" level="warn" />
+		<Logger name="javax.swing" level="warn" />
+		<Logger name="javax.xml.bind" level="warn" />
+		<Logger name="net.sf" level="warn" />
+		<Logger name="org.apache" level="warn" />
+		<Logger name="org.apache.activemq" level="info" />
+		<Logger name="org.apache.activemq.broker" level="warn" />
+		<Logger
+			name="org.apache.activemq.broker.TransportConnection.Service"
+			level="error" />
+		<Logger name="org.apache.activemq.transport" level="warn" />
+		<Logger name="org.apache.sshd.server.session" level="error" />
+		<Logger name="org.eclipse" level="warn" />
+		<Logger name="org.globus" level="warn" />
+		<Logger name="org.hibernate" level="warn" />
+		<Logger name="org.mortbay" level="warn" />
+		<!-- suppress "Logging configuration changed / Event Admin service unavailable" -->
+		<Logger
+			name="org.ops4j.pax.logging.spi.support.EventAdminConfigurationNotifier"
+			level="warn" />
+		<Logger name="org.quartz" level="warn" />
+		<!-- note: "oshi" alone does not seem to work; maybe two segments minimum? -->
+		<Logger name="oshi.util" level="error" />
+		<Logger name="sun.awt" level="warn" />
+		<Logger name="sun.rmi" level="warn" />
+		<Logger name="sun.net.www.protocol.http" level="warn" />
+	</Loggers>
+
+</Configuration>
