@@ -17,7 +17,7 @@
 
 	<properties>
 		<!-- last updated: 2020-06-26, misc_ro -->
-		<versions.jackson>2.11.1</versions.jackson>
+		<versions.jackson>2.12.6.1</versions.jackson>
 	</properties>
 
 	<dependencies>
