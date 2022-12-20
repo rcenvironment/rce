@@ -34,6 +34,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Tim Rosenbach
  */
 public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMetaDataDefinition {
 
@@ -142,6 +143,14 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
             return (String) combinedRawMetaData.get(key).get(ComponentConstants.KEY_DATATYPE);
         }
         return EndpointMetaDataConstants.TYPE_TEXT;
+    }
+    
+    @JsonIgnore
+    @Override
+    public void setDataType(String key, String dataType) {
+        if (combinedRawMetaData.containsKey(key)) {
+            combinedRawMetaData.get(key).put(ComponentConstants.KEY_DATATYPE, dataType);
+        }
     }
 
     @JsonIgnore

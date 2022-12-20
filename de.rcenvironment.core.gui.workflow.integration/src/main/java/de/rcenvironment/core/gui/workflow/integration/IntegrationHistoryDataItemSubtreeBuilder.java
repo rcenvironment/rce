@@ -14,9 +14,9 @@ import java.io.Serializable;
 
 import org.eclipse.swt.graphics.Image;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.IntegrationHistoryDataItem;
 import de.rcenvironment.core.component.model.api.ComponentImageContainerService;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
@@ -36,7 +36,7 @@ public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistor
 
     @Override
     public String[] getSupportedHistoryDataItemIdentifier() {
-        return new String[] { ToolIntegrationConstants.STANDARD_COMPONENT_ID_PREFIX.replace(".", "\\.") + ".*" };
+        return new String[] { ComponentConstants.COMMON_INTEGRATED_COMPONENT_ID_PREFIX.replace(".", "\\.") + ".*" };
     }
 
     @Override

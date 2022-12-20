@@ -95,6 +95,9 @@ public class Messages extends NLS {
     /** Message. */
     public static String restoreDefaultAlgorithmProperties;
 
+    /** Message. */
+    public static String noteDiscreteMethods;
+
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {

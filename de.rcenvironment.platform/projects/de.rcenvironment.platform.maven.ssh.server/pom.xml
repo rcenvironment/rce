@@ -1,23 +1,22 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.platform.maven.ssh.server</artifactId>
-	<name>RCE Platform - Maven Plain Java Libraries - SSH Server</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<name>RCE Third-Party Artifacts - Wrapped Maven Libraries - SSH Server</name>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.platform.parent.mavenLibraryBundle</artifactId>
-		<version>1.0.0</version>
-		<relativePath>../../maven/parent/mavenLibraryBundle</relativePath>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.common</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../de.rcenvironment.build.thirdparty/maven/parent/common</relativePath>
 	</parent>
 
 	<properties>
-		<!-- last updated: 2020-06-25, bode_br -->
-		<versions.sshd>2.7.0</versions.sshd>
+		<versions.sshd>2.9.1</versions.sshd>
 	</properties>
+
 
 	<dependencies>
 		<dependency>

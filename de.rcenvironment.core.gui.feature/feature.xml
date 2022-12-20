@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.feature"
       label="RCE Core GUI Feature"
-      version="10.3.1.qualifier"
+      version="10.4.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -252,13 +252,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
-         id="de.rcenvironment.core.gui.wizards.toolintegration"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="de.rcenvironment.core.gui.workflow"
          download-size="0"
          install-size="0"
@@ -350,13 +343,13 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
-         id="de.rcenvironment.core.gui.wizards.toolintegration.cpacs"
+         id="de.rcenvironment.core.gui.workflow.integration.cpacs"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
-
+         
    <plugin
-         id="de.rcenvironment.core.gui.workflow.integration.cpacs"
+         id="de.rcenvironment.core.gui.workflow.integration.workflow"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
@@ -370,6 +363,34 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <plugin
          id="de.rcenvironment.core.gui.palette"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.integration.toolintegration"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.integration.toolintegration.cpacs"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.integration.workflowintegration"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.integration.common"
          download-size="0"
          install-size="0"
          version="0.0.0"

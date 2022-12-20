@@ -8,8 +8,6 @@
 
 package de.rcenvironment.core.monitoring.system.api;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,9 +16,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.IntegerParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.MultiStateParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
@@ -37,17 +43,21 @@ public class SystemMonitoringCommandPlugin implements CommandPlugin {
 
     private static final String ROOT_COMMAND = "sysmon";
 
-    private static final String SUBCOMMAND_FETCH_LOCAL = "local";
+    private static final String SUBCOMMAND_FETCH_LOCAL = "--local";
 
     private static final String SUBCOMMAND_FETCH_LOCAL_SHORT = "-l";
 
-    private static final String SUBCOMMAND_FETCH_REMOTE = "remote";
+    private static final String SUBCOMMAND_FETCH_REMOTE = "--remote";
 
     private static final String SUBCOMMAND_FETCH_REMOTE_SHORT = "-r";
 
     private static final String SUBCOMMAND_API = "api";
 
-    private static final String SPACE = " ";
+    private static final String SUBCOMMAND_REMOTE = "remote";
+    
+    private static final String DEFAULT = "default";
+    
+    private static final String AVG_CPU_RAM = "avgcpu+ram";
 
     private static final int DEFAULT_FETCH_TIME_SPAN_VALUE_SEC = 10;
 
@@ -55,6 +65,23 @@ public class SystemMonitoringCommandPlugin implements CommandPlugin {
 
     private static final int SEC_TO_MSEC = 1000;
 
+    private static final CommandFlag LOCAL_FLAG = new CommandFlag(
+            SUBCOMMAND_FETCH_LOCAL_SHORT, SUBCOMMAND_FETCH_LOCAL, "prints system monitoring data for the local instance");
+    
+    private static final CommandFlag REMOTE_FLAG = new CommandFlag(
+            SUBCOMMAND_FETCH_REMOTE_SHORT, SUBCOMMAND_FETCH_REMOTE,
+            "fetches system monitoring data from all reachable nodes in the network, and prints it in a human-readable format");
+    
+    private static final MultiStateParameter API_PARAMETER = new MultiStateParameter("operation" ,
+            "operation to perform; avgcpu+ram: fetches the average CPU load over the given time span and the current free RAM",
+            DEFAULT, AVG_CPU_RAM);
+    
+    private static final IntegerParameter TIME_SPAN_PARAMETER = new IntegerParameter(null, "time span",
+            "the maximum time span (in seconds) to aggregate load data over");
+    
+    private static final IntegerParameter TIME_LIMIT_PARAMETER = new IntegerParameter(null, "time limit",
+            "the maximum time (in milliseconds) to wait for each node's load data response");
+    
     private LocalSystemMonitoringAggregationService localSystemMonitoringAggregationService;
 
     private CommunicationService communicationService;
@@ -62,72 +89,89 @@ public class SystemMonitoringCommandPlugin implements CommandPlugin {
     private InstanceNodeSessionId localInstanceNodeSessionId;
 
     @Override
-    public void execute(final CommandContext context) throws CommandException {
-        context.consumeExpectedToken(ROOT_COMMAND);
-        final String subCommand = context.consumeNextToken();
-        if (subCommand == null) {
-            // TODO (p2) improve once new command help/parsing system is in place
-            throw CommandException.syntaxError("Missing operation argument (e.g. \"" + ROOT_COMMAND + " " + SUBCOMMAND_FETCH_REMOTE + "\")",
-                context);
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(ROOT_COMMAND, "fetch system monitoring data",
+            "basic system-monitoring information", this::performSysMain,
+            new CommandModifierInfo(
+                new CommandFlag[] {
+                    LOCAL_FLAG,
+                    REMOTE_FLAG
+                }
+            ),
+            new SubCommandDescription(SUBCOMMAND_REMOTE,
+                "fetches system monitoring data from all reachable nodes in the network, and prints it in a human-readable format",
+                this::performSysmonRemote
+            ),
+            new SubCommandDescription(SUBCOMMAND_API,
+                "fetches system monitoring data from all reachable nodes in the network,"
+                + "and prints it in a parser-friendly format.", this::performSysApi,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        API_PARAMETER,
+                        TIME_SPAN_PARAMETER,
+                        TIME_LIMIT_PARAMETER
+                    }
+                )
+            )
+        );
+        
+        return new MainCommandDescription[] { commands };
+    }
+    
+    private enum FetchLocation {
+        Local,
+        Remote
+    }
+
+    private void performSysMain(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        boolean local = modifiers.hasCommandFlag(SUBCOMMAND_FETCH_LOCAL);
+        boolean remote = modifiers.hasCommandFlag(SUBCOMMAND_FETCH_REMOTE);
+        
+        if (local && remote) {
+            throw CommandException.syntaxError("Only one of the two flags \"--local\"/\"--remote\" can be entered", context);
         }
-        switch (subCommand) {
-        case SUBCOMMAND_FETCH_LOCAL:
-        case SUBCOMMAND_FETCH_LOCAL_SHORT:
-            // arbitrary timespan for default fetch: 10 seconds
+        
+        if (!local && !remote) {
+            throw CommandException.syntaxError("One of the two flags \"--local\"/\"--remote\" can be entered", context);
+        }
+        
+        if (local) {
+            performSysmon(context, FetchLocation.Local);
+        } else {
+            performSysmon(context, FetchLocation.Remote);
+        }
+    }
+    
+    private void performSysmonRemote(CommandContext context) throws CommandException {
+        performSysmon(context, FetchLocation.Remote);
+    }
+    
+    private void performSysmon(CommandContext context, FetchLocation fetchLocation) throws CommandException {
+        
+        switch (fetchLocation) {
+        case Local:
             performPrintLocalSysMonData(context, DEFAULT_FETCH_TIME_SPAN_VALUE_SEC * SEC_TO_MSEC,
-                DEFAULT_FETCH_TIME_LIMIT_VALUE_MSEC, true);
+                    DEFAULT_FETCH_TIME_LIMIT_VALUE_MSEC, true);
             break;
-        case SUBCOMMAND_FETCH_REMOTE:
-        case SUBCOMMAND_FETCH_REMOTE_SHORT:
-            // arbitrary timespan for default fetch: 10 seconds
+        case Remote:
             performCollectAndPrintSysMonData(context, DEFAULT_FETCH_TIME_SPAN_VALUE_SEC * SEC_TO_MSEC,
-                DEFAULT_FETCH_TIME_LIMIT_VALUE_MSEC, true);
-            break;
-        case SUBCOMMAND_API:
-            String apiCall = context.consumeNextToken();
-            if (apiCall == null) {
-                throw CommandException.wrongNumberOfParameters(context);
-            }
-            switch (apiCall) {
-            case "default":
-            case "avgcpu+ram":
-                final int timeSpanSec = parseRequiredPositiveIntParameter(context, "time span");
-                final int timeLimitMsec = parseRequiredPositiveIntParameter(context, "time limit");
-                performCollectAndPrintSysMonData(context, timeSpanSec * SEC_TO_MSEC, timeLimitMsec, false);
-                break;
-            default:
-                throw CommandException.syntaxError("Unknown API operation: " + apiCall, context);
-            }
+                    DEFAULT_FETCH_TIME_LIMIT_VALUE_MSEC, true);
             break;
         default:
-            throw CommandException.unknownCommand(context);
+            CommandException.executionError("fetch location error", context);
         }
-
     }
-
-    @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
-        // should be revisited when new command help/parser is in place
+    
+    private void performSysApi(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
         
-        // TODO possible expansion: add "local" query command, too?
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions
-            .add(new CommandDescription(ROOT_COMMAND, SUBCOMMAND_FETCH_LOCAL + "/" + SUBCOMMAND_FETCH_LOCAL_SHORT, false,
-                "prints system monitoring data for the local instance"));
-        contributions
-            .add(new CommandDescription(ROOT_COMMAND + " " + SUBCOMMAND_FETCH_REMOTE, "/" + SUBCOMMAND_FETCH_REMOTE_SHORT, false,
-                "fetches system monitoring data from all reachable nodes in the network, and prints it in a human-readable format"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + SPACE + SUBCOMMAND_API, "<operation>", false,
-            "fetches system monitoring data from all reachable nodes in the network, and prints it in a parser-friendly format.",
-            "Available operations:",
-            "  avgcpu+ram <time span> <time limit> - fetches the average CPU load over the given time span and the current free RAM",
-            "Operation parameters:",
-            "  time span - the maximum time span (in seconds) to aggregate load data over",
-            "  time limit - the maximum time (in milliseconds) to wait for each node's load data response"));
-        return contributions;
+        final int timeSpanSec = ((ParsedIntegerParameter) modifiers.getPositionalCommandParameter(1)).getResult();
+        final int timeLimitMsec = ((ParsedIntegerParameter) modifiers.getPositionalCommandParameter(2)).getResult();
+        performCollectAndPrintSysMonData(context, timeSpanSec * SEC_TO_MSEC, timeLimitMsec, false);
     }
-
+    
     /**
      * OSGi-DS bind method.
      * 

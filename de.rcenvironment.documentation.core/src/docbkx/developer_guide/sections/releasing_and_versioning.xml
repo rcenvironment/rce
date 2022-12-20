@@ -1,7 +1,7 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="releasing_and_versioning">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="releasing_and_versioning">
 	<title>Release and Versioning Process</title>
-	<sect2>
+	<section>
 		<title>Overview: The Release and Versioning Process</title>
 		<para>Creating an RCE release and preparing for the next one is a process
 			that can be split into four distinct steps (or phases):
@@ -27,22 +27,22 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Step 1: Trunk preparations</title>
 		<para>TODO migrate/add content</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Step 2: Release candidate building and testing</title>
 		<para>TODO migrate/add content</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Step 3: Publishing the final release</title>
 		<para>TODO migrate/add content</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Step 4: Post-release actions</title>
-		<sect3>
+		<section>
 			<title>Upgrading Version Numbers (and Verification)</title>
 			<para> By convention, the version numbers of all plugins and features are increased in the trunk
 				immediately <emphasis>after</emphasis> a release has been performed. This way, every
@@ -113,9 +113,9 @@
 						</para>
 					</listitem>
 				</itemizedlist></para>
-		</sect3>
-	</sect2>
-	<sect2>
+		</section>
+	</section>
+	<section>
 		<title>Creating a maintenance/hotfix release</title>
 		<para> When creating a release that is not based on the current development trunk, the release
 			process is slightly different. Such "maintenance" or "hotfix" releases must
@@ -170,5 +170,5 @@
 				</listitem>
 			</itemizedlist>
 		</para>
-	</sect2>
-</sect1>
+	</section>
+</section>

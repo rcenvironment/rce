@@ -1,5 +1,6 @@
 Feature: UplinkTests
 
+@UplinkTestsFeature
 @Uplink01
 Scenario: Simple check of uplink connections of two client and two uplink server instances
 
@@ -34,6 +35,7 @@ Scenario: Simple check of uplink connections of two client and two uplink server
     stream is already closed
     """
 
+@UplinkTestsFeature
 @Uplink02
 Scenario: Check of uplink autoconnect after restart of Client1 (provides tool for Client2)
 
@@ -84,7 +86,9 @@ Scenario: Check of uplink autoconnect after restart of Client1 (provides tool fo
     stream is already closed
     """
 
-@Uplink02c
+# Variant of @Uplink02: crash instead of restart
+@UplinkTestsFeature
+@Uplink06
 Scenario: Check of uplink autoconnect after crash and restart of Client1 (provides tool for Client2)
 
     Given instance "Uplink1, Client1, Client2" using the default build
@@ -145,6 +149,7 @@ Scenario: Check of uplink autoconnect after crash and restart of Client1 (provid
     as it is already in use by session
     """
 
+@UplinkTestsFeature
 @Uplink03
 Scenario: Check of uplink autoconnect after restart of Client2 (uses tool from Client1)
 
@@ -194,6 +199,7 @@ Scenario: Check of uplink autoconnect after restart of Client2 (uses tool from C
     stream is already closed
     """
 
+@UplinkTestsFeature
 @Uplink04
 Scenario: Check of uplink autoconnect after shutdown and restart of uplink server
 
@@ -261,10 +267,9 @@ Scenario: Check of uplink autoconnect after shutdown and restart of uplink serve
     stream is already closed
     """
 
-# This combines the previous restart options. It is meant to be used in the context of automated
-# regression testing in order to save time (compared with running each case independently).
-
-@Uplink04c
+# Variant of @Uplink04: crash instead of restart
+@UplinkTestsFeature
+@Uplink07
 Scenario: Check of uplink autoconnect after crash and restart of uplink server
 
     Given instance "Uplink1, Client1, Client2" using the default build
@@ -318,7 +323,11 @@ Scenario: Check of uplink autoconnect after crash and restart of uplink server
     stream is already closed
     """
 
-@Uplink02-04
+# This combines the previous restart options. It is meant to be used in the context of automated
+# regression testing in order to save time (compared with running each case independently).
+#Combination of @Uplink02, @Uplink03, @Uplink4
+@UplinkTestsFeature
+@Uplink05
 Scenario: Combined check of uplink autoconnect after shutdown and restart of clients and uplink server
 
     Given instance "Uplink1, Client1, Client2" using the default build
@@ -395,7 +404,8 @@ Scenario: Combined check of uplink autoconnect after shutdown and restart of cli
     stream is already closed
     """
 
-@Uplink05
+@UplinkTestsFeature
+@Uplink08
 Scenario: Autoconnect after startup with uplink server started before clients
     Given instance "Uplink1, Client1, Client2" using the default build
     And configured network connections "Client1-[upl]->Uplink1 [autoStart autoRetry]"
@@ -432,7 +442,8 @@ Scenario: Autoconnect after startup with uplink server started before clients
     stream is already closed
     """
 
-@Uplink06
+@UplinkTestsFeature
+@Uplink09
 Scenario: Autoconnect after startup with clients started before uplink sever
     Given instance "Uplink1, Client1, Client2" using the default build
     And configured network connections "Client1-[upl]->Uplink1 [autoStart autoRetry]"
@@ -468,8 +479,9 @@ Scenario: Autoconnect after startup with clients started before uplink sever
     stream is already closed
     """
 
-@Uplink07
-Scenario: Check of disonnect and connect of clients in an uplink connection
+@UplinkTestsFeature
+@Uplink10
+Scenario: Check of disconnect and connect of clients in an uplink connection
 
     Given instance "Uplink1, Client1, Client2" using the default build
     And configured network connections "Client1-[upl]->Uplink1 [autoStart autoRetry]"
@@ -533,7 +545,8 @@ Scenario: Check of disonnect and connect of clients in an uplink connection
     stream is already closed
     """
 
-@Uplink08
+@UplinkTestsFeature
+@Uplink11
 Scenario: Two clients with same ID access the uplink server after startup and dis- and reconnecting, uplink server rejects the second. 
 
     Given instances "Uplink1, Client3a, Client3b" using the default build
@@ -581,7 +594,8 @@ Scenario: Two clients with same ID access the uplink server after startup and di
     from using namespace userNameClient3a as it is already in use
     """
 
-@Uplink09
+@UplinkTestsFeature
+@Uplink12
 Scenario: Two clients with same ID access the uplink server after startup and repeated stop/restart, uplink server rejects the second. 
 
     Given instances "Uplink1, Client3a, Client3b" using the default build
@@ -640,7 +654,8 @@ Scenario: Two clients with same ID access the uplink server after startup and re
     from using namespace userNameClient3a as it is already in use
     """
 
-@Uplink10
+@UplinkTestsFeature
+@Uplink13
 Scenario: Two clients with same ID access the uplink server after startup and repeated crash/restart, uplink server rejects the second. 
 
     Given instances "Uplink1, Client3a, Client3b" using the default build
@@ -702,7 +717,8 @@ Scenario: Two clients with same ID access the uplink server after startup and re
     Session terminated in non-terminal state UNCLEAN_SHUTDOWN_INITIATED
     """
 
-@Uplink11
+@UplinkTestsFeature
+@Uplink14
 Scenario: After crash, the same client connects again to the uplink server (s. Mantis #17415).
 
     Given instances "Uplink1, Client1" using the default build
@@ -741,7 +757,7 @@ Scenario: After crash, the same client connects again to the uplink server (s. M
     )
     """
 # The following scenario is meant as demonstrative example to allow certain warnings at shutdown.
-@Uplink003
+@UplinkExperimental01
 Scenario: Check of allowed warnings after shutdown
 
     Given instance "Uplink1, Client1" using the default build

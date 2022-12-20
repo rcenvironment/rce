@@ -667,7 +667,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
 
             provenanceService.ifPresent(service -> service.workflowNodeExecutionStarted(componentContext.getWorkflowExecutionIdentifier(),
-                componentContext.getComponentName(),
+                componentContext.getInstanceName(),
                 componentContext.getComponentIdentifier(), componentContext.getExecutionIdentifier(),
                 componentContext.getNodeId().toString()));
         }
@@ -755,7 +755,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             final Optional<ProvenanceEventListener> provenanceService = provenanceReference.map(context::getService);
 
             provenanceService.ifPresent(service -> service.workflowNodeExecutionStarted(componentContext.getWorkflowExecutionIdentifier(),
-                componentContext.getComponentName(),
+                componentContext.getInstanceName(),
                 componentContext.getComponentIdentifier(), componentContext.getExecutionIdentifier(),
                 componentContext.getNodeId().toString()));
         }

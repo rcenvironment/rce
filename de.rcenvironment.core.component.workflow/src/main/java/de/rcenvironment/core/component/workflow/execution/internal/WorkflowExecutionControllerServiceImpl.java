@@ -49,6 +49,10 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
 import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecutionInformationImpl;
 import de.rcenvironment.core.component.workflow.execution.spi.SingleWorkflowStateChangeListener;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogConstants;
+import de.rcenvironment.core.eventlog.api.EventLogEntry;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -97,7 +101,18 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
     public WorkflowExecutionInformation createExecutionController(WorkflowExecutionContext wfExeCtx,
         Map<String, String> executionAuthTokens, Boolean calledFromRemote) throws WorkflowExecutionException, RemoteOperationException {
 
+        // TODO start_ts; workflow_metadata? workflow title?
+        EventLogEntry eventLogEntry = EventLog.newEntry(EventType.WORKFLOW_EXECUTION_REQUESTED)
+            .set(EventType.Attributes.WORKFLOW_RUN_ID, wfExeCtx.getExecutionIdentifier())
+            // TODO (p1) 11.0.0: trusting the remote side to provide this information is obviously unreliable
+            .set(EventType.Attributes.INITIATOR_IS_LOCAL_NODE, EventLogConstants.trueFalseValueFromBoolean(!calledFromRemote))
+            // TODO (p1) 11.0.0: trusting the remote side to provide this information is obviously unreliable
+            .set(EventType.Attributes.INITIATOR_NODE, wfExeCtx.getNodeIdStartedExecution().getLogicalNodeIdString());
+
+        // TODO (p1) 11.0.0: improve this validation; see #17908
         if (calledFromRemote && !workflowHostService.getLogicalWorkflowHostNodes().contains(wfExeCtx.getNodeId())) {
+            eventLogEntry.set(EventType.Attributes.SUCCESS, EventLogConstants.FALSE_VALUE);
+            EventLog.append(eventLogEntry);
             throw new WorkflowExecutionException(StringUtils.format("Workflow execution request refused, as the requested instance is "
                 + "not declared as workflow host: %s", wfExeCtx.getNodeId()));
         }
@@ -115,6 +130,10 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
         synchronized (workflowExecutionInformations) {
             workflowExecutionInformations.put(wfExeCtx.getExecutionIdentifier(), workflowExecutionInformation);
         }
+
+        eventLogEntry.set(EventType.Attributes.SUCCESS, EventLogConstants.TRUE_VALUE);
+        EventLog.append(eventLogEntry);
+
         return workflowExecutionInformation;
     }
 

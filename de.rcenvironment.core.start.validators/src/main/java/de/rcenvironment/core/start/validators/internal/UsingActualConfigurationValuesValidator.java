@@ -12,11 +12,13 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
 import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Ensures that the actual configuration values are applied.
  * 
  * @author Doreen Seider
+ * @author Kathrin Schaffert (added configuration file path to message)
  */
 public class UsingActualConfigurationValuesValidator extends DefaultInstanceValidator {
 
@@ -25,9 +27,11 @@ public class UsingActualConfigurationValuesValidator extends DefaultInstanceVali
     @Override
     public InstanceValidationResult validate() {
         final String validationDisplayName = "Configuration values";
-        
+
         if (configurationService.isUsingDefaultConfigurationValues()) {
-            String errorMessage1 = "Failed to load configuration file. Most likely, it has syntax errors. Check the log for details.";
+            String errorMessage1 =
+                StringUtils.format("Failed to load configuration file: %s \nMost likely, it has syntax errors. Check the log for details.",
+                    configurationService.getProfileConfigurationFile().getAbsoluteFile());
             String errorMessage2 = "Default configuration values will be applied.";
 
             return InstanceValidationResultFactory.createResultForFailureWhichAllowsToProceed(validationDisplayName,
@@ -35,7 +39,7 @@ public class UsingActualConfigurationValuesValidator extends DefaultInstanceVali
         }
         return InstanceValidationResultFactory.createResultForPassed(validationDisplayName);
     }
-    
+
     protected void bindConfigurationService(ConfigurationService newService) {
         configurationService = newService;
     }

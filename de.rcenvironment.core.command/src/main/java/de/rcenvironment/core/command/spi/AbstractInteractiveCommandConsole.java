@@ -86,9 +86,9 @@ public abstract class AbstractInteractiveCommandConsole implements TextOutputRec
                 }
                 break;
             case HELP_REQUESTED:
-                // TODO backwards compatibility hack; pass prefix as parameter instead - misc_ro
-                boolean useCommandPrefix = commandPrefix != null && !commandPrefix.isEmpty();
-                commandExecutionService.printHelpText(useCommandPrefix, ce.shouldPrintDeveloperHelp(), this);
+                // explicitly fetch the selected output receiver, as it may have been redirected via "saveto"
+                TextOutputReceiver outputReceiver = ce.getOutputReceiver();
+                commandExecutionService.printHelpText(ce.getParsedModifiers(), outputReceiver);
                 break;
             default:
                 // should never happen

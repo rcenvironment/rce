@@ -515,7 +515,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -733,7 +733,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -751,7 +750,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "0",
@@ -794,7 +792,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -812,7 +809,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "-1e99",
@@ -837,7 +833,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -855,7 +850,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "-10",
@@ -880,7 +874,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -898,7 +891,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "0",
@@ -916,7 +908,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -1097,7 +1089,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -1115,7 +1106,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "-1e99",
@@ -1150,7 +1140,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -1168,7 +1157,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "-10",
@@ -1193,7 +1181,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
@@ -1211,7 +1198,6 @@
       "epIdentifier" : "optima",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "lower" : "0",
@@ -1404,7 +1390,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -1476,7 +1462,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
@@ -1507,7 +1492,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
@@ -1538,7 +1522,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
@@ -1569,7 +1552,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",
@@ -1600,7 +1582,6 @@
       "epIdentifier" : "Design",
       "datatype" : "Float",
       "metadata" : {
-        "base" : "0.0",
         "hasSingleBounds" : "true",
         "hasStartValue" : "true",
         "isDiscrete" : "false",

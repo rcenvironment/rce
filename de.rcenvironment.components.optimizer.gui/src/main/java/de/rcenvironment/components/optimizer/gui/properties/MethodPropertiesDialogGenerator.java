@@ -48,12 +48,11 @@ import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
  * @author Sascha Zur
  */
 public class MethodPropertiesDialogGenerator extends Dialog {
-    
-    private static final  String TRUE = "true";
-    
+
+    private static final String TRUE = "true";
+
     private final MethodDescription methodDescription;
-    
-    
+
     private Map<Widget, String> widgetToKeyMap;
 
     protected MethodPropertiesDialogGenerator(Shell parentShell, MethodDescription methodDescription) {
@@ -98,7 +97,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
             }
             if (methodDescription.getResponsesSettings() != null
                 && checkIfSettingsAreGUIRelevant(methodDescription.getResponsesSettings())) {
-                
+
                 CTabItem responsesSettingsTab = new CTabItem(settingsTabFolder, SWT.NONE);
                 responsesSettingsTab.setText("Responses Settings");
                 Composite responsesSettingsContainer = new Composite(settingsTabFolder, SWT.NONE);
@@ -109,13 +108,13 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         }
         return dialogContainer;
     }
-    
-    private boolean checkIfSettingsAreGUIRelevant(Map<String, Map<String, String> > settings) {
+
+    private boolean checkIfSettingsAreGUIRelevant(Map<String, Map<String, String>> settings) {
         boolean returnValue = true;
         if (settings.isEmpty()) {
             returnValue = false;
         }
-        
+
         if (settings != null) {
             for (String key : settings.keySet()) {
                 if (settings.get(key).get(OptimizerComponentConstants.DONT_SHOW_KEY) != null) {
@@ -123,10 +122,9 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                 }
             }
         }
-        
+
         return returnValue;
     }
-    
 
     private void createSettings(Map<String, Map<String, String>> settings, Composite container) {
         if (settings != null) {
@@ -205,7 +203,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
             loadDefaults.addSelectionListener(new DefaultSelectionListener(container, settings));
         }
     }
-    
+
     /**
      * 
      * Implements the selection listener for the "load default" values button.
@@ -215,18 +213,16 @@ public class MethodPropertiesDialogGenerator extends Dialog {
     private class DefaultSelectionListener implements SelectionListener {
 
         private Composite container;
-        
-        private Map<String, Map<String, String> > settings;
-        
-        DefaultSelectionListener(Composite container, Map<String, Map<String, String> > settings) {
+
+        private Map<String, Map<String, String>> settings;
+
+        DefaultSelectionListener(Composite container, Map<String, Map<String, String>> settings) {
             this.container = container;
             this.settings = settings;
         }
-        
-        
+
         @Override
-        public void widgetDefaultSelected(SelectionEvent arg0) {
-        }
+        public void widgetDefaultSelected(SelectionEvent arg0) {}
 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
@@ -248,11 +244,11 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                             ((Combo) field).setText(value);
                         }
                     }
-                    
+
                 }
                 if (field instanceof Button) {
                     String key = (String) ((Button) field).getData();
-                    
+
                     if (key != null) {
                         String value = settings.get(key).get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
                         if (value != null) {
@@ -266,9 +262,8 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                 }
             }
         }
-        
-    }
 
+    }
 
     private Button createLabelAndCheckbox(Composite container, String text, String value) {
         new Label(container, SWT.NONE).setText(text);
@@ -298,9 +293,9 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         result.setText(value);
         if (dataType.equals("Int")) {
-            result.addVerifyListener(new NumericalTextConstraintListener(result, WidgetGroupFactory.ONLY_INTEGER));
+            result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER));
         } else if (dataType.equals("Real")) {
-            result.addVerifyListener(new NumericalTextConstraintListener(result, WidgetGroupFactory.ONLY_FLOAT));
+            result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT));
         }
         return result;
     }
@@ -312,11 +307,14 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         boolean isValid = true;
         for (Widget widget : widgetToKeyMap.keySet()) {
             Map<String, String> settings = null;
-            if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(widget))) {
+            if (methodDescription.getCommonSettings() != null
+                && methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(widget))) {
                 settings = methodDescription.getCommonSettings().get(widgetToKeyMap.get(widget));
-            } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(widget))) {
+            } else if (methodDescription.getSpecificSettings() != null
+                && methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(widget))) {
                 settings = methodDescription.getSpecificSettings().get(widgetToKeyMap.get(widget));
-            } else if (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(widget))) {
+            } else if (methodDescription.getResponsesSettings() != null
+                && methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(widget))) {
                 settings = methodDescription.getResponsesSettings().get(widgetToKeyMap.get(widget));
             }
             if (settings != null) {
@@ -400,21 +398,26 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         public void modifyText(ModifyEvent arg0) {
             Widget source = (Widget) arg0.getSource();
             if (source instanceof Text) {
-                if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
+                if (methodDescription.getCommonSettings() != null
+                    && methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Text) source).getText());
-                } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
+                } else if (methodDescription.getSpecificSettings() != null
+                    && methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Text) source).getText());
-                } else if (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(source))) {
+                } else if (methodDescription.getResponsesSettings() != null
+                    && methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getResponsesSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Text) source).getText());
                 }
             } else if (source instanceof Combo) {
-                if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
+                if (methodDescription.getCommonSettings() != null
+                    && methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Combo) source).getText());
-                } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
+                } else if (methodDescription.getSpecificSettings() != null
+                    && methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Combo) source).getText());
                 } else if (methodDescription.getResponsesSettings() != null

@@ -12,6 +12,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.rcenvironment.core.command.spi.ParsedBooleanParameter;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedMultiParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
 import de.rcenvironment.core.instancemanagement.InstanceConfigurationOperationSequence;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 
@@ -194,6 +198,13 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
     }
 
     @Override
+    public InstanceConfigurationOperationSequence addSshAccount(String username, String role, boolean enabled, String password) {
+        appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_SSH_ACCOUNT, username, role,
+                enabled, password));
+        return this;
+    }
+    
+    @Override
     public InstanceConfigurationOperationSequence addSshAccountFromStringParameters(List<String> parameters) {
         String username = parameters.get(0);
         String role = parameters.get(1);
@@ -284,6 +295,34 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_REMOVE_SSH_CONNECTION, name));
         return this;
     }
+    
+    @Override
+    public InstanceConfigurationOperationSequence addUplinkConnection(ParsedMultiParameter parsedParameters) {
+        
+        final ParsedStringParameter connectionId = (ParsedStringParameter) parsedParameters.getResult()[0];
+        final ParsedStringParameter hostName = (ParsedStringParameter) parsedParameters.getResult()[1];
+        final ParsedIntegerParameter port = (ParsedIntegerParameter) parsedParameters.getResult()[2];
+        final ParsedStringParameter clientId = (ParsedStringParameter) parsedParameters.getResult()[3];
+        final ParsedBooleanParameter isGateway = (ParsedBooleanParameter) parsedParameters.getResult()[4];
+        final ParsedBooleanParameter connectOnStartup = (ParsedBooleanParameter) parsedParameters.getResult()[5];
+        final ParsedBooleanParameter autoRetry = (ParsedBooleanParameter) parsedParameters.getResult()[6];
+        final ParsedStringParameter userName = (ParsedStringParameter) parsedParameters.getResult()[7];
+        final ParsedStringParameter verification = (ParsedStringParameter) parsedParameters.getResult()[8];
+        final ParsedStringParameter passwordParameter = (ParsedStringParameter) parsedParameters.getResult()[9];
+        
+        // TODO add support for keyfiles
+        String password = null;
+        if (verification.getResult().equals("password")) {
+            password = passwordParameter.getResult();
+        }
+        final ConfigurationUplinkConnection uplinkConnection = new ConfigurationUplinkConnection(connectionId.getResult(),
+                hostName.getResult(), port.getResult(), userName.getResult(), connectionId.getResult(), clientId.getResult(),
+                null, connectOnStartup.getResult(), autoRetry.getResult(), isGateway.getResult(), password);
+        appendStep(
+            new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION, uplinkConnection));
+        
+        return this;
+    }
 
     @Override
     public InstanceConfigurationOperationSequence addUplinkConnectionFromStringParameters(List<String> parameters) {
@@ -308,6 +347,7 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
         return this;
     }
 
+    /*
     @Override
     public InstanceConfigurationOperationSequence addUplinkConnection(UplinkConnectionParameters parameters) {
         final ConfigurationUplinkConnection uplinkConnection = new ConfigurationUplinkConnection(parameters.getConnectionId(),
@@ -317,7 +357,7 @@ class InstanceConfigurationOperationSequenceImpl implements InstanceConfiguratio
             new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_ADD_UPLINK_CONNECTION, uplinkConnection));
         return this;
     }
-
+     */
     @Override
     public InstanceConfigurationOperationSequence removeUplinkConnection(String id) {
         appendStep(new InstanceConfigurationOperationDescriptor(InstanceManagementConstants.SUBCOMMAND_REMOVE_UPLINK_CONNECTION, id));

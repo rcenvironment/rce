@@ -293,6 +293,19 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
         return getIdentifier().compareTo(o.getIdentifier());
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof WorkflowLabel) {
+            return getIdentifier().equals(((WorkflowLabel) obj).getIdentifier());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return identifier.hashCode();
+    }
+
     /**
      * Contains label alignment type.
      * 

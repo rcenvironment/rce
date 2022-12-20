@@ -15,7 +15,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -23,12 +22,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
-import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
-import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
@@ -61,29 +59,22 @@ public class OutputWriterRootLocationSection extends ValidatingWorkflowNodePrope
 
     @Override
     public void createCompositeContent(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
-
-        parent.setLayout(new FillLayout(SWT.VERTICAL | SWT.V_SCROLL));
         super.createCompositeContent(parent, aTabbedPropertySheetPage);
+        parent.setLayout(new GridLayout(1, true));
 
-        TabbedPropertySheetWidgetFactory toolkit = aTabbedPropertySheetPage.getWidgetFactory();
-        Composite root = new LayoutComposite(parent);
-        Composite rootComposite = toolkit.createFlatFormComposite(root);
-        rootComposite.setLayout(new GridLayout(1, true));
-
-        createRootSection(rootComposite, toolkit);
-
-        rootComposite.layout();
+        createRootSection(parent, aTabbedPropertySheetPage);
     }
 
-    private Composite createRootSection(final Composite parent, FormToolkit toolkit) {
+    private Composite createRootSection(final Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
 
-        final Section sectionProperties = toolkit.createSection(parent, ExpandableComposite.TITLE_BAR);
+        final Section sectionProperties = aTabbedPropertySheetPage.getWidgetFactory().createSection(parent, ExpandableComposite.TITLE_BAR);
         sectionProperties.setText(Messages.rootFolderSectionTitle);
         GridData layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         sectionProperties.setLayoutData(layoutData);
 
-        Composite rootgroup = toolkit.createComposite(sectionProperties);
+        final Composite rootgroup = aTabbedPropertySheetPage.getWidgetFactory().createComposite(parent);
         rootgroup.setLayout(new GridLayout(2, false));
+        rootgroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
 
         rootText = new Text(rootgroup, SWT.BORDER);
         GridData gridData = new GridData();
@@ -96,41 +87,52 @@ public class OutputWriterRootLocationSection extends ValidatingWorkflowNodePrope
         rootText.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_ROOT);
 
         rootSelectFromProjectButton = new Button(rootgroup, SWT.NONE);
+        rootSelectFromProjectButton.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
         rootSelectFromProjectButton.setText("Select from project ...");
-        rootSelectFromProjectButton.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false,
-            false, 1, 1));
         rootSelectFromProjectButton.addSelectionListener(new SelectFromProjectSelectionListener());
 
         rootSelectFromFileSystemButton = new Button(rootgroup, SWT.NONE);
         rootSelectFromFileSystemButton.setText("Select from file system ...");
-        rootSelectFromFileSystemButton.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false,
-            false, 1, 1));
+        rootSelectFromFileSystemButton.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
 
         rootSelectFromFileSystemButton.addSelectionListener(new SelectFromFileSystemSelectionListener());
 
-        workflowStartCheckbox = new Button(rootgroup, SWT.CHECK);
-        workflowStartCheckbox.setText(Messages.selectAtStart);
-        workflowStartCheckbox.setLayoutData(new GridData(SWT.LEFT,
-            SWT.TOP, true, false, 2, 1));
-        workflowStartCheckbox.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART);
-
-        overwriteCheckbox = new Button(rootgroup, SWT.CHECK);
-        overwriteCheckbox.setText(Messages.overwriteOption);
-        overwriteCheckbox.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
-        overwriteCheckbox.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_OVERWRITE);
-
-        noteComposite = toolkit.createComposite(rootgroup);
+        final Composite checkboxComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(rootgroup);
         gridData = new GridData();
         gridData.horizontalSpan = 2;
+        checkboxComposite.setLayoutData(gridData);
+        checkboxComposite.setLayout(new GridLayout(2, false));
+        
+        // The implementation in the following with a Check Box plus separate Label - instead of setting the Button's Text variable - is
+        // intentional. The reason is GUI issues regarding the visibility of check marks on different (Linux) platforms with different
+        // desktop variants. (see #17877)
+        // Kathrin Schaffert, 01.03.2022
+        workflowStartCheckbox = new Button(checkboxComposite, SWT.CHECK);
+        workflowStartCheckbox.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
+        workflowStartCheckbox.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART);
+
+        Label workflowStartCheckboxLabel = new Label(checkboxComposite, SWT.NONE);
+        workflowStartCheckboxLabel.setText(Messages.selectAtStart);
+        workflowStartCheckboxLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
+        workflowStartCheckboxLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+        overwriteCheckbox = new Button(checkboxComposite, SWT.CHECK);
+        overwriteCheckbox.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
+        overwriteCheckbox.setData(CONTROL_PROPERTY_KEY, OutputWriterComponentConstants.CONFIG_KEY_OVERWRITE);
+
+        Label overwriteCheckboxLabel = new Label(checkboxComposite, SWT.NONE);
+        overwriteCheckboxLabel.setText(Messages.overwriteOption);
+        overwriteCheckboxLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, false, false, 1, 1));
+        overwriteCheckboxLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+        noteComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(rootgroup);
         noteComposite.setLayoutData(gridData);
         noteComposite.setLayout(new GridLayout(2, false));
 
         CLabel noteLabel = new CLabel(noteComposite, SWT.NONE);
         noteLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16));
         noteLabel.setText(Messages.note);
-
-        sectionProperties.setClient(rootgroup);
-        sectionProperties.setVisible(true);
+        noteLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
 
         return rootgroup;
     }
@@ -217,7 +219,7 @@ public class OutputWriterRootLocationSection extends ValidatingWorkflowNodePrope
         @Override
         public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
             super.updateControl(control, propertyName, newValue, oldValue);
-            if (control instanceof Button && ((Button) control).getText().equals(Messages.selectAtStart)) {
+            if (control instanceof Button && propertyName.equals(OutputWriterComponentConstants.CONFIG_KEY_ONWFSTART)) {
                 setEnabilityRoot(!Boolean.valueOf(newValue));
             }
         }

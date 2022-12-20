@@ -846,7 +846,7 @@ public class DMContentProvider implements ITreeContentProvider {
     private void addComponentLogFilesNode(DMBrowserNode parentNode, ComponentRun componentRun) {
         String logFileRef = componentRun.getLogFile();
         String errorLogFileRef = componentRun.getErrorLogFile();
-        boolean logFilesAlwaysStored = VersionUtils.getVersionOfCoreBundles().compareTo(new Version("7.0.0")) >= 0;
+        boolean logFilesAlwaysStored = VersionUtils.getCoreBundleVersion().compareTo(new Version("7.0.0")) >= 0;
         if (logFilesAlwaysStored
             || (logFileRef != null || errorLogFileRef != null)) {
 
@@ -879,7 +879,7 @@ public class DMContentProvider implements ITreeContentProvider {
     }
 
     private void addWorkflowErrorLogFileNode(DMBrowserNode parentNode, WorkflowRun workflowRun) {
-        boolean logFilesAlwaysStored = VersionUtils.getVersionOfCoreBundles().compareTo(new Version("7.0.0")) >= 0;
+        boolean logFilesAlwaysStored = VersionUtils.getCoreBundleVersion().compareTo(new Version("7.0.0")) >= 0;
         String errorLogRef = workflowRun.getErrorLogFileReference();
         if (logFilesAlwaysStored || errorLogRef != null) {
             DMBrowserNode errorLogNode = createLogFileNode(errorLogRef, true);

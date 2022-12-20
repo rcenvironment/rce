@@ -3,6 +3,7 @@
     "methodCode":"moga",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"true",
     "specificSettings":{
         "fitness_type":{
             "GuiName":"Fitness type",

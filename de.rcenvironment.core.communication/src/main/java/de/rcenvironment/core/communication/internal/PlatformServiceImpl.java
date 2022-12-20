@@ -63,7 +63,7 @@ public class PlatformServiceImpl implements PlatformService {
         // register a preliminary name for proper log output (instead of <unknown> or similar); this is replaced with the
         // actual display name when the local node receives the callback for its own node properties (as from any other node)
         final NodeIdentifierService nodeIdentifierService = nodeConfigurationService.getNodeIdentifierService();
-        nodeIdentifierService.associateDisplayName(localInstanceSessionId, "<local instance>");
+        nodeIdentifierService.setDefaultDisplayNameForLocalNode(localInstanceSessionId);
     }
 
     /**

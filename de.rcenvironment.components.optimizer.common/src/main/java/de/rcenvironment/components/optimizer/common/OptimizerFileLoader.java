@@ -19,21 +19,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.utils.common.JsonUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Static class for loading resources.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (#17821)
  */
 public final class OptimizerFileLoader {
 
@@ -42,6 +44,8 @@ public final class OptimizerFileLoader {
     private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private static ConfigurationService configService;
+
+    private static Log log = LogFactory.getLog(OptimizerFileLoader.class);
 
     public OptimizerFileLoader() {
 
@@ -52,13 +56,11 @@ public final class OptimizerFileLoader {
      * 
      * @param algorithmFolder : To choose the method package (optimizer/doe).
      * @return all descriptions
-     * @throws JsonParseException :
-     * @throws JsonMappingException :
      * @throws IOException :
      */
     @SuppressWarnings("unchecked")
     public static Map<String, MethodDescription> getAllMethodDescriptions(String algorithmFolder)
-        throws JsonParseException, JsonMappingException, IOException {
+        throws IOException {
         // Fill the list of algorithms provided
         Map<String, String> methodNamesToFileLinking = new HashMap<String, String>();
 
@@ -75,7 +77,7 @@ public final class OptimizerFileLoader {
                     try (InputStream algorithmsInputStream = OptimizerFileLoader.class.getResourceAsStream(elementURL2.getFile())) {
                         Map<String, String> loadedMethods = mapper.readValue(algorithmsInputStream,
                             new HashMap<String, String>().getClass());
-    
+
                         if (loadedMethods != null) {
                             for (String methods : loadedMethods.keySet()) {
                                 loadedMethods.put(methods, rawPath + loadedMethods.get(methods));
@@ -97,7 +99,7 @@ public final class OptimizerFileLoader {
                         String fullpath = methodNamesToFileLinking.get(methodKey.getKey());
                         String neededPath = fullpath.substring(0, fullpath.lastIndexOf("/"));
                         try (InputStream newCommonInputStream =
-                                OptimizerFileLoader.class.getResourceAsStream(neededPath + "/defaults.json")) {
+                            OptimizerFileLoader.class.getResourceAsStream(neededPath + "/defaults.json")) {
                             newDescription.setCommonSettings(mapper.readValue(newCommonInputStream,
                                 new HashMap<String, Map<String, String>>().getClass()));
                         }
@@ -151,15 +153,16 @@ public final class OptimizerFileLoader {
                     for (Entry<String, String> method : loadedMethods.entrySet()) {
                         File newMethod = new File(new File(guiConfigFolder, method.getValue()) + ".json");
                         if (newMethod.exists()) {
-                            MethodDescription newDescription = mapper.readValue(newMethod,
-                                MethodDescription.class);
-                            if (newDescription != null && newDescription.getOptimizerPackage() != null) {
-                                newDescription.setCommonSettings(new HashMap<String, Map<String, String>>());
-                            }
-                            if (newDescription != null) {
-                                String foldername = optimizerFolder.getName();
-                                newDescription.setConfigValue("genericFolder", foldername);
-                                methodDescriptions.put(method.getKey() + " [" + foldername + "'s method]", newDescription);
+                            try {
+                                MethodDescription newDescription = mapper.readValue(newMethod, MethodDescription.class);
+                                if (newDescription != null) {
+                                    String foldername = optimizerFolder.getName();
+                                    newDescription.setConfigValue("genericFolder", foldername);
+                                    methodDescriptions.put(method.getKey() + " [" + foldername + "'s method]", newDescription);
+                                }
+                            } catch (IOException e) {
+                                log.error(StringUtils.format("The generic algorithm %s could not be loaded: %s", method.getValue(),
+                                    e.getMessage()));
                             }
                         }
                     }
@@ -203,11 +206,9 @@ public final class OptimizerFileLoader {
      * 
      * @param key method to load
      * @return the method
-     * @throws JsonParseException from reading the files
-     * @throws JsonMappingException from reading the files
      * @throws IOException from reading the files
      */
-    public static MethodDescription loadMethod(String key) throws JsonParseException, JsonMappingException, IOException {
+    public static MethodDescription loadMethod(String key) throws IOException {
         Map<String, MethodDescription> all = getAllMethodDescriptions("/optimizer");
         return all.get(key);
     }

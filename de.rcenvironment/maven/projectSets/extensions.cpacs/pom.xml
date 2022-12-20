@@ -1,0 +1,26 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.projectsets.extensions.cpacs</artifactId>
+	<name>RCE Project Set ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<module>${projects-root}/de.rcenvironment.core.component.integration.cpacs</module>
+
+		<module>${projects-root}/de.rcenvironment.core.gui.integration.toolintegration.cpacs</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.wizards.exampleproject.cpacs</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration.cpacs</module>
+
+		<module>${projects-root}/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature</module>
+	</modules>
+
+</project>

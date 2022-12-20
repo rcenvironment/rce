@@ -36,7 +36,6 @@ import de.rcenvironment.core.component.integration.internal.FileService;
 import de.rcenvironment.core.component.integration.internal.MockFileBuilder;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationFileWatcher.Factory;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.internal.WatchService;
 
 /**
@@ -62,7 +61,7 @@ public class ToolIntegrationFileWatcherTest {
 
     private IMocksControl control;
 
-    private ToolIntegrationContext context;
+    private IntegrationContext context;
 
     private Factory watcherFactory;
 
@@ -98,7 +97,7 @@ public class ToolIntegrationFileWatcherTest {
         objectMapper = control.createMock(ObjectMapper.class);
         watcherFactory.setObjectMapper(objectMapper);
 
-        context = control.createMock(ToolIntegrationContext.class);
+        context = control.createMock(IntegrationContext.class);
     }
 
     /**
@@ -176,7 +175,7 @@ public class ToolIntegrationFileWatcherTest {
         EasyMock.expect(fileService.createFile(createdFile, CONFIGURATION_JSON)).andReturn(configurationFile);
 
         final Map<String, Object> configurationMap = new HashMap<>();
-        configurationMap.put(ToolIntegrationConstants.KEY_TOOL_NAME, MOCK_TOOL);
+        configurationMap.put(IntegrationConstants.KEY_COMPONENT_NAME, MOCK_TOOL);
         // We should expect some subclass of Map.class here. However, defining a custom matcher for this case appears to be a lot of
         // overhead for only a small gain in testing precision.
         EasyMock.expect(objectMapper.readValue(EasyMock.eq(configurationFile), EasyMock.anyObject(Class.class)))
@@ -308,7 +307,7 @@ public class ToolIntegrationFileWatcherTest {
         setIsRegularFile(createdPath);
 
         final Map<String, Object> configurationMap = new HashMap<>();
-        configurationMap.put(ToolIntegrationConstants.KEY_TOOL_NAME, MOCK_TOOL);
+        configurationMap.put(IntegrationConstants.KEY_COMPONENT_NAME, MOCK_TOOL);
         // We should expect some subclass of Map.class here. However, defining a custom matcher for this case appears to be a lot of
         // overhead for only a small gain in testing precision.
         EasyMock.expect(objectMapper.readValue(EasyMock.eq(createdFile), EasyMock.anyObject(Class.class)))
@@ -396,7 +395,7 @@ public class ToolIntegrationFileWatcherTest {
         EasyMock.expectLastCall();
 
         final Map<String, Object> configurationMap = new HashMap<>();
-        configurationMap.put(ToolIntegrationConstants.KEY_TOOL_NAME, MOCK_TOOL);
+        configurationMap.put(IntegrationConstants.KEY_COMPONENT_NAME, MOCK_TOOL);
         // We should expect some subclass of Map.class here. However, defining a custom matcher for this case appears to be a lot of
         // overhead for only a small gain in testing precision.
         EasyMock.expect(objectMapper.readValue(EasyMock.eq(modifiedFile), EasyMock.anyObject(Class.class)))

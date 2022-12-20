@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Joiner Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.joiner.execution
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Import-Package: com.fasterxml.jackson.core;version="2.9.9",
  com.fasterxml.jackson.databind;version="2.9.9",
  com.fasterxml.jackson.databind.node;version="2.9.9",
@@ -28,3 +28,4 @@ RCE-Component: true
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
 Automatic-Module-Name: de.rcenvironment.components.joiner.execution
+Bundle-ActivationPolicy: lazy

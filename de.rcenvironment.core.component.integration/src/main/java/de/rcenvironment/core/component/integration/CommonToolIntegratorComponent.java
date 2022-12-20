@@ -59,7 +59,6 @@ import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.execution.api.ThreadHandler;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -241,7 +240,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         lastRunStaticOutputValues = new HashMap<>();
         // Create basic folder structure and prepare sandbox
 
-        String toolName = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_NAME);
+        String toolName = componentContext.getConfigurationValue(IntegrationConstants.KEY_COMPONENT_NAME);
         rootWDPath = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY);
         String toolDirPath = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DIRECTORY);
 
@@ -828,7 +827,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     try {
                         if (componentContext.getOutputDataType(outputMapping.get(key)) == DataType.FileReference) {
                             String metafilename = componentContext.getOutputMetaDataValue(outputMapping.get(key),
-                                ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
+                                IntegrationConstants.KEY_ENDPOINT_FILENAME);
                             String filename = file.getName();
                             if (metafilename != null && !metafilename.isEmpty()) {
                                 filename = metafilename;
@@ -839,7 +838,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                             lastRunStaticOutputValues.put(outputMapping.get(key), uuid);
                         } else {
                             String metafilename = componentContext.getOutputMetaDataValue(outputMapping.get(key),
-                                ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
+                                IntegrationConstants.KEY_ENDPOINT_FILENAME);
                             String filename = file.getName();
                             if (metafilename != null && !metafilename.isEmpty()) {
                                 filename = metafilename;

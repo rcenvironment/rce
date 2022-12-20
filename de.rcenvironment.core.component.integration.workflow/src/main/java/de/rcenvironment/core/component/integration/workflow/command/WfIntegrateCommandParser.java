@@ -29,10 +29,6 @@ import de.rcenvironment.core.workflow.execution.function.EndpointAdapter;
 
 class WfIntegrateCommandParser {
 
-    private static final String EXPOSE_OUTPUT_FLAG = "--expose-output";
-
-    private static final String EXPOSE_INPUT_FLAG = "--expose-input";
-
     private static final String EXPOSE_FLAG = "--expose";
 
     private static final String EXPOSE_INPUTS_FLAG = "--expose-inputs";
@@ -40,7 +36,7 @@ class WfIntegrateCommandParser {
     private static final String EXPOSE_OUTPUTS_FLAG = "--expose-outputs";
 
     private static final String[] VALID_EXPOSE_FLAGS =
-        new String[] { EXPOSE_FLAG, EXPOSE_INPUT_FLAG, EXPOSE_OUTPUT_FLAG, EXPOSE_INPUTS_FLAG, EXPOSE_OUTPUTS_FLAG };
+        new String[] { EXPOSE_FLAG, EXPOSE_INPUTS_FLAG, EXPOSE_OUTPUTS_FLAG };
 
     public Collection<ParseResult<EndpointAdapter>> parseEndpointAdapterDefinition(CommandContext context,
         WorkflowDescription desc) {
@@ -89,6 +85,44 @@ class WfIntegrateCommandParser {
             return Collections.singletonList(buildEndpointAdapter(desc, parameterFlag, adaptedNode, endpointName, externalName));
         }
     }
+    
+    public Collection<ParseResult<EndpointAdapter>> parseEndpointAdapterDefinition(String parameterFlag, String definition,
+            WorkflowDescription desc) {
+
+            final String[] parts = definition.split(":");
+
+            if (parts.length != 1 && parts.length != 2 && parts.length != 3) {
+                return Collections.singletonList(ParseResult.createErrorResult(StringUtils.format(
+                    "Could not parse endpoint adapter definition '%s'. "
+                        + "Expected format: Either '<component id>:<endpoint id>:<external name>' or '<component id>:<endpoint id>'",
+                    definition)));
+            }
+            final String componentId = parts[0];
+
+            final ParseResult<WorkflowNode> adaptedNodeOptional = findAdaptedNode(desc, componentId);
+            if (adaptedNodeOptional.isErrorResult()) {
+                return Collections.singletonList(ParseResult.createErrorResult(adaptedNodeOptional.getErrorDisplayMessage()));
+            }
+            final WorkflowNode adaptedNode = adaptedNodeOptional.getResult();
+
+            final String endpointName;
+            final String externalName;
+            if (parts.length == 1) {
+                final boolean exposeInputs = EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_INPUTS_FLAG.equals(parameterFlag);
+                final boolean exposeOutputs = EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_OUTPUTS_FLAG.equals(parameterFlag);
+                return buildAllEndpointAdaptersForNode(desc, adaptedNode, exposeInputs, exposeOutputs);
+            } else if (parts.length == 2) {
+                endpointName = parts[1];
+                externalName = parts[1];
+                return Collections.singletonList(buildEndpointAdapter(desc, parameterFlag, adaptedNode, endpointName, externalName));
+            } else {
+                // Since we previously checked that parts.length is one of 1, 2, or 3,
+                // we know that the array `parts` is of length 3 in this case
+                endpointName = parts[1];
+                externalName = parts[2];
+                return Collections.singletonList(buildEndpointAdapter(desc, parameterFlag, adaptedNode, endpointName, externalName));
+            }
+        }
 
     private ParseResult<EndpointAdapter> buildEndpointAdapter(WorkflowDescription desc, final String parameterFlag,
         final WorkflowNode adaptedNode, final String endpointName, final String externalName) {
@@ -98,7 +132,7 @@ class WfIntegrateCommandParser {
 
         final List<EndpointDescription> potentiallyAdaptedInputs;
 
-        if (EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_INPUT_FLAG.equals(parameterFlag)) {
+        if (EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_INPUTS_FLAG.equals(parameterFlag)) {
             potentiallyAdaptedInputs = Stream.concat(
                 inputDescriptionsManager.getStaticEndpointDescriptions().stream(),
                 inputDescriptionsManager.getDynamicEndpointDescriptions().stream())
@@ -109,7 +143,7 @@ class WfIntegrateCommandParser {
         }
 
         final List<EndpointDescription> potentiallyAdaptedOutputs;
-        if (EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_OUTPUT_FLAG.equals(parameterFlag)) {
+        if (EXPOSE_FLAG.equals(parameterFlag) || EXPOSE_OUTPUTS_FLAG.equals(parameterFlag)) {
             potentiallyAdaptedOutputs = Stream.concat(
                 outputDescriptionsManager.getStaticEndpointDescriptions().stream(),
                 outputDescriptionsManager.getDynamicEndpointDescriptions().stream())

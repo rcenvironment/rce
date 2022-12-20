@@ -1,7 +1,7 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="quality_assurance">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="quality_assurance">
 	<title>Copyright Statements</title>
-	<sect2>
+	<section>
 		<title>Current Year Definition</title>
 		<para>In copyright statements, the current year is defined. Each year, it must be updated at the following places (files):
 		</para>
@@ -23,5 +23,5 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-	</sect2>
-</sect1>
+	</section>
+</section>

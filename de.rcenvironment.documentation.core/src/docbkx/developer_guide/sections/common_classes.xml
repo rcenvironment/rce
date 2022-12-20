@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="common_classes">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="common_classes">
 	<title>Common Classes and Interfaces</title>
 	<para>This section lists classes and interfaces that every RCE
 		developer should be familiar with.
@@ -8,7 +8,7 @@
 		come across a class you wish you had known earlier, please let us
 		know.
 	</para>
-	<sect2>
+	<section>
 		<title>General</title>
 		<para></para>
 		<variablelist>
@@ -28,8 +28,8 @@
 				</listitem>
 			</varlistentry>
 		</variablelist>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Components and Workflows</title>
 		<para></para>
 		<variablelist>
@@ -44,8 +44,8 @@
 				</listitem>
 			</varlistentry>
 		</variablelist>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Utilities</title>
 		<para></para>
 		<variablelist>
@@ -74,5 +74,5 @@
 				</listitem>
 			</varlistentry>
 		</variablelist>
-	</sect2>
-</sect1>
+	</section>
+</section>

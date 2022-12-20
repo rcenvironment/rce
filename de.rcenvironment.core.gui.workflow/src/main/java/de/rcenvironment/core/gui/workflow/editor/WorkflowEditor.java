@@ -98,7 +98,6 @@ import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistr
 import de.rcenvironment.core.component.management.api.LocalComponentRegistrationService;
 import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
@@ -142,7 +141,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Alexander Weinert
  */
 public class WorkflowEditor extends GraphicalEditor
-    implements ITabbedPropertySheetPageContributor {
+    implements ITabbedPropertySheetPageContributor, MouseListener {
 
     /** Property change event. */
     public static final int PROP_FINAL_WORKFLOW_DESCRIPTION_SET = 0x300;
@@ -163,6 +162,8 @@ public class WorkflowEditor extends GraphicalEditor
 
     protected static final int DEFAULT_TOLERANCE = 10;
 
+    protected static final int UNDO_LIMIT = 10;
+
     private static final int MOVEMENT = 1;
 
     private static final Log LOGGER = LogFactory.getLog(WorkflowEditor.class);
@@ -170,8 +171,6 @@ public class WorkflowEditor extends GraphicalEditor
     private static final char OPEN_CONNECTION_VIEW_KEYCODE = 'c'; // for ALT + c as shortcut
 
     private static final int MINUS_ONE = -1;
-
-    private static final int UNDO_LIMIT = 10;
 
     private static final int TILE_OFFSET = 30;
 
@@ -217,7 +216,7 @@ public class WorkflowEditor extends GraphicalEditor
         return getCommandStack();
     }
 
-    private void openConnectionEditor() {
+    protected void openConnectionEditor() {
 
         OpenConnectionsViewHandler openConnectionViewHandler = new OpenConnectionsViewHandler();
         try {
@@ -230,30 +229,30 @@ public class WorkflowEditor extends GraphicalEditor
     @Override
     protected void initializeGraphicalViewer() {
 
-        viewer = getGraphicalViewer();
+        setViewer(getGraphicalViewer());
         WorkflowScalableFreeformRootEditPart rootEditPart = new WorkflowScalableFreeformRootEditPart();
-        viewer.setRootEditPart(rootEditPart);
-        viewer.setEditPartFactory(new WorkflowEditorEditPartFactory());
+        getViewer().setRootEditPart(rootEditPart);
+        getViewer().setEditPartFactory(new WorkflowEditorEditPartFactory());
 
         getCommandStack().setUndoLimit(UNDO_LIMIT);
 
-        viewer.getControl().addKeyListener(new WorkflowEditorKeyListener());
+        getViewer().getControl().addKeyListener(new WorkflowEditorKeyListener());
 
-        viewer.setContents(workflowDescription);
+        getViewer().setContents(workflowDescription);
 
-        viewer.addDropTargetListener(new TemplateTransferDropTargetListener(viewer));
+        getViewer().addDropTargetListener(new TemplateTransferDropTargetListener(getViewer()));
 
-        ContextMenuProvider cmProvider = new WorkflowEditorContextMenuProvider(viewer, getActionRegistry());
-        viewer.setContextMenu(cmProvider);
-        getSite().registerContextMenu(cmProvider, viewer);
+        ContextMenuProvider cmProvider = new WorkflowEditorContextMenuProvider(getViewer(), getActionRegistry());
+        getViewer().setContextMenu(cmProvider);
+        getSite().registerContextMenu(cmProvider, getViewer());
 
         WorkflowZoomManager zoomManager = (WorkflowZoomManager) rootEditPart.getZoomManager();
         getActionRegistry().registerAction(new ZoomInAction(zoomManager));
         getActionRegistry().registerAction(new ZoomOutAction(zoomManager));
-        viewer.setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
+        getViewer().setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), MouseWheelZoomHandler.SINGLETON);
         tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
 
-        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+        getViewer().addSelectionChangedListener(new ISelectionChangedListener() {
 
             @Override
             public void selectionChanged(SelectionChangedEvent selectionChangedEvent) {
@@ -261,7 +260,7 @@ public class WorkflowEditor extends GraphicalEditor
                 for (Object structuredSelectionObject : structuredSelection.toList()) {
                     if (structuredSelectionObject instanceof ConnectionPart) {
                         ConnectionPart connectionPart = ((ConnectionPart) structuredSelectionObject);
-                        if (viewer.getSelectedEditParts().contains(connectionPart)) {
+                        if (getViewer().getSelectedEditParts().contains(connectionPart)) {
                             connectionPart.getConnectionFigure().setForegroundColor(ColorConstants.blue);
                             connectionPart.showLabel();
                         }
@@ -273,7 +272,7 @@ public class WorkflowEditor extends GraphicalEditor
                         String id = ci.getIdentifierAndVersion().substring(0,
                             ci.getIdentifierAndVersion().lastIndexOf(ComponentConstants.ID_SEPARATOR));
                         if (toolIntegrationRegistry.hasTIContextMatchingPrefix(id)) {
-                            setHelp(ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
+                            setHelp(ComponentConstants.INTEGRATION_CONTEXTUAL_HELP_PLACEHOLDER_ID);
                         } else {
                             setHelp(id);
                         }
@@ -285,45 +284,9 @@ public class WorkflowEditor extends GraphicalEditor
             }
         });
 
-        viewer.getControl().setData(DRAG_STATE_BENDPOINT, false);
+        getViewer().getControl().setData(DRAG_STATE_BENDPOINT, false);
 
-        viewer.getControl().addMouseListener(new MouseListener() {
-
-            @Override
-            public void mouseUp(MouseEvent ev) {
-                // Nothing to do here.
-            }
-
-            @Override
-            public void mouseDown(MouseEvent ev) {
-                // Nothing to do here.
-            }
-
-            @Override
-            public void mouseDoubleClick(MouseEvent ev) {
-
-                // Open Connection Editor filtered to the selected connection
-                ConnectionPart connectionPart = selectConnection(ev);
-                if (connectionPart != null) {
-                    WorkflowNode source = null;
-                    WorkflowNode target = null;
-                    if (connectionPart.getSource().getModel() instanceof WorkflowNode) {
-                        source = (WorkflowNode) connectionPart.getSource().getModel();
-                    }
-                    if (connectionPart.getTarget().getModel() instanceof WorkflowNode) {
-                        target = (WorkflowNode) connectionPart.getTarget().getModel();
-                    }
-                    OpenConnectionEditorHandler openConnectionEditorHandler = new OpenConnectionEditorHandler(source,
-                        target);
-                    try {
-                        openConnectionEditorHandler.execute(new ExecutionEvent());
-                    } catch (ExecutionException e1) {
-                        e1.printStackTrace();
-                    }
-                }
-            }
-
-        });
+        getViewer().getControl().addMouseListener(this);
 
         // Snap to grid and geometry actions, enable geometry automatically.
         getActionRegistry().registerAction(new ToggleGridAction(getGraphicalViewer()));
@@ -343,16 +306,50 @@ public class WorkflowEditor extends GraphicalEditor
         preferenceStore.setValue(WorkflowEditor.SHOW_LABELS_PREFERENCE_KEY, false);
 
         // remove unwanted menu entries from workflow editor's context menu
-        ContextMenuItemRemover.removeUnwantedMenuEntries(viewer.getControl());
-        ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceListener);
+        ContextMenuItemRemover.removeUnwantedMenuEntries(getViewer().getControl());
+        ResourcesPlugin.getWorkspace().addResourceChangeListener(getResourceListener());
 
+    }
+
+    @Override
+    public void mouseUp(MouseEvent ev) {
+        // Nothing to do here.
+    }
+
+    @Override
+    public void mouseDown(MouseEvent ev) {
+        // Nothing to do here.
+    }
+
+    @Override
+    public void mouseDoubleClick(MouseEvent ev) {
+
+        // Open Connection Editor filtered to the selected connection
+        ConnectionPart connectionPart = selectConnection(ev);
+        if (connectionPart != null) {
+            WorkflowNode source = null;
+            WorkflowNode target = null;
+            if (connectionPart.getSource().getModel() instanceof WorkflowNode) {
+                source = (WorkflowNode) connectionPart.getSource().getModel();
+            }
+            if (connectionPart.getTarget().getModel() instanceof WorkflowNode) {
+                target = (WorkflowNode) connectionPart.getTarget().getModel();
+            }
+            OpenConnectionEditorHandler openConnectionEditorHandler = new OpenConnectionEditorHandler(source,
+                target);
+            try {
+                openConnectionEditorHandler.execute(new ExecutionEvent());
+            } catch (ExecutionException e1) {
+                e1.printStackTrace();
+            }
+        }
     }
 
     /**
      * Shows the number of channels for all connections.
      */
     public void showAllConnectionLabels() {
-        for (Object connectionPartObject : viewer.getEditPartRegistry().values()) {
+        for (Object connectionPartObject : getViewer().getEditPartRegistry().values()) {
             if (connectionPartObject instanceof ConnectionPart) {
                 ((ConnectionPart) connectionPartObject).showLabel();
             }
@@ -363,7 +360,7 @@ public class WorkflowEditor extends GraphicalEditor
      * Hides the number of channel for all connections.
      */
     public void hideUnselectedConnectionLabels() {
-        for (Object connectionPartObject : viewer.getEditPartRegistry().values()) {
+        for (Object connectionPartObject : getViewer().getEditPartRegistry().values()) {
             if (connectionPartObject instanceof ConnectionPart) {
                 ConnectionPart part = ((ConnectionPart) connectionPartObject);
                 // only hide label if connection is not selected
@@ -376,10 +373,10 @@ public class WorkflowEditor extends GraphicalEditor
 
     }
 
-    private void removeConnectionColorsAndLabel() {
-        for (Object connectionPartObject : viewer.getEditPartRegistry().values()) {
+    public void removeConnectionColorsAndLabel() {
+        for (Object connectionPartObject : getViewer().getEditPartRegistry().values()) {
             if (connectionPartObject instanceof ConnectionPart
-                && !viewer.getSelectedEditParts().contains(connectionPartObject)) {
+                && !getViewer().getSelectedEditParts().contains(connectionPartObject)) {
                 ConnectionPart connectionPart = (ConnectionPart) connectionPartObject;
                 connectionPart.getConnectionFigure().setForegroundColor(ColorConstants.black);
                 IPreferenceStore prefs = Activator.getInstance().getPreferenceStore();
@@ -392,8 +389,8 @@ public class WorkflowEditor extends GraphicalEditor
         }
     }
 
-    private ConnectionPart selectConnection(MouseEvent ev) {
-        for (Object editPart : viewer.getEditPartRegistry().values()) {
+    protected ConnectionPart selectConnection(MouseEvent ev) {
+        for (Object editPart : getViewer().getEditPartRegistry().values()) {
             if (editPart instanceof ConnectionPart) {
                 int offsetX = ((FigureCanvas) getViewer().getControl()).getViewport().getViewLocation().x;
                 int offsetY = ((FigureCanvas) getViewer().getControl()).getViewport().getViewLocation().y;
@@ -402,8 +399,8 @@ public class WorkflowEditor extends GraphicalEditor
                 Rectangle toleranceRectangle = new Rectangle(ev.x + offsetX - DEFAULT_TOLERANCE / 2,
                     ev.y + offsetY - DEFAULT_TOLERANCE / 2, DEFAULT_TOLERANCE, DEFAULT_TOLERANCE);
                 if (connectionPoints.intersects(toleranceRectangle)) {
-                    viewer.select(connectionPart);
-                    viewer.reveal(connectionPart);
+                    getViewer().select(connectionPart);
+                    getViewer().reveal(connectionPart);
                     return connectionPart;
                 }
             }
@@ -447,8 +444,8 @@ public class WorkflowEditor extends GraphicalEditor
 
                             @Override
                             public void run() {
-                                if (viewer.getControl() != null) {
-                                    viewer.setContents(workflowDescription);
+                                if (getViewer().getControl() != null) {
+                                    getViewer().setContents(workflowDescription);
                                     if (getEditorSite() != null) {
                                         setFocus();
                                     }
@@ -626,10 +623,10 @@ public class WorkflowEditor extends GraphicalEditor
         return wd;
     }
 
-    private void validateWorkflow() {
+    public void validateWorkflow() {
         ComponentValidationMessageStore.getInstance().emptyMessageStore(); // delete any previous validation errors
 
-        List<?> list = viewer.getRootEditPart().getChildren();
+        List<?> list = getViewer().getRootEditPart().getChildren();
         WorkflowDescriptionValidationUtils.validateWorkflowDescription(workflowDescription, false, true);
         for (Object object : list) {
             if (!(object instanceof WorkflowPart)) {
@@ -712,7 +709,7 @@ public class WorkflowEditor extends GraphicalEditor
     }
 
     private void showMemoryExceedingWarningMessage() {
-        MessageBox messageBox = new MessageBox(viewer.getControl().getShell(), SWT.ICON_WARNING | SWT.OK);
+        MessageBox messageBox = new MessageBox(getViewer().getControl().getShell(), SWT.ICON_WARNING | SWT.OK);
         messageBox.setMessage(Messages.memoryExceededWarningMessage);
         messageBox.setText(Messages.memoryExceededWarningHeading);
         messageBox.open();
@@ -738,7 +735,7 @@ public class WorkflowEditor extends GraphicalEditor
             }
             return tabbedPropertySheetPage;
         } else if (type == IContextProvider.class) {
-            return new WorkflowEditorHelpContextProvider(viewer);
+            return new WorkflowEditorHelpContextProvider(getViewer());
         } else if (type == IContentOutlinePage.class) {
             return new OutlineView(getGraphicalViewer());
         } else if (type == ZoomManager.class) {
@@ -771,7 +768,7 @@ public class WorkflowEditor extends GraphicalEditor
      * @author Oliver Seebach
      * @author Jascha Riedel(#0013977) moved selection and connection tool to ui.bindings
      */
-    private final class WorkflowEditorKeyListener implements KeyListener {
+    public final class WorkflowEditorKeyListener implements KeyListener {
 
         @Override
         public void keyReleased(KeyEvent e) {}
@@ -866,14 +863,14 @@ public class WorkflowEditor extends GraphicalEditor
 
         if (getEditorInput() != null) {
             IFile file = ((IFileEditorInput) getEditorInput()).getFile();
-            file.getWorkspace().removeResourceChangeListener(resourceListener);
+            file.getWorkspace().removeResourceChangeListener(getResourceListener());
         }
 
         super.setInput(input);
 
         if (getEditorInput() != null) {
             IFile file = ((IFileEditorInput) getEditorInput()).getFile();
-            file.getWorkspace().addResourceChangeListener(resourceListener);
+            file.getWorkspace().addResourceChangeListener(getResourceListener());
             setPartName(file.getName());
         }
     }
@@ -891,13 +888,13 @@ public class WorkflowEditor extends GraphicalEditor
         getEditorsCommandStack().execute(createCommand);
 
         // select new part and activate corresponding properties view
-        for (Object editpart : viewer.getContents().getChildren()) {
+        for (Object editpart : getViewer().getContents().getChildren()) {
             if (editpart instanceof EditPart) {
                 EditPart currentEditPart = (EditPart) editpart;
                 if (currentEditPart.getModel().equals(newObject)) {
-                    viewer.select(currentEditPart);
+                    getViewer().select(currentEditPart);
                     tabbedPropertySheetPage.selectionChanged(WorkflowEditor.this,
-                        viewer.getSelection());
+                        getViewer().getSelection());
                     break;
                 }
             }
@@ -906,7 +903,7 @@ public class WorkflowEditor extends GraphicalEditor
 
     private WorkflowNodeLabelConnectionCreateCommand getCreateCommand(Object newObject, Object objectType) {
         final int offset = 20;
-        WorkflowDescription model = (WorkflowDescription) viewer.getContents().getModel();
+        WorkflowDescription model = (WorkflowDescription) getViewer().getContents().getModel();
         if (objectType == WorkflowNode.class) {
             // Set bounds of new component, if intersects with existing translate by
             // 30,30
@@ -933,8 +930,16 @@ public class WorkflowEditor extends GraphicalEditor
     }
 
     public void setHelp(String id) {
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), id);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(getViewer().getControl(), id);
 //        LogFactory.getLog(this.getClass()).debug(StringUtils.format("Set help ID to %s", id));
+    }
+
+    public ResourceTracker getResourceListener() {
+        return resourceListener;
+    }
+
+    public void setViewer(GraphicalViewer viewer) {
+        this.viewer = viewer;
     }
 
     /**

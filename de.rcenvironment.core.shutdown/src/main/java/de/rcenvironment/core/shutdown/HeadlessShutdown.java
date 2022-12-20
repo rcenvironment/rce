@@ -28,8 +28,6 @@ import de.rcenvironment.core.configuration.bootstrap.profile.Profile;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.toolkitbridge.api.ToolkitBridge;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
@@ -147,10 +145,9 @@ public class HeadlessShutdown {
             if (message != null) {
                 writeToLog("Message \"" + message + "\" received");
                 if (message.contains("shutdown") && message.contains(secretString)) {
-                    AuditLog.append(AuditLogIds.APPLICATION_SHUTDOWN_REQUESTED, "method", "CLI/network signal");
                     logger.info("Received shutdown signal, shutting down");
                     IOUtils.closeQuietly(serverSocket);
-                    Instance.shutdown(); // non-blocking
+                    Instance.shutdown("CLI/network signal"); // non-blocking
                     try {
                         Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
                         writeToLog("Regular shutdown time expired, shutting down hard using System.exit()");

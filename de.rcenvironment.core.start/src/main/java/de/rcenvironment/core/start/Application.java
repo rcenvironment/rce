@@ -93,7 +93,7 @@ public class Application implements IApplication {
 
     @Override
     public void stop() {
-        Instance.shutdown();
+        Instance.shutdown("default");
     }
 
 }

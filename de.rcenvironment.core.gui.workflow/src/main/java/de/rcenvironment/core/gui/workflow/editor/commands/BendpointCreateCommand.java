@@ -52,7 +52,7 @@ public class BendpointCreateCommand extends AbstractBendpointCommand {
                 return false;
             }
         } 
-        return true;
+        return super.canExecute();
     }
   
     

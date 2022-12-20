@@ -54,8 +54,8 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.palette.PaletteViewConstants;
 import de.rcenvironment.core.gui.palette.PaletteViewStorage;
 import de.rcenvironment.core.gui.palette.view.dialogs.ManageCustomGroupsDialog;
@@ -346,7 +346,9 @@ public class PaletteView extends ViewPart implements IPartListener2, CommandStac
         public void dragStart(DragSourceEvent evt) {
             ITreeSelection selection = paletteTreeViewer.getStructuredSelection();
             PaletteTreeNode node = (PaletteTreeNode) selection.getFirstElement();
-            if (selection.size() == 1 && (node.isAccessibleComponent() || node.isCreationTool())) {
+            boolean isWorkfowEditor =
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor() instanceof WorkflowEditor;
+            if (isWorkfowEditor && selection.size() == 1 && (node.isAccessibleComponent() || node.isCreationTool())) {
                 evt.image = null;
                 if (node.isCreationTool()) {
                     evt.doit = node.getCreationToolNode().getTool() instanceof PaletteCreationTool;
@@ -523,10 +525,8 @@ public class PaletteView extends ViewPart implements IPartListener2, CommandStac
             PaletteTreeNode node = (PaletteTreeNode) object;
             if (node.getHelpContextID().isPresent()) {
                 String helpId = node.getHelpContextID().get();
-                if (helpId.startsWith("de.rcenvironment.integration.workflow")) {
-                    return getContextFromHelpSystem("de.rcenvironment.workflow");
-                } else if (toolIntegrationRegistry.hasTIContextMatchingPrefix(helpId)) {
-                    return getContextFromHelpSystem(ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
+                if (toolIntegrationRegistry.hasTIContextMatchingPrefix(helpId)) {
+                    return getContextFromHelpSystem(ComponentConstants.INTEGRATION_CONTEXTUAL_HELP_PLACEHOLDER_ID);
                 } else if (helpId.contains("de.rcenvironment.remoteaccess")) {
                     return getContextFromHelpSystem("de.rcenvironment.remoteaccess.*");
                 } else {

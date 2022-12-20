@@ -27,8 +27,9 @@ public interface NodeInformationRegistry extends NodeNameResolver {
      * 
      * @param id the instance session id
      * @param newName the name to associate
+     * @return true if the name change was actually applied; false, for example, if the change relates to an outdated instance session
      */
-    void associateDisplayName(InstanceNodeSessionId id, String newName);
+    boolean associateDisplayName(InstanceNodeSessionId id, String newName);
 
     /**
      * Sets the name to associate with a specific logical node on the given instance session. This is typically the result of a remote node
@@ -36,8 +37,9 @@ public interface NodeInformationRegistry extends NodeNameResolver {
      * 
      * @param id the logical node session id
      * @param newName the name to associate, or null to remove an existing association
+     * @return true if the name change was actually applied; false, for example, if the change relates to an outdated instance session
      */
-    void associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName);
+    boolean associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName);
 
     /**
      * Debug method; prints all registered id-to-displayName associations.

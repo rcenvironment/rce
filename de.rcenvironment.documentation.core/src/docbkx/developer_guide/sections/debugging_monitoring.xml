@@ -1,11 +1,11 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="logging">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="logging">
     <title>Logging</title>
-    <sect2>
+    <section>
         <title>General Configuration</title>
         <para>(TODO)</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Verbose Logging</title>
         <para>Some log messages are disabled by default as they produce large amounts of output, and
             are only needed in special circumstances (typically, for debugging). This is called
@@ -67,5 +67,5 @@
                     </tbody>
                 </tgroup>
             </table></para>
-    </sect2>
-</sect1>
+    </section>
+</section>

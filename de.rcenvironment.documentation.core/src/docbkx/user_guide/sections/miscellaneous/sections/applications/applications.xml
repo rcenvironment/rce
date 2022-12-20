@@ -1,9 +1,9 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="applications">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="applications">
 	<title>Applications</title>
 	<para>This section describes some of the applications of RCE.
 	</para>
-	<sect2 id="prel_aircr_des">
+	<section id="prel_aircr_des">
 	<title>Preliminary Aircraft Design: Design of a short- to medium-range aircraft</title>
 	<para>From a paper presented at DLRK 2012: "Application of a distributed
 		MDAO framework to the design of a short- to medium-range aircraft", E.
@@ -29,5 +29,5 @@
 				</imageobject>
 			</mediaobject>
 		</figure>
-	</sect2>
-</sect1>
+	</section>
+</section>

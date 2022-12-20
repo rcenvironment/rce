@@ -9,7 +9,8 @@ package de.rcenvironment.core.monitoring.system.internal;
 
 import java.util.List;
 
-import de.rcenvironment.core.utils.common.AuditLog;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventType;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -57,12 +58,12 @@ public class OSHISystemIntegrationAdapter implements SystemIntegrationAdapter {
         String maxHeapSize = Long.toString(systemRuntime.maxMemory());
 
         // write system and JVM information to the event log
-        AuditLog.append(AuditLog.newEntry("monitoring.start")
-            .set("system_total_ram", totalSystemRamBytes)
-            .set("system_logical_cpus", logicalProcessors)
-            .set("jvm_processor_count", cpuCoreCount)
-            .set("jvm_heap_limit", maxHeapSize)
-            .set("jvm_pid", selfJavaPid));
+        EventLog.append(EventLog.newEntry(EventType.SYSMON_INITIALIZED)
+            .set(EventType.Attributes.SYSTEM_TOTAL_RAM, totalSystemRamBytes)
+            .set(EventType.Attributes.SYSTEM_LOGICAL_CPUS, logicalProcessors)
+            .set(EventType.Attributes.JVM_PROCESSOR_COUNT, cpuCoreCount)
+            .set(EventType.Attributes.JVM_HEAP_LIMIT, maxHeapSize)
+            .set(EventType.Attributes.JVM_PID, selfJavaPid));
     }
 
     @Override

@@ -18,47 +18,21 @@ import org.eclipse.swt.widgets.Text;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel (#14005)
+ * @author Kathrin Schaffert (bug fixes, refactoring)
  */
 public class NumericalTextConstraintListener implements VerifyListener {
 
-    /**
-     * Option if there shall be no restriction.
-     */
-    public static final int NONE = WidgetGroupFactory.NONE;
+    protected static final String SMALL_E = "e";
 
-    /**
-     * Option if a textfield should only allow float inputs (e.g. no letters).
-     */
-    public static final int ONLY_FLOAT = WidgetGroupFactory.ONLY_FLOAT;
-
-    /**
-     * Option if a textfield should only allow integer inputs (e.g. no letters).
-     */
-    public static final int ONLY_INTEGER = WidgetGroupFactory.ONLY_INTEGER;
-
-    /**
-     * Option if a textfield should only allow only inputs >= 0.
-     */
-    public static final int GREATER_OR_EQUAL_ZERO = WidgetGroupFactory.GREATER_OR_EQUAL_ZERO;
-    
-    /**
-     * Option if a textfield should only allow inputs > 0.
-     */
-    public static final int GREATER_ZERO = WidgetGroupFactory.GREATER_ZERO;
-
-    private static final String SMALL_E = "e";
+    protected static final String E = "E";
 
     private static final String MINUS = "-";
 
-    private static final String E = "E";
-    
-    private static final String ZERO = "0";
-    
     private static final String DOT = ".";
 
     private final int function;
 
-    public NumericalTextConstraintListener(Text text, int function) {
+    public NumericalTextConstraintListener(int function) {
         this.function = function;
     }
 
@@ -77,28 +51,33 @@ public class NumericalTextConstraintListener implements VerifyListener {
         if ((function & WidgetGroupFactory.ONLY_INTEGER) > 0) {
             valid &= checkIfInputIsInt(newS);
         }
-        
-        if ((function & WidgetGroupFactory.GREATER_ZERO) > 0 && ((function & WidgetGroupFactory.ONLY_INTEGER) > 0) && valid) {
+
+        if ((function & WidgetGroupFactory.GREATER_ZERO) > 0 && valid) {
             valid &= checkIfGreaterZero(newS);
         }
-        
+
         if ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ZERO) > 0 && valid) {
             valid &= checkIfGreaterOrEqualZero(newS);
         }
-        
+
+        if ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ONE) > 0 && valid) {
+            valid &= checkIfGreaterOrEqualOne(newS);
+        }
+
         // allow leading dot
         if ((newS.equals(DOT) || newS.equals(MINUS + DOT))
-            && ((function & WidgetGroupFactory.ONLY_FLOAT) > 0)) {
+            && ((function & WidgetGroupFactory.ONLY_FLOAT) > 0) && ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ONE) <= 0)) {
             valid = true;
         }
-        
+
         // Allow deleting text entry
         if (newS.isEmpty() && !oldS.isEmpty()) {
             valid = true;
         }
 
         // Allow minus operation if not >= 0
-        if (newS.equals(MINUS) && !((function & (WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.GREATER_ZERO)) > 0)) {
+        if (newS.equals(MINUS) && !((function & (WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.GREATER_ZERO
+            | WidgetGroupFactory.GREATER_OR_EQUAL_ONE)) > 0)) {
             valid = true;
         }
 
@@ -134,6 +113,15 @@ public class NumericalTextConstraintListener implements VerifyListener {
         e.doit = valid;
     }
 
+    private boolean checkIfGreaterOrEqualOne(String newS) {
+        try {
+            float result = Float.parseFloat(newS);
+            return result >= 1;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     private boolean checkIfGreaterOrEqualZero(String newS) {
         try {
             float result = Float.parseFloat(newS);
@@ -142,7 +130,7 @@ public class NumericalTextConstraintListener implements VerifyListener {
             return false;
         }
     }
-    
+
     private boolean checkIfGreaterZero(String newS) {
         try {
             float result = Float.parseFloat(newS);
@@ -164,7 +152,7 @@ public class NumericalTextConstraintListener implements VerifyListener {
     private boolean checkIfInputIsFloat(String newS) {
         try {
             if ((String.valueOf(Double.parseDouble(newS)).equals("Infinity"))
-                    || (String.valueOf(Double.parseDouble(newS)).equals("-Infinity"))) {
+                || (String.valueOf(Double.parseDouble(newS)).equals("-Infinity"))) {
                 return false;
             }
             Float.parseFloat(newS);

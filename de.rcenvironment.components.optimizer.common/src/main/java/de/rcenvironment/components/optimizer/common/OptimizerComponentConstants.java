@@ -227,6 +227,9 @@ public final class OptimizerComponentConstants {
 
     /** Constant. */
     public static final String STEP_VALUE_SIGNATURE = " - step value";
+    
+    /** Constant. */
+    public static final String OPT_PACKAGE_DAKOTA = "dakota";
 
     /**
      * Hide the constructor.

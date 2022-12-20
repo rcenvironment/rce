@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Authorization
 Bundle-SymbolicName: de.rcenvironment.core.authorization;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.authorization.api,
@@ -20,8 +20,8 @@ Import-Package: de.rcenvironment.core.command.common,
  org.apache.commons.codec.binary;version="1.6.0",
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.logging;version="1.1.1",
- org.bouncycastle;version="1.64.0",
- org.bouncycastle.jce.provider;version="1.64.0",
+ org.bouncycastle;version="1.70.0",
+ org.bouncycastle.jce.provider;version="1.70.0",
  org.eclipse.equinox.security.storage;version="1.0.0",
  org.osgi.framework,
  org.osgi.service.component.annotations

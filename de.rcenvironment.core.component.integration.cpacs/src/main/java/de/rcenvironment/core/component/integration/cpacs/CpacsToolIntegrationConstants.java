@@ -98,9 +98,6 @@ public final class CpacsToolIntegrationConstants {
     /** Constant. */
     public static final String FILE_SUFFIX_XSL = "xsl";
 
-    /** Constant. */
-    public static final String CPACS_TOOL_INTEGRATION_CONTEXT_TYPE = "CPACS";
-
     private CpacsToolIntegrationConstants() {
 
     }

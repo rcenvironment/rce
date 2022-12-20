@@ -24,7 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContext;
 import de.rcenvironment.core.utils.testing.CaptureMatchers;
 
 final class WorkflowIntegrationServiceImplMatchers {
@@ -51,7 +51,7 @@ final class WorkflowIntegrationServiceImplMatchers {
                     mismatchDescription.appendText(mismatchDescriptionText);
                 } else {
                     final int indexOfParameter = service.getToolIntegrationNameParameter().getValues().indexOf(expectedComponentName);
-                    final ToolIntegrationContext actualContext =
+                    final IntegrationContext actualContext =
                         service.getToolIntegrationContextParameter().getValues().get(indexOfParameter);
                     final String mismatchDescriptionText =
                         String.format("has called ToolIntegrationService#registerRecursively(\"%s\", %s)", expectedComponentName,

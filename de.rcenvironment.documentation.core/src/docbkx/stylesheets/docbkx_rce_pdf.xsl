@@ -10,6 +10,10 @@
 	<xsl:template match="processing-instruction('linebreak')">
 	  <fo:block/>
 	</xsl:template>
+	<!-- Line break for AsciiDoc --> 
+	<xsl:template match="processing-instruction('asciidoc-br')"> 
+	  <fo:block/> 
+	</xsl:template>
 	
 	<!-- Verbatim text formatting (programlistings) -->
 	<xsl:attribute-set name="monospace.verbatim.properties">

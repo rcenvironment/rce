@@ -37,6 +37,12 @@ public interface InstanceNodeSessionId extends CommonIdBase, ResolvableNodeId {
     boolean isSameInstanceNodeSessionAs(InstanceNodeSessionId id);
 
     /**
+     * @param id the id to compare with
+     * @return true if both ids refer to the same instance session
+     */
+    boolean isSameInstanceNodeSessionAs(LogicalNodeSessionId id);
+
+    /**
      * @return the {@link InstanceNodeId} of this instance session; may or may not return the same object on repeated calls
      */
     InstanceNodeId convertToInstanceNodeId();

@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication GUI
 Bundle-SymbolicName: de.rcenvironment.core.gui.communication; singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.equinox.security;bundle-version="1.1.1",
  org.eclipse.equinox.security.ui;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Activator: de.rcenvironment.core.gui.communication.views.Activator
-Import-Package: com.jcraft.jsch;version="0.1.55",
+Import-Package: com.jcraft.jsch;version="0.2.0",
  de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,

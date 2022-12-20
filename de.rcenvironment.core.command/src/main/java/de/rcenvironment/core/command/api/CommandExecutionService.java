@@ -11,6 +11,8 @@ package de.rcenvironment.core.command.api;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import de.rcenvironment.core.command.spi.CommandParser;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -40,15 +42,8 @@ public interface CommandExecutionService {
      */
     Future<CommandExecutionResult> asyncExecMultiCommand(List<String> tokens, TextOutputReceiver outputReceiver, Object initiator);
 
-    /**
-     * Writes command help information to the given {@link TextOutputReceiver}.
-     * 
-     * @param addCommonPrefix true if the common prefix ("rce ...") should be added
-     * @param showDevCommands whether developer commands should be included
-     * @param outputReceiver the {@link TextOutputReceiver} to write to
-     */
-    void printHelpText(boolean addCommonPrefix, boolean showDevCommands, TextOutputReceiver outputReceiver);
-
+    void printHelpText(ParsedCommandModifiers modifiers, TextOutputReceiver outputReceiver);
+        
     /**
      * Prints the same output as {@link #printHelpText(boolean, TextOutputReceiver)}, but collects the output and returns it as a
      * newline-separated string.
@@ -58,5 +53,7 @@ public interface CommandExecutionService {
      * @return the collected output
      */
     String getHelpText(boolean addCommonPrefix, boolean showDevCommands);
+
+    CommandParser getParser();
 
 }

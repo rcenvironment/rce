@@ -41,6 +41,7 @@ import de.rcenvironment.core.communication.uplink.client.session.api.ToolDescrip
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.api.UserComponentIdMappingService;
+import de.rcenvironment.core.component.integration.IntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.management.utils.JsonDataEncryptionUtils;
@@ -259,14 +260,14 @@ public class UplinkToolAnnouncementServiceImpl implements UplinkToolAnnouncement
 
     private Map<String, String> generateReadOnlyConfigToSend(Map<String, String> readOnlyconfig) {
         Map<String, String> readOnlyConfigToSend = new HashMap<String, String>();
-        readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_TOOL_NAME,
-            readOnlyconfig.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-        readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_NAME,
-            readOnlyconfig.get(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_NAME));
-        readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL,
-            readOnlyconfig.get(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL));
-        readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION,
-            readOnlyconfig.get(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION));
+        readOnlyConfigToSend.put(IntegrationConstants.KEY_COMPONENT_NAME,
+            readOnlyconfig.get(IntegrationConstants.KEY_COMPONENT_NAME));
+        readOnlyConfigToSend.put(IntegrationConstants.KEY_INTEGRATOR_NAME,
+            readOnlyconfig.get(IntegrationConstants.KEY_INTEGRATOR_NAME));
+        readOnlyConfigToSend.put(IntegrationConstants.KEY_INTEGRATOR_EMAIL,
+            readOnlyconfig.get(IntegrationConstants.KEY_INTEGRATOR_EMAIL));
+        readOnlyConfigToSend.put(IntegrationConstants.KEY_DESCRIPTION,
+            readOnlyconfig.get(IntegrationConstants.KEY_DESCRIPTION));
         readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED,
             readOnlyconfig.get(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED));
         readOnlyConfigToSend.put(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER,

@@ -17,9 +17,9 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLog.LogEntry;
-import de.rcenvironment.core.utils.common.AuditLogIds;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogEntry;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
@@ -41,7 +41,7 @@ public class IncomingSessionTracker<T> {
         SessionHandle addLogData(String key, String value);
 
         /*
-         * See {@link AuditLog.LogEntry#set(String, int)} for reasoning and behavior.
+         * See {@link EventLog.LogEntry#set(String, int)} for reasoning and behavior.
          */
         SessionHandle addLogData(String key, int value);
 
@@ -67,33 +67,15 @@ public class IncomingSessionTracker<T> {
      * Internal data holder. For simplicity, there are no get/set methods or implicit synchronization. Any field access MUST only occur
      * while synchronizing on the holder object.
      *
-     * @author misc_ro
+     * @author Robert Mischke
      */
     private static class SessionStateHolder implements SessionHandle {
 
         private static final Log sharedLog = LogFactory.getLog(SessionStateHolder.class);
 
-        private static final String EVENT_LOG_KEY_CONNECTION_TYPE = "type";
-
-        private static final String EVENT_LOG_KEY_INTERNAL_ID = "connection_id";
-
-        private static final String EVENT_LOG_KEY_LOGIN_NAME = "login_name";
-
-        private static final String EVENT_LOG_KEY_CLOSE_REASON = "close_reason";
-
-        private static final String EVENT_LOG_KEY_LAST_PREFIX = "last_"; // for auth method, login name, auth failure reason
-
-        private static final String EVENT_LOG_KEY_AUTH_METHOD = "auth_method";
-
-        private static final String EVENT_LOG_KEY_NUM_AUTH_FAILURES = "auth_failure_count";
-
-        private static final String EVENT_LOG_KEY_AUTH_FAILURE_REASON = "auth_failure_reason";
-
-        private static final String EVENT_LOG_KEY_SESSION_DURATION_MSEC = "duration_msec";
-
         private final Instant startTime = Instant.now();
 
-        private final Map<String, String> logData = new HashMap<>();
+        private final Map<String, String> commonEventLogData = new HashMap<>();
 
         private boolean hadIncomingEOF;
 
@@ -109,17 +91,17 @@ public class IncomingSessionTracker<T> {
 
         private boolean wasRegularlyClosed;
 
-        private String internalSessionId;
+        private String connectionId;
 
         private int customCounter;
 
-        public synchronized void setInternalSessionId(String id) {
-            internalSessionId = id;
-            storeLogDataKeyValuePair(EVENT_LOG_KEY_INTERNAL_ID, id);
+        public synchronized void setConnectionId(String id) {
+            connectionId = id;
+            setCommonEventLogKeyValuePair(EventType.Attributes.CONNECTION_ID, id);
         }
 
         public synchronized void setConnectionType(String connectionTypeLogId) {
-            storeLogDataKeyValuePair(EVENT_LOG_KEY_CONNECTION_TYPE, connectionTypeLogId);
+            setCommonEventLogKeyValuePair(EventType.Attributes.TYPE, connectionTypeLogId);
         }
 
         /**
@@ -131,7 +113,7 @@ public class IncomingSessionTracker<T> {
          *        collection or on shutdown)
          */
         public synchronized void registerEndOfSession(boolean regularClose) {
-            sharedLog.debug("Closing session " + internalSessionId);
+            sharedLog.debug("Closing connection " + connectionId);
             this.wasRegularlyClosed = regularClose;
             writeFinalLogEntry();
         }
@@ -142,20 +124,20 @@ public class IncomingSessionTracker<T> {
             for (Entry<String, String> e : data.entrySet()) {
                 String key = e.getKey();
                 String value = e.getValue();
-                storeLogDataKeyValuePair(key, value);
+                setCommonEventLogKeyValuePair(key, value);
             }
             return this;
         }
 
         @Override
         public synchronized SessionHandle addLogData(String key, String value) {
-            storeLogDataKeyValuePair(key, value);
+            setCommonEventLogKeyValuePair(key, value);
             return this;
         }
 
         @Override
         public synchronized SessionHandle addLogData(String key, int value) {
-            storeLogDataKeyValuePair(key, Integer.toString(value));
+            setCommonEventLogKeyValuePair(key, Integer.toString(value));
             return this;
         }
 
@@ -187,7 +169,7 @@ public class IncomingSessionTracker<T> {
             // If this is impossible for some reason, adapt this code to allow this, e.g. with an extra flag.
             if (hadAuthenticationSuccess) {
                 throw new IllegalStateException("Attempted to register an authentication failure after "
-                    + "authentication success for session id " + internalSessionId);
+                    + "authentication success for connection " + connectionId);
             }
 
             lastAuthLoginName = loginName;
@@ -218,64 +200,64 @@ public class IncomingSessionTracker<T> {
         }
 
         // note: add "allow overwrite without warning" flag if needed
-        private void storeLogDataKeyValuePair(String key, String value) {
-            String replaced = logData.put(key, value);
+        private void setCommonEventLogKeyValuePair(String key, String value) {
+            String replaced = commonEventLogData.put(key, value);
             if (replaced != null) {
                 if (replaced.equals(value)) {
-                    sharedLog.warn("Repeatedly attached the same log data for session " + internalSessionId + ", key: " + key
+                    sharedLog.warn("Repeatedly attached the same log data for connection " + connectionId + ", key: " + key
                         + ", value: " + value);
                 } else {
-                    sharedLog.warn("Replacing log data for session " + internalSessionId + ", key: " + key
+                    sharedLog.warn("Replacing log data for connection " + connectionId + ", key: " + key
                         + ", old value: " + replaced + ", new value: " + value);
                 }
             }
         }
 
         private void writeAuthenticationSuccessLogEntry() {
-            LogEntry logEntry = AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_ACCEPT);
+            EventLogEntry logEntry = EventLog.newEntry(EventType.CONNECTION_INCOMING_ACCEPTED);
 
             // apply collected log data
-            logEntry.setAll(logData);
+            logEntry.setAll(commonEventLogData);
 
             // add auth-specific entries
-            logEntry.set(EVENT_LOG_KEY_LOGIN_NAME, lastAuthLoginName);
-            logEntry.set(EVENT_LOG_KEY_AUTH_METHOD, lastAuthMethod);
+            logEntry.set(EventType.Attributes.LOGIN_NAME, lastAuthLoginName);
+            logEntry.set(EventType.Attributes.AUTH_METHOD, lastAuthMethod);
             if (authenticationFailureCount != 0) {
-                logEntry.set(EVENT_LOG_KEY_NUM_AUTH_FAILURES, Integer.toString(authenticationFailureCount));
+                logEntry.set(EventType.Attributes.AUTH_FAILURE_COUNT, Integer.toString(authenticationFailureCount));
             }
 
-            AuditLog.append(logEntry);
+            EventLog.append(logEntry);
         }
 
         private void writeAuthenticationFailureLogEntry() {
-            LogEntry logEntry = AuditLog.newEntry(AuditLogIds.CONNECTION_INCOMING_AUTH_FAILURE);
+            EventLogEntry logEntry = EventLog.newEntry(EventType.CONNECTION_INCOMING_AUTH_FAILED);
 
             // apply collected log data
-            logEntry.setAll(logData);
+            logEntry.setAll(commonEventLogData);
 
             // add auth-specific entries
-            logEntry.set(EVENT_LOG_KEY_NUM_AUTH_FAILURES, Integer.toString(authenticationFailureCount));
-            logEntry.set(EVENT_LOG_KEY_LOGIN_NAME, lastAuthLoginName);
-            logEntry.set(EVENT_LOG_KEY_AUTH_METHOD, lastAuthMethod);
-            logEntry.set(EVENT_LOG_KEY_AUTH_FAILURE_REASON, lastAuthFailureReason);
+            logEntry.set(EventType.Attributes.AUTH_FAILURE_COUNT, Integer.toString(authenticationFailureCount));
+            logEntry.set(EventType.Attributes.LOGIN_NAME, lastAuthLoginName);
+            logEntry.set(EventType.Attributes.AUTH_METHOD, lastAuthMethod);
+            logEntry.set(EventType.Attributes.AUTH_FAILURE_REASON, lastAuthFailureReason);
 
-            AuditLog.append(logEntry);
+            EventLog.append(logEntry);
         }
 
         private void writeFinalLogEntry() {
             boolean hadAuthenticationFailure = authenticationFailureCount != 0;
 
             // "final" ensures that these are set exactly once
-            final String mainEventType;
+            final EventType mainEventType;
             final String closeReason;
 
             if (!wasRegularlyClosed) {
                 // log unusual cases: closed by some sort of session garbage collection, or leftover sessions on shutdown
-                mainEventType = AuditLogIds.CONNECTION_INCOMING_CLOSE;
+                mainEventType = EventType.CONNECTION_INCOMING_CLOSED;
                 closeReason = "fallback";
             } else {
                 if (hadAuthenticationSuccess) {
-                    mainEventType = AuditLogIds.CONNECTION_INCOMING_CLOSE;
+                    mainEventType = EventType.CONNECTION_INCOMING_CLOSED;
                     if (hadIncomingEOF) {
                         // TODO >10.2.1 (p2) this commonly occurs at the normal end of Uplink sessions; could be improved
                         closeReason = "end of stream";
@@ -283,45 +265,45 @@ public class IncomingSessionTracker<T> {
                         closeReason = "regular";
                     }
                 } else if (hadAuthenticationFailure) {
-                    mainEventType = AuditLogIds.CONNECTION_INCOMING_REFUSE;
+                    mainEventType = EventType.CONNECTION_INCOMING_REFUSED;
                     closeReason = "auth failure";
                 } else {
-                    mainEventType = AuditLogIds.CONNECTION_INCOMING_REFUSE;
+                    mainEventType = EventType.CONNECTION_INCOMING_REFUSED;
                     // no auth attempt registered -> assume auth timeout
                     closeReason = "auth timeout";
                 }
             }
 
-            LogEntry logEntry = AuditLog.newEntry(mainEventType);
+            EventLogEntry logEntry = EventLog.newEntry(mainEventType);
 
             // apply collected log data
-            logEntry.setAll(logData);
+            logEntry.setAll(commonEventLogData);
 
             // add authentication result data
             if (hadAuthenticationSuccess) {
                 // success with or without a previous failure -> log successful attempt parameters
-                logEntry.set(EVENT_LOG_KEY_LOGIN_NAME, lastAuthLoginName);
-                logEntry.set(EVENT_LOG_KEY_AUTH_METHOD, lastAuthMethod);
+                logEntry.set(EventType.Attributes.LOGIN_NAME, lastAuthLoginName);
+                logEntry.set(EventType.Attributes.AUTH_METHOD, lastAuthMethod);
                 if (hadAuthenticationFailure) {
                     // always log the number of login failures, even if redeemed by subsequent success
-                    logEntry.set(EVENT_LOG_KEY_NUM_AUTH_FAILURES, Integer.toString(authenticationFailureCount));
+                    logEntry.set(EventType.Attributes.AUTH_FAILURE_COUNT, Integer.toString(authenticationFailureCount));
                 }
             } else if (hadAuthenticationFailure) {
                 // failure without subsequent success -> log last login attempt parameters
-                logEntry.set(EVENT_LOG_KEY_NUM_AUTH_FAILURES, Integer.toString(authenticationFailureCount));
-                logEntry.set(EVENT_LOG_KEY_LAST_PREFIX + EVENT_LOG_KEY_LOGIN_NAME, lastAuthLoginName);
-                logEntry.set(EVENT_LOG_KEY_LAST_PREFIX + EVENT_LOG_KEY_AUTH_METHOD, lastAuthMethod);
-                logEntry.set(EVENT_LOG_KEY_LAST_PREFIX + EVENT_LOG_KEY_AUTH_FAILURE_REASON, lastAuthFailureReason);
+                logEntry.set(EventType.Attributes.AUTH_FAILURE_COUNT, Integer.toString(authenticationFailureCount));
+                logEntry.set(EventType.Attributes.LAST_LOGIN_NAME, lastAuthLoginName);
+                logEntry.set(EventType.Attributes.LAST_AUTH_METHOD, lastAuthMethod);
+                logEntry.set(EventType.Attributes.LAST_AUTH_FAILURE_REASON, lastAuthFailureReason);
             }
 
             // add session close reason/trigger
-            logEntry.set(EVENT_LOG_KEY_CLOSE_REASON, closeReason);
+            logEntry.set(EventType.Attributes.CLOSE_REASON, closeReason);
 
             // add duration
             String durationString = Long.toString(Duration.between(startTime, Instant.now()).toMillis());
-            logEntry.set(EVENT_LOG_KEY_SESSION_DURATION_MSEC, durationString);
+            logEntry.set(EventType.Attributes.DURATION, durationString);
 
-            AuditLog.append(logEntry);
+            EventLog.append(logEntry);
         }
 
     }
@@ -341,7 +323,7 @@ public class IncomingSessionTracker<T> {
 
         // set basic data
         stateHolder.setConnectionType(connectionTypeLogId);
-        stateHolder.setInternalSessionId(renderInternalIdOfSession(session));
+        stateHolder.setConnectionId(renderConnectionIdOfSession(session));
 
         synchronized (stateHoldersBySession) {
             SessionStateHolder existing = stateHoldersBySession.get(session);
@@ -413,10 +395,10 @@ public class IncomingSessionTracker<T> {
     }
 
     private String renderLogDescriptorOfSession(T session) {
-        return StringUtils.format("%s [%s]", session.toString(), renderInternalIdOfSession(session));
+        return StringUtils.format("%s [%s]", session.toString(), renderConnectionIdOfSession(session));
     }
 
-    private String renderInternalIdOfSession(T session) {
+    private String renderConnectionIdOfSession(T session) {
         // rendering the hash code to an integer for now; could be rendered to hex or similar as well, as long as it is unique
         return Integer.toString(System.identityHashCode(session));
     }

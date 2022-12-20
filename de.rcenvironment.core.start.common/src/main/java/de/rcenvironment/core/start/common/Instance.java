@@ -11,8 +11,9 @@ package de.rcenvironment.core.start.common;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLogIds;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogConstants;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -126,9 +127,8 @@ public class Instance {
     /**
      * Shuts down the RCE instance.
      */
-    public static void shutdown() {
-        // TODO identify and add cause as "method" field
-        AuditLog.append(AuditLogIds.APPLICATION_SHUTDOWN_REQUESTED, null);
+    public static void shutdown(String triggerMethod) {
+        EventLog.append(EventType.APPLICATION_SHUTDOWN_REQUESTED, EventType.Attributes.METHOD, triggerMethod);
         shutdownLatch.countDown();
         if (instanceRunner == null) {
             shutdownRequested = true;
@@ -153,7 +153,10 @@ public class Instance {
     /**
      * Restarts the RCE instance.
      */
-    public static void restart() {
+    public static void restart(String triggerMethod) {
+        EventLog.append(EventLog.newEntry(EventType.APPLICATION_SHUTDOWN_REQUESTED)
+            .set(EventType.Attributes.METHOD, triggerMethod)
+            .set(EventType.Attributes.IS_RESTART, EventLogConstants.TRUE_VALUE));
         getInstanceRunner().triggerRestart();
     }
 

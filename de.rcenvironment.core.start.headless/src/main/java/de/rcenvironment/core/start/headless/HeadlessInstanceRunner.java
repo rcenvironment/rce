@@ -150,7 +150,8 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
     @Override
     public void triggerRestart() {
         setExitCode(IApplication.EXIT_RESTART);
-        Instance.shutdown();
+        // TODO causes two event log entries to be created; not a problem, but could be improved
+        Instance.shutdown("restart request");
     }
 
     private void setExitCode(int newExitCode) {

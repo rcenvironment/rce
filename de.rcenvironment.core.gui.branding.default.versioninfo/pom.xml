@@ -3,8 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.core.gui.branding.default.versioninfo</artifactId>
-	<name>RCE Core GUI Branding Version Info Fragment Bundle</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<name>RCE Default Version Info Branding (Fragment)</name>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

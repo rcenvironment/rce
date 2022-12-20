@@ -13,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
@@ -38,7 +40,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * Contributes the subtree showing the list of current {@link ConnectionSetup}s.
  * 
  * @author Robert Mischke
- * @author Kathrin Schaffert (#16977)
+ * @author Kathrin Schaffert (#16977, #17714)
  * @author Jan Flink
  */
 public class ConnectionSetupsListContributor extends NetworkViewContributorBase {
@@ -54,7 +56,10 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
     private final class ConnectionSetupNode implements SelfRenderingNetworkViewNode, StandardUserNodeActionNode {
 
         private static final int INT_1000 = 1000;
+
         private final ConnectionSetup connectionSetup;
+
+        private final Log log = LogFactory.getLog(getClass());
 
         ConnectionSetupNode(ConnectionSetup connectionSetup) {
             // consistency check
@@ -117,6 +122,12 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
         public void performAction(StandardUserNodeActionType actionType) {
             switch (actionType) {
             case START:
+                if (!connectionSetup.getAutoRetry()) {
+                    log.warn(
+                        "For connection " + connectionSetup.getDisplayName()
+                            + ", automatic reconnection is disabled or the reconnection settings are invalid. "
+                            + "No reconnection attempt is made after errors.");
+                }
                 connectionSetup.signalStartIntent();
                 break;
             case STOP:
@@ -196,6 +207,7 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
             configurationEntries.put("host", connectionSetup.getContactPointHost());
             configurationEntries.put("port", connectionSetup.getContactPointPort());
             configurationEntries.put("connectOnStartup", connectionSetup.getConnectOnStartup());
+            configurationEntries.put("autoRetry", connectionSetup.getAutoRetry());
             configurationEntries.put("autoRetryInitialDelay", connectionSetup.getAutoRetryInitialDelayMsec() / INT_1000);
             configurationEntries.put("autoRetryMaximumDelay", connectionSetup.getAutoRetryMaximumDelayMsec() / INT_1000);
             configurationEntries.put("autoRetryDelayMultiplier", connectionSetup.getAutoRetryDelayMultiplier());
@@ -267,7 +279,7 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
         // get and sort actual setups
         final ConnectionSetup[] setups = currentModel.connectionSetups.toArray(new ConnectionSetup[currentModel.connectionSetups.size()]);
         Arrays.sort(setups, (ConnectionSetup o1, ConnectionSetup o2) -> o1.getDisplayName().compareTo(o2.getDisplayName()));
-        
+
         // wrap into node class
         final ConnectionSetupNode[] nodes = new ConnectionSetupNode[setups.length];
         int pos = 0;

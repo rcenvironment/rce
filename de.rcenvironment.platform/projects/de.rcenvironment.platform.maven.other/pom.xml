@@ -4,27 +4,27 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.platform.maven.other</artifactId>
-	<name>RCE Platform - Maven Plain Java Libraries - Other</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<name>RCE Third-Party Artifacts - Wrapped Maven Libraries - Other</name>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.platform.parent.mavenLibraryBundle</artifactId>
-		<version>1.0.0</version>
-		<relativePath>../../maven/parent/mavenLibraryBundle</relativePath>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.common</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../de.rcenvironment.build.thirdparty/maven/parent/common</relativePath>
 	</parent>
 
 	<properties>
 		<!-- last updated: 2020-06-26, misc_ro -->
-		<versions.jackson>2.11.1</versions.jackson>
+		<versions.jackson>2.14.0</versions.jackson>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>com.jcraft</groupId>
+			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.1.55</version>
+			<version>0.2.4</version>
 		</dependency>
 		<dependency>
 			<!-- used by SSH bundle for SCP operations -->
@@ -38,7 +38,7 @@
 				referenced 1.4. upgrade to 1.6? - misc_ro -->
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
-			<version>1.4</version>
+			<version>1.15</version>
 		</dependency>
 		<dependency>
 			<!-- added 2015-01-14 - misc_ro -->
@@ -121,14 +121,6 @@
 			<version>4.2</version>
 		</dependency>
 
-		<dependency>
-			<!-- License: Apache 2.0 (http://wiki.fasterxml.com/JacksonDownload) -->
-			<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<!-- see property declaration for 'last update' information -->
-			<version>${versions.jackson}</version>
-		</dependency>
 		<dependency>
 			<!-- License: Apache 2.0 (http://wiki.fasterxml.com/JacksonDownload) -->
 			<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->

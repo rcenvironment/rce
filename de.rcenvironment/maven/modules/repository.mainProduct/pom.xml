@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.modules.repository.mainProduct</artifactId>
 	<name>RCE Main Product Repository</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-repository</packaging>
 
 	<parent>
@@ -36,6 +36,49 @@
 					</products>
 					<includeAllDependencies>true</includeAllDependencies>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>verify-absence-of-legacy-commons-logging</id>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<!-- Validates that a certain legacy JAR is not present in the build's repository.
+									This JAR is included in standard RCP repository scopes as a transitive dependency 
+									of one or more Eclipse RCP feature(s). Besides potentially containing security 
+									issues, this bundle is particularly problematic because other bundles may 
+									be wired to it as their log output receiver, leading to log messages being 
+									lost outside our logging setup (MANTIS ID 0017862). The solution for this is our
+									"org.apache.commons.logging.placeholder" bundle, which should have been provided
+									by the "rce-third-party" repository. (misc_ro, Nov 2022) -->
+								<available file="${project.build.directory}/repository/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar"
+									property="isLegacyCommonsLoggingJarPresent" />
+								<fail if="isLegacyCommonsLoggingJarPresent" 
+									message="org.apache.commons.logging_1.1.1.v201101211721.jar should not be present in the build's repository" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>generate-version-file</id>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<!-- Generate a VERSION file inside the repository directory -->
+								<echo file="${project.build.directory}/repository/VERSION" message="${qualifiedVersion}"/>
+								<!-- Generate a VERSION file inside the products directory -->
+								<echo file="${project.build.directory}/products/VERSION" message="${qualifiedVersion}"/>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

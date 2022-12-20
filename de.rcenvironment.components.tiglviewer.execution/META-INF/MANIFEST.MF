@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE TiGL Viewer Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.execution
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Service-Component: OSGI-INF/*.xml
 Require-Bundle: org.eclipse.osgi,
  org.eclipse.core.resources,

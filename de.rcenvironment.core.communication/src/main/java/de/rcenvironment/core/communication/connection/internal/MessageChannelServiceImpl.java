@@ -59,6 +59,8 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseH
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.configuration.bootstrap.RuntimeDetection;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -152,8 +154,17 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             }
             registerNewOutgoingChannel(channel);
             logger.debug(StringUtils.format("Remote-initiated channel '%s' established from '%s' to '%s' via local SCP %s", channel,
-                ownNodeInformation.getLogDescription(), channel.getRemoteNodeInformation().getLogDescription(),
+                channel.getRemoteNodeInformation().getLogDescription(), ownNodeInformation.getLogDescription(),
                 serverContactPoint));
+
+            EventLog.append(EventLog.newEntry(EventType.CONNECTION_INCOMING_ACCEPTED)
+                .set(EventType.Attributes.TYPE, "localnet")
+                .set(EventType.Attributes.CONNECTION_ID, channel.getChannelId())
+                .set(EventType.Attributes.REMOTE_NODE_ID, channel.getRemoteNodeInformation().getInstanceNodeSessionIdString())
+                // TODO (p2) 10.4.0+ determine remote ip/port and forward it here for logging; may be null for virtual transports etc.
+                .set(EventType.Attributes.REMOTE_IP, "TODO")
+                .set(EventType.Attributes.REMOTE_PORT, "TODO")
+                .set(EventType.Attributes.SERVER_PORT, serverContactPoint.getNetworkContactPoint().getPort()));
         }
 
         @Override
@@ -349,6 +360,9 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 mergeRemoteHandshakeInformationIntoGlobalNodeKnowledge(remoteNodeInformation);
                 logger.debug(StringUtils.format("Channel '%s' established from '%s' to '%s' using remote NCP %s", channel,
                     ownNodeInformation.getLogDescription(), remoteNodeInformation.getLogDescription(), ncp));
+
+                // TODO write event log entry for outgoing connection
+
                 return channel;
             }
         };
@@ -682,7 +696,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             // do not activate this service if is was spawned as part of a default test environment
             return;
         }
-        
+
         ownNodeInformation = configurationService.getInitialNodeInformation();
         localNodeId = ownNodeInformation.getInstanceNodeSessionId();
         localNodeIsRelay = configurationService.isRelay();
@@ -892,6 +906,17 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 listener.onOutgoingChannelTerminated(channel);
             }
         });
+        
+        EventLog.append(EventLog.newEntry(EventType.CONNECTION_INCOMING_CLOSED)
+            // TODO add reason
+            .set(EventType.Attributes.TYPE, "localnet")
+            .set(EventType.Attributes.CONNECTION_ID, channel.getChannelId())
+            .set(EventType.Attributes.REMOTE_NODE_ID, channel.getRemoteNodeInformation().getInstanceNodeSessionIdString())
+            // TODO (p2) 10.4.0+ determine remote ip/port and forward it here for logging; may be null for virtual transports etc.
+            .set(EventType.Attributes.REMOTE_IP, "TODO")
+            .set(EventType.Attributes.REMOTE_PORT, "TODO")
+            // TODO server port is not immediately accessible here; forward/attach it?
+            .set(EventType.Attributes.SERVER_PORT, "TODO"));
     }
 
 }

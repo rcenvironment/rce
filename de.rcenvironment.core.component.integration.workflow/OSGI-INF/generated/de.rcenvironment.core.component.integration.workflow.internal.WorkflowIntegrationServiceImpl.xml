@@ -4,7 +4,8 @@
       <provide interface="de.rcenvironment.core.component.integration.workflow.WorkflowIntegrationService"/>
    </service>
    <reference bind="bindConfigurationService" interface="de.rcenvironment.core.configuration.ConfigurationService" name="ConfigurationService"/>
+   <implementation class="de.rcenvironment.core.component.integration.workflow.internal.WorkflowIntegrationServiceImpl"/>
+   <reference bind="bindIconHelper" cardinality="1..1" interface="de.rcenvironment.core.component.integration.internal.IconHelper" name="IconHelper" policy="static"/>
    <reference bind="bindToolIntegrationService" interface="de.rcenvironment.core.component.integration.ToolIntegrationService" name="ToolIntegrationService"/>
    <reference bind="bindToolIntegrationServiceRegistry" interface="de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry" name="ToolIntegrationServiceRegistry"/>
-   <implementation class="de.rcenvironment.core.component.integration.workflow.internal.WorkflowIntegrationServiceImpl"/>
 </scr:component>

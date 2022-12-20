@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContext;
 
 // We deactivate Sonar on this class declaration, as it mistakenly identifies it as a JUnit test suite and asks us to add a test to it
 final class WorkflowIntegrationServiceImplUnderTest extends WorkflowIntegrationServiceImpl { // NOSONAR
@@ -27,7 +27,7 @@ final class WorkflowIntegrationServiceImplUnderTest extends WorkflowIntegrationS
 
     private final File workflowTargetFile = new File("workflow.wf");
 
-    private final Capture<File> createParentDirectoriesParameters = Capture.newInstance(CaptureType.ALL);
+    private final Capture<File> parentDirectoriesParameters = Capture.newInstance(CaptureType.ALL);
 
     private final Capture<String> createdFiles = Capture.newInstance(CaptureType.ALL);
 
@@ -39,7 +39,7 @@ final class WorkflowIntegrationServiceImplUnderTest extends WorkflowIntegrationS
 
     private final Capture<String> toolIntegrationNameParameter = Capture.newInstance(CaptureType.ALL);
 
-    private final Capture<ToolIntegrationContext> toolIntegrationContextParameter = Capture.newInstance(CaptureType.ALL);
+    private final Capture<IntegrationContext> toolIntegrationContextParameter = Capture.newInstance(CaptureType.ALL);
 
     @Override
     protected InputStream createConfigurationTemplateStream() {
@@ -60,7 +60,7 @@ final class WorkflowIntegrationServiceImplUnderTest extends WorkflowIntegrationS
     @Override
     protected void createParentDirectories(File file) {
         // Stubbed out for testing
-        createParentDirectoriesParameters.setValue(file);
+        parentDirectoriesParameters.setValue(file);
     }
 
     @Override
@@ -106,7 +106,11 @@ final class WorkflowIntegrationServiceImplUnderTest extends WorkflowIntegrationS
         return toolIntegrationNameParameter;
     }
 
-    Capture<ToolIntegrationContext> getToolIntegrationContextParameter() {
+    Capture<IntegrationContext> getToolIntegrationContextParameter() {
         return toolIntegrationContextParameter;
+    }
+
+    Capture<File> getParentDirectoryParameter() {
+        return parentDirectoriesParameters;
     }
 }

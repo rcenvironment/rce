@@ -1,5 +1,6 @@
 Feature: NetworkingTests
 
+@NetworkingTestsFeature
 @Network01
 @DefaultTestSuite
 @NoGUITestSuite
@@ -17,6 +18,7 @@ Scenario: Basic multi-instance handling and command execution
   Then  the log output of all instances should indicate a clean shutdown with no warnings or errors
 
 
+@NetworkingTestsFeature
 @Network02
 @NoGUITestSuite
 Scenario: Basic networking between three instances (auto-start connections, no relay flag)
@@ -29,6 +31,7 @@ Scenario: Basic networking between three instances (auto-start connections, no r
   And   the visible network of "NodeA" should consist of "NodeA, NodeC"
   And   the visible network of "NodeB" should consist of "NodeB, NodeC"
 
+@NetworkingTestsFeature
 @Network03
 @NoGUITestSuite
 Scenario: Basic networking between three instances with relay
@@ -42,6 +45,7 @@ Scenario: Basic networking between three instances with relay
   And   the visible network of "NodeB" should consist of "NodeA, NodeB, NodeC"
   And   the visible network of "NodeC" should consist of "NodeA, NodeB, NodeC"
   	
+@NetworkingTestsFeature
 @Network10
 @SSHTestSuite
 @NoGUITestSuite
@@ -62,6 +66,7 @@ Scenario: Configuring standard uplink setup
          
         
 #TODO work out other method to test connection establishment than checking visibility of a tool    
+@NetworkingTestsFeature
 @Network11
 @SSHTestSuite
 @NoGUITestSuite
@@ -80,6 +85,7 @@ Scenario: Connection established with autoRetry
         | Client1 (via userName/Client1_) | common/TestTool | local |
     
 
+@NetworkingTestsFeature
 @Network12
 @SSHTestSuite
 @NoGUITestSuite
@@ -99,10 +105,11 @@ Scenario: Connection established after restart
         | Client1 (via userName/Client1_) | common/TestTool | local |
     And waiting for 30 seconds
         
-@Network22
+@NetworkingTestsFeature
+@Network13
 @SSHTestSuite
 @NoGUITestSuite
-Scenario: Connection of client instance to uplink instance established after multiple restart of client
+Scenario: Connection of client instance to uplink instance established after multiple restarts of client
 
     Given instance "Upl, Cli1, Cli2" using the default build
     And configured network connections "Cli1-[upl]->Upl [autoStart autoRetry], Cli2-[upl]->Upl [autoStart autoRetry]"
@@ -142,17 +149,18 @@ Scenario: Connection of client instance to uplink instance established after mul
     And waiting for 30 seconds
     Then instance "Cli2" should see these components:
         | Cli1 (via userName/Cli1_Upl) | common/TestTool | local |
-    #And waiting for 5 seconds
-
+    And waiting for 5 seconds
 
     And   stopping instance "Upl, Cli1, Cli2"
     #And waiting for 10 seconds
     #And   stopping instance "Upl"
+    # the following would lead to something "alreadyshut down"
     #Then  the log output of "Upl" should indicate a clean shutdown with no warnings or errors
     #And waiting for 10 seconds
     And  the log output of "Cli1" should indicate a clean shutdown with no warnings or errors
         
-@Network13
+@NetworkingTestsFeature
+@Network14
 @NoGUITestSuite
 @BasicIntegrationTestSuite
 Scenario: Connection with other major version - regular connection
@@ -166,7 +174,8 @@ Scenario: Connection with other major version - regular connection
     Then  the visible network of "NodeA" should consist of "NodeA"
     And   the visible network of "NodeB" should consist of "NodeB"
     
-@Network14
+@NetworkingTestsFeature
+@Network15
 @NoGUITestSuite
 @BasicIntegrationTestSuite
 Scenario Outline: Connection with other major version - uplink connection
@@ -193,7 +202,8 @@ Scenario Outline: Connection with other major version - uplink connection
     |default|default|legacy|
     |default|legacy|legacy|
     
-@Network15
+@NetworkingTestsFeature
+@Network16
 @NoGUITestSuite
 @BasicIntegrationTestSuite
 Scenario: Connection with other minor version - regular connection
@@ -207,7 +217,8 @@ Scenario: Connection with other minor version - regular connection
     Then  the visible network of "NodeA" should consist of "NodeA, NodeB"
     And   the visible network of "NodeB" should consist of "NodeA, NodeB"
     
-@Network16
+#@NetworkingTestsFeature
+@Network17
 @NoGUITestSuite
 @BasicIntegrationTestSuite
 Scenario Outline: Connection with other minor version - uplink connection

@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Uplink Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.component.uplinktoolaccess;singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.fasterxml.jackson.databind;version="2.9.8",
- com.jcraft.jsch;version="0.1.55",
+ com.jcraft.jsch;version="0.2.0",
  de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
@@ -26,6 +26,7 @@ Import-Package: com.fasterxml.jackson.databind;version="2.9.8",
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.endpoint.impl,
+ de.rcenvironment.core.component.model.impl,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.spi,
  de.rcenvironment.core.component.workflow.api,

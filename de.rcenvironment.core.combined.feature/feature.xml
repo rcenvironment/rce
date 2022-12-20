@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.combined.feature"
       label="RCE Combined Core Feature"
-      version="10.3.1.qualifier"
+      version="10.4.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -120,7 +120,39 @@ This Agreement is governed by the laws of the State of New York and the intellec
          version="0.0.0"/>
 
    <includes
-         id="de.rcenvironment.platform.combined.feature"
+         id="de.rcenvironment.modules.thirdparty.dakota.binaries.common.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.eclipse.platform.common.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.eclipse.platform.gui.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.imageviewer.gui.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.libraries.bdd.common.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.libraries.generic.common.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.libraries.generic.gui.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.paxlogging.common.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="de.rcenvironment.modules.thirdparty.pdfviewer.gui.feature"
          version="0.0.0"/>
 
 </feature>

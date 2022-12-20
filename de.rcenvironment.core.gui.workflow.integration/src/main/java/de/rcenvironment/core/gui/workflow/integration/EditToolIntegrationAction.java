@@ -12,7 +12,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWizardHandler;
+import de.rcenvironment.core.gui.integration.toolintegration.ShowIntegrationEditWizardHandler;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorAction;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 

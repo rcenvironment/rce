@@ -45,7 +45,7 @@ public interface EndpointDefinition extends EndpointGroupDefinition {
      * 
      * @author Doreen Seider
      */
-    enum InputDatumHandling {
+    public enum InputDatumHandling {
 
         /** The input value will be consumed by the component. Input values can be queued. */
         Queue("Queue (consumed)"),
@@ -76,7 +76,7 @@ public interface EndpointDefinition extends EndpointGroupDefinition {
      * 
      * @author Doreen Seider
      */
-    enum InputExecutionContraint {
+    public enum InputExecutionContraint {
 
         /**
          * The input is required, no matter if it is connected to an output or not.

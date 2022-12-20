@@ -19,8 +19,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
+import de.rcenvironment.core.component.integration.IntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.workflow.editor.documentation.ToolIntegrationDocumentationGUIHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
@@ -112,19 +112,19 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
         toolDescriptionLabel.setText("");
         ReadOnlyConfiguration readOnlyconfig = getConfiguration().getConfigurationDescription()
             .getComponentConfigurationDefinition().getReadOnlyConfiguration();
-        readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME);
+        readOnlyconfig.getValue(IntegrationConstants.KEY_COMPONENT_NAME);
 
-        if (readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME) != null) {
-            toolNameLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME));
+        if (readOnlyconfig.getValue(IntegrationConstants.KEY_COMPONENT_NAME) != null) {
+            toolNameLabel.setText(readOnlyconfig.getValue(IntegrationConstants.KEY_COMPONENT_NAME));
         }
-        if (readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_NAME) != null) {
-            integratorNameLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_NAME));
+        if (readOnlyconfig.getValue(IntegrationConstants.KEY_INTEGRATOR_NAME) != null) {
+            integratorNameLabel.setText(readOnlyconfig.getValue(IntegrationConstants.KEY_INTEGRATOR_NAME));
         }
-        if (readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL) != null) {
-            integratorEmailLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL));
+        if (readOnlyconfig.getValue(IntegrationConstants.KEY_INTEGRATOR_EMAIL) != null) {
+            integratorEmailLabel.setText(readOnlyconfig.getValue(IntegrationConstants.KEY_INTEGRATOR_EMAIL));
         }
-        if (readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION) != null) {
-            toolDescriptionLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION));
+        if (readOnlyconfig.getValue(IntegrationConstants.KEY_DESCRIPTION) != null) {
+            toolDescriptionLabel.setText(readOnlyconfig.getValue(IntegrationConstants.KEY_DESCRIPTION));
         }
     }
 

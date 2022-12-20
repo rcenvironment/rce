@@ -59,6 +59,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
+import de.rcenvironment.core.gui.utils.incubator.TableColumnMinimalWidthControlListener;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.EndpointHandlingHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicEndpointCommand;
@@ -72,7 +73,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
  * @author Christian Weiss
  * @author Sascha Zur
  * @author Doreen Seider
- * @author Kathrin Schaffert (added TableColumnControlListener)
+ * @author Kathrin Schaffert (added TableColumnMinimalWidthControlListener)
  */
 public class EndpointSelectionPane implements Refreshable {
 
@@ -425,7 +426,7 @@ public class EndpointSelectionPane implements Refreshable {
         TableColumn col = null;
         try {
             col = new TableColumn(table, SWT.NONE, index);
-            col.addControlListener(new TableColumnControlListener());
+            col.addControlListener(new TableColumnMinimalWidthControlListener());
             decorateColumn(title, col);
             // Due to a layout gui bug under linux, this exception must be catched.
             // Afterwards, the decoration of the column can be done without an error.
@@ -442,24 +443,6 @@ public class EndpointSelectionPane implements Refreshable {
         final int columnWeight = 20;
         tableLayout.setColumnData(col, new ColumnWeightData(columnWeight, true));
         col.setText(key);
-    }
-
-    private class TableColumnControlListener implements ControlListener {
-
-        @Override
-        public void controlMoved(ControlEvent arg0) {
-            // nothing to do here
-        }
-
-        @Override
-        public void controlResized(ControlEvent event) {
-            TableColumn source = (TableColumn) event.getSource();
-            final int columnWeight = 20;
-            if (source.getWidth() < columnWeight) {
-                source.setWidth(columnWeight);
-            }
-        }
-
     }
 
     /**
@@ -867,4 +850,9 @@ public class EndpointSelectionPane implements Refreshable {
     public void setEndpointIdToManage(String endpointIdToManage) {
         this.dynEndpointIdToManage = endpointIdToManage;
     }
+
+    public void setTableBuilt(boolean tableBuilt) {
+        this.tableBuilt = tableBuilt;
+    }
+
 }

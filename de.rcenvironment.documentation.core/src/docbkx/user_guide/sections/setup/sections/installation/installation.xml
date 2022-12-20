@@ -1,8 +1,8 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="installation">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="installation">
     <title>Installation on <phrase os="linux">Linux</phrase><phrase os="windows"
         >Windows</phrase></title>
-    <sect2>
+    <section>
         <title>Prerequisites</title>
         <para>To run RCE on a system, the only prerequisite is an installed Java Runtime Environment
             (JRE), version 8u161 or above. If you do not already have one on your machine, <phrase
@@ -15,8 +15,8 @@
                     refer to <link linkend="workflow_components">Section 2.3 (Workflow
                         Components)</link> for more details.</para>
             </note></para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title id="signing_key">Obtaining the Signing Key</title>
         <para>Any software can be tampered with by a malicious attacker. For RCE, the consequences
             of such tampering may be worse than with other software, since its intended behavior
@@ -81,8 +81,8 @@
             <phrase os="linux">either your package manager or by gpg, which should be pre-installed
                 on your system or available via the package manager of your choice.</phrase> Please
             refer to its documentation in order to verify your downloaded software artifact.</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title id="installation_details"> Installation</title>
         <para os="windows">On Windows, we provide a single .zip-file to set up both client and
             server installations. This file is available
@@ -174,7 +174,7 @@
                     </tbody>
                 </tgroup>
             </table></para>
-        <sect3 os="linux">
+        <section os="linux">
             <title>Installing from the Package Repository (recommended for
                 Debian/Ubuntu/Mint)</title>
             <para>To register the RCE .deb package repository in your system, you first have to add
@@ -210,8 +210,8 @@
                 RCE 10.x will not auto-upgrade to 11.x (or higher) to maintain compatibility within
                 networks of RCE 10.x instances. You will need to manually install the 11.x
                 repository location in order to upgrade.</para>
-        </sect3>
-        <sect3 os="linux">
+        </section>
+        <section os="linux">
             <title>Installation of the .deb/.rpm Package (recommended for CentOS/Red Hat/SUSE,
                 alternative for Debian/Ubuntu/Mint)</title>
             <para>To install the .deb/.rpm file manually, download the latest version from either
@@ -227,8 +227,8 @@
                     &lt;filename></code> (Debian, Ubuntu, Mint, ...) from a terminal.</para>
             <para>To upgrade an existing installation, simply install the newer package. The package
                 manager will detect the upgrade and handle it properly.</para>
-        </sect3>
-        <sect3 os="linux">
+        </section>
+        <section os="linux">
             <title>Installation from the .zip File (alternative for all distributions)</title>
             <para>If none of the previous installation options fits your needs, you can also extract
                 RCE from a zip file downloaded
@@ -258,9 +258,9 @@
                     <para>The path to your installation location must not contain any colons to
                     avoid Java Virtual Machine errors when starting RCE.</para>
                 </note>
-        </sect3>
-    </sect2>
-    <sect2>
+        </section>
+    </section>
+    <section>
         <title>Starting RCE as a GUI Client</title>
         <para><phrase os="windows">To use RCE with a graphical user interface (GUI), simply start
                 the "rce" executable from Windows Explorer. Optionally, create a desktop icon from
@@ -282,8 +282,8 @@
                     restart your computer.</para>
             </note>
         </para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Starting a Non-GUI ("Headless") Instance</title>
         <para>RCE can also be run from the command line without a graphical user interface (which is
             called "headless" mode), which uses less system resources and is therefore recommended
@@ -294,11 +294,11 @@
             enter various console commands described in <xref linkend="command_line"/>; note that
             you need to prefix all RCE commands with "rce" here. To perform a clean shutdown, for
             example, type <code>rce stop</code> and press enter.</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Installation as a Service on a <phrase os="linux">Linux Server</phrase><phrase
                 os="windows">Windows Server</phrase></title>
         <para>Please refer to the section "<phrase os="linux">RCE as a Linux systemd Service</phrase><phrase os="windows">RCE as a Windows Service</phrase>" in the "RCE Administration
 			and Security Guide" to install RCE as a service.</para>
-    </sect2>
-</sect1>
+    </section>
+</section>

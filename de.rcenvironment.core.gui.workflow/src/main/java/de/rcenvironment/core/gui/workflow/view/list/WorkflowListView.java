@@ -55,6 +55,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotif
 import de.rcenvironment.core.component.workflow.execution.spi.MultipleWorkflowsStateChangeListener;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.incubator.TableColumnMinimalWidthControlListener;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorAction;
 import de.rcenvironment.core.notification.DistributedNotificationService;
@@ -76,6 +77,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Heinrich Wendel
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author Kathrin Schaffert (added TableColumnMinimalWidthControlListener)
  */
 public class WorkflowListView extends ViewPart implements MultipleWorkflowsStateChangeListener {
 
@@ -218,6 +220,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
             column.setWidth(width);
             column.setResizable(true);
             column.setMoveable(true);
+            column.addControlListener(new TableColumnMinimalWidthControlListener());
             column.addSelectionListener(new SelectionAdapter() {
 
                 @Override

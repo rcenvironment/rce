@@ -11,7 +11,7 @@
                enablesFor="1"
                filter="de.rcenvironment.core.component.integration.workflow.gui.WorkflowComponentFilter"
                id="workflow.editor.tab.Properties.Section.InputsOutputs"
-               tab="workflow.editor.tab.script.InputsOutputs">
+               tab="workflow.editor.tab.wac.InputsOutputs">
          </propertySection>
   	</propertySections>        
   </extension>
@@ -23,7 +23,7 @@
             contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
          <propertyTab
                category="default"
-               id="workflow.editor.tab.script.InputsOutputs"
+               id="workflow.editor.tab.wac.InputsOutputs"
                label="Inputs/Outputs">
          </propertyTab>
       </propertyTabs>

@@ -8,6 +8,8 @@
 package de.rcenvironment.components.parametricstudy.execution;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -247,7 +249,10 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
         if (step == 1) {
             return from;
         } else {
-            designVariable = from + (to - from) * (step - 1.0) / (steps - 1.0);
+            designVariable = (BigDecimal.valueOf(to).subtract(BigDecimal.valueOf(from)))
+                .multiply(BigDecimal.valueOf((long) step - 1)).divide(BigDecimal.valueOf(steps - 1), Double.SIZE, RoundingMode.HALF_UP)
+                .add(BigDecimal.valueOf(from))
+                .doubleValue();
             return designVariable;
         }
     }
@@ -261,11 +266,13 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
     }
 
     private double calculateDesignVariableNotFittingStepSizeToBounds() {
-        return from + (stepCount - 1) * stepSize;
+        return BigDecimal.valueOf(from).add(BigDecimal.valueOf(stepSize).multiply(BigDecimal.valueOf(stepCount)))
+            .subtract(BigDecimal.valueOf(stepSize)).doubleValue();
     }
 
     private double getLastDesignVariableNotFittingStepSizeToBounds() {
-        return from + (stepCount - 1) * stepSize;
+        return BigDecimal.valueOf(from).add(BigDecimal.valueOf(stepSize).multiply(BigDecimal.valueOf(stepCount - 1.0)))
+            .subtract(BigDecimal.valueOf(stepSize)).doubleValue();
     }
 
     private boolean allDesignVariablesSent() {
@@ -395,7 +402,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             componentContext.getInstanceName(),
             createStructure(componentContext));
 
-        double stepsDouble = (Math.floor((to - from) / stepSize)) + 1; // including first AND last
+        double stepsDouble = (Math.round((to - from) / stepSize)) + 1; // including first AND last
         if (stepsDouble >= Long.MAX_VALUE) {
             throw new ComponentException("The number of values produced by the Component exceeds the numerical limits.");
         }

@@ -16,11 +16,13 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Section;
@@ -51,7 +53,11 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
 
     private Button strictButton;
 
+    private Label strictLabel;
+
     private Button lenientButton;
+
+    private Label lenientLabel;
 
     private PropertyChangeListener propertyListener = evt -> {
         if (evt.getNewValue() instanceof EndpointChange && !strictButton.isDisposed()) {
@@ -75,24 +81,27 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         memFileSection.setText("Evaluation Memory File");
 
         final Composite memFileComposite = propSheetPage.getWidgetFactory().createComposite(parent);
-        memFileComposite.setLayout(new GridLayout(2, true));
-        memFileComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+        memFileComposite.setLayout(new RowLayout());
 
         final Button selectAtWfStartButton = new Button(memFileComposite, SWT.CHECK);
-        selectAtWfStartButton.setText("Select at workflow start");
-        selectAtWfStartButton.setBackground(memFileComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+        final Label selectAtWfStartLabel = new Label(memFileComposite, SWT.NONE);
+        selectAtWfStartLabel.setText("Select at workflow start");
+        selectAtWfStartLabel.setBackground(memFileComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+        final Composite selectFileComposite = propSheetPage.getWidgetFactory().createComposite(parent);
+        selectFileComposite.setLayout(new GridLayout(2, true));
+        selectFileComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+
 
         selectAtWfStartButton.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
             EvaluationMemoryComponentConstants.CONFIG_SELECT_AT_WF_START);
-        GridData gridData = new GridData();
-        gridData.horizontalSpan = 2;
-        selectAtWfStartButton.setLayoutData(gridData);
 
-        memoryFilePathText = new Text(memFileComposite, SWT.WRAP | SWT.BORDER | SWT.SINGLE);
+        memoryFilePathText = new Text(selectFileComposite, SWT.WRAP | SWT.BORDER | SWT.SINGLE);
         memoryFilePathText.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_MEMORY_FILE);
         memoryFilePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
 
-        selectFilePathButton = new Button(memFileComposite, SWT.PUSH);
+        selectFilePathButton = new Button(selectFileComposite, SWT.PUSH);
         selectFilePathButton.setText("...");
         selectFilePathButton.addListener(SWT.Selection, new Listener() {
 
@@ -112,14 +121,15 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         memOptionsSection.setText("Evaluation Memory Options");
 
         final Composite memOptionsComposite = propSheetPage.getWidgetFactory().createComposite(parent);
-        memOptionsComposite.setLayout(new GridLayout(1, false));
-        memOptionsComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+        memOptionsComposite.setLayout(new RowLayout());
 
         final Button storeLoopFailures = new Button(memOptionsComposite, SWT.CHECK);
         storeLoopFailures.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_CONSIDER_LOOP_FAILURES);
-        storeLoopFailures.setText("Consider loop failures as valid loop results"
+
+        final Label storeLoopFailuresLabel = new Label(memOptionsComposite, SWT.NONE);
+        storeLoopFailuresLabel.setText("Consider loop failures as valid loop results"
             + " (values of type not-a-value that are explicitly sent by components)");
-        storeLoopFailures.setBackground(memOptionsComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+        storeLoopFailuresLabel.setBackground(memFileComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
 
         TabbedPropertySheetWidgetFactory factory = propSheetPage.getWidgetFactory();
 
@@ -127,51 +137,47 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     }
 
     private void appendToleranceOverlapConfigurationSection(final Composite parent, TabbedPropertySheetWidgetFactory factory) {
-        final Section sectionOverlap = appendTitleBar(parent, factory);
-        final Composite compositeOverlap = factory.createFlatFormComposite(sectionOverlap);
 
-        appendLabel(factory, compositeOverlap);
-
-        appendStrictButton(factory, compositeOverlap);
-        appendLenientButton(factory, compositeOverlap);
-
-        sectionOverlap.setClient(compositeOverlap);
-    }
-
-    private Section appendTitleBar(final Composite parent, final TabbedPropertySheetWidgetFactory factory) {
         final Section sectionOverlap = factory.createSection(parent, Section.TITLE_BAR);
         sectionOverlap.setLayout(new GridLayout());
         sectionOverlap.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
         sectionOverlap.setText("Handling overlapping tolerance-intervals");
-        return sectionOverlap;
+
+        final Composite compositeOverlap = factory.createFlatFormComposite(parent);
+
+        appendLabel(factory, compositeOverlap);
+        appendStrictButton(compositeOverlap);
+        appendLenientButton(compositeOverlap);
+
     }
 
     private void appendLabel(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap) {
-        compositeOverlap.setLayout(new GridLayout(3, false));
-        factory.createLabel(compositeOverlap,
+        compositeOverlap.setLayout(new GridLayout(2, false));
+        Label label = factory.createLabel(compositeOverlap,
             "If the tolerance-interval around the input values contains multiple previously evaluated values:");
+        final GridData gridData = new GridData();
+        gridData.horizontalSpan = 2;
+        label.setLayoutData(gridData);
     }
 
-    private void appendStrictButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap) {
-        final GridData gridData = new GridData();
-        gridData.horizontalSpan = 3;
-
-        strictButton = factory.createButton(compositeOverlap, "Strict: Evaluate with exact input-values", SWT.RADIO);
-        strictButton.setLayoutData(gridData);
+    private void appendStrictButton(final Composite compositeOverlap) {
+        strictButton = new Button(compositeOverlap, SWT.RADIO);
         strictButton.setData(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR,
             OverlapBehavior.STRICT);
         strictButton.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR);
+        strictLabel = new Label(compositeOverlap, SWT.NONE);
+        strictLabel.setText("Strict: Evaluate with exact input-values");
+        strictLabel.setBackground(compositeOverlap.getDisplay().getSystemColor(SWT.COLOR_WHITE));
     }
 
-    private void appendLenientButton(final TabbedPropertySheetWidgetFactory factory, final Composite compositeOverlap) {
-        final GridData gridData = new GridData();
-        gridData.horizontalSpan = 3;
-
-        lenientButton = factory.createButton(compositeOverlap, "Lenient: Return any previous evaluation within tolerance", SWT.RADIO);
-        lenientButton.setLayoutData(gridData);
+    private void appendLenientButton(final Composite compositeOverlap) {
+        lenientButton = new Button(compositeOverlap, SWT.RADIO);
         lenientButton.setData(EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR,
             OverlapBehavior.LENIENT);
         lenientButton.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_KEY_TOLERANCE_OVERLAP_BEHAVIOR);
+        lenientLabel = new Label(compositeOverlap, SWT.NONE);
+        lenientLabel.setText("Lenient: Return any previous evaluation within tolerance");
+        lenientLabel.setBackground(compositeOverlap.getDisplay().getSystemColor(SWT.COLOR_WHITE));
     }
 
     private boolean containsTolerantInputs() {
@@ -206,11 +212,15 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
     private void disableToleranceOverlapButtons() {
         this.strictButton.setEnabled(false);
         this.lenientButton.setEnabled(false);
+        this.strictLabel.setEnabled(false);
+        this.lenientLabel.setEnabled(false);
     }
 
     private void enableToleranceOverlapButtons() {
         this.strictButton.setEnabled(true);
         this.lenientButton.setEnabled(true);
+        this.strictLabel.setEnabled(true);
+        this.lenientLabel.setEnabled(true);
     }
 
     @Override

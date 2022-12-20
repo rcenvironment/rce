@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
                          "http://docbook.org/xml/4.4/docbookx.dtd">
-<sect1>
+<section>
     <title>Intended Audience</title>
     <para>The intended audience of this document consists of engineers, scientists, and everybody
         else interested in developing automated workflows with RCE.</para>
-</sect1>
+</section>

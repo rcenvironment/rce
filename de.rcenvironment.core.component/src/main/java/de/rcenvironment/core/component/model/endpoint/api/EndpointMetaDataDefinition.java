@@ -20,6 +20,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Tim Rosenbach
  * 
  * Note: Used to generate GUI elements in the endpoint dialog and to provide proper display names, proper ordering, etc. --seid_do
  */
@@ -81,6 +82,12 @@ public interface EndpointMetaDataDefinition {
      * @return data type of given meta datum
      */
     String getDataType(String key);
+    
+    /**
+     * @param key meta data key
+     * @param dataType
+     */
+    void setDataType(String key, String dataType);
 
     /**
      * @param key meta data key

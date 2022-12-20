@@ -16,7 +16,8 @@
 	<packaging>pom</packaging>
 	
 	<properties>
-		<tycho.version>0.23.1</tycho.version>
+		<!-- TODO upgrade; also, inherit this from a common parent POM instead? --> 
+		<internal.tycho.version>0.23.1</internal.tycho.version>
 		<mirror.sourceUrl>http://psnet.nu/eclipse/updates/</mirror.sourceUrl>
 		<mirror.outputDir>${project.basedir}/../../p2/nu.psnet.quickimage</mirror.outputDir>
 	</properties>
@@ -27,7 +28,7 @@
 			<plugin>
 				<groupId>org.eclipse.tycho.extras</groupId>
 				<artifactId>tycho-p2-extras-plugin</artifactId>
-				<version>${tycho.version}</version>
+				<version>${internal.tycho.version}</version>
 				<executions>
 					<!-- step 1: mirror -->
 					<execution>

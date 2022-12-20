@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.command.spi;
 
+// TODO For RCE 10.5., not used anymore, can probably be removed
+
 /**
  * Represents a help entry for a single command provided by a {@link CommandPlugin}.
  * 

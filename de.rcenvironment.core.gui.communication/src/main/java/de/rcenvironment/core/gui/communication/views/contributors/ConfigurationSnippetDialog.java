@@ -14,9 +14,11 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -91,7 +93,7 @@ public class ConfigurationSnippetDialog extends TitleAreaDialog {
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
         
-        configurationSnippetTextfield = new Text(container, SWT.MULTI | SWT.READ_ONLY);
+        configurationSnippetTextfield = new Text(container, SWT.MULTI | SWT.READ_ONLY | SWT.V_SCROLL);
         configurationSnippetTextfield.setBackground(ColorManager.getInstance().getSharedColor(StandardColors.RCE_WHITE));
         configurationSnippetTextfield.setText(configurationSnippet);
         configurationSnippetTextfield.setLayoutData(new GridData(GridData.FILL_BOTH));

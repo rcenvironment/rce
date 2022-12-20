@@ -16,13 +16,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.IMessageProvider;
+import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -50,6 +52,7 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -57,19 +60,28 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  * @author Sascha Zur
- * @author Kathrin Schaffert (refactoring)
+ * @author Kathrin Schaffert (refactoring, little bug fix)
+ * @author Tim Rosenbach
  */
-public class EndpointEditDialog extends Dialog {
+public class EndpointEditDialog extends TitleAreaDialog {
 
     protected static final String COLON = ":";
 
     protected static final String MINUS = "-";
 
-    private static final int GROUPS_MIN_WIDTH = 235;
-
     private static final int MINIMUM_HEIGHT = 125;
 
     private static final int MINIMUM_WIDTH = 250;
+
+    private static final int DIALOG_WIDTH = 325;
+
+    private static final int DIALOG_HEIGHT = 400;
+
+    private static final int COMBO_SETTINGS_WIDTH = 235;
+
+    private static final int COMBO_GROUP_WIDTH = 185;
+
+    private static final int MAXLENGTH_SHORTTEXT = 140;
 
     protected final ComponentInstanceProperties configuration;
 
@@ -156,6 +168,7 @@ public class EndpointEditDialog extends Dialog {
             setInputHandling();
             setInputExecutionConstraint();
         }
+        setDialogHelpAvailable(false);
     }
 
     private static int getReadOnlyValue(boolean isStatic) {
@@ -204,13 +217,13 @@ public class EndpointEditDialog extends Dialog {
     @Override
     protected Control createDialogArea(Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
-        container.setLayout(new GridLayout(1, true));
+
+        createEndpointSettings(container);
+
         GridData g = new GridData(GridData.FILL_BOTH);
         g.grabExcessHorizontalSpace = true;
         g.horizontalAlignment = GridData.CENTER;
-        container.setLayoutData(g);
-
-        createEndpointSettings(container);
+        g.grabExcessVerticalSpace = false;
 
         Composite configHeader = new Composite(container, SWT.FILL);
         configHeader.setLayout(new GridLayout(3, false));
@@ -229,9 +242,6 @@ public class EndpointEditDialog extends Dialog {
     protected Control createConfigurationArea(Composite parent) {
         widgetToKeyMap = new HashMap<>();
         if (!metaData.getMetaDataKeys().isEmpty()) {
-            Composite settingsComposite = (Composite) super.createDialogArea(parent);
-            GridData g = new GridData(GridData.FILL, GridData.FILL, true, true);
-            settingsComposite.setLayoutData(g);
             if (metaData != null) {
                 Map<String, Map<Integer, String>> groups = new TreeMap<>();
                 for (String key : metaData.getMetaDataKeys()) {
@@ -251,11 +261,11 @@ public class EndpointEditDialog extends Dialog {
                     groups.put(group, groupTree);
                 }
                 for (Entry<String, Map<Integer, String>> entry : groups.entrySet()) {
-                    createSettingsTab(settingsComposite, entry.getKey(), entry.getValue());
+                    createSettingsTab(parent, entry.getKey(), entry.getValue());
                 }
             }
 
-            return settingsComposite;
+            return parent;
         } else {
             Label noMetaData = new Label(parent, SWT.NONE);
             noMetaData.setText(StringUtils.format(Messages.noConfig, type));
@@ -267,12 +277,12 @@ public class EndpointEditDialog extends Dialog {
     }
 
     protected void createSettingsTab(Composite composite, String groupTitle, Map<Integer, String> sortedKeyMap) {
-        Group configGroup = new Group(composite, SWT.CENTER);
+        Group configGroup = new Group(composite, SWT.BEGINNING);
         GridData g = new GridData(GridData.FILL_BOTH);
         configGroup.setLayoutData(g);
         g.grabExcessHorizontalSpace = true;
-        g.horizontalAlignment = GridData.CENTER;
-        g.minimumWidth = GROUPS_MIN_WIDTH;
+        g.grabExcessVerticalSpace = false;
+        g.horizontalAlignment = GridData.FILL;
         configGroup.setText(groupTitle);
         configGroup.setLayout(new GridLayout(2, false));
         createSettings(sortedKeyMap, configGroup);
@@ -310,6 +320,9 @@ public class EndpointEditDialog extends Dialog {
                 } else {
                     Combo newCombo = createLabelAndCombo(container, metaData.getGuiName(key) + COLON,
                         key, value);
+                    GridData g = new GridData(SWT.BEGINNING, SWT.FILL, true, false);
+                    g.minimumWidth = COMBO_GROUP_WIDTH;
+                    newCombo.setLayoutData(g);
                     widgetToKeyMap.put(newCombo, key);
                     newCombo.addModifyListener(new MethodPropertiesModifyListener());
                 }
@@ -358,22 +371,19 @@ public class EndpointEditDialog extends Dialog {
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         result.setText(value);
         if (dataType.equals(EndpointMetaDataConstants.TYPE_INT)) {
-            result.addVerifyListener(new NumericalTextConstraintListener(result,
-                NumericalTextConstraintListener.ONLY_INTEGER));
+            result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER));
             if (value.equals(MINUS)) {
                 result.setText("");
             }
         }
         if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT)) {
-            result.addVerifyListener(new NumericalTextConstraintListener(result,
-                NumericalTextConstraintListener.ONLY_FLOAT));
+            result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT));
             if (value.equals(MINUS)) {
                 result.setText("");
             }
         }
         if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT_GREATER_ZERO)) {
-            result.addVerifyListener(new NumericalTextConstraintListener(result,
-                NumericalTextConstraintListener.ONLY_FLOAT | NumericalTextConstraintListener.GREATER_ZERO));
+            result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT | WidgetGroupFactory.GREATER_ZERO));
             if (value.equals(MINUS)) {
                 result.setText("");
             }
@@ -384,6 +394,7 @@ public class EndpointEditDialog extends Dialog {
     protected void createEndpointSettings(Composite parent) {
         Composite container = new Composite(parent, SWT.NONE);
         GridData g = new GridData(GridData.FILL, GridData.FILL, true, true);
+        g.grabExcessVerticalSpace = false;
         container.setLayout(new GridLayout(2, false));
         container.setLayoutData(g);
 
@@ -429,7 +440,9 @@ public class EndpointEditDialog extends Dialog {
 
     private void createDataTypeComboBox(Composite container) {
         comboDataType = new Combo(container, SWT.BORDER | SWT.READ_ONLY | SWT.RIGHT);
-        comboDataType.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        GridData g = new GridData(SWT.BEGINNING, SWT.FILL, true, false);
+        g.minimumWidth = COMBO_SETTINGS_WIDTH;
+        comboDataType.setLayoutData(g);
 
         List<DataType> possibleDataTypes;
         if (isStatic) {
@@ -463,7 +476,9 @@ public class EndpointEditDialog extends Dialog {
 
     private void createInputHandlingComboBox(Composite container) {
         comboInputDatumHandling = new Combo(container, SWT.BORDER | SWT.READ_ONLY | SWT.RIGHT);
-        comboInputDatumHandling.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        GridData g = new GridData(SWT.BEGINNING, SWT.FILL, true, false);
+        g.minimumWidth = COMBO_SETTINGS_WIDTH;
+        comboInputDatumHandling.setLayoutData(g);
 
         List<EndpointDefinition.InputDatumHandling> possibleInputinputHandlingOptions;
         if (isStatic) {
@@ -496,7 +511,9 @@ public class EndpointEditDialog extends Dialog {
 
     private void createInputExecutionContraintComboBox(Composite container) {
         comboInputExecutionContraint = new Combo(container, SWT.BORDER | SWT.READ_ONLY | SWT.RIGHT);
-        comboInputExecutionContraint.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        GridData g = new GridData(SWT.BEGINNING, SWT.FILL, true, false);
+        g.minimumWidth = COMBO_SETTINGS_WIDTH;
+        comboInputExecutionContraint.setLayoutData(g);
 
         List<EndpointDefinition.InputExecutionContraint> possibleInputHandlingOptions;
         if (isStatic) {
@@ -532,7 +549,7 @@ public class EndpointEditDialog extends Dialog {
     public void create() {
         super.create();
         // dialog title
-        getShell().setText(title);
+        setTitle(title);
         getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
 
         // initial validation
@@ -540,6 +557,31 @@ public class EndpointEditDialog extends Dialog {
         // set listeners here so the ok button is initialized
         installModifyListeners();
         validateInput();
+
+    }
+
+    protected void updateMessage(String message, boolean isError) {
+
+        if (isError) {
+            setMessage(message, IMessageProvider.ERROR);
+        } else if (getMessage() != null) {
+            setMessage(message, IMessageProvider.INFORMATION);
+        }
+
+    }
+
+    protected void hideMessage() {
+        setMessage(null);
+    }
+
+    @Override
+    protected Point getInitialSize() {
+        return new Point(DIALOG_WIDTH, DIALOG_HEIGHT);
+    }
+
+    @Override
+    protected boolean isResizable() {
+        return true;
     }
 
     private void installModifyListeners() {
@@ -558,14 +600,26 @@ public class EndpointEditDialog extends Dialog {
 
     protected void validateInput() {
 
+        hideMessage();
+
         String name = getNameInputFromUI();
         // initialName is null if not set, so it will not be equal when naming a new endpoint
         boolean nameIsValid = name.equals(initialName);
         nameIsValid |= epManager.isValidEndpointName(name);
 
-        // enable/disable "ok"
         boolean inputsValid = validateMetaDataInputs();
+
+        if (!nameIsValid) {
+            if (name.isEmpty()) {
+                updateMessage(StringUtils.format(Messages.missingNameMessage, type.toString()), true);
+            } else {
+                updateMessage(Messages.invalidNameMessage, true);
+            }
+        }
+
+        // enable/disable "ok"
         getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid && inputsValid);
+
     }
 
     /**
@@ -606,14 +660,17 @@ public class EndpointEditDialog extends Dialog {
                 if (widgetText.equals("") && (visible && enabled)
                     && (validation != null && (validation.contains("required")))) {
                     isValid = false;
+
+                    updateMessage(Messages.missingValueMessage, true);
+
                 } else if (!widgetText.equals("")) {
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_INT)) {
-                        int value = Integer.MAX_VALUE;
                         try {
-                            value = Integer.parseInt(widgetText);
+                            long value = Long.parseLong(widgetText);
                             isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
+                        } catch (NumberFormatException e) { // should never happen
                             isValid = false;
+                            updateMessage(Messages.invalidValueIntMessage, true);
                         }
                     }
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_BOOL)) {
@@ -624,12 +681,23 @@ public class EndpointEditDialog extends Dialog {
                         }
                     }
                     if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_FLOAT)) {
-                        double value = Double.MAX_VALUE;
                         try {
-                            value = Double.parseDouble(widgetText);
+                            double value = Double.parseDouble(widgetText);
                             isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
+                        } catch (NumberFormatException e) { // should never happen
                             isValid = false;
+                            updateMessage(Messages.invalidValueFloatMessage, true);
+                        }
+                    }
+                    if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_SHORTTEXT)) {
+                        String value = ((Text) widget).getText();
+                        if (value.length() >= MAXLENGTH_SHORTTEXT) {
+                            updateMessage(Messages.maxCharacterLengthMessage, false);
+                        }
+                        if (value.length() <= MAXLENGTH_SHORTTEXT) {
+                            isValid &= true;
+                        } else {
+                            isValid &= false;
                         }
                     }
                 }

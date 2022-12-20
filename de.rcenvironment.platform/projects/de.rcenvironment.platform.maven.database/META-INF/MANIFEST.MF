@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RCE Platform - Maven Plain Java Libraries - Database
+Bundle-Name: RCE Third-Party Artifacts - Wrapped Maven Libraries - Database
 Bundle-SymbolicName: de.rcenvironment.platform.maven.database;singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/commons-dbcp-1.4.jar,
  lib/maven/commons-pool-1.5.4.jar,
@@ -75,3 +75,4 @@ Export-Package: org.apache.commons.dbcp;version="1.4.0",
  org.apache.derby.vti;version="10.11.1"
 Bundle-Vendor: DLR
 Eclipse-BundleShape: dir
+Automatic-Module-Name: de.rcenvironment.platform.maven.database

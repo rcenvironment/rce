@@ -7,12 +7,13 @@
   "cpacsOutgoingEndpointName" : "CPACSOut",
   "cpacsResultFilename" : "cpacsResult.xml",
   "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "documentationFilePath" : "",
   "dynamicInputs" : [ {
     "endpointIdentifier" : "default",
     "endpointDataTypes" : [ "Boolean", "ShortText", "Integer", "Float" ],
     "endpointDefaultDataType" : "Float",
-    "inputinputHandlingOptions" : [ "Consuming", "Immutable" ],
-    "defaultInputHandling" : "Consuming",
+    "inputinputHandlingOptions" : [ "Single", "Constant", "Queue" ],
+    "defaultInputHandling" : "Single",
     "inputinputExecutionConstraintOptions" : [ "Required", "RequiredIfConnected" ],
     "defaultInputExecutionConstraint" : "Required",
     "endpointMetaData" : {
@@ -22,7 +23,8 @@
         "guiGroup" : "XML values",
         "visibility" : "shown",
         "defaultValue" : "",
-        "validation" : "required"
+        "validation" : "required",
+        "persistent" : "true"
       }
     }
   } ],
@@ -37,13 +39,17 @@
         "guiGroup" : "XML values",
         "visibility" : "shown",
         "defaultValue" : "",
-        "validation" : "required"
+        "validation" : "required",
+        "persistent" : "true"
       }
     }
   } ],
+  "enableCommandScriptLinux" : true,
   "enableCommandScriptWindows" : true,
   "groupName" : "CPACS",
   "hasToolSpecificInput" : true,
+  "imitationScript" : "",
+  "imitationToolOutputFilename" : "",
   "inputs" : [ {
     "endpointFolder" : "Input folder",
     "endpointFileName" : "CPACSInitial.xml",
@@ -79,6 +85,7 @@
   "toolDescription" : "",
   "toolIconPath" : "",
   "toolInputFileName" : "ToolInput/toolInput.xml",
+  "toolIntegrationVersion" : 1,
   "toolIntegratorE-Mail" : "",
   "toolIntegratorName" : "",
   "toolName" : "Simple CPACS Tool",

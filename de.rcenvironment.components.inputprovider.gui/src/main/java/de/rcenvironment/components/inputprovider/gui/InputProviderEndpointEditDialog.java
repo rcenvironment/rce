@@ -19,7 +19,9 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -32,12 +34,9 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -47,6 +46,7 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.gui.utils.incubator.TextConstraintListener;
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 
@@ -56,12 +56,18 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * @author Mark Geiger
  * @author Doreen Seider
  * @author Adrian Stock
+ * @author Tim Rosenbach
+ * @author Kathrin Schaffert (added NumericalTextConstraintFloatListener, NumericalTextConstraintIntListener to display info messages)
  */
 public class InputProviderEndpointEditDialog extends EndpointEditDialog implements SelectionListener {
 
     private static final int[] NOTETEXTSIZE = { 75, 10 };
 
     private static final int SHORTTEXT_MAXLENGTH = 140;
+
+    private static final int DIALOG_WIDTH = 345;
+
+    private static final int DIALOG_HEIGHT = 400;
 
     private Label label;
 
@@ -77,9 +83,11 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
 
     private Boolean warningCompositeCreated = false;
 
-    private NumericalTextConstraintListener floatListener;
+    private NumericalTextConstraintFloatListener floatListener;
 
-    private NumericalTextConstraintListener integerListener;
+    private NumericalTextConstraintIntListener integerListener;
+
+    private TextConstraintListener textLengthListener;
 
     private Button selectFromProjectButton;
 
@@ -88,8 +96,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     private boolean isInProject;
 
     public InputProviderEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
-            ComponentInstanceProperties configuration, EndpointType direction, String id, boolean isStatic, Image icon,
-            EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
+        ComponentInstanceProperties configuration, EndpointType direction, String id, boolean isStatic, Image icon,
+        EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
         super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
     }
 
@@ -100,8 +108,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     }
 
     @Override
-    public void widgetDefaultSelected(SelectionEvent event) {
-    }
+    public void widgetDefaultSelected(SelectionEvent event) {}
 
     @Override
     public void widgetSelected(SelectionEvent event) {
@@ -128,10 +135,15 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         return textField;
     }
 
+    @Override
+    protected Point getInitialSize() {
+        return new Point(DIALOG_WIDTH, DIALOG_HEIGHT);
+    }
+
     private void initializeWithValue(String value) {
         if (metadataValues.containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
-                && metadataValues.get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                        .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
+            && metadataValues.get(InputProviderComponentConstants.META_FILESOURCETYPE)
+                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
             selectAtStartCheckbox.setSelection(true);
             setSelectedAtStart();
         } else {
@@ -168,10 +180,12 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         } else if (dataType.equals(DataType.Float.getDisplayName())) {
             textField.addVerifyListener(floatListener);
         } else if (dataType.equals(DataType.FileReference.getDisplayName())
-                || dataType.equals(DataType.DirectoryReference.getDisplayName())) {
+            || dataType.equals(DataType.DirectoryReference.getDisplayName())) {
             if (!selectAtStartCheckbox.getSelection()) {
                 setFileOrDirectorySelected(true);
             }
+        } else if (dataType.equals(DataType.ShortText.getDisplayName())) {
+            textField.addVerifyListener(textLengthListener);
         } else if (dataType.equals(DataType.Boolean.getDisplayName())) {
             if (combo == null) {
                 createBooleanCombo();
@@ -184,6 +198,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
     }
 
+    
+    
     private void setTextFieldOrComboVisible(boolean textFieldVisible) {
         textField.setVisible(textFieldVisible);
         if (combo != null) {
@@ -203,7 +219,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     private void createFileSelectionArea() {
 
         if ((PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getEditorInput()
-                .toString().split("/")).length == 1) {
+            .toString().split("/")).length == 1) {
             isInProject = false;
         } else {
             isInProject = true;
@@ -214,13 +230,11 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         g.horizontalSpan = 2;
         fileSelectionComposite.setLayoutData(g);
 
-        Composite atStartComposite = new Composite(fileSelectionComposite, SWT.NONE);
-        atStartComposite.setLayout(new GridLayout(2, false));
         g = new GridData();
         g.horizontalSpan = 2;
-        g.grabExcessHorizontalSpace = true;
-        atStartComposite.setLayoutData(g);
-        selectAtStartCheckbox = new Button(atStartComposite, SWT.CHECK);
+        g.grabExcessHorizontalSpace = false;
+        selectAtStartCheckbox = new Button(fileSelectionComposite, SWT.CHECK);
+        selectAtStartCheckbox.setLayoutData(g);
         selectAtStartCheckbox.setText(Messages.chooseAtWorkflowStart);
         selectAtStartCheckbox.addSelectionListener(new SelectionListener() {
 
@@ -231,8 +245,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-            }
+            public void widgetDefaultSelected(SelectionEvent event) {}
         });
 
         selectFromProjectButton = new Button(fileSelectionComposite, SWT.PUSH);
@@ -247,10 +260,10 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 IResource resource = null;
                 if (comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName())) {
                     resource = PropertyTabGuiHelper.selectDirectoryFromActiveProject(confContainer.getShell(),
-                            Messages.selectDirectory, Messages.selectDirectoryFromProject);
+                        Messages.selectDirectory, Messages.selectDirectoryFromProject);
                 } else if (isInProject) {
                     resource = PropertyTabGuiHelper.selectFileFromActiveProject(confContainer.getShell(),
-                            Messages.selectFile, Messages.selectFileFromProject);
+                        Messages.selectFile, Messages.selectFileFromProject);
                 }
                 if (resource != null) {
                     textField.setText(resource.getFullPath().makeRelative().toPortableString());
@@ -258,8 +271,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-            }
+            public void widgetDefaultSelected(SelectionEvent event) {}
         });
         selectFromFileSystemButton = new Button(fileSelectionComposite, SWT.PUSH);
         selectFromFileSystemButton.setText(Messages.selectFromFileSystem);
@@ -324,8 +336,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-            }
+            public void widgetDefaultSelected(SelectionEvent event) {}
         });
         setFileOrDirectorySelected(false);
 
@@ -359,7 +370,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         noteText.setLayoutData(g);
         noteText.setCursor(Display.getCurrent().getSystemCursor(SWT.CURSOR_ARROW));
         noteText.setText(
-                "Select from project is not available because the component is in a workflow outside your current workspace.");
+            "Select from project is not available because the component is in a workflow outside your current workspace.");
 
         warningCompositeCreated = true;
     }
@@ -374,7 +385,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
         String dataType = comboDataType.getText();
         if (dataType.equals(DataType.FileReference.toString())
-                || dataType.equals(DataType.DirectoryReference.toString())) {
+            || dataType.equals(DataType.DirectoryReference.toString())) {
             if (isInProject) {
                 selectFromProjectButton.setEnabled(!selectAtStart);
             } else {
@@ -390,7 +401,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
         if (selectAtStart) {
             metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE,
-                    InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART);
+                InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART);
         } else {
             metadataValues.remove(InputProviderComponentConstants.META_FILESOURCETYPE);
         }
@@ -440,68 +451,77 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     }
 
     private void createListeners() {
-        floatListener = new NumericalTextConstraintListener(textField, WidgetGroupFactory.ONLY_FLOAT);
-        integerListener = new NumericalTextConstraintListener(textField, WidgetGroupFactory.ONLY_INTEGER);
+        floatListener = new NumericalTextConstraintFloatListener(WidgetGroupFactory.ONLY_FLOAT);
+        integerListener = new NumericalTextConstraintIntListener(WidgetGroupFactory.ONLY_INTEGER);
+        textLengthListener = new TextConstraintListener(SHORTTEXT_MAXLENGTH);
     }
 
     private void removeListeners() {
         textField.removeVerifyListener(integerListener);
         textField.removeVerifyListener(floatListener);
+        textField.removeVerifyListener(textLengthListener);
     }
 
     @Override
     protected boolean validateMetaDataInputs() {
-        boolean isValid = true;
-        for (Widget widget : widgetToKeyMap.keySet()) {
-            String key = "";
-            if (metaData.getMetaDataKeys().contains(widgetToKeyMap.get(widget))) {
-                key = widgetToKeyMap.get(widget);
+        return selectAtStartCheckbox.getSelection() || super.validateMetaDataInputs();
+    }
+
+    private class NumericalTextConstraintFloatListener extends NumericalTextConstraintListener {
+
+        NumericalTextConstraintFloatListener(int function) {
+            super(function);
+        }
+
+        @Override
+        public void verifyText(VerifyEvent e) {
+
+            super.verifyText(e);
+
+            Text text = (Text) e.getSource();
+            String oldS = text.getText();
+            String newS = oldS.substring(0, e.start) + e.text + oldS.substring(e.end);
+
+            if (newS.endsWith(E) || newS.endsWith(SMALL_E)) {
+                return;
             }
-            String dataType = metaData.getDataType(key);
-            String validation = metaData.getValidation(key);
-            boolean datatypeIsNotBoolean = !dataType.equals(EndpointMetaDataConstants.TYPE_BOOL);
-            if (datatypeIsNotBoolean
-                    && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
-                boolean inputIsRequired = validation != null
-                        && (validation.contains(ComponentConstants.INPUT_USAGE_TYPE_REQUIRED));
-                if (((Text) widget).getText().equals("") && inputIsRequired
-                        && !(comboDataType.getText().equalsIgnoreCase(DataType.ShortText.getDisplayName()))) {
-                    isValid = false;
-                } else if (!((Text) widget).getText().equals("")) {
-                    if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_INT)) {
-                        int value = Integer.MAX_VALUE;
-                        try {
-                            value = Integer.parseInt(((Text) widget).getText());
-                            isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
-                            isValid &= false;
-                        }
-                    } else if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_BOOL)) {
-                        double value = Double.MAX_VALUE;
-                        try {
-                            value = Double.parseDouble(((Text) widget).getText());
-                            isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
-                            isValid &= false;
-                        }
-                    } else if (dataType.equalsIgnoreCase(EndpointMetaDataConstants.TYPE_TEXT)) {
-                        String value = ((Text) widget).getText();
-                        if (value.length() <= SHORTTEXT_MAXLENGTH) {
-                            isValid &= true;
-                        } else {
-                            isValid &= false;
-                        }
-                    }
+            try {
+                if ((String.valueOf(Double.parseDouble(newS)).equals("Infinity")
+                    || String.valueOf(Double.parseDouble(newS)).equals("-Infinity")) && getMessage().isEmpty()) {
+                    updateMessage("The maximum or minimum value for data type Float has been reached.", false);
                 }
+            } catch (NumberFormatException exception) {
+                // nothing to do here
             }
         }
-        if (!isValid
-                && (comboDataType.getText().equalsIgnoreCase(DataType.FileReference.getDisplayName())
-                        || comboDataType.getText().equalsIgnoreCase(DataType.DirectoryReference.getDisplayName()))
-                && selectAtStartCheckbox.getSelection()) {
-            isValid = true;
+
+    }
+
+    private class NumericalTextConstraintIntListener extends NumericalTextConstraintListener {
+
+        NumericalTextConstraintIntListener(int function) {
+            super(function);
         }
-        return isValid;
+
+        @Override
+        public void verifyText(VerifyEvent e) {
+
+            super.verifyText(e);
+
+            Text text = (Text) e.getSource();
+            String oldS = text.getText();
+            String newS = oldS.substring(0, e.start) + e.text + oldS.substring(e.end);
+
+            try {
+                if ((Double.parseDouble(newS) >= Long.MAX_VALUE
+                    || Double.parseDouble(newS) <= Long.MIN_VALUE) && getMessage().isEmpty()) {
+                    updateMessage("The maximum or minimum value for data type Integer has been reached.", false);
+                }
+            } catch (NumberFormatException exception) {
+                // nothing to do here
+            }
+        }
+
     }
 
 }

@@ -30,7 +30,7 @@ public interface ToolIntegrationService {
      * @param configurationMap Information for the interface
      * @param context about the component such as the prefix for the component id.
      */
-    void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context);
+    void integrateTool(Map<String, Object> configurationMap, IntegrationContext context);
 
     /**
      * See method integrateTool but with option to not save published components.
@@ -39,7 +39,7 @@ public interface ToolIntegrationService {
      * @param context about the component such as the prefix for the component id.
      * @param savePublished if true, published files are written.
      */
-    void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context, boolean savePublished);
+    void integrateTool(Map<String, Object> configurationMap, IntegrationContext context, boolean savePublished);
 
     /**
      * Dynamically removes a {@link ComponentInterface} based on its id.
@@ -47,7 +47,7 @@ public interface ToolIntegrationService {
      * @param toolName of the component to remove
      * @param information about the component such as the prefix for the component id.
      */
-    void removeTool(String toolName, ToolIntegrationContext information);
+    void removeTool(String toolName, IntegrationContext information);
 
     /**
      * Writes a new description of a component to the configuration folder of the local RCE.
@@ -56,7 +56,7 @@ public interface ToolIntegrationService {
      * @param integrationInformation about the tool e.g. the component id prefix and all location information
      * @throws IOException if writing tool fails
      */
-    void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation) throws IOException;
+    void writeToolIntegrationFile(Map<String, Object> configurationMap, IntegrationContext integrationInformation) throws IOException;
 
     /**
      * Writes a new description of a component to the folder that was selected.
@@ -67,7 +67,7 @@ public interface ToolIntegrationService {
      * @throws IOException if writing tool fails
      */
     void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
-        ToolIntegrationContext integrationInformation) throws IOException;
+        IntegrationContext integrationInformation) throws IOException;
 
     /**
      * Returns the read in configuration of toolId, which has all information about the tool and for the component.
@@ -91,7 +91,7 @@ public interface ToolIntegrationService {
      * @param context of the tool
      * @return path
      */
-    String getPathOfComponentID(String id, ToolIntegrationContext context);
+    String getPathOfComponentID(String id, IntegrationContext context);
 
     /**
      * @return ids of all currently active components.
@@ -104,7 +104,7 @@ public interface ToolIntegrationService {
      * @param integrationContext for the given tool
      * @return true, if tool is already integrated.
      */
-    boolean isToolIntegrated(Map<String, Object> configurationMap, ToolIntegrationContext integrationContext);
+    boolean isToolIntegrated(Map<String, Object> configurationMap, IntegrationContext integrationContext);
 
     /**
      * Returns the tool name to a given path, if its known.
@@ -125,7 +125,7 @@ public interface ToolIntegrationService {
      * 
      * @param context .
      */
-    void updatePublishedComponents(ToolIntegrationContext context);
+    void updatePublishedComponents(IntegrationContext context);
 
     /**
      * @param identifier with component id and version
@@ -149,7 +149,7 @@ public interface ToolIntegrationService {
      * @param previousToolName to unregister
      * @param integrationContext of the tool
      */
-    void unregisterIntegration(String previousToolName, ToolIntegrationContext integrationContext);
+    void unregisterIntegration(String previousToolName, IntegrationContext integrationContext);
 
     /**
      * Register a complete tool directory.
@@ -157,7 +157,16 @@ public interface ToolIntegrationService {
      * @param toolName to unregister
      * @param integrationContext of the tool
      */
-    void registerRecursive(String toolName, ToolIntegrationContext integrationContext);
+    void registerRecursive(String toolName, IntegrationContext integrationContext);
+    
+    void copyToolDocumentation(ConfigurationMap configurationMap, File toolConfigFile);
+
+    /**
+     * Returns a map of all integrated configurations (tools and workflows).
+     * 
+     * @return map
+     */
+    Map<String, Map<String, Object>> getIntegratedConfigurations();
     
     
 

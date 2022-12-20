@@ -8,17 +8,13 @@
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
 import de.rcenvironment.toolkit.utils.common.IdGeneratorType;
@@ -45,19 +41,19 @@ public class KeyToolCommandPlugin implements CommandPlugin {
     private SshAccountConfigurationService sshAccountService;
 
     @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(MAIN_CMD);
-        String subCmd = context.consumeNextToken();
-        List<String> parameters = context.consumeRemainingTokens();
-        if (SUBCMD_SSH_PW.equals(subCmd) || SUBCMD_UPLINK_PW.equals(subCmd)) {
-            performGenerateSshOrUplinkPw(context, parameters);
-        } else {
-            throw CommandException.syntaxError("Missing operation argument (e.g. \"" + MAIN_CMD + " " + SUBCMD_SSH_PW + "\")",
-                context);
-        }
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription keytoolCommands = new MainCommandDescription(MAIN_CMD, "generate ssh passwords",
+            "commands for ssh passwords",
+            new SubCommandDescription(SUBCMD_SSH_PW, "generates a password for an SSH or Uplink connection, and the corresponding "
+                + "server entry", this::performGenerateSshOrUplinkPw),
+            new SubCommandDescription(SUBCMD_UPLINK_PW, "generates a password for an SSH or Uplink connection, and the corresponding "
+                    + "server entry", this::performGenerateSshOrUplinkPw)
+        );
+        
+        return new MainCommandDescription[] { keytoolCommands };
     }
 
-    private void performGenerateSshOrUplinkPw(CommandContext context, List<String> parameters) {
+    private void performGenerateSshOrUplinkPw(CommandContext context) {
         // To ensure an unbiased password without the special Base64url characters ("_" and "-"), over-generate at twice the length...
         String password = IdGenerator.createRandomBase64UrlString(GENERATED_PASSWORD_LENGTH * 2, IdGeneratorType.SECURE);
         // ...and then remove the offending characters and trim to the actual length. For this to fail, more than half of the
@@ -70,17 +66,5 @@ public class KeyToolCommandPlugin implements CommandPlugin {
         context.println("The password hash (send this to the server's administrator):");
         context.println(sshAccountService.generatePasswordHash(password));
     }
-
-    @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
-        // should be revisited when new command help/parser is in place
-        contributions.add(new CommandDescription(MAIN_CMD, SUBCMD_SSH_PW,
-            false, "generates a password for an SSH connection, and the corresponding server entry"));
-        contributions.add(new CommandDescription(MAIN_CMD + " " + SUBCMD_UPLINK_PW, null,
-            false, "generates a password for an Uplink connection, and the corresponding server entry"));
-        return contributions;
-    }
-
+    
 }

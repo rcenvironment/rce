@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RCE Platform - Maven Plain Java Libraries - Graph Algorithms
+Bundle-Name: RCE Third-Party Artifacts - Wrapped Maven Libraries - Graph Algorithms
 Bundle-SymbolicName: de.rcenvironment.platform.maven.graph;singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: lib/maven/collections-generic-4.01.jar,
  lib/maven/colt-1.2.0.jar,
@@ -31,3 +31,4 @@ Export-Package: edu.uci.ics.jung.algorithms.blockmodel;version="2.0.1",
  edu.uci.ics.jung.graph.util;version="2.0.1"
 Bundle-Vendor: DLR
 Eclipse-BundleShape: dir
+Automatic-Module-Name: de.rcenvironment.platform.maven.graph

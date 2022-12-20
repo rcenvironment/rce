@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.components.script.common.DefaultScriptHelper;
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
 import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.PythonValidationResult;
 import de.rcenvironment.components.script.execution.validator.ScriptComponentValidator.PythonVersionRegexValidator;
@@ -91,7 +92,7 @@ public class ScriptComponentValidatorTest {
     @Test
     public void testDefaultScript() {
         componentDescriptionHelper.addConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT,
-            ScriptComponentConstants.DEFAULT_SCRIPT_WITHOUT_COMMENTS_AND_IMPORTS);
+            DefaultScriptHelper.getDefaultScript());
 
         componentDescription = componentDescriptionHelper.createComponentDescriptionMock();
 

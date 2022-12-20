@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component Tests
 Bundle-SymbolicName: de.rcenvironment.components.xml.merger.execution.tests
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.components.xml.merger.execution;bundle-version="6.2.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -12,7 +12,7 @@ Import-Package: de.rcenvironment.core.communication.common.impl,
  de.rcenvironment.core.component.xml.impl,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common.xml.impl,
- org.easymock;version="5.0.0",
+ org.easymock;version="4.2.0",
  org.junit,
  org.junit.rules;version="4.8.2"
 Require-Bundle: de.rcenvironment.core.utils.testing;bundle-version="6.2.0"

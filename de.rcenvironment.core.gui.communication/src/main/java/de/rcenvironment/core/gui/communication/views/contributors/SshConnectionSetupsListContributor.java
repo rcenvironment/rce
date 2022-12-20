@@ -304,8 +304,8 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
         if (dialog.open() == Window.OK) {
             final String connectionName = dialog.getConnectionName();
-            final boolean connectImmediately = dialog.getAutoRetry();
-            final boolean autoRetry = dialog.getConnectImmediately();
+            final boolean connectImmediately = dialog.getConnectImmediately();
+            final boolean autoRetry = dialog.getAutoRetry();
             final String host = dialog.getHost();
             final int port = dialog.getPort();
             final String username = dialog.getUsername();

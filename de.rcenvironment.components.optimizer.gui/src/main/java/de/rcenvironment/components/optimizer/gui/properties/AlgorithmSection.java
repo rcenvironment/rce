@@ -8,14 +8,21 @@
 
 package de.rcenvironment.components.optimizer.gui.properties;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -29,6 +36,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
@@ -39,6 +47,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerFileLoader;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
@@ -50,7 +60,7 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Sascha Zur
  * @author Kathrin Schaffert
  */
-public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySection {
+public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySection implements PropertyChangeListener {
 
     private static final String COMMA = ",";
 
@@ -58,6 +68,10 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
      * Selections.
      */
     private static final String COULD_NOT_PARSE_METHOD_FILE = "Could not parse method file";
+
+    private boolean listenerRegistered = false;
+
+    private boolean displayOnlyDiscreteMethods;
 
     private Combo comboMainAlgorithmSelection;
 
@@ -75,13 +89,21 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
 
     private Composite thirdAlgo;
 
-    private String[] methods;
+    private String[] allMethods;
+
+    private String[] discreteMethods;
 
     private Label pythonLabel;
+
+    private Label noteLabel;
 
     private Button dakotaPathButton;
 
     public AlgorithmSection() {
+        loadMethods();
+    }
+
+    private void loadMethods() {
         try {
             methodDescriptions = OptimizerFileLoader.getAllMethodDescriptions(getAlgorithmFolder());
         } catch (JsonParseException e) {
@@ -91,6 +113,24 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         } catch (IOException e) {
             logger.error("Could not load method file ", e);
         }
+
+        Set<String> keySet = new HashSet<>();
+        keySet.addAll(methodDescriptions.keySet());
+
+        allMethods = new String[keySet.size()];
+        keySet.toArray(allMethods);
+        Arrays.sort(allMethods);
+
+        List<String> list =
+            keySet.stream()
+                .filter(key -> methodDescriptions.get(key).getOptimizerPackage().equals(OptimizerComponentConstants.OPT_PACKAGE_DAKOTA))
+                .filter(key -> methodDescriptions.get(key).getSupportsDiscreteOptimization().equals("false"))
+                .collect(Collectors.toList());
+
+        keySet.removeAll(list);
+        discreteMethods = new String[keySet.size()];
+        discreteMethods = keySet.toArray(new String[0]);
+        Arrays.sort(discreteMethods);
     }
 
     protected abstract String getAlgorithmFolder();
@@ -104,15 +144,11 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         sectionAlgorithm.setClient(algorithmConfigurationParent);
         algorithmConfigurationParent.setLayout(new GridLayout(1, false));
 
-        methods = new String[methodDescriptions.keySet().size()];
-        methodDescriptions.keySet().toArray(methods);
-        Arrays.sort(methods);
         firstAlgo = new Composite(algorithmConfigurationParent, SWT.NONE);
         firstAlgo.setLayout(new GridLayout(2, false));
         new Label(firstAlgo, SWT.NONE).setText("Main algorithm");
         new Label(firstAlgo, SWT.NONE);
         comboMainAlgorithmSelection = new Combo(firstAlgo, SWT.BORDER | SWT.READ_ONLY);
-        comboMainAlgorithmSelection.setItems(methods);
         comboMainAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
         comboMainAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonProperties = new Button(firstAlgo, SWT.PUSH);
@@ -127,7 +163,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         new Label(secondAlgo, SWT.NONE).setText("Second algorithm");
         new Label(secondAlgo, SWT.NONE);
         comboSecondAlgorithmSelection = new Combo(secondAlgo, SWT.BORDER | SWT.READ_ONLY);
-        comboSecondAlgorithmSelection.setItems(methods);
+        comboSecondAlgorithmSelection.setItems(allMethods);
         comboSecondAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
         comboSecondAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonSecondProperties = new Button(secondAlgo, SWT.PUSH);
@@ -142,7 +178,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         new Label(thirdAlgo, SWT.NONE).setText("Third algorithm");
         new Label(thirdAlgo, SWT.NONE);
         comboThirdAlgorithmSelection = new Combo(thirdAlgo, SWT.BORDER | SWT.READ_ONLY);
-        comboThirdAlgorithmSelection.setItems(methods);
+        comboThirdAlgorithmSelection.setItems(allMethods);
         comboThirdAlgorithmSelection.addListener(SWT.Selection, new SelectAlgorithmListener());
         comboThirdAlgorithmSelection.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.ALGORITHMS);
         Button buttonThirdProperties = new Button(thirdAlgo, SWT.PUSH);
@@ -157,6 +193,10 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         labelData.horizontalSpan = 2;
         pythonLabel.setLayoutData(labelData);
 
+        noteLabel = new Label(firstAlgo, SWT.NONE);
+        noteLabel.setText(Messages.noteDiscreteMethods);
+        noteLabel.setLayoutData(labelData);
+
         dakotaPathButton = new Button(firstAlgo, SWT.CHECK);
         dakotaPathButton.setText("Use custom dakota binary (selected at workflow start)");
         dakotaPathButton.setData(CONTROL_PROPERTY_KEY, OptimizerComponentConstants.USE_CUSTOM_DAKOTA_PATH);
@@ -170,9 +210,22 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
     }
 
     @Override
-    public void aboutToBeShown() {
-        super.aboutToBeShown();
+    protected void afterInitializingModelBindingWithValidation() {
+        super.afterInitializingModelBindingWithValidation();
         setMethodConfigurationsIfNotExisting();
+        setDisplayOnlyDiscreteMethods();
+        updateMethods();
+    }
+
+    private void setDisplayOnlyDiscreteMethods() {
+        if (getConfiguration().getOutputDescriptionsManager().getDynamicEndpointDescriptions().isEmpty()) {
+            displayOnlyDiscreteMethods = false;
+        } else {
+            displayOnlyDiscreteMethods = getConfiguration().getOutputDescriptionsManager().getDynamicEndpointDescriptions().stream()
+                .map(EndpointDescription.class::cast)
+                .filter(x -> x.getDynamicEndpointIdentifier().equals(OptimizerComponentConstants.ID_DESIGN))
+                .allMatch(x -> Boolean.parseBoolean(x.getMetaDataValue(OptimizerComponentConstants.META_IS_DISCRETE)));
+        }
     }
 
     public void setMethodConfigurationsIfNotExisting() {
@@ -194,6 +247,24 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                 logger.error(e);
             }
         }
+    }
+
+    @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        if (node != null && !listenerRegistered) {
+            node.addPropertyChangeListener(this);
+            listenerRegistered = true;
+        }
+    }
+
+    @Override
+    protected void beforeTearingDownModelBinding() {
+        if (node != null) {
+            node.removePropertyChangeListener(this);
+        }
+        listenerRegistered = false;
+        super.beforeTearingDownModelBinding();
     }
 
     /**
@@ -288,16 +359,17 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                 allConfiguredDescriptions.get(comboMainAlgorithmSelection.getText()), MethodDescription.class);
             if (mainAlgorithm != null && mainAlgorithm.getOptimizerPackage() != null) {
                 pythonLabel.setVisible(true);
-                if (mainAlgorithm.getOptimizerPackage().equalsIgnoreCase("dakota")) {
+                noteLabel.setVisible(true);
+                if (mainAlgorithm.getOptimizerPackage().equalsIgnoreCase(OptimizerComponentConstants.OPT_PACKAGE_DAKOTA)) {
                     pythonLabel.setText(Messages.dakotaOSHint);
                     dakotaPathButton.setVisible(true);
-
                 } else {
                     dakotaPathButton.setVisible(false);
+                    noteLabel.setVisible(false);
                     pythonLabel.setText(Messages.pythonForMethodInstalled);
                 }
                 pythonLabel.getParent().pack();
-                if (mainAlgorithm.getOptimizerPackage().equals("dakota")
+                if (mainAlgorithm.getOptimizerPackage().equals(OptimizerComponentConstants.OPT_PACKAGE_DAKOTA)
                     && mainAlgorithm.getMethodName().contains(OptimizerComponentConstants.DAKOTA_SGB)) {
                     comboSecondAlgorithmSelection.removeAll();
                     comboThirdAlgorithmSelection.removeAll();
@@ -338,6 +410,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             } else {
                 comboMainAlgorithmSelection.setText("");
                 pythonLabel.setVisible(false);
+                noteLabel.setVisible(false);
             }
         } catch (JsonParseException e1) {
             logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
@@ -361,6 +434,37 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         result.toArray(methodList);
         Arrays.sort(methodList);
         combo.setItems(methodList);
+    }
+
+    protected void updateMethods() {
+        if (displayOnlyDiscreteMethods) {
+            comboMainAlgorithmSelection.setItems(discreteMethods);
+        } else {
+            comboMainAlgorithmSelection.setItems(allMethods);
+        }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        if (evt.getPropertyName().equals(EndpointDescriptionsManager.PROPERTY_ENDPOINT)) {
+
+            List<EndpointDescription> endpointList = (((EndpointDescriptionsManager) evt.getSource()).getDynamicEndpointDescriptions())
+                .stream().map(EndpointDescription.class::cast)
+                .filter(x -> x.getDynamicEndpointIdentifier().equals(OptimizerComponentConstants.ID_DESIGN)).collect(Collectors.toList());
+
+            if (endpointList.isEmpty()) {
+                return;
+            }
+            boolean isDiscrete = endpointList.stream()
+                .allMatch(x -> Boolean.parseBoolean(x.getMetaDataValue(OptimizerComponentConstants.META_IS_DISCRETE)));
+
+            if (displayOnlyDiscreteMethods != isDiscrete) {
+                displayOnlyDiscreteMethods = isDiscrete;
+                updateMethods();
+                refreshAlgorithmSection();
+            }
+        }
     }
 
     /**

@@ -8,14 +8,19 @@
 
 package de.rcenvironment.core.communication.sshconnection.internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.IntegerParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
@@ -31,46 +36,40 @@ public class SshConnectionSetupCommandPlugin implements CommandPlugin {
 
     private static final String CMD_SSH = "ssh";
 
+    private static final String DESC = " list\" to get the id)";
+    
+    private static final StringParameter ID_PARAMETER = new StringParameter(null, "id", "id for the ssh connection");
+    
+    private static final StringParameter DISPLAY_NAME_PRAMETER = new StringParameter(null, "display name",
+            "display name for the ssh connection");
+    
+    private static final StringParameter HOST_IP_PARAMETER = new StringParameter(null, "host",
+            "host for the ssh connection");
+    
+    private static final IntegerParameter PORT_PARAMETER = new IntegerParameter(0, "port", "port for the ssh connection");
+    
+    private static final StringParameter USERNAME_PARAMETER = new StringParameter(null, "username",
+            "username for the ssh connection");
+    
+    private static final StringParameter KEYFILE_LOCATION_PARAMETER = new StringParameter(null, "key file location",
+            "location of the key file");
+    
     private SshConnectionService sshConnectionService;
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see de.rcenvironment.core.command.spi.SingleCommandHandler#execute(de.rcenvironment.core.command.spi.CommandContext)
-     */
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(CMD_SSH);
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null) {
-            // "ssh" -> "ssh list" by default
-            performList(context);
-        } else {
-            List<String> parameters = context.consumeRemainingTokens();
-            if ("add".equals(subCmd)) {
-                performAdd(context, parameters);
-            } else if ("list".equals(subCmd)) {
-                performList(context);
-            } else if ("start".equals(subCmd)) {
-                performStart(context, parameters);
-            } else if ("stop".equals(subCmd)) {
-                performStop(context, parameters);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        }
-    }
+    private void performAdd(final CommandContext context) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter displayNameParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter hostIpParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        ParsedIntegerParameter portParameter = (ParsedIntegerParameter) modifiers.getPositionalCommandParameter(2);
+        ParsedStringParameter usernameParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(3);
+        ParsedStringParameter keyfileLocationParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(4);
 
-    private void performAdd(final CommandContext context, List<String> parameters) throws CommandException {
-        if (parameters.size() < 5 || parameters.size() > 5) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-
-        final String connectionName = parameters.get(0);
-        final String host = parameters.get(1);
-        final int port = Integer.parseInt(parameters.get(2));
-        final String username = parameters.get(3);
-        final String keyfileLocation = parameters.get(4);
+        final String connectionName = displayNameParameter.getResult();
+        final String host = hostIpParameter.getResult();
+        final int port = portParameter.getResult();
+        final String username = usernameParameter.getResult();
+        final String keyfileLocation = keyfileLocationParameter.getResult();
 
         SshConnectionContext contextSSH = new SshConnectionContext(null, connectionName, null, host, port, username,
             keyfileLocation, false, false, false, false);
@@ -97,47 +96,55 @@ public class SshConnectionSetupCommandPlugin implements CommandPlugin {
         }
     }
 
-    private void performStart(CommandContext context, List<String> parameters) throws CommandException {
-        if (parameters.size() < 1) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        final String connectionId = parameters.get(0);
+    private void performStart(CommandContext context) {
+        
+        final String connectionId = ((ParsedStringParameter) context.getParsedModifiers().getPositionalCommandParameter(0)).getResult();
 
-        ConcurrencyUtils.getAsyncTaskService().execute("Start SSH Connection.", () -> {
-
-            sshConnectionService.connectSession(connectionId);
-
-        });
+        ConcurrencyUtils.getAsyncTaskService().execute("Start SSH Connection.", () -> 
+            sshConnectionService.connectSession(connectionId));
     }
 
-    private void performStop(CommandContext context, List<String> parameters) throws CommandException {
-        if (parameters.size() < 1) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        String connectionId = parameters.get(0);
+    private void performStop(CommandContext context) {
+        
+        String connectionId = ((ParsedStringParameter) context.getParsedModifiers().getPositionalCommandParameter(0)).getResult();
+        
         sshConnectionService.disconnectSession(connectionId);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see de.rcenvironment.core.command.spi.CommandPlugin#getCommandDescriptions()
-     */
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(CMD_SSH, "", false, "short form of \"ssh list\""));
-        contributions.add(new CommandDescription(CMD_SSH + " add", "<displayName> <host> <port> <username> <keyfileLocation>", false,
-            "add a new ssh connection", "(Example: TODO)"));
-        contributions.add(new CommandDescription(CMD_SSH + " list", "", false,
-            "lists all ssh connections, including ids and connection states"));
-        contributions.add(new CommandDescription(CMD_SSH + " start", "<id>", false,
-            "starts/connects an ssh connection (use \" " + CMD_SSH + " list\" to get the id)"));
-        contributions.add(new CommandDescription(CMD_SSH + " stop", "<id>", false,
-            "stops/disconnects an ssh connection (use \" " + CMD_SSH + " list\" to get the id)"));
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription("ssh", "manage ssh connections",
+                "short form of \"ssh list\"", this::performList,
+            new SubCommandDescription("add", "add a new ssh connection", this::performAdd,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        DISPLAY_NAME_PRAMETER,
+                        HOST_IP_PARAMETER,
+                        PORT_PARAMETER,
+                        USERNAME_PARAMETER,
+                        KEYFILE_LOCATION_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("list", "lists all ssh connections, including ids and connection states", this::performList),
+            new SubCommandDescription("start", "starts/connects an ssh connection (use \" " + CMD_SSH + DESC, this::performStart,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("stop", "stops/disconnects an ssh connection (use \" " + CMD_SSH + DESC, this::performStop,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            )
+        );
+        return new MainCommandDescription[] { commands };
     }
-
+    
     /**
      * OSGI bind method.
      * 
@@ -146,4 +153,5 @@ public class SshConnectionSetupCommandPlugin implements CommandPlugin {
     public void bindSshConnectionSetupService(SshConnectionService newInstance) {
         this.sshConnectionService = newInstance;
     }
+    
 }

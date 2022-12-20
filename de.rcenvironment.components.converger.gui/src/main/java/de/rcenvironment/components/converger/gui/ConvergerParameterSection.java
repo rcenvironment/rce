@@ -44,11 +44,14 @@ public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySec
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 
+        parent.setLayout(new GridLayout(1, false));
+
         TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
         final Section sectionProperties = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+        sectionProperties.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         sectionProperties.setText(Messages.parameterTitle);
 
-        final Composite sectionInstallationClient = factory.createFlatFormComposite(sectionProperties);
+        final Composite sectionInstallationClient = factory.createFlatFormComposite(parent);
         sectionInstallationClient.setLayout(new GridLayout(2, false));
         WidgetGroupFactory.addLabelAndTextfieldForPropertyToComposite(sectionInstallationClient,
             Messages.absoluteConvergenceMessage, ConvergerComponentConstants.KEY_EPS_A, TEXT_WIDTH, WidgetGroupFactory.ONLY_FLOAT
@@ -64,29 +67,42 @@ public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySec
                 | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.ALIGN_CENTER).text;
         maxConvChecksText.setMessage(Messages.noMaxIterations);
 
-        final Composite notConvComposite = new Composite(sectionInstallationClient, SWT.NONE);
-        GridLayout notConvLayout = new GridLayout(1, false);
-        notConvLayout.marginWidth = 0;
-        notConvComposite.setLayout(notConvLayout);
+        final Composite notConvComposite = factory.createFlatFormComposite(parent);
+        notConvComposite.setLayout(new GridLayout(2, false));
 
         Label notConvLabel = new Label(notConvComposite, SWT.NONE);
         notConvLabel.setText(Messages.notConvBehavior);
         GridData notConvLabelData = new GridData();
+        notConvLabelData.horizontalSpan = 2;
+        notConvLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
         notConvLabel.setLayoutData(notConvLabelData);
 
+        // The implementation in the following with Radio Button plus separate Label - instead of setting the Button's Text variable - is
+        // intentional. The reason is GUI issues regarding the visibility of check marks on different (Linux) platforms with different
+        // desktop variants. (#17880)
+        // Kathrin Schaffert, 07.03.2022
+
         notConvIgnoreButton = new Button(notConvComposite, SWT.RADIO);
-        notConvIgnoreButton.setText(Messages.notConvIgnore);
         notConvIgnoreButton.setData(CONTROL_PROPERTY_KEY, ConvergerComponentConstants.NOT_CONVERGED_IGNORE);
 
+        Label notConvIgnoreLabel = new Label(notConvComposite, SWT.NONE);
+        notConvIgnoreLabel.setText(Messages.notConvIgnore);
+        notConvIgnoreLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
         notConvFailButton = new Button(notConvComposite, SWT.RADIO);
-        notConvFailButton.setText(Messages.notConvFail);
         notConvFailButton.setData(CONTROL_PROPERTY_KEY, ConvergerComponentConstants.NOT_CONVERGED_FAIL);
 
+        Label notConvFailLabel = new Label(notConvComposite, SWT.NONE);
+        notConvFailLabel.setText(Messages.notConvFail);
+        notConvFailLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
         notConvNotAValueButton = new Button(notConvComposite, SWT.RADIO);
-        notConvNotAValueButton.setText(Messages.notConvNotAValue);
         notConvNotAValueButton.setData(CONTROL_PROPERTY_KEY, ConvergerComponentConstants.NOT_CONVERGED_NOT_A_VALUE);
 
-        sectionProperties.setClient(sectionInstallationClient);
+        Label notConvNotAValueLabel = new Label(notConvComposite, SWT.NONE);
+        notConvNotAValueLabel.setText(Messages.notConvNotAValue);
+        notConvNotAValueLabel.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
     }
 
     @Override

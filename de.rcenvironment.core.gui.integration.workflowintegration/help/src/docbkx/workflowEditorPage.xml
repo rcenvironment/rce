@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<chapter>
+    <title>Workflow Editor Page</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>On this page, the integrated (sub-) workflow can be viewed. Displayed components can
+            be disabled to remove them from the intergrated wokflow or single connections can be
+            deleted.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>Disable components to remove them from your integrated workflow. Use the context menu
+            or select the component in the editor for dis-/enabling. Open connections will be added
+            automatically to the table on the Mapping Page and can serve as inputs or outputs for the 
+            integrated workflow component. Use the connection manager to delete single connections 
+            in case you do not wish to disable the whole component from your workflow.</para>
+        <para>Note: Components can not be added to the previous selected (sub-) workflow. Only
+            enabling/disabling of components is possible. </para>
+    </sect1>
+</chapter>

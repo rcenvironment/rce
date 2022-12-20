@@ -23,7 +23,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
@@ -42,11 +42,11 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
     private static final long DISCOVERY_WAIT_TIME_MSEC = 1000;
 
     // Optional to allow "poison pill" pattern; null elements are not permitted
-    private final BlockingDeque<Optional<ToolIntegrationContext>> initializationQueue = new LinkedBlockingDeque<>();
+    private final BlockingDeque<Optional<IntegrationContext>> initializationQueue = new LinkedBlockingDeque<>();
 
-    private final Map<String, ToolIntegrationContext> contextsById = new HashMap<>();
+    private final Map<String, IntegrationContext> contextsById = new HashMap<>();
 
-    private final Map<String, ToolIntegrationContext> contextsByType = new HashMap<>();
+    private final Map<String, IntegrationContext> contextsByType = new HashMap<>();
 
     private final AsyncTaskService asyncTaskService = ConcurrencyUtils.getAsyncTaskService();
 
@@ -63,9 +63,9 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
     }
 
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC, unbind = "removeToolIntegrationContext")
-    protected synchronized void addToolIntegrationContext(ToolIntegrationContext newContext) {
+    protected synchronized void addToolIntegrationContext(IntegrationContext newContext) {
         final String contextId = newContext.getContextId();
-        final String lowerCaseType = newContext.getContextType().toLowerCase();
+        final String lowerCaseType = newContext.getContextTypeString().toLowerCase();
         if (contextsById.containsKey(contextId)) {
             return;
         }
@@ -89,36 +89,36 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
         }
     }
 
-    protected synchronized void removeToolIntegrationContext(ToolIntegrationContext oldContext) {
+    protected synchronized void removeToolIntegrationContext(IntegrationContext oldContext) {
         final String contextId = oldContext.getContextId();
-        final String lowerCaseType = oldContext.getContextType().toLowerCase();
+        final String lowerCaseType = oldContext.getContextTypeString().toLowerCase();
         contextsById.remove(contextId);
         contextsByType.remove(lowerCaseType);
     }
 
     @Override
-    public ToolIntegrationContext fetchNextUninitializedToolIntegrationContext() {
+    public IntegrationContext fetchNextUninitializedToolIntegrationContext() {
         try {
-            Optional<ToolIntegrationContext> element = initializationQueue.take();
+            Optional<IntegrationContext> element = initializationQueue.take();
             if (element.isPresent()) {
                 return element.get();
             } else {
                 return null;
             }
         } catch (InterruptedException e) {
-            log.debug("Interrupted while waiting for the next " + ToolIntegrationContext.class.getSimpleName() + " to initialize");
+            log.debug("Interrupted while waiting for the next " + IntegrationContext.class.getSimpleName() + " to initialize");
             return null;
         }
     }
 
     @Override
-    public synchronized Collection<ToolIntegrationContext> getAllIntegrationContexts() {
+    public synchronized Collection<IntegrationContext> getAllIntegrationContexts() {
         return contextsById.values();
     }
 
     @Override
-    public synchronized ToolIntegrationContext getToolIntegrationContextById(String contextId) {
-        ToolIntegrationContext result = contextsById.get(contextId);
+    public synchronized IntegrationContext getToolIntegrationContextById(String contextId) {
+        IntegrationContext result = contextsById.get(contextId);
         if (result == null) {
             log.warn("Returning integration context 'null' for requested id '" + contextId + "'");
         }
@@ -126,8 +126,8 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
     }
 
     @Override
-    public synchronized ToolIntegrationContext getToolIntegrationContextByType(String type) {
-        ToolIntegrationContext result = contextsByType.get(type.toLowerCase());
+    public synchronized IntegrationContext getToolIntegrationContextByType(String type) {
+        IntegrationContext result = contextsByType.get(type.toLowerCase());
         if (result == null) {
             log.warn("Returning integration context 'null' for requested type '" + type + "'");
         }
@@ -136,7 +136,7 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
 
     @Override
     public synchronized boolean hasTIContextMatchingPrefix(String toolId) {
-        for (ToolIntegrationContext context : contextsById.values()) {
+        for (IntegrationContext context : contextsById.values()) {
             if (toolId.startsWith(context.getPrefixForComponentId())) {
                 return true;
             }

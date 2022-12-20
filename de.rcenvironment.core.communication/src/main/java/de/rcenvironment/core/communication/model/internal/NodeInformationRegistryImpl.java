@@ -144,12 +144,12 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
     }
 
     @Override
-    public synchronized void associateDisplayName(InstanceNodeSessionId id, String newName) {
+    public synchronized boolean associateDisplayName(InstanceNodeSessionId id, String newName) {
         InstanceSessionData currentSessionData = getOrReplaceCurrentSessionDataForInstance(id);
         String fullIdString = id.getInstanceNodeSessionIdString();
         if (!currentSessionData.matchesSessionIdOf(id)) {
             log.debug(StringUtils.format(LOG_PATTERN_IGNORING_NAME_CHANGE_FOR_NON_CURRENT_SESSION, newName, fullIdString));
-            return;
+            return false;
         }
 
         NodeNameDataHolder oldNameHolder = currentSessionData.sessionNameDataHolder;
@@ -163,22 +163,31 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
             } else {
                 // TODO make "verbose logging" only?
                 log.debug(StringUtils.format(LOG_PATTERN_IGNORING_DUPLICATE_NAMING_REQUEST, newName, fullIdString));
+                return false;
             }
         }
+
+        // TODO review: is this still correct once we implement dynamic instance name changes within sessions?
+        // wouldn't this discard all logical node namings, even if the session did not change?
         currentSessionData.setInstanceSessionNameHolder(new NodeNameDataHolder(newName));
+
+        return true;
     }
 
     @Override
-    public synchronized void associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName) {
+    public synchronized boolean associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName) {
         InstanceSessionData currentSessionData = getOrReplaceCurrentSessionDataForInstance(id.convertToInstanceNodeSessionId());
         final String fullIdString = id.getLogicalNodeSessionIdString();
         if (!currentSessionData.matchesSessionIdOf(id)) {
             log.debug(
                 StringUtils.format(LOG_PATTERN_IGNORING_NAME_CHANGE_FOR_NON_CURRENT_SESSION, newName, fullIdString));
-            return;
+            return false;
         }
 
+        // TODO (p2) add detection whether this is a no-change operation and return "false"?
         currentSessionData.setOrRemoveLogicalNodeName(id.getLogicalNodePart(), newName);
+
+        return true;
     }
 
     @Override

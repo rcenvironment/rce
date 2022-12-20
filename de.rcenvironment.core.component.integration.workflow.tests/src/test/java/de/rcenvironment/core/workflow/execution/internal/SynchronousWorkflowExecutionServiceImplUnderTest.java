@@ -9,6 +9,7 @@ package de.rcenvironment.core.workflow.execution.internal;
 
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
+import de.rcenvironment.core.workflow.execution.internal.SynchronousWorkflowExecutionServiceImpl;
 
 // We disable Sonar for this class declaration, as it only complains about there not being any tests. This is, however, by design,
 // as this class implements the subclass-and-stub-pattern

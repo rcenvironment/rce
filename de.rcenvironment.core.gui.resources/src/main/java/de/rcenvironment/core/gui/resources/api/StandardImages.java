@@ -527,7 +527,12 @@ public enum StandardImages implements ImageSource {
     /**
      * Toolbar icon to collapse all tree nodes of a tree.
      */
-    COLLAPSE_ALL(fromEclipseShared(ISharedImages.IMG_ELCL_COLLAPSEALL));
+    COLLAPSE_ALL(fromEclipseShared(ISharedImages.IMG_ELCL_COLLAPSEALL)),
+
+    /**
+     * Icon for edit integrated workflow command.
+     */
+    WORKFLOW_INTEGRATION_EDIT(fromLocalBundle("wf_integration_edit.png"));
 
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";

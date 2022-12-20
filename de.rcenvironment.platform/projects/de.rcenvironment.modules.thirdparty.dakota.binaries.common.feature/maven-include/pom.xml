@@ -1,0 +1,24 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.thirdparty.dakota.binaries.common.include</artifactId>
+	<name>RCE Third-Party Artifacts - Modules - Dakota Binaries (Maven Include Project)</name>
+	<version>10.4.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.module</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../../de.rcenvironment.build.thirdparty/maven/parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<module>..</module> <!-- the module's own feature -->
+		<module>../../de.rcenvironment.binaries.dakota.win32.x86_64</module>
+		<module>../../de.rcenvironment.binaries.dakota.linux.x86_64</module>
+		<module>../../de.rcenvironment.binaries.dakota.feature</module>
+	</modules>
+
+</project>

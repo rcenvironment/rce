@@ -1,10 +1,5 @@
-// --- DO NOT COPY THIS COMMENT BLOCK ---
-//
-// This is an example config for a server in the internal network.
-// Because the "isWorkflowHost" option is set, this instance can be used as workflow controller by other instances.
-//
-
 {
+	"_meta_comment" : "This is an example configuration for a server in an internal network. Because the 'isWorkflowHost' option is set, this instance can be used as workflow controller by other instances.",
 	"general" : {
 		"instanceName" : "Example standalone server started by \"${systemUser}\" on ${hostName}",
 		"isWorkflowHost": true

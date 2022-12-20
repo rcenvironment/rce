@@ -331,7 +331,7 @@ public final class GUIInstanceRunner extends InstanceRunner {
      * property for build hint will be set accordingly.
      */
     private void storeVersionInformationToSystemProperties() {
-        Version version = VersionUtils.getVersionOfProduct();
+        Version version = VersionUtils.getProductVersion();
         String buildId = VersionUtils.getBuildIdAsString(version);
         if (buildId == null) {
             buildId = "-";

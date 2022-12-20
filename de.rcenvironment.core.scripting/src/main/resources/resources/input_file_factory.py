@@ -52,8 +52,8 @@ class InputFileFactory(dictionary):
         
         path = os.path.join(self.p,tail)
         if not overwrite and os.path.exists(path):
-        
-            raise ValueError("The file '" + str(name) + "' already exists in '" + str(path) + "'")
+            dir = os.path.dirname(path)
+            raise ValueError("The file '" + str(name) + "' already exists in '" + str(dir) + "'")
         else:
             with open(path,'w') as f:
                 for key in self.d:

@@ -9,10 +9,7 @@
 package de.rcenvironment.core.remoteaccess.server.internal;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -23,14 +20,28 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.FileParameter;
+import de.rcenvironment.core.command.spi.ListCommandParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.NamedMultiParameter;
+import de.rcenvironment.core.command.spi.NamedParameter;
+import de.rcenvironment.core.command.spi.NamedSingleParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedFileParameter;
+import de.rcenvironment.core.command.spi.ParsedListParameter;
+import de.rcenvironment.core.command.spi.ParsedMultiParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
-import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
 import de.rcenvironment.core.embedded.ssh.api.ScpContext;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
@@ -91,20 +102,129 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
 
     private static final String SUBCOMMAND_DOWNLOAD_DOCUMENTATION = "get-tool-doc";
 
-    private static final Object SUBCOMMAND_ADMIN_PUBLISH_WF = "publish-wf";
+    private static final String SUBCOMMAND_ADMIN_PUBLISH_WF = "publish-wf";
 
     private static final String OPTION_PLACEHOLDERS_FILE = "-p";
 
     private static final String OPTION_GROUP_NAME = "-g";
 
-    private static final Object SUBCOMMAND_ADMIN_UNPUBLISH_WF = "unpublish-wf";
+    private static final String SUBCOMMAND_ADMIN_UNPUBLISH_WF = "unpublish-wf";
 
-    private static final Object SUBCOMMAND_ADMIN_LIST_WFS = "list-wfs";
+    private static final String SUBCOMMAND_ADMIN_LIST_WFS = "list-wfs";
 
     private static final String INPUT = "input";
 
     private static final String OUTPUT = "output";
 
+    private static final String FORMAT = "-f";
+
+    private static final String CSV = "csv";
+
+    private static final String TOKEN_STREAM = "token-stream";
+
+    private static final String TEMPLATE = "--template";
+    
+    private static final String T = "-t";
+    
+    private static final String K = "-k";
+
+    private static final String TOOLNODEID_PARAM = "-n";
+    
+    private static final String WITH_LOAD_DATA = "--with-load-data";
+    
+    private static final String UNCOMPRESSED = "-u";
+    
+    private static final String SIMPLE = "--simple";
+    
+    private static final String DYN_INPUTS = "--dynInputs";
+    
+    private static final String DYN_OUTPUTS = "--dynOutputs";
+    
+    private static final String NON_REQ_INPUTS = "--nonReqInputs";
+    
+    // Modifiers
+
+    private static final CommandFlag OUTPUT_FLAG = new CommandFlag(
+            OPTION_STREAMING_OUTPUT_SHORT_FORM, OPTION_STREAMING_OUTPUT_LONG_FORM, "shows output");
+    
+    private static final CommandFlag TEMPLATE_FLAG = new CommandFlag(T, TEMPLATE, "make template");
+    
+    private static final CommandFlag TEMPORARY_FLAG = new CommandFlag(T, "--temporary", "automatically unpublish when RCE shuts down");
+    
+    private static final CommandFlag KEEP_DATA_FALG = new CommandFlag(K, "--keep-data", "workflow data will not be deleted");
+    
+    private static final CommandFlag COMPACT_FLAG = new CommandFlag(OPTION_COMPACT_SHORT_FORM, OPTION_COMPACT_LONG_FORM, "compact output");
+    
+    private static final CommandFlag UNCOMPRESSED_FLAG = new CommandFlag(UNCOMPRESSED, "uncompressed upload");
+    
+    private static final CommandFlag SIMPLE_FLAG = new CommandFlag(SIMPLE, "simple description format");
+    
+    private static final StringParameter SESSION_TOKEN = new StringParameter(null, "session token", "token of the session");
+    
+    private static final StringParameter TOOL_ID = new StringParameter(null, "tool id", "id of the tool");
+    
+    private static final StringParameter TOOL_VERSION = new StringParameter(null, "tool version", "version of the tool");
+    
+    private static final StringParameter WORKFLOW_ID = new StringParameter(null, "workflow id", "id of the workflow");
+    
+    private static final StringParameter WORKFLOW_VERSION = new StringParameter(null, "workflow version", "version of the workflow");
+    
+    private static final StringParameter TOOL_NODE = new StringParameter(null, "tool node id", "id of the tool node");
+    
+    private static final StringParameter PARAMETER = new StringParameter(null, "parameter", "additional parameter");
+    
+    private static final FileParameter WORKFLOW_FILE = new FileParameter("workflow file", "the file of the workflow");
+    
+    private static final StringParameter GROUP_NAME = new StringParameter("", "group name", "name of the group");
+    
+    private static final FileParameter PLACEHOLER_FILE = new FileParameter("JSON placeholder file", "JSON file as a placeholder");
+    
+    private static final StringParameter FORMAT_CSV_PARAMETER = new StringParameter(CSV, "format", "output format");
+
+    private static final StringParameter FORMAT_TOKEN_STREAM_PARAMETER = new StringParameter(TOKEN_STREAM, "format", "output format");
+    
+    private static final StringParameter TIME_SPAN_PARAMETER = new StringParameter(null ,
+            "time span", "time span");
+
+    private static final StringParameter TIME_LIMIT_PARAMETER = new StringParameter(null ,
+        "time limit", "time limit");
+    
+    private static final StringParameter DYN_INPUTS_PARAMETER = new StringParameter(null, "dyn inputs", "dynamic inputs");
+    
+    private static final StringParameter DYN_OUTPUTS_PARAMETER = new StringParameter(null, "dyn outputs", "dynamic outputs");
+    
+    private static final StringParameter NON_REQ_INPUTS_PARAMETER = new StringParameter(null, "non req inputs", "non required inputs");
+    
+    private static final StringParameter HASH_VALUE_PARAMETER = new StringParameter(null, "hash value", "hash value");
+    
+    private static final NamedSingleParameter TOOL_NODE_ID = new NamedSingleParameter(TOOLNODEID_PARAM, "set tool node id", TOOL_NODE);
+    
+    private static final NamedSingleParameter NAMED_GROUP_NAME = new NamedSingleParameter(OPTION_GROUP_NAME, "set group name", GROUP_NAME);
+    
+    private static final NamedSingleParameter NAMED_PLACEHOLDER_FILE = new NamedSingleParameter(
+            OPTION_PLACEHOLDERS_FILE, "JSON placeholder file", PLACEHOLER_FILE);
+    
+    private static final NamedSingleParameter PARAMETERS = new NamedSingleParameter(OPTION_PLACEHOLDERS_FILE, "additional parameters",
+            new ListCommandParameter(PARAMETER, "parameters", "list of parameters"));
+    
+    private static final NamedSingleParameter NAMED_FORMAT_CSV_PARAMETER = new NamedSingleParameter(FORMAT,
+            "output format", FORMAT_CSV_PARAMETER);
+
+    private static final NamedSingleParameter NAMED_FORMAT_TOKEN_STREAM_PARAMETER = new NamedSingleParameter(FORMAT,
+            "output format", FORMAT_TOKEN_STREAM_PARAMETER);
+    
+    private static final NamedMultiParameter NAMED_WITH_LOAD_DATA_PARAMETER = new NamedMultiParameter(WITH_LOAD_DATA,
+            "load data", false, 2, TIME_SPAN_PARAMETER, TIME_LIMIT_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_DYN_INPUTS_PARAMETER = new NamedSingleParameter(DYN_INPUTS,
+            "dynamic inputs", DYN_INPUTS_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_DYN_OUTPUTS_PARAMETER = new NamedSingleParameter(DYN_OUTPUTS,
+            "dynamic outputs", DYN_OUTPUTS_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_NON_REQ_INPUTS_PARAMETER = new NamedSingleParameter(NON_REQ_INPUTS,
+            "non required inputs", NON_REQ_INPUTS_PARAMETER);
+    
     private RemoteAccessService remoteAccessService;
 
     private ScpContextManager scpContextManager;
@@ -125,10 +245,15 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         }
 
         public void execute() throws CommandException {
+            ParsedCommandModifiers modifiers = context.getParsedModifiers();
+            
+            ParsedStringParameter sessionTokenParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+            final String sessionToken = sessionTokenParameter.getResult();
+            boolean optionStreamingOutput = modifiers.hasCommandFlag(OPTION_STREAMING_OUTPUT_SHORT_FORM);
+            
             SshAccount account = getAndValidateSshAccount(context);
             String usedCommandVariant = context.getOriginalTokens().get(0); // e.g. "ra" or "ra-admin"
-            final String sessionToken = context.consumeNextToken();
-
+            
             String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
 
             // TODO fetch directly by session id instead? - misc_ro
@@ -138,21 +263,21 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
                     "No permission to access session %s (or not a valid session token)", sessionToken), context);
             }
 
-            boolean optionStreamingOutput = context.consumeNextTokenIfEquals(OPTION_STREAMING_OUTPUT_SHORT_FORM)
-                || context.consumeNextTokenIfEquals(OPTION_STREAMING_OUTPUT_LONG_FORM);
-
             readCustomParameters();
 
             /*
-             * List<String> parameterParts = context.consumeRemainingTokens(); String parameters =
-             * org.apache.commons.lang3.StringUtils.join(parameterParts, " "); log.debug("Read parameter string: " + parameters); if
-             * (!validateToolOrWorkflowParameterString(parameters)) { throw CommandException.executionError(StringUtils.format(
+             * List<String> parameterParts = context.consumeRemainingTokens(); String
+             * parameters = org.apache.commons.lang3.StringUtils.join(parameterParts, " ");
+             * log.debug("Read parameter string: " + parameters); if
+             * (!validateToolOrWorkflowParameterString(parameters)) { throw
+             * CommandException.executionError(StringUtils.format(
              * "The parameter string contains at least one forbidden character. " +
-             * "More information is available in the RCE instance's log files.", sessionToken), context); }
+             * "More information is available in the RCE instance's log files.",
+             * sessionToken), context); }
              */
 
             log.debug("Executing 'run' command in the context of temporary account " + account.getLoginName()
-                + ", with a local SCP directory of " + scpContext.getLocalRootPath());
+                    + ", with a local SCP directory of " + scpContext.getLocalRootPath());
 
             File inputFilesPath = new File(scpContext.getLocalRootPath(), INPUT);
             File outputFilesPath = new File(scpContext.getLocalRootPath(), OUTPUT);
@@ -165,37 +290,44 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
                 if (optionStreamingOutput) {
                     optionalStreamingOutputProcessor = new StreamingOutputConsoleRowAdapter(context, sessionToken);
                 }
-                FinalWorkflowState finalState =
-                    invokeWorkflow(sessionToken, inputFilesPath, outputFilesPath, optionalStreamingOutputProcessor);
+                FinalWorkflowState finalState = invokeWorkflow(sessionToken, inputFilesPath, outputFilesPath,
+                        optionalStreamingOutputProcessor);
                 if (!outputFilesPath.isDirectory()) {
-                    context.println("WARNING: no \"output\" directory found after tool execution; creating an empty one");
+                    context.println(
+                            "WARNING: no \"output\" directory found after tool execution; creating an empty one");
                     outputFilesPath.mkdirs();
                     if (!outputFilesPath.isDirectory()) {
-                        context.println("WARNING: \"output\" directory still does not exist after attempting to create it");
+                        context.println(
+                                "WARNING: \"output\" directory still does not exist after attempting to create it");
                     }
                 }
                 // TODO merge common code with "wf" command plugin?
                 if (finalState != FinalWorkflowState.FINISHED) {
-                    throw CommandException.executionError("The workflow finished in state " + finalState + " (instead of "
-                        + FinalWorkflowState.FINISHED + "); check the log file for more details", context);
+                    throw CommandException
+                            .executionError(
+                                    "The workflow finished in state " + finalState + " (instead of "
+                                            + FinalWorkflowState.FINISHED + "); check the log file for more details",
+                                    context);
                 }
             } catch (IOException | WorkflowExecutionException e) {
                 // TODO review: error handling sufficient? - misc_ro
                 log.error("Error running remote access workflow", e);
-                throw CommandException.executionError("An error occurred during remote workflow execution: " + e.toString(), context);
+                throw CommandException
+                        .executionError("An error occurred during remote workflow execution: " + e.toString(), context);
             }
         }
 
         protected abstract void readCustomParameters() throws CommandException;
 
         protected abstract FinalWorkflowState invokeWorkflow(String sessionToken, File inputFilesPath,
-            File outputFilesPath, SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
-            throws IOException, WorkflowExecutionException;
+                File outputFilesPath, SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
+                throws IOException, WorkflowExecutionException;
 
         private boolean validateToolOrWorkflowParameterString(String parameterString) {
             // only accept strings that are safe in all known contexts
             for (SubstitutionContext substitutionContext : SubstitutionContext.values()) {
-                if (!StringSubstitutionSecurityUtils.isSafeForSubstitutionInsideDoubleQuotes(parameterString, substitutionContext)) {
+                if (!StringSubstitutionSecurityUtils.isSafeForSubstitutionInsideDoubleQuotes(parameterString,
+                        substitutionContext)) {
                     return false;
                 }
             }
@@ -204,7 +336,8 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     /**
-     * Processes workflow {@link ConsoleRow}s and generates appropriate streaming output lines on the context's {@link TextOutputReceiver} .
+     * Processes workflow {@link ConsoleRow}s and generates appropriate streaming
+     * output lines on the context's {@link TextOutputReceiver} .
      * 
      * @author Robert Mischke
      */
@@ -236,7 +369,8 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             case LIFE_CYCLE_EVENT:
                 if (payload.startsWith(WORKFLOW_STATE_CHANGE_CONSOLEROW_PREFIX)) {
                     String stateString = payload.substring(WORKFLOW_STATE_CHANGE_CONSOLEROW_PREFIX.length());
-                    // suppress DISPOSING and DISPOSED states for output stability, as it is random whether they will happen in time or not
+                    // suppress DISPOSING and DISPOSED states for output stability, as it is random
+                    // whether they will happen in time or not
                     if (!stateString.startsWith("DISPOS")) {
                         context.println(StringUtils.format("[%s] State: %s", sessionToken, stateString));
                     }
@@ -247,141 +381,182 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             }
         }
     }
-
+    
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        // TODO staticPart/dynamicPart is not always used as intended here to fix problems with the help command,all ComamndDescriptions
-        // should be revisited when new command help/parser is in place
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription userCommands = new MainCommandDescription(RA_COMMAND, "Commands for remote-access",
+            "Commands for remote-access", true,
+            new SubCommandDescription(SUBCOMMAND_PROTOCOL_VERSION,
+                "prints the protocol version of this interface", this::performProtocolVersion, true),
+            new SubCommandDescription(SUBCOMMAND_LIST_TOOLS, // How does this work?
+                "lists all available tool ids and versions for the \"" + SUBCOMMAND_RUN_TOOL + "\"command",
+                this::performListTools, new CommandModifierInfo(
+                    new NamedParameter[] {
+                        NAMED_FORMAT_CSV_PARAMETER,
+                        NAMED_WITH_LOAD_DATA_PARAMETER
+                    }
+                ), true),
+            new SubCommandDescription(SUBCOMMAND_LIST_WORKFLOWS,
+                "lists all available workflow ids and versions for the \"" + SUBCOMMAND_LIST_WORKFLOWS
+                + "\"command",
+                this::performListWfs, new CommandModifierInfo(
+                    new NamedParameter[] {
+                        NAMED_FORMAT_TOKEN_STREAM_PARAMETER
+                    }
+                ), true),
+            new SubCommandDescription(SUBCOMMAND_INIT,
+                "initializes a remote access session, and returns a session token",
+                ((context) -> {
+                try {
+                    performInit(context);
+                } catch (IOException e) {
+                    log.warn("I/O error during Remote Access command execution", e);
+                    throw CommandException.executionError("An I/O error occurred during command execution. "
+                        + "Please check the log file for details.", context);
+                }
+            }),
+                new CommandModifierInfo(
+                    new CommandFlag[] {
+                        COMPACT_FLAG
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_RUN_TOOL, "invokes a tool by its id and version", //Needs work
+                this::performRunTool,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        SESSION_TOKEN,
+                        TOOL_ID,
+                        TOOL_VERSION
+                    },
+                    new CommandFlag[] {
+                        OUTPUT_FLAG,
+                        UNCOMPRESSED_FLAG,
+                        SIMPLE_FLAG
+                    },
+                    new NamedParameter[] {
+                        TOOL_NODE_ID,
+                        PARAMETERS,
+                        NAMED_DYN_INPUTS_PARAMETER,
+                        NAMED_DYN_OUTPUTS_PARAMETER,
+                        NAMED_NON_REQ_INPUTS_PARAMETER
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_RUN_WF, "invokes a published workflow by its id", //Needs work
+                this::performRunWf,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        SESSION_TOKEN,
+                        WORKFLOW_ID,
+                        WORKFLOW_VERSION
+                    },
+                    new CommandFlag[] {
+                        OUTPUT_FLAG
+                    },
+                    new NamedParameter[] {
+                        PARAMETERS
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_DISPOSE,
+                "releases resources used by a remote access session", this::performDispose,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        SESSION_TOKEN
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_TOOL_DETAILS,
+                "prints names and data types of the tool's or workflow's intputs and outputs",
+                this::performGetToolDetails,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        TOOL_ID,
+                        TOOL_VERSION
+                    },
+                    new CommandFlag[] {
+                        TEMPLATE_FLAG
+                    },
+                    new NamedParameter[] {
+                        TOOL_NODE_ID
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_WF_DETAILS,
+                "prints names and data types of the tool's or workflow's intputs and outputs",
+                this::performGetWfDetails,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_ID,
+                        WORKFLOW_VERSION
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_CANCEL, "cancels a session",
+                this::performCancel,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        SESSION_TOKEN
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_TOOL_DOCUMENTATION_LIST, "get tool documentation list",
+                this::performGetToolDocList,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        TOOL_ID,
+                        TOOL_VERSION
+                    }
+                ), true
+            ),
+            new SubCommandDescription(SUBCOMMAND_DOWNLOAD_DOCUMENTATION, "download documentation",
+                this::performDownloadDocumentation,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        SESSION_TOKEN,
+                        TOOL_ID,
+                        TOOL_VERSION,
+                        TOOL_NODE,
+                        HASH_VALUE_PARAMETER
+                    }
+                ), true
+            )
+        );
         
-        // ra protocol-version
-        contributions.add(new CommandDescription(RA_COMMAND, SUBCOMMAND_PROTOCOL_VERSION, true,
-            "prints the protocol version of this interface"));
-        // ra list-tools
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_TOOLS, "[-f/--format {csv|token-list}] "
-            + "[--load-data <time span> <time limit>]", true,
-            "lists all available tool ids and versions for the \"" + SUBCOMMAND_RUN_TOOL + "\" command",
-            "-f/--format: specifies the output format; allowed values are \"csv\" (default) and \"token-stream\"",
-            "--with-load-data: fetch CPU/RAM load data for all tool nodes and include them in the output",
-            "time span - the maximum time span, in seconds, to aggregate/average load data over",
-            "time limit - the maximum time, in millisedoncs, to wait for each node's load data response"));
-        // ra list-wfs
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_WORKFLOWS, "", true,
-            "lists all available workflow ids and versions for the \"" + SUBCOMMAND_LIST_WORKFLOWS + "\" command"));
-        // ra init
-        contributions.add(new CommandDescription(RA_COMMAND + " init", "[-c/--compact]", true,
-            "initializes a remote access session, and returns a session token",
-            "-c/--compact: only print the session token, omitting all extra information; useful for scripting"));
-        // ra run-tool
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_RUN_TOOL,
-            "<session token> [-o/--show-output] [-n <tool node id>] <tool id> <tool version> [<parameters>]", true,
-            "invokes a tool by its id and version; ",
-            "-o/--show-output: print tool output and execution state while the command is running",
-            "-n: specify the node id (*) of the RCE instance to run the rool on; can be omitted if only one instance provides this tool",
-            "    (*) the third value of the \"list-tools\" output",
-            "All parameters after <tool version> are passed to the tool as a single parameter string."));
-        // ra run-wf
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_RUN_WF,
-            "<session token> [-o/--show-output] <workflow id> <workflow version> [<parameters>]", true,
-            "invokes a published workflow by its id; ",
-            "-o/--show-output: print tool output and execution state while the command is running",
-            "All parameters after <tool version> are passed to the workflow as a single parameter string."));
-        // ra dispose
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_DISPOSE, "<session token>", true,
-            "releases resources used by a remote access session"));
-        // ra describe-tool --template
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_TOOL_DETAILS, "<tool id> [--template]", true,
-            "prints names and data types of the tool's or workflow's intputs and outputs"));
-        // ra describe-wf --template
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_WF_DETAILS, "<workflow id> [--template]", true,
-            "prints names and data types of the tool's or workflow's intputs and outputs"));
-        // ra-admin publish-wf
-        contributions
-            .add(new CommandDescription(
-                RA_ADMIN_COMMAND , " publish-wf [-g <group name>] [-k] [-t] [-p <JSON placeholder file>] <workflow file> <id>",
-                false,
-                "publishes a workflow file for remote execution via \""
-                    + RA_COMMAND + " " + SUBCOMMAND_RUN_WF + "\" using <id>.",
-                "-g name of the group in which the workflow will be shown in the Palette on the client instance",
-                "-k (keep execution data): if set, the workflow execution data will not be deleted after the workflow is run",
-                "-t (temporary/transient): if set, the workflow is automatically unpublished when the RCE instance is shut down",
-                "-p: adds a placeholder file for the given workflow; see the \"wf run\" command's documentation for details.",
-                "This operation verifies that the workflow contains the required standard elements before publishing.",
-                "Note that a snapshot of the workflow file (and optionally, the given placeholder file) is taken before publishing; ",
-                "subsequent changes of the workflow file do NOT affect the published workflow."));
-        // ra-admin unpublish-wf
-        contributions.add(new CommandDescription(RA_ADMIN_COMMAND + " unpublish-wf", "<id>",
-            false, "unpublishes (removes) the workflow file with id <id> from remote execution."));
-        // ra-admin list-wfs
-        contributions.add(new CommandDescription(RA_ADMIN_COMMAND + " list-wfs", "",
-            false, "lists the ids of all published workflows."));
-        return contributions;
-    }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        try {
-            String rootCommand = context.consumeNextToken();
-            if (RA_COMMAND.equals(rootCommand)) {
-                handleStandardCommand(context);
-            } else if (RA_ADMIN_COMMAND.equals(rootCommand)) {
-                handleAdminCommand(context);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        } catch (IOException e) {
-            log.warn("I/O error during Remote Access command execution", e);
-            throw CommandException.executionError("An I/O error occurred during command execution. "
-                + "Please check the log file for details.", context);
-        }
-    }
-
-    private void handleStandardCommand(CommandContext context) throws IOException, CommandException {
-        String subCommand = context.consumeNextToken();
-        if (SUBCOMMAND_PROTOCOL_VERSION.equals(subCommand)) {
-            performProtocolVersion(context);
-        } else if (SUBCOMMAND_LIST_TOOLS.equals(subCommand)) {
-            performListTools(context);
-        } else if (SUBCOMMAND_LIST_WORKFLOWS.equals(subCommand)) {
-            performListWfs(context);
-        } else if (SUBCOMMAND_INIT.equals(subCommand)) {
-            performInit(context);
-        } else if (SUBCOMMAND_RUN_TOOL.equals(subCommand)) {
-            performRunTool(context);
-        } else if (SUBCOMMAND_RUN_WF.equals(subCommand)) {
-            performRunWf(context);
-        } else if (SUBCOMMAND_CANCEL.equals(subCommand)) {
-            performCancel(context);
-        } else if (SUBCOMMAND_DISPOSE.equals(subCommand)) {
-            performDispose(context);
-        } else if (SUBCOMMAND_TOOL_DETAILS.equals(subCommand)) {
-            performGetToolDetails(context);
-        } else if (SUBCOMMAND_WF_DETAILS.equals(subCommand)) {
-            performGetWfDetails(context);
-        } else if (SUBCOMMAND_TOOL_DOCUMENTATION_LIST.equals(subCommand)) {
-            performGetToolDocList(context);
-        } else if (SUBCOMMAND_DOWNLOAD_DOCUMENTATION.equals(subCommand)) {
-            performDownloadDocumentation(context);
-        } else {
-            throw CommandException.syntaxError(
-                "Missing operation argument (e.g. \"" + RA_COMMAND + " " + SUBCOMMAND_PROTOCOL_VERSION  + "\")",
-                context);
-        }
-    }
-
-    private void handleAdminCommand(CommandContext context) throws IOException, CommandException {
-        String subCommand = context.consumeNextToken();
-        if (SUBCOMMAND_ADMIN_PUBLISH_WF.equals(subCommand)) {
-            performAdminPublishWf(context);
-        } else if (SUBCOMMAND_ADMIN_UNPUBLISH_WF.equals(subCommand)) {
-            performAdminUnpublishWf(context);
-        } else if (SUBCOMMAND_ADMIN_LIST_WFS.equals(subCommand)) {
-            performAdminListWfs(context);
-        } else {
-            throw CommandException.syntaxError(
-                "Missing operation argument (e.g. \"" + RA_ADMIN_COMMAND + " list-wfs" + "\")",
-                context);
-        }
+        final MainCommandDescription adminCommands = new MainCommandDescription(RA_ADMIN_COMMAND, "administrate remote access",
+            "administrate remote access",
+            new SubCommandDescription(SUBCOMMAND_ADMIN_PUBLISH_WF,
+                "publishes a workflow file for remote execution via \"" + RA_COMMAND + " " + SUBCOMMAND_RUN_WF
+                + "\" using <id>.", this::performAdminPublishWf,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_FILE,
+                        WORKFLOW_ID
+                    },
+                    new CommandFlag[] {
+                        KEEP_DATA_FALG,
+                        TEMPORARY_FLAG
+                    },
+                    new NamedParameter[] {
+                        NAMED_GROUP_NAME,
+                        NAMED_PLACEHOLDER_FILE
+                    }
+                )
+            ),
+            new SubCommandDescription(SUBCOMMAND_ADMIN_UNPUBLISH_WF,
+                "unpublishes (removes) the workflow file with id <id> from remote execution.",
+                this::performAdminUnpublishWf,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_ID
+                    }
+                )
+            ),
+            new SubCommandDescription((String) SUBCOMMAND_ADMIN_LIST_WFS, "lists the ids of all published workflows.",
+                this::performAdminListWfs));
+        
+        return new MainCommandDescription[] { userCommands, adminCommands };
     }
 
     /**
@@ -409,20 +584,24 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performListTools(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter formatParameter = (ParsedStringParameter) modifiers.getCommandParameter(FORMAT);
+        ParsedMultiParameter withLoadDataParameter = (ParsedMultiParameter) modifiers.getCommandParameter(WITH_LOAD_DATA);
+        
+        
         try {
-            // output format parameter
-            String format = "csv";
-            if (context.consumeNextTokenIfEquals("-f") || context.consumeNextTokenIfEquals("--format")) {
-                format = context.consumeNextToken();
-            }
             // load data parameters
-            if (context.consumeNextTokenIfEquals("--with-load-data")) {
-                final int timeSpanSec = parseRequiredPositiveIntParameter(context, "time span");
-                final int timeLimitMsec = parseRequiredPositiveIntParameter(context, "time limit");
-                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), format, true,
-                    timeSpanSec * SEC_TO_MSEC, timeLimitMsec);
+            if (withLoadDataParameter != null) {
+                ParsedStringParameter timeSpanParameter = (ParsedStringParameter) withLoadDataParameter.getResult()[0];
+                ParsedStringParameter timeLimitParameter = (ParsedStringParameter) withLoadDataParameter.getResult()[1];
+                
+                Integer timeSpan = Integer.valueOf(timeSpanParameter.getResult());
+                Integer timeLimit = Integer.valueOf(timeLimitParameter.getResult());
+                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), formatParameter.getResult(), true,
+                        timeSpan * SEC_TO_MSEC, timeLimit);
             } else {
-                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), format, false, 0, 0);
+                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), formatParameter.getResult(), false, 0, 0);
             }
         } catch (IllegalArgumentException | InterruptedException | ExecutionException | TimeoutException e) {
             throw CommandException.syntaxError(e.toString(), context);
@@ -431,13 +610,12 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performListWfs(CommandContext context) throws CommandException {
-        // TODO add csv output if useful
-        String format = "token-stream";
-        if (context.consumeNextTokenIfEquals("-f") || context.consumeNextTokenIfEquals("--format")) {
-            format = context.consumeNextToken();
-        }
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter formatParameter = (ParsedStringParameter) modifiers.getCommandParameter(FORMAT);
+        
         try {
-            remoteAccessService.printListOfAvailableWorkflows(context.getOutputReceiver(), format);
+            remoteAccessService.printListOfAvailableWorkflows(context.getOutputReceiver(), formatParameter.getResult());
         } catch (IllegalArgumentException e) {
             throw CommandException.syntaxError(e.getMessage(), context);
         }
@@ -446,8 +624,7 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     private void performInit(CommandContext context) throws IOException, CommandException {
         SshAccount account = getAndValidateSshAccount(context);
 
-        String token = context.consumeNextToken();
-        boolean useCompactOutput = OPTION_COMPACT_LONG_FORM.equals(token) || OPTION_COMPACT_SHORT_FORM.equals(token);
+        boolean useCompactOutput = context.getParsedModifiers().hasCommandFlag(OPTION_COMPACT_SHORT_FORM);
 
         String sessionToken = IdGenerator.fastRandomHexString(8);
         String usedCommandVariant = context.getOriginalTokens().get(0); // e.g. "ra" or "ra-admin"
@@ -463,11 +640,10 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         } else {
             context.println(StringUtils.format("Session token: %s", sessionToken));
             context.println(StringUtils.format("Input (upload) SCP path: %sinput/", virtualScpRootPath));
-            context.println(StringUtils.format(
-                "Execution command: \"%s %s %s <tool id> <tool version> [<parameters>]\"", usedCommandVariant, SUBCOMMAND_RUN_TOOL,
-                sessionToken));
-            context.println(StringUtils.format("Output (download) SCP path: %soutput/",
-                virtualScpRootPath));
+            context.println(
+                    StringUtils.format("Execution command: \"%s %s %s <tool id> <tool version> [<parameters>]\"",
+                            usedCommandVariant, SUBCOMMAND_RUN_TOOL, sessionToken));
+            context.println(StringUtils.format("Output (download) SCP path: %soutput/", virtualScpRootPath));
         }
     }
 
@@ -493,40 +669,29 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
 
             @Override
             protected void readCustomParameters() throws CommandException {
-
-                if (context.consumeNextTokenIfEquals("-n")) {
-                    nodeId = context.consumeNextToken();
-                    if (nodeId == null) {
-                        throw CommandException.syntaxError("Error: missing node id after -n", context);
-                    }
-                }
-
-                if (context.consumeNextTokenIfEquals("-u")) {
-                    uncompressedUpload = true;
-                }
-
-                if (context.consumeNextTokenIfEquals("-simple")) {
-                    simpleDescriptionFormat = true;
-                }
-
-                toolId = context.consumeNextToken();
+                ParsedCommandModifiers modifiers = context.getParsedModifiers();
+                
+                ParsedStringParameter toolIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+                ParsedStringParameter toolVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(2);
+                ParsedStringParameter toolNodeIdParameter = (ParsedStringParameter) modifiers.getCommandParameter(TOOLNODEID_PARAM);
+                ParsedListParameter parametersParameter = (ParsedListParameter) modifiers.getCommandParameter(OPTION_PLACEHOLDERS_FILE);
+                ParsedStringParameter dynInputsParameter = (ParsedStringParameter) modifiers.getCommandParameter(DYN_INPUTS);
+                ParsedStringParameter dynOutputsParameter = (ParsedStringParameter) modifiers.getCommandParameter(DYN_OUTPUTS);
+                ParsedStringParameter nonReqInputsParameter = (ParsedStringParameter) modifiers.getCommandParameter(NON_REQ_INPUTS);
+                
+                nodeId = toolNodeIdParameter.getResult();
+                toolId = toolIdParameter.getResult();
                 validateIdString(toolId, "tool id", context);
-
-                toolVersion = context.consumeNextToken();
+                toolVersion = toolVersionParameter.getResult();
                 validateVersionString(toolVersion, "tool version", context);
-
-                // Check for dynamic inputs and outputs
-                if (context.consumeNextTokenIfEquals("--dynInputs")) {
-                    dynInputs = context.consumeNextToken();
-                }
-                if (context.consumeNextTokenIfEquals("--dynOutputs")) {
-                    dynOutputs = context.consumeNextToken();
-                }
-                if (context.consumeNextTokenIfEquals("--nonReqInputs")) {
-                    nonReqInputs = context.consumeNextToken();
-                }
-
-                log.debug(StringUtils.format("Command run-tool: Parsed tool id '%s', version '%s'", toolId, toolVersion));
+                dynInputs = dynInputsParameter.getResult();
+                dynOutputs = dynOutputsParameter.getResult();
+                nonReqInputs = nonReqInputsParameter.getResult();
+                uncompressedUpload = modifiers.hasCommandFlag("-u");
+                simpleDescriptionFormat = modifiers.hasCommandFlag("-simple");
+                
+                log.debug(
+                        StringUtils.format("Command run-tool: Parsed tool id '%s', version '%s'", toolId, toolVersion));
 
                 try {
                     nodeId = remoteAccessService.validateToolParametersAndGetFinalNodeId(toolId, toolVersion, nodeId);
@@ -536,19 +701,19 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             }
 
             @Override
-            protected FinalWorkflowState invokeWorkflow(String sessionToken, File inputFilesPath,
-                File outputFilesPath, SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
-                throws IOException, WorkflowExecutionException {
-                return remoteAccessService.runSingleToolWorkflow(new RemoteComponentExecutionParameter(toolId, toolVersion,
-                    nodeId, sessionToken, inputFilesPath, outputFilesPath, dynInputs, dynOutputs, nonReqInputs,
-                    uncompressedUpload, simpleDescriptionFormat), optionalStreamingOutputProcessor);
+            protected FinalWorkflowState invokeWorkflow(String sessionToken, File inputFilesPath, File outputFilesPath,
+                    SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
+                    throws IOException, WorkflowExecutionException {
+                return remoteAccessService.runSingleToolWorkflow(new RemoteComponentExecutionParameter(toolId,
+                        toolVersion, nodeId, sessionToken, inputFilesPath, outputFilesPath, dynInputs, dynOutputs,
+                        nonReqInputs, uncompressedUpload, simpleDescriptionFormat), optionalStreamingOutputProcessor);
             }
         }.execute();
     }
 
     private void performRunWf(final CommandContext context) throws CommandException {
         new WorkflowRun(context) {
-
+            
             private String workflowId;
 
             private String workflowVersion;
@@ -559,40 +724,43 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
 
             @Override
             protected void readCustomParameters() throws CommandException {
+                ParsedCommandModifiers modifiers = context.getParsedModifiers();
+                
+                ParsedStringParameter workflowIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+                ParsedStringParameter workflowVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(2);
 
-                if (context.consumeNextTokenIfEquals("-u")) {
-                    uncompressedUpload = true;
-                }
-
-                if (context.consumeNextTokenIfEquals("-simple")) {
-                    simpleDescriptionFormat = true;
-                }
-
-                workflowId = context.consumeNextToken();
-                validateIdString(workflowId, "workflow id", context);
-
-                workflowVersion = context.consumeNextToken();
+                workflowId = workflowIdParameter.getResult();
+                workflowVersion = workflowVersionParameter.getResult();
                 validateVersionString(workflowVersion, "workflow version", context);
+                
+                uncompressedUpload = modifiers.hasCommandFlag(UNCOMPRESSED);
+                simpleDescriptionFormat = modifiers.hasCommandFlag(SIMPLE);
 
-                log.debug(StringUtils.format("Command run-wf: Parsed workflow id '%s', version '%s'", workflowId, workflowVersion));
+                log.debug(StringUtils.format("Command run-wf: Parsed workflow id '%s', version '%s'", workflowId,
+                        workflowVersion));
             }
 
             @Override
-            protected FinalWorkflowState invokeWorkflow(String sessionToken, File inputFilesPath,
-                File outputFilesPath, SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
-                throws IOException, WorkflowExecutionException {
-                // note: workflowVersion is ignored so far; it was added for future proofing only
+            protected FinalWorkflowState invokeWorkflow(String sessionToken, File inputFilesPath, File outputFilesPath,
+                    SingleConsoleRowsProcessor optionalStreamingOutputProcessor)
+                    throws IOException, WorkflowExecutionException {
+                // note: workflowVersion is ignored so far; it was added for future proofing
+                // only
                 return remoteAccessService.runPublishedWorkflowTemplate(workflowId, sessionToken, inputFilesPath,
-                    outputFilesPath, optionalStreamingOutputProcessor, uncompressedUpload, simpleDescriptionFormat);
+                        outputFilesPath, optionalStreamingOutputProcessor, uncompressedUpload, simpleDescriptionFormat);
             }
 
         }.execute();
     }
 
     private void performDispose(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter sessionTokenParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        final String sessionToken = sessionTokenParameter.getResult();
+        
         SshAccount account = getAndValidateSshAccount(context);
         String usedCommandVariant = context.getOriginalTokens().get(0); // e.g. "ra" or "ra-admin"
-        final String sessionToken = context.consumeNextToken();
 
         String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
         ScpContext scpContext = scpContextManager.getMatchingScpContext(account.getLoginName(), virtualScpRootPath);
@@ -604,20 +772,18 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performGetToolDetails(CommandContext context) throws CommandException {
-        String nodeId = null;
-        if (context.consumeNextTokenIfEquals("-n")) {
-            nodeId = context.consumeNextToken();
-            if (nodeId == null) {
-                throw CommandException.syntaxError("Error: missing node id after -n", context);
-            }
-        }
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter toolIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter toolVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        ParsedStringParameter nodeIdParameter = (ParsedStringParameter) modifiers.getCommandParameter(TOOLNODEID_PARAM);
 
-        final String toolId = context.consumeNextToken();
-        final String toolVersion = context.consumeNextToken();
+        final String toolId = toolIdParameter.getResult();
+        final String toolVersion = toolVersionParameter.getResult();
         validateIdString(toolId, "tool id", context);
         validateVersionString(toolVersion, "tool version", context);
-
-        boolean template = context.consumeNextTokenIfEquals("--template");
+        String nodeId = nodeIdParameter.getResult();
+        boolean template = modifiers.hasCommandFlag(TEMPLATE);
 
         try {
             nodeId = remoteAccessService.validateToolParametersAndGetFinalNodeId(toolId, toolVersion, nodeId);
@@ -629,9 +795,14 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performGetWfDetails(CommandContext context) throws CommandException {
-        final String wfId = context.consumeNextToken();
-        final String wfVersion = context.consumeNextToken();
-        boolean template = context.consumeNextTokenIfEquals("--template");
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter wfIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter wfVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        
+        final String wfId = wfIdParameter.getResult();
+        final String wfVersion = wfVersionParameter.getResult();
+        boolean template = modifiers.hasCommandFlag(TEMPLATE);
 
         validateIdString(wfId, "wf id", context);
         validateVersionString(wfVersion, "wf version", context);
@@ -640,21 +811,40 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performCancel(CommandContext context) {
-        String sessionToken = context.consumeNextToken();
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter sessionTokenParamter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        
+        String sessionToken = sessionTokenParamter.getResult();
         remoteAccessService.cancelToolOrWorkflow(sessionToken);
     }
 
     private void performGetToolDocList(CommandContext context) {
-        String toolId = context.consumeNextToken();
-        remoteAccessService.getToolDocumentationList(context.getOutputReceiver(), toolId);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter toolIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter toolVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        
+        String toolId = toolIdParameter.getResult();
+        String toolVersion = toolVersionParameter.getResult();
+        remoteAccessService.getToolDocumentationList(context.getOutputReceiver(), StringUtils.format("%s/%s", toolId, toolVersion));
     }
 
     private void performDownloadDocumentation(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter sessionTokenParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter toolIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        ParsedStringParameter toolVersionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(2);
+        ParsedStringParameter nodeIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(3);
+        ParsedStringParameter hashValueParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(4);
+        
         SshAccount account = getAndValidateSshAccount(context);
-        String toolId = context.consumeNextToken();
-        String nodeId = context.consumeNextToken();
-        String hashValue = context.consumeNextToken();
-        String sessionToken = context.consumeNextToken();
+        String sessionToken = sessionTokenParameter.getResult();
+        String toolId = toolIdParameter.getResult();
+        String nodeId = nodeIdParameter.getResult();
+        String toolVersion = toolVersionParameter.getResult();
+        String hashValue = hashValueParameter.getResult();
 
         String usedCommandVariant = context.getOriginalTokens().get(0);
         String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
@@ -663,64 +853,36 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         ScpContext scpContext = scpContextManager.getMatchingScpContext(account.getLoginName(), virtualScpRootPath);
         if (scpContext == null) {
             throw CommandException.executionError(StringUtils.format(
-                "No permission to access session %s (or not a valid session token)", sessionToken), context);
+                    "No permission to access session %s (or not a valid session token)", sessionToken), context);
         }
 
         File outputFilesPath = new File(scpContext.getLocalRootPath(), OUTPUT);
 
-        remoteAccessService.getToolDocumentation(context.getOutputReceiver(), toolId, nodeId, hashValue, outputFilesPath);
+        remoteAccessService.getToolDocumentation(context.getOutputReceiver(),  StringUtils.format("%s/%s", toolId, toolVersion), nodeId, hashValue, outputFilesPath);
     }
 
     private void performAdminPublishWf(CommandContext context) throws CommandException {
-        // ra-admin publish-wf [-g group name] [-t] [-p <JSON placeholder file>] <workflow file> <id>
-
-        String groupName = null;
-        if (context.consumeNextTokenIfEquals(OPTION_GROUP_NAME)) {
-            groupName = context.consumeNextToken();
-        }
-        boolean neverDeleteExecutionData = context.consumeNextTokenIfEquals("-k");
-
-        // note: the -t (transient) option is the inverse of the boolean value set here (persistent);
+        // ra-admin publish-wf [-g group name] [-t] [-p <JSON placeholder file>]
+        // <workflow file> <id>
+        ParsedCommandModifiers parameters = context.getParsedModifiers();
+        
+        ParsedFileParameter wfFileParameter = (ParsedFileParameter) parameters.getPositionalCommandParameter(0);
+        ParsedStringParameter publishIdParameter = (ParsedStringParameter) parameters.getPositionalCommandParameter(1);
+        ParsedStringParameter groupNameParameter = (ParsedStringParameter) parameters.getCommandParameter(OPTION_GROUP_NAME);
+        ParsedFileParameter placeholderFileParameter = (ParsedFileParameter) parameters.getCommandParameter(OPTION_PLACEHOLDERS_FILE);
+        boolean neverDeleteExecutionData = parameters.hasCommandFlag(K);
+        boolean makePersistent = !parameters.hasCommandFlag(T);
+        // note: the -t (transient) option is the inverse of the boolean value set here
+        // (persistent);
         // the default behavior is "persistent" since persistence was added in 6.2.0
-        boolean makePersistent = !context.consumeNextTokenIfEquals("-t");
-
-        File placeholdersFile = null; // optional
-        if (context.consumeNextTokenIfEquals(OPTION_PLACEHOLDERS_FILE)) {
-            String placeholdersFilename = context.consumeNextToken();
-            if (placeholdersFilename == null) {
-                throw CommandException.syntaxError("Missing placeholder filename", context);
-            }
-            try {
-                placeholdersFile =
-                    WorkflowExecutionUtils.resolveWorkflowOrPlaceholderFileLocation(placeholdersFilename,
-                        WorkflowExecutionUtils.DEFAULT_ERROR_MESSAGE_TEMPLATE_CANNOT_READ_PLACEHOLDER_FILE);
-            } catch (FileNotFoundException e) {
-                throw CommandException.executionError(e.getMessage(), context);
-            }
-        }
-
-        final String filename = context.consumeNextToken();
-        validateParameterNotNull(filename, "filename", context);
-
-        final String publishId = context.consumeNextToken();
-        validateIdString(publishId, "workflow publish id", context);
-
+        
         // TODO also add validation for version number when added
-
-        if (context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        File wfFile;
+        
         try {
-            wfFile =
-                WorkflowExecutionUtils.resolveWorkflowOrPlaceholderFileLocation(filename,
-                    WorkflowExecutionUtils.DEFAULT_ERROR_MESSAGE_TEMPLATE_CANNOT_READ_WORKFLOW_FILE);
-        } catch (FileNotFoundException e) {
-            throw CommandException.executionError(e.getMessage(), context);
-        }
-        try {
-            remoteAccessService.checkAndPublishWorkflowFile(wfFile, placeholdersFile, publishId, groupName,
-                context.getOutputReceiver(), makePersistent, neverDeleteExecutionData);
+            remoteAccessService.checkAndPublishWorkflowFile(wfFileParameter.getResult(),
+                    placeholderFileParameter.getResult(), publishIdParameter.getResult(),
+                    groupNameParameter.getResult(), context.getOutputReceiver(),
+                    makePersistent, neverDeleteExecutionData);
         } catch (WorkflowExecutionException e) {
             throw CommandException.executionError(e.getMessage(), context);
         } catch (RuntimeException e) {
@@ -730,8 +892,13 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performAdminUnpublishWf(CommandContext context) throws CommandException {
-        final String publishId = context.consumeNextToken();
-        // note: intentionally only validating for presence to allow removal of now-forbidden ids
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter publishIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        final String publishId = publishIdParameter.getResult();
+        
+        // note: intentionally only validating for presence to allow removal of
+        // now-forbidden ids
         validateIdString(publishId, "workflow publish id", context);
 
         if (context.hasRemainingTokens()) {
@@ -748,10 +915,12 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         remoteAccessService.printSummaryOfPublishedWorkflows(context.getOutputReceiver());
     }
 
-    private void createScpContextSubdir(String name, ScpContext scpContext, CommandContext commandContext) throws CommandException {
+    private void createScpContextSubdir(String name, ScpContext scpContext, CommandContext commandContext)
+            throws CommandException {
         File dir = new File(scpContext.getLocalRootPath(), name);
         if (!dir.mkdir()) {
-            throw CommandException.executionError("Internal problem: failed to create " + name + " directory", commandContext);
+            throw CommandException.executionError("Internal problem: failed to create " + name + " directory",
+                    commandContext);
         }
     }
 
@@ -762,12 +931,14 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     private SshAccount getAndValidateSshAccount(CommandContext context) throws CommandException {
         Object invoker = context.getInvokerInformation();
         if (!(invoker instanceof SshAccount)) {
-            throw CommandException.executionError("This command is only usable from an SSH account as it requires an SCP context", context);
+            throw CommandException.executionError(
+                    "This command is only usable from an SSH account as it requires an SCP context", context);
         }
         return (SshAccount) invoker;
     }
 
-    protected void validateParameterNotNull(String input, String description, CommandContext context) throws CommandException {
+    protected void validateParameterNotNull(String input, String description, CommandContext context)
+            throws CommandException {
         if (input == null) {
             throw CommandException.syntaxError("Error: missing " + description, context);
         }
@@ -787,32 +958,12 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     /**
      * Includes {@link #validateParameterNotNull(String, String, CommandContext)}.
      */
-    private void validateVersionString(String input, String description, CommandContext context) throws CommandException {
+    private void validateVersionString(String input, String description, CommandContext context)
+            throws CommandException {
         validateParameterNotNull(input, description, context);
         Optional<String> errorMsg = CommonIdRules.validateCommonVersionStringRules(input);
         if (errorMsg.isPresent()) {
             throw CommandException.syntaxError(StringUtils.format("Invalid %s: %s", description, errorMsg), context);
         }
     }
-
-    // TODO (p2) refactor into common utility method; duplicated in System Monitoring plugin
-    private int parseRequiredPositiveIntParameter(final CommandContext context, String name) throws CommandException {
-        final String parameter = context.consumeNextToken();
-        if (parameter == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        final int timespan;
-        try {
-            timespan = Integer.parseInt(parameter);
-            if (timespan <= 0) {
-                throw CommandException.syntaxError("The " + name
-                    + " parameter must be positive: " + parameter, context);
-            }
-        } catch (NumberFormatException e) {
-            throw CommandException.syntaxError("The " + name
-                + " parameter must be an integer number: " + parameter, context);
-        }
-        return timespan;
-    }
-
 }

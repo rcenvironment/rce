@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="configuration">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="configuration">
 	<title>Configuration and Profiles</title>
 	<para>Each instance of RCE reads its configurations from the <emphasis>profile
 		directory</emphasis>, or <emphasis>profile</emphasis> for short. In this document, if the
@@ -13,7 +13,7 @@
 		startup and populates them with a default configuration. RCE creates the directory
 			<code>.rce</code> as a hidden directory. Thus, you will have to enable the display of
 		hidden directories in order to see that directory.</para>
-	<sect2 id="profile_directory">
+	<section id="profile_directory">
 		<title>Choosing the Profile Directory</title>
 		<para>Since RCE uses the profile directory to load its configuration at startup, it is not
 			possible to change the profile directory at runtime. Instead, when running RCE via the
@@ -101,8 +101,8 @@
 					><code>rce.exe</code></phrase><phrase os="linux"><code>./rce</code></phrase>),
 				RCE will start using the profile <code>secondinstance</code>.</para>
 		</example>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Contents of the Profile Directory</title>
 		<para>As stated above, each profile contains the static configuration of RCE as well as its
 			integrated tools. The former is defined via the JSON-file
@@ -119,8 +119,8 @@
 					change the contents of the file <code>configuration.json</code>, you have to
 					restart RCE to apply these changes.</para>
 			</note></para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Configuration Parameters</title>
 		<para>Configuration parameters are grouped within the configuration file. The configuration
 			parameters are listed below. There is one list per JSON configuration group. Some
@@ -925,8 +925,8 @@
 				in <xref linkend="configuration_ui_smtp"/>, since the password needs to be
 				obfuscated.</para>
 		</note>
-	</sect2>
-	<sect2 id="configuration_ui">
+	</section>
+	<section id="configuration_ui">
 		<title>Configuration UI</title>		
 		<para>If you want to configure SSH accounts with passphrases or you want to configure e-mail
 			support for the instance, you need to use the Configuration UI. You can access the
@@ -944,7 +944,7 @@
 			</mediaobject>
 		</figure>
 
-		<sect3>
+		<section>
 			<title>Remote Access: SSH account configuration</title>		
 		
 			<para>If the RCE instance shall act as a SSH server, you can configure SSH accounts using the Configuration UI, which encrypts the SSH passwords before storing them in the
@@ -957,8 +957,8 @@
 					editing the configuration file manually (see <xref linkend="table_ssh_roles"/>
 					). </para>
 			</note>
-		</sect3>
-		<sect3 id="configuration_ui_smtp">
+		</section>
+		<section id="configuration_ui_smtp">
 			<title>Mail: SMTP server configuration</title>		
 			
 			<para>If you use the tool output verification (cf. <xref linkend="tool_result_verification"/>)
@@ -975,10 +975,10 @@
 					inserts the characters "q@" into a text field if you want to insert the @ sign.
 					You can manually remove the additional character "q". </para>
 			</note>
-		</sect3>
+		</section>
 
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title><anchor id="authdata-import"/>Importing authorization data without GUI access</title>
 		<para>There are currently two categories of authorization data that should not be simply written
 			into configuration files for security reasons: SSH login passwords and keyfile
@@ -1017,7 +1017,7 @@
 						the authorization data that you have!</para>
 				</listitem>
 			</itemizedlist></para>
-		<sect3>
+		<section>
 			<title>Importing or deleting RCE authorization group keys</title>
 			<para>This section focusses on importing or deleting <emphasis role="italic">already
 					defined</emphasis> authorization groups via their group keys. Creating groups is
@@ -1057,8 +1057,8 @@
 					</listitem>
 				</itemizedlist>
 			</para>
-		</sect3>
-		<sect3>
+		</section>
+		<section>
 			<title>Importing SSH Uplink passwords or keyfile passphrases</title>
 			<itemizedlist>
 				<listitem>
@@ -1077,14 +1077,19 @@
 					<para>The content of the files is the password or keyfile passphrase.</para>
 				</listitem>
 				<listitem>
+					<para>When the profile is launched, the password or keyfile passphrase is
+						imported into RCE's secure storage and the import files are deleted to
+						mitigate potential security risks.</para>
+				</listitem>
+				<listitem>
 					<para>As this is never actually needed, deleting passwords is not directly
 						supported. If you have imported a password/passphrase you would rather
 						remove from RCE's secure storage, simply import a dummy password for the
 						same connection id. This will overwrite and erase the previous data.</para>
 				</listitem>
 			</itemizedlist>
-		</sect3>
-		<sect3>
+		</section>
+		<section>
 			<title>Importing SSH Remote Access passwords or keyfile passphrases</title>
 			<itemizedlist>
 				<listitem>
@@ -1103,12 +1108,17 @@
 					<para>The content of the files is the password or keyfile passphrase.</para>
 				</listitem>
 				<listitem>
+					<para>When the profile is launched, the password or keyfile passphrase is
+						imported into RCE's secure storage and the import files are deleted to
+						mitigate potential security risks.</para>
+				</listitem>
+				<listitem>
 					<para>As this is never actually needed, deleting passwords is not directly
 						supported. If you have imported a password/passphrase you would rather
 						remove from RCE's secure storage, simply import a dummy password for the
 						same connection id. This will overwrite and erase the previous data.</para>
 				</listitem>
 			</itemizedlist>
-		</sect3>
-	</sect2>
-</sect1>
+		</section>
+	</section>
+</section>

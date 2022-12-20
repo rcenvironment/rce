@@ -1,0 +1,24 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!-- This aggregator POM is mostly intended for test building the parent POMs,
+		or deploying/installing them if desired. It is not used by standard builds. -->
+	<artifactId>de.rcenvironment.build.common.parent.all</artifactId>
+	<name>RCE Parent POMs - Common - All (Collection)</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.build.common.parent.basicSettings</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../basicSettings</relativePath>
+	</parent>
+
+	<modules>
+		<module>../basicSettings</module>
+		<module>../osgiProject</module>
+		<module>../osgiRepositoryProject</module>
+	</modules>
+
+</project>

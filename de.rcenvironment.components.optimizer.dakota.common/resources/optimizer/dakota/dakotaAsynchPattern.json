@@ -3,6 +3,7 @@
     "methodCode":"asynch_pattern_search",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"false",
     "specificSettings":{
         "initial_delta":{
             "GuiName":"Initial offset value",

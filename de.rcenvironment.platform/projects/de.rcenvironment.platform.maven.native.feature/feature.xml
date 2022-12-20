@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="de.rcenvironment.platform.maven.native.feature"
-      label="RCE Platform - Maven Native Code Libraries Feature"
-      version="10.3.1.qualifier">
+      label="RCE Third-Party Artifacts - Wrapped Maven Libraries - Native (Feature)"
+      version="10.4.0.qualifier">
 
    <description url="http://www.rcenvironment.de">
-      Win32 library files for RCE (Remote Component Environment).
+      Native library files for RCE (Remote Component Environment).
    </description>
 
    <copyright url="http://www.rcenvironment.de">

@@ -19,7 +19,9 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,7 +29,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.WritableConfigurationSegment;
-import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Default {@link WritableConfigurationSegment} implementation.
@@ -164,6 +165,9 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public Double getDouble(String relativePath, Double defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
+            // Note: treeLocation.doubleValue() returns 0.0 if the node is not numeric
+            // default value is never returned
+            // K.Schaffert, 23.11.2022
             return useDefaultValueIfNull(treeLocation.doubleValue(), defaultValue);
         } else {
             return defaultValue;
@@ -240,7 +244,19 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         Iterator<Entry<String, JsonNode>> iterator = treeLocation.fields();
         while (iterator.hasNext()) {
             Entry<String, JsonNode> entry = iterator.next();
-            resultMap.put(entry.getKey(), new WritableConfigurationSegmentImpl(entry.getValue(), rootSegment));
+            String key = entry.getKey();
+            // do not list any elements starting with "_" and containing the string "comment"
+            if (key.startsWith("_")) {
+                if (key.toLowerCase().contains("comment")) {
+                    // silently skip/exclude
+                    continue;
+                } else {
+                    // warn, but keep
+                    log.warn("Encountered a configuration list key starting with an underscore (\"" + key
+                        + "\"); this naming pattern is reserved for special values and therefore not recommended");
+                }
+            }
+            resultMap.put(key, new WritableConfigurationSegmentImpl(entry.getValue(), rootSegment));
         }
         return resultMap;
     }
@@ -251,9 +267,15 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
             if (segmentRootNode == null) {
                 return clazz.newInstance();
             }
-            return JsonUtils.getDefaultObjectMapper().treeToValue(segmentRootNode, clazz);
+            // avoid reconfiguring the global (default) ObjectMapper, so create a local one
+            ObjectMapper objectMapper = new ObjectMapper();
+            // this is a stop-gap fix to avoid failing on "_comment_*" fields; the downside is that
+            // this will also cause any misspelled field to be silently ignored
+            // TODO >10.4.0 (p3) add more specific solution for ignoring JSON comment fields?
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            return objectMapper.treeToValue(segmentRootNode, clazz);
         } catch (RuntimeException | InstantiationException | IllegalAccessException e) {
-            throw new IOException("Error parsing configuration", e);
+            throw new IOException("Error parsing configuration data: " + e.toString());
         }
     }
 

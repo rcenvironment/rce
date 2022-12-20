@@ -8,6 +8,10 @@
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -16,14 +20,17 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
+import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
@@ -34,9 +41,11 @@ import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
  * @author Doreen Seider
  * @author Kathrin Schaffert
  */
-public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySection {
+public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySection implements PropertyChangeListener {
 
     private static final String TEXT_DISCARD = "Discard the evaluation loop run and continue with next one";
+
+    private static final String TEXT_RERUN_EVALUATION_LOOP = "Rerun the evaluation loop at the maximum of";
 
     private static final String TEXT_FINALLY_FAIL =
         "If an evaluation loop run was discarded, finally fail on loop termination (only applicable outside nested loops)";
@@ -44,11 +53,17 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
     private static final String TEXT_ONLY_FAIL_LOOP =
         "Only fail the loop and forward failure to outer loop (only applicable if used in nested loop)";
 
+    private boolean listenerRegistered = false;
+
     private Button failRadioButtonNAV;
 
     private Button discardAndContinueRadioButtonNAV;
 
+    private Label labelDiscardAndContinue;
+
     private Button rerunAndDiscardRadioButtonNAV;
+
+    private Label labelRerunAndDiscard;
 
     private Text rerunTimesAndFailTextNAV;
 
@@ -60,42 +75,50 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
 
     private Button failLoopIfAnyRunFailedCheckboxNAV;
 
+    private Label labelFinallyFail;
+
     private Button onlyFailLoopCheckboxNAV;
+
+    private Label labelOnlyFailLoop;
 
     private Button failRadioButtonCmpFlr;
 
     private Button discardAndContinueRadioButtonCmpFlr;
+
+    private Label labelDiscardAndContinueCmpFlr;
 
     private boolean loopDriverSupportsDiscard;
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 
-        parent.setLayout(new GridLayout(1, true));
-
+        parent.setLayout(new GridLayout(1, false));
         TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
 
         final Section sectionPropertiesNAV = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+        sectionPropertiesNAV.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         sectionPropertiesNAV.setText("Fault-tolerance in case of 'not-a-value' received");
-        final Composite compositeNAV = factory.createFlatFormComposite(sectionPropertiesNAV);
-        compositeNAV.setLayout(new GridLayout(3, false));
-        factory.createLabel(compositeNAV, "If a component in the loop sent 'not-a-value':");
+
+        final Composite compositeNAV = factory.createFlatFormComposite(parent);
+        compositeNAV.setLayout(new GridLayout(4, false));
+        Label labelNAV = factory.createLabel(compositeNAV, "If a component in the loop sent 'not-a-value':");
+        spanHorizontal(labelNAV, 4);
 
         BehaviorInCaseOfFailureSelectionListenerNAV listenerNAV = new BehaviorInCaseOfFailureSelectionListenerNAV();
-        failRadioButtonNAV = factory.createButton(compositeNAV, "Fail", SWT.RADIO);
-        spanHorizontal(failRadioButtonNAV);
+        failRadioButtonNAV = new Button(compositeNAV, SWT.RADIO);
+        createLabel(compositeNAV, "Fail", true);
         failRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV, LoopBehaviorInCaseOfFailure.Fail);
         failRadioButtonNAV.addSelectionListener(listenerNAV);
         failRadioButtonNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV);
 
-        discardAndContinueRadioButtonNAV = factory.createButton(compositeNAV, TEXT_DISCARD, SWT.RADIO);
-        spanHorizontal(discardAndContinueRadioButtonNAV);
+        discardAndContinueRadioButtonNAV = new Button(compositeNAV, SWT.RADIO);
+        labelDiscardAndContinue = createLabel(compositeNAV, TEXT_DISCARD, true);
         discardAndContinueRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV,
             LoopBehaviorInCaseOfFailure.Discard);
         discardAndContinueRadioButtonNAV.addSelectionListener(listenerNAV);
 
-        rerunAndFailRadioButtonNAV = factory.createButton(compositeNAV,
-            "Rerun the evaluation loop at the maximum of", SWT.RADIO);
+        rerunAndFailRadioButtonNAV = new Button(compositeNAV, SWT.RADIO);
+        createLabel(compositeNAV, TEXT_RERUN_EVALUATION_LOOP, false);
         rerunAndFailRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV,
             LoopBehaviorInCaseOfFailure.RerunAndFail);
         rerunAndFailRadioButtonNAV.addSelectionListener(listenerNAV);
@@ -106,11 +129,12 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         gridData.widthHint = width;
         rerunTimesAndFailTextNAV.setLayoutData(gridData);
         rerunTimesAndFailTextNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV);
-        rerunTimesAndFailTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndFailTextNAV,
-            NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
+        rerunTimesAndFailTextNAV
+            .addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.GREATER_ZERO | WidgetGroupFactory.ONLY_INTEGER));
         factory.createLabel(compositeNAV, "time(s) and fail if maximum exceeded");
 
-        rerunAndDiscardRadioButtonNAV = factory.createButton(compositeNAV, "Rerun the evaluation loop at the maximum of", SWT.RADIO);
+        rerunAndDiscardRadioButtonNAV = new Button(compositeNAV, SWT.RADIO);
+        labelRerunAndDiscard = createLabel(compositeNAV, TEXT_RERUN_EVALUATION_LOOP, false);
         rerunAndDiscardRadioButtonNAV.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV,
             LoopBehaviorInCaseOfFailure.RerunAndDiscard);
         rerunAndDiscardRadioButtonNAV.addSelectionListener(listenerNAV);
@@ -120,47 +144,75 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         gridData.widthHint = width;
         rerunTimesAndDiscardTextNAV.setLayoutData(gridData);
         rerunTimesAndDiscardTextNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV);
-        rerunTimesAndDiscardTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndDiscardTextNAV,
-            NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
+        rerunTimesAndDiscardTextNAV.addVerifyListener(new NumericalTextConstraintListener(
+            WidgetGroupFactory.GREATER_ZERO | WidgetGroupFactory.ONLY_INTEGER));
         rerunTimesAndDiscardLabelNAV = factory.createLabel(compositeNAV, "time(s) and discard if maximum exceeded");
 
-        failLoopIfAnyRunFailedCheckboxNAV = factory.createButton(compositeNAV, TEXT_FINALLY_FAIL, SWT.CHECK);
-        spanHorizontal(failLoopIfAnyRunFailedCheckboxNAV);
+        failLoopIfAnyRunFailedCheckboxNAV = new Button(compositeNAV, SWT.CHECK);
+        labelFinallyFail = createLabel(compositeNAV, TEXT_FINALLY_FAIL, true);
         failLoopIfAnyRunFailedCheckboxNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV);
-        onlyFailLoopCheckboxNAV = factory.createButton(compositeNAV, TEXT_ONLY_FAIL_LOOP, SWT.CHECK);
-        spanHorizontal(onlyFailLoopCheckboxNAV);
+
+        onlyFailLoopCheckboxNAV = new Button(compositeNAV, SWT.CHECK);
+        labelOnlyFailLoop = createLabel(compositeNAV, TEXT_ONLY_FAIL_LOOP, true);
         onlyFailLoopCheckboxNAV.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV);
 
-        sectionPropertiesNAV.setClient(compositeNAV);
-
         final Section sectionPropertiesCmpFlr = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+        sectionPropertiesCmpFlr.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         sectionPropertiesCmpFlr.setText("Fault-tolerance in case of component failure");
-        final Composite compositeCmpFlr = factory.createFlatFormComposite(sectionPropertiesCmpFlr);
-        compositeCmpFlr.setLayout(new GridLayout(1, false));
-        compositeCmpFlr.setLayoutData(gridData);
-        factory.createLabel(compositeCmpFlr, "If a component in the loop fails:");
+
+        final Composite compositeCmpFlr = factory.createFlatFormComposite(parent);
+        compositeCmpFlr.setLayout(new GridLayout(2, false));
+        Label labelComponentFailure = factory.createLabel(compositeCmpFlr, "If a component in the loop fails:");
+        spanHorizontal(labelComponentFailure, 2);
 
         BehaviorInCaseOfFailureSelectionListenerCompFailure listenerCmpFlr = new BehaviorInCaseOfFailureSelectionListenerCompFailure();
 
-        failRadioButtonCmpFlr = factory.createButton(compositeCmpFlr, "Fail component", SWT.RADIO);
-        spanHorizontal(failRadioButtonCmpFlr);
+        failRadioButtonCmpFlr = new Button(compositeCmpFlr, SWT.RADIO);
+        createLabel(compositeCmpFlr, "Fail component", false);
         failRadioButtonCmpFlr.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE,
             LoopBehaviorInCaseOfFailure.Fail);
         failRadioButtonCmpFlr.addSelectionListener(listenerCmpFlr);
         failRadioButtonCmpFlr.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE);
 
-        discardAndContinueRadioButtonCmpFlr = factory.createButton(compositeCmpFlr, TEXT_DISCARD, SWT.RADIO);
-        spanHorizontal(discardAndContinueRadioButtonCmpFlr);
+        discardAndContinueRadioButtonCmpFlr = new Button(compositeCmpFlr, SWT.RADIO);
+        labelDiscardAndContinueCmpFlr = createLabel(compositeCmpFlr, TEXT_DISCARD, false);
         discardAndContinueRadioButtonCmpFlr.setData(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE,
             LoopBehaviorInCaseOfFailure.Discard);
         discardAndContinueRadioButtonCmpFlr.addSelectionListener(listenerCmpFlr);
 
-        sectionPropertiesCmpFlr.setClient(compositeCmpFlr);
     }
 
-    private void spanHorizontal(Control control) {
+    @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        if (node != null && !listenerRegistered) {
+            node.addPropertyChangeListener(this);
+            listenerRegistered = true;
+        }
+    }
+
+    @Override
+    protected void beforeTearingDownModelBinding() {
+        if (node != null) {
+            node.removePropertyChangeListener(this);
+        }
+        listenerRegistered = false;
+        super.beforeTearingDownModelBinding();
+    }
+
+    private Label createLabel(Composite parent, String labelText, boolean spanLabel) {
+        Label label = new Label(parent, SWT.NONE);
+        label.setText(labelText);
+        label.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
+        if (spanLabel) {
+            spanHorizontal(label, 3);
+        }
+        return label;
+    }
+
+    private void spanHorizontal(Control control, int span) {
         GridData gridData = new GridData();
-        gridData.horizontalSpan = 3;
+        gridData.horizontalSpan = span;
         control.setLayoutData(gridData);
     }
 
@@ -178,17 +230,26 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         failRadioButtonCmpFlr.setSelection(loopBehaviorInCaseOfFailureCmpFlr.equals(LoopBehaviorInCaseOfFailure.Fail));
         rerunAndFailRadioButtonNAV.setSelection(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndFail));
         rerunTimesAndFailTextNAV.setEnabled(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndFail));
-        onlyFailLoopCheckboxNAV.setEnabled((loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.Fail)
-            || loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndFail))
-            && Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)));
+
+        Boolean isNestedLoop = Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
+        boolean onlyFailEnabled = (loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.Fail)
+            || loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.RerunAndFail)) && isNestedLoop;
+        onlyFailLoopCheckboxNAV.setEnabled(onlyFailEnabled);
+        labelOnlyFailLoop.setEnabled(onlyFailEnabled);
 
         discardAndContinueRadioButtonNAV.setEnabled(loopDriverSupportsDiscard);
+        labelDiscardAndContinue.setEnabled(loopDriverSupportsDiscard);
         discardAndContinueRadioButtonCmpFlr.setEnabled(loopDriverSupportsDiscard);
+        labelDiscardAndContinueCmpFlr.setEnabled(loopDriverSupportsDiscard);
         rerunAndDiscardRadioButtonNAV.setEnabled(loopDriverSupportsDiscard);
+        labelRerunAndDiscard.setEnabled(loopDriverSupportsDiscard);
         rerunTimesAndDiscardTextNAV.setEnabled(loopDriverSupportsDiscard);
         rerunTimesAndDiscardLabelNAV.setEnabled(loopDriverSupportsDiscard);
-        failLoopIfAnyRunFailedCheckboxNAV.setEnabled(loopDriverSupportsDiscard
-            && !Boolean.valueOf(getProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)));
+
+        boolean finallyFailEnabled = loopDriverSupportsDiscard && !isNestedLoop;
+        failLoopIfAnyRunFailedCheckboxNAV.setEnabled(finallyFailEnabled);
+        labelFinallyFail.setEnabled(finallyFailEnabled);
+
         if (loopDriverSupportsDiscard) {
             discardAndContinueRadioButtonNAV.setSelection(loopBehaviorInCaseOfFailureNAV.equals(LoopBehaviorInCaseOfFailure.Discard));
             discardAndContinueRadioButtonCmpFlr.setSelection(loopBehaviorInCaseOfFailureCmpFlr.equals(LoopBehaviorInCaseOfFailure.Discard));
@@ -317,8 +378,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
             }
             if (control instanceof Button && oldValue != null) {
                 if (!propertyName.equals(LoopComponentConstants.CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV)
-                    && !propertyName.equals(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV)
-                ) {
+                    && !propertyName.equals(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP_ONLY_NAV)) {
                     setWorkflowNode(node);
                 } else {
                     super.updateControl(control, propertyName, newValue, oldValue);
@@ -326,6 +386,13 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
             }
         }
 
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals(ComponentDescription.PROPERTIES_PREFIX + LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP)) {
+            setWorkflowNode(node);
+        }
     }
 
 }

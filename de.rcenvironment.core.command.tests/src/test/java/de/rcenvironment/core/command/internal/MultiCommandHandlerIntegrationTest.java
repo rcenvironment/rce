@@ -22,14 +22,16 @@ import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.authentication.Session;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.internal.handlers.BuiltInCommandPlugin;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandParser;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -54,17 +56,16 @@ public class MultiCommandHandlerIntegrationTest {
         }
 
         @Override
+        public MainCommandDescription[] getCommands() {
+            final Collection<MainCommandDescription> returnValue = new LinkedList<>();
+            for (String command : commands) {
+                returnValue.add(new MainCommandDescription(command, "", "", this::execute));
+            }
+            return (MainCommandDescription[]) returnValue.toArray();
+        }
+        
         public void execute(CommandContext commandContext) throws CommandException {
             capturedContext.setValue(commandContext);
-        }
-
-        @Override
-        public Collection<CommandDescription> getCommandDescriptions() {
-            final Collection<CommandDescription> returnValue = new LinkedList<>();
-            for(String command : commands) {
-                returnValue.add(new CommandDescription(command, "", false, ""));
-            }
-            return returnValue;
         }
         
         public boolean wasExecuted() {
@@ -80,7 +81,9 @@ public class MultiCommandHandlerIntegrationTest {
 
     private static final String UNEXPECTED_REPONSE_TEXT = "Unexpected reponse text: ";
 
-    private CommandPluginDispatcher commandPluginDispatcher;
+//    private CommandPluginDispatcher commandPluginDispatcher;
+    
+    private CommandParser commandParser;
 
     /**
      * Creates a Session for testing.
@@ -95,8 +98,8 @@ public class MultiCommandHandlerIntegrationTest {
      */
     @Before
     public void setUp() {
-        commandPluginDispatcher = new CommandPluginDispatcher();
-        commandPluginDispatcher.registerPlugin(new BuiltInCommandPlugin());
+//        commandPluginDispatcher = new CommandPluginDispatcher();
+        commandParser = new CommandParser();
     }
 
     /**
@@ -117,7 +120,7 @@ public class MultiCommandHandlerIntegrationTest {
         EasyMock.replay(outputReceiver);
 
         // invoke
-        new MultiCommandHandler(tokens, outputReceiver, commandPluginDispatcher).call();
+        new MultiCommandHandler(tokens, outputReceiver, commandParser, null).call();
         // test callback parameter(s)
         assertEquals("Unexpected CommandException sub-type", CommandException.Type.HELP_REQUESTED, capture.getValue().getType());
 
@@ -130,6 +133,8 @@ public class MultiCommandHandlerIntegrationTest {
      */
     @Test
     public void testDummyCommand() {
+        commandParser.registerCommands(new BuiltInCommandPlugin().getCommands());
+        
         List<String> tokens = new ArrayList<String>();
         tokens.add("dummy");
         TextOutputReceiver outputReceiver = EasyMock.createStrictMock(TextOutputReceiver.class);
@@ -143,7 +148,7 @@ public class MultiCommandHandlerIntegrationTest {
         EasyMock.replay(outputReceiver);
 
         // invoke
-        new MultiCommandHandler(tokens, outputReceiver, commandPluginDispatcher).call();
+        new MultiCommandHandler(tokens, outputReceiver, commandParser, null).call();
         // test callback parameter(s)
         String capturedText = capture.getValue();
         assertTrue("Unexpected reponse text (should contain 'dummy')", capturedText.toLowerCase().contains("dummy"));
@@ -157,7 +162,8 @@ public class MultiCommandHandlerIntegrationTest {
      */
     @Test
     public void testTokenQuotingNormalization() {
-
+        commandParser.registerCommands(new BuiltInCommandPlugin().getCommands());
+        
         List<String> tokens = Arrays.asList(new String[] {
             EXPLAIN_COMMAND_TOKEN, "a", "\"b", "2", "", "", "c\"", "d"
         });
@@ -184,7 +190,8 @@ public class MultiCommandHandlerIntegrationTest {
      */
     @Test
     public void testTokenQuotingSpecialCases() {
-
+        commandParser.registerCommands(new BuiltInCommandPlugin().getCommands());
+        
         List<String> tokens = Arrays.asList(new String[] {
             EXPLAIN_COMMAND_TOKEN, "a\"b", "\"c", "d\"e", "\"", "f\"g"
         });
@@ -197,7 +204,8 @@ public class MultiCommandHandlerIntegrationTest {
      */
     @Test
     public void testTokenQuotesUnescaping() {
-
+        commandParser.registerCommands(new BuiltInCommandPlugin().getCommands());
+        
         List<String> tokens = Arrays.asList(new String[] {
             EXPLAIN_COMMAND_TOKEN, "a\\\"", "\\\"b", "c\\\"d"
         });
@@ -217,7 +225,7 @@ public class MultiCommandHandlerIntegrationTest {
         EasyMock.replay(outputReceiver);
 
         // invoke
-        new MultiCommandHandler(tokens, outputReceiver, commandPluginDispatcher).call();
+        new MultiCommandHandler(tokens, outputReceiver, commandParser, null).call();
         // test callback parameter(s)
         String capturedText = capture.getValue();
         EasyMock.verify(outputReceiver);
@@ -229,16 +237,17 @@ public class MultiCommandHandlerIntegrationTest {
      * @throws CommandException 
      */
     @Test
+    @Ignore // TODO: can probably be removed, this behavior is currently unsupported
     public void testPluginOverlap() throws CommandException {
-        final CommandPluginDispatcher dispatcher = new CommandPluginDispatcher();
+        final CommandParser parser = new CommandParser();
 
         final MockCommandPlugin wfPlugin = new MockCommandPlugin("wf", "wf list");
-        dispatcher.registerPlugin(wfPlugin);
+        parser.registerCommands(wfPlugin.getCommands());
 
         final MockCommandPlugin wfIntegratePlugin = new MockCommandPlugin("wf integrate");
-        dispatcher.registerPlugin(wfIntegratePlugin);
-        
-        dispatcher.execute(new CommandContext(Arrays.asList("wf"), null, null));
+        parser.registerCommands(wfPlugin.getCommands());
+
+        parser.parseCommand(new CommandContext(Arrays.asList("wf"), null, null)).execute();
         
         assertTrue(wfPlugin.wasExecuted());
         assertFalse(wfIntegratePlugin.wasExecuted());
@@ -246,7 +255,7 @@ public class MultiCommandHandlerIntegrationTest {
         wfPlugin.resetExecutionStatus();
         wfIntegratePlugin.resetExecutionStatus();
 
-        dispatcher.execute(new CommandContext(Arrays.asList("wf", "integrate"), null, null));
+        parser.parseCommand(new CommandContext(Arrays.asList("wf", "integrate"), null, null)).execute();
         
         assertFalse(wfPlugin.wasExecuted());
         assertTrue(wfIntegratePlugin.wasExecuted());

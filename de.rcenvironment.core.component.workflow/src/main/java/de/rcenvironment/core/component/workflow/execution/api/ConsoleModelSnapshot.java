@@ -9,6 +9,7 @@
 package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.util.Collection;
+import java.util.Map;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.internal.ConsoleRowModelServiceImpl;
@@ -18,6 +19,7 @@ import de.rcenvironment.core.component.workflow.execution.internal.ConsoleRowMod
  * an immutable model state to the view in a single call.
  * 
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#17869: changed method into getComponentMap())
  */
 public interface ConsoleModelSnapshot {
 
@@ -43,7 +45,7 @@ public interface ConsoleModelSnapshot {
     /**
      * @return true if the workflow list has potentially changed
      */
-    boolean hasWorkflowListChanged();
+    boolean isWorkflowListChanged();
 
     /**
      * @return the current workflow list; for performance, only set if #hasWorkflowListChanged is
@@ -57,9 +59,9 @@ public interface ConsoleModelSnapshot {
     boolean hasComponentListChanged();
 
     /**
-     * @return the current component list; for performance, only set if
+     * @return the current component map; for performance, only set if
      *         {@link #hasComponentListChanged()} is true; otherwise null
      */
-    Collection<String> getComponentList();
+    Map<String, Collection<String>> getWorkflowComponentsMap();
 
 }

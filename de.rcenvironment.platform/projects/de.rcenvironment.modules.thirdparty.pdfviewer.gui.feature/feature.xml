@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="de.rcenvironment.modules.thirdparty.pdfviewer.gui.feature"
+      label="RCE Third-Party Artifacts - Modules - PDF File Viewer (Feature)"
+      version="10.4.0.qualifier"
+      provider-name="DLR">
+
+   <copyright url="https://www.rcenvironment.de">
+      Copyright 2022 DLR, Germany
+   </copyright>
+
+   <license url="https://www.eclipse.org/legal/epl-v10.html">
+      Eclipse Public License - v 1.0
+   </license>
+
+   <includes
+         id="de.vonloesch.pdf4eclipse"
+         version="0.0.0"/>
+
+</feature>

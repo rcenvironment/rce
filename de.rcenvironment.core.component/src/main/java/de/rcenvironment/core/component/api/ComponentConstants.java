@@ -13,6 +13,7 @@ import java.util.List;
 
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentState;
+import de.rcenvironment.core.component.execution.internal.ComponentStateMachine;
 import de.rcenvironment.core.component.model.api.ComponentColor;
 import de.rcenvironment.core.component.model.api.ComponentShape;
 import de.rcenvironment.core.component.model.api.ComponentSize;
@@ -55,7 +56,7 @@ public final class ComponentConstants {
      * Key for full qualified name of the component implementing class.
      */
     public static final String COMPONENT_CLASS_KEY = "rce.component.class";
-    
+
     /**
      * Key for componentValidator id.
      */
@@ -101,7 +102,7 @@ public final class ComponentConstants {
      * Key that specifies if a loop driver supports discard of inner loop runs.
      */
     public static final String LOOP_DRIVER_SUPPORTS_DISCARD = "rce.component.loopDriverSupportsDiscard";
-    
+
     /**
      * Key for component's color.
      */
@@ -265,7 +266,7 @@ public final class ComponentConstants {
 
     /** Finished component states. */
     public static final List<ComponentState> FININISHED_COMPONENT_STATES = new ArrayList<>();
-    
+
     /** Failed component states. */
     public static final List<ComponentState> FAILED_COMPONENT_STATES = new ArrayList<>();
 
@@ -286,6 +287,14 @@ public final class ComponentConstants {
         FINAL_COMPONENT_STATES_WITH_DISPOSED.addAll(FINAL_COMPONENT_STATES);
         FINAL_COMPONENT_STATES_WITH_DISPOSED.add(ComponentState.DISPOSED);
     }
+
+    // TODO: Check, if the following two constants (INTEGRATION_CONTEXTUAL_HELP_PLACEHOLDER_ID,COMMON_INTEGRATED_COMPONENT_ID_PREFIX) can be
+    // shifted to de.rcenvironment.core.component.integration and the cyclometric dependency can be resolved.
+    /** Constant. */
+    public static final String INTEGRATION_CONTEXTUAL_HELP_PLACEHOLDER_ID = "de.rcenvironment.integration.*";
+
+    /** Constant. */
+    public static final String COMMON_INTEGRATED_COMPONENT_ID_PREFIX = "de.rcenvironment.integration.common.";
 
     /** Private Constructor. */
     private ComponentConstants() {

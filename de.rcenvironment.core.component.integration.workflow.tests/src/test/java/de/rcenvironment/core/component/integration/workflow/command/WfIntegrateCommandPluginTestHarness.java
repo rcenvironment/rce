@@ -31,7 +31,8 @@ import org.easymock.EasyMock;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.common.CommandException.Type;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandParser;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
 import de.rcenvironment.core.component.integration.workflow.WorkflowIntegrationService;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
@@ -298,24 +299,34 @@ class WfIntegrateCommandPluginTestHarness {
     final class WhenSteps {
 
         // We make the constructor private in order to enforce use of the factory method when() in the enclosing class
-        private WhenSteps() {}
-
-        Collection<CommandDescription> getCommandDescriptions() {
-            return plugin.getCommandDescriptions();
+        private WhenSteps() {
+            commandParser = new CommandParser();
+            commandParser.registerCommands(getCommands());
         }
 
+        MainCommandDescription[] getCommands() {
+            return plugin.getCommands();
+        }
+        
+        private CommandParser commandParser;
+        
+        /*
+         * TODO: figure this out
+         */
+        
         void executeWfIntegrateCommand(final String... parameters) {
             final CommandContext context = wfIntegrateCommandContext(parameters);
             thrownException = Capture.newInstance();
+              
             try {
-                plugin.execute(context);
+                commandParser.parseCommand(context).execute();
             } catch (CommandException e) {
                 thrownException.setValue(e);
             }
         }
 
         private CommandContext wfIntegrateCommandContext(String... tokens) {
-            final List<String> defaultTokens = Arrays.asList("wf", "integrate");
+            final List<String> defaultTokens = Arrays.asList("wf-integrate");
             final List<String> commandTokens = Arrays.asList(tokens);
             final List<String> allTokens = new LinkedList<>();
             allTokens.addAll(defaultTokens);
@@ -416,7 +427,7 @@ class WfIntegrateCommandPluginTestHarness {
             // Guard against programmer error and first check explicitly that an exception was thrown before asserting its properties
             commandExceptionWasThrown();
             final CommandException capturedException = thrownException.getValue();
-            assertEquals(expectedCommandString, capturedException.getCommandString());
+            assertEquals(expectedCommandString, capturedException.getCommandString().trim());
             return this;
         }
 

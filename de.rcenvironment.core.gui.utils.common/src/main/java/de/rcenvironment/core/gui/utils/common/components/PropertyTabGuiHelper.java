@@ -9,8 +9,11 @@
 package de.rcenvironment.core.gui.utils.common.components;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,6 +63,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Arne Bachmann
  * @author Jan Flink
+ * @author Kathrin Schaffert
  */
 public final class PropertyTabGuiHelper {
 
@@ -72,11 +76,10 @@ public final class PropertyTabGuiHelper {
      * Constant for the layout manager.
      */
     public static final int PERC_100 = 100;
-    
 
     /**
      * The log instance.
-     */    
+     */
     private static final Log LOGGER = LogFactory.getLog(PropertyTabGuiHelper.class);
 
     /**
@@ -92,7 +95,6 @@ public final class PropertyTabGuiHelper {
         DIRECTORY,
         FILE_AND_DIRECTORY
     }
-    
 
     /**
      * Hiding constructor. There are only static methods in this class.
@@ -260,7 +262,7 @@ public final class PropertyTabGuiHelper {
             @Override
             protected Control createContents(Composite parent) {
                 final Control result = super.createContents(parent);
-                
+
                 if (project != null) {
                     getTreeViewer().setExpandedElements(new Object[] { project });
                 }
@@ -273,21 +275,21 @@ public final class PropertyTabGuiHelper {
             }
 
         };
-        
+
         selectionDialog.addFilter(new ViewerFilter() {
-            
+
             @Override
             public boolean select(Viewer viewer, Object parent, Object element) {
                 return element == project || element instanceof IFolder;
             }
         });
-        
+
         selectionDialog.setStatusLineAboveButtons(false);
         selectionDialog.setTitle(title);
         selectionDialog.setMessage(message);
         selectionDialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
         selectionDialog.setInitialSelection(project);
-        
+
         if (selectionDialog.open() == ElementTreeSelectionDialog.OK && selectionDialog.getResult().length > 0) {
             return (IResource) selectionDialog.getResult()[0];
         }
@@ -308,7 +310,6 @@ public final class PropertyTabGuiHelper {
         return (IFile) selectFileOrDirectoryFromWorkspace(shell, title, message, ResourcesPlugin.getWorkspace().getRoot(),
             SelectionType.FILE);
     }
-    
 
     /**
      * Dialog for project files with a given suffix.
@@ -324,7 +325,6 @@ public final class PropertyTabGuiHelper {
         return (IFile) selectFileOrDirectoryFromWorkspace(shell, title, message, ResourcesPlugin.getWorkspace().getRoot(),
             SelectionType.FILE);
     }
-       
 
     private static Object selectFileOrDirectoryFromWorkspace(final Shell shell, final String title, final String message,
         Object input, final SelectionType filter) {
@@ -332,7 +332,6 @@ public final class PropertyTabGuiHelper {
         final ElementTreeSelectionDialog selectionDialog = new ElementTreeSelectionDialog(shell,
             new WorkbenchLabelProvider(),
             new BaseWorkbenchContentProvider()) {
-
 
             @Override
             protected void updateStatus(IStatus status) {
@@ -382,18 +381,29 @@ public final class PropertyTabGuiHelper {
      * Dialog for file system files.
      * 
      * @param shell The shell to block modally
-     * @param extensionFilters The filter expression, e.g. *.py
+     * @param filterNames The filter names to be shown in the dialog, e.g. *.py
      * @param title The dialog title
      * @param filterPath The path the dialog should start, null if default
      * @return The filename or null
      */
-    public static String selectFileFromFileSystem(final Shell shell, final String[] extensionFilters,
+    public static String selectFileFromFileSystem(final Shell shell, final String[] filterNames,
         final String title, final String filterPath) {
         final FileDialog fileDialog = new FileDialog(shell);
-        fileDialog.setFilterExtensions(extensionFilters);
         fileDialog.setText(title);
         fileDialog.setFilterPath(filterPath);
+        fileDialog.setFilterNames(createFilterNamesToDisplay(filterNames));
+        fileDialog.setFilterExtensions(createFilterExtensions(filterNames));
         return fileDialog.open();
+    }
+
+    private static String[] createFilterNamesToDisplay(String[] filterNames) {
+        List<String> list = Stream.of(filterNames).map(String::toLowerCase).collect(Collectors.toList());
+        return list.toArray(new String[0]);
+    }
+
+    private static String[] createFilterExtensions(String[] filterNames) {
+        List<String> list = Stream.of(filterNames).map(str -> str.toLowerCase() + ";" + str.toUpperCase()).collect(Collectors.toList());
+        return list.toArray(new String[0]);
     }
 
     /**
@@ -419,7 +429,7 @@ public final class PropertyTabGuiHelper {
     public static String selectDirectoryFromFileSystem(final Shell shell, final String title) {
         return selectDirectoryFromFileSystemWithPath(shell, title, null);
     }
-    
+
     /**
      * Dialog for file system directories, when FilterPath is given.
      * 
@@ -428,7 +438,7 @@ public final class PropertyTabGuiHelper {
      * @param path The given path to filter in
      * @return The filename or null
      */
-    
+
     public static String selectDirectoryFromFileSystemWithPath(final Shell shell, final String title, final String path) {
         final DirectoryDialog fileDialog = new DirectoryDialog(shell);
         fileDialog.setText(title);

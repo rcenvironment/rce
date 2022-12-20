@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="tool_integration">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="tool_integration">
     <title>User-Defined Components</title>
     <para>RCE comes with a number of components that already allow you to create rather large and
         complex workflows. It is technically possible to construct a workflow using only the
@@ -12,7 +12,7 @@
         values such as the script of a Script-component. To simplify the construction, sharing, and
         maintenance of workflows containing calls to external tools, RCE allows for the integration
         of such external tools as user-defined components.</para>
-    <sect2>
+    <section>
         <title>Integrating External Tools as Components</title>
         <para>If you want to integrate an external tool, the tool must</para>
         <itemizedlist>
@@ -77,7 +77,7 @@
             configuration directory, please add this file as an explicit input to the component.
             Other options include, e.g., fixing a "whitelist" of safe configuration options and
             allowing the user a choice of these configuration options via properties.</para>
-        <sect3>
+        <section>
             <title>Directory Structure for Integrated Tools</title>
             <para>When executing an integrated tool, a certain directory structure is created in the
                 chosen working directory. This structure depends on the options you have chosen in
@@ -110,8 +110,8 @@
                 new working directory on each run" is disabled, this will always be the same as the
                 "Root Working Directory". Otherwise, a new directory is created each run (the name
                 will be the run number) and is the working directory for the run.</para>
-        </sect3>
-        <sect3>
+        </section>
+        <section>
             <title>Copying of Integrated Tools</title>
             <para>When a component is created in the integration wizard, a configuration file is
                 created.</para>
@@ -136,7 +136,7 @@
                         must be empty), afterwards you can delete the tool folder.</para>
                 </note>
             </para>
-            <sect4>
+            <section>
                 <title>Tool Execution Return Codes</title>
                 <para>The tools are executed by using a command line call on the operating system
                     via the execution script. When the tool finished executing (with or without
@@ -152,11 +152,11 @@
                     component, so the workflow runs as normal, or let the component crash after some
                     debugging information was written using the Script API
                         <code>RCE.fail("reason")</code>.</para>
-            </sect4>
-        </sect3>
-        <sect3>
+            </section>
+        </section>
+        <section>
             <title>Integration of CPACS Tools</title>
-            <sect4>
+            <section>
                 <title>Additional concepts of CPACS Tool Integration</title>
                 <para>Extending the common Tool Integration concept, the CPACS Tool Integration has
                     some additional features.<itemizedlist>
@@ -319,8 +319,8 @@
                         </imageobject>
                     </mediaobject>
                 </figure>
-            </sect4>
-            <sect4>
+            </section>
+            <section>
                 <title>Integrate a CPACS Tool into a Client Instance</title>
                 <para>
                     <orderedlist>
@@ -432,8 +432,8 @@ post.bat</programlisting>
                         </listitem>
                     </orderedlist>
                 </para>
-            </sect4>
-            <sect4>
+            </section>
+            <section>
                 <title>Integrate a CPACS Tool into a Server Instance in Headless Mode</title>
                 <para>The way to integrate a CPACS tool on a server running RCE in headless mode is
                     as follows: Perform the steps to integrate a CPACS tool on a client instance and
@@ -447,9 +447,9 @@ post.bat</programlisting>
                     commands (cf. <xref linkend="publishing_authorization"/> ) to publish your tool.
                     If the server instance is already running, your tool will be available
                     immediately after publishing.</para>
-            </sect4>
-        </sect3>
-        <sect3 id="tool_integration_known_issues">
+            </section>
+        </section>
+        <section id="tool_integration_known_issues">
             <title>Known Issues</title>
             <para>As noted above, pre- and postscripts are executed using a Java implementation of
                 Python 2. One particular caveat is Python 2's handling of unicode strings, which
@@ -461,9 +461,9 @@ post.bat</programlisting>
                     <code>Runtime#eval</code>. This method in turn relies on internal Windows APIs
                 which have known issues with handling unicode. Please make sure that your execution
                 script works as expected when executed via RCE with unicode strings.</para>
-        </sect3>
-    </sect2>
-    <sect2>
+        </section>
+    </section>
+    <section>
         <title>Integrating Workflows as Components (Experimental)</title>
         <para>In this section we describe how to integrate a workflow containing multiple components
             as a component itself. This feature is currently experimental and <emphasis>not
@@ -486,8 +486,8 @@ post.bat</programlisting>
             other, more complex workflows.</para>
         <para>One approach would be to simply copy the part of the workflow that implements the
             actual computation (i.e., the components <code>Optimizer</code> and
-                <code>DiscComp</code>) and paste it whenever she requires this functionality in
-            other workflow. This approach, however, is neither scalable nor maintainable: While this
+                <code>DiscComp</code>) and paste it whenever it needs this functionality in
+            other workflows. This approach, however, is neither scalable nor maintainable: While this
             example requires only copying of two componentes, one can easily imagine situations in
             which the functionality to be copied is implemented via dozens of components, which
             leads to severe cluttering of the workflows in which the functionality is used.
@@ -505,8 +505,8 @@ post.bat</programlisting>
             sections, we will refer to an "inner" workflow and an "outer" workflow. These refer to
             the workflow that is integrated as a component and to the workflow in which that
             component is used later on, respectively.</para>
-        <sect3>
-            <title>Integrating a Workflow</title>
+        <section>
+            <title>Integrating a Workflow via command console</title>
             <para>Before integrating the workflow shown above, we assume that you have already
                 constructed a workflow that implements the behavior that you want to provide to
                 other users as a component. Moreover, we assume that this workflow contains some
@@ -620,47 +620,108 @@ Output Adapter: x_optimal @ 402cac5e-2206-48cc-a62f-803bd320a15a --[Float]-> x_o
                     <code>FindOptimalX</code> with a single input named <code>c</code> and a single
                 output named <code>optimalX</code> will be available for use in all other
                 workflows.</para>
-        </sect3>
-        <sect3>
-            <title>Executing an Integrated Workflow</title>
+        </section>
+        <section>
+            <title>Workflow Integration Editor</title>
+            <para> With RCE 10.4 we provide the Workflow Integration Editor to support the workflow
+                integration via the graphical user interface of RCE. There are two options to open
+                the editor:<itemizedlist>
+                    <listitem>
+                        <para>Select the workflow you want to integrate as a component from the
+                            Project Explorer and go to either the main menu <emphasis role="italic"
+                                >Intgration > Integrate Workflow File</emphasis> or use the quick
+                            acess via the icon bar.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Select a (sub-)workflow in the Workflow Editor and choose from the
+                            context menu <emphasis role="italic">Integrate selected Components as
+                                Component</emphasis></para>
+                    </listitem>
+                </itemizedlist></para>
+            <para>Required fields are marked with an asterisk (*). Press <emphasis role="italic"
+                    >Integrate Workflow</emphasis> to integrate the workflow as a component. The
+                component will automatically show up in the Workflow Editor palette.</para>
+            <para>
+                <note>
+                    <para>The workflow integration editor has a dynamic help, which is shown by
+                        clicking on the question mark on the bottom left or by pressing F1. It will
+                        guide you through the tabs of the workflow integration editor.</para>
+                </note>
+            </para>
+            <para>To edit an already integrated workflow component use the <emphasis role="italic"
+                    >Intgration > Edit Workflow Integration</emphasis> from the main menu or use the
+                context menu in either the Workflow Editor or the Palette after selecting the
+                desired workflow component.</para>
+            <figure>
+                <title>Workflow Integration Editor</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/WorkflowIntegrationEditor.png" width="400px"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+            <para>One major part of the workflow integration consists of the input/output mapping.
+                On the Mapping tab all unconnected endpoints of your selected (sub-)workflow are
+                displayed. Here you can select endpoints to serve as inputs and outputs for the
+                integrated workflow component. <note>
+                    <para> Inputs with the constraint <emphasis role="italic">Required</emphasis>
+                        are mandatory. </para>
+                </note></para>
+            <para>You can assign custom names for your endpoints by editing the Mapped Name cell in
+                the table.</para>
+            <figure>
+                <title>Mapping Page</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/MappingPage.png" width="300px"/>
+                    </imageobject>
+                </mediaobject>
+            </figure>
+        </section>
+        <section>
+            <title>Technical Details of Executing an Integrated Workflow</title>
+            <para>In this section some technical details are given for interested users how exactely
+                an integrated workflow used as a workflow component in another workflow is executed.
+                If you are interested in more conceptual details or encounter problems while running
+                an integrated workflow, this section may be helpful.</para>
             <para>Recall that each workflow that RCE executes is controlled by some particular
                 instance, i.e., by the workflow controller. Since executing an integrated workflow
                 executes the underlying workflow, RCE requires a workflow controller for doing so.
                 That workflow controller may or may not be the same as the one executing the outer
-                workflow. Currently, the instance executing the component serves as the workflow
-                controller for the execution of the inner workflow. That instance will execute a
-                copy of the workflow that has been created when the workflow was integrated, i.e.,
-                changes made to the workflow after integration will have no effect on the behavior
-                of the integrated component.</para>
-            <para>Futhermore, since the publishing instance serves as workflow controller for the
-                execution of the integrated workflow, the execution of the integrated workflow will
-                show up in the datamanagement of the publishing instance under the name
-                    <code>&lt;component name> running as component '&lt;node name>' of workflow
-                    '&lt;outer workflow>'</code>, where <code>&lt;component name></code> denotes the
-                name as which the publishing instance published the component, <code>&lt;node
-                    name></code> denotes the name under which the component is used in the outer
-                workflow, and <code>&lt;outer workflow></code> denotes the name under which the
-                calling workflow is stored in the data management of its workflow controller.<note>
+                workflow. Currently, the instance publishing the component serves as the workflow
+                controller for the execution of the inner workflow. We call it the "inner workflow
+                controller" to distinguish it from the workflow controller that runs the outer
+                workflow. This "inner workflow controller" runs a copy of the workflow in the exact
+                state in which it was integrated, i.e., changes made to the workflow after
+                integration will have no effect on the behavior of the integrated component.</para>
+            <para>Futhermore, since the publishing instance serves as "inner workflow controller"
+                for the execution of the integrated workflow, the execution of the integrated
+                workflow will show up in the Workflow Data Browser of the publishing instance under
+                the name <code>&lt;workflow component name> running as component '&lt;component
+                    name>' of workflow '&lt;outer workflow>'</code>. The <code>&lt;workflow
+                    component name></code> denotes the name as which the publishing instance
+                published the integrated workflow, <code>&lt;component name></code> denotes the name
+                under which the workflow component is used in the outer workflow, and
+                    <code>&lt;outer workflow></code> denotes the name under which the outer workflow
+                is stored in the Workflow Data Browser of its workflow controller.<note>
                     <para>Nesting workflows, i.e., integrating workflows as components that already
                         contain workflows integrated as components, can easily lead to unreadable
-                        names of workflow executions that are stored in the data management. This
-                        may significantly inhibit manual inspection of the resulting data. Keep this
-                        in mind when designing workflows.</para>
+                        names of workflow executions that are stored in the Workflow Data Browser.
+                        This may significantly inhibit manual inspection of the resulting data. Keep
+                        this in mind when designing workflows.</para>
                 </note></para>
-            <para>Technically, before starting the integrated workflow, the workflow controller
-                injects two additional components into the workflow, one so-called input adapter and
-                one so-called output adapter.These components are not accessible by the user when
-                constructing workflows and are only used in transport data from the inputs to the
-                component on the side of the calling workflow to the exposed inputs as well as data
-                from the exposed outputs of the workflow to the outputs of the component in the
-                calling workflow, respectively.</para>
-            <para>Upon execution of the integrated component in the calling workflow, the instance
+            <para>Technically, before starting the integrated workflow, the instance controlling the
+                inner workflow injects two additional components into the workflow, one so-called
+                input adapter and one so-called output adapter. These components are not accessible
+                by the user when constructing workflows. They are only used to transport data from
+                the inputs of the workflow component to the exposed inputs as well as data from the
+                exposed outputs to the outputs of the workflow component, respectively.</para>
+            <para>Upon execution of the integrated component in the outer workflow, the instance
                 publishing the component first injects the input and the output adapter as described
                 above. It subsequently executes the workflow and collects the results via the output
-                adapter. The execution takes place as if the workflow were executed using the
-                command <code>wf run</code>.</para>
-        </sect3>
-        <sect3>
+                adapter. </para>
+        </section>
+        <section>
             <title>Limitations, Caveats, and FAQ</title>
             <para>Since the integration of workflows as components is currently under development
                 and only released as a beta feature, there are some caveats and known issues that
@@ -681,17 +742,17 @@ Output Adapter: x_optimal @ 402cac5e-2206-48cc-a62f-803bd320a15a --[Float]-> x_o
                         at execution time.</para>
                 </listitem>
                 <listitem>
-                    <para>The user cannot specify a version of the integrated component. If there is
-                        demand, we will add the command line switch <code>--version</code> in order
-                        to allow the user to have multiple versions of the same workflow integrated
-                        simultaneously. Also, the user can currently not specify an individual icon
-                        to be used for the integrated component. This may also be added in future
-                        versions.</para>
+                    <para>Via the command console, the user cannot specify a version of the
+                        integrated component. If there is demand, we will add the command line
+                        switch <code>--version</code> in order to allow the user to have multiple
+                        versions of the same workflow integrated simultaneously. Also, the user can
+                        currently not specify an individual icon to be used for the integrated
+                        component. This may also be added in future versions.</para>
                 </listitem>
                 <listitem>
                     <para>If some adapted output is written to multiple times during a single run of
                         the integrated workflow, only the final values written to that output are
-                        forwarded to the calling workflow.</para>
+                        forwarded to the outer workflow.</para>
                 </listitem>
                 <listitem>
                     <para>Due to this new implementation, there is doubled functionality between the
@@ -721,9 +782,11 @@ Output Adapter: x_optimal @ 402cac5e-2206-48cc-a62f-803bd320a15a --[Float]-> x_o
                     <varlistentry>
                         <term>Where is the integration folder of my new component?</term>
                         <listitem>
-                            <para>The integration of a workflow as a component is
-                                stored in a profile in the folder
-                                <phrase os="windows"><code>integration\components\workflows</code></phrase><phrase os="linux"><code>integration/components/workflows</code></phrase>.</para>
+                            <para>The integration of a workflow as a component is stored in a
+                                profile in the folder <phrase os="windows"
+                                        ><code>integration\tools\workflow</code></phrase><phrase
+                                    os="linux"
+                                ><code>integration/tools/workflow</code></phrase>.</para>
                         </listitem>
                     </varlistentry>
                     <varlistentry>
@@ -748,7 +811,7 @@ Output Adapter: x_optimal @ 402cac5e-2206-48cc-a62f-803bd320a15a --[Float]-> x_o
                         </listitem>
                     </varlistentry>
                 </variablelist></para>
-        </sect3>
-    </sect2>
+        </section>
+    </section>
     
-</sect1>
+</section>

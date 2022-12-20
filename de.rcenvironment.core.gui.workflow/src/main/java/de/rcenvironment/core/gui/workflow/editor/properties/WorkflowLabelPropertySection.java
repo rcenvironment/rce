@@ -51,6 +51,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.LabelPosition;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.TextAlignmentType;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.utils.common.OSFamily;
 
@@ -509,8 +510,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         });
         bgAlphaValueText = new Text(bgAlphaComposite, SWT.NONE);
         bgAlphaValueText.setEditable(false);
-        bgAlphaValueText.addVerifyListener(new NumericalTextConstraintListener(bgAlphaValueText,
-            NumericalTextConstraintListener.ONLY_INTEGER));
+        bgAlphaValueText.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER));
         bgAlphaValueText.addModifyListener(new AlphaValueListener());
         GridData alphaData = new GridData();
         alphaData.widthHint = ALPHA_TEXT_WIDTH;

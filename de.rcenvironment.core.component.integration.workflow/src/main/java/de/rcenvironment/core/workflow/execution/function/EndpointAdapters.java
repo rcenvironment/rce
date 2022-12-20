@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,6 +25,12 @@ public final class EndpointAdapters implements Iterable<EndpointAdapter> {
     // We make the Constructor private in order to enforce use of the builder class
     private EndpointAdapters() {}
 
+    /**
+     * Endpoint adapter builder.
+     *
+     * @author Alexander Weinert
+     * @author Jan Flink
+     */
     public static class Builder {
 
         private final EndpointAdapters product = new EndpointAdapters();
@@ -34,11 +41,24 @@ public final class EndpointAdapters implements Iterable<EndpointAdapter> {
         }
 
         public EndpointAdapters build() {
-            final Map<String, List<EndpointAdapter>> externalNameCount = this.product.definitions.stream()
+            final Map<String, List<EndpointAdapter>> externalInputNameCount = this.product.definitions.stream()
+                .filter(EndpointAdapter::isInputAdapter)
+                .collect(Collectors.groupingBy(EndpointAdapter::getExternalName));
+            final Map<String, List<EndpointAdapter>> externalOutputNameCount = this.product.definitions.stream()
+                .filter(EndpointAdapter::isOutputAdapter)
                 .collect(Collectors.groupingBy(EndpointAdapter::getExternalName));
 
             StringBuilder offendingEndpointAdapterDescriptions = new StringBuilder();
-            for (Map.Entry<String, List<EndpointAdapter>> countEntry : externalNameCount.entrySet()) {
+            for (Map.Entry<String, List<EndpointAdapter>> countEntry : externalInputNameCount.entrySet()) {
+                if (countEntry.getValue().size() > 1) {
+                    final String endpointAdapterDescriptions = countEntry.getValue().stream()
+                        .map(EndpointAdapter::toString)
+                        .collect(Collectors.joining(", ", "[", "]"));
+
+                    offendingEndpointAdapterDescriptions.append(endpointAdapterDescriptions);
+                }
+            }
+            for (Map.Entry<String, List<EndpointAdapter>> countEntry : externalOutputNameCount.entrySet()) {
                 if (countEntry.getValue().size() > 1) {
                     final String endpointAdapterDescriptions = countEntry.getValue().stream()
                         .map(EndpointAdapter::toString)

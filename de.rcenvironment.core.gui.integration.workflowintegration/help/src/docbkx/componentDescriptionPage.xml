@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://docbook.org/xml/4.4/docbookx.dtd">
+<chapter>
+    <title>Component Description Page</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>On this page, the user can define characteristics for the integrated workflow
+            component, for example a name and version or some information about the tool
+            integrator.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>Define some characteristics for the integrated workflow. Required fields are<emphasis role="italic"> Name</emphasis> and <emphasis role="italic">Version</emphasis>. All
+            other fields are optional.</para>
+        <para>Workflow component characteristics:</para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>Name*: <emphasis role="bold">Required field</emphasis> that defines the
+                        name of the component after integration. The integrated workflow component
+                        is displayed with this name in the palette view. Note that the name must not
+                        contain special characters. Furthermore the name will not be accepted if
+                        there is another locally integrated tool or workflow component with the same
+                        name.</para>
+                </listitem>
+                <listitem>
+                    <para>Version*: <emphasis role="bold">Required field</emphasis> to define a
+                        version for your integrated workflow component. If components with the same
+                        name were integrated by other users in the network, they can be
+                        distinguished by the version. When executing a workflow the user can select
+                        the desired component version from a dropdown menu.</para>
+                </listitem>
+                <listitem>
+                    <para>Icon Path: Select an icon for the workflow component. At best, it is larger than 32x32 pixels and has the same width and height.
+                        To avoid an absolute path link to the icon, select to copy it into the configuration folder.</para>
+                </listitem>
+                <listitem>
+                    <para>Group Path: Define a path here under which the workflow component is displayed in the palette view. Subgroups can be seperated by "/".</para>
+                </listitem>
+                <listitem>
+                    <para>Documentation Path: Add a documentation file for the workflow component.
+                        Note that the file must be a PDF or a TXT document and it must not be
+                        greater than 50 MB. The documentation will be copied into the configuration
+                        folder during integration. </para>
+                </listitem>
+                <listitem>
+                    <para>Description: Provide a description of the workflow component, that can be seen by other users in the network when using the component in a workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>Limit parallel execution: Here you can limit the number of parallel
+                        executions of the workflow component. If this number is reached any further
+                        calls of the component will wait until a prior call is finished. This can be
+                        useful when you have restricted licenses for running the component or
+                        ressource restriction is desired.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>Contact Information:</para>
+        <itemizedlist>
+            <listitem>
+                <para>Name: Specify a contact name of the tool integrator.</para>
+            </listitem>
+            <listitem>
+                <para>E-mail: Provide contact information if someone has questions or wants to make
+                    suggestions about the integrated workflow component.</para>
+            </listitem>
+
+        </itemizedlist>
+        
+    </sect1>
+</chapter>

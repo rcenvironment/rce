@@ -1,7 +1,7 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="automated_gui_testing">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="automated_gui_testing">
 	<title>Automated GUI Testing</title>
-	<sect2>
+	<section>
 	<title>Getting started</title>
 		<para>This section describes the required steps to run existing or create new automated GUI tests
 			for RCE using the RCP Testing Tools (RCPTT): </para>
@@ -117,5 +117,5 @@
 				upper right corner.</listitem>
 		</itemizedlist>
 		<para> </para>
-	</sect2>
-</sect1>
+	</section>
+</section>

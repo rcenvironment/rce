@@ -1,7 +1,6 @@
 {
   "identifier" : "7e3caab2-03a1-410b-ac34-79248dd42fec",
   "workflowVersion" : "5",
-  "name" : "03_03_Nested_Loop_2020-03-04_10:29:22_01",
   "nodes" : [ {
     "identifier" : "c14ea0c9-3339-4411-b615-4d99780f5584",
     "name" : "Analysis",
@@ -10,7 +9,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {
@@ -109,7 +108,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -204,7 +203,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {
@@ -249,7 +248,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
+      "version" : "3.5",
       "name" : "Script"
     },
     "configuration" : {

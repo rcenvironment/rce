@@ -396,7 +396,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         // TODO @5.0: review: provide options to disable? - misc_ro
         localData.put("debug.sessionStartInfo",
             DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(new Date(sessionStartTimeMsec))); // temporary
-        Version coreVersion = VersionUtils.getVersionOfCoreBundles();
+        Version coreVersion = VersionUtils.getCoreBundleVersion();
         if (coreVersion != null) {
             localData.put("debug.coreVersion", coreVersion.toString());
         } else {

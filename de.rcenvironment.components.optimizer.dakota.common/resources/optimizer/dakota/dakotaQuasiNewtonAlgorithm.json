@@ -3,6 +3,7 @@
     "methodCode":"optpp_q_newton",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"false",
     "specificSettings":{
         "search_method":{
             "GuiName":"Search method",

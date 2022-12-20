@@ -15,6 +15,7 @@
 
 	<modules>
 		<module>../de.rcenvironment.supplemental.testscriptrunner</module>
+		<module>../de.rcenvironment.supplemental.testscriptrunner.tests</module>
 		<module>../de.rcenvironment.supplemental.testscriptrunner.scripts</module>
 		<module>../de.rcenvironment.extensions.testscriptrunner.feature</module>
 		<module>maven/repository</module>

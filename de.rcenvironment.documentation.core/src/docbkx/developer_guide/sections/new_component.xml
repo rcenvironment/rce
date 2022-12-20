@@ -1,8 +1,8 @@
 <?xml version='1.0'?>
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="new_component">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="new_component">
     <title>Developing a new Component</title>
-    <sect2 id="about_components">
+    <section id="about_components">
         <title>Component Bundle Setup</title>
         <para>An RCE component usually consists of up to three OSGi bundles: named the
                 <emphasis>execution</emphasis>, <emphasis>gui</emphasis>, and
@@ -27,8 +27,8 @@
                 Projects</emphasis>, and can be extended with Eclipse-specific features. In
             practice, the terms <emphasis>bundle</emphasis> and <emphasis>plugin</emphasis> are
             often used interchangeably.</para>
-    </sect2>
-    <sect2 id="new_execution_plugin">
+    </section>
+    <section id="new_execution_plugin">
         <title>Creating the <emphasis>execution</emphasis> Bundle</title>
         <para>To start developing your first component, generate a new Eclipse Plug-In Project by
             selecting the corresponding item in the menu bar: </para>
@@ -167,8 +167,8 @@ Export-Package: de.rcenvironment.components.<yourcomponentname>.execution
         <para>When you start RCE from Eclipse and open a workflow file, your component should be
             shown in the component palette on the right, in the group that you have set in the
             "OSGI-INF/..." XML file.</para>
-    </sect2>
-    <sect2 id="new_common_plugin">
+    </section>
+    <section id="new_common_plugin">
         <title>Creating a <emphasis>common</emphasis> Bundle</title>
         <para>Generate a new Eclipse Plug-In Project by selecting the same option as in the
             "execution" bundle section above. The project name should follow the RCE naming
@@ -193,8 +193,8 @@ public static final String COMPONENT_ID =
         <programlisting><![CDATA[    
 Export-Package: de.rcenvironment.components.<yourcomponentname>.common
             ]]></programlisting>
-    </sect2>
-    <sect2 id="new_gui_plugin">
+    </section>
+    <section id="new_gui_plugin">
         <title>Creating a <emphasis>gui</emphasis> Bundle</title>
         <para>To add a graphical user interface for your component, create a "gui" bundle. Start by
             generating a new blank Eclipse Plug-In Project, as you did for the "execution" and
@@ -304,8 +304,8 @@ return componentId.startsWith(YourComponentNameComponentConstants.COMPONENT_ID);
             propertySection above. Customise the section title by editing the <code>label</code>
             attribute. </para>
         <para> TODO: Add explanation how to use Messages file. </para>
-    </sect2>
-    <sect2 id="add_new_component_to_svn">
+    </section>
+    <section id="add_new_component_to_svn">
         <title>Adding your new component to SVN</title>
         <para>
             It is recommended to develop a new component in a separate development branch. 
@@ -317,8 +317,8 @@ return componentId.startsWith(YourComponentNameComponentConstants.COMPONENT_ID);
             Select them and right click to open the context menu. Then select "TortoiseSVN > Add...".
             To commit them into the branch, open the context menu again and select "Commit... ".
         </para>
-    </sect2>
-</sect1>
+    </section>
+</section>
 
 
 

@@ -2,13 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Common
 Bundle-SymbolicName: de.rcenvironment.core.start.common
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Service-Component: OSGI-INF/generated/*.xml
 Import-Package: de.rcenvironment.core.command.api,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration.bootstrap,
+ de.rcenvironment.core.eventlog.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.textstream,
  org.apache.commons.lang3;version="3.1.0",

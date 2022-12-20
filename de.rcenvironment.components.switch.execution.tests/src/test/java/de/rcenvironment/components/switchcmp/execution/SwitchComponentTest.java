@@ -673,7 +673,7 @@ public class SwitchComponentTest {
         final ScriptingService scriptingService = ScriptingServiceStubFactory.createDefaultMock(engine);
         context.addService(ScriptingService.class, scriptingService);
 
-        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID,DataType.Boolean, false, null);
+        context.addSimulatedInput(DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_ID, DataType.Boolean, false, null);
         context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_CONDITION + " 1",
             SwitchComponentConstants.DATA_OUTPUT_ID, DataType.Boolean, false, null);
         context.addSimulatedOutput(DATA_INPUT_NAME + SwitchComponentConstants.OUTPUT_VARIABLE_SUFFIX_NO_MATCH,

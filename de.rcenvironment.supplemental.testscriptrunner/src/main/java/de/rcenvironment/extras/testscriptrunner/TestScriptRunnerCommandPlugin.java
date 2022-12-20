@@ -10,17 +10,27 @@ package de.rcenvironment.extras.testscriptrunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.StringJoiner;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.ListCommandParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.MultiStateParameter;
+import de.rcenvironment.core.command.spi.NamedParameter;
+import de.rcenvironment.core.command.spi.NamedSingleParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedListParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -41,18 +51,38 @@ import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAd
 import de.rcenvironment.extras.testscriptrunner.internal.CucumberTestFrameworkAdapter.ReportOutputFormat;
 
 /**
- * {@link CommandPlugin} for executing BDD test scripts via the "run-test" command.
+ * {@link CommandPlugin} for executing BDD test scripts via the "run-test"
+ * command.
  *
  * @author Robert Mischke
  * @author Marlon Schroeter (minor alterations)
  */
 public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
-    private static final String USAGE_INFO_PARAMETER_PART = "[--format pretty|json] <comma-separated test ids>|--all <build id>";
-
     private static final String SEPARATOR_TEXT_LINE =
-        "-----------------------------------------------------------------------------------------------";
+            "-----------------------------------------------------------------------------------------------";
 
+    private static final String FORMAT = "--format";
+    
+    private static final String PRETTY = "pretty";
+    
+    private static final String JSON = "json";
+    
+    private static final String ALL_TOKEN = ":all";
+    
+    private static final StringParameter BUILD_UNDER_TEST_ID_PARAMETER = new StringParameter(null,
+            "build under test id", "build version to be used");
+    
+    private static final StringParameter TAG_NAME_FILTER_PARAMETER = new StringParameter(null,
+            "tag name filter", "filter for tag names");
+    
+    private static final ListCommandParameter LIST_TAG_NAME_FILTER_PARAMETER = new ListCommandParameter(TAG_NAME_FILTER_PARAMETER,
+            "tag name filters", "filter for tag names");
+    
+    private static final MultiStateParameter FORMAT_PARAMETER = new MultiStateParameter("format", "output format", PRETTY, JSON);
+    
+    private static final NamedSingleParameter NAMED_FORMAT_PARAMETER = new NamedSingleParameter(FORMAT, "output format", FORMAT_PARAMETER);
+    
     private ConfigurationSegment configuration;
 
     private File scriptLocationRoot;
@@ -64,16 +94,10 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
     private final File reportsRootDir;
 
     public TestScriptRunnerCommandPlugin() throws IOException {
-        testFrameworkAdapter = new CucumberTestFrameworkAdapter(
-            AssertOutputStepDefinitions.class,
-            CommonStepDefinitions.class,
-            ComponentStepDefinitions.class,
-            InstanceCommandStepDefinitions.class,
-            InstanceInstantiationStepDefinitions.class,
-            InstanceNetworkingStepDefinitions.class,
-            InstanceStateStepDefinitions.class,
-            RceTestLifeCycleHooks.class,
-            WorkflowStepDefinitions.class);
+        testFrameworkAdapter = new CucumberTestFrameworkAdapter(AssertOutputStepDefinitions.class,
+                CommonStepDefinitions.class, ComponentStepDefinitions.class, InstanceCommandStepDefinitions.class,
+                InstanceInstantiationStepDefinitions.class, InstanceNetworkingStepDefinitions.class,
+                InstanceStateStepDefinitions.class, RceTestLifeCycleHooks.class, WorkflowStepDefinitions.class);
         if (RuntimeDetection.isImplicitServiceActivationDenied()) {
             // avoid breaking when activated in a default test environment
             TempFileServiceAccess.setupUnitTestEnvironment();
@@ -83,8 +107,10 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
 
     protected void bindConfigurationService(ConfigurationService configurationService) {
         if (RuntimeDetection.isImplicitServiceActivationDenied()) {
-            // skip implicit bind actions if is was spawned as part of a default test environment;
-            // if this causes errors in mocked service tests, invoke RuntimeDetection.allowSimulatedServiceActivation()
+            // skip implicit bind actions if is was spawned as part of a default test
+            // environment;
+            // if this causes errors in mocked service tests, invoke
+            // RuntimeDetection.allowSimulatedServiceActivation()
             return;
         }
 
@@ -98,8 +124,7 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
                 scriptLocationRoot = configurationService.getUnpackedFilesLocation("testScripts");
             } catch (ConfigurationException e) {
                 log.error("Failed to locate the default script file location, "
-                    + "and no explicit path setting found - disabling TestScriptRunner",
-                    e);
+                        + "and no explicit path setting found - disabling TestScriptRunner", e);
                 scriptLocationRoot = null;
                 return;
             }
@@ -107,40 +132,17 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
         log.debug("Using test script folder " + scriptLocationRoot);
     }
 
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        if (scriptLocationRoot == null) {
-            throw CommandException.executionError("The run-test feature is disabled because it was not correctly configured", context);
-        }
-        String mainCommand = context.consumeNextToken();
-        if (!"run-test".equals(mainCommand) && !"run-tests".equals(mainCommand)) {
-            throw CommandException.unknownCommand(context);
-        }
-        try {
-            performRunTests(context);
-        } catch (IOException e) {
-            throw CommandException.executionError(e.getMessage(), context);
-        }
-    }
-
     private void performRunTests(CommandContext context) throws IOException, CommandException {
-
-        if (context.getOriginalTokens().size() != 3 && context.getOriginalTokens().size() != 5) {
-            throw CommandException.syntaxError(
-                "Wrong number of parameters\n"
-                    + "  Usage: run-test[s] " + USAGE_INFO_PARAMETER_PART + "\n"
-                    + "  Example: run-test Test03 snapshots/trunk" + "\n"
-                    + "  Example: run-test --format json Test03 snapshots/trunk",
-                context);
-        }
-
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter buildUnderTestIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        String buildUnderTestId = buildUnderTestIdParameter.getResult();
+        
         final CucumberTestFrameworkAdapter.ReportOutputFormat reportFormat = extractReportFormat(context);
-        final String tagNameFilter = extractTagNameFilter(context);
-
-        String buildUnderTestId = context.consumeNextToken();
+        final String tagNameFilter = extractTagNameFilter(modifiers);
 
         final ExecutionResult result = testFrameworkAdapter.executeTestScripts(scriptLocationRoot, tagNameFilter,
-            context.getOutputReceiver(), buildUnderTestId, reportsRootDir, reportFormat);
+                context.getOutputReceiver(), buildUnderTestId, reportsRootDir, reportFormat);
 
         List<String> reportLines = result.getReportFileLines();
         if (reportLines != null) {
@@ -169,45 +171,89 @@ public class TestScriptRunnerCommandPlugin implements CommandPlugin {
         }
     }
 
-    private String extractTagNameFilter(CommandContext context) {
-        String tagNameFilter = context.consumeNextToken();
-        if ("--all".equals(tagNameFilter)) {
-            tagNameFilter = null; // execute all
+    private String extractTagNameFilter(ParsedCommandModifiers modifiers) {
+        ParsedListParameter tagNameFilterParameter = (ParsedListParameter) modifiers.getPositionalCommandParameter(0);
+
+        StringJoiner joiner = new StringJoiner(",");
+        
+        for (int i = 0; i < tagNameFilterParameter.getResult().size(); i++) {
+            ParsedStringParameter parameter = (ParsedStringParameter) tagNameFilterParameter.getResult().get(i);
+            
+            if (parameter.getResult().equals(ALL_TOKEN)) {
+                return null;
+            }
+            
+            joiner.add(parameter.getResult());
         }
-        return tagNameFilter;
+        
+        return joiner.toString();
     }
 
-    private CucumberTestFrameworkAdapter.ReportOutputFormat extractReportFormat(CommandContext context) throws CommandException {
-        if (!context.consumeNextTokenIfEquals("--format")) {
-            return ReportOutputFormat.PRETTY;
-        }
+    private CucumberTestFrameworkAdapter.ReportOutputFormat extractReportFormat(CommandContext context)
+            throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
 
-        final String formatSpecifier = context.consumeNextToken();
+        ParsedStringParameter formatParameter = (ParsedStringParameter) modifiers.getCommandParameter(FORMAT);
+
         /*
-         * Here we manually match user input to supported output formats. Judging by lines of code, it would be easier to do something like
-         * `ReportOutputFormat.values().filter(val -> val.getFormatSpecifier().equals(formatSpecifier)).findAny()`. This, however, would tie
-         * our user interface on the RCE side directly to the plugin specification on the Cucumber side. Currently, the two are aligned,
-         * e.g., RCE users specify "pretty" if they want to use the Cucumber-output-plugin "pretty". In the future, however, the two may
-         * diverge.
+         * Here we manually match user input to supported output formats. Judging by
+         * lines of code, it would be easier to do something like
+         * `ReportOutputFormat.values().filter(val ->
+         * val.getFormatSpecifier().equals(formatSpecifier)).findAny()`. This, however,
+         * would tie our user interface on the RCE side directly to the plugin
+         * specification on the Cucumber side. Currently, the two are aligned, e.g., RCE
+         * users specify "pretty" if they want to use the Cucumber-output-plugin
+         * "pretty". In the future, however, the two may diverge.
          */
-        switch (formatSpecifier) {
-        case "pretty":
+        switch (formatParameter.getResult()) {
+        case PRETTY:
             return ReportOutputFormat.PRETTY;
-        case "json":
+        case JSON:
             return ReportOutputFormat.JSON;
         default:
             throw CommandException.syntaxError(
-                StringUtils.format("Unknown report format specifier '%s'. Supported report formats: pretty, json", formatSpecifier),
-                context);
+                    StringUtils.format("Unknown report format specifier '%s'. Supported report formats: pretty, json",
+                            formatParameter.getResult()),
+                    context);
         }
     }
 
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        ArrayList<CommandDescription> result = new ArrayList<CommandDescription>();
-        result.add(new CommandDescription("run-test", USAGE_INFO_PARAMETER_PART, true, null));
-        result.add(new CommandDescription("run-tests", "", true, "(alias of \"run-test\")"));
-        return result;
+    public MainCommandDescription[] getCommands() {
+        return new MainCommandDescription[] {
+            new MainCommandDescription("run-test", "run a test", "run a test", context -> {
+                try {
+                    performRunTests(context);
+                } catch (IOException e) {
+                    throw CommandException.executionError(e.getMessage(), context);
+                }
+            }, new CommandModifierInfo(
+                new AbstractCommandParameter[] {
+                    LIST_TAG_NAME_FILTER_PARAMETER,
+                    BUILD_UNDER_TEST_ID_PARAMETER
+                },
+                new NamedParameter[] {
+                    NAMED_FORMAT_PARAMETER
+                }
+            ), true),
+            new MainCommandDescription("run-tests", "(alias of \"run-test\")", "(alias of \"run-test\")",
+                context -> {
+                    try {
+                        performRunTests(context);
+                    } catch (IOException e) {
+                        throw CommandException.executionError(e.getMessage(), context);
+                    }
+                },
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        LIST_TAG_NAME_FILTER_PARAMETER,
+                        BUILD_UNDER_TEST_ID_PARAMETER
+                    },
+                    new NamedParameter[] {
+                        NAMED_FORMAT_PARAMETER
+                    }
+                ), true)
+        };
     }
 
 }

@@ -59,6 +59,7 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardColors;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
+import de.rcenvironment.core.gui.utils.incubator.TableColumnMinimalWidthControlListener;
 import de.rcenvironment.core.log.SerializableLogEntry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -70,6 +71,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Doreen Seider
  * @author Robert Mischke
  * @author Oliver Seebach
+ * @author Kathrin Schaffert (added TableColumnMinimalWidthControlListener)
  */
 public class LogView extends ViewPart {
 
@@ -520,6 +522,7 @@ public class LogView extends ViewPart {
             column.setWidth(bounds[i]);
             column.setResizable(true);
             column.setMoveable(true);
+            column.addControlListener(new TableColumnMinimalWidthControlListener());
 
             column.addSelectionListener(new SelectionAdapter() {
 

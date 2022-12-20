@@ -71,7 +71,7 @@ public class CommunicationConfigurationTest {
 
         String connection1 = testInstance.getRemoteContactPoints().get(0);
         assertEquals("activemq-tcp:127.0.0.2:20002"
-            + "(autoRetryInitialDelay=4,autoRetryMaximumDelay=600,autoRetryDelayMultiplier=2.5,connectOnStartup=true)", connection1);
+            + "(autoRetryInitialDelay=4,autoRetryMaximumDelay=600,autoRetryDelayMultiplier=2.5,connectOnStartup=true,autoRetry=true)", connection1);
 
         String serverPort1 = testInstance.getProvidedContactPoints().get(0);
         assertEquals("activemq-tcp:1.2.3.4:20009", serverPort1);

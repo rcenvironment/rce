@@ -1,12 +1,12 @@
 <?xml version='1.0'?>
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="new_bundle">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="new_bundle">
     <title>Adding a new Bundle with Production Code</title>
     <para>Here, we describe how to add a new bundle to RCE. This bundle will only contain production
         code, but no test code. In RCE, unit tests reside in "companion bundles" to those deployed
         in production. The process for how to add a "testing bundle" to RCE is undocumented as of
         yet.</para>
-    <sect2>
+    <section>
         <title>RCE Structure</title>
         <para>RCE is built on top of the Eclipse RCP framework. Speaking in terms of RCP, RCE is a
                 <emphasis>product</emphasis>, which consists of a number of
@@ -43,8 +43,8 @@
                 </listitem>
             </orderedlist>We adress each of these points individually in the following
             sections</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Create a new Eclipse Project</title>
         <para>There are two major ways to create a new Eclipse Project containing code for
             productive use: Either by copying an existing bundle and subsequently importing that
@@ -100,8 +100,8 @@ Automatic-Module-Name: de.rcenvironment.core.newbundle</programlisting></para>
                 Import -> General -> Existing Projects into Workspace</code>. Since you have copied
             an existing Eclipse project, Eclipse should recognize the new project and import
             it.</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Add the new Bundle to Maven</title>
         <para>Recall that RCE can be built either via Eclipse (during development) or via Maven.
             Since you have already imported your new project into Eclipse in the previous step, it
@@ -146,8 +146,8 @@ Automatic-Module-Name: de.rcenvironment.core.newbundle</programlisting></para>
             terms of Eclipse RCP, RCE is a product, which consists of features, which in turn
             consist of plug-ins. At this point, your new plug-in is not yet part of a feature, thus
             it does not get deployed into the product.</para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Add the new Plug-in to the RCE product</title>
         <para>Pick some existing feature to which you want to add your new plug-in. Features are
             contained in top-level directories ending in <code>.feature</code>. In this example, we
@@ -163,8 +163,8 @@ Automatic-Module-Name: de.rcenvironment.core.newbundle</programlisting></para>
                 <code>&lt;feature></code> in the file <code>feature.xml</code>.</para>
         <para>Independently of the used method, your plug-in is now part of the feature you have
             chosen and will be included in the RCE product.</para>
-    </sect2>
-</sect1>
+    </section>
+</section>
 
 
 

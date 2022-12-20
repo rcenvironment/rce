@@ -20,6 +20,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentImageManagerService;
@@ -41,7 +42,7 @@ public final class ComponentImageManagerImpl implements ComponentImageManagerSer
     // This is the md5 hash of three null images. All component interfaces without image data have this hash.
     private static final String NULL_HASH = "d41d8cd98f00b204e9800998ecf8427e";
 
-    private static final String INTEGRATION = ToolIntegrationConstants.STANDARD_COMPONENT_ID_PREFIX.replace(".common.", "");
+    private static final String INTEGRATION = ComponentConstants.COMMON_INTEGRATED_COMPONENT_ID_PREFIX.replace(".common.", "");
 
     /**
      * Constants for different component icons.
@@ -286,7 +287,7 @@ public final class ComponentImageManagerImpl implements ComponentImageManagerSer
     private void createDefaultImagePackages() {
         rceDefaultImagePackage = new DefaultImagePackage("", getDefaultIcon(null, IconSize.ICON16), getDefaultIcon(null, IconSize.ICON24),
             getDefaultIcon(null, IconSize.ICON32));
-        String integration = ToolIntegrationConstants.STANDARD_COMPONENT_ID_PREFIX;
+        String integration = ComponentConstants.COMMON_INTEGRATED_COMPONENT_ID_PREFIX;
         integratedDefaultImagePackage = new DefaultImagePackage("", getDefaultIcon(integration, IconSize.ICON16),
             getDefaultIcon(integration, IconSize.ICON24), getDefaultIcon(integration, IconSize.ICON32));
     }

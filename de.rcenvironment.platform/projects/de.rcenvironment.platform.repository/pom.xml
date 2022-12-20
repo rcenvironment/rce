@@ -4,15 +4,15 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.platform.repository</artifactId>
-	<name>RCE Platform - p2 Repository</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<name>RCE Third-Party Artifacts - p2 Repository</name>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-repository</packaging>
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.platform.parent.p2</artifactId>
-		<version>1.0.0</version>
-		<relativePath>../../maven/parent/p2DependenciesBundle</relativePath>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.p2DependenciesBundle</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../de.rcenvironment.build.thirdparty/maven/parent/p2DependenciesBundle</relativePath>
 	</parent>
 
 	<properties>
@@ -34,24 +34,36 @@
 				<artifactId>maven-antrun-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>verify-absence-of-legacy-commons-logging</id>
 						<phase>package</phase>
 						<configuration>
-							<tasks>
-								<!-- This is a post-build fix for an obsolete commons-logging bundle 
-									JAR which is included in the standard repository scope as a transitive dependency 
+							<target>
+								<!-- Validates that a certain legacy JAR is not present in the target platform build.
+									This JAR is included in standard RCP repository scopes as a transitive dependency 
 									of one or more Eclipse RCP feature(s). Besides potentially containing security 
 									issues, this bundle is particularly problematic because other bundles may 
 									be wired to it as their log output receiver, leading to log messages being 
-									lost outside our logging setup. (MANTIS ID 0017862) As there seems to be 
-									no easy way to filter this out within the Tycho build setup, deleting the 
-									JAR is a pragmatic way of removing the plugin from the output repository. 
-									Even as the repository metadata still references this jar, no problems have 
-									been observed using this modified repository so far. (misc_ro, Feb 2022) -->
-								<delete
-									file="${project.build.directory}/repository/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar" />
-								<echo
-									message="Deleted org.apache.commons.logging_1.1.1.v201101211721.jar from repository/plugins/ (see MANTIS ID 0017862)" />
-							</tasks>
+									lost outside our logging setup (MANTIS ID 0017862). The solution for this is the
+									"org.apache.commons.logging.placeholder" bundle (provided by this source repository),
+									which should be present in the repository build instead. (misc_ro, May 2022) -->
+								<available file="${project.build.directory}/repository/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar"
+									property="isLegacyCommonsLoggingJarPresent" />
+								<fail if="isLegacyCommonsLoggingJarPresent" 
+									message="org.apache.commons.logging_1.1.1.v201101211721.jar should not be present in the repository build" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>generate-version-file</id>
+						<phase>package</phase>
+						<configuration>
+							<target>
+								<!-- Generate a VERSION file inside the repository directory -->
+								<echo file="${project.build.directory}/repository/VERSION" message="${qualifiedVersion}"/>
+							</target>
 						</configuration>
 						<goals>
 							<goal>run</goal>
@@ -63,12 +75,17 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>license-maven-plugin</artifactId>
-				<version>1.0</version>
+				<!-- TODO 10.5.0+: consider upgrading to 2.x -->
+				<version>1.20</version>
 				<executions>
 					<execution>
 						<goals>
 							<goal>add-third-party</goal>
 						</goals>
+						<configuration>
+							<sortArtifactByName>true</sortArtifactByName>
+							<excludedGroups>de.rcenvironment</excludedGroups>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

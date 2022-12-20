@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.integration;
 import java.util.Collection;
 
 /**
- * Registry for all {@link ToolIntegrationContext}s. After the registration, the tools that are stored in the given place are read and
+ * Registry for all {@link IntegrationContext}s. After the registration, the tools that are stored in the given place are read and
  * registered as workflow components.
  * 
  * @author Sascha Zur
@@ -21,15 +21,15 @@ public interface ToolIntegrationContextRegistry {
 
     /**
      * @param contextId the context id to look for; case sensitive
-     * @return the {@link ToolIntegrationContext} for the given id; null if not available.
+     * @return the {@link IntegrationContext} for the given id; null if not available.
      */
-    ToolIntegrationContext getToolIntegrationContextById(String contextId);
+    IntegrationContext getToolIntegrationContextById(String contextId);
 
     /**
      * @param type the type (e.g. "common") to look for; not case sensitive
-     * @return the {@link ToolIntegrationContext} for the given type; null if not available.
+     * @return the {@link IntegrationContext} for the given type; null if not available.
      */
-    ToolIntegrationContext getToolIntegrationContextByType(String type);
+    IntegrationContext getToolIntegrationContextByType(String type);
 
     /**
      * Checks whether there is a context matching the prefix of the given tool id. (Note: apparently, this method has undergone semantic
@@ -43,12 +43,12 @@ public interface ToolIntegrationContextRegistry {
     /**
      * @return all registered contexts.
      */
-    Collection<ToolIntegrationContext> getAllIntegrationContexts();
+    Collection<IntegrationContext> getAllIntegrationContexts();
 
     /**
-     * @return the next unitialized {@link ToolIntegrationContext}, or null if no further context is queued; the element is removed from the
+     * @return the next unitialized {@link IntegrationContext}, or null if no further context is queued; the element is removed from the
      *         internal global queue
      */
-    ToolIntegrationContext fetchNextUninitializedToolIntegrationContext();
+    IntegrationContext fetchNextUninitializedToolIntegrationContext();
 
 }

@@ -18,7 +18,7 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannel;
  * Represents a connection setup, ie a configured network destination that a logical message channel can be established to.
  * 
  * @author Robert Mischke
- * @author Kathrin Schaffert (#16977)
+ * @author Kathrin Schaffert (#16977, #17714)
  */
 public interface ConnectionSetup {
 
@@ -111,18 +111,23 @@ public interface ConnectionSetup {
     String getContactPointHost();
 
     /**
+     * @return true if this connection should automatically retry to connect after error
+     */
+    boolean getAutoRetry();
+
+    /**
      * @return the initial delay for the connection to retry automatically
      */
-    int getAutoRetryInitialDelayMsec();
+    long getAutoRetryInitialDelayMsec();
 
     /**
      * @return the maximum delay for the connection to retry automatically
      */
-    int getAutoRetryMaximumDelayMsec();
+    long getAutoRetryMaximumDelayMsec();
 
     /**
      * @return the delay multiplier for the automatic connection retry
      */
-    float getAutoRetryDelayMultiplier();
+    double getAutoRetryDelayMultiplier();
 
 }

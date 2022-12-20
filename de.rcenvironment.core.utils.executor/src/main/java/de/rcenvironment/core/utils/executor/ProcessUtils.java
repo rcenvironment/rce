@@ -11,15 +11,18 @@ package de.rcenvironment.core.utils.executor;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.logging.LogFactory;
 
-import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
+import com.sun.jna.win32.StdCallLibrary;
 
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -67,6 +70,8 @@ final class ProcessUtils {
 
     private static final String LINUX_KILL_COMMAND_TEMPLATE = "for pid in $(ps -s %d -o pid=); do kill -9 ${pid}; done";
 
+    private static final String INACCESSIBLE_OBJECT_EXCEPTION = "InaccessibleObjectException";
+
     /**
      * Lists the PIDs of all processes with the SID %d.
      */
@@ -83,9 +88,9 @@ final class ProcessUtils {
     /**
      * This interface is needed for JNA to get access to the native windows api.
      */
-    interface Kernel32 extends Library {
+    interface Kernel32 extends StdCallLibrary {
 
-        Kernel32 INSTANCE = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
+        Kernel32 INSTANCE = Native.load("kernel32", Kernel32.class);
 
         /**
          * Retrieves the process identifier of the specified process.
@@ -102,8 +107,8 @@ final class ProcessUtils {
 
         if (Platform.isWindows()) {
             commandTokens = Arrays.copyOf(ProcessUtils.WINDOWS_SHELL_TOKENS, ProcessUtils.WINDOWS_SHELL_TOKENS.length);
-            //Surround the complete command with quotation marks. This was added to fix the bug in Mantis issue 16497, where 
-            //the CommandLineExecutor seems to remove quotes at the beginning and the end of a command (bode_br)
+            // Surround the complete command with quotation marks. This was added to fix the bug in Mantis issue 16497, where
+            // the CommandLineExecutor seems to remove quotes at the beginning and the end of a command (bode_br)
             commandTokens[ProcessUtils.WINDOWS_SHELL_TOKENS.length - 1] = "\"" + command + "\"";
         } else if (Platform.isLinux()) {
             commandTokens = Arrays.copyOf(ProcessUtils.LINUX_SHELL_TOKENS, ProcessUtils.LINUX_SHELL_TOKENS.length);
@@ -123,34 +128,51 @@ final class ProcessUtils {
     /**
      * Extracts the system dependent process id from {@link Process}. This method is implemented using Reflection API and JNA and is
      * therefore naturally platform dependent. It is possible to extract the PID from already finished processes for both Windows as well as
-     * Linux.
+     * Linux. TODO The use of reflection will be unnecessary in Java >=9 and should be refactored to access the pid directly via the
+     * processes' method.
      */
     static int getPid(Process pProcess)
         throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
 
-        int pid;
+        try {
+            if (Platform.isWindows()) {
+                // extract the handle from the process object using the reflection API
+                Field f = pProcess.getClass().getDeclaredField("handle");
+                f.setAccessible(true);
+                long processHandle = f.getLong(pProcess);
 
-        if (Platform.isWindows()) {
-            // extract the handle from the process object using the reflection API
-            Field f = pProcess.getClass().getDeclaredField("handle");
-            f.setAccessible(true);
-            long processHandle = f.getLong(pProcess);
+                // get the process id from the process handle using JNA
+                return Kernel32.INSTANCE.GetProcessId(processHandle);
 
-            // get the process id from the process handle using JNA
-            pid = Kernel32.INSTANCE.GetProcessId(processHandle);
+            } else if (Platform.isLinux()) {
 
-        } else if (Platform.isLinux()) {
+                // extract the process id from the process object using the reflection API
+                Field f = pProcess.getClass().getDeclaredField("pid");
+                f.setAccessible(true);
+                return f.getInt(pProcess);
 
-            // extract the process id from the process object using the reflection API
-            Field f = pProcess.getClass().getDeclaredField("pid");
-            f.setAccessible(true);
-            pid = f.getInt(pProcess);
-
-        } else {
-            throw new IllegalStateException(UNKOWN_PLATFORM_ERROR);
+            } else {
+                throw new IllegalStateException(UNKOWN_PLATFORM_ERROR);
+            }
+        } catch (RuntimeException e) {
+            if (e.getClass().getSimpleName().contains(INACCESSIBLE_OBJECT_EXCEPTION)) {
+                LogFactory.getLog(ProcessUtils.class.getCanonicalName())
+                    .debug(
+                        "Using fallback method to retrieve process id due to limited reflection access in Java versions >=16."
+                            + " Original exception:",
+                        e);
+                String processString = pProcess.toString();
+                Pattern pattern = Pattern.compile("pid=(\\d+),");
+                Matcher matcher = pattern.matcher(processString);
+                if (matcher.find()) {
+                    return Integer.parseInt(matcher.group(1));
+                } else {
+                    throw e;
+                }
+            } else {
+                throw e;
+            }
         }
-
-        return pid;
     }
 
     /**
@@ -174,7 +196,7 @@ final class ProcessUtils {
         if (Platform.isWindows()) {
 
             int[] validExitValues =
-            { WINDOWS_EXIT_CODE_SUCCESS, WINDOWS_EXIT_CODE_WAIT_NO_CHILDREN, WINDOWS_EXIT_CODE_EA_LIST_INCONSISTENT };
+                { WINDOWS_EXIT_CODE_SUCCESS, WINDOWS_EXIT_CODE_WAIT_NO_CHILDREN, WINDOWS_EXIT_CODE_EA_LIST_INCONSISTENT };
             executor.setExitValues(validExitValues);
             executor.setStreamHandler(new PumpStreamHandler(null));
 

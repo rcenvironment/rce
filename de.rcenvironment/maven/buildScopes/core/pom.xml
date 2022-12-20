@@ -14,8 +14,12 @@
 	</parent>
 
 	<modules>
-		<module>${modules-root}/core.combined</module>
-		<module>${modules-root}/cpacs.nonComponent</module>
+		<module>${project-sets}/core</module>
+		<!-- As long as these extensions are built as part of the main repository, 
+		we consider them a part of the core code base. This is also meant to include
+		them in core test and QA operations. - misc_ro, Sep 2022 -->
+		<module>${project-sets}/extensions.cpacs</module>
+		<module>${project-sets}/extensions.testscriptrunner</module>
 	</modules>
 
 </project>

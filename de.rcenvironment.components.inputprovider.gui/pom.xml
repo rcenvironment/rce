@@ -4,14 +4,14 @@
 
 	<artifactId>de.rcenvironment.components.inputprovider.gui</artifactId>
 	<name>RCE Input Provider Component GUI Bundle</name>
-	<version>10.3.1-SNAPSHOT</version>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.componentgroups.standard.parent</artifactId>
+		<artifactId>de.rcenvironment.components.parent</artifactId>
 		<version>1.0.0</version>
-		<relativePath>../de.rcenvironment.componentgroups.standard/parent.pom</relativePath>
+		<relativePath>../de.rcenvironment.components.parent</relativePath>
 	</parent>
 
 </project>

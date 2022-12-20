@@ -64,6 +64,10 @@ import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptio
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamanagement.MetaDataService;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogConstants;
+import de.rcenvironment.core.eventlog.api.EventLogEntry;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -243,8 +247,30 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
         Map<String, String> authTokens = acquireExecutionAuthorizationTokensForComponents(wfExeCtx.getWorkflowDescription());
 
-        return getExecutionControllerService(wfExeCtx.getNodeId()).createExecutionController(wfExeCtx, authTokens,
-            !platformService.matchesLocalInstance(wfExeCtx.getNodeId()));
+        boolean controllerLocationIsLocalNode = platformService.matchesLocalInstance(wfExeCtx.getNodeId());
+
+        // TODO workflow file; workflow metadata? workflow title?
+        EventLogEntry eventLogEntry = EventLog.newEntry(EventType.WORKFLOW_REQUEST_INITIATED)
+            .set(EventType.Attributes.WORKFLOW_RUN_ID, wfExeCtx.getExecutionIdentifier())
+            .set(EventType.Attributes.WORKFLOW_CONTROLLER_NODE, wfExeCtx.getNodeId().getLogicalNodeIdString())
+            .set(EventType.Attributes.WORKFLOW_CONTROLLER_IS_LOCAL_NODE,
+                EventLogConstants.trueFalseValueFromBoolean(controllerLocationIsLocalNode));
+
+        final WorkflowExecutionInformation result;
+        try {
+            result = getExecutionControllerService(wfExeCtx.getNodeId()).createExecutionController(wfExeCtx, authTokens,
+                !controllerLocationIsLocalNode);
+            // at this point, the workflow was at least successfully initiated; it may still fail on starting, though
+            eventLogEntry.set(EventType.Attributes.SUCCESS, EventLogConstants.TRUE_VALUE);
+            EventLog.append(eventLogEntry);
+        } catch (WorkflowExecutionException | RemoteOperationException e) {
+            eventLogEntry.set(EventType.Attributes.SUCCESS, EventLogConstants.FALSE_VALUE);
+            EventLog.append(eventLogEntry);
+            throw e; // re-throw
+        }
+
+        return result;
+
     }
 
     private void performStartOnExecutionController(WorkflowExecutionHandle handle) throws ExecutionControllerException,

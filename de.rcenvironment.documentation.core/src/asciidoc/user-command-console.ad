@@ -1,0 +1,112 @@
+# RCE's Command Console
+
+RCE features a command console. + 
+This command console is accessible via the command console view  in RCE's desktop mode or via SSH.
+Commands consist of one or two tokens e.g. "wf" for one token and "wf run" for two tokens.
+A list of all commands is shown in section <<commands>>.
+In addition, some commands can be provided with parameters.
+There are three types of parameters. These types and their uses are explained in section <<parameters>>.
+
+## Commands [[commands]]
+
+Commands are structured in groups.
+A command group is defined by the first token of a command.
+This means, that commands like "wf run" and "wf verify" are in the same command group.
+Some command groups like "mail" consist only of a single command.
+For each group there is a table explaining all the related commands.
+
+
+include::generated/user-commands.ad[]
+
+## Parameters [[parameters]]
+
+RCE commands can use three different types of parameters.
+These are <<positional, positional>> parameters, <<named, named>> parameters and <<flag, flags>>.
+Positional and named parameters take at least one value.
+However, some of them also take a list parameters.
+List parameters are denoted by three dots after their name in the tables above, while parameters that take only a single value do not have it, e.g. *<parameter...>*.
+Multiple values for list parameters are entered using comma separation, e.g. *value0, value1, value2*.
+
+*_Positional Parameters [[positional]]_*
+
+Positional parameters must be entered immediately after a command.
+The order of the parameters must be followed for the command to process the parameters correctly.
+After all positional parameters have been entered, other types of parameters can be entered.
+
+*_Named Parameters [[named]]_*
+
+Named parameters are optional parameters.
+The command input of these parameters always start with a double dash, e.g. *--name*.
+The value must be specified after the parameter name.
+
+*_Command Flags [[flag]]_*
+
+
+Command flags are used to modify the operation of a command.
+They are always optional.
+Flags start with a dash or a double dash.
+A single dash is used for flags consisting of only a single character, e.g. *-a*.
+Double dash is used for flags composed of more than one letter, e.g. *--all*.
+This long form is more descriptive and is therefore easier to understand.
+Command flags can have both long and short form, e.g. *-a* and *--all*, which do not differ in execution.
+
+### Configuration Placeholder Value Files
+Some workflow components use placeholders for configuration values. The values for the placeholders
+are defined at workflow start. When executing workflows from the command line (e.g. in headless or
+batch mode), the placeholder's values must be defined in a file, which will be passed to the command
+with the -p option. Placeholder value files have following format:
+[source,json]
+----
+{
+	<component id>/<component version> : {
+		<configuration placeholder id> : <configuration value>
+	},
+	<component id>/<component version>/<component instance name> : {
+		<configuration placeholder id> : <configuration value>Usage
+	}
+}
+----
+[NOTE]
+====
+Every id and every value must be in enclosed in double quotes ("...").
+====
+
+The component id is the id string of a component (e.g. de.rcenvironment.script), the component
+version is the version of the component that is used in the workflow (e.g. 3.4).
+There are two ways of defining values for configuration placeholders: per component type and
+per component instance. When defined per component type, the id and version must be specified
+(e.g. "de.rcenvironment.script/3.4"). When defined per component instance the component id,
+component version, and the name of the component in the workflow must be specified (e.g.
+"de.rcenvironment.inputprovider/MyFile"). In both cases, the configuration placeholder
+id, which is the name of the configuration placeholder, and the actual configuration value
+must be specified.
+Component instance values override component type values.
+[NOTE]
+====
+It is possible to mix component type and component instance values.
+====
+
+Below is an example placeholder value file, which defines one placeholder value (component type)
+for the input provider component and a placeholder value (component instance) for a specified input
+provider component of the workflow:
+[source,json]
+----
+{
+	"de.rcenvironment.inputprovider/3.2": {
+		"inputFile": "C:/input/globalInputFile.txt"
+	},
+	"de.rcenvironment.inputprovider/3.2/Provider 1" : {
+		"inputFile": "C:/input/Provider1.txt"
+	}
+}
+----
+The following table lists components and their configuration placeholders.
+[options = "header"]
+|===
+|Component |Component ID and Version |Configuration Placeholders
+|Cluster |de.rcenvironment.cluster/3.1 |authuser - user name +
+authphrase - password (base64 encoded)
+|Input Provider |de.rcenvironment.inputprovider/3.2 |<output name> - value of output
+|Output Writer |de.rcenvironment.outputwriter/2.1 |targetRootFolder - path to target root folder
+|Script |de.rcenvironment.script/3.5 |pythonExecutionPath - path to the Python executable (only required if Python is set as script language)
+|===

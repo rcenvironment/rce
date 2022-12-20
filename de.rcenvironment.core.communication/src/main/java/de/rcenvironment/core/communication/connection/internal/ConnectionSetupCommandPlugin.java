@@ -8,14 +8,20 @@
 
 package de.rcenvironment.core.communication.connection.internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.IntegerParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
@@ -30,48 +36,53 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class ConnectionSetupCommandPlugin implements CommandPlugin {
 
     private static final String CMD_CN = "cn";
+    
+    private static final String ID_DESC = "id";
 
+    private static final StringParameter TARGET_PARAMETER = new StringParameter(null, "target", "target of the connection");
+    
+    private static final StringParameter DESCRIPTION_PARAMETER = new StringParameter(null, "description",
+            "description of the connection");
+    
+    private static final IntegerParameter ID_PARAMETER = new IntegerParameter(null, ID_DESC, "id of the connection");
+    
     private ConnectionSetupService connectionSetupService;
 
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(CMD_CN, "", false, "short form of \"cn list\""));
-        contributions.add(new CommandDescription("cn add", "<target> [\"<description>\"]", false, "add a new network connection",
-            "(Example: cn add activemq-tcp:rceserver.example.com:20001 \"Our RCE Server\")"));
-        contributions.add(new CommandDescription("cn list", "", false,
-            "lists all network connections, including ids and connection states"));
-        contributions.add(new CommandDescription("cn start", "<id>", false,
-            "starts/connects a READY or DISCONNECTED connection (use \"cn list\" to get the id)"));
-        contributions.add(new CommandDescription("cn stop", "<id>", false,
-            "stops/disconnects an ESTABLISHED connection (use \"cn list\" to get the id)"));
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(CMD_CN, "manage network connections",
+            "alias for \"cn list\"", this::performList,
+            new SubCommandDescription("add", "add a new network connection (Example: cn add "
+                +  "activemq-tcp:rceserver.example.com:20001 \"Our RCE Server\")", this::performAdd,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        TARGET_PARAMETER,
+                        DESCRIPTION_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("list", "lists all network connections, including ids and connection states",
+                this::performList),
+            new SubCommandDescription("start", "starts/connects a READY or DISCONNECTED connection (use \"cn list\" to get the id)",
+                this::performStart,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("stop", "stops/disconnects an ESTABLISHED connection (use \"cn list\" to get the id)",
+                this::performStop,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            )
+        );
+        return new MainCommandDescription[] { commands };
     }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(CMD_CN);
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null) {
-            // "cn" -> "cn list" by default
-            performList(context);
-        } else {
-            List<String> parameters = context.consumeRemainingTokens();
-            if ("add".equals(subCmd)) {
-                // "rce net add <...>"
-                performAdd(context, parameters);
-            } else if ("list".equals(subCmd)) {
-                performList(context);
-            } else if ("start".equals(subCmd)) {
-                performStart(context, parameters);
-            } else if ("stop".equals(subCmd)) {
-                performStop(context, parameters);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        }
-    }
-
+    
     /**
      * OSGi-DS bind method.
      * 
@@ -96,11 +107,12 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
         }
     }
 
-    private void performAdd(CommandContext context, List<String> parameters) throws CommandException {
-        if (parameters.size() < 1 || parameters.size() > 2) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        String contactPointStr = parameters.get(0);
+    private void performAdd(CommandContext context) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter descParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        String contactPointStr = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+        
         NetworkContactPoint ncp;
         try {
             ncp = NetworkContactPointUtils.parseStringRepresentation(contactPointStr);
@@ -109,8 +121,8 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
             return;
         }
         String displayName;
-        if (parameters.size() == 2) {
-            displayName = parameters.get(1);
+        if (descParameter.getResult() != null) {
+            displayName = descParameter.getResult();
         } else {
             displayName = "<" + contactPointStr + ">";
         }
@@ -125,19 +137,11 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
         performList(context);
     }
 
-    private void performStart(CommandContext context, List<String> parameters) {
-        if (parameters.size() < 1) {
-            context.println("Error: missing connection id");
-            // TODO print standard help?
-            return;
-        }
-        long id;
-        try {
-            id = Long.parseLong(parameters.get(0));
-        } catch (NumberFormatException e) {
-            context.println("Error: invalid connection id");
-            return;
-        }
+    private void performStart(CommandContext context) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        long id = ((ParsedIntegerParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+        
         ConnectionSetup setup = connectionSetupService.getConnectionSetupById(id);
         if (setup == null) {
             context.println("Error: unknown connection id");
@@ -155,19 +159,11 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
         // }
     }
 
-    private void performStop(CommandContext context, List<String> parameters) {
-        if (parameters.size() < 1) {
-            context.println("Error: missing connection id");
-            // TODO print standard help?
-            return;
-        }
-        long id;
-        try {
-            id = Long.parseLong(parameters.get(0));
-        } catch (NumberFormatException e) {
-            context.println("Error: invalid connection id");
-            return;
-        }
+    private void performStop(CommandContext context) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        long id = ((ParsedIntegerParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+        
         ConnectionSetup setup = connectionSetupService.getConnectionSetupById(id);
         if (setup == null) {
             context.println("Error: unknown connection id");
@@ -178,5 +174,5 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
 
         // TODO add synchronous option as well; decide which should be default
     }
-
+    
 }

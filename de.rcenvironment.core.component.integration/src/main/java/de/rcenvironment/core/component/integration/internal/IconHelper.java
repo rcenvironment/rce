@@ -5,7 +5,7 @@
  * 
  * https://rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.integration.internal;
 
 import java.awt.image.BufferedImage;
@@ -84,21 +84,26 @@ public final class IconHelper {
         final boolean sourceIconCanBeCopied = icon.exists() && icon.isFile() && icon.isAbsolute();
         if (sourceIconShallBeCopied && sourceIconCanBeCopied) {
             final File destination = fileAccess.createFile(toolConfigFile, icon.getName());
-            try {
-                fileAccess.copyFile(icon, destination);
-                // By only writing icon.getName() into the configuration map instead, we implicitly state that the path to the tool icon is
-                // relative to the tool configuration folder.
-                configurationMap.setIconPath(icon.getName());
+            if (!destination.equals(icon)) {
+                try {
+                    fileAccess.copyFile(icon, destination);
+                    // By only writing icon.getName() into the configuration map instead, we implicitly state that the path to the tool icon
+                    // is relative to the tool configuration folder.
+                    configurationMap.setIconPath(icon.getName());
+
+                } catch (IOException e) {
+                    LOGGER.warn("Could not copy icon to tool directory: ", e);
+                }
                 // Since we have copied the icon to the tool integration folder, we can remove the obligation to do so from the
                 // configuration map
                 configurationMap.doNotUploadIcon();
-            } catch (IOException e) {
-                LOGGER.warn("Could not copy icon to tool directory: ", e);
             }
         }
 
-        for (IconSize iconSize : IconSize.values()) {
-            tryPrescaleAndStoreIcon(iconImage, iconSize, toolConfigFile);
+        if (iconImage != null) {
+            for (IconSize iconSize : IconSize.values()) {
+                tryPrescaleAndStoreIcon(iconImage, iconSize, toolConfigFile);
+            }
         }
 
         configurationMap.setIconHash(md5Hash);
@@ -155,7 +160,7 @@ public final class IconHelper {
 
         return null;
     }
-    
+
     /**
      * If an error occurs during reading the prescaled icon, an error is logged.
      * 

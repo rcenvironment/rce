@@ -18,6 +18,7 @@ import java.util.Map;
  * Stores Validation Messages.
  * 
  * @author Jascha Riedel
+ * @author Tim Rosenbach
  *
  */
 public final class ComponentValidationMessageStore {
@@ -59,11 +60,6 @@ public final class ComponentValidationMessageStore {
      */
     public void addValidationMessagesByComponentId(String componentId, List<ComponentValidationMessage> messageList) {
         synchronized (messageMap) {
-            List<ComponentValidationMessage> oldList = messageMap.get(componentId);
-            if (oldList != null && !oldList.isEmpty()) { // append?
-                oldList.addAll(messageList);
-                messageList = oldList;
-            }
             messageMap.put(componentId, messageList);
         }
     }

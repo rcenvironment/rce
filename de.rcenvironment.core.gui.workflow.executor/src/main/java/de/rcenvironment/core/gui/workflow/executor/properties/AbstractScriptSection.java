@@ -16,9 +16,12 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
@@ -71,24 +74,32 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         parent.setLayout(new GridLayout(1, true));
 
-        final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+        final Composite composite = getWidgetFactory().createComposite(parent);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         composite.setLayout(new GridLayout(1, true));
 
         final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
-        scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        scriptSection.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         scriptSection.setText(Messages.configureScript);
 
-        Composite scriptComposite = getWidgetFactory().createFlatFormComposite(scriptSection);
+        Composite scriptComposite = getWidgetFactory().createComposite(composite);
         scriptComposite.setLayout(new GridLayout(1, false));
         scriptComposite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
-
-        scriptSection.setClient(scriptComposite);
 
         createCompositeContentAtVeryTop(scriptComposite, getWidgetFactory());
 
         openInEditorButton = getWidgetFactory().createButton(scriptComposite, Messages.openInEditor, SWT.PUSH);
-        checkBoxWhitespace = getWidgetFactory().createButton(scriptComposite, Messages.showWhitespace, SWT.CHECK);
+
+        // We intentionally do not use the getWidgetFactory().createButton() in the following. In addition we split the Button and the Label
+        // instead of setting the Button's Text variable. The reason is GUI issues regarding the visibility of check marks on different
+        // (Linux) platforms with different desktop variants. (see #17878)
+        // Kathrin Schaffert, 02.03.2022
+        final Composite checkBoxComposite = getWidgetFactory().createComposite(scriptComposite);
+        checkBoxComposite.setLayout(new RowLayout());
+        checkBoxWhitespace = new Button(checkBoxComposite, SWT.CHECK);
+        Label labelWhitespace = new Label(checkBoxComposite, SWT.NONE);
+        labelWhitespace.setText(Messages.showWhitespace);
+        labelWhitespace.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
         openInEditorButton.addSelectionListener(new SelectionListener() {
 

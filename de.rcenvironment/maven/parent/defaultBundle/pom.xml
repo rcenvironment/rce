@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -11,9 +12,9 @@
 
 	<parent>
 		<groupId>de.rcenvironment</groupId>
-		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
-		<version>10.3.1-SNAPSHOT</version>
-		<relativePath>../../../../de.rcenvironment.common.parent/maven/osgiProject/pom.xml</relativePath>
+		<artifactId>de.rcenvironment.build.common.parent.osgiProject</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../../../../de.rcenvironment.build.common/maven/parent/osgiProject</relativePath>
 	</parent>
 
 	<properties>
@@ -168,41 +169,5 @@
 			</build>
 		</profile>
 	</profiles>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-				<version>3.1.1</version>
-				<dependencies>
-					<dependency>
-						<groupId>com.puppycrawl.tools</groupId>
-						<artifactId>checkstyle</artifactId>
-						<version>8.30</version>
-					</dependency>
-				</dependencies>
-				<executions>
-					<execution>
-						<id>run-checkstyle</id>
-						<phase>validate</phase>
-						<configuration>
-							<configLocation>${projects-root}/de.rcenvironment/checkstyle/checks.xml</configLocation>
-							<propertyExpansion>config_loc=${basedir}/${projects-root}/de.rcenvironment/checkstyle</propertyExpansion>
-							<encoding>UTF-8</encoding>
-							<consoleOutput>true</consoleOutput>
-							<violationSeverity>error</violationSeverity>
-							<failOnViolation>false</failOnViolation>
-							<logViolationsToConsole>true</logViolationsToConsole>
-							<linkXRef>false</linkXRef>
-						</configuration>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>

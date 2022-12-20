@@ -101,4 +101,6 @@ public final class NetworkContactPointUtils {
         return StringUtils.format("%s:%s:%s%s", ncp.getTransportId(), ncp.getHost(), ncp.getPort(), attributesSuffix);
     }
 
+    
+    
 }

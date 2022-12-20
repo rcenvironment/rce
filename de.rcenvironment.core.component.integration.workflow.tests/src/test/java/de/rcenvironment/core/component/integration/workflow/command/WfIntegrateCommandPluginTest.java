@@ -10,13 +10,18 @@ package de.rcenvironment.core.component.integration.workflow.command;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.command.common.CommandException;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.NamedParameter;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputDatumHandling;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
@@ -68,36 +73,79 @@ public class WfIntegrateCommandPluginTest {
 
     @Test
     public void hasSingleCommandDescription() {
-        // WHEN
-        final Collection<CommandDescription> commandDescriptions = pluginHarness.when().getCommandDescriptions();
+    	// WHEN
+        final MainCommandDescription[] commandDescriptions = pluginHarness.when().getCommands();
 
         // THEN
         singleCommandDescriptionReturned(commandDescriptions);
-        final CommandDescription singleCommandDescription = commandDescriptions.iterator().next();
-        commandDescriptionHasStaticPart(singleCommandDescription, "wf integrate");
-        commandDescriptionHasDynamicPart(singleCommandDescription, "<toolname> <workflow file>");
-        commandDescriptionHasFirstLine(singleCommandDescription, "integrate a workflow file as a component");
-        commandDescriptionHasNoAdditionalLines(singleCommandDescription);
+        final MainCommandDescription singleCommandDescription = commandDescriptions[0];
+        commandDescriptionHasStaticPart(singleCommandDescription, "wf-integrate");
+        final String[] expectedPositionalParameters = new String[] { "toolname", "workflow file" };
+        final String[] expectedNamedParameters = new String[] {
+                "--expose",
+                "--expose-inputs",
+                "--expose-outputs"
+            };
+        final String[] expectedFlags = new String[] { "--verbose" };
+        commandDescriptionHasModifiers(singleCommandDescription,
+                expectedPositionalParameters, expectedNamedParameters, expectedFlags);
+        commandDescriptionHasDescription(singleCommandDescription, "integrate a workflow file as a component");
     }
 
-    private void singleCommandDescriptionReturned(final Collection<CommandDescription> commandDescriptions) {
-        assertEquals(1, commandDescriptions.size());
+    private void singleCommandDescriptionReturned(final MainCommandDescription[] commandDescriptions) {
+        assertEquals(1, commandDescriptions.length);
+        assertEquals(0, commandDescriptions[0].getSubCommands().length);
     }
 
-    private void commandDescriptionHasStaticPart(final CommandDescription commandDescription, String expectedStaticPart) {
-        assertEquals(expectedStaticPart, commandDescription.getStaticPart());
+    private void commandDescriptionHasStaticPart(final MainCommandDescription commandDescription, String expectedStaticPart) {
+        assertEquals(expectedStaticPart, commandDescription.getCommand());
     }
 
-    private void commandDescriptionHasDynamicPart(final CommandDescription commandDescription, String expectedDynamicPart) {
-        assertEquals(expectedDynamicPart, commandDescription.getDynamicPart());
+    private void commandDescriptionHasModifiers(final MainCommandDescription commandDescription,
+            String[] positionalParameters, String[] namedParameters, String[] flags) {
+        
+        final List<AbstractCommandParameter> realPosParameters = commandDescription.getModifiers().getPositionals();
+        final List<NamedParameter> realNamedParameters = commandDescription.getModifiers().getNamedParameters();
+        final List<CommandFlag> realFlags = commandDescription.getModifiers().getFlags();
+        
+        assertEquals(realPosParameters.size(), positionalParameters.length);
+        assertEquals(realNamedParameters.size(), namedParameters.length);
+        assertEquals(realFlags.size(), flags.length);
+        
+        for (int i = 0; i < positionalParameters.length; i++) {
+            final String name = positionalParameters[i];
+            final String realName = realPosParameters.get(i).getName();
+            
+            assertEquals(name, realName);
+        }
+        
+        final List<NamedParameter> sortedRealNamedParameters = realNamedParameters.stream()
+                .sorted((a, b) -> a.getName().compareTo(b.getName())).collect(Collectors.toList());
+        final List<String> sortedNamedParameters = Arrays.stream(namedParameters)
+                .sorted((a, b) -> a.compareTo(b)).collect(Collectors.toList());
+        
+        for (int i = 0; i < sortedNamedParameters.size(); i++) {
+            final String name = sortedNamedParameters.get(i);
+            final String realName = sortedRealNamedParameters.get(i).getName();
+            
+            assertEquals(name, realName);
+        }
+        
+        final List<CommandFlag> sortedRealFlags = realFlags.stream()
+                .sorted((a, b) -> a.getShortFlag().compareTo(b.getShortFlag())).collect(Collectors.toList());
+        final List<String> sortedFlags = Arrays.stream(flags)
+                .sorted((a, b) -> a.compareTo(b)).collect(Collectors.toList());
+        
+        for (int i = 0; i < sortedFlags.size(); i++) {
+            final String flag = sortedFlags.get(i);
+            final String realFlag = sortedRealFlags.get(0).getLongFlag();
+            
+            assertEquals(flag, realFlag);
+        }
     }
 
-    private void commandDescriptionHasFirstLine(final CommandDescription commandDescription, String expectedLine) {
-        assertEquals(expectedLine, commandDescription.getFirstLine());
-    }
-
-    private void commandDescriptionHasNoAdditionalLines(final CommandDescription commandDescription) {
-        assertEquals(0, commandDescription.getAdditionalLines().length);
+    private void commandDescriptionHasDescription(final MainCommandDescription commandDescription, String expectedLine) {
+        assertEquals(expectedLine, commandDescription.getDescription());
     }
 
     @Test
@@ -116,7 +164,7 @@ public class WfIntegrateCommandPluginTest {
             .outputReceiverWasNeverCalled()
             .syntaxErrorWasThrown()
             .exceptionHasCommandString(wfIntegrateCommand())
-            .exceptionHasMessage("Missing component name");
+            .exceptionHasMessage("Not enough positional parameters");
     }
     
     @Test
@@ -126,7 +174,7 @@ public class WfIntegrateCommandPluginTest {
             .workflowIntegrationServiceIsAbsent();
         
         pluginHarness.when()
-            .executeWfIntegrateCommand(SOME_INVALID_COMPONENT_ID);
+            .executeWfIntegrateCommand(SOME_INVALID_COMPONENT_ID, "");
         
         pluginHarness.then()
             .syntaxErrorWasThrown()
@@ -149,7 +197,7 @@ public class WfIntegrateCommandPluginTest {
         pluginHarness.then()
             .syntaxErrorWasThrown()
             .exceptionHasCommandString(String.join(" ", wfIntegrateCommand(), SOME_COMPONENT_ID))
-            .exceptionHasMessage("Missing filename");
+            .exceptionHasMessage("Not enough positional parameters");
     }
 
     @Test
@@ -177,10 +225,7 @@ public class WfIntegrateCommandPluginTest {
     public void whenExposureFlagIsNotGivenThenTheCommandFailsGracefully() throws WorkflowFileException {
         // GIVEN
         pluginHarness.given()
-            .workflowLoaderServiceIsPresent()
-            .workflowLoaderReturnsWorkflowDescription(WfIntegrateCommandPluginTest.SOME_WORKFLOW_IDENTIFIER);
-
-        pluginHarness.given()
+            .workflowLoaderServiceIsAbsent()
             .workflowIntegrationServiceIsAbsent();
 
         // WHEN
@@ -189,9 +234,8 @@ public class WfIntegrateCommandPluginTest {
 
         // THEN
         pluginHarness.then()
-            .loaderServiceWasNotCalled()
             .syntaxErrorWasThrown()
-            .exceptionHasMessage(parseErrorMessageHeader() + unexpectedExposureFlagErrorMessage(SOME_INVALID_EXPOSURE_PARAMETER));
+            .exceptionHasMessage("Not all tokens could be parsed");
     }
 
     @Test
@@ -315,7 +359,7 @@ public class WfIntegrateCommandPluginTest {
         // WHEN
         pluginHarness.when()
             .executeWfIntegrateCommand(VERBOSE_FLAG, SOME_COMPONENT_ID, SOME_WORKFLOWFILE_PATH, exposeFlag(),
-                exposureParameter(SOME_COMPONENT_ID, SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME), exposeFlag(),
+                exposureParameter(SOME_COMPONENT_ID, SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME + ","), //TODO: refactor into better fitting structure
                 exposureParameter(SOME_COMPONENT_ID, SOME_INTERNAL_OUTPUT_NAME, SOME_EXTERNAL_OUTPUT_NAME));
 
         // THEN
@@ -349,7 +393,7 @@ public class WfIntegrateCommandPluginTest {
     }
 
     private String wfIntegrateCommand() {
-        return "wf integrate";
+        return "wf-integrate";
     }
 
     @Test
@@ -478,7 +522,7 @@ public class WfIntegrateCommandPluginTest {
     }
 
     private String wfIntegrateCommandVerbose() {
-        return "wf integrate -v";
+        return "wf-integrate -v";
     }
 
     @Test
@@ -570,11 +614,11 @@ public class WfIntegrateCommandPluginTest {
             .workflowLoaderReturnsWorkflowDescription(SOME_WORKFLOW_IDENTIFIER)
             .loadedWorkflowDescriptionHasNode(SOME_COMPONENT_ID, SOME_UUID_1)
             .thatNodeHasIntegerInput(SOME_INTERNAL_INPUT_NAME, SOME_UUID_2)
-            .thatNodeHasIntegerOutput(SOME_INTERNAL_INPUT_NAME, SOME_UUID_2);
+            .thatNodeHasIntegerOutput(SOME_INTERNAL_OUTPUT_NAME, SOME_UUID_3);
 
         pluginHarness.when()
             .executeWfIntegrateCommand(SOME_COMPONENT_ID, SOME_WORKFLOWFILE_PATH, exposeInputFlag(),
-                exposureParameter(SOME_UUID_1, SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME));
+                exposureParameter(SOME_COMPONENT_ID, SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME));
 
         pluginHarness.then()
             .noCommandExceptionWasThrown()
@@ -594,17 +638,17 @@ public class WfIntegrateCommandPluginTest {
             .workflowLoaderReturnsWorkflowDescription(SOME_WORKFLOW_IDENTIFIER)
             .loadedWorkflowDescriptionHasNode(SOME_COMPONENT_ID, SOME_UUID_1)
             .thatNodeHasIntegerInput(SOME_INTERNAL_INPUT_NAME, SOME_UUID_2)
-            .thatNodeHasIntegerOutput(SOME_INTERNAL_INPUT_NAME, SOME_UUID_2);
+            .thatNodeHasIntegerOutput(SOME_INTERNAL_OUTPUT_NAME, SOME_UUID_3);
 
         pluginHarness.when()
             .executeWfIntegrateCommand(SOME_COMPONENT_ID, SOME_WORKFLOWFILE_PATH, exposeOutputFlag(),
-                exposureParameter(SOME_UUID_1, SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME));
+                exposureParameter(SOME_UUID_1, SOME_INTERNAL_OUTPUT_NAME, SOME_EXTERNAL_OUTPUT_NAME));
 
         pluginHarness.then()
             .noCommandExceptionWasThrown()
             .loaderServiceWasCalled()
             .integrationServiceWasCalled()
-            .workflowIntegrationServiceWasCalledWithEndpointAdapter(SOME_INTERNAL_INPUT_NAME, SOME_EXTERNAL_INPUT_NAME)
+            .workflowIntegrationServiceWasCalledWithEndpointAdapter(SOME_INTERNAL_OUTPUT_NAME, SOME_EXTERNAL_OUTPUT_NAME)
             .thatEndpointAdapterIsOutputAdapter();
     }
 
@@ -784,11 +828,11 @@ public class WfIntegrateCommandPluginTest {
     }
 
     private String exposeInputFlag() {
-        return "--expose-input";
+        return "--expose-inputs";
     }
 
     private String exposeOutputFlag() {
-        return "--expose-output";
+        return "--expose-outputs";
     }
 
     private String exposureParameter(String componentName) {

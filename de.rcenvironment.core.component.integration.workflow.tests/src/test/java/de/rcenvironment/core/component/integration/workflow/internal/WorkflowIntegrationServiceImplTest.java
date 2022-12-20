@@ -55,15 +55,21 @@ public class WorkflowIntegrationServiceImplTest {
 
     private void createAndBindToolIntegrationService() {
         final ToolIntegrationService toolIntegrationService = EasyMock.createMock(ToolIntegrationService.class);
+
         toolIntegrationService.setFileWatcherActive(EasyMock.captureBoolean(serviceUnderTest.getSetFileWatcherActiveParameters()));
         EasyMock.expectLastCall();
+        
+        toolIntegrationService.putToolNameToPath(EasyMock.capture(serviceUnderTest.getToolIntegrationNameParameter()),
+            EasyMock.capture(serviceUnderTest.getParentDirectoryParameter()));
+        EasyMock.expectLastCall();
 
+        toolIntegrationService.setFileWatcherActive(EasyMock.captureBoolean(serviceUnderTest.getSetFileWatcherActiveParameters()));
+        EasyMock.expectLastCall();
+        
         toolIntegrationService.registerRecursive(EasyMock.capture(serviceUnderTest.getToolIntegrationNameParameter()),
             EasyMock.capture(serviceUnderTest.getToolIntegrationContextParameter()));
         EasyMock.expectLastCall();
 
-        toolIntegrationService.setFileWatcherActive(EasyMock.captureBoolean(serviceUnderTest.getSetFileWatcherActiveParameters()));
-        EasyMock.expectLastCall();
 
         EasyMock.replay(toolIntegrationService);
 
@@ -174,6 +180,7 @@ public class WorkflowIntegrationServiceImplTest {
                         containsMapping("externalName", someExternalInputName()),
                         containsMapping("inputHandling", InputDatumHandling.Queue.toString()),
                         containsMapping("inputExecutionConstraint", InputExecutionContraint.Required.toString()),
+//                    containsMapping("endpointDataType", "Integer"), //TODO: Clarify why endpointDataType is not stored
                         containsMapping("type", "INPUT")
                     ))
                 ))))));

@@ -1,0 +1,29 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.projectsets.documentation</artifactId>
+	<name>RCE Project Set ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<!-- documentation -->
+		<module>${projects-root}/de.rcenvironment.documentation.core</module>
+		<module>${projects-root}/de.rcenvironment.documentation.core.feature</module>
+		<module>${projects-root}/de.rcenvironment.documentation.core.linux.feature</module>
+		<module>${projects-root}/de.rcenvironment.documentation.core.win32.feature</module>
+		<!-- help system -->
+		<module>${projects-root}/de.rcenvironment.core.gui.help</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.help.feature</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.help.linux</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.help.win32</module>
+	</modules>
+
+</project>

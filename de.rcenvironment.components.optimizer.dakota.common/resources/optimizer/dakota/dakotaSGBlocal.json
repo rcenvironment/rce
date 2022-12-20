@@ -3,6 +3,7 @@
     "methodCode":"surrogate_based_local",
     "optimizerPackage":"dakota",
     "followingMethods":"2",
+    "supportsDiscreteOptimization":"false",
     "specificSettings":{
         "approx_method_pointer":{
             "doNotShow":"true",

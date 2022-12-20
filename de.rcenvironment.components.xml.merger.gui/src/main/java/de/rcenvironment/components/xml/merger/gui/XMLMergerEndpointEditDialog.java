@@ -26,6 +26,7 @@ import de.rcenvironment.core.gui.xpathchooser.XPathEditDialog;
  * Constructor.
  *
  * @author Brigitte Boden
+ * @author Tim Rosenbach
  */
 public class XMLMergerEndpointEditDialog extends XPathEditDialog {
 
@@ -40,14 +41,18 @@ public class XMLMergerEndpointEditDialog extends XPathEditDialog {
 
     @Override
     protected void validateInput() {
+        super.validateInput();
+        if (!getButton(IDialogConstants.OK_ID).isEnabled()) {
+            return;
+        }
         String name = getNameInputFromUI();
-        // initialName is null if not set, so it will not be equal when naming a new endpoint
-        boolean nameIsValid = name.equals(initialName);
-        nameIsValid |= epManager.isValidEndpointName(name);
-        
         //Do not allow to add a dynamic input with the name "mapping file", because it is reserved for the mapping file input.
-        nameIsValid &= !name.equalsIgnoreCase(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE);
+        boolean nameIsValid = !name.equalsIgnoreCase(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE);
+        if (!nameIsValid) {
+            updateMessage("Name is reserved for receiving mapping file via input.", true);
+        }
         // enable/disable "ok"
-        getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid & validateMetaDataInputs());
+        getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid);
+
     }
 }

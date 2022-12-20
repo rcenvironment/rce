@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
 <?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
-<sect1 xmlns="http://docbook.org/ns/docbook" 
+<section xmlns="http://docbook.org/ns/docbook" 
     xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
     <title>Integrated Test Script Runner</title>
     <para>The integrated "Test Script Runner" (TSR) was created to automate test sequences on one or
@@ -12,7 +12,7 @@
     <para>As of RCE 9.0.0, the Test Script Runner is included in the standard application release,
         as well as the standard Eclipse checkout. Therefore, very little configuration is required
         to use it.</para>
-    <sect2>
+    <section>
         <title>Configuration</title>
         <para>The only configuration that is required for using the TSR is adding an Instance
             Management configuration to the RCE instance that will execute the test scripts. This
@@ -36,8 +36,8 @@
                 maximum lenght will be determined, documented, and maybe also automatically checked
                 in the future.</para>
         </note>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Test Definitions</title>
         <para>We use the language <link xlink:href="https://cucumber.io/docs/gherkin/"
                 >Gherkin</link>, a structured natural language, to define our tests and execute them
@@ -111,8 +111,8 @@ Scenario: Concurrent headless instance starting and stopping
                 </varlistentry>
             </variablelist>
         </para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Executing Tests</title>
         <para>The TSR is invoked by a single RCE console command (<code>run-test</code>), with an
             alias for readability (<code>run-tests</code>). The general syntax is:</para>
@@ -176,11 +176,11 @@ Scenario: Concurrent headless instance starting and stopping
             test ids can be specified in the command <code>run-test[s]</code> with or without the
                 <code>@</code> character. "<code>--all</code>" executes all available test
             scenarios. </para>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <title>Examples</title>
-    </sect2>
-    <sect2>
+    </section>
+    <section>
         <para>
             <itemizedlist>
                 <listitem>
@@ -210,5 +210,5 @@ Scenario: Concurrent headless instance starting and stopping
                 </listitem>
             </itemizedlist>
         </para>
-    </sect2>
-</sect1>
+    </section>
+</section>

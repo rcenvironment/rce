@@ -1,0 +1,38 @@
+[plantuml]
+----
+actor user as "User"
+participant exe as "Native Launcher\n(rce.exe)"
+participant jvm as "JVM\n"
+participant equinox_launcher as "Patched Equinox\nLauncher"
+entity splash as "Splash\nScreen"
+participant rce_hooks as "RCE Laucher\nCustomization"
+entity sysprops as "System\nProperties"
+participant equinox_framework as "Equinox (OSGi)\nFramework"
+box "OSGi" #f8f8ff
+participant osgi_bundles as "OSGi Bundles\n(RCP+RCE)"
+participant bootstrap_config as "RCE Bootstrap\nConfiguration"
+participant rce_application_main as "RCE Appli-\ncation Class"
+participant rcp as "RCP (GUI)\nMain Loop"
+end box
+
+user -> exe
+exe -> splash: show (if applicable)
+exe -> jvm: spawn+run
+jvm -> equinox_launcher
+equinox_launcher -> rce_hooks: patched-in calls
+rce_hooks -> sysprops: set
+equinox_launcher -> equinox_framework: spawn+run
+equinox_framework -> osgi_bundles: load+autostarts
+osgi_bundles -> bootstrap_config: read (as needed)
+bootstrap_config -> sysprops: read
+' TODO verify callback timing
+equinox_framework -> equinox_launcher: callback 
+activate equinox_launcher
+equinox_launcher -> splash: close (if applicable)
+deactivate equinox_launcher
+equinox_framework -> rce_application_main: call (defined by product)
+rce_application_main -> bootstrap_config: read (as needed)
+rce_application_main -> osgi_bundles: active starting
+osgi_bundles -> bootstrap_config: read (as needed)
+rce_application_main -> rcp: run (if applicable)
+----

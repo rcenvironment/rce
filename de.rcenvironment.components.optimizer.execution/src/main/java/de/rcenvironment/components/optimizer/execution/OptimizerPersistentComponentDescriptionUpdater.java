@@ -130,6 +130,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V8 = "8";
 
+    private static final String V8_1 = "8.1";
+
     private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     @Override
@@ -150,8 +152,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             && persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
         }
-        if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V8) < 0) {
+        if (silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V8_1) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         if (silent && persistentComponentDescriptionVersion != null
@@ -187,6 +189,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                     description = updateFrom70To71(description);
                 case V7_1:
                     description = updateFrom71To8(description);
+                case V8:
+                    description = updateFrom8To81(description);
                 default:
                     // nothing to do here
                 }
@@ -196,12 +200,39 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                 switch (description.getComponentVersion()) {
                 case V7_0:
                     description = updateFrom70To71(description);
+                case V8:
+                    description = updateFrom8To81(description);
                 default:
                     // nothing to do here
                 }
             }
         }
         return description;
+    }
+
+    private PersistentComponentDescription updateFrom8To81(PersistentComponentDescription description)
+        throws IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode dynamicOutputs = node.get(DYNAMIC_OUTPUTS);
+
+        boolean isDiscrete = true;
+        for (JsonNode output : dynamicOutputs) {
+            if (output.get(EP_IDENTIFIER).asText().equals(OptimizerComponentConstants.ID_DESIGN)) {
+                isDiscrete = output.get(METADATA).get("isDiscrete").asBoolean();
+            }
+        }
+        if (isDiscrete) {
+            ((ObjectNode) node.get(CONFIGURATION)).remove(ALGORITHM);
+            ((ObjectNode) node.get(CONFIGURATION)).put(ALGORITHM, "");
+            LOGGER.info(
+                "The optimizer configuration was incorrect. The selected algorithm does not support discrete optimization "
+                + "and has therefore been removed. "
+                + "Please select a valid algorithm from the drop-down menu.");
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V8_1);
+        return newdesc;
     }
 
     private PersistentComponentDescription updateFrom71To8(PersistentComponentDescription description)

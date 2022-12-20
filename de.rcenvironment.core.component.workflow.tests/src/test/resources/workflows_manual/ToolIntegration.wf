@@ -1,6 +1,6 @@
 {
   "identifier" : "37d92545-a130-480b-b2f5-0665cd96c7cc",
-  "workflowVersion" : "3",
+  "workflowVersion" : "5",
   "name" : "ToolIntegration_2014-04-28_09:05:21",
   "nodes" : [ {
     "identifier" : "42a4151a-0ca7-415d-8daf-6c3f136ff24e",
@@ -8,7 +8,7 @@
     "location" : "493:117",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.3"
+      "version" : "3.5"
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
@@ -22,7 +22,8 @@
       "epIdentifier" : "default",
       "datatype" : "FileReference",
       "metadata" : {
-        "usage" : "required"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ]
   }, {
@@ -31,7 +32,7 @@
     "location" : "208:136",
     "component" : {
       "identifier" : "de.rcenvironment.inputprovider",
-      "version" : "3.1"
+      "version" : "3.2"
     },
     "dynamicOutputs" : [ {
       "identifier" : "3de9c829-594e-4b1a-9d9a-335dcaa4b10a",

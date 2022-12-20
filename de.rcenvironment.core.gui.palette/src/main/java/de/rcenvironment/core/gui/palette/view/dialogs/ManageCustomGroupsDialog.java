@@ -416,7 +416,7 @@ public class ManageCustomGroupsDialog extends TitleAreaDialog {
             if (item.getData() instanceof PaletteTreeNode) {
                 PaletteTreeNode node = (PaletteTreeNode) item.getData();
                 Shell shell = Display.getDefault().getActiveShell();
-                EditCustomGroupDialog editDialog = new EditCustomGroupDialog(shell, node, contentProvider.getAssignment());
+                EditCustomGroupDialog editDialog = new EditCustomGroupDialog(shell, node, contentProvider);
                 editDialog.open();
                 if (editDialog.isGroupUpdated()) {
                     refreshTrees();

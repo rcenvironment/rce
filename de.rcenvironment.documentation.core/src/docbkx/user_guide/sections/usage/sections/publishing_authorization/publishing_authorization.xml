@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="publishing_authorization">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="publishing_authorization">
 	<title>Tool publishing and authorization</title>
 	<para>RCE components and integrated tools can be published to make them usable by other connected
 		("remote") RCE instances. The publishing options for each component/tool can be defined in
@@ -28,7 +28,7 @@
 				"Window > Show View" menu. If it is not listed there, choose "Other" and select them
 				from the "RCE" category.</para>
 		</note></para>
-	<sect2>
+	<section>
 		<title>Managing authorization groups</title>
 		<para>Authorization groups can be created and managed in the "Authorization Groups" dialog, which
 			can be opened from the "Component Publishing" view. To create a new group, click the
@@ -51,8 +51,8 @@
 			<note><para>To provide access to tools over Uplink Connections, the tools either have to be 
 			"public" or in an authorization group which name starts with "external_". Tools in other authorization
 			groups are only accessible from the internal RCE network.</para></note>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Publishing tools on the command console</title>
 		<para>Creating custom tool groups and publishing tools is also possible using the "auth" commands
 			on the command line. A short reference:<itemizedlist>
@@ -104,6 +104,6 @@
 							"<code>cpacs/CPACSExampleTool</code>"</para>
 				</listitem>
 			</itemizedlist></para>
-	</sect2>
+	</section>
 	
-</sect1>
+</section>

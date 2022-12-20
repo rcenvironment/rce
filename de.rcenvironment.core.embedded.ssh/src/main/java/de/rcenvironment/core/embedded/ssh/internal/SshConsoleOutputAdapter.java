@@ -91,7 +91,8 @@ public class SshConsoleOutputAdapter extends AbstractInteractiveCommandConsole {
      * @param ce - the command exception (if it exists)
      */
     public void printHelp(CommandException ce) {
-        commandExecutionService.printHelpText(false, false, this);
+        // TODO help text
+        //commandExecutionService.printHelpText(false, false, this);
     }
 
     /**

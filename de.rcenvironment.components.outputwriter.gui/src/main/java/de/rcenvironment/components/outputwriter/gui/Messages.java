@@ -16,6 +16,7 @@ import org.eclipse.osgi.util.NLS;
  * @author Hendrik Abbenhaus
  * @author Brigitte Boden
  * @author Kathrin Schaffert
+ * @author Tim Rosenbach
  * 
  */
 public class Messages extends NLS {
@@ -137,6 +138,9 @@ public class Messages extends NLS {
 
     /** Message: Handling option only for file from previous iteration. */
     public static String previousIterationMessage;
+    
+    /** Message: Forbidden file/Directory is used. */
+    public static String forbiddenFilenamesMessage;
 
     /** Confirm dialog on input changes. */
     public static String editingInputWithOutputLocationDialogTitle;

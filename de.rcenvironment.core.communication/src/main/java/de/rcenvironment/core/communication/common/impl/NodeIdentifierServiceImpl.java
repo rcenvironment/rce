@@ -11,9 +11,6 @@ package de.rcenvironment.core.communication.common.impl;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.NodeNameResolver;
 import de.rcenvironment.core.communication.common.CommonIdBase;
@@ -25,6 +22,10 @@ import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.model.NodeInformationRegistry;
 import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogConstants;
+import de.rcenvironment.core.eventlog.api.EventLogEntry;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.toolkit.utils.common.DefaultTimeSource;
 import de.rcenvironment.toolkit.utils.common.IdGenerator;
@@ -51,7 +52,10 @@ public final class NodeIdentifierServiceImpl implements NodeIdentifierService {
 
     private final TimeSource timeSource = new DefaultTimeSource(); // used to easily support mock testing later
 
-    private final Log log = LogFactory.getLog(getClass());
+    // private final Log log = LogFactory.getLog(getClass());
+
+    // the instance session id of the local node; initialized passively be the first call to setDefaultDisplayNameForLocalNode()
+    private InstanceNodeSessionId localInstanceSessionId;
 
     public NodeIdentifierServiceImpl() {
         this(IdGeneratorType.SECURE); // default to secure id generation
@@ -105,13 +109,48 @@ public final class NodeIdentifierServiceImpl implements NodeIdentifierService {
     }
 
     @Override
+    public void setDefaultDisplayNameForLocalNode(InstanceNodeSessionId localInstanceSessionIdParam) {
+        synchronized (this) {
+            // use this event to passively initialize this value
+            this.localInstanceSessionId = localInstanceSessionIdParam;
+        }
+        nodeInformationRegistry.associateDisplayName(localInstanceSessionIdParam, "<local instance>");
+
+        // note: as this event does not carry any relevant information, it is excluded from the event log
+    }
+
+    @Override
     public void associateDisplayName(InstanceNodeSessionId id, String newName) {
-        nodeInformationRegistry.associateDisplayName(id, newName);
+        if (nodeInformationRegistry.associateDisplayName(id, newName)) {
+            EventLogEntry eventLogEntry = EventLog.newEntry(EventType.NETWORK_NODE_NAMED)
+                .set(EventType.Attributes.INSTANCE_ID, id.getInstanceNodeIdString())
+                .set(EventType.Attributes.SESSION_ID, id.getSessionIdPart())
+                .set(EventType.Attributes.NAME, newName);
+            synchronized (this) {
+                if (this.localInstanceSessionId != null && this.localInstanceSessionId.isSameInstanceNodeSessionAs(id)) {
+                    eventLogEntry.set(EventType.Attributes.IS_LOCAL_NODE, EventLogConstants.TRUE_VALUE);
+                }
+            }
+            EventLog.append(eventLogEntry);
+        }
     }
 
     @Override
     public void associateDisplayNameWithLogicalNode(LogicalNodeSessionId id, String newName) {
-        nodeInformationRegistry.associateDisplayNameWithLogicalNode(id, newName);
+        if (nodeInformationRegistry.associateDisplayNameWithLogicalNode(id, newName)) {
+            // TODO "is local node" field
+            EventLogEntry eventLogEntry = EventLog.newEntry(EventType.NETWORK_NODE_NAMED)
+                .set(EventType.Attributes.INSTANCE_ID, id.getInstanceNodeIdString())
+                .set(EventType.Attributes.SESSION_ID, id.getSessionIdPart())
+                .set(EventType.Attributes.LOGICAL_SUB_NODE_ID, id.getLogicalNodePart())
+                .set(EventType.Attributes.NAME, newName);
+            synchronized (this) {
+                if (this.localInstanceSessionId != null && this.localInstanceSessionId.isSameInstanceNodeSessionAs(id)) {
+                    eventLogEntry.set(EventType.Attributes.IS_LOCAL_NODE, EventLogConstants.TRUE_VALUE);
+                }
+            }
+            EventLog.append(eventLogEntry);
+        }
     }
 
     @Override

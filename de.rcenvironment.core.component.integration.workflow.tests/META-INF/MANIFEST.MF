@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Components Workflow Integration Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.integration.workflow.tests
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Fragment-Host: de.rcenvironment.core.component.integration.workflow
 Automatic-Module-Name: de.rcenvironment.core.component.integration.workflow.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -27,3 +27,4 @@ Import-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.workflow.execution.function.testutils,
  de.rcenvironment.toolkit.modules.concurrency.api
+Bundle-Vendor: DLR

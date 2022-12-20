@@ -51,7 +51,7 @@ import de.rcenvironment.core.gui.workflow.executor.properties.WhitespaceShowList
  *
  * @author Brigitte Boden
  * @author Dominik Schneider
- * @author Kathrin Schaffert (#17016, #14895)
+ * @author Kathrin Schaffert (#17016, #14895, #17673)
  */
 
 public class OutputLocationEditDialog extends Dialog {
@@ -110,7 +110,7 @@ public class OutputLocationEditDialog extends Dialog {
     /**
      * Dialog for creating or editing an endpoint.
      * 
-     * @param parentShell   parent Shell
+     * @param parentShell parent Shell
      * @param title
      * @param configuration the containing endpoint manager
      */
@@ -356,19 +356,8 @@ public class OutputLocationEditDialog extends Dialog {
             updateWarningLabel();
         });
 
-        // prevents adding linebreaks via enter
-        header.addKeyListener(new KeyAdapter() {
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (!header.getText().isEmpty()) {
-                    if (e.keyCode == SWT.CR || e.keyCode == SWT.LF) {
-                        header.setText(cleanCarriageReturn(header.getText()));
-                        header.setSelection(header.getText().length());
-                    }
-                }
-            }
-        });
+        // handles adding linebreaks via enter
+        header.addKeyListener(createHandleLinebreaksKeyAdapter(header));
 
         WhitespaceShowListener headerWhitespaceListener = new WhitespaceShowListener(header);
         header.addPaintListener(headerWhitespaceListener);
@@ -382,7 +371,6 @@ public class OutputLocationEditDialog extends Dialog {
         headerPlaceholderCompLayout.marginWidth = 0;
         headerPlaceholderComp.setLayout(headerPlaceholderCompLayout);
         headerPlaceholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
-
 
         headerPlaceholderCombo = OutputWriterGuiUtils.createPlaceholderCombo(headerPlaceholderComp, new String[0]);
         OutputWriterGuiUtils.createPlaceholderInsertButton(headerPlaceholderComp, headerPlaceholderCombo, header);
@@ -400,19 +388,8 @@ public class OutputLocationEditDialog extends Dialog {
             updateWarningLabel();
         });
 
-        // prevents adding linebreaks via enter
-        formatString.addKeyListener(new KeyAdapter() {
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (formatString.getText().length() > 0) {
-                    if (e.keyCode == SWT.CR || e.keyCode == SWT.LF) {
-                        formatString.setText(cleanCarriageReturn(formatString.getText()));
-                        formatString.setSelection(formatString.getText().length());
-                    }
-                }
-            }
-        });
+        // handles adding linebreaks via enter
+        formatString.addKeyListener(createHandleLinebreaksKeyAdapter(formatString));
 
         WhitespaceShowListener formatWhitespaceListener = new WhitespaceShowListener(formatString);
         formatString.addPaintListener(formatWhitespaceListener);
@@ -562,14 +539,6 @@ public class OutputLocationEditDialog extends Dialog {
 
     }
 
-    private String cleanCarriageReturn(String tmp) {
-        tmp = tmp.replaceAll("\r", "");
-        tmp = tmp.replaceAll("\n", "");
-        tmp = tmp.replace(Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK),
-            Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK + LINE_SEP));
-        return tmp;
-    }
-
     private void refreshFormatPlaceholderList() {
         generalFormatPlaceholderList = new ArrayList<String>();
         generalFormatPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
@@ -654,4 +623,24 @@ public class OutputLocationEditDialog extends Dialog {
         warningLabel = new WarningErrorLabel(configGroup, SWT.NONE);
     }
 
+    private KeyAdapter createHandleLinebreaksKeyAdapter(StyledText text) {
+        return new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (text.getText().length() > 0 && (e.keyCode == SWT.CR || e.keyCode == SWT.LF)) {
+                    text.insert(OutputWriterComponentConstants.PH_LINEBREAK);
+                    text.setText(cleanCarriageReturn(text.getText()));
+                    text.setSelection(text.getText().length());
+                }
+            }
+        };
+    }
+
+    private String cleanCarriageReturn(String tmp) {
+        tmp = tmp.replace("\r", "");
+        tmp = tmp.replace("\n", "");
+        tmp = tmp.replace(Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK),
+            Matcher.quoteReplacement(OutputWriterComponentConstants.PH_LINEBREAK + LINE_SEP));
+        return tmp;
+    }
 }

@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.integration;
 import org.easymock.EasyMock;
 
 /**
- * Builder class for a mocked {@link ToolIntegrationContext}.
+ * Builder class for a mocked {@link IntegrationContext}.
  * 
  * @author Alexander Weinert
  */
@@ -64,8 +64,8 @@ public class MockToolIntegrationContextBuilder {
     /**
      * @return A mocked ToolIntegrationContext that behaves as configured by previous calls to this object.
      */
-    public ToolIntegrationContext build() {
-        final ToolIntegrationContext context = EasyMock.createMock(ToolIntegrationContext.class);
+    public IntegrationContext build() {
+        final IntegrationContext context = EasyMock.createMock(IntegrationContext.class);
 
         if (rootPathToToolIntegrationDirectory != null) {
             EasyMock.expect(context.getRootPathToToolIntegrationDirectory()).andStubReturn(rootPathToToolIntegrationDirectory);
@@ -76,7 +76,7 @@ public class MockToolIntegrationContextBuilder {
         }
         
         if (contextType != null) {
-            EasyMock.expect(context.getContextType()).andStubReturn(contextType);
+            EasyMock.expect(context.getContextTypeString()).andStubReturn(contextType);
         }
 
         if (configurationFilename != null) {

@@ -1,16 +1,16 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="build_process_and_dependencies">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="build_process_and_dependencies">
 	<title>Build Structure and Dependencies</title>
-	<sect2>
+	<section>
 		<title>Overview: Build and Versioning Scopes</title>
 		<para>TODO migrate/add content</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Changing Version Dependencies</title>
-		<sect3>
+		<section>
 			<title>Switching "RCE Core" to another version of "RCE Platform"
 			</title>
 			<para>TODO migrate/add content</para>
-		</sect3>
-	</sect2>
-</sect1>
+		</section>
+	</section>
+</section>

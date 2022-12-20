@@ -33,6 +33,9 @@ public final class EndpointMetaDataConstants {
     public static final String TYPE_TEXT = "text";
 
     /** Type of meta datum. */
+    public static final String TYPE_SHORTTEXT = "short_text";
+
+    /** Type of meta datum. */
     public static final String TYPE_BOOL = "bool";
 
     /** Type of meta datum. */
@@ -46,6 +49,7 @@ public final class EndpointMetaDataConstants {
 
     /** Placeholder for any possible value. */
     public static final String PLACEHOLDER_ANY_POSSIBLE_VALUE = "*";
+
 
     private EndpointMetaDataConstants() {}
 

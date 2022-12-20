@@ -77,6 +77,7 @@ public class FileLoggingTextOutputReceiver implements TextOutputReceiver {
     public void addOutput(String line) {
         try {
             writer.write(line);
+            writer.newLine();
         } catch (IOException e) {
             log.error("Unable to write.", e);
         }

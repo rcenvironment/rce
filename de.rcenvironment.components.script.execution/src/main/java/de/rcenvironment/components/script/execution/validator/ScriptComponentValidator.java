@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.components.script.common.DefaultScriptHelper;
 import de.rcenvironment.components.script.common.ScriptComponentConstants;
 import de.rcenvironment.components.script.execution.Messages;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
@@ -48,6 +49,7 @@ import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
  * @author Thorsten Sommer (fixed version parsing + caching, second implementation)
  * @author Kathrin Schaffert (#14965)
  * @author Niklas Först
+ * @author Tim Rosenbach (#17536)
  */
 public class ScriptComponentValidator extends AbstractComponentValidator {
 
@@ -58,6 +60,8 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     private static final int MINUS_ONE = -1;
 
     private static final String COLON = ": ";
+    
+    private static final String DEFAULT_SCRIPT = DefaultScriptHelper.getDefaultScript();
 
     private static Log logger = LogFactory.getLog(ScriptComponentValidator.class);
 
@@ -76,13 +80,13 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
         if (script == null) {
             return messages;
         }
-
+        
         if (script.trim().isEmpty()) {
             final ComponentValidationMessage noScriptMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.ERROR, SshExecutorConstants.CONFIG_KEY_SCRIPT, Messages.noScript,
                 Messages.noScript + " defined");
             messages.add(noScriptMessage);
-        } else if (script.endsWith(ScriptComponentConstants.DEFAULT_SCRIPT_LAST_LINE)) {
+        } else if (script.equals(DEFAULT_SCRIPT)) {
             final ComponentValidationMessage defaultScriptMessage = new ComponentValidationMessage(
                 ComponentValidationMessage.Type.WARNING, SshExecutorConstants.CONFIG_KEY_SCRIPT,
                 Messages.defaultScriptMessage,
@@ -142,7 +146,8 @@ public class ScriptComponentValidator extends AbstractComponentValidator {
     @Override
     public List<ComponentValidationMessage> validateOnWorkflowStart(ComponentDescription componentDescription) {
         final List<ComponentValidationMessage> messages = new ArrayList<>();
-        String property=getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE);
+        // TODO >10.4.0 (p2): check unused variable
+        String property = getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE);
         if (getProperty(componentDescription, ScriptComponentConstants.SCRIPT_LANGUAGE).equals("Python")) {
             final String pythonInstallation = getProperty(componentDescription, PythonComponentConstants.PYTHON_INSTALLATION);
             if (!pythonInstallation.isEmpty()) {

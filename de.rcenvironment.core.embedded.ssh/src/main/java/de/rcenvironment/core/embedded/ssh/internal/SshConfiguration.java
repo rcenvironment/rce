@@ -114,7 +114,7 @@ public class SshConfiguration {
         try {
             staticAccounts = parseAccountData(staticAccountData, STATIC_ACCOUNT_DATA_SOURCE_INFO);
         } catch (ConfigurationException e) {
-            log.warn("Failed to parse the list of SSH accounts; the SSH server will remain disabled");
+            log.warn("Failed to parse the list of static SSH accounts, using an empty list instead: " + e.toString());
             staticAccounts = new ArrayList<>();
         }
 
@@ -339,7 +339,7 @@ public class SshConfiguration {
                 tempAccountList.add(account);
             } catch (IOException e) {
                 throw new ConfigurationException(
-                    "Error parsing the SSH account entry \"" + entry.getKey() + "\" loaded from " + dataSourceInfo);
+                    "Error parsing the SSH account entry \"" + entry.getKey() + "\" loaded from " + dataSourceInfo + ": " + e.toString());
             }
         }
         return tempAccountList;

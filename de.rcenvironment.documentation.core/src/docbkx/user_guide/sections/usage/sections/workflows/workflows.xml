@@ -1,14 +1,14 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="usage_components">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="usage_components">
 	<title>Workflows</title>
 	<para>This section describes the basics of workflows in RCE.</para>
-	<sect2>
+	<section>
 		<title>Rationale</title>
 		<para>RCE is designed to execute automated, distributed workflows. Workflows consist of so called
 			workflow components which can be coupled with each other. Loops are supported, even
 			multi-nested ones.</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Getting Started</title>
 		<para>To get started with workflows in RCE it is recommended to both read the following sections
 			about workflows and walk through the example workflows provided in RCE. The sections
@@ -20,8 +20,8 @@
 			the left-hand side, the newly created project is shown. The example workflows are
 			grouped in sub folders. It is recommended to walk through the workflows following the
 			prefix starting with <code>01_01_Hello_World.wf</code>.</para>
-	</sect2>
-	<sect2 id="workflow_components">
+	</section>
+	<section id="workflow_components">
 		<title>Workflow Components</title>
 		<para>Workflow components are either tools that are integrated by users or are provided by RCE
 			supplying multi-purpose functionality. The following list shows workflow components
@@ -94,8 +94,8 @@
 			text field, new paths can be created. Add a slash and the name of the node that shall be
 			created to the existing path. The new path will be added during the workflow run. </para>
 		<para>New XPaths can only be generated within the inputs tab. Using the outputs tab will cause an error.</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Coupling Workflow Components</title>
 		<para>A workflow component can send data to other workflow components. Therefore, a so called
 			connection needs to be created between the sending workflow component and the receiving
@@ -323,8 +323,8 @@
 				</tgroup>
 			</table>
 		</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Execution Scheduling of Workflow Components</title>
 		<para>The execution of workflows is data-driven. As soon as all of the desired input data is
 			available, a workflow component will be executed. Which input data is desired is defined
@@ -410,8 +410,8 @@
 			affects an input of the script component, check the option, which let the script
 			component execute on each new value at any of its inputs. Also check <emphasis role="italic">Not required</emphasis> as an alternative execution constraint
 			option.</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>(Nested) Loops</title>
 		<para>Workflow components can be coupled to loops. A loop must always contain a so-called driver
 			workflow component. Driver workflow components (group "Evaluation") are: Optimizer,
@@ -683,8 +683,8 @@
 					</tbody>
 				</tgroup>
 			</table>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Fault-tolerant Loops</title>
 		<para>Workflow components of a loop can fail. There are two kind of failures:<itemizedlist>
 				<listitem>
@@ -701,8 +701,8 @@
 			</itemizedlist></para>
 		<para> In the "Fault Tolerance" configuration tab of workflow driver components, it can be
 			configured how to handle failures in loops, for both kind of failures separately.</para>
-	</sect2>
-	<sect2 id="tool_result_verification">
+	</section>
+	<section id="tool_result_verification">
 		<title>Manual Tool Result Verification</title>
 		<para>After the execution of an integrated tool, the results are sent via outputs to the
 			next workflow component (e.g. to the next integrated tool). By default, this is done in
@@ -746,5 +746,5 @@
 				<para>A dialog appears that guides you through the verification process.</para>
 			</listitem>
 		</itemizedlist>
-	</sect2>
-</sect1>
+	</section>
+</section>

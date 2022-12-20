@@ -33,10 +33,7 @@ public final class ScriptComponentConstants {
     /** Default config value. Must be equal to the preconfigured script in '...execution/resources/configuration.json' */
     public static final String DEFAULT_SCRIPT_WITHOUT_COMMENTS_AND_IMPORTS =
         "import sys\n\nsys.stderr.write('Script was not configured')\nsys.stderr.flush()";
-    
-    /** Default config value. Must be equal to the last line of /resources/default.py */
-    public static final String DEFAULT_SCRIPT_LAST_LINE = "sys.stderr.flush()";
-    
+   
     /** Input group name. */
     public static final String GROUP_NAME_OR = "or";
 

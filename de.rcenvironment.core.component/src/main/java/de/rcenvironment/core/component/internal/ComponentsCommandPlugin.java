@@ -26,9 +26,19 @@ import de.rcenvironment.core.authorization.api.AuthorizationPermissionSet;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.authorization.api.DefaultAuthorizationObjects;
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
+import de.rcenvironment.core.command.spi.AbstractParsedCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.ListCommandParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedListParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
@@ -58,7 +68,29 @@ import de.rcenvironment.core.utils.incubator.formatter.Formatter;
 public class ComponentsCommandPlugin implements CommandPlugin {
 
     private static final String ROOT_COMMAND = "components";
+    
+    private static final CommandFlag LOCAL_FLAG = new CommandFlag("-l", "--local", "only list components provided by the local node");
+    
+    private static final CommandFlag REMOTE_FLAG = new CommandFlag("-r", "--remote", "only list components provided by the remote node(s)");
+    
+    private static final CommandFlag AS_TABLE_FLAG = new CommandFlag("-t", "--as-table", "format the output as a table that is especially"
+            + " suited for automated parsing");
+    
+    private static final StringParameter COMPONENT_ID_PARAMETER = new StringParameter(null, "component id",
+            "A component's id as listed by the \"components list\" command, "
+            + "e.g. \"rce/Parametric Study\", \"common/MyIntegratedTool\", or \"cpacs/MyCpacsTool\". ");
+    
+    private static final StringParameter GROUP_PARAMETER = new StringParameter(null, "group",
+            "A comma-separated list of user-defined authorization groups to assign. "
+            + "This replaces any previously assigned groups. "
+            + "Note that the specified groups must have been created or imported beforehand; "
+            + "see the \"auth create\" and \"auth import\" commands for details. "
+            + "Instead of a list of groups, the special value \"public\" can be used to grant access to "
+            + "any user within the visible network, while \"local\" revokes any previously granted access by remote users.");
 
+    private static final ListCommandParameter GROUPS_PARAMETER = new ListCommandParameter(GROUP_PARAMETER, "groups",
+            "list of authorization groups");
+    
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
     private LocalComponentRegistrationService componentRegistrationService;
@@ -70,58 +102,50 @@ public class ComponentsCommandPlugin implements CommandPlugin {
     private UserComponentIdMappingService userComponentIdMappingService;
 
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<>();
-        contributions.add(new CommandDescription(ROOT_COMMAND, "", false, "short form of \"components list\""));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " list", "[--local] [--as-table]", false,
-            "show available components; by default, components on the local node as well as "
-                + "those published by a reachable remote node are listed. Options:",
-            "--local  - only list components provided by the local node",
-            // "--remote - only list components from remote nodes",
-            "--as-table - format the output as a table that is especially suited for automated parsing"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " list-auth", "", false,
-            "Shows a list of all defined authorization settings. "
-                + "Note that these settings are independent of whether a matching component exists, "
-                + "which means that settings are kept when a component is removed and later added again."));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " set-auth", "<component id> <groups>", false,
-            "assigns a list of authorization groups to a component id; note that authorization "
-                + "settings always apply to all components with using this id, regardless of the component's version",
-            "<component id> - A component's id as listed by the \"components list\" command, "
-                + "e.g. \"rce/Parametric Study\", \"common/MyIntegratedTool\", or \"cpacs/MyCpacsTool\". "
-                + "This id must be enclosed in double quotes if it contains spaces.",
-            "<groups> - A comma-separated list of user-defined authorization groups to assign. "
-                + "This replaces any previously assigned groups. "
-                + "Note that the specified groups must have been created or imported beforehand; "
-                + "see the \"auth create\" and \"auth import\" commands for details. "
-                + "Instead of a list of groups, the special value \"public\" can be used to grant access to "
-                + "any user within the visible network, while \"local\" revokes any previously granted access by remote users."));
-        contributions.add(new CommandDescription(ROOT_COMMAND + "show", "<component id>", true,
-            "Displays detailed information about a component, particularly its inputs and outputs. Mainly used for automated testing."));
-        return contributions;
-    }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(ROOT_COMMAND);
-        String firstParameter = context.peekNextToken();
-        if (firstParameter == null || firstParameter.startsWith("-")) {
-            // "components" shorthand for "components list"; delegate to this without consuming the parameter
-            performComponentsList(context);
-            return;
-        }
-
-        String subCmd = context.consumeNextToken();
-        if (subCmd.equals("list")) {
-            performComponentsList(context);
-        } else if (subCmd.equals("set-auth")) {
-            performSetAuth(context);
-        } else if (subCmd.equals("list-auth")) {
-            performListAuth(context);
-        } else if (subCmd.equals("show")) {
-            performShow(context);
-        } else {
-            throw CommandException.unknownCommand(context);
-        }
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(ROOT_COMMAND, "manage component publishing",
+            "alias for \"components list\"",
+            this::performComponentsList,
+            new CommandModifierInfo(
+                new CommandFlag[] {
+                    LOCAL_FLAG,
+                    REMOTE_FLAG,
+                    AS_TABLE_FLAG
+                }
+            ),
+            new SubCommandDescription("list", "show available components; by default, components on the local node as well as those "
+                    + "published by a reachable remote node are listed",
+                this::performComponentsList,
+                new CommandModifierInfo(
+                    new CommandFlag[] {
+                        LOCAL_FLAG,
+                        REMOTE_FLAG,
+                        AS_TABLE_FLAG
+                    }
+                )
+            ),
+            new SubCommandDescription("list-auth",  "Shows a list of all defined authorization settings. "
+                    + "Note that these settings are independent of whether a matching component exists, "
+                    + "which means that settings are kept when a component is removed and later added again.", this::performListAuth),
+            new SubCommandDescription("set-auth", "assigns a list of authorization groups to a component id; note that authorization "
+                    + "settings always apply to all components with using this id, regardless of the component's version",
+                    this::performSetAuth,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        COMPONENT_ID_PARAMETER,
+                        GROUPS_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("show", "Show component definition", this::performShow,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        COMPONENT_ID_PARAMETER
+                    }
+                )
+            )
+        );
+        return new MainCommandDescription[] { commands };
     }
 
     @Reference
@@ -146,20 +170,22 @@ public class ComponentsCommandPlugin implements CommandPlugin {
     }
 
     private void performComponentsList(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
         // TreeMap for components ordered alphabetically by platform first, then alphabetically by components
         Map<String, TreeMap<String, DistributedComponentEntry>> components = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentSnapshot();
         final Collection<DistributedComponentEntry> installationSet;
 
-        final List<String> options = context.consumeRemainingTokens();
-        boolean localOnly = options.contains("--local");
-        boolean remoteOnly = options.contains("--remote");
+        //final List<String> options = context.consumeRemainingTokens();
+        boolean localOnly = modifiers.hasCommandFlag("-l");
+        boolean remoteOnly = modifiers.hasCommandFlag("-r");
         if (localOnly && remoteOnly) {
             throw CommandException.syntaxError("Only one of --local and --remote can be selected", context);
         }
         boolean includeAuthInformation = true; // always on for now; option removed
-        boolean asTable = options.contains("--as-table"); // for easier parsing by scripted calls
+        boolean asTable = modifiers.hasCommandFlag("-t"); // for easier parsing by scripted calls
 
         if (localOnly) {
             installationSet = compKnowledge.getAllLocalInstallations();
@@ -255,15 +281,16 @@ public class ComponentsCommandPlugin implements CommandPlugin {
     }
 
     private void performSetAuth(CommandContext context) throws CommandException {
-        String componentId = context.consumeNextToken();
-        String authSetting = context.consumeNextToken();
-        if (authSetting == null || context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String componentId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+        List<AbstractParsedCommandParameter> authSetting = ((ParsedListParameter) modifiers.getPositionalCommandParameter(1)).getResult();
+        String authSettingString = authSetting.stream().map(group -> (String) group.getResult()).collect(Collectors.joining(","));
+        
         if (componentId.isEmpty() || !componentId.contains("/")) {
             throw CommandException.syntaxError("Invalid component id", context);
         }
-        final AuthorizationPermissionSet permissionSet = parsePermissionSetString(authSetting, context);
+        final AuthorizationPermissionSet permissionSet = parsePermissionSetString(authSettingString, context);
         ComponentAuthorizationSelectorImpl selector = new ComponentAuthorizationSelectorImpl(componentId);
         componentRegistrationService.setComponentPermissions(selector, permissionSet);
         // fetch actual setting back from service to ensure consistency
@@ -343,19 +370,18 @@ public class ComponentsCommandPlugin implements CommandPlugin {
             context.println(sb.toString());
         }
     }
-
+    
     private void performShow(CommandContext context) throws CommandException {
-        final String externalComponentId = context.consumeNextToken();
-        if (externalComponentId == null) {
-            throw CommandException.syntaxError("Missing component ID", context);
-        }
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	
+    	ParsedStringParameter externalCompontentIdParamteter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
 
         String internalId;
         try {
-            internalId = userComponentIdMappingService.fromExternalToInternalId(externalComponentId);
+            internalId = userComponentIdMappingService.fromExternalToInternalId(externalCompontentIdParamteter.getResult());
         } catch (OperationFailureException e) {
             throw CommandException
-                .executionError(StringUtils.format("Failed to translate external ID '%s' into internal ID", externalComponentId), context);
+                .executionError(StringUtils.format("Failed to translate external ID '%s' into internal ID", externalCompontentIdParamteter.getResult()), context);
         }
         final Optional<DistributedComponentEntry> optionalComponentEntry =
             componentKnowledgeService.getCurrentSnapshot().getAllInstallations().stream()
@@ -363,11 +389,11 @@ public class ComponentsCommandPlugin implements CommandPlugin {
                 .findAny();
 
         if (!optionalComponentEntry.isPresent()) {
-            throw CommandException.executionError(StringUtils.format("No component with ID '%s' found", externalComponentId), context);
+            throw CommandException.executionError(StringUtils.format("No component with ID '%s' found", externalCompontentIdParamteter.getResult()), context);
         }
 
         final DistributedComponentEntry componentEntry = optionalComponentEntry.get();
-        context.getOutputReceiver().addOutput(StringUtils.format("External ID: %s", externalComponentId));
+        context.getOutputReceiver().addOutput(StringUtils.format("External ID: %s", externalCompontentIdParamteter.getResult()));
         context.getOutputReceiver().addOutput(StringUtils.format("Internal ID: %s", internalId));
 
         final EndpointDefinitionsProvider inputDefinitionsProvider = componentEntry.getComponentInterface().getInputDefinitionsProvider();

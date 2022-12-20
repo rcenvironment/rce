@@ -15,9 +15,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.CommandParser;
 import de.rcenvironment.core.command.spi.SingleCommandHandler;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
@@ -58,6 +62,8 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
     private static final String DOUBLE_QUOTE = "\"";
 
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
+    
+    private static final String COMMA = ",";
 
     // private static final String MIRROR = "-m";
     //
@@ -78,6 +84,10 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
     private final SingleCommandHandler singleCommandHandler;
 
     private volatile Object initiatorInformation;
+    
+    private final CommandParser parser;
+    
+    private Log log = LogFactory.getLog(getClass());
 
     // private final File profileOutputDirectory;
 
@@ -88,9 +98,19 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
         this.remainingTokens = new LinkedList<String>(); // empty list; filled after normalization
         this.outputReceiver = outputReceiver;
         this.singleCommandHandler = singleCommandHandler;
+        this.parser = null;
         // this.profileOutputDirectory = profileOutput;
     }
 
+    public MultiCommandHandler(List<String> tokens, TextOutputReceiver outputReceiver, CommandParser parser, File fileOutput) {
+        
+        this.rawTokens = tokens;
+        this.remainingTokens = new LinkedList<String>(); // empty list; filled after normalization
+        this.outputReceiver = outputReceiver;
+        this.singleCommandHandler = null;
+        this.parser = parser;
+    }
+    
     /**
      * This constructor is manly intended for easing testing. As it does not specify the location of the profile output directory, this
      * class will return an error if the 'saveto' command is encountered during command execution.
@@ -144,10 +164,15 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
                     collectedTokens.add(token);
                 }
             } while (token != null);
-            outputReceiver.onFinished();
+            
             return CommandExecutionResult.DEFAULT;
         } catch (CommandException e) {
             outputReceiver.onFatalError(e);
+            if (e.getOutputReceiver() != outputReceiver) {
+                // special case: if output was redirected, finish both the original and redirection output
+                e.getOutputReceiver().onFinished();
+            }
+            outputReceiver.onFinished();
             return CommandExecutionResult.ERROR;
         }
     }
@@ -293,6 +318,11 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
                     quotedPartBuffer += " " + token.substring(0, token.length() - 1);
                     output.add(unescapeQuotes(quotedPartBuffer));
                     quotedPartBuffer = null;
+                } else if (token.endsWith(DOUBLE_QUOTE + COMMA) && !token.endsWith(ESCAPED_DOUBLE_QUOTE + COMMA)) {
+                    //end of quoted part
+                    quotedPartBuffer += " " + token.substring(0, token.length() - 2) + COMMA;
+                    output.add(unescapeQuotes(quotedPartBuffer));
+                    quotedPartBuffer = null;
                 } else {
                     // quoted part continued
                     // TODO check for nested quoted parts?
@@ -327,7 +357,8 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
 
     private void executeSingleCommand(List<String> tokens) throws CommandException {
         CommandContext commandContext = new CommandContext(tokens, outputReceiver, initiatorInformation);
-        singleCommandHandler.execute(commandContext);
+        
+        parser.parseCommand(commandContext).execute();
     }
 
 }

@@ -31,6 +31,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.ProcessEndpointsGroupCommand;
@@ -197,22 +198,19 @@ public class ParametricStudyEndpointSelectionPane extends EndpointSelectionPane 
             result.setText(value);
 
             if (dataType.equals(EndpointMetaDataConstants.TYPE_INT)) {
-                result.addVerifyListener(new NumericalTextConstraintListener(result,
-                    NumericalTextConstraintListener.ONLY_INTEGER));
+                result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER));
                 if (value.equals(MINUS)) {
                     result.setText("");
                 }
             }
             if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT)) {
-                result.addVerifyListener(new NumericalTextConstraintListener(result,
-                    NumericalTextConstraintListener.ONLY_FLOAT));
+                result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT));
                 if (value.equals(MINUS)) {
                     result.setText("");
                 }
             }
             if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT_GREATER_ZERO)) {
-                result.addVerifyListener(new NumericalTextConstraintListener(result,
-                    NumericalTextConstraintListener.ONLY_FLOAT | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
+                result.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO));
                 // TODO "GREATER_OR_EQUAL_ZERO" is a quickfix to prohibit the user from entering a "-" sign,
                 // since "GREATER_ZERO" did not work as expected. Should be changed when the underlying issue #14301 is fixed.
                 if (value.equals(MINUS)) {

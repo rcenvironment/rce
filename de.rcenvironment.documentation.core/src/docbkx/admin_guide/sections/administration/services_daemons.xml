@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section>
 	<title>Installation as a Service on a <phrase os="linux">Linux Server</phrase><phrase
 		os="windows">Windows Server</phrase></title>
 	<para>For ad-hoc or temporary RCE network setups, running a headless RCE from the command
@@ -8,7 +8,7 @@
 		os="linux">Linux systemd Service</phrase> instead. This has the advantage that
 		RCE automatically shuts down when the server is shut down, and automatically restarts
 		when the server does.</para>
-	<sect2 os="linux">
+	<section os="linux">
 	    <title>RCE as a Linux systemd Service</title>
 		<para>This section describes setting up RCE as an auto-start service on Linux.</para>
 	    <para>Please note that the "<code>rce-daemon</code>" command provided with previous RCE releases
@@ -70,7 +70,7 @@
 	        <listitem>
 	            <para>In systemd terminology, the created .service file is called (or represents) a
 	                "service unit", which is then controlled through various standard commands. See
-	                the sect2 "Useful management commands" below for a list of commands. For now,
+	                the section "Useful management commands" below for a list of commands. For now,
 	                just use <code>systemctl start rce-&lt;ID></code> to start the instance, and
 	                    <code>systemctl status rce-&lt;ID></code> to see if it started as expected.
 	                If it did, use <code>systemctl enable rce-&lt;ID></code> to auto-start the
@@ -125,8 +125,8 @@
 	        </listitem>
 	        <!-- TODO also add journalctl commands? -->
 	    </itemizedlist>
-	</sect2>
-	<sect2 os="windows">
+	</section>
+	<section os="windows">
 	    <title>RCE as a Windows Service</title>
 		<para>Executing the following steps will install RCE as an auto-start service on Windows.</para>
 	    <para>
@@ -252,8 +252,8 @@
 	            </listitem>
 	        </orderedlist>
 	    </para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 	    <title><phrase os="linux">Daemon</phrase><phrase os="windows">Service</phrase>
 	        Configuration</title>
 	    <para>After installation, the <phrase os="linux">daemon</phrase><phrase os="windows"
@@ -276,5 +276,5 @@
 	            configuration changes as soon as configuration files are changed or new import
 	            files are placed in the respective folders.</para>
 	    </note>
-	</sect2>
-</sect1>
+	</section>
+</section>

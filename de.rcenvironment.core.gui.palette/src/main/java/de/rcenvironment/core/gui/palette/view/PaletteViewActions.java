@@ -31,6 +31,8 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PlatformUI;
 
+import de.rcenvironment.core.gui.integration.common.ShowDeactivateIntegrationHandler;
+import de.rcenvironment.core.gui.integration.toolintegration.ShowIntegrationWizardHandler;
 import de.rcenvironment.core.gui.palette.toolidentification.ToolIdentification;
 import de.rcenvironment.core.gui.palette.toolidentification.ToolType;
 import de.rcenvironment.core.gui.palette.view.dialogs.AddCustomGroupDialog;
@@ -43,8 +45,6 @@ import de.rcenvironment.core.gui.palette.view.palettetreenodes.GroupNode;
 import de.rcenvironment.core.gui.palette.view.palettetreenodes.PaletteTreeNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationRemoveHandler;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationWizardHandler;
 import de.rcenvironment.core.gui.workflow.editor.documentation.ToolIntegrationDocumentationGUIHelper;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -78,9 +78,11 @@ public class PaletteViewActions {
 
     private Action integrateTool;
 
-    private Action editTool;
+    private Action editToolIntegration;
 
-    private Action deactivateTool;
+    private Action editWorkflowIntegration;
+
+    private Action deactivateIntegration;
 
     private Action deleteEmptyGroup;
 
@@ -88,9 +90,9 @@ public class PaletteViewActions {
 
     private Action showEmptyGroups;
 
-    private Action openToolDocumentation;
+    private Action openComponentDocumentation;
 
-    private Action exportToolDocumentation;
+    private Action exportComponentDocumentation;
 
     private Action editGroup;
 
@@ -137,9 +139,10 @@ public class PaletteViewActions {
 
         boolean singleSelection = nodes.length == 1;
         resetGroup.setEnabled(false);
-        editTool.setEnabled(singleSelection && nodes[0].canHandleEditEvent());
-        openToolDocumentation.setEnabled(singleSelection && isIntegratedTool(nodes[0]));
-        exportToolDocumentation.setEnabled(singleSelection && isIntegratedTool(nodes[0]));
+        editToolIntegration.setEnabled(singleSelection && nodes[0].canHandleEditEvent() && isIntegratedTool(nodes[0]));
+        openComponentDocumentation.setEnabled(singleSelection && (isIntegratedTool(nodes[0]) || isIntegratedWorkflow(nodes[0])));
+        exportComponentDocumentation.setEnabled(singleSelection && (isIntegratedTool(nodes[0]) || isIntegratedWorkflow(nodes[0])));
+        editWorkflowIntegration.setEnabled(singleSelection && nodes[0].canHandleEditEvent() && isIntegratedWorkflow(nodes[0]));
         deleteEmptyGroup.setEnabled(singleSelection && isCustomGroup(nodes[0])
             && !contentProvider.containsAnyToolNodes(nodes[0], true));
         if (deleteEmptyGroup.isEnabled()) {
@@ -171,6 +174,13 @@ public class PaletteViewActions {
     private boolean isIntegratedTool(PaletteTreeNode paletteTreeNode) {
         if (paletteTreeNode.isAccessibleComponent()) {
             return paletteTreeNode.getAccessibleComponentNode().getType().equals(ToolType.INTEGRATED_TOOL);
+        }
+        return false;
+    }
+
+    private boolean isIntegratedWorkflow(PaletteTreeNode paletteTreeNode) {
+        if (paletteTreeNode.isAccessibleComponent()) {
+            return paletteTreeNode.getAccessibleComponentNode().getType().equals(ToolType.INTEGRATED_WORKFLOW);
         }
         return false;
     }
@@ -212,15 +222,20 @@ public class PaletteViewActions {
         menuManager.add(addGroup);
         menuManager.add(organizeGroups);
         menuManager.add(showEmptyGroups);
-        if (openToolDocumentation.isEnabled()) {
+        if (openComponentDocumentation.isEnabled()) {
             menuManager.add(new Separator());
-            menuManager.add(openToolDocumentation);
-            menuManager.add(exportToolDocumentation);
-            menuManager.add(editTool);
+            menuManager.add(openComponentDocumentation);
+            menuManager.add(exportComponentDocumentation);
+        }
+        if (editToolIntegration.isEnabled()) {
+            menuManager.add(editToolIntegration);
+        }
+        if (editWorkflowIntegration.isEnabled()) {
+            menuManager.add(editWorkflowIntegration);
         }
         menuManager.add(new Separator());
         menuManager.add(integrateTool);
-        menuManager.add(deactivateTool);
+        menuManager.add(deactivateIntegration);
 
         if (showComponentInformation.isEnabled()) {
             menuManager.add(new Separator());
@@ -274,13 +289,15 @@ public class PaletteViewActions {
 
         integrateTool = createIntegrateToolAction();
 
-        editTool = createEditToolAction();
+        editToolIntegration = createEditToolIntegrationAction();
 
-        deactivateTool = createDeactivateToolAction();
+        editWorkflowIntegration = createEditWorkflowIntegrationAction();
 
-        openToolDocumentation = createOpenToolDocumentationAction();
+        deactivateIntegration = createDeactivateIntegrationAction();
 
-        exportToolDocumentation = createExportToolDocumentationAction();
+        openComponentDocumentation = createOpenComponentDocumentationAction();
+
+        exportComponentDocumentation = createExportComponentDocumentationAction();
 
         deleteEmptyGroup = createDeleteEmptyGroupAction();
 
@@ -355,8 +372,8 @@ public class PaletteViewActions {
         };
     }
 
-    private Action createOpenToolDocumentationAction() {
-        return new Action("Open Tool Documentation") {
+    private Action createOpenComponentDocumentationAction() {
+        return new Action("Open Component Documentation") {
 
             @Override
             public void run() {
@@ -372,8 +389,8 @@ public class PaletteViewActions {
         };
     }
 
-    private Action createExportToolDocumentationAction() {
-        return new Action("Export Tool Documentation") {
+    private Action createExportComponentDocumentationAction() {
+        return new Action("Export Component Documentation") {
 
             @Override
             public void run() {
@@ -389,12 +406,13 @@ public class PaletteViewActions {
         };
     }
 
-    private Action createDeactivateToolAction() {
-        return new Action("Deactivate a Tool...", ImageManager.getInstance().getImageDescriptor(StandardImages.INTEGRATION_REMOVE)) {
+    private Action createDeactivateIntegrationAction() {
+        return new Action("Deactivate an Integration...",
+            ImageManager.getInstance().getImageDescriptor(StandardImages.INTEGRATION_REMOVE)) {
 
             @Override
             public void run() {
-                ShowIntegrationRemoveHandler handler = new ShowIntegrationRemoveHandler();
+                ShowDeactivateIntegrationHandler handler = new ShowDeactivateIntegrationHandler();
                 try {
                     handler.execute(new ExecutionEvent());
                     paletteView.selectSelectionToolNode();
@@ -406,8 +424,22 @@ public class PaletteViewActions {
         };
     }
 
-    private Action createEditToolAction() {
-        return new Action("Edit Tool...", ImageManager.getInstance().getImageDescriptor(StandardImages.INTEGRATION_EDIT)) {
+    private Action createEditToolIntegrationAction() {
+        return new Action("Edit selected Tool Integration...",
+            ImageManager.getInstance().getImageDescriptor(StandardImages.INTEGRATION_EDIT)) {
+
+            @Override
+            public void run() {
+                PaletteTreeNode node = (PaletteTreeNode) (paletteView.getPaletteTreeViewer().getTree().getSelection()[0].getData());
+                node.handleEditEvent();
+                paletteView.selectSelectionToolNode();
+            }
+        };
+    }
+
+    private Action createEditWorkflowIntegrationAction() {
+        return new Action("Edit selected Workflow Integration...",
+            ImageManager.getInstance().getImageDescriptor(StandardImages.WORKFLOW_INTEGRATION_EDIT)) {
 
             @Override
             public void run() {
@@ -445,7 +477,7 @@ public class PaletteViewActions {
                     return;
                 }
                 EditCustomGroupDialog editDialog =
-                    new EditCustomGroupDialog(Display.getDefault().getActiveShell(), nodes[0], contentProvider.getAssignment());
+                    new EditCustomGroupDialog(Display.getDefault().getActiveShell(), nodes[0], contentProvider);
                 editDialog.open();
                 if (editDialog.isGroupUpdated()) {
                     paletteView.getPaletteTreeViewer().getTree().setVisible(false);
@@ -455,7 +487,6 @@ public class PaletteViewActions {
                     paletteView.getPaletteTreeViewer().getTree().setVisible(true);
                 }
             }
-
         };
     }
 

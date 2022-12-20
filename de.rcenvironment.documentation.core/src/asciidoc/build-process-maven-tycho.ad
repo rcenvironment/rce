@@ -1,0 +1,83 @@
+## Build Process
+
+### The Maven POM Hierarchy
+
+TODO: overview
+
+There is no obvious "best" placement for the parent POMs within the repositories
+and project hierarchy.
+For now, the naming conventions are as follows:
+
+- `de.rcenvironment.build.common` (shared between repositories)
+- `de.rcenvironment.build.*` (specific parent POM projects per repository)
+
+Current "well-known" instances of repository-specific projects are:
+
+- `de.rcenvironment.build.main`
+- `de.rcenvironment.build.thirdparty`
+
+The `.common` project is supposed to be shared between repositories, although
+the mechanism for this (on-demand copying between repositories vs. versioned 
+handling as pre-installed Maven artifacts) is not finally decided yet (see below).
+To keep future changes simple, these should be a separate project per repository.
+
+
+### Maven POM Versioning and Parent POM Sharing
+
+Due to the requirements of building with Tycho, all Maven POMs that generate OSGi
+artifacts are always versioned as `\*-SNAPSHOT`, even on release builds.
+This is unusual in the Maven ecosystem, but required for technical reasons in Tycho,
+in particular the correspondence to OSGi/Tycho `*.qualifier` manifest versions.
+
+Parent POMs, however, do not have this restriction, and could use any versioning
+convention.
+However, their versioning scheme depends on whether they are supposed to be deployed
+as "stable" artifacts at some point, or whether they are considered parts of each
+local repository.
+In the latter case, propagation of parent POM improvements are handled by 
+manually copying/merging updates between repositories.
+While obviously more crude, this has the benefit of avoiding the overhead of
+full artifact management which is then only used for a few parent POMs.
+Additionally, this guarantees a consistent, reproducible state of parent POMs
+to be used at any time, even between releases.
+Consequently, until there is a definite advantage of handling them as standalone 
+artifacts, the "common" parent POMs should be maintained as part of each repository,
+and referenced via  `<relativePath>`.
+These "common" parent POMs should use the static version `1.0.0-SNAPHOT`.
+
+In summary, all parent POMs should either:
+
+- use the same version as the surrounding bundles and other artifacts (as long as
+  we keep using the same version for all of them, at least), and be placed in a
+  custom `de.rcenvironment.build.*` project per repository,
+  
+- OR use the fixed version `1.0.0-SNAPSHOT` and be placed in the 
+  `de.rcenvironment.build.common` project if the parent POM is 
+  considered "generic" or "shared" between projects or repositories.
+  (Note that the previous version convention was `1.0.0`, which is still in use 
+  until the migration is complete.)
+
+
+### Maven POM Conventions and Rules
+
+* Version numbers that are likely to change frequently or used in several places 
+  should be extracted into Maven properties, at the highest hierarchy level where 
+  they are used.
+  Examples for this are Tycho (used for several build plugins), and frequently
+  updated libraries like Jackson (where the same version is also used for multiple 
+  dependencies).
+  In contrast, slowly-changing plugins with an independent version (like 
+  "maven-clean-plugin") should not be extracted as properties to avoid clutter.
+* The naming convention for custom Maven/build properties depends on whether the 
+  property is intended to be overridden from the outside (the call initiating the
+  build) or not.  
+** Properties that are meant to be overridable should be named `rce.maven.*`.
+** Properties that are only used "from POM to POM" should be named `internal.\*`.
+  (TODO Decide whether to change this to `rce.internal.*` for consistency.)
+* Maven build plugins that are relevant for all POMs in a hierarchy should be
+  versioned and added in a parent POM.
+* Maven build plugins that are only relevant for some child POMs should be versioned
+  in a parent POM (in `<pluginManagement>`), and then activated (via `<plugins>`) 
+  where needed. The latter can still take place in a parent POM, but on a lower level. 
+
+

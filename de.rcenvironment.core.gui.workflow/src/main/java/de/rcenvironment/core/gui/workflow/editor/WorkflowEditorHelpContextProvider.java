@@ -16,7 +16,6 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowExecutionInformationPart;
@@ -57,13 +56,8 @@ public class WorkflowEditorHelpContextProvider implements IContextProvider {
             // contexts.xml are adapted and version suffix is added)
             // as a consequence, context help can only be provided per component and not per version
             // - seid_do, Dec 2013
-            if (componentIdentifier.startsWith("de.rcenvironment.integration.workflow")) {
-                // We give components that integrate some workflow a special treatment here, since they have a different F1-help than other
-                // user-integrated components. This will be changed in future versions and components backed by tools and by workflows will
-                // be indistinguishable by the user
-                return getContextFromHelpSystem("de.rcenvironment.workflow");
-            } else if (toolIntegrationRegistry.hasTIContextMatchingPrefix(componentIdentifier)) {
-                return getContextFromHelpSystem(ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
+            if (toolIntegrationRegistry.hasTIContextMatchingPrefix(componentIdentifier)) {
+                return getContextFromHelpSystem(ComponentConstants.INTEGRATION_CONTEXTUAL_HELP_PLACEHOLDER_ID);
             } else if (componentIdentifier.contains("de.rcenvironment.remoteaccess")) {
                 return getContextFromHelpSystem("de.rcenvironment.remoteaccess.*");
             } else {

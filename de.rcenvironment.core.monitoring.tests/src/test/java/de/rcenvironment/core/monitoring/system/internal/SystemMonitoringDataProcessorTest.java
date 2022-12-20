@@ -33,9 +33,9 @@ public class SystemMonitoringDataProcessorTest {
 
     private static final long FAKE_RAM_USAGE = 5000L;
 
-    private static double FAKE_CPU_USAGE = 0.7D;
+    private static final double FAKE_CPU_USAGE = 0.7D;
 
-    private static double FAKE_CPU_USAGE_1 = 0.8D;
+    private static final double FAKE_CPU_USAGE_1 = 0.8D;
 
     /**
      * Testing that a full system snapshot is never null.

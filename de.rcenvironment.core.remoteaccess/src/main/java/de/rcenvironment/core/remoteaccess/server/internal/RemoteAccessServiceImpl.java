@@ -1185,7 +1185,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                         timeSpan = INT_NO_DATA_PLACEHOLDER;
                         availableRam = INT_NO_DATA_PLACEHOLDER;
                     }
-                    String line = csvFormat.format(tokens, StringUtils.format(FORMAT_2F, cpuAvg), numSamples, timeSpan, availableRam);
+                    String line = StringUtils.format("%s %s", csvFormat.format(tokens),
+                        csvFormat.format(StringUtils.format(FORMAT_2F, cpuAvg), numSamples, timeSpan, availableRam));
                     outputReceiver.addOutput(line);
                 } else {
                     String line = csvFormat.format(tokens);

@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.cpacs.feature"
       label="RCE CPACS Components Feature"
-      version="10.3.1.qualifier"
+      version="10.4.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

@@ -32,6 +32,11 @@ public class EndpointAdapter {
         
         protected Builder() {}
 
+        public Builder isInputAdapter(Boolean isInputAdapter) {
+            this.product.isInputAdapter = isInputAdapter;
+            return this;
+        }
+
         public Builder internalEndpointName(String name) {
             this.product.internalEndpointName = name;
             return this;
@@ -66,7 +71,7 @@ public class EndpointAdapter {
             Objects.requireNonNull(this.product.internalEndpointName);
             Objects.requireNonNull(this.product.externalEndpointName);
             Objects.requireNonNull(this.product.workflowNodeIdentifier);
-            Objects.requireNonNull(this.product.adaptedDataType);
+//            Objects.requireNonNull(this.product.adaptedDataType); //TODO: Clarify if dataType is still required.
 
             if (product.isInputAdapter) {
                 assertInputDefinitionsSet();
@@ -105,6 +110,39 @@ public class EndpointAdapter {
 
     private InputExecutionContraint executionContraint;
     
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((workflowNodeIdentifier == null) ? 0 : workflowNodeIdentifier.hashCode());
+        result = prime * result + ((internalEndpointName == null) ? 0 : internalEndpointName.hashCode());
+        result = prime * result + ((String.valueOf(isInputAdapter) == null) ? 0 : String.valueOf(isInputAdapter).hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        EndpointAdapter other = (EndpointAdapter) obj;
+
+        if (!workflowNodeIdentifier.equals(other.workflowNodeIdentifier)) {
+            return false;
+        }
+        if (isInputAdapter != other.isInputAdapter) {
+            return false;
+        }
+        if (!internalEndpointName.equals(other.internalEndpointName)) {
+            return false;
+        }
+        return true;
+    }
+
     public static Builder inputAdapterBuilder() {
         final Builder returnValue = new Builder();
         returnValue.product.isInputAdapter = true;
@@ -115,6 +153,11 @@ public class EndpointAdapter {
         final Builder returnValue = new Builder();
         returnValue.product.isInputAdapter = false;
         return returnValue;
+    }
+
+    public static Builder adapterBuilder() {
+        return new Builder();
+
     }
 
     @Override
@@ -167,5 +210,9 @@ public class EndpointAdapter {
 
     public InputDatumHandling getInputDatumHandling() {
         return this.datumHandling;
+    }
+
+    public void setExternalName(String externalName) {
+        this.externalEndpointName = externalName;
     }
 }

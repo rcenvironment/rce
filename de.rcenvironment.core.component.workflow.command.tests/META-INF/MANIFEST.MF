@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Workflow Commands Test
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow.command.tests
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Automatic-Module-Name: de.rcenvironment.core.component.workflow.command.tests
 Fragment-Host: de.rcenvironment.core.component.workflow.command
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -20,5 +20,6 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.utils.common.textstream.receivers,
  org.apache.commons.io;version="2.2.0",
  org.apache.commons.logging;version="1.0.4",
- org.easymock;version="5.0.0",
+ org.easymock;version="4.2.0",
  org.junit
+Bundle-Vendor: DLR

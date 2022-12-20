@@ -402,6 +402,12 @@ public class NodeIdentifierImpl implements CommonIdBase, ResolvableNodeId, Insta
     }
 
     @Override
+    public boolean isSameInstanceNodeSessionAs(LogicalNodeSessionId id) {
+        // slightly crude, but no point in premature optimization as this is probably a rare call
+        return isSameInstanceNodeSessionAs(id.convertToInstanceNodeSessionId());
+    }
+
+    @Override
     public String getRawAssociatedDisplayName() {
         return nodeNameResolver.getDisplayNameForNodeId(this, false);
     }

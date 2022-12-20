@@ -75,7 +75,7 @@
       <property name="authorFormat" value="[A-Z][\-\p{L}]*\s+[\p{L}\.\s]*[A-Z][\-\p{L}]*"/>
     </module>
     <module name="JavadocMethod">
-      <property name="scope" value="public"/>
+      <property name="accessModifiers" value="public"/>
       <property name="tokens" value="METHOD_DEF"/>
     </module>
     <module name="JavadocVariable">
@@ -160,7 +160,7 @@
     <property name="file" value="${config_loc}/suppressions.xml"/>
   </module>
   <module name="NewlineAtEndOfFile">
-    <property name="lineSeparator" value="crlf"/>
+    <property name="lineSeparator" value="lf_cr_crlf"/>
     <property name="fileExtensions" value="java,properties,pom,MF"/>
   </module>
   <module name="Translation"/>

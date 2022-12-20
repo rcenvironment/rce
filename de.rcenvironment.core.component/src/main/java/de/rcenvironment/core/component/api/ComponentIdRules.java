@@ -25,15 +25,21 @@ public final class ComponentIdRules {
     protected static final int MINIMUM_ID_LENGTH = 2;
 
     protected static final String MINIMUM_ID_LENGTH_ERROR_MESSAGE =
-        "It must consist of at least " + MINIMUM_ID_LENGTH + " characters";
+        "It must consist of at least " + MINIMUM_ID_LENGTH + " characters.";
+
+    protected static final String MINIMUM_VERSION_LENGTH_ERROR_MESSAGE =
+        "The version must not be empty.";
 
     protected static final int MAXIMUM_ID_LENGTH = 100;
 
     protected static final String MAXIMUM_ID_LENGTH_ERROR_MESSAGE =
-        "The maximum allowed length is %d characters";
+        "The maximum allowed length is %d characters.";
 
     protected static final String ID_INVALID_AS_FILENAME_ERROR_MESSAGE =
-        "It violates the rules for valid filenames of at least one operating system";
+        "It violates the rules for valid filenames of at least one operating system.";
+
+    protected static final String ID_INVALID_AS_VERSION_ERROR_MESSAGE =
+        "It violates the rules for valid versions of at least one operating system.";
 
     private static final int MAXIMUM_VERSION_STRING_LENGTH = 32;
 
@@ -75,6 +81,9 @@ public final class ComponentIdRules {
      * @return An {@link Optional} human-readable error message if (and only if) there is a violation.
      */
     public static Optional<String> validateComponentVersionRules(String input) {
+        if (input.length() == 0) {
+            return Optional.of(MINIMUM_VERSION_LENGTH_ERROR_MESSAGE);
+        }
         Optional<String> commonValidationError = CommonIdRules.validateCommonVersionStringRules(input); // note: version rule set
         if (commonValidationError.isPresent()) {
             return commonValidationError;
@@ -84,7 +93,7 @@ public final class ComponentIdRules {
         }
         // additionally, check whether the given version string violates any platform-specific rules for filenames
         if (!CrossPlatformFilenameUtils.isFilenameValid(input)) {
-            return Optional.of(ID_INVALID_AS_FILENAME_ERROR_MESSAGE);
+            return Optional.of(ID_INVALID_AS_VERSION_ERROR_MESSAGE);
         }
         return Optional.empty(); // passed
     }

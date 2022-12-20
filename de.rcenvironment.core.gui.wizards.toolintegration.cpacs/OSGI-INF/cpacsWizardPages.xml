@@ -1,9 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="CPACS tool integration wizard pages">
-
-   <implementation class="de.rcenvironment.core.gui.wizards.toolintegration.cpacs.CpacsWizardPages"/>
-   
-   <service>
-      <provide interface="de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributor"/>
-   </service
-   >
-</scr:component>

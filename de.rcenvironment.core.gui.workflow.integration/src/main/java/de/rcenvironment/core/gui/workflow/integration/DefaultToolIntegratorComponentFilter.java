@@ -7,7 +7,7 @@
  */
 package de.rcenvironment.core.gui.workflow.integration;
 
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.workflow.editor.properties.ComponentFilter;
 
 /**

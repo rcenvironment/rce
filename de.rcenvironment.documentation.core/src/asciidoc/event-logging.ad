@@ -1,0 +1,55 @@
+# The Event Log
+
+The RCE __Event Log__ provides a high-level summary of events that are relevant to users and administrators of RCE instances.
+
+## Design Principles
+
+Unlike a low-level technical log file, the Event Log is meant to aggregate events as much as possible.
+Where a technical log may list several steps related to an action or event, the Event Log is meant to focus on semantic results and final events, and condense them into a minimal number of entries.
+
+For example, a technical log would typically represent the related events "user requested pause", followed by "pausing", and then "paused" as separate entries, often with other events mixed in-between.
+
+The Event Log, in contrast, would represent this example as a single "paused" event.
+The details surrounding this event are collected and represented as attributes.
+For example, the "paused" event could have a "reason" attribute with a value of "initiated by user", and an optional "initiated by" attribute providing the user's identity information.
+This design allows users to quickly understand what is happening in the system without associating multiple log events.
+
+Of course, not all events can be merged this way.
+For example, the start of a network connection should be logged once it is established, as it is unknown when it will terminate.
+In these such cases, providing one or more unique association id(s) as event attribute(s) is recommended.
+If the event log is consumed using specialized clients, events can be automatically associated using these ids.
+Even if the event log is consumed without such tools, these association ids can still be easily found by using text-based search or filtering. 
+
+## Event Structure and File Representation
+ 
+In the current implementation, all event entries are appended to two files in the profile directory.
+
+The `events-readable.log` file is meant for human inspection, and provides more explicit titles for event types and attributes.
+This file can be read in RCE by opening it via "File > Open", or with any external text file reader just like a `.txt` file.
+
+The `events-compact.log` file, on the other hand, is meant for automated parsing.
+It uses technical ids for the event types and their attributes, and represents each event as a single line of UTF-8 JSON.
+
+Event timestamps are represented differently in those files.
+In `events-readable.log`, times are formatted in a human-readable way, in the form of `<YYYY>-<MM>-<DD>T<hh>:<mm>:<ss>.<mmm>`.
+This format is based on ISO 8601, with milliseconds accuracy, using "unqualified local time", i.e., no time zone information but using local time.
+The latter choice was made to improve human readability when inspecting raw event data, at the cost of potential "jumps in time" on changes in the local UTC offset, e.g., "winter" time vs. "summer" time/DST.
+In `events-compact.log`, on the other hand, timestamps are encoded in the "_ts" JSON field as milliseconds from 1970-01-01T00:00:00Z.
+
+Unlike other RCE log files, these files are intentionally not cleared on the restart of an instance, in order to provide a long-term protocol of system activity.
+For example, if an RCE instance is running as a system daemon, even repeated restarts of the host system will not erase older event data.
+
+Note that both file formats are __preliminary__, and the scope of event types and attributes is not fully implemented yet.
+Notably, most workflow and component/tool execution events are not being logged yet. 
+
+
+## Events Types and Attributes
+
+This section lists the specified event types and their possible attributes.
+The human-readable titles of the types and attributes (listed first) are what appears in the `events-readable.log` file.  
+Their technical ids (shown in a smaller font and parantheses) are used in the `events-compact.log` file, with the intention of more long-term stability.
+
+include::generated/event-types.ad[]
+
+NOTE: It is possible that event types not listed here were/are/will be logged by past, current, or future RCE versions.
+Therefore, any automated code for parsing event log data MUST tolerate event types not listed here. 

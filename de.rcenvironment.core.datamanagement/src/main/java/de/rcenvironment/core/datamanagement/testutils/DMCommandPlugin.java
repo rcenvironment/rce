@@ -11,8 +11,6 @@ package de.rcenvironment.core.datamanagement.testutils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,8 +24,18 @@ import org.apache.commons.io.FileUtils;
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.IntegerParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.NamedParameter;
+import de.rcenvironment.core.command.spi.NamedSingleParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.datamanagement.DataManagementService;
@@ -76,13 +84,53 @@ public class DMCommandPlugin implements CommandPlugin {
     private static final int DEFAULT_NUMBER_OF_WORKFLOWS = 10;
 
     private static final String DEFAULT_WORKFLOWNAME_PREFIX = "dummy_workflow";
+    
+    private static final String BIGFILES = "--bigfiles";
+    
+    private static final String SMALLFILES = "--smallfiles";
+
+    private static final String PREFIX = "--prefix";
+    
+    private static final String WORKFLOWS = "--workflows";
+    
+    private static final String ITERATIONS = "--iterations";
+    
+    private static final String ALLOWED_DEVIATION = "--allowedDeviation";
 
     /**
      * The values for number of iterations, number of components and number of inputs are varied for each workflow. This constant defines
      * how much deviation from the default value is allowed (i.e. 20%)
      */
     private static final double DEFAULT_ALLOWED_DEVIATION_IN_PERCENT = 20;
-
+    
+    private static final CommandFlag SMALL_FILES_FLAG = new CommandFlag("-s", SMALLFILES, "small input files for components");
+    
+    private static final CommandFlag BIG_FILES_FLAG = new CommandFlag("-b", BIGFILES, "big input files for components");
+    
+    private static final StringParameter WORKFLOWNAME_PREFIX_PARAMETER = new StringParameter(DEFAULT_WORKFLOWNAME_PREFIX, "prefix",
+            "prefix for the workflownames");
+    
+    private static final IntegerParameter NUMBER_OF_WORKFLOWS_PARAMETER =
+            new IntegerParameter(DEFAULT_NUMBER_OF_WORKFLOWS, "workflow number", "number of workflows");
+    
+    private static final IntegerParameter NUMBER_OF_ITERATIONS_PARAMETER =
+            new IntegerParameter(DEFAULT_NUMBER_OF_ITERATIONS, "iterations number", "number of iterations per workflow");
+    
+    private static final IntegerParameter ALLOWED_DEVIATION_PARAMETER =
+            new IntegerParameter((int) DEFAULT_ALLOWED_DEVIATION_IN_PERCENT, "deviation", "allowed deviation of values in %");
+    
+    private static final NamedSingleParameter NAMED_PREFIX_PARAMETER = new NamedSingleParameter(
+            PREFIX, "prefix for created workflows", WORKFLOWNAME_PREFIX_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_WORKFLOWS_PARAMETER = new NamedSingleParameter(
+            WORKFLOWS, "name for created workflows", NUMBER_OF_WORKFLOWS_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_ITERATIONS_PARAMETER = new NamedSingleParameter(
+            ITERATIONS, "number of iterations", NUMBER_OF_ITERATIONS_PARAMETER);
+    
+    private static final NamedSingleParameter NAMED_ALLOWED_DEVIATION_PARAMETER = new NamedSingleParameter(
+            ALLOWED_DEVIATION, "allowed deviation in %, standard value is 20%", ALLOWED_DEVIATION_PARAMETER);
+    
     private MetaDataBackendService metaDataService;
 
     private PlatformService platformService;
@@ -104,63 +152,19 @@ public class DMCommandPlugin implements CommandPlugin {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @see de.rcenvironment.core.command.spi.SingleCommandHandler#execute(de.rcenvironment.core.command.spi.CommandContext)
-     */
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken("dm");
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null) {
-            throw CommandException.unknownCommand(context);
-        } else {
-            if ("create-test-data".equals(subCmd)) {
-                // "dm create-test-data"
-                performDmCreateTestData(context);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        }
-    }
-
-    /**
      * Fill datamanagement with workflow runs.
      * 
      * @param context
      */
     private void performDmCreateTestData(final CommandContext context) throws CommandException {
-
-        final int userDefinednumberOfWorkflows;
-        final int userDefinednumberOfIterations;
-        final double userDefinedAllowedDeviation;
-        final String userDefinedWorkflowNamePrefix;
-
-        // Read optional parameters
-        String workflowPrefix = readOptionalStringParameter(context, "--prefix");
-        if (workflowPrefix != null) {
-            userDefinedWorkflowNamePrefix = workflowPrefix;
-        } else {
-            userDefinedWorkflowNamePrefix = DEFAULT_WORKFLOWNAME_PREFIX;
-        }
-        Integer w = readOptionalIntParameter(context, "--workflows");
-        if (w != null) {
-            userDefinednumberOfWorkflows = w;
-        } else {
-            userDefinednumberOfWorkflows = DEFAULT_NUMBER_OF_WORKFLOWS;
-        }
-        Integer iter = readOptionalIntParameter(context, "--iterations");
-        if (iter != null) {
-            userDefinednumberOfIterations = iter;
-        } else {
-            userDefinednumberOfIterations = DEFAULT_NUMBER_OF_ITERATIONS;
-        }
-        Double deviationInPercent = readOptionalDoubleParameter(context, "--allowedDeviation");
-        if (deviationInPercent != null) {
-            userDefinedAllowedDeviation = deviationInPercent / NUMBER_100;
-        } else {
-            userDefinedAllowedDeviation = DEFAULT_ALLOWED_DEVIATION_IN_PERCENT / NUMBER_100;
-        }
+        final ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        final int userDefinednumberOfWorkflows = ((ParsedIntegerParameter) modifiers.getCommandParameter(WORKFLOWS)).getResult();
+        final int userDefinednumberOfIterations = ((ParsedIntegerParameter) modifiers.getCommandParameter(ITERATIONS)).getResult();
+        //Double Parameter
+        final int userDefinedAllowedDeviation = ((ParsedIntegerParameter) modifiers.getCommandParameter(ALLOWED_DEVIATION)).
+                getResult() / NUMBER_100;
+        final String userDefinedWorkflowNamePrefix = ((ParsedStringParameter) modifiers.getCommandParameter(PREFIX)).getResult();
 
         if (userDefinednumberOfWorkflows < 0 || userDefinednumberOfIterations < 0 || userDefinedAllowedDeviation < 0) {
             throw CommandException.executionError("Negative values are not supported.", context);
@@ -169,15 +173,16 @@ public class DMCommandPlugin implements CommandPlugin {
             throw CommandException.executionError("Deviation of more than 100% is not supported.", context);
         }
 
-        List<String> fileTokens = context.consumeRemainingTokens();
-
+        boolean smallFiles = modifiers.hasCommandFlag(SMALLFILES);
+        boolean bigFiles = modifiers.hasCommandFlag(BIGFILES);
+        
         FileCreationOption fileCreationOption = FileCreationOption.NONE;
-        if (fileTokens.contains("--smallfiles")) {
+        if (smallFiles) {
             fileCreationOption = FileCreationOption.SMALL;
-            if (fileTokens.contains("--bigfiles")) {
+            if (bigFiles) {
                 context.println("Both --smallfiles and --bigfiles were set, --smallfiles will be used.");
             }
-        } else if (fileTokens.contains("--bigfiles")) {
+        } else if (bigFiles) {
             fileCreationOption = FileCreationOption.BIG;
         }
 
@@ -266,66 +271,30 @@ public class DMCommandPlugin implements CommandPlugin {
         return (int) (Math.round((Math.random() * (2 * allowedDeviation) + (1 - allowedDeviation)) * defaultValue));
     }
 
-    private Integer readOptionalIntParameter(CommandContext context, String parameter) throws CommandException {
-        if (context.consumeNextTokenIfEquals(parameter)) {
-            String number = context.consumeNextToken();
-            if (number == null) {
-                throw CommandException.syntaxError("Missing number", context);
-            }
-            try {
-                return Integer.parseInt(number);
-            } catch (NumberFormatException e) {
-                throw CommandException.executionError(e.getMessage(), context);
-            }
-        }
-        return null;
-    }
-
-    private String readOptionalStringParameter(CommandContext context, String parameter) throws CommandException {
-        if (context.consumeNextTokenIfEquals(parameter)) {
-            String prefix = context.consumeNextToken();
-            if (prefix == null) {
-                throw CommandException.syntaxError("Missing Workflow Name Prefix", context);
-            }
-            return prefix;
-        }
-        return null;
-    }
-
-    private Double readOptionalDoubleParameter(CommandContext context, String parameter) throws CommandException {
-        if (context.consumeNextTokenIfEquals(parameter)) {
-            String number = context.consumeNextToken();
-            if (number == null) {
-                throw CommandException.syntaxError("Missing number", context);
-            }
-            try {
-                return Double.parseDouble(number);
-            } catch (NumberFormatException e) {
-                throw CommandException.executionError(e.getMessage(), context);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @see de.rcenvironment.core.command.spi.CommandPlugin#getCommandDescriptions()
-     */
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions
-            .add(new CommandDescription(
-                "dm create-test-data [--workflows <number of workflows>] [--iterations <number of iterations per workflow>]\n\t"
-                    + " [--allowedDeviation <allowed deviation of values in %>]"
-                    + " [--smallfiles] [--bigfiles]", "", true, "creates test data in the database. ", "If --smallfiles or --bigfiles is "
-                    + "set, files are generated as inputs/outputs of the components.", " Values for number of iterations, number of "
-                    + "components, number of inputs/outputs are randomized, deviating at most <allowedDeviation> % from default values "
-                    + "(default 20%)"));
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription("dm", "Commands for databases", "Commands for databases", true,
+            new SubCommandDescription("create-test-data", "creates test data in the database.",
+                this::performDmCreateTestData,
+                new CommandModifierInfo(
+                    new CommandFlag[] {
+                        SMALL_FILES_FLAG,
+                        BIG_FILES_FLAG
+                    },
+                    new NamedParameter[] {
+                        NAMED_PREFIX_PARAMETER,
+                        NAMED_WORKFLOWS_PARAMETER,
+                        NAMED_ITERATIONS_PARAMETER,
+                        NAMED_ALLOWED_DEVIATION_PARAMETER
+                    }
+                ),
+                true
+            )
+        );
+        
+        return new MainCommandDescription[] { commands };
     }
-
+    
     /**
      * OSGi-DS bind method.
      * 
@@ -538,4 +507,5 @@ public class DMCommandPlugin implements CommandPlugin {
             return null;
         }
     }
+    
 }

@@ -19,19 +19,21 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.component.integration.ConfigurationMap;
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContextType;
+import de.rcenvironment.core.component.integration.workflow.WorkflowIntegrationConstants;
 import de.rcenvironment.core.component.integration.workflow.WorkflowIntegratorComponent;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathListId;
 
 /**
- * A {@link ToolIntegrationContext} for integrating workflows as components.
+ * A {@link IntegrationContext} for integrating workflows as components.
  * 
  * @author Alexander Weinert
  */
 @Component
-public final class WorkflowIntegrationContext implements ToolIntegrationContext {
+public final class WorkflowIntegrationContext implements IntegrationContext {
 
     private ConfigurationService configService; // Initialized by OSGI-DS
 
@@ -41,8 +43,13 @@ public final class WorkflowIntegrationContext implements ToolIntegrationContext 
     }
 
     @Override
-    public String getContextType() {
-        return "Workflow";
+    public IntegrationContextType getContextType() {
+        return IntegrationContextType.WORKFLOW;
+    }
+
+    @Override
+    public String getContextTypeString() {
+        return IntegrationContextType.WORKFLOW.toString();
     }
 
     @Override
@@ -77,7 +84,7 @@ public final class WorkflowIntegrationContext implements ToolIntegrationContext 
 
     @Override
     public String getDefaultComponentGroupId() {
-        return "User Integrated Workflows";
+        return WorkflowIntegrationConstants.DEFAULT_GROUP_ID;
     }
 
     @Override
@@ -99,5 +106,6 @@ public final class WorkflowIntegrationContext implements ToolIntegrationContext 
     public Optional<ConfigurationMap> parseConfigurationMap(Map<String, Object> rawConfigurationMap) {
         return Optional.ofNullable(ConfigurationMap.fromMap(rawConfigurationMap));
     }
+
 
 }

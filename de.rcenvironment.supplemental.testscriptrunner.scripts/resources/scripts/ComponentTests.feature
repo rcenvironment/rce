@@ -1,5 +1,6 @@
 Feature: ComponentTests
 
+@ComponentTestsFeature
 @Comp01
 @DefaultTestSuite
 @NoGUITestSuite
@@ -54,6 +55,7 @@ Scenario: Single-instance component publishing and visibility control
         | NodeA | rce/Joiner   | shared:GroupA:0123456789abcdef |
         | NodeA | rce/Database | local-only                     |
         
+@ComponentTestsFeature
 @Comp02
 @DefaultTestSuite
 @NoGUITestSuite
@@ -111,11 +113,12 @@ Scenario: Multi-instance component publishing and visibility control
   # TODO add more constellations
   
   
+@ComponentTestsFeature
 @Comp03   
 @Comp03a
 @SSHTestSuite
 @NoGUITestSuite
-Scenario: Accessing Component through uplink
+Scenario: Accessing Component through uplink with simultaneous start of instances
 
     Given instance "Uplink1, Client1, Client2" using the default build
     And configured network connections "Client1-[upl]->Uplink1 [autoStart autoRetry], Client2-[upl]->Uplink1 [autoStart autoRetry]"
@@ -123,10 +126,12 @@ Scenario: Accessing Component through uplink
     When starting all instances
     And adding tool "common/TestTool" to "Client1"
     And executing command "components set-auth common/TestTool public" on "Client1"
+    And waiting for 15 seconds
     
     Then instance "Client2" should see these components:
         | Client1 (via userName/Client1_) | common/TestTool | local |
 
+@ComponentTestsFeature
 @Comp03 
 @Comp03b
 @SSHTestSuite
@@ -140,11 +145,12 @@ Scenario: Accessing Component through uplink
     And adding tool "common/TestTool" to "Client1"
     And executing command "components set-auth common/TestTool public" on "Client1"
     And starting instances "Uplink1, Client2" in the given order
-    And waiting for 2 seconds
+    And waiting for 15 seconds
     
     Then instance "Client2" should see these components:
         | Client1 (via userName/Client1_) | common/TestTool | local |
     
+@ComponentTestsFeature
 @Comp04
 @SSHTestSuite
 @NoGUITestSuite

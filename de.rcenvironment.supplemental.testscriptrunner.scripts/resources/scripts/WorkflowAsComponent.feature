@@ -1,5 +1,6 @@
 Feature: WorkflowAsComponent
 
+#@WorkflowAsComponentFeature
 @WorkflowIntegrationOnCommandline
 Scenario: Workflow can be integrated as component via console command
 	Given running instance "Instance1" using the default build
@@ -15,6 +16,7 @@ Scenario: Workflow can be integrated as component via console command
   And   that component should have a static output with name "output"
   And   that output should have the default data type "Integer"
     
+@WorkflowAsComponentFeature
 @WorkflowIntegrationViaFolder
 Scenario: Workflow can be integrated as component by dropping integration folder
 	Given running instance "Instance1" using the default build
@@ -23,6 +25,7 @@ Scenario: Workflow can be integrated as component by dropping integration folder
   And   instance "Instance1" should see these components:
         | Instance1 | workflow/IntegerIncrement   | local         |
         
+#@WorkflowAsComponentFeature
 @LocalExecutionOfIntegratedWorkflows
 Scenario: Workflows containing integrated workflows can be executed locally
 	Given running instance "Instance1" using the default build
@@ -33,6 +36,7 @@ Scenario: Workflows containing integrated workflows can be executed locally
 	And   executing the workflow "incrementAndAppend.wf" on "Instance1"
 	Then  the log output of instance "Instance1" should not contain any error
 	
+@WorkflowAsComponentFeature
 @RemoteExecutionOfIntegratedWorkflows
 Scenario: Components backed by workflows can be executed remotely even if they contain components that are not accessible to the workflow controller
   Given instances "DataSource,Controller,ComputeInterface,ComputeWorker,DataSink" using the default build

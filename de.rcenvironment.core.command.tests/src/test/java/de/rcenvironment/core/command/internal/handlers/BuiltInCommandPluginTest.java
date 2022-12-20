@@ -18,6 +18,7 @@ import org.junit.rules.ExpectedException;
 
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.CommandParser;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -41,7 +42,9 @@ public class BuiltInCommandPluginTest {
     @Test
     public void testForceCrashWithoutArgument() throws CommandException {
 
+        CommandParser parser = new CommandParser();
         BuiltInCommandPlugin plugin = new BuiltInCommandPlugin();
+        parser.registerCommands(plugin.getCommands());
         TextOutputReceiver receiver = EasyMock.createStrictMock(TextOutputReceiver.class);
 
         List<String> tokens = new LinkedList<String>();
@@ -50,8 +53,9 @@ public class BuiltInCommandPluginTest {
         CommandContext context = new CommandContext(tokens, receiver, "invoker");
 
         commandException.expect(CommandException.class);
-        commandException.expectMessage("Wrong number of parameters");
-        plugin.execute(context);
+        commandException.expectMessage("Not enough positional parameters");
+
+        parser.parseCommand(context).execute();
     }
 
 
@@ -63,7 +67,9 @@ public class BuiltInCommandPluginTest {
     @Test
     public void testForceCrashWithArgumentOfWrongType() throws CommandException {
 
+        CommandParser parser = new CommandParser();
         BuiltInCommandPlugin plugin = new BuiltInCommandPlugin();
+        parser.registerCommands(plugin.getCommands());
         TextOutputReceiver receiver = EasyMock.createStrictMock(TextOutputReceiver.class);
 
         List<String> tokens = new LinkedList<String>();
@@ -73,7 +79,8 @@ public class BuiltInCommandPluginTest {
         CommandContext context = new CommandContext(tokens, receiver, "invoker");
 
         commandException.expect(CommandException.class);
-        commandException.expectMessage("You need to specify the delay in milliseconds");
-        plugin.execute(context);
+        commandException.expectMessage("integer parameter could not be parsed");
+
+        parser.parseCommand(context).execute();
     }
 }

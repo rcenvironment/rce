@@ -8,10 +8,15 @@
 
 package de.rcenvironment.core.gui.workflow.view.console;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -50,6 +55,7 @@ import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowFilter;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
+import de.rcenvironment.core.gui.utils.incubator.TableColumnMinimalWidthControlListener;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart.ComponentStateFigureImpl;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -63,6 +69,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Doreen Seider
  * @author Robert Mischke
  * @author Brigitte Boden
+ * @author Kathrin Schaffert (added TableColumnMinimalWidthControlListener, #17869)
  */
 public class ConsoleView extends ViewPart {
 
@@ -138,6 +145,8 @@ public class ConsoleView extends ViewPart {
 
     private MenuItem copyMessageItem;
 
+    private Map<String, Collection<String>> componentMap;
+
     /**
      * A timer task that is used to periodically check the {@link ConsoleRowModelService} for modifications. This approach was chosen over a
      * callback/observer structure to realize rate limiting of GUI updates to ensure responsiveness in high CPU load situations.
@@ -189,7 +198,7 @@ public class ConsoleView extends ViewPart {
             // TODO check if these combo modifications trigger unnecessary filter/model updates
 
             // update dropdown boxes if needed
-            if (snapshot.hasWorkflowListChanged()) {
+            if (snapshot.isWorkflowListChanged()) {
                 String oldSelection = getWorkflowSelection();
                 String[] newList = convertToDisplayArray(snapshot.getWorkflowList(), "Workflows");
                 workflowCombo.setItems(newList);
@@ -204,18 +213,8 @@ public class ConsoleView extends ViewPart {
                 }
             }
             if (snapshot.hasComponentListChanged()) {
-                String oldSelection = getComponentSelection();
-                String[] newList = convertToDisplayArray(snapshot.getComponentList(), "Components");
-                componentCombo.setItems(newList);
-                // restore selection to same value, if possible
-                componentCombo.select(INITIAL_SELECTION);
-                for (int i = 1; i < newList.length; i++) {
-                    // note: oldSelection may be null
-                    if (newList[i].equals(oldSelection)) {
-                        componentCombo.select(i);
-                        break;
-                    }
-                }
+                componentMap = snapshot.getWorkflowComponentsMap();
+                updateComponentCombo(getWorkflowSelection());
             }
 
             if (snapshot.hasFilteredRowListChanged()) {
@@ -231,16 +230,6 @@ public class ConsoleView extends ViewPart {
             }
         }
 
-        private String[] convertToDisplayArray(Collection<String> input, String firstEntry) {
-            String[] result = new String[input.size() + 1];
-            result[0] = StringUtils.format("[All %s]", firstEntry);
-            int i = 1;
-            for (String wf : input) {
-                result[i] = wf;
-                i++;
-            }
-            return result;
-        }
     }
 
     public ConsoleView() {
@@ -257,6 +246,53 @@ public class ConsoleView extends ViewPart {
 
     public static ConsoleView getInstance() {
         return instance;
+    }
+
+    private void updateComponentCombo(String selectedWorkflow) {
+        String oldSelection = getComponentSelection();
+        String[] newList = convertToDisplayArray(getComponentList(selectedWorkflow), "Components");
+        componentCombo.setItems(newList);
+        // restore selection to same value, if possible
+        componentCombo.select(INITIAL_SELECTION);
+        for (int i = 1; i < newList.length; i++) {
+            // note: oldSelection may be null
+            if (newList[i].equals(oldSelection)) {
+                componentCombo.select(i);
+                break;
+            }
+        }
+    }
+
+    public Collection<String> getComponentList(String selectedWorkflow) {
+
+        if (componentMap == null) {
+            return new ArrayList<>();
+        }
+
+        if (selectedWorkflow != null) {
+            if (componentMap.containsKey(selectedWorkflow)) {
+                List<String> list = componentMap.get(selectedWorkflow).stream().collect(Collectors.toList());
+                Collections.sort(list);
+                return list;
+            } else {
+                return new ArrayList<>();
+            }
+        }
+        List<String> list =
+            componentMap.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()).stream().collect(Collectors.toList());
+        Collections.sort(list);
+        return list;
+    }
+
+    private String[] convertToDisplayArray(Collection<String> input, String firstEntry) {
+        String[] result = new String[input.size() + 1];
+        result[0] = StringUtils.format("[All %s]", firstEntry);
+        int i = 1;
+        for (String wf : input) {
+            result[i] = wf;
+            i++;
+        }
+        return result;
     }
 
     @Override
@@ -337,8 +373,23 @@ public class ConsoleView extends ViewPart {
         checkboxStderr.addSelectionListener(changeListener);
         checkboxStdout.addSelectionListener(changeListener);
         checkboxMetaInfo.addSelectionListener(changeListener);
-        workflowCombo.addSelectionListener(changeListener);
         componentCombo.addSelectionListener(changeListener);
+        workflowCombo.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                rowFilter.setWorkflow(getWorkflowSelection());
+                updateComponentCombo(getWorkflowSelection());
+                rowFilter.setComponent(getComponentSelection());
+                // apply & trigger update
+                applyNewRowFilter(true);
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
 
         // add sorting functionality
         consoleColumnSorter = new ConsoleColumnSorter();
@@ -577,6 +628,7 @@ public class ConsoleView extends ViewPart {
             column.setWidth(bounds[i]);
             column.setResizable(true);
             column.setMoveable(true);
+            column.addControlListener(new TableColumnMinimalWidthControlListener());
 
             column.addSelectionListener(new SelectionAdapter() {
 

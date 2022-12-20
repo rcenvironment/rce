@@ -386,17 +386,6 @@
             id="de.rcenvironment.core.gui.workflow.saveasimage"
             name="Save as Image">
       </command>
-      <command
-            categoryId="de.rcenvironment.core.gui.workflow.integration"
-            description="%toolIntegrationDescription"
-            id="de.rcenvironment.core.gui.workflow.integration.command"
-            name="%toolIntegrationName">
-      </command>
-      <category
-            description="%toolIntegrationDescription"
-            id="de.rcenvironment.core.gui.workflow.integration"
-            name="%toolIntegrationName ">
-      </category>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -1615,7 +1604,7 @@
         properties="enableResume, enablePause, enableCancel"
         type="java.lang.Object">
     </propertyTester>
-	</extension>
+   </extension>
       
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

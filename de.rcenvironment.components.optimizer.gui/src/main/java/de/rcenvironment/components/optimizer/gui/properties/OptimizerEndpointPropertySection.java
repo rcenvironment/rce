@@ -8,8 +8,12 @@
 
 package de.rcenvironment.components.optimizer.gui.properties;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointPropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
@@ -20,15 +24,17 @@ import de.rcenvironment.core.gui.workflow.editor.properties.InputCoupledWithAnot
  * 
  * @author Sascha Zur
  */
-public class OptimizerEndpointPropertySection extends EndpointPropertySection {
+public class OptimizerEndpointPropertySection extends EndpointPropertySection{
 
+    private OptimizerEndpointSelectionPane designVariablePane;
+    
     public OptimizerEndpointPropertySection() {
         super();
         OptimizerEndpointSelectionPane objectivePane = new OptimizerEndpointSelectionPane(Messages.targetFunction,
             EndpointType.INPUT, OptimizerComponentConstants.ID_OBJECTIVE, this, false);
         OptimizerEndpointSelectionPane constraintsPane = new OptimizerEndpointSelectionPane(Messages.constraints,
             EndpointType.INPUT, OptimizerComponentConstants.ID_CONSTRAINT, this, false);
-        OptimizerEndpointSelectionPane designVariablePane = new OptimizerEndpointSelectionPane(Messages.designVariables,
+        designVariablePane = new OptimizerEndpointSelectionPane(Messages.designVariables,
             EndpointType.OUTPUT, OptimizerComponentConstants.ID_DESIGN, this, false);
         OptimizerEndpointSelectionPane gradientsPane = new OptimizerEndpointSelectionPane("Gradients (Inputs)",
             EndpointType.INPUT, OptimizerComponentConstants.ID_GRADIENTS, this, true);
@@ -64,4 +70,15 @@ public class OptimizerEndpointPropertySection extends EndpointPropertySection {
             optimumPane, gradientsPane });
 
     }
+    
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        super.propertyChange(evt);
+        if (evt.getPropertyName().equals("properties.optimizerPackageCode")) {
+            designVariablePane.removeMetaDataColumns();
+            designVariablePane.setTableBuilt(false);
+            designVariablePane.fillTable();
+        }
+    }
+    
 }

@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Validation Example Bundle
+Bundle-SymbolicName: de.rcenvironment.example
+Bundle-Version: 10.3.1.qualifier
+Import-Package: com.fasterxml.jackson.core;version="2.11.1",
+ com.fasterxml.jackson.databind;version="2.11.1",
+ de.rcenvironment.core.utils.common,
+ org.apache.commons.logging;version="1.1.1"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Vendor: DLR
+Automatic-Module-Name: de.rcenvironment.example
+Export-Package: de.rcenvironment.example.api

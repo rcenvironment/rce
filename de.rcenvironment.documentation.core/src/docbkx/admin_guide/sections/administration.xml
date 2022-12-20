@@ -6,14 +6,14 @@
 	
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="administration/uplink.xml"/>
 	
-	<sect1>
+	<section>
 		<title>Notes and Recommendations: RCE's Default Network ("LocalNet") Connections </title>
 		<para>For default connections, an arbitrary number of incoming network ports can be configured.<note>
 				<para>TODO This section will be expanded in a future version of this guide; please
 					refer to the User Guide for additional information.</para>
 			</note></para>
-	</sect1>
-	<sect1>
+	</section>
+	<section>
 		<title>Notes and Recommendations: SSH/Uplink Account management</title>
 		<para>It is <emphasis role="bold">strongly</emphasis> recommended to use the RCE console's
 				"<code>keytool uplink-pw</code>" command to generate secure passwords for Uplink
@@ -39,5 +39,5 @@
 				experimental stage; for example, how to dynamically add SSH/Uplink accounts without
 				a server restart, setting proper Uplink account roles etc.</para>
 		</note>
-	</sect1>
+	</section>
 </chapter>

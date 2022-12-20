@@ -21,6 +21,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -47,6 +48,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * 
  * @author Sascha Zur
  * @author Brigitte Boden
+ * @author Tim Rosenbach
  */
 public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
 
@@ -58,7 +60,11 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
     private static final int MINUS_ONE = -1;
 
     private static final String COLON = ":";
-
+    
+    private static final int DIALOG_WIDTH = 450;
+    
+    private static final int DIALOG_HEIGHT = 575;
+    
     private final Set<String> paths;
 
     private Text result;
@@ -188,12 +194,17 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         additionalFolder.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         
     }
-    
+
+    @Override
+    protected Point getInitialSize() {
+        return new Point(DIALOG_WIDTH, DIALOG_HEIGHT);
+    }
+
     @Override
     public Map<String, String> getMetadataValues() {
         Map<String, String> metaData = super.getMetadataValues();
         if (!currentDataType.equals(DataType.DirectoryReference) && !currentDataType.equals(DataType.FileReference)) {
-            //If the input has a simple data type, remove values for target file and target folder
+            // If the input has a simple data type, remove values for target file and target folder
             metaData.put(OutputWriterComponentConstants.CONFIG_KEY_FILENAME, NO_DATA_STRING);
             metaData.put(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING, NO_DATA_STRING);
         }
@@ -205,7 +216,12 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
         hintLabel.setVisible(!comboDataType.getText().equals(DataType.FileReference.getDisplayName())
             && !comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName()));
-        return super.validateMetaDataInputs() && !forbiddenFilenames.contains(result.getText().toUpperCase());
+
+        boolean containsForbiddenFilenames = forbiddenFilenames.contains(result.getText().toUpperCase());
+        if (containsForbiddenFilenames) {
+            updateMessage(Messages.forbiddenFilenamesMessage, true);
+        }
+        return super.validateMetaDataInputs() && !containsForbiddenFilenames;
     }
 
 }

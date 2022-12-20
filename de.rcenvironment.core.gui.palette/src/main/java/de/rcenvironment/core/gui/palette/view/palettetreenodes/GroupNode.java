@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.gui.palette.view.palettetreenodes;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -93,7 +94,7 @@ public class GroupNode extends PaletteTreeNode {
     public boolean isExpanded() {
         return getContentProvider().getExpandedState(this);
     }
-    
+
     public boolean isCustomGroup() {
         return customGroup;
     }
@@ -133,6 +134,10 @@ public class GroupNode extends PaletteTreeNode {
     @Override
     public Optional<String> getHelpContextID() {
         return Optional.empty();
+    }
+
+    public Stream<ComponentNode> getAllComponentNodes() {
+        return Arrays.stream(this.getChildren()).filter(ComponentNode.class::isInstance).map(ComponentNode.class::cast);
     }
 
 }

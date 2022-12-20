@@ -18,9 +18,11 @@ import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
  * Dialog to edit an existing network connection.
  *
  * @author Oliver Seebach
- * @author Kathrin Schaffert (#17494)
+ * @author Kathrin Schaffert (#17494, #17714, #17951)
  */
 public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog {
+
+    protected static final String ERROR_MESSAGE = "One of the configured connection settings was invalid and was not passed to the dialog.";
 
     private static final String COLON = ":";
 
@@ -78,28 +80,71 @@ public class EditNetworkConnectionDialog extends AbstractNetworkConnectionDialog
             if (attributes.containsKey(CONNECT_ON_STARTUP)) {
                 connectionSettings.setConnectOnStartup(Boolean.valueOf(attributes.get(CONNECT_ON_STARTUP)));
             }
+            if (attributes.containsKey(AUTO_RETRY)) {
+                connectionSettings.setAutoRetry(Boolean.valueOf(attributes.get(AUTO_RETRY)));
+            }
             if (attributes.containsKey(USE_DEFAULT_SETTINGS)) {
                 connectionSettings.setUseDefaultSettings(Boolean.valueOf(attributes.get(USE_DEFAULT_SETTINGS)));
             }
-            if (attributes.containsKey(AUTO_RETRY_INITIAL_DELAY_STR)) {
+            connectionSettings.setUseDefaultSettings(
+                !attributes.containsKey(AUTO_RETRY_INITIAL_DELAY_STR) && !attributes.containsKey(AUTO_RETRY_MAXI_DELAY_STR)
+                    && !attributes.containsKey(AUTO_RETRY_DELAY_MULTIPL));
+
+            // if any configuration is missing, set error message
+            if (!attributes.containsKey(AUTO_RETRY_INITIAL_DELAY_STR) || !attributes.containsKey(AUTO_RETRY_MAXI_DELAY_STR)
+                || !attributes.containsKey(AUTO_RETRY_DELAY_MULTIPL)) {
+                errorMessage = ERROR_MESSAGE;
+            }
+            if (attributes.containsKey(AUTO_RETRY_INITIAL_DELAY_STR)
+                && checkIfInputIsPositiveLong(attributes.get(AUTO_RETRY_INITIAL_DELAY_STR))) {
                 connectionSettings.setAutoRetryInitialDelay(
-                    Integer.valueOf(attributes.get(AUTO_RETRY_INITIAL_DELAY_STR)));
+                    Long.valueOf(attributes.get(AUTO_RETRY_INITIAL_DELAY_STR)));
+            } else {
+                // if initial delay is not an integer, set error message and leave field empty (set to zero)
+                connectionSettings.setAutoRetryInitialDelay(0);
+                errorMessage = ERROR_MESSAGE;
             }
-            if (attributes.containsKey(AUTO_RETRY_MAXI_DELAY_STR)) {
+            if (attributes.containsKey(AUTO_RETRY_MAXI_DELAY_STR)
+                && checkIfInputIsPositiveLong(attributes.get(AUTO_RETRY_MAXI_DELAY_STR))) {
                 connectionSettings
-                    .setAutoRetryMaximumDelay(Integer.valueOf(attributes.get(AUTO_RETRY_MAXI_DELAY_STR)));
+                    .setAutoRetryMaximumDelay(Long.valueOf(attributes.get(AUTO_RETRY_MAXI_DELAY_STR)));
+            } else {
+                // if maximum delay is not an integer, set error message and leave field empty (set to zero)
+                connectionSettings.setAutoRetryMaximumDelay(0);
+                errorMessage = ERROR_MESSAGE;
             }
-            if (attributes.containsKey(AUTO_RETRY_DELAY_MULTIPL)) {
+            if (attributes.containsKey(AUTO_RETRY_DELAY_MULTIPL)
+                && checkIfInputIsValidMultiplier(attributes.get(AUTO_RETRY_DELAY_MULTIPL))) {
                 connectionSettings
                     .setAutoRetryDelayMultiplier(Double.valueOf(attributes.get(AUTO_RETRY_DELAY_MULTIPL)));
+            } else {
+                // if delay multiplier is < 1.0, set error message and leave field empty (set to zero)
+                // Note: delay multiplier is always a valid double > see #17993
+                // K.Schaffert, 23.11.2022
+                connectionSettings.setAutoRetryDelayMultiplier(0);
+                errorMessage = ERROR_MESSAGE;
             }
-
+            if (Boolean.FALSE.equals(Boolean.valueOf(attributes.get(AUTO_RETRY)))) {
+                // if autoRetry is not true, remove error message
+                errorMessage = null;
+            }
         } catch (NumberFormatException ex) {
             // should never happen
             throw new NumberFormatException(
                 "The connection settings format is incorrect. The edit dialog cannot be displayed." + ex.toString());
         }
+    }
 
+    private boolean checkIfInputIsPositiveLong(String newS) {
+        try {
+            return Long.parseLong(newS) > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean checkIfInputIsValidMultiplier(String input) {
+        return Double.valueOf(input) >= 1.0 && !input.equals("Infinity") && !input.equals("-Infinity");
     }
 
     @Override

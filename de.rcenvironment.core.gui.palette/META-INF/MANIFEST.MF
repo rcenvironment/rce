@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Palette GUI
 Bundle-SymbolicName: de.rcenvironment.core.gui.palette;singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.gef,
  org.eclipse.ui.views.properties.tabbed,
@@ -20,8 +20,10 @@ Import-Package: de.rcenvironment.core.authorization.api,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.spi,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.gui.integration.common,
+ de.rcenvironment.core.gui.integration.toolintegration,
+ de.rcenvironment.core.gui.integration.workflowintegration.handlers,
  de.rcenvironment.core.gui.resources.api,
- de.rcenvironment.core.gui.wizards.toolintegration,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.logging;version="1.0.4",

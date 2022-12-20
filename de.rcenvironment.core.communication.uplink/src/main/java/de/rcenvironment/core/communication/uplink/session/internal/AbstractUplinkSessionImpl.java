@@ -53,29 +53,6 @@ import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
  */
 public abstract class AbstractUplinkSessionImpl implements UplinkSession {
 
-    protected static final String AUDIT_LOG_KEY_SESSION_ID = "session_id";
-
-    protected static final String AUDIT_LOG_KEY_ORIGINAL_LOGIN_NAME = "login_name";
-
-    protected static final String AUDIT_LOG_KEY_EFFECTIVE_LOGIN_NAME = "login_name";
-
-    protected static final String AUDIT_LOG_KEY_EFFECTIVE_CLIENT_ID = "client_id";
-
-    protected static final String AUDIT_LOG_KEY_NAMESPACE = "namespace";
-
-    /**
-     * Audit log key for the session's context, e.g. the underlying connection id matching the connection's log entries for association.
-     */
-    protected static final String AUDIT_LOG_KEY_CONNECTION_ID = "connection_id";
-
-    protected static final String AUDIT_LOG_KEY_PROTOCOL_VERSION = "protocol";
-
-    protected static final String AUDIT_LOG_KEY_CLIENT_VERSION_INFO = "client_version";
-
-    protected static final String AUDIT_LOG_KEY_REASON = "reason";
-
-    protected static final String AUDIT_LOG_KEY_FINAL_STATE = "final_state";
-
     protected static final String UNDEFINED_CLIENT_VERSION_PLACEHOLDER = "<undefined>";
 
     // the maximum time to wait for the namespace id's Future; not intended for actual waiting, but only to prevent minor race conditions

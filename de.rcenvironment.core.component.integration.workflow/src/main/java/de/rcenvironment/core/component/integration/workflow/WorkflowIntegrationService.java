@@ -8,7 +8,10 @@
 package de.rcenvironment.core.component.integration.workflow;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.Set;
 
+import de.rcenvironment.core.component.integration.ConfigurationMap;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.workflow.execution.function.EndpointAdapters;
 
@@ -30,5 +33,17 @@ public interface WorkflowIntegrationService {
     void integrateWorkflowFileAsComponent(WorkflowDescription workflow, String componentname,
         EndpointAdapters endpointAdapterDefinitions)
         throws IOException;
+
+    void integrateWorkflowFileAsComponent(WorkflowDescription workflow, ConfigurationMap configurationMap, Optional<String> originalName)
+        throws IOException;
+
+    /**
+     * Returns all workflow component ids that were integrated.
+     * 
+     * @return a set of all integrated workflow ids.
+     */
+    Set<String> getActiveIntegratedWorkflowComponentIds();
+
+    Set<String> getInactiveIntegratedWorkflowComponentIds();
 
 }

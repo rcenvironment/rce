@@ -24,21 +24,21 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 public class DefaultToolIntegrationServiceStub implements ToolIntegrationService {
 
     @Override
-    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context) {}
+    public void integrateTool(Map<String, Object> configurationMap, IntegrationContext context) {}
 
     @Override
-    public void integrateTool(Map<String, Object> configurationMap, ToolIntegrationContext context, boolean savePublished) {}
+    public void integrateTool(Map<String, Object> configurationMap, IntegrationContext context, boolean savePublished) {}
 
     @Override
-    public void removeTool(String toolName, ToolIntegrationContext information) {}
+    public void removeTool(String toolName, IntegrationContext information) {}
 
     @Override
-    public void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation)
+    public void writeToolIntegrationFile(Map<String, Object> configurationMap, IntegrationContext integrationInformation)
         throws IOException {}
 
     @Override
     public void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
-        ToolIntegrationContext integrationInformation) throws IOException {}
+        IntegrationContext integrationInformation) throws IOException {}
 
     @Override
     public Map<String, Object> getToolConfiguration(String toolId) {
@@ -51,7 +51,7 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public String getPathOfComponentID(String id, ToolIntegrationContext context) {
+    public String getPathOfComponentID(String id, IntegrationContext context) {
         return null;
     }
 
@@ -61,7 +61,7 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public boolean isToolIntegrated(Map<String, Object> configurationMap, ToolIntegrationContext integrationContext) {
+    public boolean isToolIntegrated(Map<String, Object> configurationMap, IntegrationContext integrationContext) {
         return false;
     }
 
@@ -76,7 +76,7 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public void updatePublishedComponents(ToolIntegrationContext context) {
+    public void updatePublishedComponents(IntegrationContext context) {
 
     }
 
@@ -89,9 +89,17 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     public void setFileWatcherActive(boolean value) {}
 
     @Override
-    public void unregisterIntegration(String previousToolName, ToolIntegrationContext integrationContext) {}
+    public void unregisterIntegration(String previousToolName, IntegrationContext integrationContext) {}
 
     @Override
-    public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {}
+    public void registerRecursive(String toolName, IntegrationContext integrationContext) {}
+
+    @Override
+    public Map<String, Map<String, Object>> getIntegratedConfigurations() {
+        return null;
+    }
+
+    @Override
+    public void copyToolDocumentation(ConfigurationMap configurationMap, File toolConfigFile) {}
 
 }

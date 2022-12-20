@@ -2,20 +2,21 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.common
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry
-Import-Package: de.rcenvironment.core.component.api,
+Import-Package: com.fasterxml.jackson.core;version="2.9.9",
+ com.fasterxml.jackson.databind;version="2.9.9",
+ com.fasterxml.jackson.databind.node;version="2.9.9",
+ de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.scripting,
- org.apache.commons.logging;provider=paxlogging,
- com.fasterxml.jackson.core;version="2.9.9",
- com.fasterxml.jackson.databind;version="2.9.9",
- com.fasterxml.jackson.databind.node;version="2.9.9"
+ org.apache.commons.io;version="2.2.0",
+ org.apache.commons.logging;provider=paxlogging
 Service-Component: OSGI-INF/*.xml 
 Bundle-Vendor: DLR
 RCE-Component: true

@@ -9,11 +9,14 @@
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.osgi.service.component.annotations.Activate;
@@ -37,6 +40,7 @@ import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
  * 
  * @author Doreen Seider (initial version)
  * @author Robert Mischke (current)
+ * @author Kathrin Schaffert (#17869)
  */
 @Component(immediate = true)
 public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, ConsoleRowProcessor {
@@ -66,9 +70,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
 
     private Deque<ConsoleRow> filteredRows;
 
-    private SortedSet<String> workflows;
-
-    private SortedSet<String> components;
+    private Map<String, Collection<String>> workflowComponentsMap;
 
     /**
      * Incremented on each model change; used for efficient change testing. Initialized with "+1" so a query with INITIAL_SEQUENCE_ID as
@@ -162,11 +164,12 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
         }
         // if modified, set a copy of the workflow list
         if (workflowListLastChanged > sequenceId) {
-            snapshot.setWorkflowList(new ArrayList<String>(workflows));
+            snapshot.setWorkflowComponentsMap(workflowComponentsMap);
+            snapshot.setWorkflowListChanged(true);
         }
         // if modified, set a copy of the component list
         if (componentListLastChanged > sequenceId) {
-            snapshot.setComponentList(new ArrayList<String>(components));
+            snapshot.setWorkflowComponentsMap(workflowComponentsMap);
         }
         snapshot.setSequenceId(sequenceIdCounter);
 
@@ -190,15 +193,18 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
                     filteredRows.addLast(row);
                     filteredListLastChanged = sequenceIdCounter;
                 }
-                // add to the set of workflows
-                // note: currently, workflows are only purged on clearAll
-                if (workflows.add(row.getWorkflowName())) {
-                    workflowListLastChanged = sequenceIdCounter;
-                }
-                // add to the set of components
-                // note: currently, components are only purged on clearAll
-                if (components.add(row.getComponentName())) {
+                // add to the map of workflows and related components
+                // note: currently, workflowComponentsMap is only purged on clearAll
+                if (workflowComponentsMap.containsKey(row.getWorkflowName())) {
+                    if (workflowComponentsMap.get(row.getWorkflowName()).add(row.getComponentName())) {
+                        componentListLastChanged = sequenceIdCounter;
+                    }
+                } else {
+                    Set<String> set = new HashSet<>();
+                    set.add(row.getComponentName());
+                    workflowComponentsMap.put(row.getWorkflowName(), set);
                     componentListLastChanged = sequenceIdCounter;
+                    workflowListLastChanged = sequenceIdCounter;
                 }
             }
         }
@@ -243,13 +249,12 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     }
 
     private void resetModel() {
-        allRows = new LinkedList<ConsoleRow>();
-        filteredRows = new LinkedList<ConsoleRow>();
+        allRows = new LinkedList<>();
+        filteredRows = new LinkedList<>();
         filteredListLastChanged = sequenceIdCounter;
-        workflows = new TreeSet<String>();
         workflowListLastChanged = sequenceIdCounter;
-        components = new TreeSet<String>();
         componentListLastChanged = sequenceIdCounter;
+        workflowComponentsMap = new HashMap<>();
         currentFilter = new ConsoleRowFilter();
     }
 

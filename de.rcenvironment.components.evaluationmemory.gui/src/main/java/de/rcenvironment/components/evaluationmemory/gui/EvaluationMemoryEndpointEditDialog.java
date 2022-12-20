@@ -5,7 +5,7 @@
  * 
  * https://rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.evaluationmemory.gui;
 
 import java.util.Map;
@@ -31,15 +31,17 @@ import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 
-
 /**
  * 
  * The dialog shown for adding and editing inputs to evaluate for the evaluation memory component. We require a custom dialog since we want
  * to allow the user to provide tolerances on the values.
  *
  * @author Alexander Weinert
+ * @author Tim Rosenbach
  */
 public class EvaluationMemoryEndpointEditDialog extends EndpointEditDialog {
+
+    private static final String TOLERANCE_MESSAGE = "Define a value for the tolerance";
 
     private Button useToleranceButton;
 
@@ -95,7 +97,7 @@ public class EvaluationMemoryEndpointEditDialog extends EndpointEditDialog {
 
         return toleranceField;
     }
-    
+
     private boolean useTolerance() {
         return useToleranceButton.getSelection();
     }
@@ -117,7 +119,7 @@ public class EvaluationMemoryEndpointEditDialog extends EndpointEditDialog {
     private void setToleranceInMetadata(String tolerance) {
         metadataValues.put(EvaluationMemoryComponentConstants.META_TOLERANCE, tolerance);
     }
-    
+
     private void removeToleranceFromMetadata() {
         metadataValues.put(EvaluationMemoryComponentConstants.META_TOLERANCE, "");
     }
@@ -162,13 +164,13 @@ public class EvaluationMemoryEndpointEditDialog extends EndpointEditDialog {
         toleranceField = new Text(toleranceFieldContainer, SWT.BORDER | SWT.RIGHT);
         toleranceField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         toleranceField.setVisible(true);
-        
+
         percentageSignLabel = new Label(toleranceFieldContainer, SWT.NONE);
         percentageSignLabel.setText(EvaluationMemoryComponentConstants.PERCENTAGE_SIGN);
         percentageSignLabel.setVisible(true);
 
         // Since tolerance is always given relative, we have to expect and enforce floats in this field
-        toleranceField.addVerifyListener(new NumericalTextConstraintListener(toleranceField, WidgetGroupFactory.ONLY_FLOAT));
+        toleranceField.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_FLOAT));
     }
 
     private boolean dataTypeSupportsTolerance(DataType dataType) {
@@ -216,6 +218,10 @@ public class EvaluationMemoryEndpointEditDialog extends EndpointEditDialog {
         // "!useTolerance || !toleranceValue.isEmpty"
         final String toleranceValue = toleranceField.getText();
         final boolean validTolerance = !useTolerance() || !toleranceValue.isEmpty();
+
+        if (!validTolerance) {
+            updateMessage(TOLERANCE_MESSAGE, true);
+        }
 
         return validTolerance && super.validateMetaDataInputs();
     }

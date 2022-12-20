@@ -13,10 +13,12 @@ import java.util.List;
 
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.commands.Command;
+import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionWrapper;
 
 
@@ -78,4 +80,10 @@ public abstract class AbstractBendpointCommand extends Command {
         this.referencedwrapper = referencedwrapper;
     }
     
+    @Override
+    public boolean canExecute() {
+        return super.canExecute()
+            && PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor() instanceof WorkflowEditor;
+    }
+
 }

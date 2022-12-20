@@ -18,22 +18,23 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.component.integration.ConfigurationMap;
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContextType;
+import de.rcenvironment.core.component.integration.IntegrationContext;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.cpacs.CpacsToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.cpacs.CpacsToolIntegratorComponent;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathListId;
 
 /**
- * Implementation of {@link ToolIntegrationContext} for the CPACS tool integration.
+ * Implementation of {@link IntegrationContext} for the CPACS tool integration.
  * 
  * @author Jan Flink
  * @author Alexander Weinert (OSGI annotations)
  */
 @Component
-public final class CpacsToolIntegrationContext implements ToolIntegrationContext {
+public final class CpacsToolIntegrationContext implements IntegrationContext {
 
     private static ConfigurationService configService;
 
@@ -88,8 +89,13 @@ public final class CpacsToolIntegrationContext implements ToolIntegrationContext
     }
 
     @Override
-    public String getContextType() {
-        return "CPACS";
+    public IntegrationContextType getContextType() {
+        return IntegrationContextType.CPACS;
+    }
+
+    @Override
+    public String getContextTypeString() {
+        return IntegrationContextType.CPACS.toString();
     }
 
     @Override
@@ -102,5 +108,4 @@ public final class CpacsToolIntegrationContext implements ToolIntegrationContext
     public Optional<ConfigurationMap> parseConfigurationMap(Map<String, Object> rawConfigurationMap) {
         return Optional.ofNullable(ConfigurationMap.fromMap(rawConfigurationMap));
     }
-
 }

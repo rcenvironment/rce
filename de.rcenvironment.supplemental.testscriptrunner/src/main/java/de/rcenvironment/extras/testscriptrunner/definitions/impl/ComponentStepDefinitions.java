@@ -241,13 +241,13 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
     public void whenIntegratingWorkflow(String workflowName, String componentName, String instanceId, DataTable endpointDefinitionTable) {
         final List<List<String>> endpointDefinitions = endpointDefinitionTable.cells(0);
 
-        final String endpointsDefinitionsString = endpointDefinitions.stream()
-            .map(row -> ("--expose " + row.get(0)))
-            .collect(Collectors.joining(" "));
+        final String endpointsDefinitionsString = "--expose " + endpointDefinitions.stream()
+            .map(row -> (row.get(0)))
+            .collect(Collectors.joining(", "));
 
         final Path originalWfFileLocation = executionContext.getTestScriptLocation().toPath().resolve("workflows").resolve(workflowName);
         final String command =
-            StringUtils.format("wf integrate %s \"%s\" %s", componentName, originalWfFileLocation, endpointsDefinitionsString);
+            StringUtils.format("wf-integrate %s \"%s\" %s", componentName, originalWfFileLocation, endpointsDefinitionsString);
         executeCommandOnInstance(resolveInstance(instanceId), command, false);
     }
 
@@ -280,7 +280,7 @@ public class ComponentStepDefinitions extends InstanceManagementStepDefinitionBa
         }
 
         // parse actual state
-        String output = executeCommandOnInstance(instance, "components list --as-table --auth", false);
+        String output = executeCommandOnInstance(instance, "components list --as-table", false);
         // log.debug(output);
         for (String line : output.split("\n")) {
             if (line.startsWith("Finished executing command")) {

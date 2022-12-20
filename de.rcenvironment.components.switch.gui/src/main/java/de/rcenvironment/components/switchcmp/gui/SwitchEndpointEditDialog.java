@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 
@@ -30,8 +31,13 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * 
  * @author David Scholz
  * @author Kathrin Schaffert
+ * @author Tim Rosenbach
  */
 public class SwitchEndpointEditDialog extends EndpointEditDialog {
+
+    private static final int DIALOG_WIDTH = 325;
+
+    private static final int DIALOG_HEIGHT = 325;
 
     SwitchEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
         ComponentInstanceProperties configuration,
@@ -44,6 +50,11 @@ public class SwitchEndpointEditDialog extends EndpointEditDialog {
         super.createEndpointSettings(parent);
         textfieldName.addListener(SWT.Verify, new VariableNameVerifyListener(VariableNameVerifyListener.PYTHON_VIABLE,
             this.textfieldName));
+    }
+
+    @Override
+    protected Point getInitialSize() {
+        return new Point(DIALOG_WIDTH, DIALOG_HEIGHT);
     }
 
     @Override

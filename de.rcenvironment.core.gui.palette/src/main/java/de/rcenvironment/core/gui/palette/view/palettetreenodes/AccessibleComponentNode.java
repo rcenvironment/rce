@@ -23,13 +23,14 @@ import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.management.api.DistributedComponentEntry;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.gui.integration.toolintegration.ShowIntegrationEditWizardHandler;
+import de.rcenvironment.core.gui.integration.workflowintegration.handlers.EditWorkflowIntegrationHandler;
 import de.rcenvironment.core.gui.palette.PaletteViewConstants;
 import de.rcenvironment.core.gui.palette.toolidentification.ToolIdentification;
 import de.rcenvironment.core.gui.palette.toolidentification.ToolType;
 import de.rcenvironment.core.gui.palette.view.PaletteView;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWizardHandler;
 import de.rcenvironment.core.gui.workflow.editor.PaletteCreationTool;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowNodeFactory;
@@ -124,6 +125,13 @@ public class AccessibleComponentNode extends ComponentNode {
             } catch (ExecutionException e) {
                 LogFactory.getLog(PaletteTreeNode.class).error("Opening Tool Edit wizard failed", e);
             }
+        } else if (getToolIdentification().getType().equals(ToolType.INTEGRATED_WORKFLOW)) {
+            EditWorkflowIntegrationHandler handler = new EditWorkflowIntegrationHandler(this.getNodeName());
+            try {
+                handler.execute(null);
+            } catch (ExecutionException e) {
+                LogFactory.getLog(PaletteTreeNode.class).error("Opening Edit Workflow failed", e);
+            }
         } else {
             throw new UnsupportedOperationException(
                 StringUtils.format("Unexpected edit event on %s", this.getClass().getCanonicalName()));
@@ -133,7 +141,8 @@ public class AccessibleComponentNode extends ComponentNode {
 
     @Override
     public boolean canHandleEditEvent() {
-        return getToolIdentification().getType().equals(ToolType.INTEGRATED_TOOL) && this.isLocal();
+        return (getToolIdentification().getType().equals(ToolType.INTEGRATED_TOOL)
+            || getToolIdentification().getType().equals(ToolType.INTEGRATED_WORKFLOW)) && this.isLocal();
     }
 
     @Override
@@ -156,7 +165,6 @@ public class AccessibleComponentNode extends ComponentNode {
 //        ComponentInterface componentInterface = componentEntry.getComponentInstallation().getComponentInterface();
 //        return StringUtils.format("%s (%s)", getNodeName(), componentInterface.getVersion());
 //    }
-
 
     public String getPredefinedGroup() {
         return componentEntry.getComponentInstallation().getComponentInterface().getGroupName();

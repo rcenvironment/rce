@@ -13,6 +13,7 @@ import java.util.Map;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -34,9 +35,10 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * @author Markus Kunde
  * @author Adrian Stock
  * @author Jan Flink
+ * @author Tim Rosenbach
  */
 public class XPathEditDialog extends EndpointEditDialog {
-    
+
     private static final String CHANNEL_XPATH = "variable.xpath";
 
     public XPathEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
@@ -51,6 +53,9 @@ public class XPathEditDialog extends EndpointEditDialog {
 
         Button selectButton = new Button(parent, SWT.NONE);
         selectButton.setText(Messages.selectButton);
+        GridData g = new GridData();
+        g.horizontalAlignment = GridData.CENTER;
+        selectButton.setLayoutData(g);
         selectButton.addListener(SWT.Selection, new Listener() {
 
             @Override

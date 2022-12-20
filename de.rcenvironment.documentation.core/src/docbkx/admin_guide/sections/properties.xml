@@ -14,7 +14,7 @@
 		<uri>https://rcenvironment.de</uri>
 		).
 	</para>
-	<sect1 id="default_network">
+	<section id="default_network">
 		<title>Security Properties of RCE's Default ("LocalNet") Network Connections </title>
 		<para> The default or "internal" network connections of RCE (informally called "LocalNet"
 			connections) are designed for close collaboration within a working group, and are only
@@ -40,8 +40,8 @@
 		
 		<!-- TODO describe which features can be remotely accessed via the default network -->
 		<!-- TODO describe the relation to the the tool authorization system -->
-	</sect1>
-	<sect1 id="ssh_server_port">
+	</section>
+	<section id="ssh_server_port">
 		<title>Security Properties of RCE's SSH Server Port</title>
 		<para> RCE offers a built-in SSH server port, which is disabled by default: An RCE installation
 			does not open a port for accepting SSH connections unless explicitly configured to do
@@ -110,8 +110,8 @@
 			was specifically designed for this purpose. Further, a special SSH authorization role is
 			provided to restrict SSH accounts to using this mode exclusively. Notably, this also
 			completely disables access to the interactive RCE command shell. </para>
-	</sect1>
-	<sect1 id="uplink"><title>Security Properties of RCE's Uplink Feature</title>
+	</section>
+	<section id="uplink"><title>Security Properties of RCE's Uplink Feature</title>
 		<para> This protocol was specifically designed to allow different
 			organizations to provide tool execution services to each other. As
 			this naturally involves creating network connections over the
@@ -140,8 +140,8 @@
 		<!-- TODO outline what data is sent as part of the protocol, and where it is transmitted to -->
 		<!-- TODO describe the interaction with RCE's Tool Integration -->
 		<!-- TODO describe the interaction with local/default networks, especially regarding tool forwarding --> 
-	</sect1>
-	<sect1 id="tool_integration">
+	</section>
+	<section id="tool_integration">
 		<title>Security Properties of RCE's Tool Integration</title>
 		<para> For general information about RCE's Tool Integration concepts
 			and configuration, please refer to the RCE User Guide (available here
@@ -179,8 +179,8 @@
 			error output of the executing tools, as well as execution time data. If this is
 			undesired, standard shell/batch features can typically be used to suppress this
 			output.</para>
-	</sect1>
-	<sect1 id="tool_authorization">
+	</section>
+	<section id="tool_authorization">
 		<title>Security Properties of RCE's Tool Authorization System</title>
 		<para> Tools can be assigned to any set of authorization groups, which
 			makes them accessible to any user that is a member of that group.
@@ -233,5 +233,5 @@
 			authorization groups and their assignments, which can be used for
 			automated auditing.
 		</para>
-	</sect1>
+	</section>
 </chapter>

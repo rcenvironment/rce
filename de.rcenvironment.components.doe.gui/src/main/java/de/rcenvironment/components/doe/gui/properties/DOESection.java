@@ -76,6 +76,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
+import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.utils.common.JsonUtils;
 
@@ -217,8 +218,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         GridData startData = new GridData();
         final int minWidthSamples = 30;
         startData.widthHint = minWidthSamples;
-        startSample.addVerifyListener(new NumericalTextConstraintListener(startSample, NumericalTextConstraintListener.ONLY_INTEGER
-            | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
+        startSample.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER
+            | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO));
         startSample.setLayoutData(startData);
         startSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_START_SAMPLE);
         endLabel = new Label(sampleComposite, SWT.NONE);
@@ -227,8 +228,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         GridData endData = new GridData();
         endData.widthHint = minWidthSamples;
         endSample.setLayoutData(endData);
-        endSample.addVerifyListener(new NumericalTextConstraintListener(endSample, NumericalTextConstraintListener.ONLY_INTEGER
-            | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
+        endSample.addVerifyListener(new NumericalTextConstraintListener(WidgetGroupFactory.ONLY_INTEGER
+            | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO));
         endSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_END_SAMPLE);
 
         GridLayout tableCompositeLayout = new GridLayout(3, false);

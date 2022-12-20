@@ -63,11 +63,11 @@ public class ToolIntegrationFileWatcherManagerTest {
 
         EasyMock.expect(fileService.getPath(absolutePath1)).andStubReturn(integrationRootFolderPath1);
 
-        final ToolIntegrationContext context = EasyMock.createMock("context", ToolIntegrationContext.class);
+        final IntegrationContext context = EasyMock.createMock("context", IntegrationContext.class);
         EasyMock.expect(context.getRootPathToToolIntegrationDirectory()).andStubReturn(rootpath);
         EasyMock.expect(context.getNameOfToolIntegrationDirectory()).andStubReturn(toolIntegrationDir1);
         EasyMock.expect(context.getContextId()).andStubReturn("context");
-        EasyMock.expect(context.getContextType()).andStubReturn("test context");
+        EasyMock.expect(context.getContextTypeString()).andStubReturn("test context");
         EasyMock.replay(context);
 
         final File integrationRootFolderFile = EasyMock.createMock(File.class);

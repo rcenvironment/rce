@@ -1,0 +1,28 @@
+[plantuml]
+----
+participant equinox_launcher as "Patched Equinox\nLauncher"
+participant rce_hooks as "RCE Laucher\nCustomization"
+entity sysprops as "System\nProperties"
+participant equinox_framework as "Equinox (OSGi)\nFramework"
+box "OSGi" #f8f8ff
+participant pax_logging as "PAX-Logging\nBundle (log4j)"
+participant custom_appender as "Custom RCE\nlog4j Appender"
+participant bootstrap_config as "RCE Bootstrap\nConfiguration"
+end box
+
+equinox_launcher -> rce_hooks: patched-in calls
+rce_hooks -> sysprops: set (initial settings)
+equinox_launcher -> equinox_framework: spawn+run
+equinox_framework -> pax_logging: load
+equinox_framework -> custom_appender: load as add-on (fragment) to pax-logging
+equinox_framework -> bootstrap_config: load
+equinox_framework -> pax_logging: activate (start level 2)
+pax_logging -> custom_appender: instantiate
+custom_appender -> sysprops: read (initial settings)
+equinox_framework -> bootstrap_config: activate (start level X)
+bootstrap_config -> bootstrap_config: locate profile  
+bootstrap_config -> sysprops: set (final settings)
+bootstrap_config -> pax_logging: trigger reconfiguration
+pax_logging -> custom_appender: instantiate
+custom_appender -> sysprops: read (final settings)
+----

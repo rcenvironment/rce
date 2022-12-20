@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.extensions.testscriptrunner.feature_10.3.1.qualifier.jar" id="de.rcenvironment.extensions.testscriptrunner.feature" version="10.3.1.qualifier">
+   <feature url="features/de.rcenvironment.extensions.testscriptrunner.feature_10.4.0.qualifier.jar" id="de.rcenvironment.extensions.testscriptrunner.feature" version="10.4.0.qualifier">
       <category name="rce_extensions"/>
    </feature>
    <category-def name="rce_extensions" label="RCE Extensions"/>

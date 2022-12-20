@@ -22,6 +22,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -33,9 +34,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Heinrich Wendel
  */
-class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
+public class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
 
-    public static final String GROUP_NODE_ACTIONS = "de.rcenvironment.rce.gui.workflow.editor.nodeActions";
+    private static final String GROUP_NODE_ACTIONS = "de.rcenvironment.rce.gui.workflow.editor.nodeActions";
 
     /** The editor's action registry. */
     private final ActionRegistry actionRegistry;
@@ -48,7 +49,7 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
      * @param viewer the editor's graphical viewer
      * @param actionRegistry the editor's action registry
      */
-    WorkflowEditorContextMenuProvider(EditPartViewer viewer, ActionRegistry actionRegistry) {
+    public WorkflowEditorContextMenuProvider(EditPartViewer viewer, ActionRegistry actionRegistry) {
         super(viewer);
         this.viewer = viewer;
         this.actionRegistry = actionRegistry;
@@ -76,6 +77,10 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
     }
 
     private void addContributedContextMenuActions(IMenuManager menu) {
+
+        if (!(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor() instanceof WorkflowEditor)) {
+            return;
+        }
 
         menu.add(new Separator(GROUP_NODE_ACTIONS));
 

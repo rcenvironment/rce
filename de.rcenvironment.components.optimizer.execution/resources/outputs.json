@@ -92,7 +92,7 @@
                     "dataType": "bool"
                 },
                 "isDiscrete": {
-                    "guiName": "Is discrete variable\n(Note: not all methods\nsupport discrete optimization)",
+                    "guiName": "Is discrete variable",
                     "guiPosition": "0",
                     "guiGroup": "Options",
                     "visibility": "shown",

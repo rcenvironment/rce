@@ -14,9 +14,9 @@
 	</parent>
 
 	<modules>
-		<module>${projects-root}/de.rcenvironment.componentgroups.standard/pom.xml</module>
-		<module>${projects-root}/de.rcenvironment.componentgroups.special/pom.xml</module>
-		<module>${modules-root}/cpacs.components</module>
+		<module>${project-sets}/components.standard</module>
+		<module>${project-sets}/components.special</module>
+		<module>${project-sets}/components.cpacs</module>
 	</modules>
 
 </project>

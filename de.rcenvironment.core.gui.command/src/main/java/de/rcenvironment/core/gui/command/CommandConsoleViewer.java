@@ -557,6 +557,22 @@ public class CommandConsoleViewer extends ViewPart {
                     displayCommandsReverse();
                 }
                 break;
+            case SWT.TRAVERSE_TAB_NEXT:
+                if (event.keyCode == SWT.TAB) {
+                    disableEvent(event);
+                    /*
+                    String command = getLineWithoutRCEPROMPT(currentLine);
+                    String[] completions = commandExecutionService.getCommandCompleter().findCompletion(command);
+                    
+                    if (completions.length == 1) {
+                        completeLine(command, completions[0]);
+                        
+                    } else if (completions.length > 1){
+                        showCompletions(command, completions);
+                        
+                    }
+                    */
+                }
             default:
                 break;
             }
@@ -586,6 +602,47 @@ public class CommandConsoleViewer extends ViewPart {
                     setSelection(styledtext.getCaretOffset() + line.length());
                 }
             }
+        }
+        
+        private void completeLine(String command, String completion) {
+            
+            String[] words = command.split(" ");
+            String lastWord = words[words.length - 1];
+            
+            setSelection(styledtext.getCaretOffset() + command.length());
+            
+            if (completion.startsWith(lastWord)) {
+                
+                int lastWordLength = command.length() - (command.lastIndexOf(' ') + 1);
+                completion = completion.substring(lastWordLength);
+                
+            } else if (!command.endsWith(" ")) {
+                completion = " " + completion;
+                
+            }
+            
+            insertText(completion);
+            setSelection(styledtext.getCaretOffset() + completion.length());
+            
+        }
+        
+        private void showCompletions(String command, String[] completions) {
+            setSelection(styledtext.getCaretOffset() + command.length());
+            
+            String text = completions[0];
+            
+            for (int i = 1; i < completions.length; i++) {
+                text += "\t" + completions[i];
+            }
+            
+            insertTextWithLineBreak("\n" + text);
+            increaseCurrentLine();
+            
+            setSelection(styledtext.getCaretOffset() + text.length() + 2);
+            
+            insertRCEPrompt();
+            insertText(command);
+            setSelection(styledtext.getCaretOffset() + command.length());
         }
     }
 

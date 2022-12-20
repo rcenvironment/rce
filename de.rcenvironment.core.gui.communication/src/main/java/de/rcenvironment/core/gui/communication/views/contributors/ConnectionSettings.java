@@ -12,7 +12,7 @@ package de.rcenvironment.core.gui.communication.views.contributors;
  * Entity class for connection settings.
  *
  * @author Goekhan Guerkan
- * @author Kathrin Schaffert (refactoring)
+ * @author Kathrin Schaffert
  */
 public class ConnectionSettings {
 
@@ -20,35 +20,37 @@ public class ConnectionSettings {
 
     private static final String EQUALS = " = ";
 
-    private static final int INITIAL_DELAY_DEFAULT_VAL = 5;
+    static final long INITIAL_DELAY_DEFAULT_VAL = 5;
 
-    private static final int MAX_DELAY_DEFAULT_VAL = 300;
+    static final long MAX_DELAY_DEFAULT_VAL = 300;
 
-    private static final double DELAY_MULTIPLIER_DEFAULT_VAL = 1.5;
+    static final double DELAY_MULTIPLIER_DEFAULT_VAL = 1.5;
 
-    private int autoRetryInitialDelay = INITIAL_DELAY_DEFAULT_VAL;
+    private long autoRetryInitialDelay = INITIAL_DELAY_DEFAULT_VAL;
 
-    private int autoRetryMaximumDelay = MAX_DELAY_DEFAULT_VAL;
+    private long autoRetryMaximumDelay = MAX_DELAY_DEFAULT_VAL;
 
     private double autoRetryDelayMultiplier = DELAY_MULTIPLIER_DEFAULT_VAL;
 
     private boolean connectOnStartup = true;
 
     private boolean useDefaultSettings = true;
+    
+    private boolean autoRetry = true;
 
-    public int getAutoRetryInitialDelay() {
+    public long getAutoRetryInitialDelay() {
         return autoRetryInitialDelay;
     }
 
-    public void setAutoRetryInitialDelay(int autoRetryInitialDelay) {
+    public void setAutoRetryInitialDelay(long autoRetryInitialDelay) {
         this.autoRetryInitialDelay = autoRetryInitialDelay;
     }
 
-    public int getAutoRetryMaximumDelay() {
+    public long getAutoRetryMaximumDelay() {
         return autoRetryMaximumDelay;
     }
 
-    public void setAutoRetryMaximumDelay(int autoRetryMaximumDelay) {
+    public void setAutoRetryMaximumDelay(long autoRetryMaximumDelay) {
         this.autoRetryMaximumDelay = autoRetryMaximumDelay;
     }
 
@@ -73,6 +75,15 @@ public class ConnectionSettings {
 
     public void setConnectOnStartup(boolean connectOnStartup) {
         this.connectOnStartup = connectOnStartup;
+    }
+    
+    public boolean isAutoRetry() {
+        return autoRetry;
+    }
+
+    
+    public void setAutoRetry(boolean autoRetry) {
+        this.autoRetry = autoRetry;
     }
 
     boolean isUseDefaultSettings() {

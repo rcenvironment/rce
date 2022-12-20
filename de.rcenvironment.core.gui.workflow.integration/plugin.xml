@@ -96,15 +96,15 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationWizardHandler"
+            class="de.rcenvironment.core.gui.integration.toolintegration.ShowIntegrationWizardHandler"
             commandId="de.rcenvironment.rce.gui.workflow.integration.command">
       </handler>
       <handler
-            class="de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWizardHandler"
+            class="de.rcenvironment.core.gui.integration.toolintegration.ShowIntegrationEditWizardHandler"
             commandId="de.rcenvironment.rce.gui.workflow.integration.edit.command">
       </handler>
       <handler
-            class="de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationRemoveHandler"
+            class="de.rcenvironment.core.gui.integration.common.ShowDeactivateIntegrationHandler"
             commandId="de.rcenvironment.rce.gui.workflow.integration.remove.command">
       </handler>
    </extension>
@@ -149,7 +149,7 @@
       <menuContribution
             locationURI="toolbar:org.eclipse.ui.main.toolbar?after=de.rcenvironment.toolintegration.toolbar">
          <toolbar
-               id="de.rcenvironment.rce.gui.workflow.integration.toolbar">
+               id="de.rcenvironment.rce.gui.workflow.integration.tool.toolbar">
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_new.png"
@@ -162,6 +162,9 @@
                   label="%integrateEditLabel"
                   tooltip="%integrateEditTooltip">
             </command>
+         </toolbar>
+         <toolbar
+               id="de.rcenvironment.rce.gui.workflow.integration.deactivate.toolbar">
             <command
                   commandId="de.rcenvironment.rce.gui.workflow.integration.remove.command"
                   icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/integration_remove.png"
@@ -173,7 +176,7 @@
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu">
             <menu id="de.rcenvironment.integration.menu"
-            	label="Tool Integration" />
+            	label="Integration" />
       </menuContribution>
       <menuContribution
             locationURI="menu:de.rcenvironment.integration.menu">
@@ -207,22 +210,34 @@
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.integration" />
    </extension>
-    <extension
-         point="de.rcenvironment.core.gui.workflow.editorActions">
-         
-      <action
-            class="de.rcenvironment.core.gui.workflow.integration.EditToolIntegrationAction"
-            component="de.rcenvironment.integration.*"
-            default="true"
-            id="de.rcenvironment.integration.editIntegration"
-            label="Edit Tool Integration">
-      </action>
-      
-   </extension>
 
    <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">
          
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.EditToolIntegrationAction"
+            component="de.rcenvironment.integration.common.*"
+            default="true"
+            id="de.rcenvironment.integration.editIntegration"
+            label="Edit selected Tool Integration...">
+      </action>
+      
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.EditToolIntegrationAction"
+            component="de.rcenvironment.integration.cpacs.*"
+            default="true"
+            id="de.rcenvironment.integration.editIntegration"
+            label="Edit selected Tool Integration...">
+      </action>
+
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.EditWorkflowIntegrationAction"
+            component="de.rcenvironment.integration.workflow.*"
+            default="true"
+            id="de.rcenvironment.integration.editIntegration"
+            label="Edit selected Workflow Integration...">
+      </action>
+      
       <action
             class="de.rcenvironment.core.gui.workflow.integration.GetDocumentationWorkflowEditorAction"
             component="de.rcenvironment.integration.*"
@@ -230,6 +245,7 @@
             id="de.rcenvironment.integration.getDocumentation"
             label="Open Documentation">
       </action>
+      
       <action
             class="de.rcenvironment.core.gui.workflow.integration.GetDocumentationWorkflowEditorAction"
             component="de.rcenvironment.remoteaccess.*"
@@ -259,9 +275,17 @@
          
       <action
             class="de.rcenvironment.core.gui.workflow.integration.SetImitationModeWorkflowEditorAction"
-            component="de.rcenvironment.integration.*"
+            component="de.rcenvironment.integration.common.*"
             default="true"
-            id="de.rcenvironment.integration.getDocumentation2"
+            id="de.rcenvironment.integration.imitationMode"
+            label="Enable/Disable tool run imitation mode">
+      </action>
+      
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.SetImitationModeWorkflowEditorAction"
+            component="de.rcenvironment.integration.cpacs.*"
+            default="true"
+            id="de.rcenvironment.integration.imitationMode"
             label="Enable/Disable tool run imitation mode">
       </action>
       

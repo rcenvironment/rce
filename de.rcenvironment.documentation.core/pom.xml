@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -7,7 +8,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>10.3.1-SNAPSHOT</version>
+	<version>10.4.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -80,6 +81,33 @@
 							</execution>
 						</executions>
 					</plugin>
+					<!-- render AsciiDoc to DocBook -->
+					<!-- TODO configure handling of generated diagrams; not used yet -->
+					<plugin>
+						<groupId>org.asciidoctor</groupId>
+						<artifactId>asciidoctor-maven-plugin</artifactId>
+						<version>2.2.2</version>
+						<configuration>
+							<sourceDirectory>src/asciidoc</sourceDirectory>
+							<outputDirectory>${project.build.directory}/asciidoc-to-docbook</outputDirectory>
+						</configuration>
+						<executions>
+							<execution>
+								<id>asciidoc-to-docbook</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>process-asciidoc</goal>
+								</goals>
+								<configuration>
+									<backend>docbook</backend>
+									<doctype>section</doctype>
+									<attributes>
+										<hardbreaks-option>false</hardbreaks-option>
+									</attributes>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 					<!-- use Ant+JavaScript to customize the displayed build id; needs antrun 
 						>=1.7 to export Maven properties -->
 					<plugin>
@@ -116,20 +144,28 @@
 												value="href=&quot;${adminguide.content.prefix}" />
 										</replace>
 										<delete>
-											<fileset dir="target/docbkx/eclipse" includes="**/plugin.xml" />
-											<fileset dir="target/docbkx/eclipse" includes="**/index.xml" />
+											<fileset dir="target/docbkx/eclipse"
+												includes="**/plugin.xml" />
+											<fileset dir="target/docbkx/eclipse"
+												includes="**/index.xml" />
 										</delete>
-										<move file="target/docbkx/eclipse/windows/user_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/windows/user_guide/toc.xml"
 											toFile="target/docbkx/eclipse/windows/user_guide_toc.xml" />
-										<move file="target/docbkx/eclipse/windows/developer_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/windows/developer_guide/toc.xml"
 											toFile="target/docbkx/eclipse/windows/developer_guide_toc.xml" />
-										<move file="target/docbkx/eclipse/windows/admin_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/windows/admin_guide/toc.xml"
 											toFile="target/docbkx/eclipse/windows/admin_guide_toc.xml" />
-										<move file="target/docbkx/eclipse/linux/user_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/linux/user_guide/toc.xml"
 											toFile="target/docbkx/eclipse/linux/user_guide_toc.xml" />
-										<move file="target/docbkx/eclipse/linux/developer_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/linux/developer_guide/toc.xml"
 											toFile="target/docbkx/eclipse/linux/developer_guide_toc.xml" />
-										<move file="target/docbkx/eclipse/linux/admin_guide/toc.xml"
+										<move
+											file="target/docbkx/eclipse/linux/admin_guide/toc.xml"
 											toFile="target/docbkx/eclipse/linux/admin_guide_toc.xml" />
 										<echo>Modified toc.xml files and deleted plugin.xml and
 											index.xml files.</echo>
@@ -140,7 +176,8 @@
 												prefix="images" />
 										</zip>
 										<zip destfile="target/docbkx/eclipse/linux/doc.zip">
-											<fileset dir="target/docbkx/eclipse/linux" excludes="**/*.xml" />
+											<fileset dir="target/docbkx/eclipse/linux"
+												excludes="**/*.xml" />
 											<zipfileset dir="target/docbkx/html/images"
 												prefix="images" />
 										</zip>

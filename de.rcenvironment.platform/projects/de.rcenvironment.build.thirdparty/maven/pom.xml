@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.build.thirdparty.root</artifactId>
+	<name>RCE Third-Party Artifacts - Maven Root Project</name>
+	<version>10.4.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.common</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>parent/common</relativePath>
+	</parent>
+	
+	<profiles>
+		<profile>
+			<id>buildPlatformRepository</id>
+			<activation>
+				<property>
+					<name>!rce.maven.skipPlatformRepository</name>
+				</property>
+			</activation>
+			<modules>
+				<module>../../de.rcenvironment.platform.repository</module>
+			</modules>
+		</profile>
+	</profiles>
+
+	<modules>
+		<!-- resolution stub for package imports fulfilled by Maven dependencies -->
+		<module>../../de.rcenvironment.platform.maven.resolution-stub</module>
+		<!-- the modules defining top-level Eclipse features to generate and the Maven projects to include -->		
+		<module>../../de.rcenvironment.modules.thirdparty.dakota.binaries.common.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.eclipse.platform.common.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.eclipse.platform.gui.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.imageviewer.gui.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.libraries.bdd.common.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.libraries.generic.common.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.libraries.generic.gui.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.paxlogging.common.feature/maven-include</module>
+		<module>../../de.rcenvironment.modules.thirdparty.pdfviewer.gui.feature/maven-include</module>
+	</modules>
+
+</project>

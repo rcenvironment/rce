@@ -1,3 +1,86 @@
+RCE 10.4.0 (December 20, 2022)
+
+# Workflow Integration Editor (Workflow as Component)
+
+- Implementation of a graphical editor to guide users through the workflow integration process
+  - Supports the integration ("wrapping") of a complete workflow or parts of a workflow as a component by
+    - selecting the workflow file in the Project Explorer or
+    - selecting components of a workflow in the Workflow Editor
+  - The usual metadata can now be added to integrated workflow components: version, icon, group, documentation, description, limit parallel execution, contact information
+  - A specific workflow editor supports removing/deselecting individual connections or components that should not be part of the integrated workflow
+  - Inputs and Outputs of the integrated workflow component can be selected and individually renamed
+  - Context-sensitive help supports the user during the integration process
+  - Integrated workflow components can be edited again after integration
+
+# Command Parser
+
+- Reworked the infrastructure that parses and executes console commands (e.g. "wf run ...")
+  - Command parsing is now done centrally, which allows for better help output and behavior
+  - In particular, commands have a consistent way of defining parameters now; list parameters are also handled more consistently
+  - Named parameters and flags are now accepted in any order
+  - Added support for more specific help output, e.g. "help wf"
+  - More parts of the command help output are now generated automatically, improving consistency
+  - Likewise, the command reference in the User/Developer Guide is now generated directly from code, improving consistency
+- Please note that some of the new help descriptions are not completely reviewed yet; this will be improved in the next releases
+
+# Event Log (Preview)
+
+- Added a first draft of the RCE Event Log, which is meant to give users and administrators a concise and helpful overview of relevant events in an RCE instance
+  - This preview does not cover all planned event types yet; in particular, workflow and component/tool execution is not fully covered yet
+  - For this reason, there is no prominent Event Log access in the GUI yet - this will be added in a future release
+  - To access the preview data, see the "Event Log" section in the User Guide
+
+# Optimization Algorithm API
+
+- The optimization algorithm documentation has been completely revised, completed and added to the Optimizer Component help
+- Several methods have been added to the API
+- New GUI options have been added to display the algorithm properties on different setting tabs if desired
+
+# Third-Party Artifact Management
+
+- In the near future, we will split our project repository into two parts: One primarily containing custom code and files, and one containing third-party artifacts, to allow more lightweight development and independent versioning. Internal changes have been made to support this.
+- Additionally, internal changes were made to improve future flexibility regarding third-party libraries, e.g. for specialized RCE distributions.
+
+# Internal Network Connection
+
+- Redesigned the "Add Network Connection" dialog, including an explicit option for reconnecting after a disconnect
+
+# Update/Security Information for RCE Releases
+
+- Added a single point of reference for update recommendations and known security issues to our website at https://rcenvironment.de/update-status.html
+  - This is intended for users and administrators and will be updated whenever new information becomes available
+  - This page also provides Java runtime (JRE) version compatibility information
+
+# Other Fixes and Improvements
+
+- Fixed a bug in the Component Palette that caused inconsistent behavior after renaming custom groups
+- Fixed a bug concerning the update behavior on the Fault Tolerance tabs
+- Fixed a bug affecting the filter behavior in the Workflow Console view
+- Fixed a bug that caused incorrect saving behavior of some configurations when adding network connections
+- Some minor fixes in the Script, Design of Experiments, Optimizer and Output Writer Component
+- Fixed Linux specific GUI issues (invisible checkmarks; table columns could not be restored after resizing to zero width)
+- Fixed a bug that leads to incorrect calculations of total steps within the Parametric Study component
+- Fixed non-standard JSON comments in example and reference configuration files
+- Added support for Elliptic Curve Cryptography SSH keys for outgoing connections; for technical reasons, this is not supported for incoming connections yet
+- Added support for XML namespaces to the mapping features of CPACS components
+- The Optimizer's algorithm selection has been updated to no longer allow invalid configurations for discrete design variables
+- In some dialogs, better feedback is now provided when the ok button is disabled (e.g. add/edit Input/Output dialogs)
+- Removed deprecated 'Remote Workflow Access' example and documentation content
+- Various minor fixes, general documentation and usability improvements
+
+# Internal and Technical Changes
+
+- Updated Checkstyle and its configuration
+- Added support for rendering documentation content (User/Developer/Admin Guides and integrated Eclipse Help) from AsciiDoc sources
+- Third-party library upgrades
+  - Upgraded ActiveMQ to 5.16.5
+  - Upgraded Jackson Core and Jackson Databind to 2.14.0
+  - Upgraded SSHD to 2.9.1
+  - Upgraded JSch fork by mwiede to 2.4.0
+  - Upgraded Commons-Codec to 1.15
+  - Upgraded Commons-IO to 2.11.0
+
+
 RCE 10.3.1 (February 23, 2022)
 
 # Application Infrastructure

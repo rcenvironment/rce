@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Defines the rules a valid component group path.
+ * Defines the rules of a valid component group path.
  *
  * @author Kathrin Schaffert
  */
@@ -78,10 +78,21 @@ public final class ComponentGroupPathRules {
     protected static final Pattern INVALID_TRADING_SPACES = Pattern.compile("\\/\\s+");
 
     /**
-     * The human-readable error message for an invalid leading and trading spaces.
+     * The human-readable error message for invalid leading and trading spaces.
      */
     protected static final String INVALID_LEADING_TRADING_SPACES_ERROR_MESSAGE =
-        "Spaces are not allwoed before or after any slash.";
+        "Spaces are not allowed before or after any slash.";
+    
+    /**
+     * A regular expression to check whether a given group path contains double slashes.
+     */
+    protected static final Pattern INVALID_SLASHES = Pattern.compile("\\/\\/");
+    
+    /**
+     * The human-readable error message for an invalid double slashes.
+     */
+    protected static final String INVALID_DOUBLE_SLASH_ERROR_MESSAGE =
+        "Invalid double slash.";
 
     private ComponentGroupPathRules() {}
 
@@ -130,6 +141,9 @@ public final class ComponentGroupPathRules {
         if (invalidCharMatcher.find()) {
             return Optional.of(StringUtils.format(INVALID_GROUP_PATH_CHARSET_ERROR_MESSAGE, invalidCharMatcher.start(0) + 1,
                 invalidCharMatcher.group(0)));
+        }
+        if (INVALID_SLASHES.matcher(input).find()) {
+            return Optional.of(INVALID_DOUBLE_SLASH_ERROR_MESSAGE);
         }
         if (!VALID_GROUP_PATH_LAST_CHARACTER_REGEXP.matcher(input).matches()) {
             return Optional.of(VALID_GROUP_PATH_LAST_CHARACTER_ERROR_MESSAGE);

@@ -1,24 +1,16 @@
 {
-  "toolDescription" : "",
-  "postScript" : "${out:present} = \"${dir:workingDir}/result\"",
-  "groupName" : "Test",
-  "toolProperties" : {
-    "Default" : {
-    }
-  },
-  "useIterationDirectories" : true,
-  "toolIntegratorName" : "",
-  "deleteWorkingDirectoriesNever" : true,
-  "toolName" : "DoALot",
-  "launchSettings" : [ {
-    "host" : "RCE",
-    "rootWorkingDirectory" : "",
-    "toolDirectory" : "doalot",
-    "version" : "42"
-  } ],
-  "deleteWorkingDirectoriesAfterIteration" : true,
   "commandScriptLinux" : "python ${dir:tool}/SirDoALot.py ${in:x}",
-  "toolIconPath" : "../doalot/SirDoALot.png",
+  "commandScriptWindows" : "python ${dir:tool}/SirDoALot.py ${in:x}",
+  "copyToolBehavior" : "always",
+  "deleteWorkingDirectoriesAfterIteration" : true,
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "deleteWorkingDirectoriesNever" : true,
+  "documentationFilePath" : "",
+  "enableCommandScriptLinux" : true,
+  "enableCommandScriptWindows" : true,
+  "groupName" : "Test",
+  "imitationScript" : "",
+  "imitationToolOutputFilename" : "",
   "inputs" : [ {
     "endpointFolder" : "",
     "endpointFileName" : "",
@@ -26,18 +18,31 @@
     "endpointName" : "x",
     "endpointUsage" : "required"
   } ],
-  "enableCommandScriptWindows" : true,
-  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
-  "enableCommandScriptLinux" : true,
-  "commandScriptWindows" : "python ${dir:tool}/SirDoALot.py ${in:x}",
-  "copyToolBehavior" : "always",
-  "toolIntegratorE-Mail" : "",
-  "preScript" : "",
+  "isActive" : true,
+  "launchSettings" : [ {
+    "host" : "RCE",
+    "rootWorkingDirectory" : "",
+    "toolDirectory" : "doalot",
+    "version" : "42"
+  } ],
   "outputs" : [ {
     "endpointFolder" : "",
     "endpointFileName" : "",
     "endpointDataType" : "FileReference",
     "endpointName" : "present",
     "endpointUsage" : "-"
-  } ]
+  } ],
+  "postScript" : "${out:present} = \"${dir:workingDir}/result\"",
+  "preScript" : "",
+  "toolDescription" : "",
+  "toolIconPath" : "../doalot/SirDoALot.png",
+  "toolIntegrationVersion" : 1,
+  "toolIntegratorE-Mail" : "",
+  "toolIntegratorName" : "",
+  "toolName" : "DoALot",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "uploadIcon" : true,
+  "useIterationDirectories" : true
 }

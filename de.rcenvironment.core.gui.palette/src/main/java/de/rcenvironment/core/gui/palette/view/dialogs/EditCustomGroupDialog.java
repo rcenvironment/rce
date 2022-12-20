@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,7 +34,9 @@ import org.eclipse.swt.widgets.Text;
 import de.rcenvironment.core.gui.palette.GroupNameValidator;
 import de.rcenvironment.core.gui.palette.ToolGroupAssignment;
 import de.rcenvironment.core.gui.palette.toolidentification.ToolIdentification;
+import de.rcenvironment.core.gui.palette.view.PaletteViewContentProvider;
 import de.rcenvironment.core.gui.palette.view.palettetreenodes.ComponentNode;
+import de.rcenvironment.core.gui.palette.view.palettetreenodes.GroupNode;
 import de.rcenvironment.core.gui.palette.view.palettetreenodes.PaletteTreeNode;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -47,6 +50,8 @@ public class EditCustomGroupDialog extends TitleAreaDialog {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private final PaletteViewContentProvider contentProvider;
+
     private ToolGroupAssignment assignment;
 
     private PaletteTreeNode groupNode;
@@ -59,10 +64,10 @@ public class EditCustomGroupDialog extends TitleAreaDialog {
 
     private boolean groupUpdated = false;
 
-
-    public EditCustomGroupDialog(Shell parentShell, PaletteTreeNode groupNode, ToolGroupAssignment assignment) {
+    public EditCustomGroupDialog(Shell parentShell, PaletteTreeNode groupNode, PaletteViewContentProvider contentProvider) {
         super(parentShell);
-        this.assignment = assignment;
+        this.contentProvider = contentProvider;
+        this.assignment = contentProvider.getAssignment();
         this.groupNode = groupNode;
         this.currentGroups = groupNode.getPaletteParent().getSubGroups();
         this.previousGroupString = groupNode.getNodeName();
@@ -115,12 +120,28 @@ public class EditCustomGroupDialog extends TitleAreaDialog {
         String groupString = editGroupText.getText().trim();
         if (!groupString.equals(previousGroupString)) {
             String previousPath = groupNode.getQualifiedGroupName();
+
             groupNode.setNodeName(groupString);
+
+            Stream<ComponentNode> predefinedNodes = null;
             if (groupNode.hasChildren()) {
+                // filter all predefined components, that should be reset to their default group after renaming the custom group
+                Stream<ComponentNode> stream1 =
+                    Arrays.stream(groupNode.getChildren()).filter(ComponentNode.class::isInstance).map(ComponentNode.class::cast);
+                Stream<ComponentNode> stream2 =
+                    groupNode.getAllSubGroups().stream().filter(TreeNode::hasChildren).flatMap(GroupNode::getAllComponentNodes);
+                predefinedNodes = Stream.concat(stream1, stream2)
+                    .filter(node -> !assignment.getCustomizedAssignments().containsKey((node).getToolIdentification()));
+                // update assignment after renaming the custom group
                 updateCustomizedAssignments(groupNode.getChildren(), groupNode.getQualifiedGroupName());
                 groupNode.getAllSubGroups().stream().filter(TreeNode::hasChildren)
                     .forEach(node -> updateCustomizedAssignments(node.getChildren(), node.getQualifiedGroupName()));
             }
+            // reset predefined components
+            if (predefinedNodes != null) {
+                predefinedNodes.forEach(contentProvider::resetGroup);
+            }
+
             groupUpdated = true;
             log.debug(StringUtils.format("Renamed group '%s' to '%s'", previousPath, groupNode.getQualifiedGroupName()));
         }
@@ -130,10 +151,8 @@ public class EditCustomGroupDialog extends TitleAreaDialog {
     private void updateCustomizedAssignments(TreeNode[] treeNodes, String qualifiedGroupString) {
         String[] groupPath = assignment.createPathArray(qualifiedGroupString);
         Map<ToolIdentification, String[]> customizedAssignments = assignment.getCustomizedAssignments();
-        Arrays.stream(treeNodes).filter(ComponentNode.class::isInstance).map(ComponentNode.class::cast).forEach(node -> {
-            updateAssignmentMap(customizedAssignments, node.getToolIdentification().getToolID(),
-                groupPath);
-        });
+        Arrays.stream(treeNodes).filter(ComponentNode.class::isInstance).map(ComponentNode.class::cast).forEach(node -> 
+            updateAssignmentMap(customizedAssignments, node.getToolIdentification().getToolID(), groupPath));
         assignment.setCustomizedAssignments(customizedAssignments);
     }
 

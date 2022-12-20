@@ -14,16 +14,10 @@
 	</parent>
 
 	<modules>
-		<module>${modules-root}/core.combined</module>
-		<module>${modules-root}/components.all</module>
-		<module>${modules-root}/documentation</module>
-		<module>${modules-root}/branding.default</module>
-		<module>${modules-root}/filesets.default</module>
-		<module>${modules-root}/cpacs.nonComponent</module>
-		<module>${modules-root}/product.versionInfo</module>
-		<module>${modules-root}/product.binaries</module>
-		<module>${modules-root}/extensions.testscriptrunner</module>
-		<module>${modules-root}/repository.mainProduct</module>
+		<!-- extend the "coreAndComponents" scope definition -->
+		<module>../coreAndComponents</module>
+		<!-- include the "productBuild" module, which contains everything except coreAndComponents -->
+		<module>${modules-root}/productBuild</module>
 	</modules>
 
 </project>

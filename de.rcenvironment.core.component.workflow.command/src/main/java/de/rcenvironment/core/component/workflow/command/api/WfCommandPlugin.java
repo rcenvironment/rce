@@ -9,7 +9,6 @@
 package de.rcenvironment.core.component.workflow.command.api;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +18,6 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
@@ -48,9 +46,27 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
+import de.rcenvironment.core.command.spi.AbstractParsedCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
+import de.rcenvironment.core.command.spi.CommandParser;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.FileParameter;
+import de.rcenvironment.core.command.spi.IntegerParameter;
+import de.rcenvironment.core.command.spi.ListCommandParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.MultiStateParameter;
+import de.rcenvironment.core.command.spi.NamedParameter;
+import de.rcenvironment.core.command.spi.NamedSingleParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedFileParameter;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedListParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentUtils;
@@ -94,8 +110,8 @@ import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 @Component
 public class WfCommandPlugin implements CommandPlugin {
 
-    private static final String WF_DETAILS_OUTPUT_TEXT =
-        "        Execution Count: %s,  Average Time: %s msec, Max Time: %s msec, Total Time: %s msec";
+	private static final String WF_DETAILS_OUTPUT_TEXT = "        Execution Count: %s,  "
+            + "Average Time: %s msec, Max Time: %s msec, Total Time: %s msec";
 
     private static final String SELF_TEST_CASES_FILE_ENDING = ".cases";
 
@@ -111,7 +127,15 @@ public class WfCommandPlugin implements CommandPlugin {
 
     private static final String DELETE_COMMAND = "delete";
 
+    private static final String DISPOSE_COMMAND = "dispose";
+
+    private static final int PARSING_WORKFLOW_FILE_RETRY_INTERVAL = 2000;
+
+    private static final int MAXIMUM_WORKFLOW_PARSE_RETRIES = 5;
+
     private static final String BASEDIR_OPTION = "--basedir";
+    
+    private static final String INCLUDEDIRS_OPTION = "--includedirs";
 
     private static final String STRING_DOT = ".";
 
@@ -121,6 +145,90 @@ public class WfCommandPlugin implements CommandPlugin {
 
     private static final String WORKFLOW_ID = "<id>";
 
+    private static final String WF = "wf";
+    
+    private static final String DELETE = "--delete";
+    
+    private static final String DISPOSE = "--dispose";
+    
+    private static final String ONFINISHED = "onfinished";
+    
+    private static final String PR = "--pr";
+    
+    private static final String SR = "--sr";
+    
+    private static final String JSON_FILE = "-p";
+    
+    private static final String PYTHON = "--python";
+    
+    private static final String CASES = "--cases";
+
+// Parameters
+    
+    private static final FileParameter WORKFLOW_FILE_PARAMETER = new FileParameter("workflow file", "path to the workflow file");
+    
+    private static final StringParameter WORKFLOW_FILE_BASEDIR_PARAMETER = new StringParameter("workflow file", "path to the workflow file", null);
+    
+    private static final FileParameter JSON_FILE_PARAMETER = new FileParameter("JSON placholder file",
+            "path to the JSON placeholder file");
+
+    private static final FileParameter BASEDIR_PARAMETER = new FileParameter("base directory", "path to base directory");
+    
+    private static final FileParameter INCLUDEDIR_PARAMETER = new FileParameter("include directory", "path to directory to include workflow files");
+    
+    private static final FileParameter PYTHON_FILE_PARAMETER = new FileParameter("python exe path", "path to python exe");
+    
+    private static final IntegerParameter PR_PARAMETER = new IntegerParameter(1, "parallel runs", "number of parallel runs");
+
+    private static final IntegerParameter SR_PARAMETER = new IntegerParameter(1, "sequential runs", "number of sequential runs");
+
+    private static final StringParameter ID_PARAMETER = new StringParameter(null, "id", "id of the workflow");
+    
+    private static final StringParameter CASES_PARAMETER = new StringParameter("", "cases", "parameter for the cases");
+    
+    private static final ListCommandParameter WORKFLOW_LIST_PARAMETER =
+            new ListCommandParameter(WORKFLOW_FILE_PARAMETER, "workflows", "list of workflow files");
+    
+    private static final ListCommandParameter WORKFLOW_LIST_BASEDIR_PARAMETER =
+    		new ListCommandParameter(WORKFLOW_FILE_BASEDIR_PARAMETER, "workflows", "list of workflow files");
+    
+    private static final ListCommandParameter CASES_LIST_PARAMETER =
+            new ListCommandParameter(CASES_PARAMETER, "cases", "cases");
+    
+    private static final ListCommandParameter INCLUDEDIR_LIST_PARAMETER =
+            new ListCommandParameter(INCLUDEDIR_PARAMETER, "include directory", "path to directory to include workflow files");
+    
+    private static final MultiStateParameter DISPOSE_DELETE_PARAMETR =
+            new MultiStateParameter("dispose/delete", "", ONFINISHED,
+                    "never", "always");
+    
+    private static final NamedParameter NAMED_JSON_FILE_PARAMETER = new NamedSingleParameter(
+            JSON_FILE, "JSON placeholder file", JSON_FILE_PARAMETER);
+    
+    private static final NamedParameter NAMED_BASEDIR_PARAMETER = new NamedSingleParameter(
+            BASEDIR_OPTION, "optional base directory", BASEDIR_PARAMETER);
+    
+    private static final NamedParameter NAMED_INCLUDEDIR_LIST_PARAMETER = new NamedSingleParameter(
+            INCLUDEDIRS_OPTION, "optional include directorys", INCLUDEDIR_LIST_PARAMETER);
+    
+    private static final NamedParameter NAMED_PYTHON_PARAMETER = new NamedSingleParameter(
+            PYTHON, "path to python.exe", PYTHON_FILE_PARAMETER);
+    
+    private static final NamedParameter DISPOSE_PARAMETER = new NamedSingleParameter(
+            DISPOSE, "dispose behaviour", DISPOSE_DELETE_PARAMETR);
+    
+    private static final NamedParameter DELETE_PARAMETER = new NamedSingleParameter(
+            DELETE, "deletion behaviour", DISPOSE_DELETE_PARAMETR);
+    
+    private static final NamedParameter NAMED_PR_PARAMETER = new NamedSingleParameter(
+            PR, "number of parallel runs", PR_PARAMETER);
+    
+    private static final NamedParameter NAMED_SR_PARAMETER = new NamedSingleParameter(
+            SR, "number of sequential runs", SR_PARAMETER);
+    
+    private static final NamedParameter NAMED_CASES_PARAMETER = new NamedSingleParameter(
+            CASES, "parameter for the cases", CASES_LIST_PARAMETER);
+    
     /** Name of directory with workflows that are expected to fail. */
     private static final String FAILURE_DIR_NAME = "failure";
 
@@ -138,126 +246,142 @@ public class WfCommandPlugin implements CommandPlugin {
     private Bundle bundle;
 
     private final Log log = LogFactory.getLog(getClass());
-
+    
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<>();
-        contributions.add(new CommandDescription("wf", "", false, "short form of \"wf list\""));
-        contributions.add(new CommandDescription("wf start",
-            "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] [--compact-output] "
-                + "[-p <JSON placeholder file>] <workflow file>",
-            false, "starts a workflow from the given file and returns its workflow id if validation passed"));
-        contributions.add(new CommandDescription("wf run",
-            "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] [--compact-output] "
-                + "[-p <JSON placeholder file>] <workflow file>",
-            false, "starts a workflow from the given file and waits for its completion"));
-        contributions.add(new CommandDescription("wf verify",
-            "[--dispose <onexpected|never|always>] [--delete <onexpected|never|always>] "
-                + "[--pr <parallel runs>] [--sr <sequential runs>] [-p <JSON placeholder file>] "
-                + "([--basedir <root directory for all subsequent files>] (<workflow filename>|\"*\")+ )+",
-            false, "batch test the specified workflow files"));
-        contributions.add(new CommandDescription("wf list", "",
-            false, "show workflow list"));
-        contributions.add(new CommandDescription("wf details", WORKFLOW_ID,
-            false, "show details of a workflow"));
-        contributions.add(new CommandDescription("wf open", WORKFLOW_ID,
-            false, "open a runtime viewer of a workflow. Requires GUI."));
-        contributions.add(new CommandDescription("wf pause", WORKFLOW_ID,
-            false, "pause a running workflow"));
-        contributions.add(new CommandDescription("wf resume", WORKFLOW_ID,
-            false, "resume a paused workflow"));
-        contributions.add(new CommandDescription("wf cancel", WORKFLOW_ID,
-            false, "cancel a running or paused workflow"));
-        contributions.add(new CommandDescription("wf delete", WORKFLOW_ID,
-            false, "delete and dispose a finished, cancelled or failed workflow"));
-        contributions.add(new CommandDescription("wf self-test",
-            "[--dispose <onexpected|never|always>] [--delete <onexpected|never|always>] "
-                + "[--pr <parallel runs>] [--sr <sequential runs>] [--python <python exe path; default: 'python'>]"
-                + " [--cases <comma-separated list of case files; default: 'core'>]",
-            true, "batch test workflow files of the test workflow files bundle"));
-        contributions.add(new CommandDescription("wf list-self-test-cases", "",
-            true, "list available test cases for wf self-test"));
-        contributions.add(new CommandDescription("wf check-self-test-cases", "",
-            true, "check if all test workflows are part of at least one test case"));
-        contributions.add(new CommandDescription("wf graph", "<workflow file>",
-            true, "prints .dot string representation of a workflow (can be used to create graph visualization with Graphviz)"));
-        return contributions;
-    }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken("wf");
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null) {
-            // "wf" -> "wf list" by default
-            performWfList(context);
-        } else {
-            if ("run".equals(subCmd)) {
-                // "wf run <filename>"
-                performWfRunOrStart(context, true); // true = wait for termination
-            } else if ("start".equals(subCmd)) {
-                // "wf start <filename>"
-                performWfRunOrStart(context, false); // false = spawn, but don't wait
-            } else if ("verify".equals(subCmd)) {
-                // "wf verify ..."
-                performWfVerify(context);
-            } else if ("pause".equals(subCmd)) {
-                // "wf pause ..."
-                performWfPause(context);
-            } else if ("resume".equals(subCmd)) {
-                // "wf resume ..."
-                performWfResume(context);
-            } else if ("cancel".equals(subCmd)) {
-                // "wf cancel ..."
-                performWfCancel(context);
-            } else if ("dispose".equals(subCmd)) {
-                // "wf dispose ..."
-                performWfDisposeOrDelete(context, subCmd);
-            } else if (DELETE_COMMAND.equals(subCmd)) {
-                // "wf delete ..."
-                performWfDisposeOrDelete(context, subCmd);
-            } else if ("list".equals(subCmd)) {
-                // "wf list ..."
-                performWfList(context);
-            } else if ("details".equals(subCmd)) {
-                // "wf details ..."
-                performWfShowDetails(context);
-            } else if ("open".equals(subCmd)) {
-                // "wf open ..."
-                performWfOpen(context);
-            } else if ("self-test".equals(subCmd)) {
-                performWfSelfTest(context);
-            } else if ("list-self-test-cases".equals(subCmd)) {
-                performWfListSelfTestCases(context);
-            } else if ("check-self-test-cases".equals(subCmd)) {
-                performWfCheckSelfTestCases(context);
-            } else if ("graph".equals(subCmd)) {
-                performWfGraph(context);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        }
-    }
-
-    private File getWorkflowFile(CommandContext cmdCtx) throws CommandException {
-        final String filename = cmdCtx.consumeNextToken();
-        // verify: filename is present and the only parameter
-        if (filename == null) {
-            CommandException.missingFilename(cmdCtx);
-        }
-
-        final String additionalToken = cmdCtx.consumeNextToken();
-        if (additionalToken != null) {
-            throw CommandException.syntaxError("Expected end of command, but found another argument: " + additionalToken, cmdCtx);
-        }
-        final File wfFile;
-        try {
-            wfFile = WorkflowExecutionUtils.resolveWorkflowOrPlaceholderFileLocation(filename,
-                WorkflowExecutionUtils.DEFAULT_ERROR_MESSAGE_TEMPLATE_CANNOT_READ_WORKFLOW_FILE);
-        } catch (FileNotFoundException e) {
-            throw CommandException.executionError(e.getMessage(), cmdCtx);
-        }
-        return wfFile;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(WF, "manage workflows",
+            "alias for \"wf list\"", this::performWfList,
+            new SubCommandDescription("run", "starts a workflow from the given file and waits for its completion",
+            	this::performWfRun,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_FILE_PARAMETER
+                    },
+                    new CommandFlag[] {
+                        new CommandFlag("-c", "--compact-output")
+                    },
+                    new NamedParameter[] {
+                        DELETE_PARAMETER,
+                        DISPOSE_PARAMETER,
+                        NAMED_JSON_FILE_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("start", "starts a workflow from the given file and returns its workflow id if validation passed",
+            	this::performWfStart,
+            	new CommandModifierInfo(
+            		new AbstractCommandParameter[] {
+            			WORKFLOW_FILE_PARAMETER
+            		},
+            		new CommandFlag[] {
+            			new CommandFlag("-c", "--compact-output")
+            		},
+            		new NamedParameter[] {
+            			DELETE_PARAMETER,
+            			DISPOSE_PARAMETER,
+            			NAMED_JSON_FILE_PARAMETER
+            		}
+            	)
+            ),
+            new SubCommandDescription("verify", "batch test the specified workflow files", this::performWfVerify,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_LIST_BASEDIR_PARAMETER
+                    },
+                    new NamedParameter[] {
+                        DELETE_PARAMETER,
+                        DISPOSE_PARAMETER,
+                        NAMED_PR_PARAMETER,
+                        NAMED_SR_PARAMETER,
+                        NAMED_JSON_FILE_PARAMETER,
+                        NAMED_BASEDIR_PARAMETER,
+                        NAMED_INCLUDEDIR_LIST_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("list", "show workflow list", this::performWfList),
+            new SubCommandDescription("details", "show details of a workflow", this::performWfShowDetails,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("open", "open a runtime viewer of a workflow. Requires GUI.", this::performWfOpen,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("pause", "pause a running workflow", this::performWfPause,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("resume", "resume a paused workflow", this::performWfResume,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("cancel", "cancel a running or paused workflow", this::performWfCancel,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription(DELETE_COMMAND, "delete and dispose a finished, cancelled or failed workflow",
+                this::performWfDelete,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                 )
+            ),
+            new SubCommandDescription(DISPOSE_COMMAND, "disposes a finished, cancelled or failed workflow",
+                this::performWfDispose,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("self-test", "batch test workflow files of the test workflow files bundle",
+                this::performWfSelfTest,
+                new CommandModifierInfo(
+                    new NamedParameter[] {
+                        DISPOSE_PARAMETER,
+                        DELETE_PARAMETER,
+                        NAMED_PR_PARAMETER,
+                        NAMED_SR_PARAMETER,
+                        NAMED_PYTHON_PARAMETER,
+                        NAMED_CASES_PARAMETER
+                    }
+                ),
+                true
+            ),
+            new SubCommandDescription("list-self-test-cases", "list available test cases for wf self-test",
+                this::performWfListSelfTestCases, true),
+            new SubCommandDescription("check-self-test-cases",
+                "check if all test workflows are part of at least one test case",
+                this::performWfCheckSelfTestCases, true),
+            new SubCommandDescription("graph",
+                "prints .dot string representation of a workflow (can be used to create graph visualization with Graphviz)",
+                this::performWfGraph,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        WORKFLOW_FILE_PARAMETER
+                    }
+                ),
+                true
+            )
+        );
+        return new MainCommandDescription[] { commands };
     }
 
     /**
@@ -313,43 +437,38 @@ public class WfCommandPlugin implements CommandPlugin {
     public void bindWorkflowVerificationService(WorkflowVerificationService service) {
         this.workflowVerificationService = service;
     }
+    
+    private void performWfRun(CommandContext cmdCtx) throws CommandException {
+    	performWfRunOrStart(cmdCtx, true);
+    }
+
+    private void performWfStart(CommandContext cmdCtx) throws CommandException {
+    	performWfRunOrStart(cmdCtx, false);
+    }
 
     private void performWfRunOrStart(CommandContext cmdCtx, boolean waitForTermination) throws CommandException {
         // "wf run [--dispose <...>] [--compact-output] [-p <JSON placeholder file>] <filename>"
 
-        HeadlessWorkflowExecutionService.DisposalBehavior dispose = readOptionalDisposeParameter(cmdCtx);
+    	ParsedCommandModifiers modifiers = cmdCtx.getParsedModifiers();
+        
+        ParsedStringParameter disposeParameter = (ParsedStringParameter) modifiers.getCommandParameter(DISPOSE);
+        ParsedStringParameter deleteParameter = (ParsedStringParameter) modifiers.getCommandParameter(DELETE);
+        ParsedFileParameter placeholdersParameter = (ParsedFileParameter) modifiers.getCommandParameter(JSON_FILE);
+        ParsedFileParameter fileParameter = (ParsedFileParameter) modifiers.getPositionalCommandParameter(0);
+        boolean hasCompactFlag = modifiers.hasCommandFlag("-c");
+        
+        HeadlessWorkflowExecutionService.DisposalBehavior dispose = toDisposal(disposeParameter.getResult(), cmdCtx);
 
-        HeadlessWorkflowExecutionService.DeletionBehavior delete = readOptionalDeleteParameter(cmdCtx);
+        HeadlessWorkflowExecutionService.DeletionBehavior delete = toDeletion(deleteParameter.getResult(), cmdCtx);
 
-        boolean compactId = cmdCtx.consumeNextTokenIfEquals("--compact-output");
-
-        File placeholdersFile = readOptionalPlaceholdersFileParameter(cmdCtx);
-
-        final String filename = cmdCtx.consumeNextToken();
-        // verify: filename is present and the only parameter
-        if (filename == null) {
-            CommandException.missingFilename(cmdCtx);
-        }
-
-        final String additionalToken = cmdCtx.consumeNextToken();
-        if (additionalToken != null) {
-            throw CommandException.syntaxError("Expected end of command, but found another argument: " + additionalToken, cmdCtx);
-        }
-        final File wfFile;
-        try {
-            wfFile = WorkflowExecutionUtils.resolveWorkflowOrPlaceholderFileLocation(filename,
-                WorkflowExecutionUtils.DEFAULT_ERROR_MESSAGE_TEMPLATE_CANNOT_READ_WORKFLOW_FILE);
-        } catch (FileNotFoundException e) {
-            throw CommandException.executionError(e.getMessage(), cmdCtx);
-        }
-        if (workflowVerificationService.preValidateWorkflow(cmdCtx.getOutputReceiver(), wfFile, true)) { // true = always print
+        if (workflowVerificationService.preValidateWorkflow(cmdCtx.getOutputReceiver(), fileParameter.getResult(), true)) { // true = always print
                                                                                                          // pre-verification output
             try {
                 // TODO specify log directory?
                 HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
-                    new HeadlessWorkflowExecutionContextBuilder(wfFile).setLogDirectory(setupLogDirectoryForWfFile(wfFile));
-                exeContextBuilder.setPlaceholdersFile(placeholdersFile);
-                exeContextBuilder.setTextOutputReceiver(cmdCtx.getOutputReceiver(), compactId);
+                    new HeadlessWorkflowExecutionContextBuilder(fileParameter.getResult()).setLogDirectory(setupLogDirectoryForWfFile(fileParameter.getResult()));
+                exeContextBuilder.setPlaceholdersFile(placeholdersParameter.getResult());
+                exeContextBuilder.setTextOutputReceiver(cmdCtx.getOutputReceiver(), hasCompactFlag);
                 exeContextBuilder.setDisposalBehavior(dispose);
                 exeContextBuilder.setDeletionBehavior(delete);
 
@@ -364,7 +483,7 @@ public class WfCommandPlugin implements CommandPlugin {
                     cmdCtx.println("Workflow Id: " + execInfo.getWorkflowExecutionHandle().getIdentifier());
                 }
             } catch (WorkflowExecutionException | IOException e) {
-                log.error("Exception while executing workflow: " + wfFile.getAbsolutePath(), e);
+                log.error("Exception while executing workflow: " + fileParameter.getResult().getAbsolutePath(), e);
                 throw CommandException.executionError(ComponentUtils.createErrorLogMessage(e), cmdCtx);
             } catch (InvalidFilenameException e) {
                 throw CommandException.executionError(ComponentUtils.createErrorLogMessage(e), cmdCtx);
@@ -372,25 +491,63 @@ public class WfCommandPlugin implements CommandPlugin {
         } else {
             cmdCtx.getOutputReceiver()
                 .addOutput(StringUtils.format("'%s' not executed due to validation errors (see log file for details) (full path: %s)",
-                    wfFile.getName(), wfFile.getAbsolutePath()));
+                		fileParameter.getResult().getName(), fileParameter.getResult().getAbsolutePath()));
         }
     }
-
-    private void performWfVerify(final CommandContext context) throws CommandException {
-        HeadlessWorkflowExecutionService.DisposalBehavior dispose = readOptionalDisposeParameter(context);
-        HeadlessWorkflowExecutionService.DeletionBehavior delete = readOptionalDeleteParameter(context);
-
-        int parallelRuns = readOptionalParallelRunsParameter(context);
-        int sequentialRuns = readOptionalSequentialRunsParameter(context);
-        File placeholdersFile = readOptionalPlaceholdersFileParameter(context);
-        List<File> wfFiles = parseWfVerifyCommand(context);
-
-        if (wfFiles.isEmpty()) {
-            throw CommandException.syntaxError("at least one workflow file must be specified", context);
+    
+    private HeadlessWorkflowExecutionService.DisposalBehavior toDisposal(String token, CommandContext context) throws CommandException {
+        
+        if (HeadlessWorkflowExecutionService.DisposalBehavior.Always.name().equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DisposalBehavior.Always;
+        } else if (HeadlessWorkflowExecutionService.DisposalBehavior.Never.name().equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DisposalBehavior.Never;
+        } else if (ONFINISHED.equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DisposalBehavior.OnExpected;
         }
+        
+        throw CommandException.syntaxError("Invalid disposal behavior: " + token, context);
+        
+    }
+    
+    private HeadlessWorkflowExecutionService.DeletionBehavior toDeletion(String token, CommandContext context) throws CommandException {
+        
+        if (HeadlessWorkflowExecutionService.DeletionBehavior.Always.name().equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DeletionBehavior.Always;
+        } else if (HeadlessWorkflowExecutionService.DeletionBehavior.Never.name().equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DeletionBehavior.Never;
+        } else if (ONFINISHED.equalsIgnoreCase(token)) {
+            return HeadlessWorkflowExecutionService.DeletionBehavior.OnExpected;
+        }
+        
+        throw CommandException.syntaxError("Invalid delete behavior: " + token, context);
+        
+    }
+    
+    private void performWfVerify(final CommandContext context) throws CommandException {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	
+    	ParsedListParameter workflowListParameter = (ParsedListParameter) modifiers.getPositionalCommandParameter(0);
+    	ParsedFileParameter basedirParameter = (ParsedFileParameter) modifiers.getCommandParameter(BASEDIR_OPTION);
+    	ParsedListParameter includedirsListParameter = (ParsedListParameter) modifiers.getCommandParameter(INCLUDEDIRS_OPTION);
+        ParsedStringParameter disposeParameter = (ParsedStringParameter) modifiers.getCommandParameter(DISPOSE);
+    	ParsedStringParameter deleteParameter = (ParsedStringParameter) modifiers.getCommandParameter(DELETE);
+    	ParsedIntegerParameter parallelRunsParameter = (ParsedIntegerParameter) modifiers.getCommandParameter(PR);
+    	ParsedIntegerParameter sequentialRunsParameter = (ParsedIntegerParameter) modifiers.getCommandParameter(SR);
+    	ParsedFileParameter placeholderFileParameter = (ParsedFileParameter) modifiers.getCommandParameter(JSON_FILE);
+        
+        HeadlessWorkflowExecutionService.DisposalBehavior dispose = toDisposal(disposeParameter.getResult(), context);
+        HeadlessWorkflowExecutionService.DeletionBehavior delete = toDeletion(deleteParameter.getResult(), context);
 
+        List<String> workflowList = workflowListParameter.getResult().stream()
+                .map(parameter -> ((ParsedStringParameter) parameter).getResult()).collect(Collectors.toList());
+        List<File> includedirsList = includedirsListParameter.getResult().stream()
+                .map(parameter -> ((ParsedFileParameter) parameter).getResult()).collect(Collectors.toList());
+        
+        List<File> wfFiles = collectFiles(context, workflowList, basedirParameter.getResult(), includedirsList);
+        
         final Map<Boolean, List<File>> partitionedWfFiles = wfFiles.stream()
-            .collect(Collectors.partitioningBy(file -> !file.getParentFile().getName().equals(FAILURE_DIR_NAME)));
+                .collect(Collectors.partitioningBy(file -> !file.getParentFile().getName().equals(FAILURE_DIR_NAME)));
+        
         final File rootFolder;
         if (!partitionedWfFiles.get(true).isEmpty()) {
             rootFolder = partitionedWfFiles.get(true).get(0).getParentFile();
@@ -404,10 +561,10 @@ public class WfCommandPlugin implements CommandPlugin {
                 .workflowRootFile(rootFolder)
                 .addWorkflowsExpectedToSucceed(partitionedWfFiles.get(true))
                 .addWorkflowsExpectedToFail(partitionedWfFiles.get(false))
-                .placeholdersFile(placeholdersFile)
+                .placeholdersFile(placeholderFileParameter.getResult())
                 .logFileFactory(this::setupLogDirectoryForWfFile)
-                .numberOfParallelRuns(parallelRuns)
-                .numberOfSequentialRuns(sequentialRuns)
+                .numberOfParallelRuns(parallelRunsParameter.getResult())
+                .numberOfSequentialRuns(sequentialRunsParameter.getResult())
                 .disposalBehavior(dispose)
                 .deletionBehavior(delete)
                 .verify();
@@ -416,15 +573,86 @@ public class WfCommandPlugin implements CommandPlugin {
             throw CommandException.executionError("Failed to initialze expected workflow behavior: " + e.getMessage(), context);
         }
     }
+    
+//    private List<File> collectFiles(CommandContext context, ParsedListParameter workflowList,
+//            ParsedFileParameter basedir, ParsedListParameter includeList) throws CommandException {
+//        
+//        if (workflowList.getResult().isEmpty() && includeList.getResult().isEmpty()) {
+//            throw CommandException.executionError("at least one file has to be specified", context);
+//        }
+//        
+//        if (basedir.getResult() != null && !basedir.getResult().isDirectory()) {
+//            throw CommandException.syntaxError("basedir is not a directory", context);
+//        }
+//        
+//        List<File> wfFiles = new ArrayList<>();
+//        
+//        if (basedir.getResult() == null) {
+//            wfFiles.addAll(workflowList.getResult().stream()
+//                    .map(parameter -> new File(((ParsedStringParameter) parameter).getResult())).collect(Collectors.toList()));
+//        } else {
+//            wfFiles = workflowList.getResult().stream()
+//                    .map(parameter -> new File(basedir.getResult(), ((ParsedStringParameter) parameter).getResult()))
+//                    .collect(Collectors.toList());
+//        }
+//        
+//        for (AbstractParsedCommandParameter includeDir : includeList.getResult()) {
+//            File dir = ((ParsedFileParameter) includeDir).getResult();
+//            
+//            if (dir.isDirectory()) {
+//                for (String filename : dir.list()) {
+//                    if (filename.endsWith(WorkflowConstants.WORKFLOW_FILE_ENDING)
+//                        && !filename.endsWith(WorkflowConstants.WORKFLOW_FILE_BACKUP_SUFFIX + WorkflowConstants.WORKFLOW_FILE_ENDING)) {
+//                        final File wfFile = new File(dir, filename);
+//                        checkWfFileExists(context, wfFile);
+//                        wfFiles.add(wfFile);
+//                    }
+//                }
+//            } else {
+//                throw CommandException.syntaxError("includedir " + dir + " is not a directory", context);
+//            }
+//        }
+//        
+//        return wfFiles;
+//    }
 
-    private void performWfPause(final CommandContext context) throws CommandException {
+    private List<File> collectFiles(CommandContext context, List<String> workflowList,
+            File basedir, List<File> includeList) throws CommandException {
+        
+        List<File> wfFiles = new ArrayList<>();
+        
+        if (basedir == null) {
+            wfFiles.addAll(workflowList.stream()
+                    .map(File::new).collect(Collectors.toList()));
+        } else {
+            wfFiles = workflowList.stream()
+                    .map(filename -> new File(basedir, filename))
+                    .collect(Collectors.toList());
+        }
+        
+        for (File includeDir : includeList) {
+            if (includeDir.isDirectory()) {
+                for (String filename : includeDir.list()) {
+                    if (filename.endsWith(WorkflowConstants.WORKFLOW_FILE_ENDING)
+                        && !filename.endsWith(WorkflowConstants.WORKFLOW_FILE_BACKUP_SUFFIX + WorkflowConstants.WORKFLOW_FILE_ENDING)) {
+                        final File wfFile = new File(includeDir, filename);
+                        checkWfFileExists(context, wfFile);
+                        wfFiles.add(wfFile);
+                    }
+                }
+            } else {
+                throw CommandException.syntaxError("includedir " + includeDir + " is not a directory", context);
+            }
+        }
+        
+        return wfFiles;
+    }
+    
+    private void performWfPause(final CommandContext context) {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
         TextOutputReceiver outputReceiver = context.getOutputReceiver();
 
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
 
         WorkflowExecutionInformation wfExecInf = getWfExecInfFromExecutionId(executionId, outputReceiver);
 
@@ -442,14 +670,12 @@ public class WfCommandPlugin implements CommandPlugin {
         }
     }
 
-    private void performWfResume(final CommandContext context) throws CommandException {
+    private void performWfResume(final CommandContext context) {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
         TextOutputReceiver outputReceiver = context.getOutputReceiver();
 
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+
         WorkflowExecutionInformation wExecInf = getWfExecInfFromExecutionId(executionId, outputReceiver);
 
         if (wExecInf != null) {
@@ -465,14 +691,11 @@ public class WfCommandPlugin implements CommandPlugin {
         }
     }
 
-    private void performWfCancel(final CommandContext context) throws CommandException {
+    private void performWfCancel(final CommandContext context) {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
         TextOutputReceiver outputReceiver = context.getOutputReceiver();
 
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
 
         WorkflowExecutionInformation wExecInf = getWfExecInfFromExecutionId(executionId, outputReceiver);
 
@@ -489,28 +712,33 @@ public class WfCommandPlugin implements CommandPlugin {
             }
         }
     }
+    
+    private void performWfDispose(final CommandContext context) {
+    	performWfDisposeOrDelete(context, true);
+    }
+    
+    private void performWfDelete(final CommandContext context) {
+    	performWfDisposeOrDelete(context, false);
+    }
+    
+    private void performWfDisposeOrDelete(final CommandContext context, boolean delete) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	TextOutputReceiver outputReceiver = context.getOutputReceiver();
 
-    private void performWfDisposeOrDelete(final CommandContext context, String token) throws CommandException {
-        TextOutputReceiver outputReceiver = context.getOutputReceiver();
-
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
 
         WorkflowExecutionInformation wExecInf = getWfExecInfFromExecutionId(executionId, outputReceiver);
 
         if (wExecInf != null) {
             try {
                 if (WorkflowConstants.FINAL_WORKFLOW_STATES.contains(wExecInf.getWorkflowState())) {
-                    if (token.equals(DELETE_COMMAND)) {
+                    if (!delete) {
                         workflowExecutionService.deleteFromDataManagement(wExecInf.getWorkflowExecutionHandle());
                     }
                     workflowExecutionService.dispose(wExecInf.getWorkflowExecutionHandle());
 
                 } else {
-                    if (token.equals(DELETE_COMMAND)) {
+                    if (delete) {
                         outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Deleting", wExecInf.getWorkflowState()));
                     } else {
                         outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Disposing", wExecInf.getWorkflowState()));
@@ -572,12 +800,9 @@ public class WfCommandPlugin implements CommandPlugin {
     }
 
     private void performWfShowDetails(final CommandContext context) throws CommandException {
-
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
 
         final TextOutputReceiver outputReceiver = context.getOutputReceiver();
         final WorkflowExecutionInformation wExecInf = getWfExecInfFromExecutionId(executionId, outputReceiver);
@@ -716,14 +941,11 @@ public class WfCommandPlugin implements CommandPlugin {
         return null;
     }
 
-    private void performWfOpen(CommandContext context) throws CommandException {
+    private void performWfOpen(CommandContext context) {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
         final TextOutputReceiver outputReceiver = context.getOutputReceiver();
 
-        final String executionId = context.consumeNextToken();
-        // verify: executionId is present
-        if (executionId == null) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        final String executionId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
 
         // Defensive copy in line with best practice for OSGI
         final WorkflowExecutionDisplayService displayService = workflowExecutionDisplayService;
@@ -812,14 +1034,27 @@ public class WfCommandPlugin implements CommandPlugin {
     }
 
     private void performWfSelfTest(final CommandContext context) throws CommandException {
+    	ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	
+    	ParsedStringParameter disposeParameter = (ParsedStringParameter) modifiers.getCommandParameter(DISPOSE);
+    	ParsedStringParameter deleteParameter = (ParsedStringParameter) modifiers.getCommandParameter(DELETE);
+    	ParsedIntegerParameter parallelRunsParameter = (ParsedIntegerParameter) modifiers.getCommandParameter(PR);
+    	ParsedIntegerParameter sequentialRunsParameter = (ParsedIntegerParameter) modifiers.getCommandParameter(SR);
+    	ParsedListParameter casesParameter = (ParsedListParameter) modifiers.getCommandParameter(CASES);
+    	
+        HeadlessWorkflowExecutionService.DisposalBehavior dispose = toDisposal(disposeParameter.getResult(), context);
+        HeadlessWorkflowExecutionService.DeletionBehavior delete = toDeletion(deleteParameter.getResult(), context);
 
-        HeadlessWorkflowExecutionService.DisposalBehavior dispose = readOptionalDisposeParameter(context);
-        HeadlessWorkflowExecutionService.DeletionBehavior delete = readOptionalDeleteParameter(context);
+        int parallelRuns = parallelRunsParameter.getResult();
+        int sequentialRuns = sequentialRunsParameter.getResult();
 
-        int parallelRuns = readOptionalParallelRunsParameter(context);
-        int sequentialRuns = readOptionalSequentialRunsParameter(context);
-
-        String[] cases = getCasesParameter(context);
+        List<String> cases = casesParameter.getResult()
+        		.stream().map(parameter -> ((ParsedStringParameter) parameter).getResult()).collect(Collectors.toList());
+        
+        if (cases.isEmpty()) {
+            cases = Collections.singletonList("core");
+        }
+        
         String pythonPath = null;
         TempFileService tempFileService = TempFileServiceAccess.getInstance();
 
@@ -828,7 +1063,7 @@ public class WfCommandPlugin implements CommandPlugin {
 
         File tempPlaceholdersStuffDir = null;
         File placeholdersFile = null;
-
+        
         try {
             tempSelfTestWorkflowDir = tempFileService.createManagedTempDir();
             tempSelfTestWorkflowFailureDir = new File(tempSelfTestWorkflowDir, FAILURE_DIR_NAME);
@@ -838,7 +1073,7 @@ public class WfCommandPlugin implements CommandPlugin {
             handleWfSelfTestExecutionError(context, tempFileService, tempSelfTestWorkflowDir, tempPlaceholdersStuffDir, e, message);
         }
 
-        if (Arrays.asList(cases).contains("with-python")) {
+        if (cases.contains("with-python")) {
             try {
                 pythonPath = getAndCheckPythonPath(context, tempSelfTestWorkflowDir);
             } catch (IOException e) {
@@ -861,18 +1096,13 @@ public class WfCommandPlugin implements CommandPlugin {
             handleWfSelfTestExecutionError(context, tempFileService, tempSelfTestWorkflowDir, tempPlaceholdersStuffDir, e, message);
         }
 
-        // construct synthetic "wf verify" command tokens and delegate
-        List<String> newTokens = new ArrayList<>();
-        newTokens.add(BASEDIR_OPTION);
-        newTokens.add(tempSelfTestWorkflowDir.getAbsolutePath());
-        newTokens.add(ASTERISK);
+        List<File> includedirs = new ArrayList<>();
+        includedirs.add(tempSelfTestWorkflowDir);
         if (tempSelfTestWorkflowFailureDir.exists()) {
-            newTokens.add(BASEDIR_OPTION);
-            newTokens.add(tempSelfTestWorkflowFailureDir.getAbsolutePath());
-            newTokens.add(ASTERISK);
+            includedirs.add(tempSelfTestWorkflowFailureDir);
         }
-        CommandContext syntheticContext = new CommandContext(newTokens, context.getOutputReceiver(), context.getInvokerInformation());
-        final List<File> workflowFiles = parseWfVerifyCommand(syntheticContext);
+        
+        final List<File> workflowFiles = collectFiles(context, Collections.emptyList(), null, includedirs);
         if (workflowFiles.isEmpty()) {
             throw CommandException.syntaxError("at least one workflow file must be specified", context);
         }
@@ -916,11 +1146,18 @@ public class WfCommandPlugin implements CommandPlugin {
         } catch (IOException e) {
             throw CommandException.executionError("Failed to initialze expected workflow behavior: " + e.getMessage(), context);
         }
-
     }
 
     private String getAndCheckPythonPath(CommandContext context, File workDir) throws CommandException, IOException {
-        String pythonPath = getPythonPathParameter(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+    	ParsedFileParameter pythonPathParameter = (ParsedFileParameter) modifiers.getCommandParameter(PYTHON);
+        String pythonPath = null;
+    	
+        if (pythonPathParameter.getResult() != null) {
+            pythonPath = pythonPathParameter.getResult().getAbsolutePath();
+        } else {
+            pythonPath = "python";
+        }
 
         LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(workDir);
         executor.start(pythonPath + " --version");
@@ -963,7 +1200,7 @@ public class WfCommandPlugin implements CommandPlugin {
         }
     }
 
-    private List<String> getWorkflowsForSelfTest(String[] cases) throws IOException {
+    private List<String> getWorkflowsForSelfTest(List<String> cases) throws IOException {
         List<String> wfs = new ArrayList<>();
         for (String caseName : cases) {
             try (InputStream caseInputStream =
@@ -979,7 +1216,7 @@ public class WfCommandPlugin implements CommandPlugin {
     }
 
     private void copyWorkflowsForSelfTest(TempFileService tempFileService, File tempSelfTestWorkflowDir,
-        File tempSelfTestWorkflowFailureDir, String[] cases) throws IOException {
+        File tempSelfTestWorkflowFailureDir, List<String> cases) throws IOException {
 
         // always create the target "failure" sub-directory in advance; it was created on demand in previous releases, but Equinox platform
         // enumeration order changes made this unreliable (issue #16090)
@@ -1086,157 +1323,6 @@ public class WfCommandPlugin implements CommandPlugin {
         return placeholdersFile;
     }
 
-    private List<File> parseWfVerifyCommand(final CommandContext context) throws CommandException {
-        // "wf verify [-pr <parallel runs>] [-sr <sequential runs>] [-p <JSON placeholder file>]
-        // [--basedir <dir>]
-        // <filename> [<filename> ...]"
-        // TODO replace File with a custom class when more parameters are needed - misc_ro
-        if (!context.hasRemainingTokens()) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        List<File> wfFiles = new ArrayList<>();
-
-        String lastBaseDirOption = null;
-        File lastBaseDir = null;
-
-        String token;
-        while ((token = context.consumeNextToken()) != null) {
-            if (BASEDIR_OPTION.equals(token)) {
-                lastBaseDirOption = context.consumeNextToken();
-                if (lastBaseDirOption == null) {
-                    throw CommandException.syntaxError("--basedir option specified without a value", context);
-                }
-                lastBaseDir = new File(lastBaseDirOption);
-                // validate
-                if (!lastBaseDir.isDirectory()) {
-                    throw CommandException.executionError("Specified --basedir is not a valid directory: "
-                        + lastBaseDir.getAbsolutePath(), context);
-                }
-            } else if (ASTERISK.equals(token)) {
-                if (lastBaseDir == null) {
-                    throw CommandException.executionError("The \"*\" wildcard requires a previous --basedir", context);
-                }
-                int count = 0;
-                for (String filename : lastBaseDir.list()) {
-                    if (filename.endsWith(WorkflowConstants.WORKFLOW_FILE_ENDING)
-                        && !filename.endsWith(WorkflowConstants.WORKFLOW_FILE_BACKUP_SUFFIX + WorkflowConstants.WORKFLOW_FILE_ENDING)) {
-                        final File wfFile = new File(lastBaseDir, filename);
-                        checkWfFileExists(context, wfFile);
-                        wfFiles.add(wfFile);
-                        count++;
-                    }
-                }
-                context.println("Added " + count + " non-backup workflow file(s) from " + lastBaseDir.getAbsolutePath());
-            } else {
-                // no option -> filename
-                final File wfFile;
-                if (lastBaseDir != null) {
-                    wfFile = new File(lastBaseDir, token);
-                } else {
-                    wfFile = new File(token);
-                }
-                checkWfFileExists(context, wfFile);
-                wfFiles.add(wfFile);
-            }
-        }
-        return wfFiles;
-    }
-
-    private Integer readOptionalParallelRunsParameter(CommandContext context) throws CommandException {
-        return readOptionalRunsParameter(context, "--pr");
-    }
-
-    private Integer readOptionalSequentialRunsParameter(CommandContext context) throws CommandException {
-        return readOptionalRunsParameter(context, "--sr");
-    }
-
-    private Integer readOptionalRunsParameter(CommandContext context, String parameter) throws CommandException {
-        int numberOfRuns = 1; // default (parameter is optional)
-        if (context.consumeNextTokenIfEquals(parameter)) {
-            String number = context.consumeNextToken();
-            if (number == null) {
-                throw CommandException.syntaxError("Missing number of runs", context);
-            }
-            try {
-                numberOfRuns = Integer.parseInt(number);
-            } catch (NumberFormatException e) {
-                throw CommandException.executionError(e.getMessage(), context);
-            }
-        }
-        return numberOfRuns;
-    }
-
-    private HeadlessWorkflowExecutionService.DisposalBehavior readOptionalDisposeParameter(CommandContext context)
-        throws CommandException {
-        if (context.consumeNextTokenIfEquals("--dispose")) {
-            String dispose = context.consumeNextToken();
-            try {
-                if (HeadlessWorkflowExecutionService.DisposalBehavior.Always.name().equalsIgnoreCase(dispose)) {
-                    return HeadlessWorkflowExecutionService.DisposalBehavior.Always;
-                } else if (HeadlessWorkflowExecutionService.DisposalBehavior.Never.name().equalsIgnoreCase(dispose)) {
-                    return HeadlessWorkflowExecutionService.DisposalBehavior.Never;
-                } else if ("onfinish".equalsIgnoreCase(dispose)
-                    || HeadlessWorkflowExecutionService.DisposalBehavior.OnExpected.name().equalsIgnoreCase(dispose)) {
-                    return HeadlessWorkflowExecutionService.DisposalBehavior.OnExpected;
-                }
-            } catch (IllegalArgumentException | NullPointerException e) {
-                throw CommandException.syntaxError("Invalid dispose behavior: " + dispose, context);
-            }
-        }
-        return HeadlessWorkflowExecutionService.DisposalBehavior.OnExpected;
-    }
-
-    private String getPythonPathParameter(CommandContext context) {
-        if (context.consumeNextTokenIfEquals("--python")) {
-            return context.consumeNextToken().replaceAll(ESCAPED_BACKSLASH, SLASH);
-        }
-        return "python";
-    }
-
-    private String[] getCasesParameter(CommandContext context) {
-        if (context.consumeNextTokenIfEquals("--cases")) {
-            return context.consumeNextToken().split(",");
-        }
-        return new String[] { "core" };
-    }
-
-    private HeadlessWorkflowExecutionService.DeletionBehavior readOptionalDeleteParameter(CommandContext context) throws CommandException {
-        if (context.consumeNextTokenIfEquals("--delete")) {
-            String delete = context.consumeNextToken();
-            try {
-                if (HeadlessWorkflowExecutionService.DeletionBehavior.Always.name().equalsIgnoreCase(delete)) {
-                    return HeadlessWorkflowExecutionService.DeletionBehavior.Always;
-                } else if (HeadlessWorkflowExecutionService.DeletionBehavior.Never.name().equalsIgnoreCase(delete)) {
-                    return HeadlessWorkflowExecutionService.DeletionBehavior.Never;
-                } else if ("onfinish".equalsIgnoreCase(delete)
-                    || HeadlessWorkflowExecutionService.DisposalBehavior.OnExpected.name().equalsIgnoreCase(delete)) {
-                    return HeadlessWorkflowExecutionService.DeletionBehavior.OnExpected;
-                }
-            } catch (IllegalArgumentException | NullPointerException e) {
-                throw CommandException.syntaxError("Invalid delete behavior: " + delete, context);
-            }
-        }
-        return HeadlessWorkflowExecutionService.DeletionBehavior.OnExpected;
-    }
-
-    private File readOptionalPlaceholdersFileParameter(CommandContext context) throws CommandException {
-        File placeholdersFile = null; // optional
-        if (context.consumeNextTokenIfEquals("-p")) {
-            String placeholdersFilename = context.consumeNextToken();
-            if (placeholdersFilename == null) {
-                throw CommandException.syntaxError("Missing placeholder filename", context);
-            }
-            try {
-                placeholdersFile =
-                    WorkflowExecutionUtils.resolveWorkflowOrPlaceholderFileLocation(placeholdersFilename,
-                        WorkflowExecutionUtils.DEFAULT_ERROR_MESSAGE_TEMPLATE_CANNOT_READ_PLACEHOLDER_FILE);
-            } catch (FileNotFoundException e) {
-                throw CommandException.executionError(e.getMessage(), context);
-            }
-        }
-        return placeholdersFile;
-    }
-
     private void checkWfFileExists(final CommandContext context, final File wfFile) throws CommandException {
         if (!wfFile.isFile()) {
             throw CommandException.executionError("Specified workflow file does not exist: " + wfFile.getAbsolutePath(), context);
@@ -1301,7 +1387,9 @@ public class WfCommandPlugin implements CommandPlugin {
     }
 
     private void performWfGraph(final CommandContext cmdCtx) throws CommandException {
-        final File wfFile = getWorkflowFile(cmdCtx);
+        ParsedCommandModifiers modifiers = cmdCtx.getParsedModifiers();
+    	
+    	final File wfFile = ((ParsedFileParameter) modifiers.getPositionalCommandParameter(0)).getResult();
         WorkflowDescription wfDesc;
         try {
             wfDesc =

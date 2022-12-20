@@ -22,7 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 
 /**
@@ -37,7 +37,7 @@ public class ToolIntegrationFileWatcherManager {
 
     private static final String COULD_NOT_CREATE_A_WATCH_SERVICE_FOR_THE_FILE = "Could not create a WatchService for the file: ";
 
-    private final Map<ToolIntegrationContext, ToolIntegrationFileWatcher> watchers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<IntegrationContext, ToolIntegrationFileWatcher> watchers = Collections.synchronizedMap(new HashMap<>());
 
     private ToolIntegrationFileWatcher.Factory fileWatcherFactory;
 
@@ -123,7 +123,7 @@ public class ToolIntegrationFileWatcherManager {
      * 
      * @param context to add new watcher to
      */
-    public void createWatcherForToolRootDirectory(ToolIntegrationContext context) {
+    public void createWatcherForToolRootDirectory(IntegrationContext context) {
         File integrationRootFolder = constructToolFolderFile(context);
         if (!integrationRootFolder.exists()) {
             integrationRootFolder.mkdirs();
@@ -135,13 +135,13 @@ public class ToolIntegrationFileWatcherManager {
             final Path toolIntegrationPath = constructPath(integrationRootFolder);
             integrationWatcher.registerRecursive(toolIntegrationPath);
             watchers.put(context, integrationWatcher);
-            log.debug("Created new watcher for context " + context.getContextType());
+            log.debug("Created new watcher for context " + context.getContextTypeString());
         } catch (IOException e) {
             log.warn(COULD_NOT_CREATE_A_WATCH_SERVICE_FOR_THE_FILE + integrationRootFolder.getAbsolutePath(), e);
         }
     }
 
-    private File constructToolFolderFile(ToolIntegrationContext context) {
+    private File constructToolFolderFile(IntegrationContext context) {
         return fileService.createFile(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
     }
 
@@ -154,7 +154,7 @@ public class ToolIntegrationFileWatcherManager {
      * 
      * @param context to unregister
      */
-    public void unregisterRootDirectory(ToolIntegrationContext context) {
+    public void unregisterRootDirectory(IntegrationContext context) {
         File integrationRootFolder = constructToolFolderFile(context);
         ToolIntegrationFileWatcher integrationWatcher = watchers.get(context);
 
@@ -189,7 +189,7 @@ public class ToolIntegrationFileWatcherManager {
      * @param previousToolName to unregister
      * @param integrationContext of the tool.
      */
-    public void unregister(String previousToolName, ToolIntegrationContext integrationContext) {
+    public void unregister(String previousToolName, IntegrationContext integrationContext) {
         if (watchers.get(integrationContext) != null) {
             File path = new File(constructToolFolderFile(integrationContext), previousToolName);
             try {
@@ -208,7 +208,7 @@ public class ToolIntegrationFileWatcherManager {
      * @param toolName to unregister
      * @param integrationContext of the tool.
      */
-    public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {
+    public void registerRecursive(String toolName, IntegrationContext integrationContext) {
         if (watchers.get(integrationContext) != null) {
             File path = new File(constructToolFolderFile(integrationContext), toolName);
             try {
@@ -226,8 +226,8 @@ public class ToolIntegrationFileWatcherManager {
      */
     public void shutdown() {
         log.debug("Shutting down file watchers");
-        List<ToolIntegrationContext> contexts = new ArrayList<>(watchers.keySet()); // avoid concurrent modification
-        for (ToolIntegrationContext context : contexts) {
+        List<IntegrationContext> contexts = new ArrayList<>(watchers.keySet()); // avoid concurrent modification
+        for (IntegrationContext context : contexts) {
             unregisterRootDirectory(context);
         }
         // consistency check

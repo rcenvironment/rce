@@ -8,8 +8,6 @@
  
 package de.rcenvironment.components.excel.common;
 
-import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
-
 /**
  * Simple Thread-Class for calling garbage collector manually.
  *

@@ -1,0 +1,16 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.build.thirdparty.parent.module</artifactId>
+	<name>RCE Parent POMs - Third-Party Repository - Top-Level Build/Feature Module</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.build.thirdparty.parent.p2DependenciesBundle</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../p2DependenciesBundle</relativePath>
+	</parent>
+  
+</project>

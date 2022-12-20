@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.Text;
  * 
  * @author Sascha Zur
  * @author Jascha Riedel (#14005)
+ * @author Kathrin Schaffert (added GREATER_OR_EQUAL_ONE)
  */
 public final class WidgetGroupFactory {
 
@@ -47,6 +48,11 @@ public final class WidgetGroupFactory {
      * Option if a textfield should only allow inputs > 0.
      */
     public static final int GREATER_ZERO = 16;
+
+    /**
+     * Option if a textfield should only allow inputs > 1.
+     */
+    public static final int GREATER_OR_EQUAL_ONE = 8;
     
     /**
      * Option if a textfield should align the text in the (standard is left).
@@ -74,13 +80,14 @@ public final class WidgetGroupFactory {
         String propertyMessage, String property, int textWidth, final int function) {
         Label propertyLabel = new Label(composite, SWT.NONE);
         propertyLabel.setText(propertyMessage);
+        propertyLabel.setBackground(composite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
         final Text propertyText = new Text(composite, SWT.BORDER | (SWT.CENTER & function));
         propertyText.setData(CONTROL_PROPERTY_KEY, property);
         GridData gridData = new GridData();
         gridData.widthHint = textWidth;
         propertyText.setLayoutData(gridData);
         if (function != WidgetGroupFactory.NONE) {
-            propertyText.addVerifyListener(new NumericalTextConstraintListener(propertyText, function));
+            propertyText.addVerifyListener(new NumericalTextConstraintListener(function));
         }
 
         LabelAndTextForProperty labelAndText = new LabelAndTextForProperty();

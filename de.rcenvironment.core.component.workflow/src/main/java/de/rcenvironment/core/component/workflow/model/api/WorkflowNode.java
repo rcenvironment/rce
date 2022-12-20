@@ -14,10 +14,10 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 

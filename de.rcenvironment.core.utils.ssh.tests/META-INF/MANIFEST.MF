@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils SSH Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.ssh.tests
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Fragment-Host: de.rcenvironment.core.utils.ssh
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: de.rcenvironment.core.utils.testing
@@ -14,17 +14,16 @@ Import-Package: de.rcenvironment.core.toolkitbridge.transitional,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.apache.sshd.common;version="2.7.0",
- org.apache.sshd.scp.common;version="2.7.0",
- org.apache.sshd.scp.server;version="2.7.0",
- org.apache.sshd.server;version="2.3.0",
- org.apache.sshd.server.auth;version="2.3.0",
- org.apache.sshd.server.auth.password;version="2.3.0",
- org.apache.sshd.server.channel;version="2.3.0",
- org.apache.sshd.server.command;version="2.3.0",
- org.apache.sshd.server.keyprovider;version="2.3.0",
- org.apache.sshd.server.scp;version="2.3.0",
- org.apache.sshd.server.session;version="2.3.0",
- org.apache.sshd.server.shell;version="2.3.0"
+ org.apache.sshd.common;version="2.8.0",
+ org.apache.sshd.scp.common;version="2.8.0",
+ org.apache.sshd.scp.server;version="2.8.0",
+ org.apache.sshd.server;version="2.8.0",
+ org.apache.sshd.server.auth;version="2.8.0",
+ org.apache.sshd.server.auth.password;version="2.8.0",
+ org.apache.sshd.server.channel;version="2.8.0",
+ org.apache.sshd.server.command;version="2.8.0",
+ org.apache.sshd.server.keyprovider;version="2.8.0",
+ org.apache.sshd.server.session;version="2.8.0",
+ org.apache.sshd.server.shell;version="2.8.0"
 Bundle-Vendor: DLR
 Automatic-Module-Name: de.rcenvironment.core.utils.ssh.tests

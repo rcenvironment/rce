@@ -37,9 +37,10 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.IntegrationConstants;
+import de.rcenvironment.core.component.integration.IntegrationContext;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
@@ -63,7 +64,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
 
     private FileService fileService;
 
-    private ToolIntegrationContext context;
+    private IntegrationContext context;
 
     private ToolIntegrationService integrationService;
 
@@ -100,7 +101,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
          * @return A file watcher that watches the configuration folder of the given tool integration.
          * @throws IOException If no {@link WatchService} can be constructed for the integration folder of the given tool.
          */
-        public ToolIntegrationFileWatcher create(ToolIntegrationContext context)
+        public ToolIntegrationFileWatcher create(IntegrationContext context)
             throws IOException {
             final Path rootContextPath = fileService.getPath(context.getRootPathToToolIntegrationDirectory(),
                 context.getNameOfToolIntegrationDirectory());
@@ -143,7 +144,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
         }
     }
 
-    protected ToolIntegrationFileWatcher(ToolIntegrationContext context, ToolIntegrationService integrationService,
+    protected ToolIntegrationFileWatcher(IntegrationContext context, ToolIntegrationService integrationService,
         final Path rootContextPathParam, FileService fileServiceParam, ObjectMapper mapperParam, WatchService watchService) {
         this.context = context;
         this.integrationService = integrationService;
@@ -249,17 +250,17 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 return;
             } catch (ClosedWatchServiceException e) {
                 running = false;
-                LOGGER.debug("Shut down watcher for context " + context.getContextType());
+                LOGGER.debug("Shut down watcher for context " + context.getContextTypeString());
                 continue;
             }
 
             if (key == null) {
-                LOGGER.debug("Got null WatchKey for FileWatcher of type " + context.getContextType());
+                LOGGER.debug("Got null WatchKey for FileWatcher of type " + context.getContextTypeString());
                 continue;
             }
             Path directory = registeredKeys.get(key);
             if (directory == null) {
-                LOGGER.debug(StringUtils.format("Got unregistered WatchKey for FileWatcher of type %s", context.getContextType()));
+                LOGGER.debug(StringUtils.format("Got unregistered WatchKey for FileWatcher of type %s", context.getContextTypeString()));
                 continue;
             }
             for (WatchEvent<?> event : key.pollEvents()) {
@@ -270,7 +271,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 if (kind == StandardWatchEventKinds.OVERFLOW) {
                     continue;
                 }
-                LOGGER.debug(StringUtils.format("Got event %s in context %s for file: %s", kind.name(), context.getContextType(),
+                LOGGER.debug(StringUtils.format("Got event %s in context %s for file: %s", kind.name(), context.getContextTypeString(),
                     child.toString()));
                 if (kind == ENTRY_CREATE) {
                     handleCreate(child, directory);
@@ -319,7 +320,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                     integrationService.updatePublishedComponents(context);
                 } else if (child.endsWith(context.getConfigurationFilename())) {
                     integrateFile(child.toFile());
-                } else if ((child.getName(child.getNameCount() - 2).endsWith(ToolIntegrationConstants.DOCS_DIR_NAME))) {
+                } else if ((child.getName(child.getNameCount() - 2).endsWith(IntegrationConstants.DOCS_DIR_NAME))) {
                     File configurationFile = new File(child.getParent().getParent().toFile(), context.getConfigurationFilename());
                     removeAndReintegrate(child.getParent().getParent().toFile(), configurationFile);
                 }
@@ -343,10 +344,10 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 } else if (child.getNameCount() == rootContextPath.getNameCount() + 1) {
                     removeTool(child.toFile());
                 }
-            } else if (child.getName(child.getNameCount() - 1).endsWith(ToolIntegrationConstants.DOCS_DIR_NAME)) {
+            } else if (child.getName(child.getNameCount() - 1).endsWith(IntegrationConstants.DOCS_DIR_NAME)) {
                 File configurationFile = new File(child.getParent().toFile(), context.getConfigurationFilename());
                 removeAndReintegrate(child.getParent().toFile(), configurationFile);
-            } else if ((child.getName(child.getNameCount() - 2).endsWith(ToolIntegrationConstants.DOCS_DIR_NAME))) {
+            } else if ((child.getName(child.getNameCount() - 2).endsWith(IntegrationConstants.DOCS_DIR_NAME))) {
                 File configurationFile = new File(child.getParent().getParent().toFile(), context.getConfigurationFilename());
                 removeAndReintegrate(child.getParent().getParent().toFile(), configurationFile);
             }
@@ -390,7 +391,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
             File configurationFile = fileService.createFile(directory.toFile(), context.getConfigurationFilename());
             removeAndReintegrate(directory.toFile(), configurationFile);
         }
-        if (directory.getName(directory.getNameCount() - 1).endsWith(ToolIntegrationConstants.DOCS_DIR_NAME)) {
+        if (directory.getName(directory.getNameCount() - 1).endsWith(IntegrationConstants.DOCS_DIR_NAME)) {
             File configurationFile = fileService.createFile(directory.getParent().toFile(), context.getConfigurationFilename());
             removeAndReintegrate(directory.getParent().toFile(), configurationFile);
         }
@@ -420,7 +421,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                     @SuppressWarnings("unchecked") Map<String, Object> configuration =
                         mapper.readValue(newConfiguration, new HashMap<String, Object>().getClass());
                     integrationService.integrateTool(configuration, context);
-                    integrationService.putToolNameToPath((String) configuration.get(ToolIntegrationConstants.KEY_TOOL_NAME),
+                    integrationService.putToolNameToPath((String) configuration.get(IntegrationConstants.KEY_COMPONENT_NAME),
                         newConfiguration.getParentFile());
                     read = true;
                 } else {

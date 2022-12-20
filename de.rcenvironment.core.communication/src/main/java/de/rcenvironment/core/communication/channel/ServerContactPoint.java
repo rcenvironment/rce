@@ -13,6 +13,8 @@ import de.rcenvironment.core.communication.configuration.ConnectionFilter;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -22,6 +24,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  */
 public class ServerContactPoint {
+
+    private static final String EVENT_LOG_VALUE_CONNECTION_TYPE = "localnet";
 
     private final NetworkContactPoint networkContactPoint;
 
@@ -87,6 +91,10 @@ public class ServerContactPoint {
     public synchronized void start() throws CommunicationException {
         transportProvider.startServer(this);
         acceptingMessages = true;
+        EventLog.append(EventLog.newEntry(EventType.SERVERPORT_OPENED)
+            .set(EventType.Attributes.TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
+            .set(EventType.Attributes.BIND_IP, networkContactPoint.getHost())
+            .set(EventType.Attributes.PORT, networkContactPoint.getPort()));
     }
 
     /**
@@ -96,6 +104,10 @@ public class ServerContactPoint {
     public synchronized void shutDown() {
         acceptingMessages = false;
         transportProvider.stopServer(this);
+        EventLog.append(EventLog.newEntry(EventType.SERVERPORT_CLOSED)
+            .set(EventType.Attributes.TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
+            .set(EventType.Attributes.BIND_IP, networkContactPoint.getHost())
+            .set(EventType.Attributes.PORT, networkContactPoint.getPort()));
     }
 
     public boolean isSimulatingBreakdown() {

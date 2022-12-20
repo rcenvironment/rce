@@ -1,0 +1,29 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.projectsets.components.special</artifactId>
+	<name>RCE Project Set ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<!-- excel component -->
+		<module>${projects-root}/de.rcenvironment.components.excel.common</module>
+		<!-- FIXME 6.0.0 disabled until issue #11111 (Excel test bundle crashes 
+			Linux build) is resolved -->
+		<!-- <module>${projects-root}/de.rcenvironment.components.excel.common.tests</module> -->
+		<module>${projects-root}/de.rcenvironment.components.excel.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.excel.gui</module>
+
+		<!-- component group feature -->
+		<module>${projects-root}/de.rcenvironment.componentgroups.special.feature</module>
+	</modules>
+
+</project>

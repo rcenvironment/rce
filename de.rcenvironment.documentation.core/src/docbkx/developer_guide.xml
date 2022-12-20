@@ -55,6 +55,11 @@
 			xmlns:xi="http://www.w3.org/2001/XInclude"/>
 	</chapter>
 	
+	<chapter>
+		<title>Command Console</title>
+			<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../target/asciidoc-to-docbook/dev-command-console.xml"/>
+	</chapter>
+	
 
 	<chapter>
 		<title>Licensing and Copyright</title>

@@ -10,6 +10,7 @@ package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -132,7 +133,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
             if (account != null) {
                 PublicKey knownKey = account.getPublicKeyObj();
                 if (knownKey != null) {
-                    success = key.equals(knownKey);
+                    success = Arrays.equals(key.getEncoded(), knownKey.getEncoded());
                 }
                 if (!success) {
                     refusalReason = REFUSAL_REASON_NO_MATCHING_KEY;

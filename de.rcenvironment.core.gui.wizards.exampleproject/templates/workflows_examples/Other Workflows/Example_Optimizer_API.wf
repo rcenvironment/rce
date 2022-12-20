@@ -54,7 +54,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -273,5 +273,5 @@
     "target" : "f117efdb-87e6-46d8-b1ae-c0a8ba9007a5",
     "input" : "cc0d8326-4079-4082-bf19-5caecafa9b9c"
   } ],
-  "labels" : "[{\"identifier\":\"445bfda9-160f-4121-9e89-66efad00791e\",\"headerText\":\"Introducing the Optimization Algorithm API\",\"text\":\"This workflows uses the example optimizer algorithm integration, which can be found in the \\\"examples\\\" directory in the RCE installation directory. It is no real optimization, but it shows how to use the API. A documentation for the API can be found in the user guide.\",\"location\":\"68:101\",\"size\":\"1047:135\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
+  "labels" : "[{\"identifier\":\"445bfda9-160f-4121-9e89-66efad00791e\",\"headerText\":\"Introducing the Optimization Algorithm API\",\"text\":\"This workflows uses the example optimizer algorithm integration, which can be found in the \\\"examples\\\" directory in the RCE installation directory. It is no real optimization, but it shows how to use the API. A documentation for the API can be found in the Optimizer's Component help.\",\"location\":\"68:101\",\"size\":\"1047:135\",\"alpha\":\"203\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"11\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

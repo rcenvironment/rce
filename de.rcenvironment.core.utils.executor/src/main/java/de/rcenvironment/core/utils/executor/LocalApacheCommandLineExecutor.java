@@ -41,6 +41,10 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
      */
     private static final String LINUX_MAKE_FILE_EXECUTABLE_TEMPLATE = "chmod +x %s";
 
+    private static final String INACCESSIBLE_OBJECT_EXCEPTION = "InaccessibleObjectException";
+
+    private static final int MINUS_ONE = -1;
+
     private File workDir;
 
     private final Log log = LogFactory.getLog(getClass());
@@ -147,7 +151,7 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
 
         log.debug(scriptFile.exists());
         log.debug(scriptFile.length());
-        
+
         // make the file executable
         String makeExecutableCmd = StringUtils.format(LINUX_MAKE_FILE_EXECUTABLE_TEMPLATE, scriptFile.getAbsolutePath());
         // we cannot call start on the same executor twice since the canceling does not support this yet
@@ -164,8 +168,8 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
         // if an interpreter is chosen, which is not available on the system, the streams are not closed correctly
         // TODO check for errors during execution, e.g. interpreter is not available
 
-        // TODO if we dispose the script now, it might be deleted before it is executed 
-        //TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(scriptFile);
+        // TODO if we dispose the script now, it might be deleted before it is executed
+        // TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(scriptFile);
     }
 
     /**
@@ -338,16 +342,28 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
             return false;
         }
 
+        int pid = MINUS_ONE;
         try {
-            int pid = ProcessUtils.getPid(process);
+            pid = ProcessUtils.getPid(process);
             ProcessUtils.killProcessTree(pid);
         } catch (NoSuchFieldException | SecurityException | IllegalArgumentException
             | IllegalAccessException | IOException | InterruptedException e) {
-
-            log.error("Unable to cancel the process.", e);
+            if (pid != MINUS_ONE) {
+                log.error(StringUtils.format("Unable to cancel the process with pid %s", pid), e);
+            } else {
+                log.error("Unable to cancel the process", e);
+            }
             return false;
+        } catch (RuntimeException e) {
+            if (e.getClass().getSimpleName().contains(INACCESSIBLE_OBJECT_EXCEPTION)) {
+                log.error(
+                    "Unable to cancel the process due to limited reflection access, please use Java with version <=15.",
+                    e);
+                return false;
+            } else {
+                throw e;
+            }
         }
-
         return true;
     }
 }

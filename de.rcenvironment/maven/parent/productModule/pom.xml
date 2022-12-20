@@ -11,7 +11,7 @@
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.maven.parent.defaultRepository</artifactId>
 		<version>1.0.0</version>
-		<relativePath>../../parent/defaultRepository</relativePath>
+		<relativePath>../defaultRepository</relativePath>
 	</parent>
 
 	<properties>

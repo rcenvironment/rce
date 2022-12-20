@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication Uplink Bundle
 Bundle-SymbolicName: de.rcenvironment.core.communication.uplink
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  com.fasterxml.jackson.core;version="2.9.9",
  com.fasterxml.jackson.core.type;version="2.9.9",
  com.fasterxml.jackson.databind;version="2.9.9",
- com.jcraft.jsch;version="0.1.55",
+ com.jcraft.jsch;version="0.2.0",
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
@@ -30,6 +30,7 @@ Import-Package: com.fasterxml.jackson.annotation;version="2.9.0",
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.eventlog.api,
  de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.exception,

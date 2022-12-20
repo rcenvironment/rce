@@ -9,6 +9,10 @@
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleModelSnapshot;
@@ -17,6 +21,7 @@ import de.rcenvironment.core.component.workflow.execution.api.ConsoleModelSnapsh
  * Default implementation of {@link ConsoleModelSnapshot}.
  * 
  * @author Robert Mischke
+ * @author Kathrin Schaffert (#17869: changed storage of data in newly added workflowComponentsMap)
  */
 class ConsoleModelSnapshotImpl implements ConsoleModelSnapshot {
 
@@ -24,9 +29,9 @@ class ConsoleModelSnapshotImpl implements ConsoleModelSnapshot {
 
     private int sequenceId;
 
-    private Collection<String> componentList;
+    private Map<String, Collection<String>> workflowComponentsMap;
 
-    private Collection<String> workflowList;
+    private boolean workflowListChanged = false;
 
     @Override
     public int getSequenceId() {
@@ -44,23 +49,29 @@ class ConsoleModelSnapshotImpl implements ConsoleModelSnapshot {
     }
 
     @Override
-    public boolean hasWorkflowListChanged() {
-        return workflowList != null;
+    public boolean isWorkflowListChanged() {
+        return workflowListChanged;
+    }
+
+    public void setWorkflowListChanged(boolean workflowListChanged) {
+        this.workflowListChanged = workflowListChanged;
     }
 
     @Override
     public Collection<String> getWorkflowList() {
-        return workflowList;
+        List<String> list = workflowComponentsMap.keySet().stream().collect(Collectors.toList());
+        Collections.sort(list);
+        return list;
     }
 
     @Override
     public boolean hasComponentListChanged() {
-        return componentList != null;
+        return workflowComponentsMap != null;
     }
 
     @Override
-    public Collection<String> getComponentList() {
-        return componentList;
+    public Map<String, Collection<String>> getWorkflowComponentsMap() {
+        return workflowComponentsMap;
     }
 
     /**
@@ -77,12 +88,8 @@ class ConsoleModelSnapshotImpl implements ConsoleModelSnapshot {
         this.sequenceId = sequenceId;
     }
 
-    void setWorkflowList(Collection<String> workflowList) {
-        this.workflowList = workflowList;
-    }
-
-    void setComponentList(Collection<String> componentList) {
-        this.componentList = componentList;
+    void setWorkflowComponentsMap(Map<String, Collection<String>> map) {
+        this.workflowComponentsMap = map;
     }
 
 }

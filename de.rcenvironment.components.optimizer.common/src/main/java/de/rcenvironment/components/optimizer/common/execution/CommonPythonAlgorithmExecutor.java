@@ -161,6 +161,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
         Map<String, Double> minValues = new HashMap<>();
         Map<String, Double> maxValues = new HashMap<>();
         Map<String, Double> objectiveWeights = new HashMap<>();
+        Map<String, String> optimizationTargets = new HashMap<>();
 
         for (String key : orderedInputValueKeys) {
             if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_OBJECTIVE)
@@ -168,6 +169,8 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
                 orderedObjectives.add(key);
                 String weight = compContext.getInputMetaDataValue(key, OptimizerComponentConstants.META_WEIGHT);
                 objectiveWeights.put(key, Double.parseDouble(weight));
+                String target = compContext.getInputMetaDataValue(key, OptimizerComponentConstants.META_GOAL);
+                optimizationTargets.put(key, target);
             }
             if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_CONSTRAINT)
                 && !key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
@@ -184,6 +187,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
         configuration.put("constraints", orderedConstraints);
         configuration.put("gradients", orderedGradients);
         configuration.put("objectivesWeights", objectiveWeights);
+        configuration.put("optimizationTargets", optimizationTargets);
         configuration.put("minValuesConstraints", minValues);
         configuration.put("maxValuesConstraints", maxValues);
 
@@ -221,6 +225,13 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
             } else {
                 initValues.put(key, ((FloatTD) outputValues.get(key)).getFloatValue());
             }
+            // The META_BASE = "base" configuration value became obsolete in the meantime. I couldn't find any other code reference to such
+            // a value, so I don't know where it might be set.
+            // In addition, this parameter is not defined in the Optimizer's output.json, so it can never be set via the GUI.
+            // Therefore the following code lines (compContext.getOutputMetaDataValue(getVectorName(key), META_BASE) != null) and
+            // (compContext.getOutputMetaDataValue(key, META_BASE) != null) will never be true.
+            // For backwards compatibility, the following code that references this value has not yet been removed.
+            // 14.10.2022, Kathrin Schaffert
             if (!key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
                 if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
                     if (compContext.getOutputMetaDataValue(getVectorName(key), META_BASE) != null) {

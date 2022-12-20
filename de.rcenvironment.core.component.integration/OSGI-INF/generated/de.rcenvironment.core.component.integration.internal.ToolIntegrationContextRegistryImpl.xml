@@ -3,6 +3,6 @@
    <service>
       <provide interface="de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry"/>
    </service>
-   <reference bind="addToolIntegrationContext" cardinality="0..n" interface="de.rcenvironment.core.component.integration.ToolIntegrationContext" name="ToolIntegrationContext" policy="dynamic" unbind="removeToolIntegrationContext"/>
+   <reference bind="addToolIntegrationContext" cardinality="0..n" interface="de.rcenvironment.core.component.integration.IntegrationContext" name="ToolIntegrationContext" policy="dynamic" unbind="removeToolIntegrationContext"/>
    <implementation class="de.rcenvironment.core.component.integration.internal.ToolIntegrationContextRegistryImpl"/>
 </scr:component>

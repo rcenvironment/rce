@@ -27,6 +27,12 @@ import java.util.regex.Pattern;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import de.rcenvironment.core.command.spi.AbstractParsedCommandParameter;
+import de.rcenvironment.core.command.spi.ParsedBooleanParameter;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedIntegerParameter;
+import de.rcenvironment.core.command.spi.ParsedMultiParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
 import de.rcenvironment.core.instancemanagement.internal.InstanceConfigurationException;
 import de.rcenvironment.core.instancemanagement.internal.SSHAccountParameters;
 import de.rcenvironment.core.instancemanagement.internal.UplinkConnectionParameters;
@@ -677,48 +683,49 @@ public class InstanceNetworkingStepDefinitions extends InstanceManagementStepDef
             .isEnabled(true)
             .build();
         addSSHAccount(serverInstance, accountParametersUpl);
+        
+        final ParsedMultiParameter uplinkParameters = new ParsedMultiParameter(
+            new AbstractParsedCommandParameter[] {
+                new ParsedStringParameter(StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT,
+                    serverInstance.getId(), connectionOptions.getUserName())),
+                new ParsedStringParameter(ConnectionOptionConstants.HOST_DEFAULT),
+                new ParsedIntegerParameter(serverPort),
+                new ParsedStringParameter(
+                    StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT, clientInstance.getId(), serverInstance.getId())),
+                new ParsedBooleanParameter(connectionOptions.getGateway()),
+                new ParsedBooleanParameter(connectionOptions.getAutoStart()),
+                new ParsedBooleanParameter(connectionOptions.getAutoRetry()),
+                new ParsedStringParameter(connectionOptions.getUserName()),
+                new ParsedStringParameter("password"),
+                new ParsedStringParameter(connectionOptions.getUserName()) // for test purposes, the pw equals the userName
+            });
 
-        final String clientId;
-        if (commonClientId.equals("")) {
-            clientId = clientInstance.getId();
-        } else {
-            clientId = commonClientId;
-        }
-
-        final UplinkConnectionParameters uplinkParameters = UplinkConnectionParameters.builder()
-            .connectionId(
-                StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT, serverInstance.getId(),
-                    connectionOptions.getUserName()))
-            .host(ConnectionOptionConstants.HOST_DEFAULT)
-            .port(serverPort)
-            .clientId(StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT, clientId, serverInstance.getId()))
-            .gateway(connectionOptions.getGateway())
-            .autoStart(connectionOptions.getAutoStart())
-            .autoRetry(connectionOptions.getAutoRetry())
-            .userName(connectionOptions.getUserName())
-            .password(connectionOptions.getUserName())
-            .build();
         configureUplinkConnection(clientInstance, uplinkParameters);
     }
 
     private void setUpPartialUplinkConnection(ManagedInstance clientInstance, ManagedInstance serverInstance, String options)
         throws Exception {
         UplinkConnectionOptions connectionOptions = parseUplinkConnectionOptions(options);
-        final UplinkConnectionParameters uplinkParameters = UplinkConnectionParameters.builder()
-            .autoRetry(connectionOptions.getAutoRetry())
-            .autoStart(connectionOptions.getAutoStart())
-            .clientId(connectionOptions.getClientId())
-            .connectionId(connectionOptions.getConnectionName()
-                .orElse(StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT, serverInstance.getId(),
-                    connectionOptions.getUserName())))
-            .gateway(connectionOptions.getGateway())
-            .host(connectionOptions.getHost())
-            .password(connectionOptions.getPassword())
-            .port(connectionOptions.getPort()
-                .orElse(
-                    getServerPort(serverInstance, connectionOptions.getServerNumber(), StepDefinitionConstants.CONNECTION_TYPE_REGULAR)))
-            .userName(connectionOptions.getUserName())
-            .build();
+
+        final ParsedMultiParameter uplinkParameters = new ParsedMultiParameter(
+            new AbstractParsedCommandParameter[] {
+                new ParsedStringParameter(StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT,
+                    serverInstance.getId(), connectionOptions.getUserName())),
+                new ParsedStringParameter(ConnectionOptionConstants.HOST_DEFAULT),
+                new ParsedIntegerParameter(connectionOptions.getPort()
+                    .orElse(
+                        getServerPort(serverInstance, connectionOptions.getServerNumber(),
+                            StepDefinitionConstants.CONNECTION_TYPE_REGULAR))),
+                new ParsedStringParameter(
+                    StringUtils.format(StepDefinitionConstants.CONNECTION_ID_FORMAT, clientInstance.getId(), serverInstance.getId())),
+                new ParsedBooleanParameter(connectionOptions.getGateway()),
+                new ParsedBooleanParameter(connectionOptions.getAutoStart()),
+                new ParsedBooleanParameter(connectionOptions.getAutoRetry()),
+                new ParsedStringParameter(connectionOptions.getUserName()),
+                new ParsedStringParameter("password"),
+                new ParsedStringParameter(connectionOptions.getUserName()) // for test purposes, the pw equals the userName
+            });
+
         configureUplinkConnection(clientInstance, uplinkParameters);
     }
 
@@ -755,7 +762,7 @@ public class InstanceNetworkingStepDefinitions extends InstanceManagementStepDef
 
     }
 
-    private void configureUplinkConnection(final ManagedInstance clientInstance, final UplinkConnectionParameters uplinkParameters)
+    private void configureUplinkConnection(final ManagedInstance clientInstance, final ParsedMultiParameter uplinkParameters)
         throws Exception {
         INSTANCE_MANAGEMENT_SERVICE.applyInstanceConfigurationOperations(clientInstance.getId(),
             INSTANCE_MANAGEMENT_SERVICE.newConfigurationOperationSequence().addUplinkConnection(uplinkParameters),

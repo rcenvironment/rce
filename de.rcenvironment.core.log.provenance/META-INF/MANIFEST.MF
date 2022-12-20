@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Log Provenance
 Bundle-SymbolicName: de.rcenvironment.core.log.provenance
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Automatic-Module-Name: de.rcenvironment.core.log.provenance
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR & Fraunhofer SCAI

@@ -26,6 +26,9 @@ import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
  * A utility class that attempts to execute OSGi commands as if they were entered into the Equinox command console.
@@ -46,18 +49,34 @@ public class EquinoxConsoleCommandInvoker {
 
     private CommandContext context;
 
+    
     /**
      * Attempts to execute the OSGi console command defined by the remaining tokens in the given {@link CommandContext}. See class
      * description for the general approach.
      * 
-     * @param pContext the {@link CommandContext} providing command tokens and receiving output
+     * @param pContext the {@link CommandContext} providing parsed command parameters and output receiver
      * @throws CommandException if an error occurs during command execution
      */
     public void execute(final CommandContext pContext) throws CommandException {
-
+        this.execute(pContext, pContext.getOutputReceiver());
+    }
+    
+    /**
+     * Attempts to execute the OSGi console command defined by the remaining tokens in the given {@link CommandContext}. See class
+     * description for the general approach.
+     * 
+     * @param pContext the {@link CommandContext} providing parsed command parameters
+     * @param outputReceiver the output receiver to be used
+     * @throws CommandException if an error occurs during command execution
+     */
+    public void execute(final CommandContext pContext, TextOutputReceiver outputReceiver) throws CommandException {
         this.context = pContext;
 
-        String osgiCommand = context.consumeNextToken();
+        ParsedCommandModifiers modifiers = pContext.getParsedModifiers();
+        
+        ParsedStringParameter osgiCommandParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        
+        String osgiCommand = osgiCommandParameter.getResult().split(" ")[0];
         if (osgiCommand == null || osgiCommand.isEmpty()) {
             throw CommandException.syntaxError("Missing OSGi command", context);
         }
@@ -73,7 +92,7 @@ public class EquinoxConsoleCommandInvoker {
 
         // ... if this is not the case, we return ...
         if (!matched) {
-            context.println("No matching OSGi command found. "
+            outputReceiver.addOutput("No matching OSGi command found. "
                 + "(Note that built-in commands like \"info\" or \"help\" may not be accessible.)");
             return;
         }
@@ -91,17 +110,18 @@ public class EquinoxConsoleCommandInvoker {
 
         try {
             // execute the OSGi command with its supplied parameters
-            List<String> tokens = context.consumeRemainingTokens();
+            List<String> tokens = Arrays.asList(osgiCommandParameter.getResult().split(" "));
+            tokens.remove(0);
             String completeOsgiCommand = osgiCommand + " " + StringUtils.join(tokens, ' ');
             session.execute(completeOsgiCommand);
             // CHECKSTYLE:DISABLE (IllegalCatch) - we need to catch Exception since execute does not throw a more specific one
         } catch (Exception e) {
             // CHECKSTYLE:ENABLE (IllegalCatch)
-            context.println("An error occured during the execution of the OSGi command.");
+            outputReceiver.addOutput("An error occured during the execution of the OSGi command.");
         }
         session.close();
         // print the command output
-        context.println(baos.toString());
+        outputReceiver.addOutput(baos.toString());
 
     }
 

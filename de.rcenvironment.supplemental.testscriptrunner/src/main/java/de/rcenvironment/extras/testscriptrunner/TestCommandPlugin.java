@@ -10,8 +10,6 @@ package de.rcenvironment.extras.testscriptrunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +28,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.FileParameter;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedFileParameter;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
@@ -106,87 +112,45 @@ public class TestCommandPlugin implements CommandPlugin {
     public void bindMetaDataService(MetaDataService service) {
         this.metaDataService = service;
     }
-
+    
     @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(ROOT_COMMAND);
-
-        String subCommand = context.consumeNextToken();
-        switch (subCommand) {
-        case OPEN_VIEW_COMMAND:
-            handleOpenViewCommand(context);
-            break;
-        case CLOSE_VIEW_COMMAND:
-            handleCloseViewCommand(context);
-            break;
-        case CLOSE_WELCOME_SCREEN:
-            closeWelcomeScreen(context);
-            break;
-        case EXPORT_ALL_WORKFLOW_RUNS:
-            exportAllWorkflows(context);
-            break;
-        case EXPORT_WORKFLOW_RUN:
-            exportWorkflow(context);
-            break;
-        case COMPARE_TWO_WORKFLOW_RUNS:
-            compareWorkflowRuns(context);
-            break;
-        default:
-            throw CommandException.unknownCommand(context);
-        }
-    }
-
-    @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, OPEN_VIEW_COMMAND),
-                "<view>",
-                true,
-                "opens a GUI view and sets focus to it.",
-                "<view> : one of the following view keys is a valid input:",
-                viewIds.keySet().toString()));
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, CLOSE_VIEW_COMMAND),
-                "(<view>|all)",
-                true,
-                "closes a GUI view.",
-                "<view> : one of the following view keys is a valid input:",
-                "\t" + viewIds.keySet().toString()));
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, CLOSE_WELCOME_SCREEN),
-                "",
-                true,
-                "closes the welcome screen if present."));
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, EXPORT_WORKFLOW_RUN),
-                "<absolute path to directory> <workflowtitle>",
-                true,
-                "exports the run corresponding to the workflowtitle to the given directory."));
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, COMPARE_TWO_WORKFLOW_RUNS),
-                "<absolute path to exported workflowrun> <absolute path to exported workflowrun>",
-                true,
-                "compares the two given workflowruns and indicates if they are identical or wether their are differences."));
-
-        contributions
-            .add(new CommandDescription(
-                StringUtils.format(StepDefinitionConstants.COMMAND_DESCRIPTION_FORMAT, ROOT_COMMAND, EXPORT_ALL_WORKFLOW_RUNS),
-                "<absolute path to export directory>",
-                true,
-                "exports all workflow runs into the given export directory."));
-
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription testCommands = new MainCommandDescription(ROOT_COMMAND, "test commands", "test commands", true,
+            new SubCommandDescription(OPEN_VIEW_COMMAND,  "opens a GUI view and sets focus to it.", this::handleOpenViewCommand,
+                new CommandModifierInfo(new AbstractCommandParameter[] { new StringParameter(null, "open view parameter",
+                    "one of the following view keys is a valid input:" + viewIds.keySet().toString())
+                }), true
+            ),
+            new SubCommandDescription(CLOSE_VIEW_COMMAND, "closes a GUI view.", this::handleCloseViewCommand,
+                new CommandModifierInfo(new AbstractCommandParameter[] { new StringParameter(null, "close view parameter",
+                    "one of the following view keys is a valid input:" + viewIds.keySet().toString())
+                }), true
+            ),
+            new SubCommandDescription(CLOSE_WELCOME_SCREEN, "closes the welcome screen if present.", this::closeWelcomeScreen, true),
+            new SubCommandDescription(EXPORT_WORKFLOW_RUN, "exports the run corresponding to the workflowtitle to the given directory.",
+                this::exportWorkflow,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        new StringParameter(null, "absolute directory path", "absolute path to directory"),
+                        new StringParameter(null, "workflow title", "title of the workflow")
+                    }
+                ), true
+            ),
+            new SubCommandDescription(COMPARE_TWO_WORKFLOW_RUNS, "compares the two given workflowruns and indicates if they are"
+                + " identical or wether their are differences.", this::compareWorkflowRuns,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        new FileParameter("abs export workflow path", "absolute path to exported workflowrun"),
+                        new FileParameter("abs export workflow path", "absolute path to exported workflowrun")
+                    }
+                ), true
+            ),
+            new SubCommandDescription(EXPORT_ALL_WORKFLOW_RUNS, "exports all workflow runs into the given export directory.", this::exportAllWorkflows,
+                new CommandModifierInfo(new AbstractCommandParameter[] { new StringParameter(null, "abs path to export dir", "absolute path to export directory") }), true
+            )
+        );
+        
+        return new MainCommandDescription[] { testCommands };
     }
 
     private void closeWelcomeScreen(CommandContext context) {
@@ -208,13 +172,11 @@ public class TestCommandPlugin implements CommandPlugin {
     }
 
     private void exportAllWorkflows(CommandContext context) throws CommandException {
-        String dirArgument = context.consumeNextToken();
-        if (dirArgument == null) {
-            throw CommandException.syntaxError("Not enough arguments.", context);
-        }
-        noMoreTokens(context);
 
-        File exportDirectory = new File(dirArgument);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        ParsedStringParameter dirParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        
+        File exportDirectory = new File(dirParameter.getResult());
         if (!exportDirectory.exists()) {
             exportDirectory.mkdirs();
         }
@@ -246,14 +208,12 @@ public class TestCommandPlugin implements CommandPlugin {
      * @throws CommandException
      */
     private void exportWorkflow(CommandContext context) throws CommandException {
-        String dirArgument = context.consumeNextToken();
-        String workflowTitle = context.consumeNextToken();
 
-        if (dirArgument == null || workflowTitle == null) {
-            throw CommandException.syntaxError("Not enough arguments.", context);
-        }
-
-        noMoreTokens(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        ParsedStringParameter dirParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedStringParameter workflowTitleParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(1);
+        String dirArgument = dirParameter.getResult();
+        String workflowTitle = workflowTitleParameter.getResult();
 
         File targetDirectory = new File(dirArgument);
         if (!targetDirectory.exists()) {
@@ -294,11 +254,12 @@ public class TestCommandPlugin implements CommandPlugin {
     }
 
     private void compareWorkflowRuns(CommandContext context) throws CommandException {
-
-        File wfRun1 = new File(context.consumeNextToken());
-        File wfRun2 = new File(context.consumeNextToken());
-
-        noMoreTokens(context);
+        
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        ParsedFileParameter wfRun1Parameter = (ParsedFileParameter) modifiers.getPositionalCommandParameter(0);
+        ParsedFileParameter wfRun2Parameter = (ParsedFileParameter) modifiers.getPositionalCommandParameter(0);
+        File wfRun1 = wfRun1Parameter.getResult();
+        File wfRun2 = wfRun2Parameter.getResult();
 
         try {
             PlainWorkflowRun plainWorkflowRun1 = mapper.readValue(wfRun1, PlainWorkflowRun.class);
@@ -318,10 +279,11 @@ public class TestCommandPlugin implements CommandPlugin {
     }
 
     private void handleOpenViewCommand(CommandContext context) throws CommandException {
-        String viewId = context.consumeNextToken();
 
-        noMoreTokens(context);
-
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        ParsedStringParameter viewIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        String viewId = viewIdParameter.getResult();
+        
         if (viewIds.containsKey(viewId)) {
             openView(viewId);
         } else {
@@ -330,10 +292,11 @@ public class TestCommandPlugin implements CommandPlugin {
     }
 
     private void handleCloseViewCommand(CommandContext context) throws CommandException {
-        String viewId = context.consumeNextToken();
-
-        noMoreTokens(context);
-
+        
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        ParsedStringParameter viewIdParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        String viewId = viewIdParameter.getResult();
+        
         if (viewIds.containsKey(viewId)) {
             closeView(viewIds.get(viewId));
         } else {
@@ -395,12 +358,6 @@ public class TestCommandPlugin implements CommandPlugin {
                 return Status.OK_STATUS;
             }
         }.schedule();
-    }
-
-    private void noMoreTokens(CommandContext context) throws CommandException {
-        if (context.hasRemainingTokens()) {
-            throw CommandException.syntaxError("Too many arguments.", context);
-        }
     }
 
     private void fillViewIdMap() {

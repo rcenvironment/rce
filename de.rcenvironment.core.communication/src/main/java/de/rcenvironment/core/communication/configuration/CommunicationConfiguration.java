@@ -28,6 +28,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  * @author Tobias Menden
  * @author Robert Mischke
+ * @author Kathrin Schaffert
  */
 public class CommunicationConfiguration {
 
@@ -154,6 +155,10 @@ public class CommunicationConfiguration {
         boolean connectOnStartup = connectionPart.getBoolean("connectOnStartup", true);
         options.append("connectOnStartup=");
         options.append(Boolean.toString(connectOnStartup));
+        options.append(COMMA);
+        boolean autoRetry = connectionPart.getBoolean("autoRetry", true);
+        options.append("autoRetry=");
+        options.append(Boolean.toString(autoRetry));
         options.append(COMMA);
 
         if (options.length() != 0) {

@@ -28,5 +28,10 @@
 
 	<xsl:param name="chunk.separate.lots" select="1"></xsl:param>
 	<xsl:param name="chunk.tocs.and.lots.has.title" select="1"></xsl:param>
+	
+		<!-- Line break for AsciiDoc --> 
+	<xsl:template match="processing-instruction('asciidoc-br')"> 
+	  <br /> 
+	</xsl:template>
 
 </xsl:stylesheet>

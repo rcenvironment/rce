@@ -1,7 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.platform.combined.feature_10.3.1.qualifier.jar" id="de.rcenvironment.platform.combined.feature" version="10.3.1.qualifier"/>
-   <feature url="features/de.rcenvironment.platform.maven_extensions.bdd.feature_10.3.1.qualifier.jar" id="de.rcenvironment.platform.maven_extensions.bdd.feature" version="10.3.1.qualifier"/>
-   <feature id="de.vonloesch.pdf4eclipse" version="1.1.0"/>
-   <feature id="nu.psnet.quickimage" version="1.0.3.2"/>
+   <feature id="de.rcenvironment.modules.thirdparty.dakota.binaries.common.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.eclipse.platform.common.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.eclipse.platform.gui.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.imageviewer.gui.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.libraries.bdd.common.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.libraries.generic.common.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.libraries.generic.gui.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.paxlogging.common.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <feature id="de.rcenvironment.modules.thirdparty.pdfviewer.gui.feature">
+      <category name="rce_thirdparty"/>
+   </feature>
+   <category-def name="rce_thirdparty" label="RCE Third-Party Artifacts"/>
 </site>

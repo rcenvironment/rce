@@ -30,10 +30,10 @@ import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkEndp
 import de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSession;
 import de.rcenvironment.core.communication.uplink.session.api.UplinkSessionState;
 import de.rcenvironment.core.communication.uplink.session.internal.AbstractUplinkSessionImpl;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventLogEntry;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLog.LogEntry;
-import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StreamConnectionEndpoint;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.ProtocolException;
@@ -186,13 +186,13 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
 
         @Override
         public void onHandshakeComplete() {
-            writeAuditLogEntryOnSessionActivating();
+            writeEventLogEntryOnSessionActivating();
             markHandshakeSuccessful();
         }
 
         @Override
         public void onHandshakeFailedOrConnectionRefused(UplinkConnectionRefusedException e) {
-            writeAuditLogEntryOnSessionRefused(e);
+            writeEventLogEntryOnSessionRefused(e);
             markHandshakeFailed(e);
         }
 
@@ -395,7 +395,7 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
     @Override
     protected void onTerminalStateReached(UplinkSessionState newState, Optional<UplinkProtocolErrorType> fatalError) {
         // TODO 10.3.0 also log error type if present?
-        writeAuditLogEntryOnSessionTerminating(newState);
+        writeEventLogEntryOnSessionTerminating(newState);
     }
 
     @Override
@@ -490,53 +490,53 @@ public class ServerSideUplinkSessionImpl extends AbstractUplinkSessionImpl imple
         }
     }
 
-    private void writeAuditLogEntryOnSessionActivating() {
-        LogEntry entry = AuditLog.newEntry(AuditLogIds.UPLINK_SESSION_START);
-        addCommonSessionStartInfoToAuditLogEntry(entry);
-        addVersionInfoToAuditLogEntry(entry);
-        AuditLog.append(entry);
+    private void writeEventLogEntryOnSessionActivating() {
+        EventLogEntry entry = EventLog.newEntry(EventType.UPLINK_INCOMING_ACCEPTED);
+        addCommonSessionStartInfoToEventLogEntry(entry);
+        addVersionInfoToEventLogEntry(entry);
+        EventLog.append(entry);
     }
 
-    private void writeAuditLogEntryOnSessionRefused(UplinkConnectionRefusedException e) {
-        LogEntry entry = AuditLog.newEntry(AuditLogIds.UPLINK_SESSION_REFUSE)
-            .set(AUDIT_LOG_KEY_REASON, e.getMessage());
-        addCommonSessionStartInfoToAuditLogEntry(entry);
-        addVersionInfoToAuditLogEntry(entry);
-        AuditLog.append(entry);
+    private void writeEventLogEntryOnSessionRefused(UplinkConnectionRefusedException e) {
+        EventLogEntry entry = EventLog.newEntry(EventType.UPLINK_INCOMING_REFUSED)
+            .set(EventType.Attributes.REASON, e.getMessage());
+        addCommonSessionStartInfoToEventLogEntry(entry);
+        addVersionInfoToEventLogEntry(entry);
+        EventLog.append(entry);
     }
 
-    private void addCommonSessionStartInfoToAuditLogEntry(LogEntry entry) {
+    private void addCommonSessionStartInfoToEventLogEntry(EventLogEntry entry) {
         String effectiveAccountName = sessionState.getEffectiveAccountName();
         entry
-            .set(AUDIT_LOG_KEY_SESSION_ID, localSessionId)
-            .set(AUDIT_LOG_KEY_CONNECTION_ID, eventLogConnectionId)
-            .set(AUDIT_LOG_KEY_EFFECTIVE_LOGIN_NAME, effectiveAccountName)
-            .set(AUDIT_LOG_KEY_EFFECTIVE_CLIENT_ID, sessionState.getEffectiveSessionQualifier());
+            .set(EventType.Attributes.SESSION_ID, localSessionId)
+            .set(EventType.Attributes.CONNECTION_ID, eventLogConnectionId)
+            .set(EventType.Attributes.LOGIN_NAME, effectiveAccountName)
+            .set(EventType.Attributes.CLIENT_ID, sessionState.getEffectiveSessionQualifier());
         Optional<String> assignedNamespaceIdIfAvailable = sessionState.getAssignedNamespaceIdIfAvailable();
         if (assignedNamespaceIdIfAvailable.isPresent()) {
-            entry.set(AUDIT_LOG_KEY_NAMESPACE, assignedNamespaceIdIfAvailable.get());
+            entry.set(EventType.Attributes.NAMESPACE, assignedNamespaceIdIfAvailable.get());
         }
         if (!effectiveAccountName.equals(loginAccountName)) {
-            entry.set(AUDIT_LOG_KEY_ORIGINAL_LOGIN_NAME, loginAccountName);
+            entry.set(EventType.Attributes.ORIGINAL_LOGIN_NAME, loginAccountName);
         }
     }
 
-    private void writeAuditLogEntryOnSessionTerminating(UplinkSessionState newState) {
-        AuditLog.append(AuditLog.newEntry(AuditLogIds.UPLINK_SESSION_CLOSE)
-            .set(AUDIT_LOG_KEY_SESSION_ID, localSessionId)
-            .set(AUDIT_LOG_KEY_CONNECTION_ID, eventLogConnectionId)
-            .set(AUDIT_LOG_KEY_FINAL_STATE, newState.name()));
+    private void writeEventLogEntryOnSessionTerminating(UplinkSessionState newState) {
+        EventLog.append(EventLog.newEntry(EventType.UPLINK_INCOMING_CLOSED)
+            .set(EventType.Attributes.SESSION_ID, localSessionId)
+            .set(EventType.Attributes.CONNECTION_ID, eventLogConnectionId)
+            .set(EventType.Attributes.FINAL_STATE, newState.name()));
     }
 
-    private void addVersionInfoToAuditLogEntry(LogEntry entry) {
+    private void addVersionInfoToEventLogEntry(EventLogEntry entry) {
         synchronized (sessionState) {
             String clientVersionInfo = sessionState.getClientVersionInfo();
             if (clientVersionInfo != null) {
-                entry.set(AUDIT_LOG_KEY_CLIENT_VERSION_INFO, clientVersionInfo);
+                entry.set(EventType.Attributes.CLIENT_VERSION, clientVersionInfo);
             }
             String protocolVersion = sessionState.getProtocolVersion();
             if (protocolVersion != null) {
-                entry.set(AUDIT_LOG_KEY_PROTOCOL_VERSION, protocolVersion);
+                entry.set(EventType.Attributes.PROTOCOL_VERSION, protocolVersion);
             }
         }
     }

@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
  * Utils class for the DOE component.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert (added parameter startSample to method writeResultToCSVFile)
  */
 public final class DOEUtils {
 
@@ -83,12 +84,28 @@ public final class DOEUtils {
      */
     public static boolean writeResultToCSVFile(Object[][] tableValues, Map<Integer, Map<String, Double>> results, String path,
         int currentRun, List<String> outputs) {
+        return writeResultToCSVFile(tableValues, results, path, currentRun, outputs, 0);
+    }
+
+    /**
+     * Writes the given table, starting with the starting sample, into a .csv file in the given Path.
+     * 
+     * @param tableValues to write
+     * @param results map with the returned values in every iteration
+     * @param path to save
+     * @param currentRun for indexing
+     * @param outputs name of all outputs for the header
+     * @param startSample to write the table from this point
+     * @return true, if writing was successful
+     */
+    public static boolean writeResultToCSVFile(Object[][] tableValues, Map<Integer, Map<String, Double>> results, String path,
+        int currentRun, List<String> outputs, int startSample) {
         if (path != null && !path.endsWith(DOEConstants.TABLE_FILE_EXTENTION)) {
             path += DOEConstants.TABLE_FILE_EXTENTION;
         }
         try {
-            if (path != null && !results.isEmpty() && results.get(0) != null && !results.get(0).isEmpty()) {
-                List<String> orderedInputs = new LinkedList<>(results.get(0).keySet());
+            if (path != null && !results.isEmpty() && results.get(startSample) != null && !results.get(startSample).isEmpty()) {
+                List<String> orderedInputs = new LinkedList<>(results.get(startSample).keySet());
                 Collections.sort(orderedInputs);
                 FileWriter fw = new FileWriter(new File(path));
                 BufferedWriter bw = new BufferedWriter(fw);
@@ -101,7 +118,7 @@ public final class DOEUtils {
                     printer.print(input);
                 }
                 printer.println();
-                for (int i = 0; i < currentRun; i++) {
+                for (int i = startSample; i < currentRun; i++) {
                     if (results.get(i) != null) {
                         for (int j = 0; j < tableValues[i].length; j++) {
                             printer.print(tableValues[i][j]);

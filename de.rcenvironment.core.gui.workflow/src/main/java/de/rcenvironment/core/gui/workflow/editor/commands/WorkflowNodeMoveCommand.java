@@ -15,10 +15,12 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
+import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.ConnectionUtils;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 
 
 /**
@@ -66,7 +68,8 @@ public class WorkflowNodeMoveCommand extends Command {
     @Override
     public boolean canExecute() {
         Object type = request.getType();
-        return (RequestConstants.REQ_MOVE.equals(type) || RequestConstants.REQ_MOVE_CHILDREN.equals(type));
+        boolean execute = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor() instanceof WorkflowEditor;
+        return (execute && (RequestConstants.REQ_MOVE.equals(type) || RequestConstants.REQ_MOVE_CHILDREN.equals(type)));
     }
     
 

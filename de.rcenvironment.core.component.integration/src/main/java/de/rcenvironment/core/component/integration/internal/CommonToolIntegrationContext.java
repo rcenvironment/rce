@@ -17,22 +17,24 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.CommonToolIntegratorComponent;
 import de.rcenvironment.core.component.integration.ConfigurationMap;
-import de.rcenvironment.core.component.integration.ToolIntegrationContext;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
+import de.rcenvironment.core.component.integration.IntegrationContextType;
+import de.rcenvironment.core.component.integration.IntegrationContext;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathListId;
 
 /**
- * Implementation of {@link ToolIntegrationContext} for the standard tool integration.
+ * Implementation of {@link IntegrationContext} for the standard tool integration.
  * 
  * @author Sascha Zur
  * @author Alexander Weinert (OSGI annotations)
  */
 @Component
-public final class CommonToolIntegrationContext implements ToolIntegrationContext {
+public final class CommonToolIntegrationContext implements IntegrationContext {
 
     private static ConfigurationService configService;
 
@@ -42,8 +44,13 @@ public final class CommonToolIntegrationContext implements ToolIntegrationContex
     }
 
     @Override
-    public String getContextType() {
-        return ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE;
+    public IntegrationContextType getContextType() {
+        return IntegrationContextType.COMMON;
+    }
+
+    @Override
+    public String getContextTypeString() {
+        return IntegrationContextType.COMMON.toString();
     }
 
     @Override
@@ -78,7 +85,7 @@ public final class CommonToolIntegrationContext implements ToolIntegrationContex
 
     @Override
     public String getPrefixForComponentId() {
-        return ToolIntegrationConstants.STANDARD_COMPONENT_ID_PREFIX;
+        return ComponentConstants.COMMON_INTEGRATED_COMPONENT_ID_PREFIX;
     }
 
     @Override

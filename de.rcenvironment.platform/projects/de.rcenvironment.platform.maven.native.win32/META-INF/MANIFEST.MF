@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RCE Platform - Maven Native Code Libraries - Win32
+Bundle-Name: RCE Third-Party Artifacts - Wrapped Maven Libraries - Native (Win32)
 Bundle-SymbolicName: de.rcenvironment.platform.maven.native.win32;singleton:=true
-Bundle-Version: 10.3.1.qualifier
+Bundle-Version: 10.4.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Vendor: DLR
 Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) (osgi.arch=x86_64) )
@@ -12,3 +12,4 @@ Bundle-NativeCode:
 Export-Package: com.jacob.activeX;version="1.17.0",
  com.jacob.com;version="1.17.0"
 Eclipse-BundleShape: dir
+Automatic-Module-Name: de.rcenvironment.platform.maven.native.win32

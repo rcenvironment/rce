@@ -11,10 +11,13 @@ package de.rcenvironment.core.component.integration;
 import java.io.File;
 import java.util.UUID;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
+
 /**
  * Constants for the ToolIntegrationWizard.
  * 
  * @author Sascha Zur
+ * @author Kathrin Schaffert
  */
 public final class ToolIntegrationConstants {
 
@@ -23,24 +26,6 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_TOOL_INTEGRATION_VERSION = "toolIntegrationVersion";
-
-    /** Constant. */
-    public static final String KEY_TOOL_NAME = "toolName";
-
-    /** Constant. */
-    public static final String KEY_TOOL_ICON_PATH = "toolIconPath";
-
-    /** Constant. */
-    public static final String KEY_TOOL_INTEGRATOR_NAME = "toolIntegratorName";
-
-    /** Constant. */
-    public static final String KEY_TOOL_INTEGRATOR_EMAIL = "toolIntegratorE-Mail";
-
-    /** Constant. */
-    public static final String[] PROPERTY_TYPES = new String[] { "Text", "List", "Boolean" };
-
-    /** Constant. */
-    public static final String KEY_TOOL_DESCRIPTION = "toolDescription";
 
     /** Constant. */
     public static final String KEY_TOOL_USE_ITERATION_DIRECTORIES = "useIterationDirectories";
@@ -76,22 +61,10 @@ public final class ToolIntegrationConstants {
     public static final String KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE = "deleteWorkingDirectoriesKeepOnErrorOnce";
 
     /** Constant. */
-    public static final String KEY_LAUNCH_SETTINGS = "launchSettings";
-
-    /** Constant. */
-    public static final String KEY_HOST = "host";
-
-    /** Constant. */
     public static final String KEY_TOOL_DIRECTORY = "toolDirectory";
 
     /** Constant. */
-    public static final String KEY_VERSION = "version";
-
-    /** Constant. */
     public static final String KEY_ROOT_WORKING_DIRECTORY = "rootWorkingDirectory";
-
-    /** Constant. */
-    public static final String VALUE_LOCALHOST = "RCE";
 
     /** Constant. */
     public static final String KEY_COMMAND_SCRIPT_WINDOWS = "commandScriptWindows";
@@ -109,40 +82,13 @@ public final class ToolIntegrationConstants {
     public static final String KEY_MOCK_SCRIPT = "imitationScript";
 
     /** Constant. */
-    public static final String KEY_ENDPOINT_OUTPUTS = "outputs";
-
-    /** Constant. */
-    public static final String KEY_ENDPOINT_INPUTS = "inputs";
-
-    /** Constant. */
-    public static final String KEY_DYNAMMIC_ENDPOINT_INPUTS = "dynamicInputs";
-
-    /** Constant. */
-    public static final String KEY_ENDPOINT_NAME = "endpointName";
-
-    /** Constant. */
     public static final String PLACEHOLDER_PREFIX = "${";
 
     /** Constant. */
     public static final String PLACEHOLDER_SUFFIX = "}";
 
     /** Constant. */
-    public static final String KEY_PROPERTIES = "toolProperties";
-
-    /** Constant. */
-    public static final String KEY_PROPERTY_DISPLAYNAME = "propertyDisplayName";
-
-    /** Constant. */
-    public static final String KEY_PROPERTY_KEY = "propertyKey";
-
-    /** Constant. */
-    public static final String KEY_ENDPOINT_FOLDER = "endpointFolder";
-
-    /** Constant. */
     public static final String KEY_ENDPOINT_IDENTIFIER = "endpointIdentifier";
-
-    /** Constant. */
-    public static final String KEY_ENDPOINT_DATA_TYPE = "endpointDataType";
 
     /** Constant. */
     public static final String KEY_ENDPOINT_DEFAULT_TYPE = "endpointDefaultDataType";
@@ -151,34 +97,13 @@ public final class ToolIntegrationConstants {
     public static final String KEY_ENDPOINT_DATA_TYPES = "endpointDataTypes";
 
     /** Constant. */
-    public static final String KEY_ENDPOINT_FILENAME = "endpointFileName";
-
-    /** Constant. */
     public static final String KEY_ENDPOINT_USAGE = "endpointUsage";
-
-    /** Constant. */
-    public static final String KEY_INPUT_HANDLING = "inputHandling";
-
-    /** Constant. */
-    public static final String KEY_INPUT_EXECUTION_CONSTRAINT = "inputExecutionConstraint";
 
     /** Constant. */
     public static final String KEY_INPUT_HANDLING_OPTIONS = "inputinputHandlingOptions";
 
     /** Constant. */
     public static final String KEY_INPUT_EXECUTION_CONSTRAINT_OPTIONS = "inputinputExecutionConstraintOptions";
-
-    /** Constant. */
-    public static final String KEY_DEFAULT_INPUT_HANDLING = "defaultInputHandling";
-
-    /** Constant. */
-    public static final String KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
-
-    /** Constant. */
-    public static final String KEY_PROPERTY_DEFAULT_VALUE = "propertyDefaultValue";
-
-    /** Constant. */
-    public static final String KEY_PROPERTY_CREATE_CONFIG_FILE = "propertyCreateConfigFile";
 
     /** Constant. */
     public static final String KEY_PROPERTY_CONFIG_FILENAME = "propertyConfigFilename";
@@ -233,9 +158,6 @@ public final class ToolIntegrationConstants {
     public static final String DEFAULT_COMPONENT_GROUP_ID = "User Integrated Tools";
 
     /** Constant. */
-    public static final String STANDARD_COMPONENT_ID_PREFIX = "de.rcenvironment.integration.common.";
-
-    /** Constant. */
     public static final String COMPONENT_INPUT_FOLDER_NAME = "Input";
 
     /** Constant. */
@@ -245,38 +167,23 @@ public final class ToolIntegrationConstants {
     public static final String COMPONENT_CONFIG_FOLDER_NAME = "Config";
 
     /** Constant. */
-    public static final String OTHER_TOOL_ROOT_DIRECTORIES = "Tool_Root_Directories.txt";
-
-    /** Constant. */
     // TODO review: is there an actual need for this ID to be dynamic?
     public static final String COMMON_TOOL_INTEGRATION_CONTEXT_UID = UUID.randomUUID().toString() + "_COMMON";
-
-    /** Constant. */
-    public static final String KEY_TOOL_GROUPNAME = "groupName";
 
     /** Constant. */
     public static final String CHOSEN_DELETE_TEMP_DIR_BEHAVIOR = "chosenDeleteTempDirBehavior";
 
     /** Constant. */
-    public static final String NEW_WIZARD_COMMON = "NEW_COMMON";
+    public static final String NEW_WIZARD = "NEW_COMMON";
 
     /** Constant. */
-    public static final String EDIT_WIZRAD_COMMON = "EDIT_COMMON";
-
-    /** Constant. */
-    public static final String METADATA_IGNORE_ON_STARTUP = "ignoreOnStartup";
-
-    /** Constant. */
-    public static final String METADATA_FILENAME = ".toolIntegrationMetadata";
+    public static final String EDIT_WIZARD = "EDIT_COMMON";
 
     /** Constant. */
     public static final String DONT_CRASH_ON_NON_ZERO_EXIT_CODES = "dontCrashOnNonZeroExitCodes";
 
     /** Constant. */
     public static final String PLACEHOLDER_ADDITIONAL_PROPERTIES_PREFIX = "addProp";
-
-    /** Constant. */
-    public static final String KEY_UPLOAD_ICON = "uploadIcon";
 
     // tool publication mixed into tool integration is disabled for now; see Mantis #16044
     // public static final String TEMP_KEY_PUBLISH_COMPONENT = "publishComponent";
@@ -285,22 +192,13 @@ public final class ToolIntegrationConstants {
     public static final String PUBLISHED_COMPONENTS_FILENAME = "published.conf";
 
     /** Constant. */
-    public static final String IS_ACTIVE = "isActive";
-
-    /** Constant. */
     public static final String KEY_SET_TOOL_DIR_AS_WORKING_DIR = "setToolDirAsWorkingDir";
 
     /** Constant. */
     public static final String TEMPLATE_PATH = "tools" + File.separator + "templates";
 
     /** Constant. */
-    public static final String COMMON_TOOL_INTEGRATION_CONTEXT_TYPE = "Common";
-
-    /** Constant. */
-    public static final String INTEGRATION_TYPE = "integrationType";
-
-    /** Constant. */
-    public static final String[] COMPONENT_IDS = new String[] { STANDARD_COMPONENT_ID_PREFIX,
+    public static final String[] COMPONENT_IDS = new String[] { ComponentConstants.COMMON_INTEGRATED_COMPONENT_ID_PREFIX,
         "de.rcenvironment.core.component.integration.CommonToolIntegratorComponent" };
 
     /** Constant. */
@@ -313,35 +211,23 @@ public final class ToolIntegrationConstants {
     public static final Object KEY_ENDPOINT_DYNAMIC_OUTPUTS = "dynamicOutputs";
 
     /** Constant. */
-    public static final String CONTEXTUAL_HELP_PLACEHOLDER_ID = "de.rcenvironment.integration.*";
-
-    /** Constant. */
     public static final String KEY_TEMPLATE_NAME = "templateName";
-
-    /** Constant. */
-    public static final String KEY_LIMIT_INSTANCES = "limitInstallationInstances";
 
     /** Constant. */
     @Deprecated
     public static final String KEY_LIMIT_INSTANCES_OLD = "limitInstalltionInstances";
 
     /** Constant. */
-    public static final String KEY_LIMIT_INSTANCES_COUNT = "limitInstallationInstancesNumber";
-
-    /** Constant. */
     public static final String KEY_KEEP_ON_FAILURE = "keepOnFailure";
-
-    /** Constant. */
-    public static final String KEY_DOC_FILE_PATH = "documentationFilePath";
-
-    /** Constant. */
-    public static final String DOCS_DIR_NAME = "docs";
 
     /** Constant. */
     public static final String DOCUMENTATION_CACHED_SUFFIX = "(C)";
 
     /** Constant. */
-    public static final String[] VALID_DOCUMENTATION_EXTENSIONS = new String[] { "pdf", "PDF", "txt", "TXT" };
+    public static final String KEY_ICON_HASH = "iconHash";
+
+    /** Constant. */
+    public static final String KEY_ICON_MODIFICATION_DATE = "iconModified";
 
     private ToolIntegrationConstants() {
 

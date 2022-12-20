@@ -13,6 +13,9 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
  * Exception class for malformed RCE commands.
@@ -56,11 +59,18 @@ public final class CommandException extends Exception {
 
     private final boolean showDeveloperHelp;
 
+    private final ParsedCommandModifiers modifiers;
+
+    // store the output receiver of the provided context to support output redirection via "saveto"
+    private final TextOutputReceiver outputReceiver;
+
     private CommandException(Type type, String message, CommandContext context) {
         super(message);
         this.type = type;
         this.commandTokens = context.getOriginalTokens();
         this.showDeveloperHelp = context.isDeveloperCommandSetEnabled(); // TODO move to getter?
+        this.modifiers = context.getParsedModifiers();
+        this.outputReceiver = context.getOutputReceiver();
     }
 
     public static CommandException missingFilename(CommandContext context) {
@@ -116,7 +126,12 @@ public final class CommandException extends Exception {
      * @return the generated exception
      */
     public static CommandException requestHelp(CommandContext context) {
-        return new CommandException(Type.HELP_REQUESTED, null, context);
+        ParsedStringParameter command = (ParsedStringParameter) context.getParsedModifiers().getPositionalCommandParameter(0);
+        String text = null;
+        if (command != null) {
+            text = command.getResult();
+        }
+        return new CommandException(Type.HELP_REQUESTED, text, context);
     }
 
     public Type getType() {
@@ -132,6 +147,14 @@ public final class CommandException extends Exception {
      */
     public boolean shouldPrintDeveloperHelp() {
         return showDeveloperHelp;
+    }
+
+    public ParsedCommandModifiers getParsedModifiers() {
+        return modifiers;
+    }
+
+    public TextOutputReceiver getOutputReceiver() {
+        return outputReceiver;
     }
 
     @Override

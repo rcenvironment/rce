@@ -1,0 +1,145 @@
+---
+modules-version: 10.3.1
+
+parent-pom-id: 'de.rcenvironment.build.thirdparty.parent.module'
+parent-pom-version: '1.0.0-SNAPSHOT'
+parent-pom-relative-path: '../de.rcenvironment.build.thirdparty/maven/parent/module'
+
+modules:
+
+
+### Eclipse Platform (core RCP and related extensions/plugins/features)
+
+- id: de.rcenvironment.modules.thirdparty.eclipse.platform.common
+  name: RCE Third-Party Artifacts - Modules - Eclipse Platform (Common)
+
+  feature-to-feature-includes:
+    - org.eclipse.platform
+    - org.eclipse.rcp
+    - org.eclipse.equinox.executable
+
+  feature-to-bundle-includes:
+    - org.eclipse.equinox.cm
+
+- id: de.rcenvironment.modules.thirdparty.eclipse.platform.gui
+  name: RCE Third-Party Artifacts - Modules - Eclipse Platform (GUI)
+
+  feature-to-feature-includes:
+    - org.eclipse.equinox.p2.user.ui
+    - org.eclipse.gef
+    - org.eclipse.wst.xml_ui.feature
+
+  feature-to-bundle-includes:
+    - org.eclipse.ui.views.log
+
+
+### Generic Libraries
+
+- id: de.rcenvironment.modules.thirdparty.libraries.generic.common
+  name: RCE Third-Party Artifacts - Modules - Generic Libraries (Common)
+
+  feature-to-feature-includes:
+    # intermediate feature; necessary as it defines platform filters
+    - de.rcenvironment.platform.maven.native.feature
+
+  feature-to-bundle-includes:
+    # wrapped maven libraries
+    - de.rcenvironment.platform.maven.auth
+    - de.rcenvironment.platform.maven.database
+    - de.rcenvironment.platform.maven.graph
+    - de.rcenvironment.platform.maven.mail
+    - de.rcenvironment.platform.maven.jms
+    - de.rcenvironment.platform.maven.ssh.server
+    - de.rcenvironment.platform.maven.testing
+    - de.rcenvironment.platform.maven.other
+    # OSGi-ready libraries from Maven Central
+    - org.apache.commons.io
+    - org.apache.servicemix.bundles.saxon
+    # libraries imported from Eclipse RCP or eclipse.org repositories
+    - org.junit
+    - org.hamcrest.core
+
+  build-process-project-includes:
+    - de.rcenvironment.platform.maven.auth
+    - de.rcenvironment.platform.maven.database
+    - de.rcenvironment.platform.maven.graph
+    - de.rcenvironment.platform.maven.mail
+    - de.rcenvironment.platform.maven.jms
+    - de.rcenvironment.platform.maven.ssh.server
+    - de.rcenvironment.platform.maven.testing
+    - de.rcenvironment.platform.maven.other
+    - de.rcenvironment.platform.maven.native.common
+    - de.rcenvironment.platform.maven.native.win32
+    - de.rcenvironment.platform.maven.native.feature
+
+- id: de.rcenvironment.modules.thirdparty.libraries.generic.gui
+  name: RCE Third-Party Artifacts - Modules - Generic Libraries (GUI)
+
+  feature-to-bundle-includes:
+    # wrapped maven libraries
+    - de.rcenvironment.platform.maven.gui
+    # libraries imported from Eclipse RCP or eclipse.org repositories
+    - org.swtchart
+    - org.eclipse.nebula.visualization.xygraph
+
+  build-process-project-includes:
+    - de.rcenvironment.platform.maven.gui
+
+
+### Special Libraries: BDD Testing
+
+- id: de.rcenvironment.modules.thirdparty.libraries.bdd.common
+  name: RCE Third-Party Artifacts - Modules - BDD Testing Libraries
+
+  feature-to-bundle-includes:
+    # wrapped maven libraries
+    - de.rcenvironment.platform.maven.testing.bdd
+
+  build-process-project-includes:
+    - de.rcenvironment.platform.maven.testing.bdd
+
+
+### PAX-Logging
+
+- id: de.rcenvironment.modules.thirdparty.paxlogging.common
+  name: RCE Third-Party Artifacts - Modules - PAX-Logging (Common)
+
+  feature-to-bundle-includes:
+    # OSGi-ready libraries from Maven Central
+    - org.ops4j.pax.logging.pax-logging-api
+    - org.ops4j.pax.logging.pax-logging-log4j2
+    # special solution to eliminate an outdated commons-logging included in RCP
+    - org.apache.commons.logging.placeholder
+
+  build-process-project-includes:
+    - org.apache.commons.logging.placeholder
+
+
+### Native Dakota Binaries (optimizer)
+
+- id: de.rcenvironment.modules.thirdparty.dakota.binaries.common
+  name: RCE Third-Party Artifacts - Modules - Dakota Binaries
+
+  feature-to-feature-includes:
+    # intermediate feature; necessary as it defines platform filters
+    - de.rcenvironment.binaries.dakota.feature
+
+  build-process-project-includes:
+    - de.rcenvironment.binaries.dakota.win32.x86_64
+    - de.rcenvironment.binaries.dakota.linux.x86_64
+    - de.rcenvironment.binaries.dakota.feature
+
+
+### Custom GUI Plugins (e.g. viewers)
+
+- id: de.rcenvironment.modules.thirdparty.imageviewer.gui
+  name: RCE Third-Party Artifacts - Modules - Image File Viewer
+
+  feature-to-feature-includes:
+    - nu.psnet.quickimage
+
+- id: de.rcenvironment.modules.thirdparty.pdfviewer.gui
+  name: RCE Third-Party Artifacts - Modules - PDF File Viewer
+
+  feature-to-feature-includes:
+    - de.vonloesch.pdf4eclipse

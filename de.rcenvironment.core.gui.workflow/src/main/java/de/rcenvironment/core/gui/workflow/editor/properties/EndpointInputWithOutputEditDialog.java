@@ -18,12 +18,14 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefini
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A dialog for editing a single endpoint configuration.
  * 
  * @author Robert Mischke
  * @author Sascha Zur
+ * @author Tim Rosenbach
  */
 public class EndpointInputWithOutputEditDialog extends EndpointEditDialog {
 
@@ -40,10 +42,21 @@ public class EndpointInputWithOutputEditDialog extends EndpointEditDialog {
 
     @Override
     protected void validateInput() {
+
+        hideMessage();
+
         String name = getNameInputFromUI();
         // initialName is null if not set, so it will not be equal when naming a new endpoint
         boolean nameIsValid = name.equals(initialName);
         nameIsValid |= isValidForBothTypes(name);
+
+        if (!nameIsValid) {
+            if (name.isEmpty()) {
+                updateMessage(StringUtils.format(Messages.missingNameMessage, type.toString()), true);
+            } else {
+                updateMessage(Messages.invalidNameMessage, true);
+            }
+        }
 
         // enable/disable "ok"
         getButton(IDialogConstants.OK_ID).setEnabled(nameIsValid & validateMetaDataInputs());

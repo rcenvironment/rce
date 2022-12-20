@@ -60,42 +60,50 @@ public class CloseOutputsSection extends ValidatingWorkflowNodePropertySection {
 
         final Composite mainComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(parent);
         mainComposite.setLayout(new GridLayout(2, false));
-        mainComposite.setLayoutData(new GridData());
-
-        GridData gridData = new GridData();
-        gridData.horizontalSpan = 2;
 
         CloseOutputsSelectionListener closeOutListener = new CloseOutputsSelectionListener();
 
+        // The implementation here with a Radio Button plus separate Label - instead of setting the Button's Text variable - is intentional.
+        // The reason is GUI issues regarding the visibility of check marks on different (Linux) platforms with different desktop variants.
+        // Kathrin Schaffert, 26.01.2022
         neverCloseButton = new Button(mainComposite, SWT.RADIO);
-        neverCloseButton.setLayoutData(gridData);
-        neverCloseButton.setText("Never close outputs");
-        neverCloseButton.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
         neverCloseButton.setData(CONTROL_PROPERTY_KEY, SwitchComponentConstants.NEVER_CLOSE_OUTPUTS_KEY);
         neverCloseButton.addSelectionListener(closeOutListener);
 
+        Label neverCloseOutputLabel = new Label(mainComposite, SWT.NONE);
+        neverCloseOutputLabel.setText("Never close outputs");
+        neverCloseOutputLabel.setBackground(mainComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
         closeOnConditionButton = new Button(mainComposite, SWT.RADIO);
-        closeOnConditionButton.setText("Close outputs on condition number: ");
-        closeOnConditionButton.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
         closeOnConditionButton.setData(CONTROL_PROPERTY_KEY, SwitchComponentConstants.CLOSE_OUTPUTS_ON_CONDITION_NUMBER_KEY);
         closeOnConditionButton.addSelectionListener(closeOutListener);
 
+        final Composite comboComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(mainComposite);
+        comboComposite.setLayout(new GridLayout(2, false));
+
+        Label closeOnConditionLabel = new Label(comboComposite, SWT.NONE);
+        closeOnConditionLabel.setText("Close outputs on condition number: ");
+        closeOnConditionLabel.setBackground(mainComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
         ConditionComboListener condCombListener = new ConditionComboListener();
 
-        conditionCombo = new Combo(mainComposite, SWT.READ_ONLY);
+        conditionCombo = new Combo(comboComposite, SWT.READ_ONLY);
         conditionCombo.setEnabled(false);
-        conditionCombo.setLayout(new GridLayout());
         conditionCombo.pack();
         conditionCombo.setData(CONTROL_PROPERTY_KEY, SwitchComponentConstants.SELECTED_CONDITION);
         conditionCombo.addSelectionListener(condCombListener);
 
         closeOnNoMatchButton = new Button(mainComposite, SWT.RADIO);
-        closeOnNoMatchButton.setLayoutData(gridData);
-        closeOnNoMatchButton.setText("Close outputs if there is no match.");
-        closeOnNoMatchButton.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
         closeOnNoMatchButton.setData(CONTROL_PROPERTY_KEY, SwitchComponentConstants.CLOSE_OUTPUTS_ON_NO_MATCH_KEY);
         closeOnNoMatchButton.addSelectionListener(closeOutListener);
 
+        Label closeOnNoMatchLabel = new Label(mainComposite, SWT.NONE);
+        closeOnNoMatchLabel.setText("Close outputs if there is no match.");
+        closeOnNoMatchLabel.setBackground(mainComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+
+        GridData gridData = new GridData();
+        gridData.horizontalSpan = 2;
+        
         Label noteLabel = new Label(mainComposite, SWT.NONE);
         noteLabel.setLayoutData(gridData);
         noteLabel.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));

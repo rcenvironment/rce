@@ -16,6 +16,7 @@ import java.util.Map;
  * Configuration class for an optimizer method.
  *
  * @author Sascha Zur
+ * @author Kathrin Schaffert (added parameter supportsDiscreteOptimization)
  */
 public class MethodDescription implements Serializable {
     /**
@@ -26,6 +27,7 @@ public class MethodDescription implements Serializable {
     private String methodCode;
     private String optimizerPackage;
     private String followingMethods;
+    private String supportsDiscreteOptimization;
     private Map<String, Map <String, String>> commonSettings;
     private Map<String, Map <String, String>> specificSettings;
     private Map<String, Map <String, String>> responsesSettings;
@@ -38,6 +40,7 @@ public class MethodDescription implements Serializable {
         resultString += "MethodCode = " + methodCode + "\n";
         resultString += "OptPackage = " + optimizerPackage + "\n";
         resultString += "followMethods = " + followingMethods + "\n";
+        resultString += "supportsDiscreteOptimization = " + supportsDiscreteOptimization + "\n";
         resultString += "CommonSettings = " + commonSettings + "\n";
         resultString += "SpecificSettings = " + specificSettings + "\n";
         resultString += "ResponsesSettings = " + responsesSettings + "\n";
@@ -117,6 +120,14 @@ public class MethodDescription implements Serializable {
 
     public void setResponsesSettings(Map<String, Map <String, String>> responsesSettings) {
         this.responsesSettings = responsesSettings;
+    }
+    
+    public String getSupportsDiscreteOptimization() {
+        return supportsDiscreteOptimization;
+    }
+    
+    public void setSupportsDiscreteOptimization(String supportsDiscreteOptimization) {
+        this.supportsDiscreteOptimization = supportsDiscreteOptimization;
     }
     
     

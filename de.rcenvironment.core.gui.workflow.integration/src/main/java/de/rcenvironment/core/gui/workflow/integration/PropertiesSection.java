@@ -39,11 +39,11 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationMetaDataDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
-import de.rcenvironment.core.component.model.impl.ToolIntegrationConstants;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
 /**
@@ -188,21 +188,17 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         // empty string "", if checkbox "Define at workflow start" is checked (default situation)
         // space character string " ", if checkbox is not checked, but no value is set during execution
         // K. Schaffert, 30.04.2019
-        if (!(config.get(defaultValuePropertyKey).equals("")
-            || config.get(defaultValuePropertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX))) { // checkbox
-                                                                                                 // unchecked
-            textField.setText(config.get(defaultValuePropertyKey));
+
+        textField.setText(config.get(defaultValuePropertyKey));
+        
+        if (!config.get(defaultValuePropertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) { // checkbox
             textField.setEnabled(true);
             checkBox.setSelection(false);
             previousValues.put(defaultValuePropertyKey, config.get(defaultValuePropertyKey));
         } else { // checkbox checked
-            if (config.get(defaultValuePropertyKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
-                textField.setText(config.get(defaultValuePropertyKey));
-            }
             textField.setEnabled(false);
             checkBox.setSelection(true);
-            previousValues.put(defaultValuePropertyKey, " "); // has to be stored, in case checkbox will be unchecked later
-            // but no default value available
+            previousValues.put(defaultValuePropertyKey, config.get(defaultValuePropertyKey));
         }
 
         textField.addFocusListener(new PropertyTableFocusListener(defaultValuePropertyKey));
@@ -337,14 +333,9 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
         }
 
         protected void onCheckboxUnchecked(final String groupKey) {
-            String defaultValue = getConfiguration().getConfigurationDescription().getComponentConfigurationDefinition()
-                .getDefaultValue(groupKey);
-            // default value available && previous value is empty string
-            if (!defaultValue.equals("") && previousValues.get(groupKey).equals(" ")) {
-                // default value is set
-                setProperty(groupKey, defaultValue);
+            if (previousValues.get(groupKey).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
+                setProperty(groupKey, "");
             } else {
-                // previous value is set
                 setProperty(groupKey, previousValues.get(groupKey));
             }
         }
@@ -400,7 +391,7 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
                     if (!(c instanceof Text) || !c.getData(CONTROL_PROPERTY_KEY).equals(control.getData(CONTROL_PROPERTY_KEY))) {
                         continue;
                     }
-                    if (newValue == null || newValue.equals("") || newValue.matches(ComponentUtils.PLACEHOLDER_REGEX)) { // checkbox checked
+                    if (newValue == null || newValue.matches(ComponentUtils.PLACEHOLDER_REGEX)) { // checkbox checked
                         ((Text) c).setEnabled(false);
                         ((Button) control).setSelection(true);
                     } else { // checkbox unchecked
@@ -412,12 +403,13 @@ public class PropertiesSection extends ValidatingWorkflowNodePropertySection {
             }
 
             if (control instanceof Text) {
-                if (newValue == null || newValue.equals("")) {
+                if (newValue == null) {
                     ((Text) control).setText("${placeholder." + propertyName + "}");
                 } else {
                     ((Text) control).setText(newValue);
                 }
             }
+            
             propertyTable.setRedraw(true);
         }
     }

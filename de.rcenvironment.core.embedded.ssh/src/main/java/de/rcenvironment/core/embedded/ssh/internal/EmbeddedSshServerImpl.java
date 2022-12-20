@@ -26,6 +26,7 @@ import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.channel.ChannelListener;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
+import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
@@ -45,9 +46,9 @@ import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePath
 import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
 import de.rcenvironment.core.embedded.ssh.internal.IncomingSessionTracker.SessionHandle;
+import de.rcenvironment.core.eventlog.api.EventLog;
+import de.rcenvironment.core.eventlog.api.EventType;
 import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
-import de.rcenvironment.core.utils.common.AuditLog;
-import de.rcenvironment.core.utils.common.AuditLogIds;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
@@ -192,6 +193,12 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             return;
         }
 
+        if (SecurityUtils.isBouncyCastleRegistered()) {
+            logger.debug("Apache SSHD uses Bouncy Castle cryptographie implementations.");
+        } else {
+            logger.error("Apache SSHD does not use Bouncy Castle cryptographie implementations, check build setup.");
+        }
+
         sshd = createSSHServerAndApplySettings();
 
         // includes loading the list of static accounts
@@ -213,7 +220,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             logger.debug("No custom account file found, using data from main configuration file");
         }
 
-        writeStatusToAuditLog(AuditLogIds.ACCOUNTS_INITIALIZED);
+        writeStatusToEventLog(EventType.ACCOUNTS_INITIALIZED);
 
         sshd.setPasswordAuthenticator(authenticationManager);
         sshd.setPublickeyAuthenticator(authenticationManager);
@@ -229,7 +236,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
         try {
             sshd.start();
-            logServerStartupEvent();
+            logServerStartedEvent();
             sshServerRunning = true;
         } catch (IOException e) {
             logger.error(
@@ -256,7 +263,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             }
             logger.debug("Detected modification of " + dynamicAccountsFilePath + ", reloading SSH account data");
             applyDynamicSshAccounts(sshAccounts);
-            writeStatusToAuditLog(AuditLogIds.ACCOUNTS_UPDATED);
+            writeStatusToEventLog(EventType.ACCOUNTS_UPDATED);
             dynamicAccountsFileLastModified = newModifiedTime;
         } catch (IOException e) {
             logger.error("Error checking or reloading account file " + dynamicAccountsFilePath + ": " + e.toString());
@@ -324,7 +331,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         if (sshd != null) {
             try {
                 sshd.stop(true);
-                logServerShutdownEvent();
+                logServerShutDownEvent();
             } catch (IOException e) {
                 logger.error("Exception during shutdown of embedded SSH server", e);
             }
@@ -361,9 +368,9 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
                 // note: session.userName() is not defined here yet
                 sessionTrackingHandle
-                    .addLogData("remote_ip", remoteAddressAndPort.getAddress().getHostAddress())
-                    .addLogData("remote_port", remoteAddressAndPort.getPort())
-                    .addLogData("server_port", sshConfiguration.getPort());
+                    .addLogData(EventType.Attributes.REMOTE_IP, remoteAddressAndPort.getAddress().getHostAddress())
+                    .addLogData(EventType.Attributes.REMOTE_PORT, remoteAddressAndPort.getPort())
+                    .addLogData(EventType.Attributes.SERVER_PORT, sshConfiguration.getPort());
             }
 
             @Override
@@ -424,20 +431,20 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         });
     }
 
-    private void logServerStartupEvent() {
-        AuditLog.append(AuditLog.newEntry(AuditLogIds.NETWORK_SERVERPORT_OPEN)
-            .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-            .set("bind_ip", sshConfiguration.getHost())
-            .set("port", sshConfiguration.getPort()));
+    private void logServerStartedEvent() {
+        EventLog.append(EventLog.newEntry(EventType.SERVERPORT_OPENED)
+            .set(EventType.Attributes.TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
+            .set(EventType.Attributes.BIND_IP, sshConfiguration.getHost())
+            .set(EventType.Attributes.PORT, sshConfiguration.getPort()));
         logger.info(StringUtils.format("SSH server started on port %s (bound to IP %s)", sshConfiguration.getPort(),
             sshConfiguration.getHost()));
     }
 
-    private void logServerShutdownEvent() {
-        AuditLog.append(AuditLog.newEntry(AuditLogIds.NETWORK_SERVERPORT_CLOSE)
-            .set(EVENT_LOG_KEY_CONNECTION_TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
-            .set("bind_ip", sshConfiguration.getHost())
-            .set("port", sshConfiguration.getPort()));
+    private void logServerShutDownEvent() {
+        EventLog.append(EventLog.newEntry(EventType.SERVERPORT_CLOSED)
+            .set(EventType.Attributes.TYPE, EVENT_LOG_VALUE_CONNECTION_TYPE)
+            .set(EventType.Attributes.BIND_IP, sshConfiguration.getHost())
+            .set(EventType.Attributes.PORT, sshConfiguration.getPort()));
         logger.debug("Embedded SSH server shut down");
     }
 
@@ -493,13 +500,13 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
         }
     }
 
-    private void writeStatusToAuditLog(String eventType) {
-        AuditLog.append(
-            AuditLog.newEntry(eventType)
-                .set("type", "ssh")
+    private void writeStatusToEventLog(EventType eventType) {
+        EventLog.append(
+            EventLog.newEntry(eventType)
+                .set(EventType.Attributes.TYPE, "ssh")
                 // TODO decision: for now, only logging the total count; log the actual accounts instead?
-                .set("number_of_accounts", sshConfiguration.getCurrentNumberOfAccouts())
-                .set("origin", sshConfiguration.getAccountDataOriginInfo()));
+                .set(EventType.Attributes.NUMBER_OF_ACCOUNTS, sshConfiguration.getCurrentNumberOfAccouts())
+                .set(EventType.Attributes.ORIGIN, sshConfiguration.getAccountDataOriginInfo()));
     }
 
 }

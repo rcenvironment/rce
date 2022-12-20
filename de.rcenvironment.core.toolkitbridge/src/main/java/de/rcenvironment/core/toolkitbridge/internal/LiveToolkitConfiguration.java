@@ -43,7 +43,7 @@ public final class LiveToolkitConfiguration extends DefaultToolkitConfiguration 
 
         // // set statistics tracking level
         final StatisticsFilterLevel statisticsLevel;
-        if (VersionUtils.isReleaseOrReleaseCandidateBuild()) {
+        if (VersionUtils.isReleaseOrReleaseCandidate()) {
             statisticsLevel = StatisticsFilterLevel.RELEASE;
         } else {
             statisticsLevel = StatisticsFilterLevel.DEVELOPMENT; // edit here to temporarily set DEBUG level

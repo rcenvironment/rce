@@ -460,6 +460,7 @@ public class XMLSupportServiceImpl implements XMLSupportService {
     public String getElementText(Document doc, String xpathStatement) throws XMLException {
         String errorMessage = "Failed to find element for given XPath: ";
         XPath xpath = xpathFactory.newXPath();
+        xpath.setNamespaceContext(new XMLNamespaceContext(doc));
         String result = null;
         try {
             Node node = (Node) xpath.evaluate(xpathStatement, doc, XPathConstants.NODE);

@@ -10,8 +10,6 @@ package de.rcenvironment.core.communication.management.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,9 +19,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandFlag;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
@@ -47,6 +52,15 @@ public class NetCommandPlugin implements CommandPlugin {
 
     private static final String CMD_NET = "net";
 
+    private static final String INFO = "info";
+    
+    private static final CommandFlag ALL_FLAG = new CommandFlag("-a", "--all", "include unreachable nodes");
+    
+    private static final StringParameter BASE_NAME_PARAMETER = new StringParameter(null, "base name", "base name parameter");
+    
+    private static final StringParameter BENCHMARK_DESCRIPTION = new StringParameter(null, "taskdef", "<targetNode|*>([<numMessages>],"
+            + "[<requestSize>],[<responseSize>],[<responseDelay(msec)>],[<threadsPerTarget>])");
+    
     private CommunicationService communicationService;
 
     private BenchmarkService benchmarkService;
@@ -60,54 +74,31 @@ public class NetCommandPlugin implements CommandPlugin {
     private File outputDir;
 
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(CMD_NET, "", false, "short version of \"net info\""));
-        contributions.add(new CommandDescription("net info", "", false, "show a list of reachable RCE nodes"));
-        contributions.add(new CommandDescription("net graph", "[<base name>]", true,
-            "generates a Graphviz file of the current network topology"));
-        contributions.add(new CommandDescription("net filter", "", false, "show IP filter status"));
-        contributions.add(new CommandDescription("net filter reload", "", false, "reloads the IP filter configuration"));
-        // developer commands
-        contributions.add(new CommandDescription("net graph -a", "[<base name>]", true,
-            "like \"net graph\", but include unreachable nodes"));
-        contributions.add(new CommandDescription("net bench", "<taskdef>[;<taskDef>]*", true, "run communication benchmark",
-            "<taskDef> = <targetNode|*>([<numMessages>],[<requestSize>],[<responseSize>],",
-            "                           [<responseDelay(msec)>],[<threadsPerTarget>])"));
-        contributions.add(new CommandDescription("net np", "", true, "show known RCE node properties"));
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(CMD_NET,
+            "query the network and topology state",
+            "alias for 'net info'", this::performNetInfo,
+            new SubCommandDescription(INFO, "show a list of reachable RCE nodes", this::performNetInfo),
+            new SubCommandDescription("graph", "generates a Graphviz file of the current network topology", this::performNetGraph,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        BASE_NAME_PARAMETER
+                    },
+                    new CommandFlag[] {
+                        ALL_FLAG
+                    }
+                ), true
+            ),
+            new SubCommandDescription("filter", "show IP filter status", this::performNetFilter),
+            new SubCommandDescription("reload-filter", "reloads the IP filter configuration", this::performRelaodFilter),
+            new SubCommandDescription("bench", "run communication benchmark", this::performNetBench,
+                    new CommandModifierInfo(new AbstractCommandParameter[] { BENCHMARK_DESCRIPTION }), true),
+            new SubCommandDescription("np", "show known RCE node properties", this::performNetNp, true)
+        );
+        
+        return new MainCommandDescription[] { commands };
     }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(CMD_NET);
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null) {
-            // "net" -> "net info"
-            performNetInfo(context);
-        } else {
-            if ("add".equals(subCmd)) {
-                // "net add <...>"
-                context.println("Obsolete command; use \"cn add\" instead");
-                return;
-            } else if ("bench".equals(subCmd)) {
-                // "net bench <...>"
-                performNetBench(context);
-            } else if ("filter".equals(subCmd)) {
-                performNetFilter(context);
-            } else if ("graph".equals(subCmd)) {
-                performNetGraph(context);
-            } else if ("info".equals(subCmd)) {
-                // TODO review: add "extended" info output? (e.g. "-a" flag)
-                performNetInfo(context);
-            } else if ("np".equals(subCmd)) {
-                performNetNp(context);
-            } else {
-                throw CommandException.unknownCommand(context);
-            }
-        }
-    }
-
+    
     /**
      * OSGi-DS bind method.
      * 
@@ -158,23 +149,26 @@ public class NetCommandPlugin implements CommandPlugin {
         messageChannelService = newInstance;
     }
 
-    private void performNetGraph(CommandContext context) throws CommandException {
+    private void performNetGraph(CommandContext context) {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter baseNameParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        boolean hasAllFlag = modifiers.hasCommandFlag("-a");
+        
         // sanity check
         if (outputDir == null || !outputDir.isDirectory()) {
             throw new IllegalStateException("Invalid output dir: " + outputDir);
         }
+        
         String formatName = "graphviz";
-        if (context.consumeNextTokenIfEquals("-a")) {
+        if (hasAllFlag) {
             formatName = "graphviz-all";
             context.setDeveloperCommandSetEnabled(true);
         }
-        List<String> parameters = context.consumeRemainingTokens();
-        if (parameters.size() > 1) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
+        
         String baseName = "rce_network"; // default
-        if (parameters.size() == 1) {
-            baseName = parameters.get(0);
+        if (!baseNameParameter.getResult().equals("")) {
+            baseName = baseNameParameter.getResult();
         }
 
         String graphvizData = communicationService.getFormattedNetworkInformation(formatName);
@@ -196,19 +190,19 @@ public class NetCommandPlugin implements CommandPlugin {
     }
 
     private void performNetInfo(CommandContext context) {
-        context.println(communicationService.getFormattedNetworkInformation("info"));
+        context.println(communicationService.getFormattedNetworkInformation(INFO));
     }
 
     private void performNetBench(CommandContext context) throws CommandException {
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        ParsedStringParameter benchmarkDescriptionParameter = (ParsedStringParameter) modifiers.getPositionalCommandParameter(0);
+        
         context.setDeveloperCommandSetEnabled(true);
-        List<String> parameters = context.consumeRemainingTokens();
-        if (parameters.size() != 1) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
 
         BenchmarkSetup setup;
         try {
-            String benchmarkDescription = parameters.get(0);
+            String benchmarkDescription = benchmarkDescriptionParameter.getResult();
             setup = benchmarkService.parseBenchmarkDescription(benchmarkDescription);
         } catch (IllegalArgumentException e) {
             throw CommandException.syntaxError("Error parsing benchmark setup: " + e.toString(), context);
@@ -219,17 +213,14 @@ public class NetCommandPlugin implements CommandPlugin {
         context.println("Benchmark complete");
     }
 
-    private void performNetFilter(CommandContext context) throws CommandException {
-        String nextToken = context.consumeNextToken();
-        if (nextToken == null) {
-            // show status
-            messageChannelService.printIPFilterInformation(context.getOutputReceiver());
-        } else if ("reload".equals(nextToken)) {
-            messageChannelService.loadAndApplyIPFilterConfiguration();
-            messageChannelService.printIPFilterInformation(context.getOutputReceiver());
-        } else {
-            throw CommandException.unknownCommand(context);
-        }
+    private void performNetFilter(CommandContext context) {
+        // show status
+        messageChannelService.printIPFilterInformation(context.getOutputReceiver());
+    }
+    
+    private void performRelaodFilter(CommandContext context) {
+        messageChannelService.loadAndApplyIPFilterConfiguration();
+        messageChannelService.printIPFilterInformation(context.getOutputReceiver());
     }
 
     private void performNetNp(CommandContext context) {

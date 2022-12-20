@@ -1,5 +1,6 @@
 Feature: GUITests
     
+@GUITestsFeature
 @GUITestSingular
 Scenario: For testing purposes 
     
@@ -15,6 +16,7 @@ Scenario: For testing purposes
   
   Then  the log output of "NodeA" should indicate a clean shutdown with no warnings or errors
     
+@GUITestsFeature
 @GUI01
 @BasicIntegrationTestSuite
 Scenario Outline: Open all views and check for errors
@@ -52,6 +54,7 @@ Scenario Outline: Open all views and check for errors
 
 #    |TIGL_Viewer            |
 
+@GUITestsFeature
 @GUI02
 @BasicIntegrationTestSuite
 Scenario Outline: Open view, close view and open view and check for errors 

@@ -3,6 +3,7 @@
     "methodCode":"dace lhs",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"false",
     "specificSettings":{
         "seed":{
             "GuiName":"Seed",

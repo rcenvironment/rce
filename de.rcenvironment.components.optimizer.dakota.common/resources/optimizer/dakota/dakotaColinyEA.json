@@ -3,6 +3,7 @@
     "methodCode":"coliny_ea",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"true",
     "specificSettings":{
         "seed":{
             "GuiName":"Random seed",

@@ -437,7 +437,7 @@ public class SshUplinkConnectionServiceImpl implements SshUplinkConnectionServic
     public void activate() {
 
         // determine this client's version for announcing it to servers
-        Version clientVersion = VersionUtils.getVersionOfProduct();
+        Version clientVersion = VersionUtils.getProductVersion();
         if (clientVersion != null) {
             clientVersionInfo = "rce/" + clientVersion.toString().replace("qualifier", "dev");
         } else {

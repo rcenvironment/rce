@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="gui_overview">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="gui_overview">
 	<title>Graphical User Interface</title>
 	<para>This section introduces the Graphical User Interface (GUI). </para>
 	<para>The GUI of RCE is composed of different views and editors (besides standard GUI elements such
@@ -114,4 +114,4 @@
 				</figure>
 			</listitem>
 		</itemizedlist></para>
-</sect1>
+</section>

@@ -397,12 +397,12 @@ public class PlaceholderPageTreeFactory {
         // componentPlaceholderCount.get(placeholderName) > 1
         if (isFloat) {
             NumericalTextConstraintListener floatListener = new NumericalTextConstraintListener(
-                placeholderText, WidgetGroupFactory.ONLY_FLOAT);
+                WidgetGroupFactory.ONLY_FLOAT);
             placeholderText.addVerifyListener(floatListener);
         }
         if (isInteger) {
             NumericalTextConstraintListener integerListener = new NumericalTextConstraintListener(
-                placeholderText, WidgetGroupFactory.ONLY_INTEGER);
+                WidgetGroupFactory.ONLY_INTEGER);
             placeholderText.addVerifyListener(integerListener);
         }
         return placeholderText;

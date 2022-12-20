@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.rcenvironment</groupId>
@@ -11,34 +10,68 @@
 	<properties>
 		<!-- default main class to use for chaining Maven invocations -->
 		<rce.maven.chaining.mainClass>org.codehaus.plexus.classworlds.launcher.Launcher</rce.maven.chaining.mainClass>
+		<maven.versions.groovy>3.0.10</maven.versions.groovy>
+		<maven.versions.gmavenplus>1.13.1</maven.versions.gmavenplus>
 	</properties>
 
 	<build>
 		<defaultGoal>compile</defaultGoal>
 		<plugins>
 			<plugin>
-				<groupId>org.codehaus.gmaven</groupId>
-				<artifactId>gmaven-plugin</artifactId>
-				<version>1.5</version>
+				<groupId>org.codehaus.gmavenplus</groupId>
+				<artifactId>gmavenplus-plugin</artifactId>
+				<version>${maven.versions.gmavenplus}</version>
 				<executions>
 					<execution>
 						<id>run-groovy</id>
+						<phase>initialize</phase>
 						<goals>
+							<goal>addSources</goal>
+							<goal>compile</goal>
 							<goal>execute</goal>
 						</goals>
-						<phase>initialize</phase>
 						<configuration>
-							<properties>
-								<rce.maven.preprocessor.projectRoot>${basedir}/../../..</rce.maven.preprocessor.projectRoot>
-								<rce.maven.preprocessor.secondStagePomPath>/de.rcenvironment/maven/secondStage/pom.xml</rce.maven.preprocessor.secondStagePomPath>
-							</properties>
-							<scriptpath>
-								<element>${project.basedir}/scripts</element>
-							</scriptpath>
-							<source><![CDATA[
-								def mavenIntegration = new MavenIntegration(project)
-								new RCEBuildPreprocessor(mavenIntegration).configure()
-							]]></source>
+							<scripts>
+								<script>
+									<![CDATA[
+										def envAdapter = new BuildEnvironmentAdapter(project)
+										new RCEBuildPreprocessor(envAdapter).run()
+									]]>
+								</script>
+							</scripts>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy</artifactId>
+						<version>${maven.versions.groovy}</version>
+						<type>pom</type>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>enforce-property</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireProperty>
+									<property>rce.maven.chaining.mainClass</property>
+								</requireProperty>
+								<requireProperty>
+									<property>rce.maven.internal.secondStageArguments</property>
+								</requireProperty>
+							</rules>
+							<fail>true</fail>
 						</configuration>
 					</execution>
 				</executions>
@@ -64,5 +97,15 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<dependencies>
+		<!-- needed on project level for compilation; see https://github.com/groovy/GMavenPlus/issues/57 -->
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy-all</artifactId>
+			<version>${maven.versions.groovy}</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
 
 </project>

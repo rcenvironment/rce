@@ -14,8 +14,10 @@ import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.requests.ChangeBoundsRequest;
+import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 
 /**
  * Command to move a WorkflowLabel to a new location on the screen.
@@ -62,8 +64,10 @@ public class WorkflowLabelMoveCommand extends Command {
     @Override
     public boolean canExecute() {
         Object type = request.getType();
-        return (RequestConstants.REQ_MOVE.equals(type) || RequestConstants.REQ_MOVE_CHILDREN.equals(type)
-            || RequestConstants.REQ_RESIZE.equals(type) || RequestConstants.REQ_RESIZE_CHILDREN.equals(type));
+        boolean execute = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor() instanceof WorkflowEditor;
+
+        return (execute && (RequestConstants.REQ_MOVE.equals(type) || RequestConstants.REQ_MOVE_CHILDREN.equals(type)
+            || RequestConstants.REQ_RESIZE.equals(type) || RequestConstants.REQ_RESIZE_CHILDREN.equals(type)));
     }
 
     @Override

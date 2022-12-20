@@ -76,8 +76,8 @@ public abstract class InstanceRunner {
      */
     public int run() throws Exception {
         // Write versions to log file
-        log.debug("Core version: " + VersionUtils.getVersionOfCoreBundles());
-        log.debug("Product version: " + VersionUtils.getVersionOfProduct());
+        log.debug("Core version: " + VersionUtils.getCoreBundleVersion());
+        log.debug("Product version: " + VersionUtils.getProductVersion());
 
         log.debug("Command line arguments passed: " + System.getProperty("sun.java.command"));
 

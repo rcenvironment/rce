@@ -310,8 +310,8 @@ public class SshUplinkConnectionSetupsListContributor extends NetworkViewContrib
 
         if (dialog.open() == Window.OK) {
             final String connectionName = dialog.getConnectionName();
-            final boolean connectImmediately = dialog.getAutoRetry();
-            final boolean autoRetry = dialog.getConnectImmediately();
+            final boolean connectImmediately = dialog.getConnectImmediately();
+            final boolean autoRetry = dialog.getAutoRetry();
             final String host = dialog.getHost();
             final int port = dialog.getPort();
             final String qualifier = dialog.getQualifier();

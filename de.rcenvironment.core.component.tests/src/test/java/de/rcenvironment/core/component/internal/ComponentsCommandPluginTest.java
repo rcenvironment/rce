@@ -20,6 +20,7 @@ import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.authorization.api.DefaultAuthorizationObjects;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
+import de.rcenvironment.core.command.spi.CommandParser;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.api.UserComponentIdMappingService;
@@ -123,6 +124,7 @@ public class ComponentsCommandPluginTest {
         for (final String outputLine : expectedOutput) {
             outputReceiver.addOutput(outputLine);
         }
+        outputReceiver.onFinished();
         EasyMock.expectLastCall();
         EasyMock.replay(outputReceiver);
         return outputReceiver;
@@ -135,8 +137,10 @@ public class ComponentsCommandPluginTest {
      */
     @Test
     public void testComponentsListAuthNoComponents() throws CommandException {
+        final CommandParser parser = new CommandParser();
         final ComponentsCommandPlugin plugin = new ComponentsCommandPlugin();
-
+        parser.registerCommands(plugin.getCommands());
+        
         final DistributedComponentKnowledgeService knowledgeService = EasyMock.createMock(DistributedComponentKnowledgeService.class);
         EasyMock.replay(knowledgeService);
         plugin.bindDistributedComponentKnowledgeService(knowledgeService);
@@ -159,7 +163,7 @@ public class ComponentsCommandPluginTest {
 
         final CommandContext context = new CommandContext(originalTokens, outputReceiver, new Object());
         
-        plugin.execute(context);
+        parser.parseCommand(context).execute();
 
         EasyMock.verify(outputReceiver);
     }
@@ -171,8 +175,10 @@ public class ComponentsCommandPluginTest {
      */
     @Test
     public void testComponentsListAuthOneComponentOneLocalOneAvailable() throws CommandException {
+        final CommandParser parser = new CommandParser();
         final ComponentsCommandPlugin plugin = new ComponentsCommandPlugin();
-
+        parser.registerCommands(plugin.getCommands());
+        
         final DistributedComponentKnowledgeService knowledgeService = EasyMock.createMock(DistributedComponentKnowledgeService.class);
         EasyMock.replay(knowledgeService);
         plugin.bindDistributedComponentKnowledgeService(knowledgeService);
@@ -197,7 +203,7 @@ public class ComponentsCommandPluginTest {
 
         final CommandContext context = new CommandContext(originalTokens, outputReceiver, new Object());
         
-        plugin.execute(context);
+        parser.parseCommand(context).execute();
 
         EasyMock.verify(outputReceiver);
     }
@@ -210,8 +216,10 @@ public class ComponentsCommandPluginTest {
      */
     @Test
     public void testComponentsListAuthThreeComponentsOneLocalOnePublicThreeAvailable() throws CommandException {
+        final CommandParser parser = new CommandParser();
         final ComponentsCommandPlugin plugin = new ComponentsCommandPlugin();
-
+        parser.registerCommands(plugin.getCommands());
+        
         final DistributedComponentKnowledgeService knowledgeService = EasyMock.createMock(DistributedComponentKnowledgeService.class);
         EasyMock.replay(knowledgeService);
         plugin.bindDistributedComponentKnowledgeService(knowledgeService);
@@ -246,7 +254,7 @@ public class ComponentsCommandPluginTest {
 
         final CommandContext context = new CommandContext(originalTokens, outputReceiver, new Object());
         
-        plugin.execute(context);
+        parser.parseCommand(context).execute();
 
         EasyMock.verify(outputReceiver);
     }
@@ -260,7 +268,9 @@ public class ComponentsCommandPluginTest {
      */
     @Test
     public void testComponentsListAuthThreeComponentsOneLocalOnePublicOneAvailable() throws CommandException, OperationFailureException {
+        final CommandParser parser = new CommandParser();
         final ComponentsCommandPlugin plugin = new ComponentsCommandPlugin();
+        parser.registerCommands(plugin.getCommands());
 
         final DistributedComponentKnowledgeService knowledgeService = EasyMock.createMock(DistributedComponentKnowledgeService.class);
         final DistributedComponentKnowledge snapshot = EasyMock.createMock(DistributedComponentKnowledge.class);
@@ -297,8 +307,8 @@ public class ComponentsCommandPluginTest {
             "|common/groupTool |<GroupA:ABCDEF;GroupB:123456>|not available|");
 
         final CommandContext context = new CommandContext(originalTokens, outputReceiver, new Object());
-        
-        plugin.execute(context);
+
+        parser.parseCommand(context).execute();
 
         EasyMock.verify(outputReceiver);
     }

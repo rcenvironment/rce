@@ -47,6 +47,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Sascha Zur
  * @author Doreen Seider (logging)
  * @author Jascha Riedel (#14117)
+ * @author Kathrin Schaffert (#17665)
  */
 public class DOEComponent extends AbstractNestedLoopComponent {
 
@@ -333,7 +334,8 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOEResult*.csv");
                 if (method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
                     || method.equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE_INPUT)) {
-                    DOEUtils.writeResultToCSVFile(valuesTable, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
+                    int startSample = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_START_SAMPLE));
+                    DOEUtils.writeResultToCSVFile(valuesTable, resultData, resultFile.getAbsolutePath(), runNumber, outputs, startSample);
                 } else {
                     DOEUtils.writeResultToCSVFile(codedValues, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
                 }

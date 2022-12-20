@@ -13,13 +13,14 @@
 		<groupId>de.rcenvironment</groupId>
 		<artifactId>de.rcenvironment.maven.parent.basicSettings</artifactId>
 		<version>1.0.0</version>
-		<relativePath>../../parent/basicSettings</relativePath>
+		<relativePath>../basicSettings</relativePath>
 	</parent>
 
 	<properties>
 		<!-- note: these paths are relative to each module's location, not to this 
 			parent POM - misc_ro -->
 		<modules-root>../../modules</modules-root>
+		<project-sets>../../projectSets</project-sets>
 		<projects-root>../../../..</projects-root>
 	</properties>
 

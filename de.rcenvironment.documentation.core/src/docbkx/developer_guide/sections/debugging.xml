@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="debugging">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="debugging">
 	<title>Tips, Tricks, and Good Practices</title>
 	<para> Here, we document tips, tricks, and good practices for debugging RCE. Since RCE is written
 		in Java, many of the standard good practices for debugging Java code apply to debugging RCE
@@ -7,7 +7,7 @@
 		good general-purpose tutorials out there, our aim in this section is not to repeat already
 		existing general advice. Instead, we discuss tools and techniques that experience shows are
 		not as well known.</para>
-	<sect2>
+	<section>
 		<title>Finding Resource Leaks in the UI using S-Leak</title>
 		<para>Recall that SWT resources (such as <code>Composite</code>, <code>Button</code>, or
 				<code>Label</code>) are not cleaned up completely by the garbage collector. Instead,
@@ -31,11 +31,11 @@
 			point after <code>-vmargs</code>. The class
 				<code>de.rcenvironment.core.start.gui.GUIInstanceRunner</code> interprets this
 			system property and starts S-Leak during startup of RCE.</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Profiling RCE using VisualVM</title>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 	<title>Debugging GUI layouts using SWT Spy</title>
 		<para>When developing GUIs using Eclipse SWT, one often wants to have more information about how
 			the GUI of the running software is composed and what properties are set. One of the
@@ -80,5 +80,5 @@
 			shortcut <code>Ctrl+Alt+Shift+.</code> you can toggle the SWT spy to keep the
 			information about the currently selected element in the view of the SWT spy to allow for
 			further investigation about the information.</para>
-	</sect2>
-</sect1>
+	</section>
+</section>

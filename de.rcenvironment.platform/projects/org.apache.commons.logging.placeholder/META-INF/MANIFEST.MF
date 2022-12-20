@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Third-Party Artifacts - Legacy RCP Placeholder for org.apache.commons.logging
+Bundle-SymbolicName: org.apache.commons.logging.placeholder;singleton:=true
+Bundle-Version: 10.4.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-Vendor: DLR

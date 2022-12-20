@@ -3,6 +3,7 @@
     "methodCode":"mesh_adaptive_search",
     "optimizerPackage":"dakota",
     "followingMethods":"0",
+    "supportsDiscreteOptimization":"true",
     "specificSettings":{
         "function_precision":{
             "GuiName":"Maximum precision of responses",

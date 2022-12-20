@@ -1,6 +1,6 @@
 Feature: InstanceManagement
 
-
+@InstanceManagementFeature
 @Start01
 @Start01a
 @DefaultTestSuite
@@ -15,6 +15,7 @@ Scenario: Concurrent headless instance starting and stopping
   Then  the log output of all instances should indicate a clean shutdown with no warnings or errors
 
 
+@InstanceManagementFeature
 @Start01
 @Start01b
 Scenario: Concurrent GUI instance starting and stopping
@@ -27,6 +28,7 @@ Scenario: Concurrent GUI instance starting and stopping
   Then  the log output of all instances should indicate a clean shutdown with no warnings or errors
 
 
+@InstanceManagementFeature
 @Start02
 @Start02a
 @DefaultTestSuite
@@ -56,6 +58,7 @@ Scenario: Frequent single-instance headless start/stop
   Then  the log output of all instances should indicate a clean shutdown with no warnings or errors
 
 
+@InstanceManagementFeature
 @Start02
 @Start02b
 Scenario: Frequent single-instance GUI start/stop
@@ -83,6 +86,7 @@ Scenario: Frequent single-instance GUI start/stop
   Then  the log output of all instances should indicate a clean shutdown with no warnings or errors
   
   
+@InstanceManagementFeature
 @Start03
 @NoGUITestSuite
 Scenario Outline: Starting instance with specific command <command>
@@ -111,6 +115,7 @@ Scenario Outline: Starting instance with specific command <command>
 #    |-Dcommunication.uploadBlockSize=131072							|
     
   
+@InstanceManagementFeature
 @Start05
 @NoGUITestSuite
 Scenario Outline: Starting instances with specific command <command> and input  

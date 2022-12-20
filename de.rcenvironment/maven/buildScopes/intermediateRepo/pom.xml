@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>de.rcenvironment.modules.buildVariants.repository.allExceptProduct</artifactId>
+	<artifactId>de.rcenvironment.modules.buildVariants.repository.intermediate</artifactId>
 	<name>RCE Module ${project.artifactId}</name>
 	<packaging>pom</packaging>
 
@@ -14,13 +14,8 @@
 	</parent>
 
 	<modules>
-		<module>${modules-root}/core.combined</module>
-		<module>${modules-root}/components.all</module>
-		<module>${modules-root}/documentation</module>
-		<module>${modules-root}/branding.default</module>
-		<module>${modules-root}/filesets.default</module>
-		<module>${modules-root}/cpacs.nonComponent</module>
-		<module>${modules-root}/product.binaries</module>
+		<!-- inherit the "coreAndComponents" scope definition -->
+		<module>../coreAndComponents</module>
 		<module>${modules-root}/repository.intermediate</module>
 	</modules>
 

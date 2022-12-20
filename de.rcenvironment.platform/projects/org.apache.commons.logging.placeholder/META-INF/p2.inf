@@ -1,0 +1,24 @@
+# These p2 touchpoint instructions configure the metadata of this bundle (more precisely, its "installation unit")
+# so that it "provides" the org.apache.commons.logging bundle, allowing RCP bundles to resolve against it at 
+# target platform build, test execution, product build, and p2 upgrade time. The actual org.apache.commons.logging
+# bundle (version 1.1.1.v201101211721) is removed from the target platform. When a build step consumes the target
+# platform, the hardcoded RCP dependencies to org.apache.commons.logging:1.1.1.v201101211721 are then resolved to
+# this placeholder bundle at build time. Note that this placeholder bundle could theoretically cause problems if
+# some bundle declared a bundle import on "org.apache.commons.logging". Within the Eclipse ecosystem, however,
+# all bundles should properly use Import-Package declarations instead, which are properly wired to the pax-logging
+# bundles at runtime, as this placeholder bundle intentionally does not export any packages. -- misc_ro, May 2022
+
+provides.0.namespace=org.eclipse.equinox.p2.iu
+provides.0.name=org.apache.commons.logging
+provides.0.version=1.1.1.v201101211721
+provides.1.namespace=org.eclipse.equinox.p2.iu
+provides.1.name=org.apache.commons.logging.placeholder
+provides.1.version=$version$
+
+# This IU also attempts to delete the legacy JAR it replaces from the plugins folder "for good measure", as doing it 
+# redundantly should not cause any harm. Doing it only in this place should not be relied upon, though; the product
+# p2.inf configuration should also include steps to remove it.
+instructions.install=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar);
+instructions.configure=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar);

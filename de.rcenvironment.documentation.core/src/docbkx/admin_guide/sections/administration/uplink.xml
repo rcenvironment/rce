@@ -1,5 +1,5 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section>
 	<title>Setting up Cross-Organization Networks using RCE Uplink</title>
 	<para>"RCE Uplink" is an experimental feature introduced in RCE 10.x that addresses the growing
 		need for the exchange of computation services between different organizations. Conceptually,
@@ -59,7 +59,7 @@
 		publish tools themselves to the other organizations. Future versions of the Uplink feature
 		may provide additional features to centrally restrict this ability. If this is a project
 		need for you, please contact us via <email>rce@dlr.de</email>.</para>
-	<sect2>
+	<section>
 		<title>Security considerations of external tool publishing</title>
 		<para>As usual in RCE's distribution approach, the binary or script code of "published" tools
 			never leaves the node it is running on. Instead, "publishing" a tool means offering it
@@ -73,8 +73,8 @@
 			colleagues. Once the tool is sufficiently stabilized, it should then be installed on
 			dedicated server machines, and published to external partners (via Uplink) from there.
 			This allows central administration and security monitoring of these servers.</para>
-	</sect2>
-	<sect2>
+	</section>
+	<section>
 		<title>Example of a Cross-Organization Network</title>
 		<para>The following figure gives an example of how such a cross-organization network
 			could be structured: </para>
@@ -125,5 +125,5 @@
 						directly to the relay server. </para>
 				</listitem>
 			</itemizedlist></para>
-	</sect2>
-</sect1>
+	</section>
+</section>

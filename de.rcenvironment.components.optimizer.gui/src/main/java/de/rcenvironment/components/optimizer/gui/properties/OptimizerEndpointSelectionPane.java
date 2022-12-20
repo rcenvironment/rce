@@ -14,9 +14,11 @@ import java.util.Map;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
@@ -139,8 +141,13 @@ public class OptimizerEndpointSelectionPane extends EndpointSelectionPane {
      * Implementation of {@link EndpointEditDialog}.
      * 
      * @author Sascha Zur
+     * @author Tim Rosenbach
      */
     private class OptimizerEndpointEditDialog extends EndpointEditDialog {
+
+        private static final int DIALOG_WIDTH = 325;
+
+        private static final int DIALOG_HEIGHT = 480;
 
         OptimizerEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
             ComponentInstanceProperties configuration,
@@ -156,13 +163,30 @@ public class OptimizerEndpointSelectionPane extends EndpointSelectionPane {
         }
 
         @Override
+        protected Point getInitialSize() {
+            return new Point(DIALOG_WIDTH, DIALOG_HEIGHT);
+        }
+
+        @Override
         protected void validateInput() {
             super.validateInput();
             String text = textfieldName.getText();
-            getButton(IDialogConstants.OK_ID).setEnabled(
-                getButton(IDialogConstants.OK_ID).isEnabled()
-                    && (text != null && !text.isEmpty() && !text.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)));
+            boolean isValid = getButton(IDialogConstants.OK_ID).isEnabled()
+                && (text != null && !text.isEmpty()
+                    && !text.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
 
+            getButton(IDialogConstants.OK_ID).setEnabled(isValid);
+
+        }
+    }
+
+    protected void removeMetaDataColumns() {
+        int i = 2;
+        if (endpointType == EndpointType.INPUT) {
+            i = 4;
+        }
+        while (i < table.getColumnCount()) {
+            table.getColumn(table.getColumnCount() - 1).dispose();
         }
     }
 }

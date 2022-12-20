@@ -8,20 +8,21 @@
 
 package de.rcenvironment.core.mail.internal;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
-import jodd.mail.EmailAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
 import de.rcenvironment.core.mail.InvalidMailException;
 import de.rcenvironment.core.mail.Mail;
 import de.rcenvironment.core.mail.MailDispatchResult;
@@ -40,7 +41,13 @@ public class MailCommandPlugin implements CommandPlugin {
         "Unable to delivered the mail to the mail server. Most likely the SMTP server configuration is wrong: %s";
 
     private static final String CMD_MAIL = "mail";
+    
+    private static final StringParameter RECIPIENT_PARAMETER = new StringParameter(null, "recipient", "recipient of the e-mail");
 
+    private static final StringParameter SUBJECT_PARAMETER = new StringParameter(null, "subject", "subject of the e-mail");
+
+    private static final StringParameter BODY_PARAMETER = new StringParameter(null, "body", "body of the e-mail");
+    
     private Log log = LogFactory.getLog(MailCommandPlugin.class);
 
     private MailService mailService;
@@ -50,35 +57,34 @@ public class MailCommandPlugin implements CommandPlugin {
     }
 
     @Override
-    public void execute(final CommandContext context) throws CommandException {
-
-        context.consumeExpectedToken(CMD_MAIL);
-
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(CMD_MAIL, "send an email",
+            "send an email", this::performSendMail,
+            new CommandModifierInfo(
+                new AbstractCommandParameter[] {
+                    RECIPIENT_PARAMETER,
+                    SUBJECT_PARAMETER,
+                    BODY_PARAMETER
+                }
+            )
+        );
+        return new MainCommandDescription[] { commands };
+    }
+    
+    private void performSendMail(CommandContext context) throws CommandException {
+        
         if (!mailService.isConfigured()) {
             context.println("The SMTP mail server is not configured or invalid configured.");
-            // ignore additional tokens
-            context.consumeRemainingTokens();
             return;
         }
-
-        String recipient = context.consumeNextToken();
-        if (recipient == null || !(new EmailAddress(recipient).isValid())) {
-            throw CommandException.syntaxError("You need to specify a valid mail address as the recipient.", context);
-        }
-
-        String subject = context.consumeNextToken();
-        if (subject == null) {
-            throw CommandException.syntaxError("You need to specify a subject.", context);
-        }
-
-        String body = context.consumeNextToken();
-        if (body == null) {
-            throw CommandException.syntaxError("You need the message body.", context);
-        }
-
-        // ignore additional tokens
-        context.consumeRemainingTokens();
-
+        
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String recipient = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
+        String subject = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(1)).getResult();
+        String body = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(2)).getResult();
+        
+        
         Mail validatedMail;
         try {
             validatedMail = Mail.createMail(new String[] { recipient }, subject, body, null);
@@ -115,16 +121,6 @@ public class MailCommandPlugin implements CommandPlugin {
             throw CommandException.executionError(e.getMessage(), context);
         }
 
-    }
-
-    @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
-        contributions.add(new CommandDescription(CMD_MAIL, "<recipient> \"<subject>\" \"<body>\"", false, "Sends an email.",
-            "<recipient> - The recipient to whom the mail should be addressed.",
-            "\"<subject>\" - The subject of the mail.",
-            "\"<body>\" - The mail body."));
-        return contributions;
     }
 
 }

@@ -12,17 +12,19 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPublicKeySpec;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 
@@ -34,6 +36,8 @@ import de.rcenvironment.core.embedded.ssh.api.SshAccount;
  * @author Brigitte Boden (added public key authentication)
  */
 public class SshAccountImpl implements SshAccount {
+
+    private static final String BC_PROVIDER_ID = "BC";
 
     private String loginName;
 
@@ -192,7 +196,11 @@ public class SshAccountImpl implements SshAccount {
     }
 
     private void parsePublicKey() {
+
+        Log log = LogFactory.getLog(this.getClass());
+
         if (publicKey != null && !publicKey.isEmpty()) {
+
             try {
                 // Parse known key string to a PublicKey object.
                 byte[] encKey = Base64.decodeBase64(publicKey.split(" ")[1]);
@@ -200,17 +208,23 @@ public class SshAccountImpl implements SshAccount {
 
                 byte[] header = readElement(inputStream);
                 String pubKeyFormat = new String(header);
-                if (pubKeyFormat.equals("ssh-rsa")) {
-                    byte[] publicExponent = readElement(inputStream);
-                    byte[] modulus = readElement(inputStream);
 
-                    KeySpec spec = new RSAPublicKeySpec(new BigInteger(modulus), new BigInteger(publicExponent));
-                    KeyFactory kf = KeyFactory.getInstance("RSA");
-                    publicKeyObj = kf.generatePublic(spec);
+                if (Security.getProvider(BC_PROVIDER_ID) == null) {
+                    Security.addProvider(new BouncyCastleProvider());
+                    log.debug("Installed BouncyCastle provider");
+                }
+                if (pubKeyFormat.equals("ssh-rsa")) {
+                    OpenSSHPublicKeySpec pubSpec = new OpenSSHPublicKeySpec(encKey);
+                    KeyFactory rsaKf = KeyFactory.getInstance("RSA", BC_PROVIDER_ID);
+                    publicKeyObj = rsaKf.generatePublic(pubSpec);
+                } else {
+                    publicKeyObj = null;
                 }
             } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | ArrayIndexOutOfBoundsException e) {
                 // No valid public key
                 publicKeyObj = null;
+            } catch (NoSuchProviderException e) {
+                log.error("Could not retrieve Bouncy Castle provider for key factory", e);
             }
         }
     }

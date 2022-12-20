@@ -108,7 +108,7 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "8",
+      "version" : "8.1",
       "name" : "Optimizer"
     },
     "configuration" : {

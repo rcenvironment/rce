@@ -8,8 +8,6 @@
 
 package de.rcenvironment.core.authorization.internal;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
@@ -18,9 +16,15 @@ import org.osgi.service.component.annotations.Reference;
 import de.rcenvironment.core.authorization.api.AuthorizationAccessGroup;
 import de.rcenvironment.core.authorization.api.AuthorizationService;
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.command.spi.AbstractCommandParameter;
 import de.rcenvironment.core.command.spi.CommandContext;
-import de.rcenvironment.core.command.spi.CommandDescription;
+import de.rcenvironment.core.command.spi.CommandModifierInfo;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.command.spi.MainCommandDescription;
+import de.rcenvironment.core.command.spi.ParsedCommandModifiers;
+import de.rcenvironment.core.command.spi.ParsedStringParameter;
+import de.rcenvironment.core.command.spi.StringParameter;
+import de.rcenvironment.core.command.spi.SubCommandDescription;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 
@@ -32,49 +36,58 @@ import de.rcenvironment.core.utils.common.exception.OperationFailureException;
 @Component
 public class AuthorizationCommandPlugin implements CommandPlugin {
 
-    private static final String GROUP_ID_PARAMETER = "<group id>";
+    private static final String GROUP_ID = "group id";
 
     private static final String ROOT_COMMAND = "auth";
+    
+    private static final StringParameter GROUP_ID_PARAMETER = new StringParameter(null, GROUP_ID, "an identifier consisting of 2-32"
+            + " letters, numbers, underscores (\"_\") and/or brackets");    
 
+    private static final StringParameter INVITATION_STRING_PARAMETER = new StringParameter(null, "invitation string",
+            "imports a group from an invitation string that was previously exported on another node");
+    
     private AuthorizationService authorizationService;
-
+    
     @Override
-    public Collection<CommandDescription> getCommandDescriptions() {
-        final Collection<CommandDescription> contributions = new ArrayList<>();
-        contributions.add(new CommandDescription(ROOT_COMMAND, "", false, "short form of \"auth list\""));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " create", GROUP_ID_PARAMETER, false, "creates a new authorization group",
-            "<group id> - an identifier consisting of 2-32 letters, numbers, underscores (\"_\") and/or brackets"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " list", null, false,
-            "lists the authorization groups that the local node belongs too"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " delete", GROUP_ID_PARAMETER, false, "deletes a local authorization group",
-            "<group id> - the identifier of the local group to delete"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " export", GROUP_ID_PARAMETER, false,
-            "exports a group as an invitation string that can be imported by another node, "
-                + "allowing that other node to join this group"));
-        contributions.add(new CommandDescription(ROOT_COMMAND + " import", "<invitation string>", false,
-            "imports a group from an invitation string that was previously exported on another node"));
-        return contributions;
+    public MainCommandDescription[] getCommands() {
+        final MainCommandDescription commands = new MainCommandDescription(ROOT_COMMAND, "manage authorization groups",
+            "alias for \"auth list\"", this::performList,
+            new SubCommandDescription("create", "creates a new authorization group", this::performCreate,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        GROUP_ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("list", "lists the authorization groups that the local node belongs too", this::performList),
+            new SubCommandDescription("delete", "deletes a local authorization group", this::performDelete,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        GROUP_ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("export", "exports a group as an invitation string that can be imported by another node, "
+                + "allowing that other node to join this group", this::performExport,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        GROUP_ID_PARAMETER
+                    }
+                )
+            ),
+            new SubCommandDescription("import",
+                "imports a group from an invitation string that was previously exported on another node", this::performImport,
+                new CommandModifierInfo(
+                    new AbstractCommandParameter[] {
+                        INVITATION_STRING_PARAMETER
+                    }
+                )
+            )
+        );
+        
+        return new MainCommandDescription[] { commands };
     }
-
-    @Override
-    public void execute(CommandContext context) throws CommandException {
-        context.consumeExpectedToken(ROOT_COMMAND);
-        String subCmd = context.consumeNextToken();
-        if (subCmd == null || subCmd.equals("list")) {
-            performList(context);
-        } else if (subCmd.equals("create")) {
-            performCreate(context);
-        } else if (subCmd.equals("export")) {
-            performExport(context);
-        } else if (subCmd.equals("import")) {
-            performImport(context);
-        } else if (subCmd.equals("delete")) {
-            performDelete(context);
-        } else {
-            throw CommandException.unknownCommand(context);
-        }
-    }
-
+    
     private void performList(CommandContext context) throws CommandException {
         if (context.hasRemainingTokens()) {
             throw CommandException.wrongNumberOfParameters(context);
@@ -86,7 +99,9 @@ public class AuthorizationCommandPlugin implements CommandPlugin {
     }
 
     private void performCreate(CommandContext context) throws CommandException {
-        String groupId = fetchSingleParameter(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String groupId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
         try {
             // TODO decide: check for pre-existing local group or not?
             AuthorizationAccessGroup group = authorizationService.createLocalGroup(groupId);
@@ -98,7 +113,9 @@ public class AuthorizationCommandPlugin implements CommandPlugin {
     }
 
     private void performExport(CommandContext context) throws CommandException {
-        String groupId = fetchSingleParameter(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String groupId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
         try {
             final AuthorizationAccessGroup group = authorizationService.findLocalGroupById(groupId);
             if (group == null) {
@@ -113,7 +130,9 @@ public class AuthorizationCommandPlugin implements CommandPlugin {
     }
 
     private void performImport(CommandContext context) throws CommandException {
-        String exportString = fetchSingleParameter(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String exportString = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
         try {
             AuthorizationAccessGroup group = authorizationService.importFromString(exportString);
             context.println("Successfully imported group " + group.getDisplayName());
@@ -124,7 +143,9 @@ public class AuthorizationCommandPlugin implements CommandPlugin {
     }
 
     private void performDelete(CommandContext context) throws CommandException {
-        String groupId = fetchSingleParameter(context);
+        ParsedCommandModifiers modifiers = context.getParsedModifiers();
+        
+        String groupId = ((ParsedStringParameter) modifiers.getPositionalCommandParameter(0)).getResult();
         try {
             final AuthorizationAccessGroup group = authorizationService.findLocalGroupById(groupId);
             if (group == null) {
@@ -143,12 +164,4 @@ public class AuthorizationCommandPlugin implements CommandPlugin {
         this.authorizationService = newService;
     }
 
-    private String fetchSingleParameter(CommandContext context) throws CommandException {
-        final List<String> tokens = context.consumeRemainingTokens();
-        if (tokens.size() != 1) {
-            throw CommandException.wrongNumberOfParameters(context);
-        }
-        String parameter = tokens.get(0);
-        return parameter;
-    }
 }

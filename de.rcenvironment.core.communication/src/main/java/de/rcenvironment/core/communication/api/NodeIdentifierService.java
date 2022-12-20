@@ -94,6 +94,15 @@ public interface NodeIdentifierService {
     LogicalNodeSessionId parseLogicalNodeSessionIdString(String input) throws IdentifierException;
 
     /**
+     * Performs a similar operation as {@link #associateDisplayName(InstanceNodeSessionId, String)}, but sets a hardcoded default display
+     * name, and the call comes with the added context information that the node in question is the local node. The implementation can use
+     * this to adapt accordingly.
+     * 
+     * @param localInstanceSessionId the instance session id of the local node
+     */
+    void setDefaultDisplayNameForLocalNode(InstanceNodeSessionId localInstanceSessionId);
+
+    /**
      * Sets the display name to associate with the given {@link InstanceNodeSessionId}. If the specified session is the most "recent" one,
      * it will be considered as the canonical session for the given instance, and the given name will also propagate as the default display
      * name for that instance.

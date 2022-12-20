@@ -15,6 +15,7 @@ import org.eclipse.osgi.util.NLS;
  * 
  * @author Tobias Menden
  * @author Sascha Zur
+ * @author Tim Rosenbach
  */
 public class Messages extends NLS {
 
@@ -101,6 +102,24 @@ public class Messages extends NLS {
     
     /** Constant. */
     public static String labelPosition;
+    
+    /** Constant. */
+    public static String missingNameMessage;
+    
+    /** Constant. */
+    public static String missingValueMessage;
+    
+    /** Constant. */
+    public static String invalidValueIntMessage;
+    
+    /** Constant. */
+    public static String invalidValueFloatMessage;
+    
+    /** Constant. */
+    public static String maxCharacterLengthMessage;
+
+    /** Constant. */
+    public static String invalidNameMessage;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

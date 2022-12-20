@@ -1,11 +1,11 @@
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<sect1 id="faq">
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<section id="faq">
 	<title>Frequently Asked Questions</title>
 	<para>Frequently asked questions and their answers are listed in this section.
 	</para>
 	
-	 <sect2>
+	 <section>
 		<title>Sample Question 1</title>
 		<para>Sample answer 1</para>
-	</sect2>
-</sect1>
+	</section>
+</section>

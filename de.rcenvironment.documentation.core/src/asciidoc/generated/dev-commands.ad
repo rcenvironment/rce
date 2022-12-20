@@ -1,0 +1,318 @@
+*The 'dev' command [[dev]]*
+|===
+|Command |Description
+
+|dev <command group> [--details\|-d] [--asciidoc]|Alias of "help --dev".  +
+
+ _<command group>_:  (optional) the command group of which the commands should be shown  +
+ _[--details\|-d]_:  show details of the commands  +
+ _[--asciidoc]_:  output in asciidoc format  +
+
+|===
+*The 'dm' command [[dm]]*
+|===
+|Command |Description
+
+|dm create-test-data [--prefix <prefix>] [--workflows <workflow number>] [--iterations <iterations number>] [--allowedDeviation <deviation>] [--smallfiles\|-s] [--bigfiles\|-b]|Creates test data in the database.  +
+
+ _[--prefix <prefix>]_:  prefix for created workflows  +
+ _[--workflows <workflow number>]_:  name for created workflows  +
+ _[--iterations <iterations number>]_:  number of iterations  +
+ _[--allowedDeviation <deviation>]_:  allowed deviation in %, standard value is 20%  +
+ _[--smallfiles\|-s]_:  small input files for components  +
+ _[--bigfiles\|-b]_:  big input files for components  +
+
+|===
+*The 'dummy' command [[dummy]]*
+|===
+|Command |Description
+
+|dummy|Prints a test message.
+|===
+*The 'force-crash' command [[force-crash]]*
+|===
+|Command |Description
+
+|force-crash <delay>|"kills" the instance without proper shutdown at <delay> milliseconds after the command is executed.  +
+
+ _<delay>_:  delay in milliseconds  +
+
+|===
+*The 'im' command [[im]]*
+|===
+|Command |Description
+
+|im configure <instances...> [--set-rce-version <version>] [--apply-template <template name>] [--set-name <name>] [--set-comment <comment>] [--set-relay-option <(is relay)>] [--set-workflow-host-option <(is worflow host)>] [--set-custom-node-id <node id>] [--set-tempdir-path <tempdir>] [--add-server-port <id> <host> <port>] [--add-connection <id> <host> <port> <auto-connect>] [--remove-connection <id>] [--configure-ssh-server <ip> <port>] [--add-ssh-account <username> <role> <enable ssh-account> <password>] [--remove-ssh-account <username>] [--set-ip-filter-option <(has ip-filter)>] [--enable-im-ssh-access <port>] [--set-request-timeout <r timeout>] [--set-forwarding-timeout <f timeout>] [--add-allowed-inbound-ip <ip>] [--remove-allowed-inbound-ip <ip>] [--add-ssh-connection <name> <display name> <host> <port> <login name>] [--remove-ssh-connection <name>] [--add-uplink-connection <ip> <hostname> <port> <client id> <is gateway> <connect on startup> <auto-retry> <username> <passwrod keyword> <password>] [--remove-uplink-connection <id>] [--publish-component <name>] [--unpublish-component <name>] [--set-background-monitoring <id> <interval>] [--reset] [--wipe] [--disable-ssh-server]|Configures the configuration.json file of the specified RCE instance(s).  +
+
+ _<instances...>_:  list of instances to manage  +
+ _[--set-rce-version <version>]_:  sets the rce version of the instances. (Does not work on existing instances.)  +
+ _[--apply-template <template name>]_:  applies (i.e. copies) the given template as the new configuration  +
+ _[--set-name <name>]_:  sets the name of the instance  +
+ _[--set-comment <comment>]_:  sets a general comment  +
+ _[--set-relay-option <(is relay)>]_:  sets or clears the relay flag  +
+ _[--set-workflow-host-option <(is worflow host)>]_:  sets or clears the workflow host flag  +
+ _[--set-custom-node-id <node id>]_:  adds an override value for the node's network id; use with caution!  +
+ _[--set-tempdir-path <tempdir>]_:  sets the root path for RCE's temporary files directory  +
+ _[--add-server-port <id> <host> <port>]_:  adds a new server port and sets the ip and port number to bind to  +
+ _[--add-connection <id> <host> <port> <auto-connect>]_:  adds new connection to the given ip/hostname and port, and whether it should auto-connect  +
+ _[--remove-connection <id>]_:  removes a connection  +
+ _[--configure-ssh-server <ip> <port>]_:  enables the ssh server and sets the ip and port to bind to  +
+ _[--add-ssh-account <username> <role> <enable ssh-account> <password>]_:  adds an SSH account  +
+ _[--remove-ssh-account <username>]_:  removes an SSH account  +
+ _[--set-ip-filter-option <(has ip-filter)>]_:  enables or disables the ip filter; default: true  +
+ _[--enable-im-ssh-access <port>]_:  enables and configures SSH forwarding of RCE console commands by the IM "master" instance  +
+ _[--set-request-timeout <r timeout>]_:  sets the request timeout in msec  +
+ _[--set-forwarding-timeout <f timeout>]_:  sets the forwarding timeout in msec  +
+ _[--add-allowed-inbound-ip <ip>]_:  adds/allows an inbound IP address to the filter  +
+ _[--remove-allowed-inbound-ip <ip>]_:  removes/disallows an inbound IP address from the filter  +
+ _[--add-ssh-connection <name> <display name> <host> <port> <login name>]_:  adds a new ssh connection  +
+ _[--remove-ssh-connection <name>]_:  removes a ssh connection  +
+ _[--add-uplink-connection <ip> <hostname> <port> <client id> <is gateway> <connect on startup> <auto-retry> <username> <passwrod keyword> <password>]_:  adds a new uplink connection  +
+ _[--remove-uplink-connection <id>]_:  removes an uplink connection  +
+ _[--publish-component <name>]_:  publishes a new component  +
+ _[--unpublish-component <name>]_:  unpublishes a component  +
+ _[--set-background-monitoring <id> <interval>]_:  enables background monitoring with the given interval (in seconds)  +
+ _[--reset]_:  resets the instance to an empty configuration  +
+ _[--wipe]_:  wipes the instance  +
+ _[--disable-ssh-server]_:  disables the ssh server  +
+
+|im dispose <instances...>|Disposes the specified instance meaning deletion of the profile directory.  +
+
+ _<instances...>_:  list of instances to manage  +
+
+|im info|Shows additional information.
+|im install <install policy: if-missing\|force-download\|force-reinstall> <major version> <installation id> [--timeout <timeout>]|Downloads and installs a new RCE installation.  +
+
+ _<install policy: if-missing\|force-download\|force-reinstall>_:  specify install policy  +
+ _<major version>_:  syntax format: [<major version>]/<url version id/part>  +
+ _<installation id>_:  id for the installation  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+
+|im list <affected items: all\|instances\|installations\|templates>|Lists information about instances, installations or templates.  +
+
+ _<affected items: all\|instances\|installations\|templates>_:  specify group of affected items  +
+
+|im reinstall <install policy: if-missing\|force-download\|force-reinstall> <major version> <installation id>|Stops all instances running the given installation id, downloads and installs the new RCEinstallation, and starts the instances again with the new installation.  +
+
+ _<install policy: if-missing\|force-download\|force-reinstall>_:  specify install policy  +
+ _<major version>_:  syntax format: [<major version>]/<url version id/part>  +
+ _<installation id>_:  id for the installation  +
+
+|im restart <instances...> <installation id> [--timeout <timeout>] [--gui <start with gui>] [--command-arguments <command arguments>]|Restarts a list of RCE instances with the given instance IDs and the given installation.  +
+
+ _<instances...>_:  list of instances to manage  +
+ _<installation id>_:  id for the installation  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+ _[--gui <start with gui>]_:  option to start with gui - standard <false>  +
+ _[--command-arguments <command arguments>]_:  additional command arguments  +
+
+|im start <instances...> <installation id> [--timeout <timeout>] [--gui <start with gui>] [--command-arguments <command arguments>]|Starts a list of new RCE instances with the desired instance IDs and the desired installation.  +
+
+ _<instances...>_:  list of instances to manage  +
+ _<installation id>_:  id for the installation  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+ _[--gui <start with gui>]_:  option to start with gui - standard <false>  +
+ _[--command-arguments <command arguments>]_:  additional command arguments  +
+
+|im start-all <installation id> [--timeout <timeout>] [--command-arguments <command arguments>]|Starts all available instances. Uses the given installation.  +
+
+ _<installation id>_:  id for the installation  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+ _[--command-arguments <command arguments>]_:  additional command arguments  +
+
+|im stop <instances...> [--timeout <timeout>]|Stops a list of running RCE instances.  +
+
+ _<instances...>_:  list of instances to manage  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+
+|im stop-all <installation id> [--timeout <timeout>]|Stops all running instances.  +
+
+ _<installation id>_:  id for the installation  +
+ _[--timeout <timeout>]_:  specifies the maximum length of time this command is allowed to run (in seconds) - default = 60s  +
+
+|===
+*The 'net' command [[net]]*
+|===
+|Command |Description
+
+|net bench <taskdef>|Run communication benchmark.  +
+
+ _<taskdef>_:  <targetNode\|*>([<numMessages>],[<requestSize>],[<responseSize>],[<responseDelay(msec)>],[<threadsPerTarget>])  +
+
+|net graph <base name> [--all\|-a]|Generates a Graphviz file of the current network topology.  +
+
+ _<base name>_:  base name parameter  +
+ _[--all\|-a]_:  include unreachable nodes  +
+
+|net np|Show known RCE node properties.
+|===
+*The 'osgi' command [[osgi]]*
+|===
+|Command |Description
+
+|osgi <command> [-o <filename>]|Executes an OSGi/Equinox console command; use -o to write text output to a file.  +
+
+ _<command>_:  osgi command  +
+ _[-o <filename>]_:  text output to a file  +
+
+|===
+*The 'ra' command [[ra]]*
+|===
+|Command |Description
+
+|ra cancel <session token>|Cancels a session.  +
+
+ _<session token>_:  token of the session  +
+
+|ra describe-tool <tool id> <tool version> [-n <tool node id>] [--template\|-t]|Prints names and data types of the tool's or workflow's intputs and outputs.  +
+
+ _<tool id>_:  id of the tool  +
+ _<tool version>_:  version of the tool  +
+ _[-n <tool node id>]_:  set tool node id  +
+ _[--template\|-t]_:  make template  +
+
+|ra describe-wf <workflow id> <workflow version>|Prints names and data types of the tool's or workflow's intputs and outputs.  +
+
+ _<workflow id>_:  id of the workflow  +
+ _<workflow version>_:  version of the workflow  +
+
+|ra dispose <session token>|Releases resources used by a remote access session.  +
+
+ _<session token>_:  token of the session  +
+
+|ra get-doc-list <tool id> <tool version>|Get tool documentation list.  +
+
+ _<tool id>_:  id of the tool  +
+ _<tool version>_:  version of the tool  +
+
+|ra get-tool-doc <session token> <tool id> <tool version> <tool node id> <hash value>|Download documentation.  +
+
+ _<session token>_:  token of the session  +
+ _<tool id>_:  id of the tool  +
+ _<tool version>_:  version of the tool  +
+ _<tool node id>_:  id of the tool node  +
+ _<hash value>_:  hash value  +
+
+|ra init [--compact\|-c]|Initializes a remote access session, and returns a session token.  +
+
+ _[--compact\|-c]_:  compact output  +
+
+|ra list-tools [-f <format>] [--with-load-data <time span> <time limit>]|Lists all available tool ids and versions for the "run-tool"command.  +
+
+ _[-f <format>]_:  output format  +
+ _[--with-load-data <time span> <time limit>]_:  load data  +
+
+|ra list-wfs [-f <format>]|Lists all available workflow ids and versions for the "list-wfs"command.  +
+
+ _[-f <format>]_:  output format  +
+
+|ra protocol-version|Prints the protocol version of this interface.
+|ra run-tool <session token> <tool id> <tool version> [-n <tool node id>] [-p <parameters...>] [--dynInputs <dyn inputs>] [--dynOutputs <dyn outputs>] [--nonReqInputs <non req inputs>] [--show-output\|-o] [uncompressed upload\|-u] [simple description format\|--simple]|Invokes a tool by its id and version.  +
+
+ _<session token>_:  token of the session  +
+ _<tool id>_:  id of the tool  +
+ _<tool version>_:  version of the tool  +
+ _[-n <tool node id>]_:  set tool node id  +
+ _[-p <parameters...>]_:  additional parameters  +
+ _[--dynInputs <dyn inputs>]_:  dynamic inputs  +
+ _[--dynOutputs <dyn outputs>]_:  dynamic outputs  +
+ _[--nonReqInputs <non req inputs>]_:  non required inputs  +
+ _[--show-output\|-o]_:  shows output  +
+ _[uncompressed upload\|-u]_:  This is a command flag  +
+ _[simple description format\|--simple]_:  This is a command flag  +
+
+|ra run-wf <session token> <workflow id> <workflow version> [-p <parameters...>] [--show-output\|-o]|Invokes a published workflow by its id.  +
+
+ _<session token>_:  token of the session  +
+ _<workflow id>_:  id of the workflow  +
+ _<workflow version>_:  version of the workflow  +
+ _[-p <parameters...>]_:  additional parameters  +
+ _[--show-output\|-o]_:  shows output  +
+
+|===
+*The 'run-test' command [[run-test]]*
+|===
+|Command |Description
+
+|run-test <tag name filters...> <build under test id> [--format <pretty\|json>]|Run a test.  +
+
+ _<tag name filters...>_:  filter for tag names  +
+ _<build under test id>_:  build version to be used  +
+ _[--format <pretty\|json>]_:  output format  +
+
+|===
+*The 'run-tests' command [[run-tests]]*
+|===
+|Command |Description
+
+|run-tests <tag name filters...> <build under test id> [--format <pretty\|json>]|(alias of "run-test").  +
+
+ _<tag name filters...>_:  filter for tag names  +
+ _<build under test id>_:  build version to be used  +
+ _[--format <pretty\|json>]_:  output format  +
+
+|===
+*The 'stats' command [[stats]]*
+|===
+|Command |Description
+
+|stats|Show internal statistics.
+|===
+*The 'tasks' command [[tasks]]*
+|===
+|Command |Description
+
+|tasks [--all\|-a] [--unique\|-i]|Show information about internal tasks.  +
+
+ _[--all\|-a]_:  Show all tasks, including inactive ones  +
+ _[--unique\|-i]_:  Extended information: list tasks with a unique id  +
+
+|===
+*The 'tc' command [[tc]]*
+|===
+|Command |Description
+
+|tc close_view <close view parameter>|Closes a GUI view.  +
+
+ _<close view parameter>_:  one of the following view keys is a valid input:[Workflow_List, Log, Optimizer, Data_Management_Browser, CPACS_Writer, Properties, Component_Publishing, Cluster_Job_Monitor, TIGL_Viewer, Workflow_Console, Timeline, Excel, Parametric_Study, Command_Console, Network]  +
+
+|tc close_welcome|Closes the welcome screen if present.
+|tc compare_wf_runs <abs export workflow path> <abs export workflow path>|Compares the two given workflowruns and indicates if they are identical or wether their are differences.  +
+
+ _<abs export workflow path>_:  absolute path to exported workflowrun  +
+ _<abs export workflow path>_:  absolute path to exported workflowrun  +
+
+|tc export_all_wf_runs <abs path to export dir>|Exports all workflow runs into the given export directory.  +
+
+ _<abs path to export dir>_:  absolute path to export directory  +
+
+|tc export_wf_run <absolute directory path> <workflow title>|Exports the run corresponding to the workflowtitle to the given directory.  +
+
+ _<absolute directory path>_:  absolute path to directory  +
+ _<workflow title>_:  title of the workflow  +
+
+|tc open_view <open view parameter>|Opens a GUI view and sets focus to it.  +
+
+ _<open view parameter>_:  one of the following view keys is a valid input:[Workflow_List, Log, Optimizer, Data_Management_Browser, CPACS_Writer, Properties, Component_Publishing, Cluster_Job_Monitor, TIGL_Viewer, Workflow_Console, Timeline, Excel, Parametric_Study, Command_Console, Network]  +
+
+|===
+*The 'wf' command [[wf]]*
+|===
+|Command |Description
+
+|wf check-self-test-cases|Check if all test workflows are part of at least one test case.
+|wf graph <workflow file>|Prints .dot string representation of a workflow (can be used to create graph visualization with Graphviz).  +
+
+ _<workflow file>_:  path to the workflow file  +
+
+|wf list-self-test-cases|List available test cases for wf self-test.
+|wf self-test [--dispose <onfinished\|never\|always>] [--delete <onfinished\|never\|always>] [--pr <parallel runs>] [--sr <sequential runs>] [--python <python exe path>] [--cases <cases...>]|Batch test workflow files of the test workflow files bundle.  +
+
+ _[--dispose <onfinished\|never\|always>]_:  dispose behaviour  +
+ _[--delete <onfinished\|never\|always>]_:  deletion behaviour  +
+ _[--pr <parallel runs>]_:  number of parallel runs  +
+ _[--sr <sequential runs>]_:  number of sequential runs  +
+ _[--python <python exe path>]_:  path to python.exe  +
+ _[--cases <cases...>]_:  parameter for the cases  +
+
+|===

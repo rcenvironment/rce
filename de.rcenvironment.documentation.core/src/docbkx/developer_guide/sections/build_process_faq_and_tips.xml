@@ -1,6 +1,6 @@
 <?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
 <?xml-model href="http://docbook.org/xml/5.0/rng/docbook.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
-<sect1 xmlns="http://docbook.org/ns/docbook" version="5.0">
+<section xmlns="http://docbook.org/ns/docbook" version="5.0">
     <title>Build Process FAQ / Tips and Tricks</title>
     <para>This section gives answers and hints to common build issues.</para>
     <qandaset defaultlabel="qanda">
@@ -103,4 +103,4 @@
             </answer>
         </qandaentry>
         </qandaset>
-</sect1>
+</section>

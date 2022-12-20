@@ -33,9 +33,11 @@ public final class CommandContext {
 
     private boolean developerCommandSetEnabled = false;
 
+    private ParsedCommandModifiers parsedModifiers = new ParsedCommandModifiers();
+    
     public CommandContext(List<String> originalTokens, TextOutputReceiver outputReceiver, Object invokerInformation) {
         this.originalTokens = originalTokens;
-        this.remainingTokens = new LinkedList<String>(originalTokens);
+        this.remainingTokens = new LinkedList<>(originalTokens);
         this.outputReceiver = outputReceiver;
         this.invokerInformation = invokerInformation;
     }
@@ -61,6 +63,7 @@ public final class CommandContext {
             return remainingTokens.peekFirst();
         }
     }
+    
 
     /**
      * Removes and returns the first token from the token queue.
@@ -97,7 +100,7 @@ public final class CommandContext {
      * @return the list of all remaining tokens
      */
     public List<String> consumeRemainingTokens() {
-        List<String> result = new ArrayList<String>(remainingTokens);
+        List<String> result = new ArrayList<>(remainingTokens);
         remainingTokens.clear();
         return result;
     }
@@ -142,4 +145,12 @@ public final class CommandContext {
         return invokerInformation;
     }
 
+    public void setParsedModifiers(ParsedCommandModifiers modifiers) {
+        this.parsedModifiers = modifiers;
+    }
+    
+    public ParsedCommandModifiers getParsedModifiers() {
+        return parsedModifiers;
+    }
+    
 }
