@@ -1,7 +1,0 @@
-#adding touchpoint instructions to use this launcher as the startup launcher in the rce.ini
-instructions.uninstall=org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:@artifact);
-instructions.install=\
-	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:plugins/de.rcenvironment.core.launcher_8.0.0.201612061214.jar);\
-	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:plugins/de.rcenvironment.core.launcher_8.0.1.201612160909.jar);\
-	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:plugins/de.rcenvironment.core.launcher_8.0.2.201703070852.jar);\
-	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:@artifact);

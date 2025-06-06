@@ -1,8 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="OSGi Local Service Resolver">
-
-	<implementation class="de.rcenvironment.core.communication.rpc.internal.OSGiLocalServiceResolver" />
-	<service>
-		<provide interface="de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver"/>
-	</service>
-		
-</scr:component>

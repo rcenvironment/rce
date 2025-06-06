@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Optimizer Validator">
-   <implementation class="de.rcenvironment.components.optimizer.execution.validator.OptimizerComponentValidator"/>
-   <property name="rce.component.validator.identifier" type="String" value="OptimizerValidator_1.0"/>
-   <service>
-      <provide interface="de.rcenvironment.core.component.validation.spi.ComponentValidator"/>
-   </service>
-</scr:component>

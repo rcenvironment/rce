@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.3.0" name="de.rcenvironment.core.component.model.impl.ComponentImageContainerServiceImpl">
-   <service scope="singleton">
-      <provide interface="de.rcenvironment.core.component.model.api.ComponentImageContainerService"/>
-   </service>
-   <implementation class="de.rcenvironment.core.component.model.impl.ComponentImageContainerServiceImpl"/>
-</scr:component>

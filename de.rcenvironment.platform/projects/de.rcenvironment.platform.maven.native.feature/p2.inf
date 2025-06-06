@@ -1,2 +1,0 @@
-instructions.configure=\
-	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Djava.library.path=lib);

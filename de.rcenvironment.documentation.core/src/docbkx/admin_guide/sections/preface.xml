@@ -1,8 +1,0 @@
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<chapter id="preface">
-	<title>Preface</title>
-	<para>This document is the main Administration and Security Guide for RCE. It is meant to provide
-		practical information for IT administrators, and also provide background information
-		regarding the security aspects of RCE setups for inspection and consideration. It is
-		currently limited in scope and will be expanded over time.</para>
-</chapter>

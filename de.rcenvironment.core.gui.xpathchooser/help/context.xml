@@ -1,6 +1,0 @@
-<contexts>
-	<context id="xpathchooser" title="XPathChooser Help">
-		<description>Use the XPathChooser to select and extract data from an Xml-File.</description>
-     	<topic href="help/generated/html/usage.xhtml" label="XPathChooser Usage"></topic>
-	</context>
-</contexts>

@@ -1,6 +1,0 @@
-<!DOCTYPE appendix PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<appendix id="appendix">
-	<title>Script API Reference</title>
-	<para>This section contains a reference for the API that is accessible via the script component.</para>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../../../../de.rcenvironment.components.script.gui/help/src/docbkx/usage.xml" xpointer="apiReferenceTable"/>
-</appendix>

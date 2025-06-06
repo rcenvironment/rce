@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="XMLSupportService">
-   <implementation class="de.rcenvironment.core.utils.common.xml.impl.XMLSupportServiceImpl"/>
-   <service>
-      <provide interface="de.rcenvironment.core.utils.common.xml.api.XMLSupportService"/>
-   </service>
-</scr:component>

@@ -1,6 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Maximum PermGen Size Validator">
-   <implementation class="de.rcenvironment.core.start.validators.internal.MaximumPermGenSizeValidator"/>
-   <service>
-   	<provide interface="de.rcenvironment.core.start.common.validation.spi.InstanceValidator"/>
-   </service>
-</scr:component>

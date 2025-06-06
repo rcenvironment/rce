@@ -1,8 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Execution Related Instances Factory">
-
-	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionRelatedInstancesFactoryImpl"/>
-	<service>
-		<provide interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionRelatedInstancesFactory"/>
-	</service>
-	
-</scr:component>

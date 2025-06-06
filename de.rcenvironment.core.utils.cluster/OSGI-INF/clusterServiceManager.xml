@@ -1,7 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Cluster Service Manager">
-	<implementation class="de.rcenvironment.core.utils.cluster.internal.ClusterServiceManagerImpl" />
-	<service>
-    	<provide interface="de.rcenvironment.core.utils.cluster.ClusterServiceManager"/>
-	</service>
-</scr:component>
- 

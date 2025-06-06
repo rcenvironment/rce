@@ -1,7 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Description Factory Service">
-	<implementation class="de.rcenvironment.core.component.model.impl.ComponentDescriptionFactoryServiceImpl"/>
-	<service>
-		<provide interface="de.rcenvironment.core.component.model.api.ComponentDescriptionFactoryService"/>
-	</service>
-	
-</scr:component>

@@ -1,9 +1,0 @@
-Hi,
-
-your tool '%s' has run as part of an RCE workflow and finished successfully. It waits now for result verification. Please review and verify the results of your tool (either confirm or deny).
-
-%s
-
-Note: You need a verification key which is provided above or in the verification key file on the file system of the tool's host machine: %s
-
-(This mail is generated. It was sent by RCE.)

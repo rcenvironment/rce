@@ -1,6 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Dakota Algorithm Provider">
-	<implementation class="de.rcenvironment.components.optimizer.dakota.execution.DakotaAlgorithmExecutor"/>
-	<service>
-		<provide interface="de.rcenvironment.components.optimizer.execution.algorithms.registry.OptimizerAlgorithmExecutorFactory"/>
-	</service>
-</scr:component>

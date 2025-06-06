@@ -1,8 +1,0 @@
-# Copy this file to "src/test/resources/JschKEyFileAuthenticationTest.properties" and fill in the test properties there.
-# Remember that property strings must be escaped, e.g. "\" in a path must be "\\".
-
-ip=
-port=
-username=
-keyfilelocation=
-passphrase=

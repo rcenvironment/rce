@@ -1,8 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="XML Loader Persistent Component Description Updater">
-	
-	<implementation class="de.rcenvironment.components.xml.loader.execution.XmlLoaderPersistentComponentDescriptionUpdater"/>
-	
-	<service>
-		<provide interface="de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater"/>
-	</service>
-</scr:component>

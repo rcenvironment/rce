@@ -1,8 +1,0 @@
-{
-		"host" : "localhost",
-		"port" : 3465,
-		"username" : "tobias.rodehutskors@dlr.de",
-		"password" : "GNrWIbalKRJ1CM6tdp7IAQ==",
-		"sender" : "tobias.rodehutskors@dlr.de",
-		"encryption" : "implicit"		
-}

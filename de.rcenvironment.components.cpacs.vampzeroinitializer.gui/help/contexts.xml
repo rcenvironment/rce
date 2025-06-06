@@ -1,6 +1,0 @@
-<contexts>
-	<context id="vampzeroinitializer" title="VAMPzero Initializer Component Help">
-		<description>The VAMPzero initializer provides means to create an input data set for the conceptual aircraft design tool VAMPzero via a user-friendly graphical interface. The output consists of a CPACS file that can be forwarded to a copy of VAMPzero.</description>
-     	<topic href="help/generated/html/usage.xhtml" label="VAMPzero Initializer Component Usage"></topic>
-	</context>
-</contexts>

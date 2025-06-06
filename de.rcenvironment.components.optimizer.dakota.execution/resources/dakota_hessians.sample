@@ -1,3 +1,0 @@
-    %%HESSIANS_VALUE%%
-    %%HESSIAN_INTERVALL%%
-    fd_hessian_step_size = %%HESSIAN_STEP_SIZE%%

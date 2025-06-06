@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.gui.workflow.view.internal.WorkflowRunEditorServiceImpl">
-   <service>
-      <provide interface="de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorService"/>
-   </service>
-   <implementation class="de.rcenvironment.core.gui.workflow.view.internal.WorkflowRunEditorServiceImpl"/>
-</scr:component>

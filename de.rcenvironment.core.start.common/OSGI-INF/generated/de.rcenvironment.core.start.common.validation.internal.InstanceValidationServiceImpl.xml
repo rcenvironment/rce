@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.start.common.validation.internal.InstanceValidationServiceImpl">
-   <service>
-      <provide interface="de.rcenvironment.core.start.common.validation.api.InstanceValidationService"/>
-   </service>
-   <reference bind="bindInstanceValidator" cardinality="0..n" interface="de.rcenvironment.core.start.common.validation.spi.InstanceValidator" name="Instance Startup Validator" policy="dynamic" unbind="unbindInstanceValidator"/>
-   <implementation class="de.rcenvironment.core.start.common.validation.internal.InstanceValidationServiceImpl"/>
-</scr:component>

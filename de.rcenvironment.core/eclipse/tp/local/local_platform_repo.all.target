@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.6"?>
-
-<target name="local_build" sequenceNumber="23">
-<locations>
-<location path="${project_loc:de.rcenvironment.repositories.platform}/target/repository/" type="Profile"/>
-</locations>
-</target>

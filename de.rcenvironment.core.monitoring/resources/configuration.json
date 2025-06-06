@@ -1,9 +1,0 @@
-{ 
-	"backgroundMonitoring": [
-        {
-            "enableIds":"id1, id2",
-            "interval": 15
-        }
-    ] 
-}
-

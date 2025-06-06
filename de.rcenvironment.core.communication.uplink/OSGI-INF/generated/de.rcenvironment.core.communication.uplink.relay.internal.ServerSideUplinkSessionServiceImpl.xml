@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.communication.uplink.relay.internal.ServerSideUplinkSessionServiceImpl">
-   <service>
-      <provide interface="de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkSessionService"/>
-   </service>
-   <reference bind="bindConcurrencyUtilsFactory" interface="de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory" name="ConcurrencyUtilsFactory"/>
-   <reference bind="bindServerSideUplinkEndpointService" interface="de.rcenvironment.core.communication.uplink.relay.api.ServerSideUplinkEndpointService" name="ServerSideUplinkEndpointService"/>
-   <implementation class="de.rcenvironment.core.communication.uplink.relay.internal.ServerSideUplinkSessionServiceImpl"/>
-</scr:component>

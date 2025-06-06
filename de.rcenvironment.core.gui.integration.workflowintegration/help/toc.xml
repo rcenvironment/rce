@@ -1,5 +1,0 @@
-<toc link_to="PLUGINS_ROOT/de.rcenvironment.core.gui.help/help/workflow_integration_toc.xml#workflowIntegration" label="Workflow Integration Editor">
-	<topic label="Component Description" href="help/generated/html/componentDescriptionPage.xhtml"/>
-	<topic label="Workflow Editor" href="help/generated/html/workflowEditorPage.xhtml"/>
-	<topic label="Mapping" href="help/generated/html/mappingPage.xhtml"/>
-</toc>

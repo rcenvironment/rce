@@ -1,6 +1,0 @@
-W:External package import to 'com.fasterxml.jackson.databind' should be versioned, but has no attributes
-W:Internal package import to 'de.rcenvironment.core.utils.common' should not have attributes, but declares 'version="1.2.3"'
-E:Missing Automatic-Module-Name in manifest
-E:Non-standard .classpath output dir (should be 'target/classes'): 'wrong/target'
-E:Non-standard Bundle-Vendor: 'WrongVendor'
-E:Wrong Bundle-RequiredExecutionEnvironment: 'JavaSE-1.7'

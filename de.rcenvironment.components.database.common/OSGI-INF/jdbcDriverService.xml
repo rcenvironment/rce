@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" name="JDBC Driver Service">
-    <implementation class="de.rcenvironment.components.database.common.jdbc.internal.JDBCDriverServiceImpl"/>
-    <service>
-       <provide interface="de.rcenvironment.components.database.common.jdbc.JDBCDriverService"/>
-    </service>
-    <reference bind="bindConfigurationService" cardinality="1..1" interface="de.rcenvironment.core.configuration.ConfigurationService" name="Configuration Service" policy="dynamic"/>
-</scr:component>

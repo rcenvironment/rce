@@ -1,9 +1,0 @@
-
-host: 
-                                                                         Req'd  Req'd   Elap
-Job ID               Username Queue    Jobname          SessID NDS   TSK Memory Time  S Time
--------------------- -------- -------- ---------------- ------ ----- --- ------ ----- - -----
-506.host             user_1   qtest    job                 --      2   2    --  00:00 R   -- 
-507.host             user_2   mem      jib                 --      2   2    --  00:00 Q   -- 
-508.host             user_1   qtest    job                 --      2   2    --  00:00 C   -- 
-509.host             user_3   fast     jab                 --      2   2    --  00:00 Q   -- 

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="XMLMapperService">
-   <implementation class="de.rcenvironment.core.utils.common.xml.impl.XMLMapperServiceImpl"/>
-   <reference bind="bindXMLSupportService" cardinality="1..1" interface="de.rcenvironment.core.utils.common.xml.api.XMLSupportService" name="XMLSupportService" policy="static"/>
-   <service>
-      <provide interface="de.rcenvironment.core.utils.common.xml.api.XMLMapperService"/>
-   </service>
-</scr:component>

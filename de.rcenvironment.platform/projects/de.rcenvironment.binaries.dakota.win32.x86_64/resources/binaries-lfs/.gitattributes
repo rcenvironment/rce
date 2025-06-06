@@ -1,5 +1,0 @@
-dakota.exe filter=lfs diff=lfs merge=lfs -text
-libifcoremd.dll filter=lfs diff=lfs merge=lfs -text
-libmmd.dll filter=lfs diff=lfs merge=lfs -text
-msvcp100.dll filter=lfs diff=lfs merge=lfs -text
-msvcr100.dll filter=lfs diff=lfs merge=lfs -text

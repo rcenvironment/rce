@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="de.rcenvironment.core.component.workflow.execution.impl.WorkflowVerificationServiceImpl">
-   <service>
-      <provide interface="de.rcenvironment.core.component.workflow.execution.api.WorkflowVerificationService"/>
-   </service>
-   <reference bind="bindWorkflowExecutionService" interface="de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService" name="WorkflowExecutionService"/>
-   <implementation class="de.rcenvironment.core.component.workflow.execution.impl.WorkflowVerificationServiceImpl"/>
-</scr:component>

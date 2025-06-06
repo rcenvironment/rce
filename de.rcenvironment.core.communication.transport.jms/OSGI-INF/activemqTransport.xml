@@ -1,7 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" 
-	activate="activate" deactivate="deactivate" name="ActiveMQ Transport Provider Service">
-	<implementation class="de.rcenvironment.core.communication.transport.jms.activemq.impl.ActiveMQTransportProvider" />
-	<service>
-    	<provide interface="de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider"/>
-	</service>
-</scr:component>

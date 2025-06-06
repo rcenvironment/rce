@@ -1,7 +1,0 @@
-{
-	"general": {
-		"testStringKey": "testValue",
-		"testIntegerKey": 1,
-		"testFloatKey": 5.0
-	}
-}

@@ -1,6 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Excel Service GUI Events">
-	<implementation class="de.rcenvironment.components.excel.common.internal.ExcelServiceOLE" />
- <service>
-    <provide interface="de.rcenvironment.components.excel.common.ExcelServiceGUIEvents"/>
- </service> 
-</scr:component>

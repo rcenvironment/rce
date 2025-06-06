@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_10.4.0.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="10.4.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_10.4.0.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="10.4.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_10.4.0.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="10.4.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_10.4.0.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="10.4.0.qualifier"/>
-</site>

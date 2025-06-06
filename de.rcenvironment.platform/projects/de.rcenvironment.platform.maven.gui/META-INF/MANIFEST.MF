@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: RCE Third-Party Artifacts - Wrapped Maven Libraries - GUI
-Bundle-SymbolicName: de.rcenvironment.platform.maven.gui;singleton:=true
-Bundle-Version: 10.4.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-Vendor: DLR
-Eclipse-BundleShape: dir
-Automatic-Module-Name: de.rcenvironment.platform.maven.gui
